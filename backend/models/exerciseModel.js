@@ -13,17 +13,27 @@ const RoutineExercise = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'routines', // Nombre de la tabla a la que hace referencia
+        model: 'routines',
         key: 'id',
       }
     },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    exercise_list_id: { // Referencia a la tabla maestra de ejercicios
+      type: DataTypes.INTEGER,
+      allowNull: true, // Puede ser nulo si es un ejercicio personalizado
+      references: {
+        model: 'exercise_list',
+        key: 'id',
+      }
+    },
+    // --- FIN ---
     name: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },
     muscle_group: {
       type: DataTypes.STRING(100),
-      allowNull: true, // El grupo muscular es opcional
+      allowNull: true,
     },
     sets: {
       type: DataTypes.INTEGER,
