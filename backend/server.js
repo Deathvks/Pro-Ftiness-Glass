@@ -11,6 +11,7 @@ import exerciseRoutes from './routes/exercises.js';
 import workoutRoutes from './routes/workouts.js';
 import bodyweightRoutes from './routes/bodyweight.js';
 import userRoutes from './routes/users.js';
+import exerciseListRoutes from './routes/exerciseList.js'; // <-- AÑADIDO
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -31,6 +32,7 @@ app.use('/api', exerciseRoutes);
 app.use('/api', workoutRoutes);
 app.use('/api', bodyweightRoutes);
 app.use('/api', userRoutes);
+app.use('/api', exerciseListRoutes); // <-- AÑADIDO
 
 // Iniciar el servidor
 app.listen(PORT, () => {

@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Play, CheckCircle } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import RoutineEditor from './RoutineEditor';
+import { useToast } from '../hooks/useToast'; // <-- CORREGIDO: Importa desde la nueva ubicación
 
 const isSameDay = (dateA, dateB) => {
     const date1 = new Date(dateA);
@@ -13,6 +14,7 @@ const isSameDay = (dateA, dateB) => {
 };
 
 const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
+  const { addToast } = useToast();
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
@@ -55,11 +57,12 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
       } else {
         setRoutines([...routines, savedOrUpdatedRoutine]);
       }
-
+      
+      addToast('Rutina guardada con éxito.', 'success');
       setEditingRoutine(null);
     } catch (error) {
       console.error("Error al guardar la rutina:", error.message);
-      alert(`Error al guardar la rutina: ${error.message}`);
+      addToast(`Error al guardar: ${error.message}`, 'error');
     }
   };
 
@@ -79,11 +82,12 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
         throw new Error(errorData.error || 'Error al eliminar la rutina.');
       }
       setRoutines(routines.filter(r => r.id !== routineToDelete));
+      addToast('Rutina eliminada.', 'success');
       setShowDeleteModal(false);
       setRoutineToDelete(null);
     } catch (error) {
       console.error("Error al eliminar la rutina:", error.message);
-      alert(`Error al eliminar: ${error.message}`);
+      addToast(`Error al eliminar: ${error.message}`, 'error');
     }
   };
 
@@ -127,10 +131,7 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
               {routine.RoutineExercises && routine.RoutineExercises.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-text-secondary mb-2">Ejercicios:</h3>
-                  {/* --- INICIO DE LA CORRECCIÓN --- */}
-                  {/* Se reemplaza el 'grid' por 'flex flex-col' para una lista vertical */}
                   <ul className="flex flex-col gap-2 pl-4 list-disc text-sm text-text-secondary">
-                  {/* --- FIN DE LA CORRECCIÓN --- */}
                     {routine.RoutineExercises.map(ex => (
                       <li key={ex.id}>{ex.name} ({ex.sets}x{ex.reps})</li>
                     ))}

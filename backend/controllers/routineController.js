@@ -1,28 +1,38 @@
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 
-const { Routine, RoutineExercise, sequelize } = models;
+// Asegúrate de importar todos los modelos necesarios
+const { Routine, RoutineExercise, ExerciseList, sequelize } = models;
 
-// Obtener todas las rutinas de un usuario, incluyendo sus ejercicios
+// OBTENER TODAS LAS RUTINAS (VERSIÓN CORREGIDA Y ROBUSTA)
 export const getAllRoutines = async (req, res) => {
   try {
     const routines = await Routine.findAll({
       where: { user_id: req.user.userId },
-      include: [{
-        model: RoutineExercise,
-        as: 'RoutineExercises'
-      }],
+      include: [
+        {
+          model: RoutineExercise,
+          as: 'RoutineExercises',
+          // Esto es crucial: le decimos a Sequelize que no descarte una rutina
+          // si no encuentra ejercicios asociados.
+          required: false, 
+        }
+      ],
       order: [
         ['id', 'DESC'],
+        // Ordenar los ejercicios dentro de cada rutina por su ID
         [{ model: RoutineExercise, as: 'RoutineExercises' }, 'id', 'ASC']
       ],
     });
     res.json(routines);
   } catch (error) {
-    console.error("Error detallado al obtener rutinas:", error);
+    // Proporciona un error más detallado en la consola del servidor
+    console.error("Error crítico al obtener rutinas:", error); 
     res.status(500).json({ error: 'Error al obtener las rutinas' });
   }
 };
+
+// --- EL RESTO DEL ARCHIVO PERMANECE IGUAL ---
 
 // Obtener una rutina específica por ID, incluyendo sus ejercicios
 export const getRoutineById = async (req, res) => {
@@ -53,12 +63,10 @@ export const getRoutineById = async (req, res) => {
 
 // Crear una nueva rutina y sus ejercicios asociados
 export const createRoutine = async (req, res) => {
-  // --- INICIO: Manejo de validación ---
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  // --- FIN ---
 
   const { name, description, exercises = [] } = req.body;
   const t = await sequelize.transaction();
@@ -75,6 +83,7 @@ export const createRoutine = async (req, res) => {
         muscle_group: ex.muscle_group,
         sets: ex.sets,
         reps: ex.reps,
+        exercise_list_id: ex.exercise_list_id || null,
         routine_id: newRoutine.id
       }));
       await RoutineExercise.bulkCreate(exercisesToCreate, { transaction: t });
@@ -95,12 +104,10 @@ export const createRoutine = async (req, res) => {
 
 // Actualizar una rutina y sus ejercicios
 export const updateRoutine = async (req, res) => {
-  // --- INICIO: Manejo de validación ---
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  // --- FIN ---
 
   const { id } = req.params;
   const { name, description, exercises = [] } = req.body;
@@ -124,6 +131,7 @@ export const updateRoutine = async (req, res) => {
         muscle_group: ex.muscle_group,
         sets: ex.sets,
         reps: ex.reps,
+        exercise_list_id: ex.exercise_list_id || null,
         routine_id: id
       }));
       await RoutineExercise.bulkCreate(exercisesToCreate, { transaction: t });

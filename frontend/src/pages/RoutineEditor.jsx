@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, Trash2, Save } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import ExerciseSearchInput from '../components/ExerciseSearchInput';
 
 const RoutineEditor = ({ routine, onSave, onCancel }) => {
     const [editedRoutine, setEditedRoutine] = useState(() => {
@@ -8,12 +9,14 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
             id: routine.id || null,
             name: routine.name || '',
             description: routine.description || '',
-            // Se asegura de que 'exercises' siempre sea un array
-            exercises: routine.RoutineExercises || routine.exercises || [] 
+            exercises: (routine.RoutineExercises || routine.exercises || []).map(ex => ({
+                ...ex,
+                tempId: `ex-${Math.random()}`
+            }))
         };
         if (initialRoutine.exercises.length === 0) {
             initialRoutine.exercises = [{
-                id: `temp-${Date.now()}`, name: '', muscle_group: '', sets: '', reps: ''
+                tempId: `ex-${Math.random()}`, name: '', muscle_group: '', sets: '', reps: ''
             }];
         }
         return initialRoutine;
@@ -29,14 +32,27 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
         }
     }, [editedRoutine.description]);
 
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Todas las funciones que manipulan 'exercises' ahora comprueban
-    // que sea un array antes de operar, evitando el error.
-
-    const handleExerciseChange = (exIndex, field, value) => {
+    const handleExerciseSelect = (exIndex, selectedExercise) => {
         setEditedRoutine(prev => {
-            const newExercises = [...(prev.exercises || [])];
+            const newExercises = [...prev.exercises];
+            newExercises[exIndex] = {
+                ...newExercises[exIndex],
+                exercise_list_id: selectedExercise.id,
+                name: selectedExercise.name,
+                muscle_group: selectedExercise.muscle_group,
+            };
+            return { ...prev, exercises: newExercises };
+        });
+    };
+
+    const handleFieldChange = (exIndex, field, value) => {
+        setEditedRoutine(prev => {
+            const newExercises = [...prev.exercises];
             newExercises[exIndex][field] = value;
+            // Si el usuario edita el nombre manualmente, desvinculamos el ejercicio de la lista maestra
+            if (field === 'name') {
+                newExercises[exIndex].exercise_list_id = null;
+            }
             return { ...prev, exercises: newExercises };
         });
     };
@@ -45,8 +61,8 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
         setEditedRoutine(prev => ({
             ...prev,
             exercises: [
-                ...(prev.exercises || []), 
-                { id: `temp-${Date.now()}`, name: '', muscle_group: '', sets: '', reps: '' }
+                ...prev.exercises,
+                { tempId: `ex-${Math.random()}`, name: '', muscle_group: '', sets: '', reps: '' }
             ]
         }));
     };
@@ -54,7 +70,7 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
     const removeExercise = (exIndex) => {
         setEditedRoutine(prev => ({
             ...prev,
-            exercises: (prev.exercises || []).filter((_, index) => index !== exIndex)
+            exercises: prev.exercises.filter((_, index) => index !== exIndex)
         }));
     };
 
@@ -64,27 +80,30 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
             return;
         }
 
-        const exercisesToSave = (editedRoutine.exercises || []).filter(ex => ex.name && ex.name.trim() !== '');
+        const exercisesToSave = editedRoutine.exercises.filter(ex => ex.name && ex.name.trim() !== '');
 
         for (const ex of exercisesToSave) {
             if (!ex.sets || ex.sets <= 0) {
-                alert(`Por favor, introduce un número de series válido para el ejercicio "${ex.name}".`);
+                alert(`Por favor, introduce un número de series válido para "${ex.name}".`);
                 return;
             }
             if (!ex.reps || ex.reps.trim() === '') {
-                alert(`Por favor, introduce las repeticiones para el ejercicio "${ex.name}".`);
+                alert(`Por favor, introduce las repeticiones para "${ex.name}".`);
                 return;
             }
         }
 
         const routineToSave = {
             ...editedRoutine,
-            exercises: exercisesToSave
+            exercises: exercisesToSave.map(ex => {
+                const copy = { ...ex };
+                delete copy.tempId; // Eliminamos la propiedad temporal
+                return copy;
+            })
         };
+
         onSave(routineToSave);
     };
-    // --- FIN DE LA CORRECCIÓN ---
-
 
     const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
 
@@ -122,15 +141,13 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
 
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold">Ejercicios</h2>
-                    {(editedRoutine.exercises || []).map((ex, index) => (
-                        <GlassCard key={ex.id || index} className="p-4 bg-bg-secondary/50">
+                    {editedRoutine.exercises.map((ex, index) => (
+                        <GlassCard key={ex.tempId} className="p-4 bg-bg-secondary/50">
                             <div className="flex items-center gap-4 mb-4">
-                                <input
-                                    type="text"
-                                    placeholder="Nombre del Ejercicio"
+                                <ExerciseSearchInput
                                     value={ex.name}
-                                    onChange={(e) => handleExerciseChange(index, 'name', e.target.value)}
-                                    className={baseInputClasses}
+                                    onChange={(e) => handleFieldChange(index, 'name', e.target.value)}
+                                    onSelect={(selected) => handleExerciseSelect(index, selected)}
                                 />
                                 <button onClick={() => removeExercise(index)} className="p-2 rounded-full text-text-muted hover:bg-red/20 hover:text-red transition">
                                     <Trash2 size={16} />
@@ -141,21 +158,21 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
                                     type="number"
                                     placeholder="Series"
                                     value={ex.sets || ''}
-                                    onChange={(e) => handleExerciseChange(index, 'sets', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                                    onChange={(e) => handleFieldChange(index, 'sets', e.target.value === '' ? '' : parseInt(e.target.value, 10))}
                                     className={baseInputClasses}
                                 />
                                 <input
                                     type="text"
                                     placeholder="Reps (ej: 8-12)"
                                     value={ex.reps || ''}
-                                    onChange={(e) => handleExerciseChange(index, 'reps', e.target.value)}
+                                    onChange={(e) => handleFieldChange(index, 'reps', e.target.value)}
                                     className={baseInputClasses}
                                 />
                                 <input
                                     type="text"
                                     placeholder="Grupo Muscular"
                                     value={ex.muscle_group || ''}
-                                    onChange={(e) => handleExerciseChange(index, 'muscle_group', e.target.value)}
+                                    onChange={(e) => handleFieldChange(index, 'muscle_group', e.target.value)}
                                     className={baseInputClasses}
                                 />
                             </div>
