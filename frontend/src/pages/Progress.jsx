@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ResponsiveContainer, LineChart, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
-import { ChevronLeft, ChevronRight, X, ChevronDown, Trash2, BookOpen, TrendingUp, BarChartHorizontal } from 'lucide-react'; // <-- Iconos añadidos
+import { ChevronLeft, ChevronRight, X, ChevronDown, Trash2, BookOpen, TrendingUp, BarChartHorizontal } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 import { getBestSet, calculateCalories } from '../utils/helpers';
 
-// --- INICIO DE LA MODIFICACIÓN ---
 const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
@@ -60,10 +59,15 @@ const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
                                     </button>
                                 </div>
                                 <div className="px-3 pb-3 space-y-3">
+                                    {log.notes && (
+                                        <div className="bg-bg-primary p-3 rounded-md border-l-2 border-accent">
+                                            <p className="font-semibold text-xs text-accent mb-1">Notas de la sesión</p>
+                                            <p className="text-sm text-text-secondary whitespace-pre-wrap">{log.notes}</p>
+                                        </div>
+                                    )}
                                     {log.WorkoutLogDetails.map((exercise, exIdx) => (
                                         <div key={exIdx} className="bg-bg-primary p-3 rounded-md">
                                             <p className="font-semibold mb-2">{exercise.exercise_name}</p>
-                                            {/* Nuevos datos de volumen y mejor serie */}
                                             <div className="flex gap-4 text-xs text-text-muted mb-2">
                                                 <div className="flex items-center gap-1"><BarChartHorizontal size={12} /><span>Volumen: <strong>{exercise.total_volume} kg</strong></span></div>
                                                 <div className="flex items-center gap-1"><TrendingUp size={12} /><span>Mejor Set: <strong>{exercise.best_set_weight} kg</strong></span></div>
@@ -97,9 +101,7 @@ const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
         </>
     );
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
-// ... (El resto de los componentes y la lógica de Progress.jsx se mantienen igual por ahora)
 const CalendarView = ({ workoutLog, setDetailedLog }) => {
     const [calendarDate, setCalendarDate] = useState(new Date());
 
@@ -166,6 +168,7 @@ const CalendarView = ({ workoutLog, setDetailedLog }) => {
         </GlassCard>
     );
 };
+
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         const formattedLabel = new Date(label).toLocaleDateString('es-ES', {
@@ -183,6 +186,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     }
     return null;
 };
+
 const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWorkoutLog }) => {
     const [viewType, setViewType] = useState('exercise');
     const [detailedLog, setDetailedLog] = useState(null);

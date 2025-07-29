@@ -34,6 +34,12 @@ const WorkoutLog = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
   },
   {
     tableName: 'workout_logs',
