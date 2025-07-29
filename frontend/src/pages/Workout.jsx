@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Play, Pause, Square } from 'lucide-react';
+import { ChevronLeft, Play, Pause, Square, FileText } from 'lucide-react'; // <-- Icono añadido
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 
@@ -19,6 +19,7 @@ const Workout = ({ routine, setView, logWorkout }) => {
     const [timer, setTimer] = useState(0);
     const [isActive, setIsActive] = useState(false);
     const [showFinishModal, setShowFinishModal] = useState(false);
+    const [notes, setNotes] = useState(''); // <-- Nuevo estado para las notas
     const countRef = useRef(null);
 
     useEffect(() => {
@@ -56,6 +57,7 @@ const Workout = ({ routine, setView, logWorkout }) => {
             routineName: routine.name,
             duration_seconds: timer,
             calories_burned: 0,
+            notes: notes, // <-- Añadimos las notas al objeto
             details: session.map(ex => ({
                 exerciseName: ex.name,
                 setsDone: ex.setsDone.filter(set => set.reps !== '' && set.weight_kg !== '')
@@ -108,26 +110,30 @@ const Workout = ({ routine, setView, logWorkout }) => {
                                     <span className="flex items-center justify-center font-bold bg-bg-secondary p-3 rounded-md border border-glass-border">
                                         {set.set_number}
                                     </span>
-                                    <input
-                                        type="number"
-                                        placeholder="0"
-                                        value={set.weight_kg}
-                                        onChange={(e) => handleSetChange(exIndex, setIndex, 'weight_kg', e.target.value)}
-                                        className={baseInputClasses}
-                                    />
-                                    <input
-                                        type="number"
-                                        placeholder="0"
-                                        value={set.reps}
-                                        onChange={(e) => handleSetChange(exIndex, setIndex, 'reps', e.target.value)}
-                                        className={baseInputClasses}
-                                    />
+                                    <input type="number" placeholder="0" value={set.weight_kg} onChange={(e) => handleSetChange(exIndex, setIndex, 'weight_kg', e.target.value)} className={baseInputClasses} />
+                                    <input type="number" placeholder="0" value={set.reps} onChange={(e) => handleSetChange(exIndex, setIndex, 'reps', e.target.value)} className={baseInputClasses} />
                                 </div>
                             ))}
                         </div>
                     </GlassCard>
                 ))}
             </div>
+            
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            <GlassCard className="p-6 mt-6">
+                <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
+                    <FileText size={20} />
+                    Notas de la Sesión
+                </h2>
+                <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="¿Cómo te sentiste? ¿Alguna observación?..."
+                    className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition resize-none"
+                    rows="3"
+                ></textarea>
+            </GlassCard>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             {showFinishModal &&
                 <ConfirmationModal
