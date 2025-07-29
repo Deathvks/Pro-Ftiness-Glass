@@ -11,7 +11,7 @@ import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
 import OnboardingScreen from './pages/OnboardingScreen';
 import ProfileEditor from './pages/ProfileEditor';
-import PRToast from './components/PRToast'; // <-- Importamos el nuevo componente
+import PRToast from './components/PRToast';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,20 +25,16 @@ export default function App() {
   const [routines, setRoutines] = useState([]);
   const [workoutLog, setWorkoutLog] = useState([]);
   const [bodyWeightLog, setBodyWeightLog] = useState([]);
-  
-  // --- INICIO DE LA MODIFICACIÓN ---
   const [prNotification, setPrNotification] = useState(null);
 
-  // Efecto para ocultar la notificación de PR después de 7 segundos
   useEffect(() => {
     if (prNotification) {
       const timer = setTimeout(() => {
         setPrNotification(null);
-      }, 7000); // La notificación se ocultará después de 7 segundos
+      }, 7000);
       return () => clearTimeout(timer);
     }
   }, [prNotification]);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const setTheme = (newTheme) => {
     localStorage.setItem('theme', newTheme);
@@ -141,17 +137,16 @@ export default function App() {
         body: JSON.stringify(workoutData),
         credentials: 'include'
       });
-      
+
       const responseData = await response.json();
       if (!response.ok) {
         throw new Error(responseData.error || 'Error al guardar el entrenamiento.');
       }
-      
-      // Comprobamos si la respuesta incluye nuevos PRs y los mostramos
+
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         setPrNotification(responseData.newPRs);
       }
-      
+
       await fetchInitialData();
     } catch (error) {
       console.error("Error en logWorkout:", error);
@@ -282,7 +277,15 @@ export default function App() {
         </button>
         <div className="flex flex-col gap-4">
           {navItems.map(item => (
-            <button key={item.id} onClick={() => navigate(item.id)} className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === item.id ? 'bg-accent text-bg-secondary' : 'text-text-secondary hover:bg-white/10 hover:text-text-primary'}`}>
+            <button
+              key={item.id}
+              onClick={() => navigate(item.id)}
+              // --- INICIO DE LA CORRECCIÓN ---
+              className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === item.id
+                  ? 'bg-accent text-bg-secondary'
+                  : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
+                }`}>
+              {/* --- FIN DE LA CORRECCIÓN --- */}
               {item.icon}
               <span className="whitespace-nowrap">{item.label}</span>
             </button>
@@ -306,8 +309,7 @@ export default function App() {
           </button>
         ))}
       </nav>
-      
-      {/* Renderizamos el toast de PR si hay una notificación */}
+
       <PRToast newPRs={prNotification} onClose={() => setPrNotification(null)} />
     </div>
   );
