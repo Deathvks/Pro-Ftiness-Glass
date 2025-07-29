@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ResponsiveContainer, LineChart, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
-import { ChevronLeft, ChevronRight, X, ChevronDown, Trash2, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ChevronDown, Trash2, BookOpen, TrendingUp, BarChartHorizontal } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
-import ExerciseHistoryModal from './ExerciseHistoryModal'; // Importar el nuevo modal
+import ExerciseHistoryModal from './ExerciseHistoryModal';
 import { getBestSet, calculateCalories } from '../utils/helpers';
 
 const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
@@ -59,9 +59,19 @@ const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
                                     </button>
                                 </div>
                                 <div className="px-3 pb-3 space-y-3">
+                                    {log.notes && (
+                                        <div className="bg-bg-primary p-3 rounded-md border-l-2 border-accent">
+                                            <p className="font-semibold text-xs text-accent mb-1">Notas de la sesión</p>
+                                            <p className="text-sm text-text-secondary whitespace-pre-wrap">{log.notes}</p>
+                                        </div>
+                                    )}
                                     {log.WorkoutLogDetails.map((exercise, exIdx) => (
                                         <div key={exIdx} className="bg-bg-primary p-3 rounded-md">
                                             <p className="font-semibold mb-2">{exercise.exercise_name}</p>
+                                            <div className="flex gap-4 text-xs text-text-muted mb-2">
+                                                <div className="flex items-center gap-1"><BarChartHorizontal size={12} /><span>Volumen: <strong>{exercise.total_volume} kg</strong></span></div>
+                                                <div className="flex items-center gap-1"><TrendingUp size={12} /><span>Mejor Set: <strong>{exercise.best_set_weight} kg</strong></span></div>
+                                            </div>
                                             <ul className="space-y-2 text-sm">
                                                 {exercise.WorkoutLogSets && exercise.WorkoutLogSets.length > 0 ? (
                                                     exercise.WorkoutLogSets.map((set, setIdx) => (

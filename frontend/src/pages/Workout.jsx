@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, Play, Pause, Square } from 'lucide-react';
+import { ChevronLeft, Play, Pause, Square, FileText, Clock } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
+import RestTimerModal from '../components/RestTimerModal';
 
 const Workout = ({ routine, setView, logWorkout }) => {
     const [session, setSession] = useState(() => {
@@ -19,7 +20,9 @@ const Workout = ({ routine, setView, logWorkout }) => {
     const [timer, setTimer] = useState(0);
     const [isActive, setIsActive] = useState(false);
     const [showFinishModal, setShowFinishModal] = useState(false);
+    const [notes, setNotes] = useState('');
     const countRef = useRef(null);
+    const [isResting, setIsResting] = useState(false);
 
     useEffect(() => {
         if (isActive) {
@@ -56,6 +59,7 @@ const Workout = ({ routine, setView, logWorkout }) => {
             routineName: routine.name,
             duration_seconds: timer,
             calories_burned: 0,
+            notes: notes,
             details: session.map(ex => ({
                 exerciseName: ex.name,
                 setsDone: ex.setsDone.filter(set => set.reps !== '' && set.weight_kg !== '')
@@ -75,6 +79,8 @@ const Workout = ({ routine, setView, logWorkout }) => {
                 Volver a Rutinas
             </button>
 
+            {/* --- INICIO DE LA CORRECCIÓN --- */}
+            {/* Este bloque se había eliminado por error y ha sido restaurado */}
             <GlassCard className="p-6 mb-6">
                 <h1 className="text-3xl font-bold">{routine.name}</h1>
                 <div className="flex justify-between items-center mt-4">
@@ -89,6 +95,7 @@ const Workout = ({ routine, setView, logWorkout }) => {
                     </div>
                 </div>
             </GlassCard>
+            {/* --- FIN DE LA CORRECCIÓN --- */}
 
             <div className="flex flex-col gap-6">
                 {session.map((ex, exIndex) => (
@@ -97,37 +104,49 @@ const Workout = ({ routine, setView, logWorkout }) => {
                             <h2 className="text-xl font-bold">{ex.name}</h2>
                             <p className="text-sm text-text-muted">Objetivo: {ex.sets} x {ex.reps} reps</p>
                         </div>
-                        <div className="grid grid-cols-[50px_1fr_1fr] gap-4 text-center text-xs font-bold text-text-secondary mb-2">
+                        <div className="grid grid-cols-[50px_1fr_1fr_auto] gap-4 text-center text-xs font-bold text-text-secondary mb-2">
                             <span>SERIE</span>
                             <span>PESO (kg)</span>
                             <span>REPS</span>
+                            <span></span>
                         </div>
                         <div className="flex flex-col gap-3">
                             {ex.setsDone.map((set, setIndex) => (
-                                <div key={setIndex} className="grid grid-cols-[50px_1fr_1fr] gap-4 items-center">
+                                <div key={setIndex} className="grid grid-cols-[50px_1fr_1fr_auto] gap-4 items-center">
                                     <span className="flex items-center justify-center font-bold bg-bg-secondary p-3 rounded-md border border-glass-border">
                                         {set.set_number}
                                     </span>
-                                    <input
-                                        type="number"
-                                        placeholder="0"
-                                        value={set.weight_kg}
-                                        onChange={(e) => handleSetChange(exIndex, setIndex, 'weight_kg', e.target.value)}
-                                        className={baseInputClasses}
-                                    />
-                                    <input
-                                        type="number"
-                                        placeholder="0"
-                                        value={set.reps}
-                                        onChange={(e) => handleSetChange(exIndex, setIndex, 'reps', e.target.value)}
-                                        className={baseInputClasses}
-                                    />
+                                    <input type="number" placeholder="0" value={set.weight_kg} onChange={(e) => handleSetChange(exIndex, setIndex, 'weight_kg', e.target.value)} className={baseInputClasses} />
+                                    <input type="number" placeholder="0" value={set.reps} onChange={(e) => handleSetChange(exIndex, setIndex, 'reps', e.target.value)} className={baseInputClasses} />
+                                    <button 
+                                      onClick={() => setIsResting(true)}
+                                      className="p-3 rounded-md bg-bg-secondary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50 transition"
+                                      title="Iniciar descanso"
+                                    >
+                                        <Clock size={20} />
+                                    </button>
                                 </div>
                             ))}
                         </div>
                     </GlassCard>
                 ))}
             </div>
+            
+            <GlassCard className="p-6 mt-6">
+                <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
+                    <FileText size={20} />
+                    Notas de la Sesión
+                </h2>
+                <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="¿Cómo te sentiste? ¿Alguna observación?..."
+                    className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition resize-none"
+                    rows="3"
+                ></textarea>
+            </GlassCard>
+
+            {isResting && <RestTimerModal onClose={() => setIsResting(false)} />}
 
             {showFinishModal &&
                 <ConfirmationModal

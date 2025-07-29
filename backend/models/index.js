@@ -9,6 +9,7 @@ import BodyWeightLog from './bodyweightModel.js';
 import WorkoutLogDetail from './workoutLogDetailModel.js';
 import WorkoutLogSet from './workoutLogSetModel.js';
 import ExerciseList from './exerciseListModel.js';
+import PersonalRecord from './personalRecordModel.js';
 
 // 2. Configuración de las asociaciones (relaciones) con sus alias
 User.hasMany(Routine, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Routines' });
@@ -29,15 +30,13 @@ WorkoutLogDetail.belongsTo(WorkoutLog, { foreignKey: 'workout_log_id' });
 WorkoutLogDetail.hasMany(WorkoutLogSet, { foreignKey: 'log_detail_id', onDelete: 'CASCADE', as: 'WorkoutLogSets' });
 WorkoutLogSet.belongsTo(WorkoutLogDetail, { foreignKey: 'log_detail_id' });
 
-// --- INICIO DE LA CORRECCIÓN ---
-// Un ejercicio de la lista maestra puede estar en muchos ejercicios de rutina
 ExerciseList.hasMany(RoutineExercise, { foreignKey: 'exercise_list_id' });
-// Un ejercicio de rutina pertenece a un único ejercicio de la lista maestra
 RoutineExercise.belongsTo(ExerciseList, { foreignKey: 'exercise_list_id' });
-// --- FIN DE LA CORRECCIÓN ---
 
+User.hasMany(PersonalRecord, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'PersonalRecords' });
+PersonalRecord.belongsTo(User, { foreignKey: 'user_id' });
 
-// 3. Exporta un único objeto que contiene todos los modelos y la instancia de sequelize
+// 3. Exporta un único objeto que contiene todos los modelos
 const models = {
     sequelize,
     User,
@@ -48,6 +47,7 @@ const models = {
     WorkoutLogSet,
     BodyWeightLog,
     ExerciseList,
+    PersonalRecord,
 };
 
 export default models;
