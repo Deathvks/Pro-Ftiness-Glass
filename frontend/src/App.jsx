@@ -11,6 +11,7 @@ import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
 import OnboardingScreen from './pages/OnboardingScreen';
 import ProfileEditor from './pages/ProfileEditor';
+import PRToast from './components/PRToast'; // <-- Importamos el nuevo componente
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -24,6 +25,20 @@ export default function App() {
   const [routines, setRoutines] = useState([]);
   const [workoutLog, setWorkoutLog] = useState([]);
   const [bodyWeightLog, setBodyWeightLog] = useState([]);
+  
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const [prNotification, setPrNotification] = useState(null);
+
+  // Efecto para ocultar la notificación de PR después de 7 segundos
+  useEffect(() => {
+    if (prNotification) {
+      const timer = setTimeout(() => {
+        setPrNotification(null);
+      }, 7000); // La notificación se ocultará después de 7 segundos
+      return () => clearTimeout(timer);
+    }
+  }, [prNotification]);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const setTheme = (newTheme) => {
     localStorage.setItem('theme', newTheme);
@@ -31,35 +46,28 @@ export default function App() {
   };
 
   const handleLogout = useCallback(async () => {
-    // --- INICIO DE LA CORRECCIÓN ---
-    // 1. Se llama al nuevo endpoint de logout para que el servidor limpie la cookie.
     try {
       await fetch('http://localhost:3001/api/auth/logout', {
         method: 'POST',
-        credentials: 'include' // Necesario para que la petición afecte a las cookies
+        credentials: 'include'
       });
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     } finally {
-      // 2. Se limpia el estado local de la aplicación.
       setIsAuthenticated(false);
       setUserProfile(null);
       setRoutines([]);
       setWorkoutLog([]);
       setBodyWeightLog([]);
     }
-    // --- FIN ---
   }, []);
 
   const fetchInitialData = useCallback(async () => {
-    // --- CORRECCIÓN: El token ya no se pasa como argumento ---
     try {
       setIsLoading(true);
-      // El navegador envía la cookie automáticamente, así que solo necesitamos 'credentials: include'
       const profileResponse = await fetch('http://localhost:3001/api/users/me', { credentials: 'include' });
 
       if (!profileResponse.ok) {
-        // Si no hay cookie o es inválida, limpiamos el estado
         handleLogout();
         throw new Error('Sesión no válida.');
       }
@@ -79,7 +87,6 @@ export default function App() {
         setBodyWeightLog(await bodyweightRes.json());
       }
     } catch (error) {
-      // No es necesario loguear el error si es de sesión no válida
       if (error.message !== 'Sesión no válida.') {
         console.error("Error de autenticación:", error);
       }
@@ -89,7 +96,6 @@ export default function App() {
   }, [handleLogout]);
 
   useEffect(() => {
-    // Ya no se necesita leer el token del localStorage
     fetchInitialData();
   }, [fetchInitialData]);
 
@@ -99,7 +105,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ weight: newWeightData.weight }),
-        credentials: 'include' // Añadir a todas las peticiones
+        credentials: 'include'
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Ocurrió un error.');
@@ -135,10 +141,17 @@ export default function App() {
         body: JSON.stringify(workoutData),
         credentials: 'include'
       });
+      
+      const responseData = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al guardar el entrenamiento.');
+        throw new Error(responseData.error || 'Error al guardar el entrenamiento.');
       }
+      
+      // Comprobamos si la respuesta incluye nuevos PRs y los mostramos
+      if (responseData.newPRs && responseData.newPRs.length > 0) {
+        setPrNotification(responseData.newPRs);
+      }
+      
       await fetchInitialData();
     } catch (error) {
       console.error("Error en logWorkout:", error);
@@ -293,6 +306,9 @@ export default function App() {
           </button>
         ))}
       </nav>
+      
+      {/* Renderizamos el toast de PR si hay una notificación */}
+      <PRToast newPRs={prNotification} onClose={() => setPrNotification(null)} />
     </div>
   );
 }

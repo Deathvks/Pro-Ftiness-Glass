@@ -32,7 +32,6 @@ export default {
       backdropBlur: {
         'glass': '12px',
       },
-      // --- ANIMACIÓN MEJORADA ---
       keyframes: {
         'roam-blob': {
           '0%': { transform: 'translate(-50%, -50%) scale(1)' },
@@ -40,10 +39,19 @@ export default {
           '50%': { transform: 'translate(80%, 80%) scale(1.2)' },
           '75%': { transform: 'translate(-80%, 50%) scale(0.9)' },
           '100%': { transform: 'translate(-50%, -50%) scale(1)' },
+        },
+        // --- INICIO DE LA MODIFICACIÓN ---
+        'fade-in-up': {
+            '0%': { opacity: '0', transform: 'translateY(10px)' },
+            '100%': { opacity: '1', transform: 'translateY(0)' },
         }
+        // --- FIN DE LA MODIFICACIÓN ---
       },
       animation: {
         'roam-blob': 'roam-blob 40s infinite ease-in-out',
+        // --- INICIO DE LA MODIFICACIÓN ---
+        'fade-in-up': 'fade-in-up 0.5s ease-out',
+        // --- FIN DE LA MODIFICACIÓN ---
       }
     },
   },

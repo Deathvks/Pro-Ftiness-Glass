@@ -1,9 +1,10 @@
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 
-const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, sequelize } = models;
+// Importamos el nuevo modelo de Récords Personales
+const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, sequelize } = models;
 
-// Obtener el historial de entrenamientos del usuario
+// --- getWorkoutHistory y otras funciones auxiliares no cambian ---
 export const getWorkoutHistory = async (req, res) => {
   try {
     const history = await WorkoutLog.findAll({
@@ -24,32 +25,54 @@ export const getWorkoutHistory = async (req, res) => {
   }
 };
 
-// Guardar una sesión de entrenamiento
+
+// --- INICIO DE LA MODIFICACIÓN: logWorkoutSession ---
 export const logWorkoutSession = async (req, res) => {
-  // --- INICIO: Manejo de validación ---
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  // --- FIN ---
 
   const { routineName, duration_seconds, calories_burned, details } = req.body;
+  const { userId } = req.user;
   const t = await sequelize.transaction();
+
   try {
     const newWorkoutLog = await WorkoutLog.create({
-      user_id: req.user.userId,
+      user_id: userId,
       routine_name: routineName,
       workout_date: new Date(),
       duration_seconds,
       calories_burned
     }, { transaction: t });
 
+    let newPRs = []; // Array para notificar al frontend de nuevos récords
+
     for (const exercise of details) {
+      let totalVolume = 0;
+      let bestSetWeight = 0;
+
+      // Primero, calculamos el volumen total y el mejor peso de esta sesión para el ejercicio
+      if (exercise.setsDone && exercise.setsDone.length > 0) {
+        exercise.setsDone.forEach(set => {
+          const weight = parseFloat(set.weight_kg) || 0;
+          const reps = parseInt(set.reps, 10) || 0;
+          totalVolume += weight * reps;
+          if (weight > bestSetWeight) {
+            bestSetWeight = weight;
+          }
+        });
+      }
+
+      // Creamos el detalle del log con los valores calculados
       const newLogDetail = await WorkoutLogDetail.create({
         workout_log_id: newWorkoutLog.id,
-        exercise_name: exercise.exerciseName
+        exercise_name: exercise.exerciseName,
+        total_volume: totalVolume,
+        best_set_weight: bestSetWeight,
       }, { transaction: t });
-
+      
+      // Guardamos las series
       if (exercise.setsDone && exercise.setsDone.length > 0) {
         const setsToCreate = exercise.setsDone.map(set => ({
           log_detail_id: newLogDetail.id,
@@ -59,40 +82,61 @@ export const logWorkoutSession = async (req, res) => {
         }));
         await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
       }
+
+      // Ahora, comprobamos si hay un nuevo Récord Personal (PR)
+      if (bestSetWeight > 0) {
+        const existingPR = await PersonalRecord.findOne({
+          where: { user_id: userId, exercise_name: exercise.exerciseName },
+          transaction: t
+        });
+
+        if (!existingPR) {
+          // Si no hay PR, creamos uno nuevo
+          await PersonalRecord.create({
+            user_id: userId,
+            exercise_name: exercise.exerciseName,
+            weight_kg: bestSetWeight,
+            date: new Date()
+          }, { transaction: t });
+          newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
+        } else if (bestSetWeight > existingPR.weight_kg) {
+          // Si el nuevo peso es mayor, actualizamos el PR existente
+          existingPR.weight_kg = bestSetWeight;
+          existingPR.date = new Date();
+          await existingPR.save({ transaction: t });
+          newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
+        }
+      }
     }
 
     await t.commit();
-    res.status(201).json({ message: 'Entrenamiento guardado con éxito', workoutId: newWorkoutLog.id });
+    res.status(201).json({ 
+        message: 'Entrenamiento guardado con éxito', 
+        workoutId: newWorkoutLog.id,
+        newPRs: newPRs // Enviamos los nuevos PRs al frontend
+    });
   } catch (error) {
     await t.rollback();
+    console.error("Error al guardar el entrenamiento:", error);
     res.status(500).json({ error: 'Error al guardar el entrenamiento' });
   }
 };
+// --- FIN DE LA MODIFICACIÓN ---
 
-// Actualizar un entrenamiento (Soporte añadido para el futuro)
+
 export const updateWorkoutLog = async (req, res) => {
     res.status(501).json({ error: 'Funcionalidad de editar no implementada todavía.' });
 };
 
-// Eliminar un registro de entrenamiento
 export const deleteWorkoutLog = async (req, res) => {
     const { workoutId } = req.params;
     const { userId } = req.user;
-
     try {
-        const workoutLog = await WorkoutLog.findOne({
-            where: {
-                id: workoutId,
-                user_id: userId
-            }
-        });
-
+        const workoutLog = await WorkoutLog.findOne({ where: { id: workoutId, user_id: userId }});
         if (!workoutLog) {
             return res.status(404).json({ error: 'Registro de entrenamiento no encontrado.' });
         }
-
         await workoutLog.destroy();
-
         res.json({ message: 'Entrenamiento eliminado correctamente.' });
     } catch (error) {
         console.error('Error al eliminar el entrenamiento:', error);
