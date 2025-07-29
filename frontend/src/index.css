@@ -1,0 +1,68 @@
+/* 1. DIRECTIVAS DE TAILWIND */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. VARIABLES Y TEMA OSCURO (POR DEFECTO) */
+:root {
+  --bg-primary: #10141c;
+  --bg-secondary: #1a202c;
+  --text-primary: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted: #718096;
+  --color-accent: #4fd1c5;
+  --color-accent-transparent: rgba(79, 209, 197, 0.1);
+  --color-accent-border: rgba(79, 209, 197, 0.3);
+  --color-green: #48bb78;
+  --color-red: #f56565;
+  --color-neutral: #718096;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(26, 32, 44, 0.5); 
+}
+
+/* 3. TEMA CLARO (MEJORADO) */
+body.light-theme {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  --color-accent: #20c997;
+  --color-accent-transparent: rgba(32, 201, 151, 0.1);
+  --color-accent-border: rgba(32, 201, 151, 0.3);
+  --color-green: #28a745;
+  --color-red: #dc3545;
+  --color-neutral: #6c757d;
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --glass-bg: var(--bg-secondary);
+}
+
+/* 4. ESTILOS DE BASE */
+@layer base {
+  html, body, #root {
+    @apply h-full;
+  }
+  body {
+    @apply bg-bg-primary text-text-primary font-sans antialiased overflow-hidden transition-colors duration-300;
+  }
+  #root {
+    @apply flex;
+  }
+  .form-error-text {
+    @apply text-red text-sm mt-1;
+  }
+}
+
+/* --- INICIO DE LA CORRECCIÓN --- */
+/* 5. REGLA GLOBAL PARA OCULTAR BARRAS DE DESPLAZAMIENTO */
+@layer utilities {
+  /* Para navegadores basados en WebKit (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  /* Para Firefox */
+  * {
+    scrollbar-width: none;
+  }
+}
+/* --- FIN DE LA CORRECCIÓN --- */
