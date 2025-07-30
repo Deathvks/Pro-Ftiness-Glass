@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import GlassCard from '../components/GlassCard';
+import Spinner from '../components/Spinner'; // <-- 1. Importamos el Spinner
 
 const RegisterScreen = ({ showLogin }) => {
     const [name, setName] = useState('');
@@ -7,6 +8,7 @@ const RegisterScreen = ({ showLogin }) => {
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
     const [success, setSuccess] = useState('');
+    const [isLoading, setIsLoading] = useState(false); // <-- 2. Añadimos estado de carga
 
     const validateForm = () => {
         const newErrors = {};
@@ -29,6 +31,7 @@ const RegisterScreen = ({ showLogin }) => {
         }
 
         setErrors({});
+        setIsLoading(true); // <-- 3. Activamos la carga
 
         try {
             const response = await fetch('http://localhost:3001/api/auth/register', {
@@ -45,6 +48,11 @@ const RegisterScreen = ({ showLogin }) => {
 
         } catch (err) {
             setErrors({ api: err.message });
+        } finally {
+            // Se desactiva la carga solo si no hay éxito, para dar tiempo a la redirección
+            if (!success) {
+                setIsLoading(false); // <-- 4. Desactivamos la carga
+            }
         }
     };
 
@@ -91,9 +99,13 @@ const RegisterScreen = ({ showLogin }) => {
                             />
                             {errors.password && <p className="form-error-text text-left">{errors.password}</p>}
                         </div>
-
-                        <button type="submit" className="flex items-center justify-center w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20">
-                            Registrarse
+                        
+                        <button 
+                          type="submit" 
+                          disabled={isLoading}
+                          className="flex items-center justify-center w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? <Spinner /> : 'Registrarse'}
                         </button>
                     </form>
                 </GlassCard>

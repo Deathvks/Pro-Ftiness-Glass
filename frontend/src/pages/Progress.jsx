@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, X, ChevronDown, Trash2, BookOpen, TrendingUp
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
-import { getBestSet, calculateCalories } from '../utils/helpers';
+import { calculateCalories } from '../utils/helpers';
 
 const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -171,21 +171,25 @@ const CalendarView = ({ workoutLog, setDetailedLog }) => {
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-        const formattedLabel = new Date(label).toLocaleDateString('es-ES', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        const displayLabel = typeof label === 'number'
+            ? new Date(label).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })
+            : label;
+
+        const value = payload[0].value;
+        const key = payload[0].dataKey;
+        
+        const displayValue = `${key}: ${Number(value).toFixed(1)}`;
+
         return (
             <div className="p-2 bg-bg-secondary border border-glass-border rounded-md shadow-lg text-sm">
-                <p className="font-semibold text-text-secondary">{formattedLabel}</p>
-                <p className="text-text-primary">{`Peso (kg) : ${payload[0].value.toFixed(1)}`}</p>
+                <p className="font-semibold text-text-secondary">{displayLabel}</p>
+                <p className="text-text-primary">{displayValue}</p>
             </div>
         );
     }
     return null;
 };
+
 
 const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWorkoutLog }) => {
     const [viewType, setViewType] = useState('exercise');
@@ -230,47 +234,36 @@ const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWork
     }, [workoutLog]);
 
     const exerciseProgressData = useMemo(() => {
-        const getWeekKey = (date) => {
-            const d = new Date(date);
-            d.setHours(0, 0, 0, 0);
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            const startOfWeek = new Date(d.setDate(diff));
-            return startOfWeek.toISOString().split('T')[0];
-        };
+        const progress = {};
+        if (!workoutLog || workoutLog.length === 0) {
+            return progress;
+        }
 
-        const weeklyMaxes = {};
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        workoutLog.forEach(log => {
-            const weekKey = getWeekKey(log.workout_date);
+        const recentLogs = workoutLog.filter(log => new Date(log.workout_date) >= thirtyDaysAgo);
+
+        recentLogs.forEach(log => {
             if (log.WorkoutLogDetails) {
                 log.WorkoutLogDetails.forEach(detail => {
-                    const bestSet = getBestSet(detail.WorkoutLogSets);
-                    const weight = parseFloat(bestSet.weight_kg) || 0;
-
-                    if (weight > 0) {
-                        if (!weeklyMaxes[detail.exercise_name]) {
-                            weeklyMaxes[detail.exercise_name] = {};
+                    if (detail.best_set_weight > 0) {
+                        if (!progress[detail.exercise_name]) {
+                            progress[detail.exercise_name] = [];
                         }
-                        const currentMax = weeklyMaxes[detail.exercise_name][weekKey] || 0;
-                        if (weight > currentMax) {
-                            weeklyMaxes[detail.exercise_name][weekKey] = weight;
-                        }
+                        progress[detail.exercise_name].push({
+                            date: new Date(log.workout_date).getTime(),
+                            'Peso Máximo (kg)': detail.best_set_weight,
+                        });
                     }
                 });
             }
         });
 
-        const progress = {};
-        for (const exerciseName in weeklyMaxes) {
-            progress[exerciseName] = Object.entries(weeklyMaxes[exerciseName])
-                .map(([weekKey, maxWeight]) => ({
-                    date: weekKey,
-                    name: new Date(weekKey).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
-                    'Peso Máximo (kg)': maxWeight,
-                }))
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
+        for (const exerciseName in progress) {
+            progress[exerciseName].sort((a, b) => a.date - b.date);
         }
+        
         return progress;
     }, [workoutLog]);
 
@@ -394,12 +387,19 @@ const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWork
                     </div>
 
                     <GlassCard className="p-6">
-                        <h2 className="text-xl font-bold mb-4">Progresión de Peso Máximo Semanal</h2>
+                        <h2 className="text-xl font-bold mb-4">Progresión de Peso (Último Mes)</h2>
                         {selectedExercise && exerciseProgressData[selectedExercise] && exerciseProgressData[selectedExercise].length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
                                 <LineChart data={exerciseProgressData[selectedExercise]} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
-                                    <XAxis dataKey="name" stroke={axisColor} fontSize={12} />
+                                    <XAxis
+                                        type="number"
+                                        dataKey="date"
+                                        domain={['dataMin', 'dataMax']}
+                                        tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
+                                        stroke={axisColor}
+                                        fontSize={12}
+                                    />
                                     <YAxis stroke={axisColor} fontSize={12} domain={['dataMin - 5', 'dataMax + 5']} />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Legend wrapperStyle={{ color: axisColor }} />
@@ -408,7 +408,7 @@ const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWork
                             </ResponsiveContainer>
                         ) : (
                             <div className="flex items-center justify-center h-[300px] text-text-muted">
-                                <p>No hay datos de progreso para mostrar.</p>
+                                <p>{selectedExercise ? 'No hay datos de progreso para este ejercicio en el último mes.' : 'Selecciona un ejercicio para ver tu progreso.'}</p>
                             </div>
                         )}
                     </GlassCard>

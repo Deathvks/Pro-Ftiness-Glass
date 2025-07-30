@@ -3,7 +3,8 @@ import { Plus, Edit, Trash2, Play, CheckCircle } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import RoutineEditor from './RoutineEditor';
-import { useToast } from '../hooks/useToast'; // <-- CORREGIDO: Importa desde la nueva ubicación
+import { useToast } from '../hooks/useToast';
+import Spinner from '../components/Spinner'; // <-- Importamos el Spinner
 
 const isSameDay = (dateA, dateB) => {
     const date1 = new Date(dateA);
@@ -18,6 +19,7 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // <-- Añadimos estado de carga
 
   const completedToday = useMemo(() => {
     if (!Array.isArray(workoutLog)) return [];
@@ -28,6 +30,7 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
   }, [workoutLog]);
 
   const handleSave = async (routineToSave) => {
+    setIsLoading(true); // <-- Activamos la carga
     try {
       const url = routineToSave.id
         ? `http://localhost:3001/api/routines/${routineToSave.id}`
@@ -63,6 +66,8 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
     } catch (error) {
       console.error("Error al guardar la rutina:", error.message);
       addToast(`Error al guardar: ${error.message}`, 'error');
+    } finally {
+        setIsLoading(false); // <-- Desactivamos la carga
     }
   };
 
@@ -72,6 +77,7 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
   };
 
   const confirmDelete = async () => {
+    setIsLoading(true); // <-- Activamos la carga
     try {
       const response = await fetch(`http://localhost:3001/api/routines/${routineToDelete}`, {
         method: 'DELETE',
@@ -88,11 +94,13 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
     } catch (error) {
       console.error("Error al eliminar la rutina:", error.message);
       addToast(`Error al eliminar: ${error.message}`, 'error');
+    } finally {
+        setIsLoading(false); // <-- Desactivamos la carga
     }
   };
 
   if (editingRoutine) {
-    return <RoutineEditor routine={editingRoutine} onSave={handleSave} onCancel={() => setEditingRoutine(null)} />;
+    return <RoutineEditor routine={editingRoutine} onSave={handleSave} onCancel={() => setEditingRoutine(null)} isLoading={isLoading} />;
   }
 
   return (
@@ -175,6 +183,7 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
           message="¿Estás seguro de que quieres borrar esta rutina?"
           onConfirm={confirmDelete}
           onCancel={() => setShowDeleteModal(false)}
+          isLoading={isLoading}
         />
       )}
     </div>

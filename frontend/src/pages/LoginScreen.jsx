@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Dumbbell, LogIn } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import Spinner from '../components/Spinner'; // <-- Importamos el Spinner
 
 const LoginScreen = ({ onLogin, showRegister }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false); // <-- Añadimos estado de carga
 
     const validateForm = () => {
         const newErrors = {};
@@ -25,32 +27,25 @@ const LoginScreen = ({ onLogin, showRegister }) => {
         }
 
         setErrors({});
+        setIsLoading(true); // <-- Activamos la carga
 
         try {
             const response = await fetch('http://localhost:3001/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
-                // --- INICIO DE LA CORRECCIÓN ---
-                // 1. Se añade 'credentials: include' para permitir que el navegador
-                // reciba y guarde la cookie HttpOnly que envía el servidor.
                 credentials: 'include'
-                // --- FIN ---
             });
 
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Error al iniciar sesión.');
 
-            // --- CORRECCIÓN ---
-            // 2. Se elimina la línea que guardaba el token en localStorage.
-            // El navegador ahora gestiona el token de forma segura.
-            // localStorage.setItem('token', data.token);
-            // --- FIN ---
-
             onLogin();
 
         } catch (err) {
             setErrors({ api: err.message });
+        } finally {
+            setIsLoading(false); // <-- Desactivamos la carga al finalizar
         }
     };
 
@@ -87,9 +82,12 @@ const LoginScreen = ({ onLogin, showRegister }) => {
                             {errors.password && <p className="form-error-text text-left">{errors.password}</p>}
                         </div>
 
-                        <button type="submit" className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20">
-                            <LogIn size={18} />
-                            <span>Iniciar Sesión</span>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? <Spinner /> : <><LogIn size={18} /> <span>Iniciar Sesión</span></>}
                         </button>
                     </form>
                 </GlassCard>

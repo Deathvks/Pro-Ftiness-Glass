@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, Trash2, Save } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ExerciseSearchInput from '../components/ExerciseSearchInput';
+import Spinner from '../components/Spinner';
 
-const RoutineEditor = ({ routine, onSave, onCancel }) => {
+const RoutineEditor = ({ routine, onSave, onCancel, isLoading }) => {
     const [editedRoutine, setEditedRoutine] = useState(() => {
         const initialRoutine = {
             id: routine.id || null,
@@ -49,7 +50,6 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
         setEditedRoutine(prev => {
             const newExercises = [...prev.exercises];
             newExercises[exIndex][field] = value;
-            // Si el usuario edita el nombre manualmente, desvinculamos el ejercicio de la lista maestra
             if (field === 'name') {
                 newExercises[exIndex].exercise_list_id = null;
             }
@@ -79,29 +79,23 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
             alert('Por favor, dale un nombre a la rutina.');
             return;
         }
-
         const exercisesToSave = editedRoutine.exercises.filter(ex => ex.name && ex.name.trim() !== '');
-
         for (const ex of exercisesToSave) {
             if (!ex.sets || ex.sets <= 0) {
-                alert(`Por favor, introduce un número de series válido para "${ex.name}".`);
-                return;
+                alert(`Por favor, introduce un número de series válido para "${ex.name}".`); return;
             }
             if (!ex.reps || ex.reps.trim() === '') {
-                alert(`Por favor, introduce las repeticiones para "${ex.name}".`);
-                return;
+                alert(`Por favor, introduce las repeticiones para "${ex.name}".`); return;
             }
         }
-
         const routineToSave = {
             ...editedRoutine,
             exercises: exercisesToSave.map(ex => {
                 const copy = { ...ex };
-                delete copy.tempId; // Eliminamos la propiedad temporal
+                delete copy.tempId;
                 return copy;
             })
         };
-
         onSave(routineToSave);
     };
 
@@ -142,7 +136,12 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
                 <div className="space-y-4">
                     <h2 className="text-xl font-bold">Ejercicios</h2>
                     {editedRoutine.exercises.map((ex, index) => (
-                        <GlassCard key={ex.tempId} className="p-4 bg-bg-secondary/50">
+                        // --- INICIO DE LA CORRECCIÓN ---
+                        <GlassCard
+                            key={ex.tempId}
+                            className="p-4 bg-bg-secondary/50 relative focus-within:z-20"
+                        >
+                            {/* --- FIN DE LA CORRECCIÓN --- */}
                             <div className="flex items-center gap-4 mb-4">
                                 <ExerciseSearchInput
                                     value={ex.name}
@@ -185,12 +184,15 @@ const RoutineEditor = ({ routine, onSave, onCancel }) => {
                 </button>
 
                 <div className="flex justify-end items-center gap-4 pt-6 border-t border-glass-border">
-                    <button onClick={onCancel} className="px-6 py-2 rounded-full font-semibold text-text-secondary hover:text-text-primary transition">
+                    <button onClick={onCancel} disabled={isLoading} className="px-6 py-2 rounded-full font-semibold text-text-secondary hover:text-text-primary transition disabled:opacity-70">
                         Cancelar
                     </button>
-                    <button onClick={handleSave} className="flex items-center gap-2 px-6 py-2 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105">
-                        <Save size={18} />
-                        Guardar
+                    <button
+                        onClick={handleSave}
+                        disabled={isLoading}
+                        className="flex items-center justify-center gap-2 px-6 py-2 w-32 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 disabled:opacity-70"
+                    >
+                        {isLoading ? <Spinner size={18} /> : <><Save size={18} /><span>Guardar</span></>}
                     </button>
                 </div>
             </GlassCard>

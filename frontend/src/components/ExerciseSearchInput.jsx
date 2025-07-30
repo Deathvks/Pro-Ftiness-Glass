@@ -5,7 +5,11 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
     const [isOpen, setIsOpen] = useState(false);
     const searchRef = useRef(null);
 
-    // Hook para cerrar el dropdown si se hace clic fuera
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Referencia para saber si el usuario ha interactuado con el input
+    const hasInteracted = useRef(false);
+    // --- FIN DE LA CORRECCIÓN ---
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -26,8 +30,14 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
             const response = await fetch(`http://localhost:3001/api/exercises?search=${searchQuery}`, { credentials: 'include' });
             if (!response.ok) throw new Error('Error fetching exercises');
             const data = await response.json();
-            setResults(data);
-            setIsOpen(true);
+            
+            if (data.length > 0) {
+                setResults(data);
+                setIsOpen(true);
+            } else {
+                setResults([]);
+                setIsOpen(false);
+            }
         } catch (error) {
             console.error(error);
             setResults([]);
@@ -35,8 +45,12 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
         }
     }, []);
 
-    // Effect con debounce para no llamar a la API en cada pulsación de tecla
     useEffect(() => {
+        // Solo ejecuta la búsqueda si el usuario ha interactuado
+        if (!hasInteracted.current) {
+            return;
+        }
+
         const handler = setTimeout(() => {
             fetchExercises(value);
         }, 300);
@@ -45,10 +59,17 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
     }, [value, fetchExercises]);
 
     const handleSelect = (exercise) => {
+        hasInteracted.current = false; // Resetea la interacción al seleccionar
         onSelect(exercise);
         setIsOpen(false);
     };
 
+    const handleInputChange = (e) => {
+        // Marca que el usuario ha interactuado
+        hasInteracted.current = true;
+        onChange(e);
+    };
+    
     const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
 
     return (
@@ -56,7 +77,8 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
             <input
                 type="text"
                 value={value}
-                onChange={onChange}
+                onChange={handleInputChange} // Usamos el nuevo manejador
+                onFocus={() => { if(value) hasInteracted.current = true; }} // Activa la búsqueda si se enfoca un campo con texto
                 placeholder="Buscar o escribir ejercicio..."
                 className={baseInputClasses}
             />

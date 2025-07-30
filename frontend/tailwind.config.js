@@ -40,18 +40,24 @@ export default {
           '75%': { transform: 'translate(-80%, 50%) scale(0.9)' },
           '100%': { transform: 'translate(-50%, -50%) scale(1)' },
         },
-        // --- INICIO DE LA MODIFICACIÓN ---
         'fade-in-up': {
             '0%': { opacity: '0', transform: 'translateY(10px)' },
             '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'toast-in': {
+          'from': { transform: 'translateX(100%)', opacity: '0' },
+          'to': { transform: 'translateX(0)', opacity: '1' },
+        },
+        'toast-out': {
+          'from': { transform: 'translateX(0)', opacity: '1' },
+          'to': { transform: 'translateX(100%)', opacity: '0' },
         }
-        // --- FIN DE LA MODIFICACIÓN ---
       },
       animation: {
         'roam-blob': 'roam-blob 40s infinite ease-in-out',
-        // --- INICIO DE LA MODIFICACIÓN ---
         'fade-in-up': 'fade-in-up 0.5s ease-out',
-        // --- FIN DE LA MODIFICACIÓN ---
+        'toast-in': 'toast-in 0.5s ease-out forwards',
+        'toast-out': 'toast-out 0.5s ease-out forwards',
       }
     },
   },
