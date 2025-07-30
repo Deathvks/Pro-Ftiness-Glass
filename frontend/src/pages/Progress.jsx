@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ResponsiveContainer, LineChart, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
-import { ChevronLeft, ChevronRight, X, ChevronDown, Trash2, BookOpen, TrendingUp, BarChartHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ChevronDown, Trash2, BookOpen, TrendingUp, BarChartHorizontal, Trophy } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 import { calculateCalories } from '../utils/helpers';
+import Spinner from '../components/Spinner';
 
 const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -199,6 +200,30 @@ const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWork
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const selectorRef = useRef(null);
 
+    const [recordsData, setRecordsData] = useState({ records: [], totalPages: 1 });
+    const [recordsPage, setRecordsPage] = useState(1);
+    const [recordsLoading, setRecordsLoading] = useState(true);
+
+    const fetchRecords = useCallback(async (page) => {
+        setRecordsLoading(true);
+        try {
+            const response = await fetch(`http://localhost:3001/api/records?page=${page}&limit=6`, { credentials: 'include' });
+            if (!response.ok) throw new Error('Error al cargar los récords');
+            const data = await response.json();
+            setRecordsData(data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setRecordsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (viewType === 'records') {
+            fetchRecords(recordsPage);
+        }
+    }, [viewType, recordsPage, fetchRecords]);
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (selectorRef.current && !selectorRef.current.contains(event.target)) {
@@ -305,11 +330,59 @@ const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWork
                 <h1 className="text-4xl font-extrabold">Tu Progreso</h1>
                 <div className="flex flex-wrap gap-2">
                     <button onClick={() => setViewType('exercise')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'exercise' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Por Ejercicio</button>
+                    <button onClick={() => setViewType('records')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'records' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Récords</button>
                     <button onClick={() => setViewType('bodyWeight')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'bodyWeight' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Peso Corporal</button>
                     <button onClick={() => setViewType('calories')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'calories' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Calorías</button>
                     <button onClick={() => setViewType('calendar')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'calendar' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Calendario</button>
                 </div>
             </div>
+
+            {viewType === 'records' && (
+                <GlassCard className="p-6">
+                    <h2 className="text-xl font-bold mb-4">Récords Personales (PRs)</h2>
+                    {recordsLoading ? (
+                        <div className="flex justify-center items-center h-40"><Spinner /></div>
+                    ) : recordsData.records.length > 0 ? (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {recordsData.records.map(pr => (
+                                    <div key={pr.id} className="bg-bg-secondary p-4 rounded-md border-l-4 border-accent">
+                                        <p className="font-bold text-text-primary truncate">{pr.exercise_name}</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <Trophy size={20} className="text-yellow-400" />
+                                            <p className="text-2xl font-extrabold">{pr.weight_kg}<span className="text-base font-medium text-text-muted"> kg</span></p>
+                                        </div>
+                                        <p className="text-xs text-text-muted mt-1">
+                                            Establecido el: {new Date(pr.date).toLocaleDateString('es-ES')}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-center items-center gap-4 mt-6 pt-4 border-t border-glass-border">
+                                <button 
+                                    onClick={() => setRecordsPage(p => p - 1)} 
+                                    disabled={recordsPage <= 1}
+                                    className="p-2 rounded-md bg-bg-secondary disabled:opacity-50"
+                                >
+                                    <ChevronLeft />
+                                </button>
+                                <span className="font-semibold text-text-secondary">Página {recordsData.currentPage} de {recordsData.totalPages}</span>
+                                <button 
+                                    onClick={() => setRecordsPage(p => p + 1)} 
+                                    disabled={recordsPage >= recordsData.totalPages}
+                                    className="p-2 rounded-md bg-bg-secondary disabled:opacity-50"
+                                >
+                                    <ChevronRight />
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex items-center justify-center h-40 text-text-muted">
+                            <p>Aún no has establecido ningún récord. ¡Sigue entrenando!</p>
+                        </div>
+                    )}
+                </GlassCard>
+            )}
 
             {viewType === 'bodyWeight' && (
                 <GlassCard className="p-6">
