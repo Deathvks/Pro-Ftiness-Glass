@@ -1,7 +1,14 @@
 import { create } from 'zustand';
+// 1. Importar todos los servicios
+import * as authService from '../services/authService';
+import * as userService from '../services/userService';
+import * as routineService from '../services/routineService';
+import * as workoutService from '../services/workoutService';
+import * as bodyweightService from '../services/bodyweightService';
+// 'personalRecordService' ha sido eliminado porque no se usa aquí
 
 const useAppStore = create((set, get) => ({
-  // 1. ESTADO
+  // --- ESTADO (Sin cambios) ---
   isAuthenticated: false,
   userProfile: null,
   routines: [],
@@ -10,55 +17,48 @@ const useAppStore = create((set, get) => ({
   isLoading: true,
   prNotification: null,
 
-  // 2. ACCIONES (Actions)
+  // --- ACCIONES REFACTORIZADAS ---
   
-  /**
-   * Muestra una notificación de nuevo récord personal.
-   */
   showPRNotification: (newPRs) => {
     set({ prNotification: newPRs });
     setTimeout(() => set({ prNotification: null }), 7000);
   },
 
   /**
-   * Carga todos los datos iniciales del usuario autenticado.
+   * Carga todos los datos iniciales del usuario autenticado usando los servicios.
    */
   fetchInitialData: async () => {
     set({ isLoading: true });
     try {
-      const profileResponse = await fetch('http://localhost:3001/api/users/me', { credentials: 'include' });
-      if (!profileResponse.ok) {
-        throw new Error('Sesión no válida.');
-      }
-      const profileData = await profileResponse.json();
+      const profileData = await userService.getMyProfile();
       set({ userProfile: profileData, isAuthenticated: true });
 
       if (profileData.goal) {
-        const [routinesRes, workoutsRes, bodyweightRes] = await Promise.all([
-          fetch('http://localhost:3001/api/routines', { credentials: 'include' }),
-          fetch('http://localhost:3001/api/workouts', { credentials: 'include' }),
-          fetch('http://localhost:3001/api/bodyweight', { credentials: 'include' })
+        const [routines, workouts, bodyweight] = await Promise.all([
+          routineService.getRoutines(),
+          workoutService.getWorkouts(),
+          bodyweightService.getHistory()
         ]);
         set({
-          routines: await routinesRes.json(),
-          workoutLog: await workoutsRes.json(),
-          bodyWeightLog: await bodyweightRes.json(),
+          routines,
+          workoutLog: workouts,
+          bodyWeightLog: bodyweight,
         });
       }
     } catch (error) {
       console.error("Error de autenticación:", error);
-      get().handleLogout(); // Llama a otra acción del store
+      get().handleLogout(); // Llama a otra acción del store si falla
     } finally {
       set({ isLoading: false });
     }
   },
 
   /**
-   * Cierra la sesión del usuario y limpia el estado.
+   * Cierra la sesión del usuario.
    */
   handleLogout: async () => {
     try {
-      await fetch('http://localhost:3001/api/auth/logout', { method: 'POST', credentials: 'include' });
+      await authService.logoutUser();
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     } finally {
@@ -68,6 +68,7 @@ const useAppStore = create((set, get) => ({
         routines: [],
         workoutLog: [],
         bodyWeightLog: [],
+        isLoading: false,
       });
     }
   },
@@ -77,24 +78,14 @@ const useAppStore = create((set, get) => ({
    */
   logWorkout: async (workoutData) => {
     try {
-      const response = await fetch('http://localhost:3001/api/workouts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(workoutData),
-        credentials: 'include'
-      });
-      const responseData = await response.json();
-      if (!response.ok) throw new Error(responseData.error || 'Error al guardar.');
-      
+      const responseData = await workoutService.logWorkout(workoutData);
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         get().showPRNotification(responseData.newPRs);
       }
-      // Vuelve a cargar los datos para reflejar el nuevo entrenamiento
       await get().fetchInitialData(); 
-      return { success: true, message: 'Entrenamiento guardado con éxito.' };
+      return { success: true, message: 'Entrenamiento guardado.' };
     } catch (error) {
-      console.error("Error en logWorkout:", error);
-      return { success: false, message: `Error al guardar: ${error.message}` };
+      return { success: false, message: `Error al guardar: ${error}` };
     }
   },
   
@@ -103,19 +94,11 @@ const useAppStore = create((set, get) => ({
    */
   deleteWorkoutLog: async (workoutId) => {
     try {
-        const response = await fetch(`http://localhost:3001/api/workouts/${workoutId}`, {
-            method: 'DELETE',
-            credentials: 'include'
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Ocurrió un error.');
-        
-        // Refresca los datos para eliminar el log de la UI
+        await workoutService.deleteWorkout(workoutId);
         await get().fetchInitialData();
         return { success: true, message: 'Entrenamiento eliminado.' };
     } catch (error) {
-        console.error("Error en deleteWorkoutLog:", error.message);
-        return { success: false, message: `Error al eliminar: ${error.message}` };
+        return { success: false, message: `Error al eliminar: ${error}` };
     }
   },
 
@@ -124,21 +107,37 @@ const useAppStore = create((set, get) => ({
    */
   updateUserProfile: async (formData) => {
     try {
-        const response = await fetch('http://localhost:3001/api/users/me', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-            credentials: 'include'
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Error al guardar los datos.');
-        }
+        await userService.updateUserProfile(formData);
         await get().fetchInitialData();
-        return { success: true, message: 'Perfil actualizado con éxito.' };
+        return { success: true, message: 'Perfil actualizado.' };
     } catch (error) {
-        console.error("Error al actualizar perfil:", error);
-        return { success: false, message: `Error: ${error.message}` };
+        return { success: false, message: `Error: ${error}` };
+    }
+  },
+
+  /**
+   * Registra un nuevo peso corporal.
+   */
+  logBodyWeight: async (weightData) => {
+    try {
+        await bodyweightService.logWeight(weightData);
+        await get().fetchInitialData();
+        return { success: true, message: 'Peso registrado con éxito.' };
+    } catch (error) {
+        return { success: false, message: `Error al guardar: ${error}` };
+    }
+  },
+
+  /**
+   * Actualiza el peso corporal del día.
+   */
+  updateTodayBodyWeight: async (weightData) => {
+    try {
+        await bodyweightService.updateTodaysWeight(weightData);
+        await get().fetchInitialData();
+        return { success: true, message: 'Peso actualizado con éxito.' };
+    } catch (error) {
+        return { success: false, message: `Error al actualizar: ${error}` };
     }
   },
 }));
