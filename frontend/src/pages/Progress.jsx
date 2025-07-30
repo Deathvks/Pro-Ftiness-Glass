@@ -6,8 +6,15 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 import { calculateCalories } from '../utils/helpers';
 import Spinner from '../components/Spinner';
+import useAppStore from '../store/useAppStore';
+import { useToast } from '../hooks/useToast';
 
-const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
+const DailyDetailView = ({ logs, onClose }) => {
+    const { userProfile, deleteWorkoutLog } = useAppStore(state => ({
+        userProfile: state.userProfile,
+        deleteWorkoutLog: state.deleteWorkoutLog,
+    }));
+    const { addToast } = useToast();
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
 
@@ -16,14 +23,19 @@ const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
         setShowDeleteConfirm(true);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (logToDelete) {
-            deleteWorkoutLog(logToDelete.id);
+            const result = await deleteWorkoutLog(logToDelete.id);
+            if (result.success) {
+                addToast(result.message, 'success');
+                if (logs.length === 1) {
+                    onClose();
+                }
+            } else {
+                addToast(result.message, 'error');
+            }
             setShowDeleteConfirm(false);
             setLogToDelete(null);
-            if (logs.length === 1) {
-                onClose();
-            }
         }
     };
 
@@ -51,7 +63,8 @@ const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
                     </div>
                     <div className="flex flex-col gap-4 border-t border-glass-border pt-4 max-h-[45vh] overflow-y-auto">
                         <h4 className="font-semibold">Entrenamientos Registrados</h4>
-                        {logs.map((log) => (
+                        {/* --- INICIO DE LA CORRECCIÓN --- */}
+                        {visibleLogs.map((log) => (
                             <div key={log.id} className="bg-bg-secondary rounded-md">
                                 <div className="flex justify-between items-center p-3">
                                     <h5 className="font-bold text-accent">{log.routine_name}</h5>
@@ -89,6 +102,7 @@ const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
                                 </div>
                             </div>
                         ))}
+                         {/* --- FIN DE LA CORRECCIÓN --- */}
                     </div>
                 </GlassCard>
             </div>
@@ -103,7 +117,8 @@ const DailyDetailView = ({ logs, onClose, userProfile, deleteWorkoutLog }) => {
     );
 };
 
-const CalendarView = ({ workoutLog, setDetailedLog }) => {
+const CalendarView = ({ setDetailedLog }) => {
+    const { workoutLog } = useAppStore(state => ({ workoutLog: state.workoutLog }));
     const [calendarDate, setCalendarDate] = useState(new Date());
 
     const workoutsByDate = useMemo(() => {
@@ -191,15 +206,19 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-
-const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWorkoutLog }) => {
+const Progress = ({ darkMode }) => {
+    const { workoutLog, bodyWeightLog, userProfile } = useAppStore(state => ({
+        workoutLog: state.workoutLog,
+        bodyWeightLog: state.bodyWeightLog,
+        userProfile: state.userProfile,
+    }));
+    
     const [viewType, setViewType] = useState('exercise');
     const [detailedLog, setDetailedLog] = useState(null);
     const [selectedExercise, setSelectedExercise] = useState('');
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const selectorRef = useRef(null);
-
     const [recordsData, setRecordsData] = useState({ records: [], totalPages: 1 });
     const [recordsPage, setRecordsPage] = useState(1);
     const [recordsLoading, setRecordsLoading] = useState(true);
@@ -430,7 +449,7 @@ const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWork
                 </GlassCard>
             )}
 
-            {viewType === 'calendar' && <CalendarView workoutLog={workoutLog} setDetailedLog={setDetailedLog} />}
+            {viewType === 'calendar' && <CalendarView setDetailedLog={setDetailedLog} />}
 
             {viewType === 'exercise' && (
                 <div className="flex flex-col gap-6">
@@ -488,7 +507,7 @@ const Progress = ({ workoutLog, bodyWeightLog, darkMode, userProfile, deleteWork
                 </div>
             )}
 
-            {detailedLog && <DailyDetailView logs={detailedLog} onClose={() => setDetailedLog(null)} userProfile={userProfile} deleteWorkoutLog={deleteWorkoutLog} />}
+            {detailedLog && <DailyDetailView logs={detailedLog} onClose={() => setDetailedLog(null)} />}
 
             {showHistoryModal && (
                 <ExerciseHistoryModal

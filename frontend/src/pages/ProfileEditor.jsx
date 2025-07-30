@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
 import { ChevronLeft, Save } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import useAppStore from '../store/useAppStore';
+import { useToast } from '../hooks/useToast';
+import Spinner from '../components/Spinner';
 
-const ProfileEditor = ({ userProfile, onSave, onCancel }) => {
+const ProfileEditor = ({ onCancel }) => {
+  const { userProfile, updateUserProfile } = useAppStore(state => ({
+    userProfile: state.userProfile,
+    updateUserProfile: state.updateUserProfile,
+  }));
+  const { addToast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     gender: userProfile.gender || 'male',
     age: userProfile.age || '',
@@ -16,13 +26,22 @@ const ProfileEditor = ({ userProfile, onSave, onCancel }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.age || !formData.height) {
-        alert("Por favor, completa todos los campos.");
+        addToast("Por favor, completa todos los campos.", 'error');
         return;
     }
-    onSave(formData);
+    setIsLoading(true);
+    const result = await updateUserProfile(formData);
+    
+    if (result.success) {
+        addToast(result.message, 'success');
+        onCancel(); // Volver a la pantalla de ajustes
+    } else {
+        addToast(result.message, 'error');
+    }
+    setIsLoading(false);
   };
 
   const activityLabels = {
@@ -101,13 +120,13 @@ const ProfileEditor = ({ userProfile, onSave, onCancel }) => {
                     </div>
                 </div>
 
-                {/* --- INICIO DE LA CORRECCIÓN --- */}
-                {/* Se cambia 'justify-end' por 'justify-center' para centrar el botón */}
                 <div className="flex justify-center pt-6 border-t border-glass-border">
-                {/* --- FIN DE LA CORRECCIÓN --- */}
-                     <button type="submit" className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105">
-                        <Save size={18} />
-                        Guardar Cambios
+                     <button 
+                        type="submit" 
+                        disabled={isLoading}
+                        className="flex items-center justify-center gap-2 px-6 py-3 w-40 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 disabled:opacity-70"
+                    >
+                        {isLoading ? <Spinner size={18}/> : <><Save size={18} /><span>Guardar</span></>}
                     </button>
                 </div>
             </form>

@@ -3,8 +3,14 @@ import { ChevronLeft, Play, Pause, Square, FileText, Clock } from 'lucide-react'
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import RestTimerModal from '../components/RestTimerModal';
+import useAppStore from '../store/useAppStore'; // 1. Importar el hook del store
+import { useToast } from '../hooks/useToast';   // 2. Importar el hook para notificaciones
 
-const Workout = ({ routine, setView, logWorkout }) => {
+const Workout = ({ routine, setView }) => {
+    // 3. Obtener la acción `logWorkout` del store
+    const logWorkout = useAppStore(state => state.logWorkout);
+    const { addToast } = useToast();
+
     const [session, setSession] = useState(() => {
         const exercises = routine.RoutineExercises || [];
         return exercises.map(ex => ({
@@ -23,6 +29,7 @@ const Workout = ({ routine, setView, logWorkout }) => {
     const [notes, setNotes] = useState('');
     const countRef = useRef(null);
     const [isResting, setIsResting] = useState(false);
+    const [isSaving, setIsSaving] = useState(false); // Estado para el spinner del modal
 
     useEffect(() => {
         if (isActive) {
@@ -54,20 +61,30 @@ const Workout = ({ routine, setView, logWorkout }) => {
         setShowFinishModal(true);
     };
 
-    const confirmFinishWorkout = () => {
+    const confirmFinishWorkout = async () => {
+        setIsSaving(true);
         const workoutData = {
             routineName: routine.name,
             duration_seconds: timer,
-            calories_burned: 0,
+            calories_burned: 0, // Se calcula en el backend
             notes: notes,
             details: session.map(ex => ({
                 exerciseName: ex.name,
                 setsDone: ex.setsDone.filter(set => set.reps !== '' && set.weight_kg !== '')
             }))
         };
-        logWorkout(workoutData);
-        setShowFinishModal(false);
-        setView('dashboard');
+        
+        // 4. Llamar a la acción del store y gestionar la respuesta
+        const result = await logWorkout(workoutData);
+        
+        if (result.success) {
+            addToast(result.message, 'success');
+            setShowFinishModal(false);
+            setView('dashboard');
+        } else {
+            addToast(result.message, 'error');
+        }
+        setIsSaving(false);
     };
     
     const baseInputClasses = "w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
@@ -79,8 +96,6 @@ const Workout = ({ routine, setView, logWorkout }) => {
                 Volver a Rutinas
             </button>
 
-            {/* --- INICIO DE LA CORRECCIÓN --- */}
-            {/* Este bloque se había eliminado por error y ha sido restaurado */}
             <GlassCard className="p-6 mb-6">
                 <h1 className="text-3xl font-bold">{routine.name}</h1>
                 <div className="flex justify-between items-center mt-4">
@@ -95,7 +110,6 @@ const Workout = ({ routine, setView, logWorkout }) => {
                     </div>
                 </div>
             </GlassCard>
-            {/* --- FIN DE LA CORRECCIÓN --- */}
 
             <div className="flex flex-col gap-6">
                 {session.map((ex, exIndex) => (
@@ -154,6 +168,7 @@ const Workout = ({ routine, setView, logWorkout }) => {
                     onConfirm={confirmFinishWorkout}
                     onCancel={() => setShowFinishModal(false)}
                     confirmText="Finalizar"
+                    isLoading={isSaving} // Pasar el estado de carga al modal
                 />
             }
         </div>
