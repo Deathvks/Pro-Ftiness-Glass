@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Home, Dumbbell, BarChart2, Settings, LogOut } from 'lucide-react';
+import { useToast } from './hooks/useToast'; // <-- CORREGIDO: Importa desde la nueva ubicación
 
 // --- Importaciones de Páginas y Componentes ---
 import Dashboard from './pages/Dashboard';
@@ -14,6 +15,7 @@ import ProfileEditor from './pages/ProfileEditor';
 import PRToast from './components/PRToast';
 
 export default function App() {
+  const { addToast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,10 +107,11 @@ export default function App() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Ocurrió un error.');
+      addToast('Peso registrado con éxito.', 'success');
       await fetchInitialData();
     } catch (error) {
       console.error("Error en logBodyWeight:", error.message);
-      alert(`Error al guardar el peso: ${error.message}`);
+      addToast(`Error al guardar: ${error.message}`, 'error');
     }
   };
 
@@ -122,10 +125,11 @@ export default function App() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Ocurrió un error.');
+      addToast('Peso actualizado con éxito.', 'success');
       await fetchInitialData();
     } catch (error) {
       console.error("Error en updateTodayBodyWeight:", error.message);
-      alert(`Error al actualizar el peso: ${error.message}`);
+      addToast(`Error al actualizar: ${error.message}`, 'error');
     }
   };
 
@@ -137,20 +141,20 @@ export default function App() {
         body: JSON.stringify(workoutData),
         credentials: 'include'
       });
-
+      
       const responseData = await response.json();
       if (!response.ok) {
         throw new Error(responseData.error || 'Error al guardar el entrenamiento.');
       }
-
+      
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         setPrNotification(responseData.newPRs);
       }
-
+      addToast('Entrenamiento guardado con éxito.', 'success');
       await fetchInitialData();
     } catch (error) {
       console.error("Error en logWorkout:", error);
-      alert(`Error al guardar: ${error.message}`);
+      addToast(`Error al guardar: ${error.message}`, 'error');
     }
   };
 
@@ -162,10 +166,11 @@ export default function App() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Ocurrió un error.');
+      addToast('Entrenamiento eliminado.', 'success');
       await fetchInitialData();
     } catch (error) {
       console.error("Error en deleteWorkoutLog:", error.message);
-      alert(`Error al eliminar el entrenamiento: ${error.message}`);
+      addToast(`Error al eliminar: ${error.message}`, 'error');
     }
   };
 
@@ -205,11 +210,12 @@ export default function App() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error al guardar los datos.');
       }
+      addToast('Perfil actualizado con éxito.', 'success');
       await fetchInitialData();
       navigate('settings');
     } catch (error) {
       console.error("Error al actualizar el perfil:", error);
-      alert(`Error al actualizar el perfil: ${error.message}`);
+      addToast(`Error: ${error.message}`, 'error');
     }
   };
 
@@ -277,15 +283,14 @@ export default function App() {
         </button>
         <div className="flex flex-col gap-4">
           {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.id)}
-              // --- INICIO DE LA CORRECCIÓN ---
-              className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === item.id
-                  ? 'bg-accent text-bg-secondary'
-                  : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
-                }`}>
-              {/* --- FIN DE LA CORRECCIÓN --- */}
+            <button 
+              key={item.id} 
+              onClick={() => navigate(item.id)} 
+              className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${
+                view === item.id 
+                ? 'bg-accent text-bg-secondary' 
+                : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
+              }`}>
               {item.icon}
               <span className="whitespace-nowrap">{item.label}</span>
             </button>
@@ -309,7 +314,7 @@ export default function App() {
           </button>
         ))}
       </nav>
-
+      
       <PRToast newPRs={prNotification} onClose={() => setPrNotification(null)} />
     </div>
   );
