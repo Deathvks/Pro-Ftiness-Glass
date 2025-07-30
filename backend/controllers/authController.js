@@ -6,7 +6,7 @@ import models from '../models/index.js';
 const { User } = models;
 
 // Registrar un nuevo usuario
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => { // <-- Añadido 'next'
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -31,12 +31,12 @@ export const registerUser = async (req, res) => {
 
     res.status(201).json({ message: 'Usuario registrado con éxito.', userId: newUser.id });
   } catch (error) {
-    res.status(500).json({ error: 'Error al registrar el usuario' });
+    next(error); // <-- Pasar el error al middleware
   }
 };
 
 // Iniciar sesión de usuario
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => { // <-- Añadido 'next'
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -60,37 +60,30 @@ export const loginUser = async (req, res) => {
     const payload = { userId: user.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    // --- INICIO DE LA CORRECCIÓN ---
-    // 1. Se envía el token en una cookie HttpOnly segura en lugar del cuerpo de la respuesta.
     res.cookie('token', token, {
-      httpOnly: true, // Inaccesible para JavaScript en el navegador
-      secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000 // 24 horas
     });
 
-    // 2. La respuesta JSON ahora solo confirma el éxito del login.
     res.json({ message: 'Inicio de sesión exitoso.' });
-    // --- FIN DE LA CORRECCIÓN ---
 
   } catch (error) {
-    res.status(500).json({ error: 'Error en el servidor durante el inicio de sesión' });
+    next(error); // <-- Pasar el error al middleware
   }
 };
 
-// --- NUEVA FUNCIÓN ---
-// Cerrar sesión de usuario
+// Cerrar sesión de usuario (no necesita cambios)
 export const logoutUser = (req, res) => {
-    // Se limpia la cookie que contiene el token.
-    res.clearCookie('token');
-    res.json({ message: 'Cierre de sesión exitoso.' });
+  res.clearCookie('token');
+  res.json({ message: 'Cierre de sesión exitoso.' });
 };
-// --- FIN ---
 
 const authController = {
   registerUser,
   loginUser,
-  logoutUser // Se añade la nueva función al controlador
+  logoutUser
 };
 
 export default authController;

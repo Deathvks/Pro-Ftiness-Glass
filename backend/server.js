@@ -13,6 +13,7 @@ import bodyweightRoutes from './routes/bodyweight.js';
 import userRoutes from './routes/users.js';
 import exerciseListRoutes from './routes/exerciseList.js';
 import personalRecordRoutes from './routes/personalRecords.js';
+import errorHandler from './middleware/errorHandler.js'; // <-- 1. Importar el middleware
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +35,9 @@ app.use('/api', bodyweightRoutes);
 app.use('/api', userRoutes);
 app.use('/api', exerciseListRoutes);
 app.use('/api', personalRecordRoutes);
+
+// --- 2. USAR EL MIDDLEWARE DE ERRORES AL FINAL ---
+app.use(errorHandler);
 
 // Iniciar el servidor
 app.listen(PORT, () => {

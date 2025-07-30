@@ -3,7 +3,7 @@ import models from '../models/index.js';
 const { PersonalRecord } = models;
 
 // Obtener todos los récords personales del usuario con paginación
-export const getPersonalRecords = async (req, res) => {
+export const getPersonalRecords = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 6; // Límite de 6 récords por página
@@ -24,13 +24,12 @@ export const getPersonalRecords = async (req, res) => {
       records: rows,
     });
   } catch (error) {
-    console.error("Error al obtener los récords personales:", error);
-    res.status(500).json({ error: 'Error al obtener los récords personales' });
+    next(error); // Pasar el error al middleware
   }
 };
 
 const personalRecordController = {
-    getPersonalRecords
+  getPersonalRecords
 };
 
 export default personalRecordController;

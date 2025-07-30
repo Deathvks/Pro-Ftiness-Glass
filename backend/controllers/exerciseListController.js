@@ -4,13 +4,13 @@ import { Op } from 'sequelize';
 const { ExerciseList } = models;
 
 // Obtener ejercicios, con opción de búsqueda
-export const getExercises = async (req, res) => {
+export const getExercises = async (req, res, next) => { // <-- Añadido 'next'
     try {
-        const { search } = req.query; // Permite buscar por ej: /api/exercises?search=press
+        const { search } = req.query;
 
         const options = {
             order: [['name', 'ASC']],
-            limit: 20 // Limitamos para no sobrecargar el frontend en el autocompletado
+            limit: 20
         };
 
         if (search) {
@@ -24,8 +24,7 @@ export const getExercises = async (req, res) => {
         const exercises = await ExerciseList.findAll(options);
         res.json(exercises);
     } catch (error) {
-        console.error("Error al obtener la lista de ejercicios:", error);
-        res.status(500).json({ error: 'Error al obtener la lista de ejercicios' });
+        next(error); // <-- Pasar el error al middleware
     }
 };
 

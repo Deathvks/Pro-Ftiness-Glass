@@ -1,28 +1,26 @@
-import { validationResult } from 'express-validator'; // Importar validationResult
+import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 
 const { RoutineExercise } = models;
 
 // Obtener todos los ejercicios de una rutina específica
-export const getExercisesFromRoutine = async (req, res) => {
+export const getExercisesFromRoutine = async (req, res, next) => {
   try {
     const exercises = await RoutineExercise.findAll({
       where: { routine_id: req.params.routineId }
     });
     res.json(exercises);
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener los ejercicios de la rutina' });
+    next(error); // Pasar el error al middleware
   }
 };
 
 // Añadir un nuevo ejercicio a una rutina
-export const addExerciseToRoutine = async (req, res) => {
-  // --- INICIO: Manejo de validación ---
+export const addExerciseToRoutine = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  // --- FIN ---
 
   const { name, muscle_group, sets, reps } = req.body;
   const { routineId } = req.params;
@@ -36,18 +34,16 @@ export const addExerciseToRoutine = async (req, res) => {
     });
     res.status(201).json(newExercise);
   } catch (error) {
-    res.status(500).json({ error: 'Error al añadir el ejercicio a la rutina' });
+    next(error); // Pasar el error al middleware
   }
 };
 
 // Actualizar un ejercicio específico por su ID
-export const updateExercise = async (req, res) => {
-  // --- INICIO: Manejo de validación ---
+export const updateExercise = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  // --- FIN ---
 
   const { exerciseId } = req.params;
   const { name, muscle_group, sets, reps } = req.body;
@@ -64,12 +60,12 @@ export const updateExercise = async (req, res) => {
     await exercise.save();
     res.json(exercise);
   } catch (error) {
-    res.status(500).json({ error: 'Error al actualizar el ejercicio' });
+    next(error); // Pasar el error al middleware
   }
 };
 
 // Eliminar un ejercicio específico por su ID
-export const deleteExercise = async (req, res) => {
+export const deleteExercise = async (req, res, next) => {
   const { exerciseId } = req.params;
   try {
     const exercise = await RoutineExercise.findByPk(exerciseId);
@@ -79,7 +75,7 @@ export const deleteExercise = async (req, res) => {
     await exercise.destroy();
     res.json({ message: 'Ejercicio eliminado correctamente' });
   } catch (error) {
-    res.status(500).json({ error: 'Error al eliminar el ejercicio' });
+    next(error); // Pasar el error al middleware
   }
 };
 

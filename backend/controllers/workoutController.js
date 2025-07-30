@@ -1,10 +1,9 @@
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
-import { Op } from 'sequelize';
 
 const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, sequelize } = models;
 
-export const getWorkoutHistory = async (req, res) => {
+export const getWorkoutHistory = async (req, res, next) => {
   try {
     const history = await WorkoutLog.findAll({
       where: { user_id: req.user.userId },
@@ -20,11 +19,11 @@ export const getWorkoutHistory = async (req, res) => {
     });
     res.json(history);
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener el historial de entrenamientos' });
+    next(error); // Pasar el error al middleware
   }
 };
 
-export const logWorkoutSession = async (req, res) => {
+export const logWorkoutSession = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -67,7 +66,7 @@ export const logWorkoutSession = async (req, res) => {
         total_volume: totalVolume,
         best_set_weight: bestSetWeight,
       }, { transaction: t });
-      
+
       if (exercise.setsDone && exercise.setsDone.length > 0) {
         const setsToCreate = exercise.setsDone.map(set => ({
           log_detail_id: newLogDetail.id,
@@ -105,80 +104,78 @@ export const logWorkoutSession = async (req, res) => {
     }
 
     await t.commit();
-    res.status(201).json({ 
-        message: 'Entrenamiento guardado con éxito', 
-        workoutId: newWorkoutLog.id,
-        newPRs: newPRs
+    res.status(201).json({
+      message: 'Entrenamiento guardado con éxito',
+      workoutId: newWorkoutLog.id,
+      newPRs: newPRs
     });
   } catch (error) {
     await t.rollback();
-    console.error("Error al guardar el entrenamiento:", error);
-    res.status(500).json({ error: 'Error al guardar el entrenamiento' });
+    next(error); // Pasar el error al middleware
   }
 };
 
 export const updateWorkoutLog = async (req, res) => {
-    res.status(501).json({ error: 'Funcionalidad de editar no implementada todavía.' });
+  res.status(501).json({ error: 'Funcionalidad de editar no implementada todavía.' });
 };
 
-export const deleteWorkoutLog = async (req, res) => {
-    const { workoutId } = req.params;
-    const { userId } = req.user;
-    const t = await sequelize.transaction();
+export const deleteWorkoutLog = async (req, res, next) => {
+  const { workoutId } = req.params;
+  const { userId } = req.user;
+  const t = await sequelize.transaction();
 
-    try {
-        const workoutLog = await WorkoutLog.findOne({
-            where: { id: workoutId, user_id: userId },
-            include: [{ model: WorkoutLogDetail, as: 'WorkoutLogDetails' }],
-            transaction: t
+  try {
+    const workoutLog = await WorkoutLog.findOne({
+      where: { id: workoutId, user_id: userId },
+      include: [{ model: WorkoutLogDetail, as: 'WorkoutLogDetails' }],
+      transaction: t
+    });
+
+    if (!workoutLog) {
+      await t.rollback();
+      return res.status(404).json({ error: 'Registro de entrenamiento no encontrado.' });
+    }
+
+    const exercisesInWorkout = workoutLog.WorkoutLogDetails;
+
+    await workoutLog.destroy({ transaction: t });
+
+    for (const exercise of exercisesInWorkout) {
+      const currentPR = await PersonalRecord.findOne({
+        where: { user_id: userId, exercise_name: exercise.exercise_name },
+        transaction: t
+      });
+
+      if (currentPR && currentPR.weight_kg == exercise.best_set_weight) {
+        const newBestLogDetail = await WorkoutLogDetail.findOne({
+          include: [{
+            model: WorkoutLog,
+            where: { user_id: userId },
+            attributes: []
+          }],
+          where: { exercise_name: exercise.exercise_name },
+          order: [['best_set_weight', 'DESC']],
+          transaction: t
         });
 
-        if (!workoutLog) {
-            await t.rollback();
-            return res.status(404).json({ error: 'Registro de entrenamiento no encontrado.' });
+        if (newBestLogDetail) {
+          const workoutDate = await WorkoutLog.findByPk(newBestLogDetail.workout_log_id, { attributes: ['workout_date'], transaction: t });
+          currentPR.weight_kg = newBestLogDetail.best_set_weight;
+          currentPR.date = workoutDate.workout_date;
+          await currentPR.save({ transaction: t });
+        } else {
+          await currentPR.destroy({ transaction: t });
         }
-
-        const exercisesInWorkout = workoutLog.WorkoutLogDetails;
-
-        await workoutLog.destroy({ transaction: t });
-
-        for (const exercise of exercisesInWorkout) {
-            const currentPR = await PersonalRecord.findOne({
-                where: { user_id: userId, exercise_name: exercise.exercise_name },
-                transaction: t
-            });
-
-            if (currentPR && currentPR.weight_kg == exercise.best_set_weight) {
-                const newBestLogDetail = await WorkoutLogDetail.findOne({
-                    include: [{
-                        model: WorkoutLog,
-                        where: { user_id: userId },
-                        attributes: []
-                    }],
-                    where: { exercise_name: exercise.exercise_name },
-                    order: [['best_set_weight', 'DESC']],
-                    transaction: t
-                });
-
-                if (newBestLogDetail) {
-                    const workoutDate = await WorkoutLog.findByPk(newBestLogDetail.workout_log_id, { attributes: ['workout_date'], transaction: t });
-                    currentPR.weight_kg = newBestLogDetail.best_set_weight;
-                    currentPR.date = workoutDate.workout_date;
-                    await currentPR.save({ transaction: t });
-                } else {
-                    await currentPR.destroy({ transaction: t });
-                }
-            }
-        }
-
-        await t.commit();
-        res.json({ message: 'Entrenamiento eliminado y récords recalculados correctamente.' });
-
-    } catch (error) {
-        await t.rollback();
-        console.error('Error al eliminar el entrenamiento:', error);
-        res.status(500).json({ error: 'Error interno del servidor al eliminar el entrenamiento.' });
+      }
     }
+
+    await t.commit();
+    res.json({ message: 'Entrenamiento eliminado y récords recalculados correctamente.' });
+
+  } catch (error) {
+    await t.rollback();
+    next(error); // Pasar el error al middleware
+  }
 };
 
 const workoutController = {

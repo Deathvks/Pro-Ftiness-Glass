@@ -5,7 +5,7 @@ import { Op } from 'sequelize';
 const { BodyWeightLog } = models;
 
 // Obtener el historial de peso del usuario logueado
-export const getBodyWeightHistory = async (req, res) => {
+export const getBodyWeightHistory = async (req, res, next) => {
   try {
     const history = await BodyWeightLog.findAll({
       where: { user_id: req.user.userId },
@@ -13,7 +13,7 @@ export const getBodyWeightHistory = async (req, res) => {
     });
     res.json(history);
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener el historial de peso' });
+    next(error); // Pasar el error al middleware
   }
 };
 
@@ -36,7 +36,7 @@ const findTodayLog = (userId) => {
 };
 
 // Registrar un nuevo peso corporal (solo si no existe uno hoy)
-export const logBodyWeight = async (req, res) => {
+export const logBodyWeight = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -53,19 +53,18 @@ export const logBodyWeight = async (req, res) => {
 
     const newLog = await BodyWeightLog.create({
       user_id: userId,
-      weight_kg: weight, // Se guarda en la columna 'weight_kg' de la BBDD
+      weight_kg: weight,
       log_date: new Date(),
     });
 
     res.status(201).json(newLog);
   } catch (error) {
-    console.error('Error al registrar el peso:', error);
-    res.status(500).json({ error: 'Error interno del servidor.', details: error.message });
+    next(error); // Pasar el error al middleware
   }
 };
 
 // Actualizar el registro de peso del día de hoy
-export const updateTodayBodyWeight = async (req, res) => {
+export const updateTodayBodyWeight = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -85,8 +84,7 @@ export const updateTodayBodyWeight = async (req, res) => {
 
     res.json(logToUpdate);
   } catch (error) {
-    console.error('Error al actualizar el peso:', error);
-    res.status(500).json({ error: 'Error interno del servidor.', details: error.message });
+    next(error); // Pasar el error al middleware
   }
 };
 
