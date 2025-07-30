@@ -4,27 +4,45 @@ import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
 import { calculateCalories } from '../utils/helpers';
+import useAppStore from '../store/useAppStore'; // 1. Importar el hook del store
 
-// --- INICIO DE LA CORRECCIÓN ---
-// Función mejorada y más robusta para comparar si dos fechas son del mismo día,
-// teniendo en cuenta las zonas horarias.
+// Función para comparar si dos fechas son del mismo día
 const isSameDay = (dateFromServer, localDate) => {
     const serverDate = new Date(dateFromServer);
     return serverDate.getFullYear() === localDate.getFullYear() &&
         serverDate.getMonth() === localDate.getMonth() &&
         serverDate.getDate() === localDate.getDate();
 };
-// --- FIN DE LA CORRECCIÓN ---
 
-const Dashboard = ({ setView, routines, workoutLog, bodyWeightLog, logBodyWeight, updateTodayBodyWeight, userProfile }) => {
+const Dashboard = ({ setView }) => {
+    // 2. Usar el hook para acceder al estado y acciones directamente del store
+    const { 
+      routines, 
+      workoutLog, 
+      bodyWeightLog, 
+      userProfile,
+      logBodyWeight, 
+      updateTodayBodyWeight 
+    } = useAppStore(state => ({
+        routines: state.routines,
+        workoutLog: state.workoutLog,
+        bodyWeightLog: state.bodyWeightLog,
+        userProfile: state.userProfile,
+        // Asumiendo que estas acciones se moverán o ya están en el store
+        logBodyWeight: state.logBodyWeight,
+        updateTodayBodyWeight: state.updateTodayBodyWeight,
+    }));
+
     const [showWeightModal, setShowWeightModal] = useState(false);
 
+    // --- Toda la lógica de `useMemo` y cálculos se mantiene igual ---
+    // Ya no depende de props, sino del estado obtenido del store.
+    
     const sortedWeightLog = useMemo(() =>
         [...bodyWeightLog].sort((a, b) => new Date(b.log_date) - new Date(a.log_date)),
         [bodyWeightLog]
     );
 
-    // La lógica para encontrar el registro de hoy ahora usará la función corregida
     const todaysLog = useMemo(() =>
         sortedWeightLog.find(log => isSameDay(log.log_date, new Date())),
         [sortedWeightLog]

@@ -4,7 +4,8 @@ import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import RoutineEditor from './RoutineEditor';
 import { useToast } from '../hooks/useToast';
-import Spinner from '../components/Spinner'; // <-- Importamos el Spinner
+import Spinner from '../components/Spinner';
+import useAppStore from '../store/useAppStore'; // 1. Importar el hook del store
 
 const isSameDay = (dateA, dateB) => {
     const date1 = new Date(dateA);
@@ -14,12 +15,19 @@ const isSameDay = (dateA, dateB) => {
            date1.getDate() === date2.getDate();
 };
 
-const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
+const Routines = ({ setView }) => {
   const { addToast } = useToast();
+  // 2. Obtener estado y acciones del store
+  const { routines, workoutLog, fetchInitialData } = useAppStore(state => ({
+    routines: state.routines,
+    workoutLog: state.workoutLog,
+    fetchInitialData: state.fetchInitialData, // Para refrescar los datos
+  }));
+
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
-  const [isLoading, setIsLoading] = useState(false); // <-- Añadimos estado de carga
+  const [isLoading, setIsLoading] = useState(false);
 
   const completedToday = useMemo(() => {
     if (!Array.isArray(workoutLog)) return [];
@@ -30,7 +38,7 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
   }, [workoutLog]);
 
   const handleSave = async (routineToSave) => {
-    setIsLoading(true); // <-- Activamos la carga
+    setIsLoading(true);
     try {
       const url = routineToSave.id
         ? `http://localhost:3001/api/routines/${routineToSave.id}`
@@ -45,29 +53,18 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
       });
 
       if (!response.ok) {
-        try {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Ocurrió un error al guardar la rutina.');
-        } catch {
-            throw new Error(`Error del servidor: ${response.statusText}`);
-        }
-      }
-
-      const savedOrUpdatedRoutine = await response.json();
-
-      if (routineToSave.id) {
-        setRoutines(routines.map(r => r.id === savedOrUpdatedRoutine.id ? savedOrUpdatedRoutine : r));
-      } else {
-        setRoutines([...routines, savedOrUpdatedRoutine]);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ocurrió un error al guardar la rutina.');
       }
       
       addToast('Rutina guardada con éxito.', 'success');
       setEditingRoutine(null);
+      await fetchInitialData(); // 3. Refrescar el estado global
     } catch (error) {
       console.error("Error al guardar la rutina:", error.message);
       addToast(`Error al guardar: ${error.message}`, 'error');
     } finally {
-        setIsLoading(false); // <-- Desactivamos la carga
+        setIsLoading(false);
     }
   };
 
@@ -77,7 +74,7 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
   };
 
   const confirmDelete = async () => {
-    setIsLoading(true); // <-- Activamos la carga
+    setIsLoading(true);
     try {
       const response = await fetch(`http://localhost:3001/api/routines/${routineToDelete}`, {
         method: 'DELETE',
@@ -87,15 +84,15 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error al eliminar la rutina.');
       }
-      setRoutines(routines.filter(r => r.id !== routineToDelete));
       addToast('Rutina eliminada.', 'success');
       setShowDeleteModal(false);
       setRoutineToDelete(null);
+      await fetchInitialData(); // 4. Refrescar el estado global
     } catch (error) {
       console.error("Error al eliminar la rutina:", error.message);
       addToast(`Error al eliminar: ${error.message}`, 'error');
     } finally {
-        setIsLoading(false); // <-- Desactivamos la carga
+        setIsLoading(false);
     }
   };
 
@@ -103,6 +100,7 @@ const Routines = ({ routines, setRoutines, setView, workoutLog = [] }) => {
     return <RoutineEditor routine={editingRoutine} onSave={handleSave} onCancel={() => setEditingRoutine(null)} isLoading={isLoading} />;
   }
 
+  // El resto del JSX no necesita cambios
   return (
     <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">

@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
 import { Dumbbell, LogIn } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
-import Spinner from '../components/Spinner'; // <-- Importamos el Spinner
+import Spinner from '../components/Spinner';
+import useAppStore from '../store/useAppStore'; // 1. Importar el hook del store
+import { useToast } from '../hooks/useToast';
 
-const LoginScreen = ({ onLogin, showRegister }) => {
+const LoginScreen = ({ showRegister }) => {
+    // 2. Obtener la acción para cargar los datos del usuario
+    const fetchInitialData = useAppStore(state => state.fetchInitialData);
+    const { addToast } = useToast();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
-    const [isLoading, setIsLoading] = useState(false); // <-- Añadimos estado de carga
+    const [isLoading, setIsLoading] = useState(false);
 
     const validateForm = () => {
         const newErrors = {};
@@ -27,7 +33,7 @@ const LoginScreen = ({ onLogin, showRegister }) => {
         }
 
         setErrors({});
-        setIsLoading(true); // <-- Activamos la carga
+        setIsLoading(true);
 
         try {
             const response = await fetch('http://localhost:3001/api/auth/login', {
@@ -40,12 +46,14 @@ const LoginScreen = ({ onLogin, showRegister }) => {
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Error al iniciar sesión.');
 
-            onLogin();
+            // 3. Llamar a la acción del store para actualizar el estado de la app
+            await fetchInitialData();
+            // No es necesario desactivar isLoading aquí, porque el componente se desmontará
 
         } catch (err) {
+            addToast(err.message, 'error');
             setErrors({ api: err.message });
-        } finally {
-            setIsLoading(false); // <-- Desactivamos la carga al finalizar
+            setIsLoading(false); 
         }
     };
 
