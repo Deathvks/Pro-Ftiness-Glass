@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, Dumbbell, BarChart2, Settings, LogOut } from 'lucide-react';
-import { useToast } from './hooks/useToast';
+import useAppStore from './store/useAppStore';
 
 // --- Importaciones de Páginas y Componentes ---
 import Dashboard from './pages/Dashboard';
@@ -15,165 +15,32 @@ import ProfileEditor from './pages/ProfileEditor';
 import PRToast from './components/PRToast';
 
 export default function App() {
-  const { addToast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Obtenemos todo el estado y las acciones necesarias del store de Zustand
+  const {
+    isAuthenticated,
+    userProfile,
+    isLoading,
+    prNotification,
+    fetchInitialData,
+    handleLogout,
+  } = useAppStore();
+
   const [isLoginView, setIsLoginView] = useState(true);
   const [view, setView] = useState('dashboard');
   const [viewProps, setViewProps] = useState({});
   const [theme, setThemeState] = useState(() => localStorage.getItem('theme') || 'system');
-
-  const [routines, setRoutines] = useState([]);
-  const [workoutLog, setWorkoutLog] = useState([]);
-  const [bodyWeightLog, setBodyWeightLog] = useState([]);
-  const [prNotification, setPrNotification] = useState(null);
-
-  useEffect(() => {
-    if (prNotification) {
-      const timer = setTimeout(() => {
-        setPrNotification(null);
-      }, 7000);
-      return () => clearTimeout(timer);
-    }
-  }, [prNotification]);
-
+  
   const setTheme = (newTheme) => {
     localStorage.setItem('theme', newTheme);
     setThemeState(newTheme);
   };
 
-  const handleLogout = useCallback(async () => {
-    try {
-      await fetch('http://localhost:3001/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-    } finally {
-      setIsAuthenticated(false);
-      setUserProfile(null);
-      setRoutines([]);
-      setWorkoutLog([]);
-      setBodyWeightLog([]);
-    }
-  }, []);
-
-  const fetchInitialData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const profileResponse = await fetch('http://localhost:3001/api/users/me', { credentials: 'include' });
-
-      if (!profileResponse.ok) {
-        handleLogout();
-        throw new Error('Sesión no válida.');
-      }
-
-      const profileData = await profileResponse.json();
-      setUserProfile(profileData);
-      setIsAuthenticated(true);
-
-      if (profileData.goal) {
-        const [routinesRes, workoutsRes, bodyweightRes] = await Promise.all([
-          fetch('http://localhost:3001/api/routines', { credentials: 'include' }),
-          fetch('http://localhost:3001/api/workouts', { credentials: 'include' }),
-          fetch('http://localhost:3001/api/bodyweight', { credentials: 'include' })
-        ]);
-        setRoutines(await routinesRes.json());
-        setWorkoutLog(await workoutsRes.json());
-        setBodyWeightLog(await bodyweightRes.json());
-      }
-    } catch (error) {
-      if (error.message !== 'Sesión no válida.') {
-        console.error("Error de autenticación:", error);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [handleLogout]);
-
+  // La carga de datos inicial se dispara desde aquí solo una vez al montar el componente
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  const logBodyWeight = async (newWeightData) => {
-    try {
-      const response = await fetch('http://localhost:3001/api/bodyweight', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weight: newWeightData.weight }),
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Ocurrió un error.');
-      addToast('Peso registrado con éxito.', 'success');
-      await fetchInitialData();
-    } catch (error) {
-      console.error("Error en logBodyWeight:", error.message);
-      addToast(`Error al guardar: ${error.message}`, 'error');
-    }
-  };
-
-  const updateTodayBodyWeight = async (updatedWeightData) => {
-    try {
-      const response = await fetch('http://localhost:3001/api/bodyweight/today', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weight: updatedWeightData.weight }),
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Ocurrió un error.');
-      addToast('Peso actualizado con éxito.', 'success');
-      await fetchInitialData();
-    } catch (error) {
-      console.error("Error en updateTodayBodyWeight:", error.message);
-      addToast(`Error al actualizar: ${error.message}`, 'error');
-    }
-  };
-
-  const logWorkout = async (workoutData) => {
-    try {
-      const response = await fetch('http://localhost:3001/api/workouts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(workoutData),
-        credentials: 'include'
-      });
-
-      const responseData = await response.json();
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Error al guardar el entrenamiento.');
-      }
-
-      if (responseData.newPRs && responseData.newPRs.length > 0) {
-        setPrNotification(responseData.newPRs);
-      }
-      addToast('Entrenamiento guardado con éxito.', 'success');
-      await fetchInitialData();
-    } catch (error) {
-      console.error("Error en logWorkout:", error);
-      addToast(`Error al guardar: ${error.message}`, 'error');
-    }
-  };
-
-  const deleteWorkoutLog = async (workoutId) => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/workouts/${workoutId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Ocurrió un error.');
-      addToast('Entrenamiento eliminado.', 'success');
-      await fetchInitialData();
-    } catch (error) {
-      console.error("Error en deleteWorkoutLog:", error.message);
-      addToast(`Error al eliminar: ${error.message}`, 'error');
-    }
-  };
-
+  // Lógica para gestionar el tema (claro/oscuro/sistema)
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const applyTheme = (themeValue) => {
@@ -194,67 +61,37 @@ export default function App() {
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   }, [theme]);
 
-  const handleLogin = () => {
-    fetchInitialData();
-  };
-
-  const handleProfileUpdate = async (formData) => {
-    try {
-      const response = await fetch('http://localhost:3001/api/users/me', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al guardar los datos.');
-      }
-      addToast('Perfil actualizado con éxito.', 'success');
-      await fetchInitialData();
-      navigate('settings');
-    } catch (error) {
-      console.error("Error al actualizar el perfil:", error);
-      addToast(`Error: ${error.message}`, 'error');
-    }
-  };
-
-  const handleOnboardingComplete = async (formData) => {
-    try {
-      const response = await fetch('http://localhost:3001/api/users/me', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Error al guardar los datos.');
-      await fetchInitialData();
-    } catch (error) {
-      console.error("Error al completar el onboarding:", error);
-    }
-  };
-
+  // Función de navegación para cambiar entre vistas
   const navigate = (viewName, props = {}) => {
     setViewProps(props);
     setView(viewName);
   };
+  
+  // --- Renderizado Condicional ---
+  
+  if (isLoading) {
+    return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return isLoginView
+      ? <LoginScreen onLogin={fetchInitialData} showRegister={() => setIsLoginView(false)} />
+      : <RegisterScreen showLogin={() => setIsLoginView(true)} />;
+  }
+
+  if (userProfile && !userProfile.goal) {
+    return <OnboardingScreen />;
+  }
 
   const renderView = () => {
     switch (view) {
-      case 'dashboard': return <Dashboard setView={navigate} routines={routines} workoutLog={workoutLog} bodyWeightLog={bodyWeightLog} logBodyWeight={logBodyWeight} updateTodayBodyWeight={updateTodayBodyWeight} userProfile={userProfile} />;
-      case 'progress': return <Progress
-        routines={routines}
-        workoutLog={workoutLog}
-        bodyWeightLog={bodyWeightLog}
-        darkMode={theme !== 'light'}
-        userProfile={userProfile}
-        deleteWorkoutLog={deleteWorkoutLog}
-      />;
-      case 'routines': return <Routines routines={routines} setRoutines={setRoutines} setView={navigate} workoutLog={workoutLog} />;
-      case 'workout': return <Workout routine={viewProps.routine} setView={navigate} logWorkout={logWorkout} />;
+      case 'dashboard': return <Dashboard setView={navigate} />;
+      case 'progress': return <Progress darkMode={theme !== 'light'} />;
+      case 'routines': return <Routines setView={navigate} />;
+      case 'workout': return <Workout routine={viewProps.routine} setView={navigate} />;
       case 'settings': return <SettingsScreen theme={theme} setTheme={setTheme} setView={navigate} />;
-      case 'profileEditor': return <ProfileEditor userProfile={userProfile} onSave={handleProfileUpdate} onCancel={() => navigate('settings')} />;
-      default: return <Dashboard setView={navigate} routines={routines} workoutLog={workoutLog} bodyWeightLog={bodyWeightLog} logBodyWeight={logBodyWeight} updateTodayBodyWeight={updateTodayBodyWeight} userProfile={userProfile} />;
+      case 'profileEditor': return <ProfileEditor onCancel={() => navigate('settings')} />;
+      default: return <Dashboard setView={navigate} />;
     }
   };
 
@@ -264,20 +101,6 @@ export default function App() {
     { id: 'routines', label: 'Rutinas', icon: <Dumbbell size={24} /> },
     { id: 'settings', label: 'Ajustes', icon: <Settings size={24} /> },
   ];
-
-  if (isLoading) {
-    return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return isLoginView
-      ? <LoginScreen onLogin={handleLogin} showRegister={() => setIsLoginView(false)} />
-      : <RegisterScreen showLogin={() => setIsLoginView(true)} />;
-  }
-
-  if (userProfile && !userProfile.goal) {
-    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
-  }
 
   return (
     <div className="relative flex w-full h-full overflow-hidden">
@@ -321,7 +144,7 @@ export default function App() {
         ))}
       </nav>
 
-      <PRToast newPRs={prNotification} onClose={() => setPrNotification(null)} />
+      <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
     </div>
   );
 }
