@@ -1,8 +1,8 @@
 import React from 'react';
-import { Sun, Moon, Monitor, User, LogOut } from 'lucide-react'; // Se importa el ícono LogOut
+import { Sun, Moon, Monitor, User, LogOut } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 
-const SettingsScreen = ({ theme, setTheme, setView, onLogoutClick }) => { // Se recibe onLogoutClick como prop
+const SettingsScreen = ({ theme, setTheme, setView, onLogoutClick }) => {
     const isSystemTheme = theme === 'system';
 
     const baseButtonClasses = "p-8 rounded-lg border bg-bg-secondary flex flex-col items-center justify-center gap-3 transition-all duration-200";
@@ -57,8 +57,9 @@ const SettingsScreen = ({ theme, setTheme, setView, onLogoutClick }) => { // Se 
                     </div>
                 </GlassCard>
                 
-                {/* --- INICIO DEL CÓDIGO AÑADIDO --- */}
-                <GlassCard className="p-6">
+                {/* --- INICIO DE LA CORRECCIÓN --- */}
+                {/* Esta tarjeta ahora se ocultará en pantallas medianas y grandes */}
+                <GlassCard className="p-6 md:hidden">
                      <h2 className="text-xl font-bold">Cuenta</h2>
                      <p className="text-text-secondary mb-4">Gestiona tu sesión actual.</p>
                      <button
@@ -69,7 +70,7 @@ const SettingsScreen = ({ theme, setTheme, setView, onLogoutClick }) => { // Se 
                         <span>Cerrar Sesión</span>
                     </button>
                 </GlassCard>
-                {/* --- FIN DEL CÓDIGO AÑADIDO --- */}
+                {/* --- FIN DE LA CORRECCIÓN --- */}
             </div>
         </div>
     );
