@@ -1,8 +1,8 @@
 import React from 'react';
-import { Sun, Moon, Monitor, User } from 'lucide-react';
+import { Sun, Moon, Monitor, User, LogOut } from 'lucide-react'; // Se importa el ícono LogOut
 import GlassCard from '../components/GlassCard';
 
-const SettingsScreen = ({ theme, setTheme, setView }) => {
+const SettingsScreen = ({ theme, setTheme, setView, onLogoutClick }) => { // Se recibe onLogoutClick como prop
     const isSystemTheme = theme === 'system';
 
     const baseButtonClasses = "p-8 rounded-lg border bg-bg-secondary flex flex-col items-center justify-center gap-3 transition-all duration-200";
@@ -31,7 +31,6 @@ const SettingsScreen = ({ theme, setTheme, setView }) => {
                     <p className="text-text-secondary mb-4">Elige un tema o sincronízalo con tu sistema.</p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {/* Botón para Tema Claro */}
                         <button
                             onClick={() => setTheme('light')}
                             className={`${baseButtonClasses} ${!isSystemTheme && theme === 'light' ? activeButtonClasses : inactiveButtonClasses}`}
@@ -40,7 +39,6 @@ const SettingsScreen = ({ theme, setTheme, setView }) => {
                             <span className="font-semibold">Claro</span>
                         </button>
                         
-                        {/* Botón para Tema Oscuro */}
                         <button
                             onClick={() => setTheme('dark')}
                             className={`${baseButtonClasses} ${!isSystemTheme && theme === 'dark' ? activeButtonClasses : inactiveButtonClasses}`}
@@ -49,7 +47,6 @@ const SettingsScreen = ({ theme, setTheme, setView }) => {
                             <span className="font-semibold">Oscuro</span>
                         </button>
 
-                        {/* Botón para Tema del Sistema */}
                         <button
                             onClick={() => setTheme('system')}
                             className={`${baseButtonClasses} ${isSystemTheme ? activeButtonClasses : inactiveButtonClasses}`}
@@ -59,6 +56,20 @@ const SettingsScreen = ({ theme, setTheme, setView }) => {
                         </button>
                     </div>
                 </GlassCard>
+                
+                {/* --- INICIO DEL CÓDIGO AÑADIDO --- */}
+                <GlassCard className="p-6">
+                     <h2 className="text-xl font-bold">Cuenta</h2>
+                     <p className="text-text-secondary mb-4">Gestiona tu sesión actual.</p>
+                     <button
+                        onClick={onLogoutClick}
+                        className="flex items-center justify-center gap-3 w-full mt-4 py-4 rounded-md font-semibold transition-colors duration-200 bg-red/10 border border-red/20 text-red hover:bg-red/20"
+                    >
+                        <LogOut size={20} />
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </GlassCard>
+                {/* --- FIN DEL CÓDIGO AÑADIDO --- */}
             </div>
         </div>
     );

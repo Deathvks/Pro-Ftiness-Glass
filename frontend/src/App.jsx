@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Home, Dumbbell, BarChart2, Settings, LogOut } from 'lucide-react';
 import useAppStore from './store/useAppStore';
 
-// --- Importaciones de Páginas y Componentes ---
+// --- Importaciones ---
 import Dashboard from './pages/Dashboard';
 import Progress from './pages/Progress';
 import Routines from './pages/Routines';
@@ -13,34 +13,33 @@ import RegisterScreen from './pages/RegisterScreen';
 import OnboardingScreen from './pages/OnboardingScreen';
 import ProfileEditor from './pages/ProfileEditor';
 import PRToast from './components/PRToast';
+import ConfirmationModal from './components/ConfirmationModal';
 
 export default function App() {
-  // Obtenemos todo el estado y las acciones necesarias del store de Zustand
   const {
     isAuthenticated,
     userProfile,
     isLoading,
     prNotification,
     fetchInitialData,
-    handleLogout,
+    handleLogout: performLogout,
   } = useAppStore();
 
   const [isLoginView, setIsLoginView] = useState(true);
   const [view, setView] = useState('dashboard');
   const [viewProps, setViewProps] = useState({});
   const [theme, setThemeState] = useState(() => localStorage.getItem('theme') || 'system');
-  
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   const setTheme = (newTheme) => {
     localStorage.setItem('theme', newTheme);
     setThemeState(newTheme);
   };
 
-  // La carga de datos inicial se dispara desde aquí solo una vez al montar el componente
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  // Lógica para gestionar el tema (claro/oscuro/sistema)
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const applyTheme = (themeValue) => {
@@ -52,23 +51,27 @@ export default function App() {
       }
     };
     const handleSystemThemeChange = () => {
-      if (theme === 'system') {
-        applyTheme('system');
-      }
+      if (theme === 'system') applyTheme('system');
     };
     applyTheme(theme);
     mediaQuery.addEventListener('change', handleSystemThemeChange);
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   }, [theme]);
 
-  // Función de navegación para cambiar entre vistas
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    performLogout();
+    setShowLogoutConfirm(false);
+  };
+
   const navigate = (viewName, props = {}) => {
     setViewProps(props);
     setView(viewName);
   };
-  
-  // --- Renderizado Condicional ---
-  
+
   if (isLoading) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
@@ -89,7 +92,7 @@ export default function App() {
       case 'progress': return <Progress darkMode={theme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout routine={viewProps.routine} setView={navigate} />;
-      case 'settings': return <SettingsScreen theme={theme} setTheme={setTheme} setView={navigate} />;
+      case 'settings': return <SettingsScreen theme={theme} setTheme={setTheme} setView={navigate} onLogoutClick={handleLogoutClick} />;
       case 'profileEditor': return <ProfileEditor onCancel={() => navigate('settings')} />;
       default: return <Dashboard setView={navigate} />;
     }
@@ -125,9 +128,11 @@ export default function App() {
             </button>
           ))}
         </div>
-        <button onClick={handleLogout} className="mt-auto flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors duration-200">
+        <button onClick={handleLogoutClick} className="mt-auto flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors duration-200">
           <LogOut size={24} />
+          {/* --- INICIO DE LA CORRECCIÓN --- */}
           <span className="whitespace-nowrap">Cerrar Sesión</span>
+          {/* --- FIN DE LA CORRECCIÓN --- */}
         </button>
       </nav>
 
@@ -145,6 +150,15 @@ export default function App() {
       </nav>
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
+
+      {showLogoutConfirm && (
+        <ConfirmationModal
+            message="¿Estás seguro de que quieres cerrar sesión?"
+            onConfirm={confirmLogout}
+            onCancel={() => setShowLogoutConfirm(false)}
+            confirmText="Cerrar Sesión"
+        />
+      )}
     </div>
   );
 }
