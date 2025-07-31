@@ -1,20 +1,31 @@
 {
   "development": {
     "username": "root",
-    "password": "123###_###",
+    "password": "1234",
     "database": "fittrack",
     "host": "127.0.0.1",
     "dialect": "mysql"
   },
   "test": {
     "username": "root",
-    "password": "123###_###",
+    "password": "1234",
     "database": "fittrack_test",
     "host": "127.0.0.1",
     "dialect": "mysql"
   },
   "production": {
-    "use_env_variable": "DATABASE_URL",
+    "username": {
+      "ENV": "DB_USER"
+    },
+    "password": {
+      "ENV": "DB_PASSWORD"
+    },
+    "database": {
+      "ENV": "DB_NAME"
+    },
+    "host": {
+      "ENV": "DB_HOST"
+    },
     "dialect": "mysql"
   }
 }
