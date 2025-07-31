@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet'; // <-- 1. Importar helmet
 
 dotenv.config();
 
@@ -13,16 +14,20 @@ import bodyweightRoutes from './routes/bodyweight.js';
 import userRoutes from './routes/users.js';
 import exerciseListRoutes from './routes/exerciseList.js';
 import personalRecordRoutes from './routes/personalRecords.js';
-import errorHandler from './middleware/errorHandler.js'; // <-- 1. Importar el middleware
+import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
-app.use(cors({
-  origin: 'http://localhost:5173',
+app.use(helmet()); // <-- 2. Usar helmet al principio
+
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -36,7 +41,7 @@ app.use('/api', userRoutes);
 app.use('/api', exerciseListRoutes);
 app.use('/api', personalRecordRoutes);
 
-// --- 2. USAR EL MIDDLEWARE DE ERRORES AL FINAL ---
+// Usar el middleware de errores al final de todas las rutas
 app.use(errorHandler);
 
 // Iniciar el servidor
