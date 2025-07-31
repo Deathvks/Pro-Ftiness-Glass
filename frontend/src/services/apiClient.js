@@ -1,4 +1,8 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Usa la variable de entorno de Vite (VITE_).
+// Si no está definida, utiliza la URL local como alternativa.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+// --- FIN DE LA MODIFICACIÓN ---
 
 /**
  * Cliente genérico para realizar peticiones a la API.
@@ -29,13 +33,11 @@ const apiClient = async (endpoint, options = {}) => {
         const data = await response.json();
 
         if (!response.ok) {
-            // Si el objeto de respuesta tiene un 'error', lánzalo. Si no, usa el statusText.
             throw new Error(data.error || response.statusText);
         }
 
         return data;
     } catch (err) {
-        // Rechaza la promesa con el mensaje de error para que pueda ser capturado
         return Promise.reject(err.message);
     }
 };

@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { ArrowDown, Minus, ArrowUp, Edit } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import useAppStore from '../store/useAppStore';
+import { useToast } from '../hooks/useToast';
+import Spinner from '../components/Spinner';
 
-const OnboardingScreen = ({ onComplete }) => {
+const OnboardingScreen = () => {
+  const { updateUserProfile } = useAppStore(state => ({
+    updateUserProfile: state.updateUserProfile,
+  }));
+  const { addToast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     gender: 'male',
@@ -18,10 +27,23 @@ const OnboardingScreen = ({ onComplete }) => {
     e.preventDefault();
     setStep(s => s + 1);
   };
-  const handleComplete = (e) => {
+  
+  const handleComplete = async (e) => {
     e.preventDefault();
-    onComplete(formData);
+    if (!formData.age || !formData.height || !formData.weight) {
+        addToast("Por favor, completa todos los campos requeridos.", 'error');
+        return;
+    }
+
+    setIsLoading(true);
+    const result = await updateUserProfile(formData);
+
+    if (!result.success) {
+        addToast(result.message, 'error');
+        setIsLoading(false);
+    }
   };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -94,7 +116,9 @@ const OnboardingScreen = ({ onComplete }) => {
         return (
           <form onSubmit={(e) => { e.preventDefault(); goToStep(5); }} className="flex flex-col gap-5">
             <h2 className="text-xl font-bold text-center">Paso 4: Tu Objetivo</h2>
-            <div className="grid grid-cols-3 gap-4">
+            {/* --- INICIO DE LA CORRECCIÓN --- */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* --- FIN DE LA CORRECCIÓN --- */}
               <button type="button" onClick={() => setFormData({ ...formData, goal: 'lose' })} className={`${choiceButtonClasses} ${formData.goal === 'lose' ? activeChoiceButtonClasses : ''}`}><ArrowDown /><span>Bajar</span></button>
               <button type="button" onClick={() => setFormData({ ...formData, goal: 'maintain' })} className={`${choiceButtonClasses} ${formData.goal === 'maintain' ? activeChoiceButtonClasses : ''}`}><Minus /><span>Mantener</span></button>
               <button type="button" onClick={() => setFormData({ ...formData, goal: 'gain' })} className={`${choiceButtonClasses} ${formData.goal === 'gain' ? activeChoiceButtonClasses : ''}`}><ArrowUp /><span>Subir</span></button>
@@ -108,7 +132,6 @@ const OnboardingScreen = ({ onComplete }) => {
             <h2 className="text-xl font-bold text-center">Paso 5: Resumen</h2>
             <p className="text-text-secondary text-center -mt-3">Revisa que toda tu información sea correcta.</p>
             <div className="flex flex-col gap-3">
-
               <div className="flex justify-between items-center bg-bg-secondary p-4 rounded-md border border-glass-border">
                 <div>
                   <p className="text-xs text-text-secondary">Sobre ti</p>
@@ -116,7 +139,6 @@ const OnboardingScreen = ({ onComplete }) => {
                 </div>
                 <button onClick={() => goToStep(1)} className="p-2 rounded-full hover:bg-white/10 text-text-secondary"><Edit size={16} /></button>
               </div>
-
               <div className="flex justify-between items-center bg-bg-secondary p-4 rounded-md border border-glass-border">
                 <div>
                   <p className="text-xs text-text-secondary">Medidas</p>
@@ -124,7 +146,6 @@ const OnboardingScreen = ({ onComplete }) => {
                 </div>
                 <button onClick={() => goToStep(2)} className="p-2 rounded-full hover:bg-white/10 text-text-secondary"><Edit size={16} /></button>
               </div>
-
               <div className="flex justify-between items-center bg-bg-secondary p-4 rounded-md border border-glass-border">
                 <div>
                   <p className="text-xs text-text-secondary">Actividad</p>
@@ -132,7 +153,6 @@ const OnboardingScreen = ({ onComplete }) => {
                 </div>
                 <button onClick={() => goToStep(3)} className="p-2 rounded-full hover:bg-white/10 text-text-secondary"><Edit size={16} /></button>
               </div>
-
               <div className="flex justify-between items-center bg-bg-secondary p-4 rounded-md border border-glass-border">
                 <div>
                   <p className="text-xs text-text-secondary">Objetivo</p>
@@ -141,7 +161,9 @@ const OnboardingScreen = ({ onComplete }) => {
                 <button onClick={() => goToStep(4)} className="p-2 rounded-full hover:bg-white/10 text-text-secondary"><Edit size={16} /></button>
               </div>
             </div>
-            <button onClick={handleComplete} className="button bg-accent text-bg-secondary w-full rounded-md py-3 mt-2">Confirmar y Empezar</button>
+            <button onClick={handleComplete} disabled={isLoading} className="button bg-accent text-bg-secondary w-full rounded-md py-3 mt-2 flex justify-center items-center disabled:opacity-70">
+              {isLoading ? <Spinner size={20} /> : 'Confirmar y Empezar'}
+            </button>
           </div>
         );
       default:

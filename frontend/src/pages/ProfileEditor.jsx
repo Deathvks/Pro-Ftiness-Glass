@@ -111,7 +111,9 @@ const ProfileEditor = ({ onCancel }) => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-2">Objetivo</label>
-                             <div className="grid grid-cols-3 gap-2">
+                             {/* --- INICIO DE LA CORRECCIÓN --- */}
+                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                             {/* --- FIN DE LA CORRECCIÓN --- */}
                                 {Object.entries(goalLabels).map(([value, label]) => (
                                     <button key={value} type="button" onClick={() => setFormData({ ...formData, goal: value })} className={`${choiceButtonClasses} ${formData.goal === value ? activeChoiceButtonClasses : ''}`}>{label}</button>
                                 ))}
