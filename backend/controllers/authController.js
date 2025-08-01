@@ -61,11 +61,11 @@ export const loginUser = async (req, res, next) => { // <-- Añadido 'next'
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', // <-- CAMBIO CLAVE
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
-});
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict', // <-- CAMBIO CLAVE
+      maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    });
 
     res.json({ message: 'Inicio de sesión exitoso.' });
 

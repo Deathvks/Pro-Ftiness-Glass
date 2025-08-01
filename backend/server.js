@@ -1,3 +1,5 @@
+// EN: backend/server.js
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -17,17 +19,25 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
-app.set('trust proxy', 1); // <-- AÑADE ESTA LÍNEA
+// --- CAMBIO 1: Confiar en el proxy de forma más genérica ---
+app.set('trust proxy', true); 
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(helmet());
 
-// Línea de depuración para CORS
 console.log(`[CORS] Configurando CORS para el origen: ${process.env.FRONTEND_URL}`);
 
+// --- CAMBIO 2: Hacer la configuración de CORS más robusta ---
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Permite peticiones sin origen (como las de Postman o apps móviles) y desde cualquier subdominio de zeabur.app
+    if (!origin || new URL(origin).hostname.endsWith('zeabur.app') || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 };
 app.use(cors(corsOptions));
