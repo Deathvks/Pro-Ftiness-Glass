@@ -12,7 +12,7 @@ const User = sequelize.define(
     email: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true, // Asegura que el email sea único
+      unique: true,
     },
     password_hash: {
       type: DataTypes.STRING(255),
@@ -45,9 +45,9 @@ const User = sequelize.define(
   },
   {
     tableName: 'users',
-    // Sequelize gestionará la columna 'created_at', pero no 'updated_at'
+    // Se ajusta la configuración de timestamps para que coincida con la migración
     timestamps: true,
-    updatedAt: false, // Desactivamos updatedAt porque no existe en tu tabla
+    updatedAt: false, // Se mantiene desactivado porque la tabla no lo tiene
     createdAt: 'created_at',
   }
 );
