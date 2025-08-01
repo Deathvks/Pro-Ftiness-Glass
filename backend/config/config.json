@@ -14,7 +14,11 @@
     "dialect": "mysql"
   },
   "production": {
-    "use_env_variable": "DATABASE_URL",
+    "username": { "ENV": "MYSQL_USERNAME" },
+    "password": { "ENV": "MYSQL_PASSWORD" },
+    "database": { "ENV": "MYSQL_DATABASE" },
+    "host": { "ENV": "MYSQL_HOST" },
+    "port": { "ENV": "MYSQL_PORT" },
     "dialect": "mysql",
     "dialectOptions": {
       "ssl": {
