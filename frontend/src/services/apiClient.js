@@ -1,8 +1,5 @@
-// --- INICIO DE LA MODIFICACIÓN ---
-// Usa la variable de entorno de Vite (VITE_).
-// Si no está definida, utiliza la URL local como alternativa.
+// Se ha escrito la URL de producción directamente para evitar problemas.
 const API_BASE_URL = 'https://fittrack-pro-api.zeabur.app/api';
-// --- FIN DE LA MODIFICACIÓN ---
 
 /**
  * Cliente genérico para realizar peticiones a la API.
@@ -11,9 +8,7 @@ const API_BASE_URL = 'https://fittrack-pro-api.zeabur.app/api';
  */
 const apiClient = async (endpoint, options = {}) => {
     const { body, ...customConfig } = options;
-
     const headers = { 'Content-Type': 'application/json' };
-
     const config = {
         method: body ? 'POST' : 'GET',
         ...customConfig,
@@ -21,7 +16,7 @@ const apiClient = async (endpoint, options = {}) => {
             ...headers,
             ...customConfig.headers,
         },
-        credentials: 'include' // Incluir cookies en todas las peticiones
+        credentials: 'include'
     };
 
     if (body) {
@@ -31,13 +26,16 @@ const apiClient = async (endpoint, options = {}) => {
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
         const data = await response.json();
-
         if (!response.ok) {
             throw new Error(data.error || response.statusText);
         }
-
         return data;
     } catch (err) {
+        // Si la respuesta no es JSON, extraemos el texto
+        if (err instanceof SyntaxError) {
+            const textResponse = await fetch(`${API_BASE_URL}${endpoint}`, config).then(res => res.text());
+            return Promise.reject(textResponse || 'Error de red');
+        }
         return Promise.reject(err.message);
     }
 };
