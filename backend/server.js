@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import helmet from 'helmet'; // <-- 1. Importar helmet
+import helmet from 'helmet';
 
 dotenv.config();
 
@@ -17,29 +17,20 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
-app.set('trust proxy', 1);
+app.set('trust proxy', 1); // <-- AÑADE ESTA LÍNEA
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
-app.use(helmet()); // <-- 2. Usar helmet al principio
+app.use(helmet());
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Línea añadida para depurar y verificar la variable de entorno
+// Línea de depuración para CORS
 console.log(`[CORS] Configurando CORS para el origen: ${process.env.FRONTEND_URL}`);
-// --- FIN DE LA MODIFICACIÓN ---
 
 const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 };
-
 app.use(cors(corsOptions));
-
-// AÑADE ESTA LÍNEA
-app.use('/api', (req, res, next) => {
-  res.setHeader('Content-Type', 'application/json');
-  next();
-});
 
 app.use(express.json());
 app.use(cookieParser());
