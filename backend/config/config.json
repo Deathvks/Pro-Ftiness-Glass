@@ -15,16 +15,16 @@
   },
   "production": {
     "username": {
-      "ENV": "DB_USER"
+      "ENV": "MYSQL_USERNAME"
     },
     "password": {
-      "ENV": "DB_PASSWORD"
+      "ENV": "MYSQL_PASSWORD"
     },
     "database": {
-      "ENV": "DB_NAME"
+      "ENV": "MYSQL_DATABASE"
     },
     "host": {
-      "ENV": "DB_HOST"
+      "ENV": "MYSQL_HOST"
     },
     "dialect": "mysql"
   }
