@@ -1,7 +1,7 @@
 // --- INICIO DE LA MODIFICACIÓN ---
 // Usa la variable de entorno de Vite (VITE_).
 // Si no está definida, utiliza la URL local como alternativa.
-const API_BASE_URL = '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 // --- FIN DE LA MODIFICACIÓN ---
 
 /**
