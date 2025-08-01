@@ -26,6 +26,12 @@
     "host": {
       "ENV": "MYSQL_HOST"
     },
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectUnauthorized": false
+      }
+    }
   }
 }
