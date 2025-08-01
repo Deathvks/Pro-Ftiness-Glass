@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import GlassCard from '../components/GlassCard';
-import Spinner from '../components/Spinner'; // <-- 1. Importamos el Spinner
+import Spinner from '../components/Spinner';
+import { useToast } from '../hooks/useToast';
+import { registerUser } from '../services/authService'; // Se importa el servicio centralizado
 
 const RegisterScreen = ({ showLogin }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
-    const [success, setSuccess] = useState('');
-    const [isLoading, setIsLoading] = useState(false); // <-- 2. Añadimos estado de carga
+    const [isLoading, setIsLoading] = useState(false);
+    const { addToast } = useToast();
 
     const validateForm = () => {
         const newErrors = {};
@@ -22,8 +24,6 @@ const RegisterScreen = ({ showLogin }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSuccess('');
-
         const formErrors = validateForm();
         if (Object.keys(formErrors).length > 0) {
             setErrors(formErrors);
@@ -31,28 +31,18 @@ const RegisterScreen = ({ showLogin }) => {
         }
 
         setErrors({});
-        setIsLoading(true); // <-- 3. Activamos la carga
+        setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:3001/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Error al registrar el usuario.');
-
-            setSuccess('¡Usuario registrado! Redirigiendo al login...');
+            // Se utiliza la función del servicio en lugar de fetch directamente
+            await registerUser({ name, email, password });
+            addToast('¡Usuario registrado! Redirigiendo al login...', 'success');
             setTimeout(() => showLogin(), 2000);
-
         } catch (err) {
-            setErrors({ api: err.message });
-        } finally {
-            // Se desactiva la carga solo si no hay éxito, para dar tiempo a la redirección
-            if (!success) {
-                setIsLoading(false); // <-- 4. Desactivamos la carga
-            }
+            const errorMessage = err.message || 'Error al registrar el usuario.';
+            setErrors({ api: errorMessage });
+            addToast(errorMessage, 'error');
+            setIsLoading(false);
         }
     };
 
@@ -65,7 +55,6 @@ const RegisterScreen = ({ showLogin }) => {
                 <GlassCard className="p-8">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                         {errors.api && <p className="text-center text-red">{errors.api}</p>}
-                        {success && <p className="text-center text-green">{success}</p>}
 
                         <div>
                             <input
@@ -99,11 +88,11 @@ const RegisterScreen = ({ showLogin }) => {
                             />
                             {errors.password && <p className="form-error-text text-left">{errors.password}</p>}
                         </div>
-                        
-                        <button 
-                          type="submit" 
-                          disabled={isLoading}
-                          className="flex items-center justify-center w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed"
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="flex items-center justify-center w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isLoading ? <Spinner /> : 'Registrarse'}
                         </button>

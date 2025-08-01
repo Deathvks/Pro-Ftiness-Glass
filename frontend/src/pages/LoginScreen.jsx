@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import { Dumbbell, LogIn } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
-import useAppStore from '../store/useAppStore'; // 1. Importar el hook del store
+import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
+import { loginUser } from '../services/authService'; // Se importa el servicio centralizado
 
 const LoginScreen = ({ showRegister }) => {
-    // 2. Obtener la acción para cargar los datos del usuario
     const fetchInitialData = useAppStore(state => state.fetchInitialData);
     const { addToast } = useToast();
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
@@ -25,7 +24,6 @@ const LoginScreen = ({ showRegister }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         const formErrors = validateForm();
         if (Object.keys(formErrors).length > 0) {
             setErrors(formErrors);
@@ -36,24 +34,15 @@ const LoginScreen = ({ showRegister }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:3001/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-                credentials: 'include'
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Error al iniciar sesión.');
-
-            // 3. Llamar a la acción del store para actualizar el estado de la app
+            // Se utiliza la función del servicio en lugar de fetch directamente
+            await loginUser({ email, password });
             await fetchInitialData();
-            // No es necesario desactivar isLoading aquí, porque el componente se desmontará
-
+            // No es necesario desactivar isLoading aquí, porque el componente se desmontará al iniciar sesión
         } catch (err) {
-            addToast(err.message, 'error');
-            setErrors({ api: err.message });
-            setIsLoading(false); 
+            const errorMessage = err.message || 'Error al iniciar sesión.';
+            addToast(errorMessage, 'error');
+            setErrors({ api: errorMessage });
+            setIsLoading(false);
         }
     };
 

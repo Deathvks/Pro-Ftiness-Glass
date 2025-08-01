@@ -5,7 +5,8 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import RoutineEditor from './RoutineEditor';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
-import useAppStore from '../store/useAppStore'; // 1. Importar el hook del store
+import useAppStore from '../store/useAppStore';
+import { saveRoutine, deleteRoutine } from '../services/routineService'; // Se importan los servicios
 
 const isSameDay = (dateA, dateB) => {
     const date1 = new Date(dateA);
@@ -17,11 +18,10 @@ const isSameDay = (dateA, dateB) => {
 
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
-  // 2. Obtener estado y acciones del store
   const { routines, workoutLog, fetchInitialData } = useAppStore(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
-    fetchInitialData: state.fetchInitialData, // Para refrescar los datos
+    fetchInitialData: state.fetchInitialData,
   }));
 
   const [editingRoutine, setEditingRoutine] = useState(null);
@@ -40,29 +40,14 @@ const Routines = ({ setView }) => {
   const handleSave = async (routineToSave) => {
     setIsLoading(true);
     try {
-      const url = routineToSave.id
-        ? `http://localhost:3001/api/routines/${routineToSave.id}`
-        : 'http://localhost:3001/api/routines';
-      const method = routineToSave.id ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(routineToSave),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Ocurrió un error al guardar la rutina.');
-      }
-      
+      // Se utiliza la función del servicio en lugar de fetch directamente
+      await saveRoutine(routineToSave);
       addToast('Rutina guardada con éxito.', 'success');
       setEditingRoutine(null);
-      await fetchInitialData(); // 3. Refrescar el estado global
+      await fetchInitialData();
     } catch (error) {
-      console.error("Error al guardar la rutina:", error.message);
-      addToast(`Error al guardar: ${error.message}`, 'error');
+      const errorMessage = error.message || 'Ocurrió un error al guardar la rutina.';
+      addToast(errorMessage, 'error');
     } finally {
         setIsLoading(false);
     }
@@ -76,21 +61,15 @@ const Routines = ({ setView }) => {
   const confirmDelete = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/routines/${routineToDelete}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al eliminar la rutina.');
-      }
+      // Se utiliza la función del servicio en lugar de fetch directamente
+      await deleteRoutine(routineToDelete);
       addToast('Rutina eliminada.', 'success');
       setShowDeleteModal(false);
       setRoutineToDelete(null);
-      await fetchInitialData(); // 4. Refrescar el estado global
+      await fetchInitialData();
     } catch (error) {
-      console.error("Error al eliminar la rutina:", error.message);
-      addToast(`Error al eliminar: ${error.message}`, 'error');
+      const errorMessage = error.message || 'Error al eliminar la rutina.';
+      addToast(errorMessage, 'error');
     } finally {
         setIsLoading(false);
     }
@@ -100,7 +79,6 @@ const Routines = ({ setView }) => {
     return <RoutineEditor routine={editingRoutine} onSave={handleSave} onCancel={() => setEditingRoutine(null)} isLoading={isLoading} />;
   }
 
-  // El resto del JSX no necesita cambios
   return (
     <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
