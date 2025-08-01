@@ -22,6 +22,11 @@ const PORT = process.env.PORT || 3001;
 // Middlewares
 app.use(helmet()); // <-- 2. Usar helmet al principio
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Línea añadida para depurar y verificar la variable de entorno
+console.log(`[CORS] Configurando CORS para el origen: ${process.env.FRONTEND_URL}`);
+// --- FIN DE LA MODIFICACIÓN ---
+
 const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
