@@ -5,19 +5,21 @@ import models from '../models/index.js';
 
 const { User } = models;
 
-// Función auxiliar para crear las opciones de la cookie
+// Función auxiliar para crear las opciones de la cookie de forma consistente
 const getCookieOptions = () => {
   const options = {
-    httpOnly: true,
-    path: '/', // La cookie es válida para todo el sitio
+    httpOnly: true, // La cookie no es accesible por JavaScript en el cliente
+    path: '/',      // La cookie es válida para todas las rutas del dominio
   };
 
+  // Aplica configuraciones específicas para producción
   if (process.env.NODE_ENV === 'production') {
-    options.secure = true; // Solo enviar por HTTPS
-    options.sameSite = 'none'; // Permitir envío cross-site
-    options.domain = 'zeabur.app'; // Válida para todos los subdominios de zeabur.app
+    options.secure = true;           // Solo enviar la cookie a través de HTTPS
+    options.sameSite = 'none';       // Permite que la cookie se envíe en peticiones cross-site (desde el frontend al backend en otro subdominio)
+    options.domain = 'zeabur.app';   // Hace la cookie válida para todos los subdominios de zeabur.app
   } else {
-    options.sameSite = 'lax'; // Configuración estándar para desarrollo
+    // Configuración para el entorno de desarrollo local
+    options.sameSite = 'lax';
   }
   
   return options;
@@ -47,7 +49,7 @@ export const loginUser = async (req, res, next) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     const cookieOptions = getCookieOptions();
-    cookieOptions.maxAge = 24 * 60 * 60 * 1000; // 24 horas
+    cookieOptions.maxAge = 24 * 60 * 60 * 1000; // La cookie expira en 24 horas
 
     res.cookie('token', token, cookieOptions);
     res.json({ message: 'Inicio de sesión exitoso.' });
@@ -59,6 +61,7 @@ export const loginUser = async (req, res, next) => {
 
 // Cerrar sesión de usuario
 export const logoutUser = (req, res) => {
+  // Las opciones para borrar la cookie deben coincidir con las de su creación
   res.clearCookie('token', getCookieOptions());
   res.json({ message: 'Cierre de sesión exitoso.' });
 };

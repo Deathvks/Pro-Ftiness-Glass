@@ -41,7 +41,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // --- FIN DE LA CORRECCIÓN ---
 
-
 app.use(express.json());
 app.use(cookieParser());
 
