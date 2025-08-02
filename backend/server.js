@@ -1,5 +1,3 @@
-// EN: backend/server.js
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -19,7 +17,10 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
+
+// Confía en el proxy de Zeabur para obtener la información correcta de la conexión (IP, protocolo, etc.)
 app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
@@ -27,18 +28,17 @@ app.use(helmet());
 
 console.log(`[CORS] Configurando CORS para el origen explícito: ${process.env.FRONTEND_URL}`);
 
-// --- CORRECCIÓN FINAL Y SIMPLIFICADA DE CORS ---
+// Configuración de CORS final y explícita
 const corsOptions = {
-  origin: process.env.FRONTEND_URL, // Usar la URL directamente
-  credentials: true
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
 };
 app.use(cors(corsOptions));
-// --- FIN DE LA CORRECCIÓN ---
 
 app.use(express.json());
 app.use(cookieParser());
 
-// Rutas
+// Rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api', routineRoutes);
 app.use('/api', exerciseRoutes);
