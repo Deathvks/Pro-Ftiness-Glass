@@ -60,14 +60,15 @@ export const loginUser = async (req, res, next) => {
     const payload = { userId: user.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    // --- AJUSTE FINAL DE LA COOKIE ---
-    res.cookie('token', token, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000 // 24 horas
-    });
-    // --- FIN DEL AJUSTE ---
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000
+    };
+
+    res.cookie('token', token, cookieOptions);
 
     res.json({ message: 'Inicio de sesión exitoso.' });
 
@@ -76,21 +77,21 @@ export const loginUser = async (req, res, next) => {
   }
 };
 
+// --- FUNCIÓN LOGOUT CORREGIDA ---
 // Cerrar sesión de usuario
 export const logoutUser = (req, res) => {
-  // Limpiamos la cookie con las mismas opciones con las que se creó
+  // Las opciones para borrar deben ser IDÉNTICAS a las de creación
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    path: '/',
   };
-  if (process.env.NODE_ENV === 'production') {
-      // No se necesita el dominio aquí si no lo usamos para establecerla
-  }
+  
   res.clearCookie('token', cookieOptions);
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
-
+// --- FIN DE LA CORRECCIÓN ---
 
 const authController = {
   registerUser,
