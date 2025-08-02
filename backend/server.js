@@ -1,3 +1,5 @@
+// EN: backend/server.js
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -23,13 +25,15 @@ const PORT = process.env.PORT || 3001;
 // Middlewares
 app.use(helmet());
 
-console.log(`[CORS] Configurando CORS para el origen: ${process.env.FRONTEND_URL}`);
+console.log(`[CORS] Configurando CORS para el origen explícito: ${process.env.FRONTEND_URL}`);
 
+// --- CORRECCIÓN FINAL Y SIMPLIFICADA DE CORS ---
 const corsOptions = {
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.FRONTEND_URL, // Usar la URL directamente
   credentials: true
 };
 app.use(cors(corsOptions));
+// --- FIN DE LA CORRECCIÓN ---
 
 app.use(express.json());
 app.use(cookieParser());
