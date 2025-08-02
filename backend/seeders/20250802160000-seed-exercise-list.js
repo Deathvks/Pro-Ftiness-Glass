@@ -1,9 +1,8 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-// --- INICIO DE LA CORRECCIÓN: Se cambia a sintaxis de ES Module ---
+// La única corrección es cambiar 'module.exports =' por 'export default'.
 export default {
-// --- FIN DE LA CORRECCIÓN ---
   async up (queryInterface, Sequelize) {
     await queryInterface.bulkInsert('exercise_list', [
       // Pecho
