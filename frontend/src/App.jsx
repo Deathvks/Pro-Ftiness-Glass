@@ -159,6 +159,12 @@ export default function App() {
             confirmText="Cerrar Sesión"
         />
       )}
+      
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      <div className="absolute bottom-4 right-4 z-50 bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">
+        v1.0.0
+      </div>
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
     </div>
   );
 }
