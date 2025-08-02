@@ -19,8 +19,8 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
-// --- CAMBIO 1: Confiar en el proxy de forma más genérica ---
-app.set('trust proxy', true); 
+// --- CORRECCIÓN: Volvemos a poner '1' para que sea compatible con express-rate-limit ---
+app.set('trust proxy', 1); 
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
@@ -28,10 +28,8 @@ app.use(helmet());
 
 console.log(`[CORS] Configurando CORS para el origen: ${process.env.FRONTEND_URL}`);
 
-// --- CAMBIO 2: Hacer la configuración de CORS más robusta ---
 const corsOptions = {
   origin: (origin, callback) => {
-    // Permite peticiones sin origen (como las de Postman o apps móviles) y desde cualquier subdominio de zeabur.app
     if (!origin || new URL(origin).hostname.endsWith('zeabur.app') || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
@@ -55,10 +53,8 @@ app.use('/api', userRoutes);
 app.use('/api', exerciseListRoutes);
 app.use('/api', personalRecordRoutes);
 
-// Usar el middleware de errores al final de todas las rutas
 app.use(errorHandler);
 
-// Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
