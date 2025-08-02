@@ -4,10 +4,13 @@ import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
-import { loginUser } from '../services/authService'; // Se importa el servicio centralizado
+// Se elimina la importación de 'loginUser' porque ya no se usa directamente
 
 const LoginScreen = ({ showRegister }) => {
-    const fetchInitialData = useAppStore(state => state.fetchInitialData);
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Obtenemos la nueva función 'handleLogin' del store en lugar de 'fetchInitialData'
+    const handleLogin = useAppStore(state => state.handleLogin);
+    // --- FIN DE LA CORRECCIÓN ---
     const { addToast } = useToast();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -34,10 +37,14 @@ const LoginScreen = ({ showRegister }) => {
         setIsLoading(true);
 
         try {
-            // Se utiliza la función del servicio en lugar de fetch directamente
-            await loginUser({ email, password });
-            await fetchInitialData();
-            // No es necesario desactivar isLoading aquí, porque el componente se desmontará al iniciar sesión
+            // --- INICIO DE LA CORRECCIÓN ---
+            // Ahora solo llamamos a 'handleLogin'. Esta función se encarga de todo:
+            // 1. Llama a la API.
+            // 2. Guarda el token.
+            // 3. Carga los datos del usuario.
+            await handleLogin({ email, password });
+            // Ya no necesitamos 'fetchInitialData()' aquí.
+            // --- FIN DE LA CORRECCIÓN ---
         } catch (err) {
             const errorMessage = err.message || 'Error al iniciar sesión.';
             addToast(errorMessage, 'error');
