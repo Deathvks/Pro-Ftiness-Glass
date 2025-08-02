@@ -60,22 +60,14 @@ export const loginUser = async (req, res, next) => {
     const payload = { userId: user.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    // --- CÓDIGO CORREGIDO PARA LA COOKIE ---
-    const cookieOptions = {
+    // --- AJUSTE FINAL DE LA COOKIE ---
+    res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000 // 24 horas
-    };
-
-    // Añadimos el dominio solo en producción
-    if (process.env.NODE_ENV === 'production') {
-      // Esto permite que la cookie sea válida para fittrack-pro.zeabur.app y fittrack-pro-api.zeabur.app
-      cookieOptions.domain = '.zeabur.app'; 
-    }
-
-    res.cookie('token', token, cookieOptions);
-    // --- FIN DE LA CORRECCIÓN ---
+    });
+    // --- FIN DEL AJUSTE ---
 
     res.json({ message: 'Inicio de sesión exitoso.' });
 
@@ -84,11 +76,21 @@ export const loginUser = async (req, res, next) => {
   }
 };
 
-// Cerrar sesión de usuario (no necesita cambios)
+// Cerrar sesión de usuario
 export const logoutUser = (req, res) => {
-  res.clearCookie('token');
+  // Limpiamos la cookie con las mismas opciones con las que se creó
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  };
+  if (process.env.NODE_ENV === 'production') {
+      // No se necesita el dominio aquí si no lo usamos para establecerla
+  }
+  res.clearCookie('token', cookieOptions);
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
+
 
 const authController = {
   registerUser,
