@@ -5,7 +5,72 @@ import models from '../models/index.js';
 
 const { User } = models;
 
-// Registrar un nuevo usuario
+// --- FUNCIÓN LOGINUSER CORREGIDA ---
+export const loginUser = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Credenciales inválidas.' });
+    }
+
+    const payload = { userId: user.id };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    const cookieOptions = {
+      httpOnly: true,
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    };
+
+    if (process.env.NODE_ENV === 'production') {
+      cookieOptions.secure = true;
+      cookieOptions.sameSite = 'none';
+      cookieOptions.domain = '.zeabur.app'; // <-- La pieza clave que faltaba
+    } else {
+      cookieOptions.sameSite = 'lax';
+    }
+
+    res.cookie('token', token, cookieOptions);
+    res.json({ message: 'Inicio de sesión exitoso.' });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- FUNCIÓN LOGOUTUSER CORREGIDA ---
+export const logoutUser = (req, res) => {
+  const cookieOptions = {
+    httpOnly: true,
+    path: '/',
+  };
+
+  if (process.env.NODE_ENV === 'production') {
+    cookieOptions.secure = true;
+    cookieOptions.sameSite = 'none';
+    cookieOptions.domain = '.zeabur.app'; // <-- Debe coincidir exactamente
+  } else {
+    cookieOptions.sameSite = 'lax';
+  }
+  
+  res.clearCookie('token', cookieOptions);
+  res.json({ message: 'Cierre de sesión exitoso.' });
+};
+
+
+// --- El resto del archivo sin cambios ---
 export const registerUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -28,66 +93,6 @@ export const registerUser = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
-
-// Iniciar sesión de usuario
-export const loginUser = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
-    }
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
-    }
-    const payload = { userId: user.id };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
-
-    // --- CORRECCIÓN FINAL Y EXPLÍCITA DE LA COOKIE ---
-    let cookieOptions = {
-      httpOnly: true,
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000 // 24 horas
-    };
-
-    if (process.env.NODE_ENV === 'production') {
-      cookieOptions.secure = true;
-      cookieOptions.sameSite = 'none';
-    } else {
-      cookieOptions.sameSite = 'lax';
-    }
-
-    res.cookie('token', token, cookieOptions);
-    // --- FIN DE LA CORRECCIÓN ---
-
-    res.json({ message: 'Inicio de sesión exitoso.' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Cerrar sesión de usuario
-export const logoutUser = (req, res) => {
-  let cookieOptions = {
-    httpOnly: true,
-    path: '/',
-  };
-
-  if (process.env.NODE_ENV === 'production') {
-    cookieOptions.secure = true;
-    cookieOptions.sameSite = 'none';
-  } else {
-    cookieOptions.sameSite = 'lax';
-  }
-  
-  res.clearCookie('token', cookieOptions);
-  res.json({ message: 'Cierre de sesión exitoso.' });
 };
 
 const authController = {

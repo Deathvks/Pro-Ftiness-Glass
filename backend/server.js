@@ -1,5 +1,3 @@
-// EN: backend/server.js
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -27,18 +25,16 @@ app.use(helmet());
 
 console.log(`[CORS] Configurando CORS para el origen: ${process.env.FRONTEND_URL}`);
 
-// --- CORRECCIÓN: Simplificar la configuración de CORS ---
 const corsOptions = {
   origin: process.env.FRONTEND_URL,
   credentials: true
 };
 app.use(cors(corsOptions));
-// --- FIN DE LA CORRECCIÓN ---
 
 app.use(express.json());
 app.use(cookieParser());
 
-// Usa las rutas con sus prefijos
+// Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api', routineRoutes);
 app.use('/api', exerciseRoutes);
