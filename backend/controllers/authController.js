@@ -12,11 +12,9 @@ const getCookieOptions = () => {
     path: '/',      // La cookie es válida para todas las rutas del dominio
   };
 
-  // Aplica configuraciones específicas para producción
   if (process.env.NODE_ENV === 'production') {
     options.secure = true;           // Solo enviar la cookie a través de HTTPS
     options.sameSite = 'none';       // Permite que la cookie se envíe en peticiones cross-site
-    options.domain = 'zeabur.app';   // Válida para todos los subdominios de zeabur.app
   } else {
     // Configuración para el entorno de desarrollo local
     options.sameSite = 'lax';
