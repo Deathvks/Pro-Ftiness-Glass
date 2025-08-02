@@ -5,17 +5,19 @@ import models from '../models/index.js';
 
 const { User } = models;
 
-const createCookieOptions = () => {
+// Función auxiliar para crear las opciones de la cookie
+const getCookieOptions = () => {
   const options = {
     httpOnly: true,
-    path: '/',
+    path: '/', // La cookie es válida para todo el sitio
   };
 
   if (process.env.NODE_ENV === 'production') {
-    options.secure = true;
-    options.sameSite = 'none';
+    options.secure = true; // Solo enviar por HTTPS
+    options.sameSite = 'none'; // Permitir envío cross-site
+    options.domain = 'zeabur.app'; // Válida para todos los subdominios de zeabur.app
   } else {
-    options.sameSite = 'lax';
+    options.sameSite = 'lax'; // Configuración estándar para desarrollo
   }
   
   return options;
@@ -44,7 +46,7 @@ export const loginUser = async (req, res, next) => {
     const payload = { userId: user.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    const cookieOptions = createCookieOptions();
+    const cookieOptions = getCookieOptions();
     cookieOptions.maxAge = 24 * 60 * 60 * 1000; // 24 horas
 
     res.cookie('token', token, cookieOptions);
@@ -57,11 +59,12 @@ export const loginUser = async (req, res, next) => {
 
 // Cerrar sesión de usuario
 export const logoutUser = (req, res) => {
-  res.clearCookie('token', createCookieOptions());
+  res.clearCookie('token', getCookieOptions());
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
 
-// Registrar un nuevo usuario
+
+// Registrar un nuevo usuario (sin cambios)
 export const registerUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

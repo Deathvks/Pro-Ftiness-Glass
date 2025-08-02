@@ -18,7 +18,7 @@ import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
 
-// Confía en el proxy de Zeabur para obtener la información correcta de la conexión (IP, protocolo, etc.)
+// Confía en el proxy de Zeabur. Es crucial para que 'secure' cookies funcionen.
 app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3001;
