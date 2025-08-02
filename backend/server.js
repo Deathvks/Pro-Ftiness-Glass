@@ -19,7 +19,6 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
-// --- CORRECCIÓN FINAL: Volvemos a '1' para que sea compatible con express-rate-limit ---
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 
@@ -28,17 +27,13 @@ app.use(helmet());
 
 console.log(`[CORS] Configurando CORS para el origen: ${process.env.FRONTEND_URL}`);
 
+// --- CORRECCIÓN: Simplificar la configuración de CORS ---
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || new URL(origin).hostname.endsWith('zeabur.app') || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: process.env.FRONTEND_URL,
   credentials: true
 };
 app.use(cors(corsOptions));
+// --- FIN DE LA CORRECCIÓN ---
 
 app.use(express.json());
 app.use(cookieParser());
