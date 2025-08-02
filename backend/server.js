@@ -1,3 +1,5 @@
+// EN: backend/server.js
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -17,23 +19,28 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
-
-// Confía en el proxy de Zeabur. Es crucial para que 'secure' cookies funcionen.
 app.set('trust proxy', 1);
-
 const PORT = process.env.PORT || 3001;
 
-// Middlewares
-app.use(helmet());
+// --- CORRECCIÓN DEFINITIVA DE HELMET Y CORS ---
+// Configuración de Helmet para permitir la comunicación entre tus dominios
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 console.log(`[CORS] Configurando CORS para el origen explícito: ${process.env.FRONTEND_URL}`);
 
-// Configuración de CORS final y explícita
+// Configuración de CORS
 const corsOptions = {
   origin: process.env.FRONTEND_URL,
   credentials: true,
 };
 app.use(cors(corsOptions));
+// --- FIN DE LA CORRECCIÓN ---
+
 
 app.use(express.json());
 app.use(cookieParser());
