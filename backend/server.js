@@ -19,8 +19,8 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
-// --- CORRECCIÓN: Volvemos a poner '1' para que sea compatible con express-rate-limit ---
-app.set('trust proxy', 1); 
+// --- CORRECCIÓN FINAL: Volvemos a '1' para que sea compatible con express-rate-limit ---
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
