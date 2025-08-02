@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+// --- INICIO DE LA CORRECCIÓN ---
+// 1. Importar el servicio que ya sabe cómo hablar con la API de producción.
+import { searchExercises } from '../services/exerciseService';
+// --- FIN DE LA CORRECCIÓN ---
 
 const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
     const [results, setResults] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
     const searchRef = useRef(null);
-
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Referencia para saber si el usuario ha interactuado con el input
     const hasInteracted = useRef(false);
-    // --- FIN DE LA CORRECCIÓN ---
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -27,9 +27,10 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
             return;
         }
         try {
-            const response = await fetch(`http://localhost:3001/api/exercises?search=${searchQuery}`, { credentials: 'include' });
-            if (!response.ok) throw new Error('Error fetching exercises');
-            const data = await response.json();
+            // --- INICIO DE LA CORRECCIÓN ---
+            // 2. Usar la función del servicio en lugar de 'fetch' con una URL hardcodeada.
+            const data = await searchExercises(searchQuery);
+            // --- FIN DE LA CORRECCIÓN ---
             
             if (data.length > 0) {
                 setResults(data);
@@ -46,7 +47,6 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
     }, []);
 
     useEffect(() => {
-        // Solo ejecuta la búsqueda si el usuario ha interactuado
         if (!hasInteracted.current) {
             return;
         }
@@ -59,13 +59,12 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
     }, [value, fetchExercises]);
 
     const handleSelect = (exercise) => {
-        hasInteracted.current = false; // Resetea la interacción al seleccionar
+        hasInteracted.current = false;
         onSelect(exercise);
         setIsOpen(false);
     };
 
     const handleInputChange = (e) => {
-        // Marca que el usuario ha interactuado
         hasInteracted.current = true;
         onChange(e);
     };
@@ -77,8 +76,8 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
             <input
                 type="text"
                 value={value}
-                onChange={handleInputChange} // Usamos el nuevo manejador
-                onFocus={() => { if(value) hasInteracted.current = true; }} // Activa la búsqueda si se enfoca un campo con texto
+                onChange={handleInputChange}
+                onFocus={() => { if(value) hasInteracted.current = true; }}
                 placeholder="Buscar o escribir ejercicio..."
                 className={baseInputClasses}
             />
