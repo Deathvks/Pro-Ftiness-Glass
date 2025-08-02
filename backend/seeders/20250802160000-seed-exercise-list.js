@@ -8,6 +8,8 @@ export default {
       // Pecho
       { name: 'Press Inclinado con Barra', muscle_group: 'Pecho' },
       { name: 'Press Inclinado con Mancuernas', muscle_group: 'Pecho' },
+      { name: 'Press Plano con Barra', muscle_group: 'Pecho' },
+      { name: 'Press Plano con Mancuernas', muscle_group: 'Pecho' },
       { name: 'Press Declinado con Barra', muscle_group: 'Pecho' },
       { name: 'Press Declinado con Mancuernas', muscle_group: 'Pecho' },
       { name: 'Aperturas en Banco Inclinado', muscle_group: 'Pecho' },
