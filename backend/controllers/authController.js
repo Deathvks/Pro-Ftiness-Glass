@@ -16,8 +16,8 @@ const getCookieOptions = () => {
     options.secure = true;           // Solo enviar la cookie a través de HTTPS
     options.sameSite = 'none';       // Permite que la cookie se envíe en peticiones cross-site
     // --- INICIO DE LA CORRECCIÓN ---
-    // Especificamos el dominio padre para que la cookie sea válida en todos los subdominios de zeabur.app
-    options.domain = 'zeabur.app';
+    // Se añade un punto al principio para que la cookie sea válida en todos los subdominios.
+    options.domain = '.zeabur.app';
     // --- FIN DE LA CORRECCIÓN ---
   } else {
     // Configuración para el entorno de desarrollo local
