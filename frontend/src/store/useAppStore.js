@@ -1,15 +1,16 @@
 import { create } from 'zustand';
-// 1. Importar todos los servicios
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
 import * as routineService from '../services/routineService';
 import * as workoutService from '../services/workoutService';
 import * as bodyweightService from '../services/bodyweightService';
-// 'personalRecordService' ha sido eliminado porque no se usa aquí
+
+// --- ARCHIVO REFACTORIZADO PARA GESTIONAR EL TOKEN ---
 
 const useAppStore = create((set, get) => ({
-  // --- ESTADO (Sin cambios) ---
-  isAuthenticated: false,
+  // --- ESTADO ---
+  isAuthenticated: !!localStorage.getItem('fittrack_token'), // La autenticación ahora depende de si hay token
+  token: localStorage.getItem('fittrack_token'), // El token se carga desde localStorage
   userProfile: null,
   routines: [],
   workoutLog: [],
@@ -17,17 +18,28 @@ const useAppStore = create((set, get) => ({
   isLoading: true,
   prNotification: null,
 
-  // --- ACCIONES REFACTORIZADAS ---
+  // --- ACCIONES ---
   
   showPRNotification: (newPRs) => {
     set({ prNotification: newPRs });
     setTimeout(() => set({ prNotification: null }), 7000);
   },
+  
+  // Nueva acción para manejar el login
+  handleLogin: async (credentials) => {
+    const { token } = await authService.loginUser(credentials);
+    localStorage.setItem('fittrack_token', token);
+    set({ token, isAuthenticated: true });
+    await get().fetchInitialData();
+  },
 
-  /**
-   * Carga todos los datos iniciales del usuario autenticado usando los servicios.
-   */
   fetchInitialData: async () => {
+    // Si no hay token, no intentes cargar datos.
+    if (!get().token) {
+        set({ isAuthenticated: false, isLoading: false });
+        return;
+    }
+    
     set({ isLoading: true });
     try {
       const profileData = await userService.getMyProfile();
@@ -47,35 +59,26 @@ const useAppStore = create((set, get) => ({
       }
     } catch (error) {
       console.error("Error de autenticación:", error);
-      get().handleLogout(); // Llama a otra acción del store si falla
+      get().handleLogout();
     } finally {
       set({ isLoading: false });
     }
   },
 
-  /**
-   * Cierra la sesión del usuario.
-   */
   handleLogout: async () => {
-    try {
-      await authService.logoutUser();
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-    } finally {
-      set({
-        isAuthenticated: false,
-        userProfile: null,
-        routines: [],
-        workoutLog: [],
-        bodyWeightLog: [],
-        isLoading: false,
-      });
-    }
+    // Ya no es necesario llamar a la API para desloguearse
+    localStorage.removeItem('fittrack_token');
+    set({
+      isAuthenticated: false,
+      token: null,
+      userProfile: null,
+      routines: [],
+      workoutLog: [],
+      bodyWeightLog: [],
+      isLoading: false,
+    });
   },
 
-  /**
-   * Registra una nueva sesión de entrenamiento.
-   */
   logWorkout: async (workoutData) => {
     try {
       const responseData = await workoutService.logWorkout(workoutData);
@@ -85,59 +88,47 @@ const useAppStore = create((set, get) => ({
       await get().fetchInitialData(); 
       return { success: true, message: 'Entrenamiento guardado.' };
     } catch (error) {
-      return { success: false, message: `Error al guardar: ${error}` };
+      return { success: false, message: `Error al guardar: ${error.message}` };
     }
   },
   
-  /**
-   * Elimina un registro de entrenamiento.
-   */
   deleteWorkoutLog: async (workoutId) => {
     try {
         await workoutService.deleteWorkout(workoutId);
         await get().fetchInitialData();
         return { success: true, message: 'Entrenamiento eliminado.' };
     } catch (error) {
-        return { success: false, message: `Error al eliminar: ${error}` };
+        return { success: false, message: `Error al eliminar: ${error.message}` };
     }
   },
 
-  /**
-   * Actualiza el perfil del usuario (onboarding o edición).
-   */
   updateUserProfile: async (formData) => {
     try {
         await userService.updateUserProfile(formData);
         await get().fetchInitialData();
         return { success: true, message: 'Perfil actualizado.' };
     } catch (error) {
-        return { success: false, message: `Error: ${error}` };
+        return { success: false, message: `Error: ${error.message}` };
     }
   },
 
-  /**
-   * Registra un nuevo peso corporal.
-   */
   logBodyWeight: async (weightData) => {
     try {
         await bodyweightService.logWeight(weightData);
         await get().fetchInitialData();
         return { success: true, message: 'Peso registrado con éxito.' };
     } catch (error) {
-        return { success: false, message: `Error al guardar: ${error}` };
+        return { success: false, message: `Error al guardar: ${error.message}` };
     }
   },
 
-  /**
-   * Actualiza el peso corporal del día.
-   */
   updateTodayBodyWeight: async (weightData) => {
     try {
         await bodyweightService.updateTodaysWeight(weightData);
         await get().fetchInitialData();
         return { success: true, message: 'Peso actualizado con éxito.' };
     } catch (error) {
-        return { success: false, message: `Error al actualizar: ${error}` };
+        return { success: false, message: `Error al actualizar: ${error.message}` };
     }
   },
 }));

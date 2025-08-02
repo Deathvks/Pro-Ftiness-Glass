@@ -5,24 +5,7 @@ import models from '../models/index.js';
 
 const { User } = models;
 
-// Función auxiliar para crear las opciones de la cookie de forma consistente
-const getCookieOptions = () => {
-  const options = {
-    httpOnly: true, // La cookie no es accesible por JavaScript en el cliente
-    path: '/',      // La cookie es válida para todas las rutas del dominio
-  };
-
-  if (process.env.NODE_ENV === 'production') {
-    options.secure = true;           // Solo enviar la cookie a través de HTTPS
-    options.sameSite = 'none';       // Permite que la cookie se envíe en peticiones cross-site
-    // Se ha eliminado la propiedad 'domain' como última prueba de configuración.
-  } else {
-    // Configuración para el entorno de desarrollo local
-    options.sameSite = 'lax';
-  }
-  
-  return options;
-};
+// --- ARCHIVO COMPLETAMENTE REFACTORIZADO ---
 
 // Iniciar sesión de usuario
 export const loginUser = async (req, res, next) => {
@@ -47,21 +30,17 @@ export const loginUser = async (req, res, next) => {
     const payload = { userId: user.id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    const cookieOptions = getCookieOptions();
-    cookieOptions.maxAge = 24 * 60 * 60 * 1000; // 24 horas
-
-    res.cookie('token', token, cookieOptions);
-    res.json({ message: 'Inicio de sesión exitoso.' });
+    // Se devuelve el token directamente en la respuesta JSON
+    res.json({ message: 'Inicio de sesión exitoso.', token });
 
   } catch (error) {
     next(error);
   }
 };
 
-// Cerrar sesión de usuario
+// Cerrar sesión de usuario (ahora es una operación vacía en el backend)
 export const logoutUser = (req, res) => {
-  // Las opciones para borrar la cookie deben coincidir con las de su creación
-  res.clearCookie('token', getCookieOptions());
+  // El logout se gestiona en el cliente eliminando el token.
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
 
