@@ -8,19 +8,19 @@ const { User } = models;
 // Función auxiliar para crear las opciones de la cookie de forma consistente
 const getCookieOptions = () => {
   const options = {
-    httpOnly: true, // La cookie no es accesible por JavaScript en el cliente
-    path: '/',      // La cookie es válida para todas las rutas del dominio
+    httpOnly: true,
+    path: '/',
   };
 
   if (process.env.NODE_ENV === 'production') {
-    options.secure = true;           // Solo enviar la cookie a través de HTTPS
-    options.sameSite = 'none';       // Permite que la cookie se envíe en peticiones cross-site
+    options.secure = true;
+    options.sameSite = 'none';
     // --- INICIO DE LA CORRECCIÓN ---
-    // Se añade un punto al principio para que la cookie sea válida en todos los subdominios.
+    // Especificamos el dominio padre con un punto al principio.
+    // Esto hace que la cookie sea válida para fittrack-pro.zeabur.app y fittrack-pro-api.zeabur.app
     options.domain = '.zeabur.app';
     // --- FIN DE LA CORRECCIÓN ---
   } else {
-    // Configuración para el entorno de desarrollo local
     options.sameSite = 'lax';
   }
   
@@ -63,7 +63,6 @@ export const loginUser = async (req, res, next) => {
 
 // Cerrar sesión de usuario
 export const logoutUser = (req, res) => {
-  // Las opciones para borrar la cookie deben coincidir con las de su creación
   res.clearCookie('token', getCookieOptions());
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
