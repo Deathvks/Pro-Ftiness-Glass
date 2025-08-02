@@ -15,8 +15,8 @@ const getCookieOptions = () => {
   // Aplica configuraciones específicas para producción
   if (process.env.NODE_ENV === 'production') {
     options.secure = true;           // Solo enviar la cookie a través de HTTPS
-    options.sameSite = 'none';       // Permite que la cookie se envíe en peticiones cross-site (desde el frontend al backend en otro subdominio)
-    options.domain = 'zeabur.app';   // Hace la cookie válida para todos los subdominios de zeabur.app
+    options.sameSite = 'none';       // Permite que la cookie se envíe en peticiones cross-site
+    options.domain = 'zeabur.app';   // Válida para todos los subdominios de zeabur.app
   } else {
     // Configuración para el entorno de desarrollo local
     options.sameSite = 'lax';
@@ -49,7 +49,7 @@ export const loginUser = async (req, res, next) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     const cookieOptions = getCookieOptions();
-    cookieOptions.maxAge = 24 * 60 * 60 * 1000; // La cookie expira en 24 horas
+    cookieOptions.maxAge = 24 * 60 * 60 * 1000; // 24 horas
 
     res.cookie('token', token, cookieOptions);
     res.json({ message: 'Inicio de sesión exitoso.' });
