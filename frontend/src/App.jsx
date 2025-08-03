@@ -130,9 +130,7 @@ export default function App() {
         </div>
         <button onClick={handleLogoutClick} className="mt-auto flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors duration-200">
           <LogOut size={24} />
-          {/* --- INICIO DE LA CORRECCIÓN --- */}
           <span className="whitespace-nowrap">Cerrar Sesión</span>
-          {/* --- FIN DE LA CORRECCIÓN --- */}
         </button>
       </nav>
 
@@ -159,12 +157,6 @@ export default function App() {
             confirmText="Cerrar Sesión"
         />
       )}
-      
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      <div className="absolute bottom-4 right-4 z-50 bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">
-        v1.0.0
-      </div>
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
     </div>
   );
 }
