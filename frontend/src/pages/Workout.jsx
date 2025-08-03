@@ -3,11 +3,10 @@ import { ChevronLeft, Play, Pause, Square, FileText, Clock } from 'lucide-react'
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import RestTimerModal from '../components/RestTimerModal';
-import useAppStore from '../store/useAppStore'; // 1. Importar el hook del store
-import { useToast } from '../hooks/useToast';   // 2. Importar el hook para notificaciones
+import useAppStore from '../store/useAppStore';
+import { useToast } from '../hooks/useToast';
 
 const Workout = ({ routine, setView }) => {
-    // 3. Obtener la acción `logWorkout` del store
     const logWorkout = useAppStore(state => state.logWorkout);
     const { addToast } = useToast();
 
@@ -29,7 +28,7 @@ const Workout = ({ routine, setView }) => {
     const [notes, setNotes] = useState('');
     const countRef = useRef(null);
     const [isResting, setIsResting] = useState(false);
-    const [isSaving, setIsSaving] = useState(false); // Estado para el spinner del modal
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (isActive) {
@@ -66,7 +65,7 @@ const Workout = ({ routine, setView }) => {
         const workoutData = {
             routineName: routine.name,
             duration_seconds: timer,
-            calories_burned: 0, // Se calcula en el backend
+            calories_burned: 0,
             notes: notes,
             details: session.map(ex => ({
                 exerciseName: ex.name,
@@ -74,7 +73,6 @@ const Workout = ({ routine, setView }) => {
             }))
         };
         
-        // 4. Llamar a la acción del store y gestionar la respuesta
         const result = await logWorkout(workoutData);
         
         if (result.success) {
@@ -97,14 +95,18 @@ const Workout = ({ routine, setView }) => {
             </button>
 
             <GlassCard className="p-6 mb-6">
-                <h1 className="text-3xl font-bold">{routine.name}</h1>
-                <div className="flex justify-between items-center mt-4">
-                    <div className="font-mono text-5xl font-bold">{formatTime(timer)}</div>
+                <h1 className="text-3xl font-bold text-center sm:text-left">{routine.name}</h1>
+                <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4 mt-4">
+                    <div className="font-mono text-4xl sm:text-5xl font-bold">{formatTime(timer)}</div>
                     <div className="flex gap-4">
-                        <button onClick={() => setIsActive(!isActive)} className={`p-4 rounded-full transition text-white ${isActive ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green hover:bg-green/80'}`}>
+                        <button 
+                            onClick={() => setIsActive(!isActive)} 
+                            className={`p-4 rounded-full transition text-bg-secondary ${isActive ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-accent hover:bg-accent/80'}`}>
                             {isActive ? <Pause size={24} /> : <Play size={24} />}
                         </button>
-                        <button onClick={handleFinishClick} className="p-4 rounded-full bg-red text-white transition hover:bg-red/80">
+                        <button 
+                            onClick={handleFinishClick} 
+                            className="p-4 rounded-full bg-red text-bg-secondary transition hover:bg-red/80">
                             <Square size={24} />
                         </button>
                     </div>
@@ -118,7 +120,7 @@ const Workout = ({ routine, setView }) => {
                             <h2 className="text-xl font-bold">{ex.name}</h2>
                             <p className="text-sm text-text-muted">Objetivo: {ex.sets} x {ex.reps} reps</p>
                         </div>
-                        <div className="grid grid-cols-[50px_1fr_1fr_auto] gap-4 text-center text-xs font-bold text-text-secondary mb-2">
+                        <div className="grid grid-cols-[50px_1fr_1fr_50px] gap-4 text-center text-xs font-bold text-text-secondary mb-2">
                             <span>SERIE</span>
                             <span>PESO (kg)</span>
                             <span>REPS</span>
@@ -126,15 +128,15 @@ const Workout = ({ routine, setView }) => {
                         </div>
                         <div className="flex flex-col gap-3">
                             {ex.setsDone.map((set, setIndex) => (
-                                <div key={setIndex} className="grid grid-cols-[50px_1fr_1fr_auto] gap-4 items-center">
-                                    <span className="flex items-center justify-center font-bold bg-bg-secondary p-3 rounded-md border border-glass-border">
+                                <div key={setIndex} className="grid grid-cols-[50px_1fr_1fr_50px] gap-4 items-center">
+                                    <span className="flex items-center justify-center font-bold bg-bg-secondary p-3 rounded-md border border-glass-border h-full">
                                         {set.set_number}
                                     </span>
                                     <input type="number" placeholder="0" value={set.weight_kg} onChange={(e) => handleSetChange(exIndex, setIndex, 'weight_kg', e.target.value)} className={baseInputClasses} />
                                     <input type="number" placeholder="0" value={set.reps} onChange={(e) => handleSetChange(exIndex, setIndex, 'reps', e.target.value)} className={baseInputClasses} />
                                     <button 
                                       onClick={() => setIsResting(true)}
-                                      className="p-3 rounded-md bg-bg-secondary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50 transition"
+                                      className="p-3 rounded-md bg-bg-secondary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50 transition h-full flex items-center justify-center"
                                       title="Iniciar descanso"
                                     >
                                         <Clock size={20} />
@@ -168,7 +170,7 @@ const Workout = ({ routine, setView }) => {
                     onConfirm={confirmFinishWorkout}
                     onCancel={() => setShowFinishModal(false)}
                     confirmText="Finalizar"
-                    isLoading={isSaving} // Pasar el estado de carga al modal
+                    isLoading={isSaving}
                 />
             }
         </div>

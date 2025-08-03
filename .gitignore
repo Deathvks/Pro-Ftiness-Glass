@@ -45,3 +45,6 @@ Thumbs.db
 
 # Cobertura de tests
 /coverage
+
+# Archivos de entorno del Frontend
+frontend/.env.*

@@ -1,35 +1,20 @@
 import useAppStore from '../store/useAppStore';
 
-// Se ha escrito la URL de producción directamente para evitar problemas.
-const API_BASE_URL = 'https://fittrack-pro-api.zeabur.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-/**
- * Cliente genérico para realizar peticiones a la API.
- * @param {string} endpoint - El endpoint de la API al que llamar (ej: '/auth/login').
- * @param {object} options - Opciones para la petición fetch (method, headers, body, etc.).
- */
 const apiClient = async (endpoint, options = {}) => {
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Obtenemos el token del store de Zustand en cada llamada.
     const token = useAppStore.getState().token;
-
     const { body, ...customConfig } = options;
     const headers = { 'Content-Type': 'application/json' };
 
-    // Si existe un token, lo añadimos a la cabecera de autorización.
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
-    // --- FIN DE LA CORRECCIÓN ---
 
     const config = {
         method: body ? 'POST' : 'GET',
         ...customConfig,
-        headers: {
-            ...headers,
-            ...customConfig.headers,
-        },
-        // 'credentials' ya no es necesario porque no usamos cookies para la auth.
+        headers: { ...headers, ...customConfig.headers },
     };
 
     if (body) {
@@ -39,12 +24,19 @@ const apiClient = async (endpoint, options = {}) => {
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
         const data = await response.json();
+        
         if (!response.ok) {
-            // Si el token es inválido o expiró, deslogueamos al usuario.
             if (response.status === 401 || response.status === 403) {
                 useAppStore.getState().handleLogout();
             }
-            throw new Error(data.error || response.statusText);
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Construye un mensaje de error claro a partir de la respuesta de la API
+            let errorMessage = data.error || 'Ha ocurrido un error inesperado.';
+            if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+                errorMessage = data.errors[0].msg; // Extrae el mensaje de express-validator
+            }
+            throw new Error(errorMessage);
+            // --- FIN DE LA MODIFICACIÓN ---
         }
         return data;
     } catch (err) {
