@@ -161,7 +161,7 @@ export default function App() {
       {/* --- INICIO DE LA MODIFICACIÓN --- */}
       {/* El 'hidden md:block' hace que solo sea visible en pantallas medianas y grandes */}
       <div className="hidden md:block absolute bottom-4 right-4 z-50 bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">
-        v1.0.0
+        v1.1.0
       </div>
       {/* --- FIN DE LA MODIFICACIÓN --- */}
     </div>
