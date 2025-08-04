@@ -1,7 +1,6 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-// La única corrección es cambiar 'module.exports =' por 'export default'.
 export default {
   async up (queryInterface, Sequelize) {
     await queryInterface.bulkInsert('exercise_list', [
@@ -41,7 +40,7 @@ export default {
       { name: 'Step-up con Mancuernas', muscle_group: 'Piernas' },
       { name: 'Curl Femoral Sentado', muscle_group: 'Piernas' },
       { name: 'Peso Muerto con Piernas Rígidas', muscle_group: 'Piernas' },
-      { name: 'Sentadilla con Mancuernas', muscle_group: 'Piernas' },
+      { name: 'Sentadilla con Mancuernas', muscle_group: 'Piernas' }, // Este era el duplicado
       { name: 'Sentadilla Goblet', muscle_group: 'Piernas' },
       { name: 'Sentadilla Zercher', muscle_group: 'Piernas' },
       { name: 'Sentadilla en Multipower', muscle_group: 'Piernas' },
