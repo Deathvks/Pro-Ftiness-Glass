@@ -67,6 +67,7 @@ const useAppStore = create((set, get) => ({
 
   handleLogout: async () => {
     localStorage.removeItem('fittrack_token');
+    localStorage.removeItem('lastView'); // Limpiar la última vista al salir
     set({
       isAuthenticated: false,
       token: null,
@@ -103,7 +104,6 @@ const useAppStore = create((set, get) => ({
   togglePauseWorkout: () => {
     const { isWorkoutPaused, workoutStartTime, workoutAccumulatedTime } = get();
     
-    // Si es la primera vez que se pulsa play
     if (!workoutStartTime) {
       set({
         isWorkoutPaused: false,
@@ -116,14 +116,14 @@ const useAppStore = create((set, get) => ({
       // Reanudar
       set({
         isWorkoutPaused: false,
-        workoutStartTime: Date.now(), // Reinicia el punto de partida
+        workoutStartTime: Date.now(),
       });
     } else {
       // Pausar
       const elapsed = Date.now() - workoutStartTime;
       set({
         isWorkoutPaused: true,
-        workoutAccumulatedTime: workoutAccumulatedTime + elapsed, // Acumula el tiempo
+        workoutAccumulatedTime: workoutAccumulatedTime + elapsed,
       });
     }
   },
@@ -156,7 +156,7 @@ const useAppStore = create((set, get) => ({
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         get().showPRNotification(responseData.newPRs);
       }
-      get().stopWorkout(); // Limpiar la sesión activa después de guardarla
+      get().stopWorkout();
       await get().fetchInitialData(); 
       return { success: true, message: 'Entrenamiento guardado.' };
     } catch (error) {

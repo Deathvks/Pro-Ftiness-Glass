@@ -27,24 +27,34 @@ export default function App() {
     activeWorkout,
   } = useAppStore();
 
+  const [view, setView] = useState(() => {
+    if (useAppStore.getState().activeWorkout) {
+      return 'workout';
+    }
+    return localStorage.getItem('lastView') || 'dashboard';
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('lastView', view);
+  }, [view]);
+
+  // --- INICIO DE LA MODIFICACIÓN ---
   const [isLoginView, setIsLoginView] = useState(true);
-  const [view, setView] = useState('dashboard');
+  // --- FIN DE LA MODIFICACIÓN ---
+  
   const [theme, setThemeState] = useState(() => localStorage.getItem('theme') || 'system');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
   const { workoutStartTime, isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
   const [timer, setTimer] = useState(0);
 
   useEffect(() => {
     let interval = null;
     if (workoutStartTime && !isWorkoutPaused) {
-      // Si el entreno está activo y no está pausado, actualiza el timer
       interval = setInterval(() => {
         const elapsed = Date.now() - workoutStartTime;
         setTimer(Math.floor((workoutAccumulatedTime + elapsed) / 1000));
       }, 1000);
     } else {
-      // Si está pausado o no hay entreno, fija el timer al tiempo acumulado
       setTimer(Math.floor(workoutAccumulatedTime / 1000));
     }
     return () => clearInterval(interval);
