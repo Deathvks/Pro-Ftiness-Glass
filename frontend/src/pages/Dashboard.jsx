@@ -4,9 +4,8 @@ import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
 import { calculateCalories } from '../utils/helpers';
-import useAppStore from '../store/useAppStore'; // 1. Importar el hook del store
+import useAppStore from '../store/useAppStore';
 
-// Función para comparar si dos fechas son del mismo día
 const isSameDay = (dateFromServer, localDate) => {
     const serverDate = new Date(dateFromServer);
     return serverDate.getFullYear() === localDate.getFullYear() &&
@@ -15,29 +14,24 @@ const isSameDay = (dateFromServer, localDate) => {
 };
 
 const Dashboard = ({ setView }) => {
-    // 2. Usar el hook para acceder al estado y acciones directamente del store
-    const { 
-      routines, 
-      workoutLog, 
-      bodyWeightLog, 
-      userProfile,
-      logBodyWeight, 
-      updateTodayBodyWeight 
+    const {
+        routines,
+        workoutLog,
+        bodyWeightLog,
+        userProfile,
+        logBodyWeight,
+        updateTodayBodyWeight
     } = useAppStore(state => ({
         routines: state.routines,
         workoutLog: state.workoutLog,
         bodyWeightLog: state.bodyWeightLog,
         userProfile: state.userProfile,
-        // Asumiendo que estas acciones se moverán o ya están en el store
         logBodyWeight: state.logBodyWeight,
         updateTodayBodyWeight: state.updateTodayBodyWeight,
     }));
 
     const [showWeightModal, setShowWeightModal] = useState(false);
 
-    // --- Toda la lógica de `useMemo` y cálculos se mantiene igual ---
-    // Ya no depende de props, sino del estado obtenido del store.
-    
     const sortedWeightLog = useMemo(() =>
         [...bodyWeightLog].sort((a, b) => new Date(b.log_date) - new Date(a.log_date)),
         [bodyWeightLog]

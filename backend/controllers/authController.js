@@ -5,8 +5,6 @@ import models from '../models/index.js';
 
 const { User } = models;
 
-// --- ARCHIVO COMPLETAMENTE REFACTORIZADO ---
-
 // Iniciar sesión de usuario
 export const loginUser = async (req, res, next) => {
   const errors = validationResult(req);
@@ -27,10 +25,9 @@ export const loginUser = async (req, res, next) => {
       return res.status(401).json({ error: 'Credenciales inválidas.' });
     }
 
-    const payload = { userId: user.id };
+    const payload = { userId: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    // Se devuelve el token directamente en la respuesta JSON
     res.json({ message: 'Inicio de sesión exitoso.', token });
 
   } catch (error) {
@@ -38,14 +35,13 @@ export const loginUser = async (req, res, next) => {
   }
 };
 
-// Cerrar sesión de usuario (ahora es una operación vacía en el backend)
+// Cerrar sesión de usuario
 export const logoutUser = (req, res) => {
-  // El logout se gestiona en el cliente eliminando el token.
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
 
 
-// Registrar un nuevo usuario (sin cambios)
+// Registrar un nuevo usuario
 export const registerUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -57,12 +53,19 @@ export const registerUser = async (req, res, next) => {
     if (existingUser) {
       return res.status(409).json({ error: 'El email ya está en uso.' });
     }
+    
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Se elimina la lógica que asignaba el rol de admin al primer usuario.
+    // La base de datos asignará 'user' por defecto.
+    // --- FIN DE LA CORRECCIÓN ---
+
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
     const newUser = await User.create({
       name,
       email,
       password_hash,
+      // No es necesario especificar el rol, se usará el valor por defecto 'user'
     });
     res.status(201).json({ message: 'Usuario registrado con éxito.', userId: newUser.id });
   } catch (error) {

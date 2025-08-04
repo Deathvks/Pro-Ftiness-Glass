@@ -6,7 +6,7 @@ import RoutineEditor from './RoutineEditor';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
-import { saveRoutine, deleteRoutine } from '../services/routineService'; // Se importan los servicios
+import { saveRoutine, deleteRoutine } from '../services/routineService';
 
 const isSameDay = (dateA, dateB) => {
     const date1 = new Date(dateA);
@@ -18,10 +18,11 @@ const isSameDay = (dateA, dateB) => {
 
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
-  const { routines, workoutLog, fetchInitialData } = useAppStore(state => ({
+  const { routines, workoutLog, fetchInitialData, startWorkout } = useAppStore(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
+    startWorkout: state.startWorkout,
   }));
 
   const [editingRoutine, setEditingRoutine] = useState(null);
@@ -40,7 +41,6 @@ const Routines = ({ setView }) => {
   const handleSave = async (routineToSave) => {
     setIsLoading(true);
     try {
-      // Se utiliza la función del servicio en lugar de fetch directamente
       await saveRoutine(routineToSave);
       addToast('Rutina guardada con éxito.', 'success');
       setEditingRoutine(null);
@@ -61,7 +61,6 @@ const Routines = ({ setView }) => {
   const confirmDelete = async () => {
     setIsLoading(true);
     try {
-      // Se utiliza la función del servicio en lugar de fetch directamente
       await deleteRoutine(routineToDelete);
       addToast('Rutina eliminada.', 'success');
       setShowDeleteModal(false);
@@ -124,7 +123,12 @@ const Routines = ({ setView }) => {
               )}
 
               <button
-                onClick={() => setView('workout', { routine })}
+                // --- INICIO DE LA MODIFICACIÓN ---
+                onClick={() => {
+                  startWorkout(routine);
+                  setView('workout');
+                }}
+                // --- FIN DE LA MODIFICACIÓN ---
                 disabled={isCompleted}
                 className={`flex items-center justify-center gap-2 w-full mt-2 py-3 rounded-md font-semibold transition ${
                   isCompleted 

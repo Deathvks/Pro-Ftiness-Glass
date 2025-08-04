@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Home, Dumbbell, BarChart2, Settings, LogOut } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap } from 'lucide-react';
 import useAppStore from './store/useAppStore';
 
 // --- Importaciones ---
@@ -14,6 +14,7 @@ import OnboardingScreen from './pages/OnboardingScreen';
 import ProfileEditor from './pages/ProfileEditor';
 import PRToast from './components/PRToast';
 import ConfirmationModal from './components/ConfirmationModal';
+import AdminPanel from './pages/AdminPanel.jsx';
 
 export default function App() {
   const {
@@ -23,13 +24,31 @@ export default function App() {
     prNotification,
     fetchInitialData,
     handleLogout: performLogout,
+    activeWorkout,
   } = useAppStore();
 
   const [isLoginView, setIsLoginView] = useState(true);
   const [view, setView] = useState('dashboard');
-  const [viewProps, setViewProps] = useState({});
   const [theme, setThemeState] = useState(() => localStorage.getItem('theme') || 'system');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const { workoutStartTime, isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
+  const [timer, setTimer] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+    if (workoutStartTime && !isWorkoutPaused) {
+      // Si el entreno está activo y no está pausado, actualiza el timer
+      interval = setInterval(() => {
+        const elapsed = Date.now() - workoutStartTime;
+        setTimer(Math.floor((workoutAccumulatedTime + elapsed) / 1000));
+      }, 1000);
+    } else {
+      // Si está pausado o no hay entreno, fija el timer al tiempo acumulado
+      setTimer(Math.floor(workoutAccumulatedTime / 1000));
+    }
+    return () => clearInterval(interval);
+  }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime]);
 
   const setTheme = (newTheme) => {
     localStorage.setItem('theme', newTheme);
@@ -67,10 +86,9 @@ export default function App() {
     setShowLogoutConfirm(false);
   };
 
-  const navigate = (viewName, props = {}) => {
-    setViewProps(props);
+  const navigate = useCallback((viewName) => {
     setView(viewName);
-  };
+  }, []);
 
   if (isLoading) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
@@ -91,9 +109,10 @@ export default function App() {
       case 'dashboard': return <Dashboard setView={navigate} />;
       case 'progress': return <Progress darkMode={theme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
-      case 'workout': return <Workout routine={viewProps.routine} setView={navigate} />;
+      case 'workout': return <Workout timer={timer} setView={navigate} />;
       case 'settings': return <SettingsScreen theme={theme} setTheme={setTheme} setView={navigate} onLogoutClick={handleLogoutClick} />;
       case 'profileEditor': return <ProfileEditor onCancel={() => navigate('settings')} />;
+      case 'adminPanel': return <AdminPanel onCancel={() => navigate('settings')} />;
       default: return <Dashboard setView={navigate} />;
     }
   };
@@ -158,12 +177,19 @@ export default function App() {
         />
       )}
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* El 'hidden md:block' hace que solo sea visible en pantallas medianas y grandes */}
+      {activeWorkout && view !== 'workout' && (
+        <button
+          onClick={() => navigate('workout')}
+          className="fixed bottom-24 right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+        >
+          <Zap size={20} />
+          <span>Volver al Entreno</span>
+        </button>
+      )}
+
       <div className="hidden md:block absolute bottom-4 right-4 z-50 bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">
-        v1.1.0
+        v1.2.0
       </div>
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
     </div>
   );
 }

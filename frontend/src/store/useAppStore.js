@@ -5,18 +5,20 @@ import * as routineService from '../services/routineService';
 import * as workoutService from '../services/workoutService';
 import * as bodyweightService from '../services/bodyweightService';
 
-// --- ARCHIVO REFACTORIZADO PARA GESTIONAR EL TOKEN ---
-
 const useAppStore = create((set, get) => ({
   // --- ESTADO ---
-  isAuthenticated: !!localStorage.getItem('fittrack_token'), // La autenticación ahora depende de si hay token
-  token: localStorage.getItem('fittrack_token'), // El token se carga desde localStorage
+  isAuthenticated: !!localStorage.getItem('fittrack_token'),
+  token: localStorage.getItem('fittrack_token'),
   userProfile: null,
   routines: [],
   workoutLog: [],
   bodyWeightLog: [],
   isLoading: true,
   prNotification: null,
+  activeWorkout: null,
+  workoutStartTime: null,
+  isWorkoutPaused: false,
+  workoutAccumulatedTime: 0,
 
   // --- ACCIONES ---
   
@@ -25,7 +27,6 @@ const useAppStore = create((set, get) => ({
     setTimeout(() => set({ prNotification: null }), 7000);
   },
   
-  // Nueva acción para manejar el login
   handleLogin: async (credentials) => {
     const { token } = await authService.loginUser(credentials);
     localStorage.setItem('fittrack_token', token);
@@ -34,7 +35,6 @@ const useAppStore = create((set, get) => ({
   },
 
   fetchInitialData: async () => {
-    // Si no hay token, no intentes cargar datos.
     if (!get().token) {
         set({ isAuthenticated: false, isLoading: false });
         return;
@@ -66,7 +66,6 @@ const useAppStore = create((set, get) => ({
   },
 
   handleLogout: async () => {
-    // Ya no es necesario llamar a la API para desloguearse
     localStorage.removeItem('fittrack_token');
     set({
       isAuthenticated: false,
@@ -79,12 +78,85 @@ const useAppStore = create((set, get) => ({
     });
   },
 
+  startWorkout: (routine) => {
+    const exercises = routine.RoutineExercises || [];
+    const sessionTemplate = exercises.map(ex => ({
+        ...ex,
+        setsDone: Array.from({ length: ex.sets }, (_, i) => ({
+            set_number: i + 1,
+            reps: '',
+            weight_kg: ''
+        }))
+    }));
+
+    set({
+      activeWorkout: {
+        routineName: routine.name,
+        exercises: sessionTemplate,
+      },
+      workoutStartTime: null,
+      isWorkoutPaused: true, // Se considera pausado hasta que se pulsa Play
+      workoutAccumulatedTime: 0,
+    });
+  },
+
+  togglePauseWorkout: () => {
+    const { isWorkoutPaused, workoutStartTime, workoutAccumulatedTime } = get();
+    
+    // Si es la primera vez que se pulsa play
+    if (!workoutStartTime) {
+      set({
+        isWorkoutPaused: false,
+        workoutStartTime: Date.now(),
+      });
+      return;
+    }
+
+    if (isWorkoutPaused) {
+      // Reanudar
+      set({
+        isWorkoutPaused: false,
+        workoutStartTime: Date.now(), // Reinicia el punto de partida
+      });
+    } else {
+      // Pausar
+      const elapsed = Date.now() - workoutStartTime;
+      set({
+        isWorkoutPaused: true,
+        workoutAccumulatedTime: workoutAccumulatedTime + elapsed, // Acumula el tiempo
+      });
+    }
+  },
+
+  stopWorkout: () => {
+    set({
+      activeWorkout: null,
+      workoutStartTime: null,
+      isWorkoutPaused: false,
+      workoutAccumulatedTime: 0,
+    });
+  },
+
+  updateActiveWorkoutSet: (exIndex, setIndex, field, value) => {
+    const session = get().activeWorkout;
+    if (!session) return;
+
+    const newExercises = [...session.exercises];
+    const parsedValue = value === '' ? '' : parseFloat(value);
+    newExercises[exIndex].setsDone[setIndex][field] = isNaN(parsedValue) ? '' : parsedValue;
+
+    set({
+      activeWorkout: { ...session, exercises: newExercises }
+    });
+  },
+
   logWorkout: async (workoutData) => {
     try {
       const responseData = await workoutService.logWorkout(workoutData);
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         get().showPRNotification(responseData.newPRs);
       }
+      get().stopWorkout(); // Limpiar la sesión activa después de guardarla
       await get().fetchInitialData(); 
       return { success: true, message: 'Entrenamiento guardado.' };
     } catch (error) {

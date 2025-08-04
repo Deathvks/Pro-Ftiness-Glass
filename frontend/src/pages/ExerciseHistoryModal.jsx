@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { searchExercises } from '../services/exerciseService'; // Se importa el servicio centralizado
+import { searchExercises } from '../services/exerciseService';
 
 const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
     const [results, setResults] = useState([]);
@@ -24,7 +24,6 @@ const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
             return;
         }
         try {
-            // Se utiliza la función del servicio en lugar de fetch directamente
             const data = await searchExercises(searchQuery);
             
             if (data.length > 0) {

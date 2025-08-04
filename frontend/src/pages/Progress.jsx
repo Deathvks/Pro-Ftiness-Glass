@@ -102,7 +102,7 @@ const DailyDetailView = ({ logs, onClose }) => {
                                 </div>
                             </div>
                         ))}
-                         {/* --- FIN DE LA CORRECCIÓN --- */}
+                        {/* --- FIN DE LA CORRECCIÓN --- */}
                     </div>
                 </GlassCard>
             </div>
@@ -193,7 +193,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
         const value = payload[0].value;
         const key = payload[0].dataKey;
-        
+
         const displayValue = `${key}: ${Number(value).toFixed(1)}`;
 
         return (
@@ -212,7 +212,7 @@ const Progress = ({ darkMode }) => {
         bodyWeightLog: state.bodyWeightLog,
         userProfile: state.userProfile,
     }));
-    
+
     const [viewType, setViewType] = useState('exercise');
     const [detailedLog, setDetailedLog] = useState(null);
     const [selectedExercise, setSelectedExercise] = useState('');
@@ -307,7 +307,7 @@ const Progress = ({ darkMode }) => {
         for (const exerciseName in progress) {
             progress[exerciseName].sort((a, b) => a.date - b.date);
         }
-        
+
         return progress;
     }, [workoutLog]);
 
@@ -378,16 +378,16 @@ const Progress = ({ darkMode }) => {
                                 ))}
                             </div>
                             <div className="flex justify-center items-center gap-4 mt-6 pt-4 border-t border-glass-border">
-                                <button 
-                                    onClick={() => setRecordsPage(p => p - 1)} 
+                                <button
+                                    onClick={() => setRecordsPage(p => p - 1)}
                                     disabled={recordsPage <= 1}
                                     className="p-2 rounded-md bg-bg-secondary disabled:opacity-50"
                                 >
                                     <ChevronLeft />
                                 </button>
                                 <span className="font-semibold text-text-secondary">Página {recordsData.currentPage} de {recordsData.totalPages}</span>
-                                <button 
-                                    onClick={() => setRecordsPage(p => p + 1)} 
+                                <button
+                                    onClick={() => setRecordsPage(p => p + 1)}
                                     disabled={recordsPage >= recordsData.totalPages}
                                     className="p-2 rounded-md bg-bg-secondary disabled:opacity-50"
                                 >

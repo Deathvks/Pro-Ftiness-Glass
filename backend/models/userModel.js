@@ -22,6 +22,13 @@ const User = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    role: {
+      type: DataTypes.ENUM('user', 'admin'),
+      allowNull: false,
+      defaultValue: 'user',
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
     gender: {
       type: DataTypes.ENUM('male', 'female', 'other'),
       allowNull: true,
@@ -45,9 +52,8 @@ const User = sequelize.define(
   },
   {
     tableName: 'users',
-    // Se ajusta la configuración de timestamps para que coincida con la migración
     timestamps: true,
-    updatedAt: false, // Se mantiene desactivado porque la tabla no lo tiene
+    updatedAt: false,
     createdAt: 'created_at',
   }
 );

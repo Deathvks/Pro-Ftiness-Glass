@@ -9,6 +9,7 @@ export default {
       email: { type: Sequelize.STRING(255), allowNull: false, unique: true },
       password_hash: { type: Sequelize.STRING(255), allowNull: false },
       name: { type: Sequelize.STRING(255), allowNull: true },
+      role: { type: Sequelize.ENUM('user', 'admin'), allowNull: false, defaultValue: 'user' },
       gender: { type: Sequelize.ENUM('male', 'female', 'other'), allowNull: true },
       age: { type: Sequelize.INTEGER, allowNull: true },
       height: { type: Sequelize.INTEGER, allowNull: true },

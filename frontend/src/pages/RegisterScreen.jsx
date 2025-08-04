@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import { useToast } from '../hooks/useToast';
-import { registerUser } from '../services/authService'; // Se importa el servicio centralizado
+import { registerUser } from '../services/authService';
 
 const RegisterScreen = ({ showLogin }) => {
     const [name, setName] = useState('');

@@ -4,13 +4,9 @@ import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
-// Se elimina la importación de 'loginUser' porque ya no se usa directamente
 
 const LoginScreen = ({ showRegister }) => {
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Obtenemos la nueva función 'handleLogin' del store en lugar de 'fetchInitialData'
     const handleLogin = useAppStore(state => state.handleLogin);
-    // --- FIN DE LA CORRECCIÓN ---
     const { addToast } = useToast();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

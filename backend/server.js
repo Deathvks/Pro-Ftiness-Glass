@@ -14,12 +14,11 @@ import bodyweightRoutes from './routes/bodyweight.js';
 import userRoutes from './routes/users.js';
 import exerciseListRoutes from './routes/exerciseList.js';
 import personalRecordRoutes from './routes/personalRecords.js';
+import adminRoutes from './routes/admin.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
 
-// --- INICIO DE LA CORRECCIÓN ---
-// Confiar en el proxy de Zeabur es crucial para que `secure: true` en las cookies funcione.
 app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3001;
@@ -29,20 +28,18 @@ app.use(helmet());
 
 console.log(`[CORS] Configurando CORS para el origen explícito: ${process.env.FRONTEND_URL}`);
 
-// Configuración de CORS final y explícita
 const corsOptions = {
   origin: process.env.FRONTEND_URL,
   credentials: true,
 };
 app.use(cors(corsOptions));
-// --- FIN DE LA CORRECCIÓN ---
-
 
 app.use(express.json());
 app.use(cookieParser());
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes); // Rutas de admin
 app.use('/api', routineRoutes);
 app.use('/api', exerciseRoutes);
 app.use('/api', workoutRoutes);
