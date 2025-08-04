@@ -84,7 +84,7 @@ const OnboardingScreen = () => {
               <label htmlFor="age" className="block text-sm font-medium text-text-secondary mb-2 text-center">Tu edad</label>
               <input id="age" name="age" type="number" value={formData.age} onChange={handleChange} required className={baseInputClasses} placeholder="Años" />
             </div>
-            <button type="submit" className="button bg-accent text-bg-secondary w-full rounded-md py-3 mt-2">Siguiente</button>
+            <button type="submit" className="bg-accent text-bg-secondary w-full rounded-md py-3 mt-2 font-semibold">Siguiente</button>
           </form>
         );
       case 2:
@@ -99,7 +99,7 @@ const OnboardingScreen = () => {
               <label htmlFor="weight" className="block text-sm font-medium text-text-secondary mb-2 text-center">Tu peso actual (kg)</label>
               <input id="weight" name="weight" type="number" step="0.1" value={formData.weight} onChange={handleChange} required className={baseInputClasses} placeholder="Ej: 80.5" />
             </div>
-            <button type="submit" className="button bg-accent text-bg-secondary w-full rounded-md py-3 mt-2">Siguiente</button>
+            <button type="submit" className="bg-accent text-bg-secondary w-full rounded-md py-3 mt-2 font-semibold">Siguiente</button>
           </form>
         );
       case 3:
@@ -109,21 +109,19 @@ const OnboardingScreen = () => {
             {Object.entries(activityLabels).map(([value, label]) => (
               <button key={value} type="button" onClick={() => setFormData({ ...formData, activityLevel: parseFloat(value) })} className={`w-full text-center ${choiceButtonClasses} ${formData.activityLevel === parseFloat(value) ? activeChoiceButtonClasses : ''}`}>{label}</button>
             ))}
-            <button type="submit" className="button bg-accent text-bg-secondary w-full rounded-md py-3 mt-2">Siguiente</button>
+            <button type="submit" className="bg-accent text-bg-secondary w-full rounded-md py-3 mt-2 font-semibold">Siguiente</button>
           </form>
         );
       case 4:
         return (
           <form onSubmit={(e) => { e.preventDefault(); goToStep(5); }} className="flex flex-col gap-5">
             <h2 className="text-xl font-bold text-center">Paso 4: Tu Objetivo</h2>
-            {/* --- INICIO DE LA CORRECCIÓN --- */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* --- FIN DE LA CORRECCIÓN --- */}
               <button type="button" onClick={() => setFormData({ ...formData, goal: 'lose' })} className={`${choiceButtonClasses} ${formData.goal === 'lose' ? activeChoiceButtonClasses : ''}`}><ArrowDown /><span>Bajar</span></button>
               <button type="button" onClick={() => setFormData({ ...formData, goal: 'maintain' })} className={`${choiceButtonClasses} ${formData.goal === 'maintain' ? activeChoiceButtonClasses : ''}`}><Minus /><span>Mantener</span></button>
               <button type="button" onClick={() => setFormData({ ...formData, goal: 'gain' })} className={`${choiceButtonClasses} ${formData.goal === 'gain' ? activeChoiceButtonClasses : ''}`}><ArrowUp /><span>Subir</span></button>
             </div>
-            <button type="submit" className="button bg-accent text-bg-secondary w-full rounded-md py-3 mt-2">Revisar Respuestas</button>
+            <button type="submit" className="bg-accent text-bg-secondary w-full rounded-md py-3 mt-2 font-semibold">Revisar Respuestas</button>
           </form>
         );
       case 5:
@@ -161,7 +159,7 @@ const OnboardingScreen = () => {
                 <button onClick={() => goToStep(4)} className="p-2 rounded-full hover:bg-white/10 text-text-secondary"><Edit size={16} /></button>
               </div>
             </div>
-            <button onClick={handleComplete} disabled={isLoading} className="button bg-accent text-bg-secondary w-full rounded-md py-3 mt-2 flex justify-center items-center disabled:opacity-70">
+            <button onClick={handleComplete} disabled={isLoading} className="bg-accent text-bg-secondary w-full rounded-md py-3 mt-2 font-semibold flex justify-center items-center disabled:opacity-70">
               {isLoading ? <Spinner size={20} /> : 'Confirmar y Empezar'}
             </button>
           </div>
