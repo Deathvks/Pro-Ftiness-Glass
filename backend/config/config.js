@@ -1,8 +1,6 @@
-// Importar dotenv para cargar las variables de entorno
 import dotenv from 'dotenv';
 dotenv.config();
 
-// La configuración para development y test no cambia
 const config = {
   development: {
     username: "root",
@@ -19,11 +17,11 @@ const config = {
     dialect: "mysql"
   },
   production: {
-    // --- INICIO DE LA CORRECCIÓN ---
-    // En lugar de 'use_env_variable', construimos la URL dinámicamente
-    // usando las mismas variables que tu aplicación ya utiliza.
-    url: `mysql://${process.env.MYSQL_USERNAME}:${process.env.MYSQL_PASSWORD}@${process.env.MYSQL_HOST}:${process.env.MYSQL_PORT}/${process.env.MYSQL_DATABASE}`,
-    // --- FIN DE LA CORRECCIÓN ---
+    username: process.env.MYSQL_USERNAME,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE,
+    host: process.env.MYSQL_HOST,
+    port: process.env.MYSQL_PORT,
     dialect: "mysql",
     dialectOptions: {
       ssl: {
