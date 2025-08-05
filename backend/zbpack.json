@@ -1,4 +1,4 @@
-    {
-      "initCmd": ""
-    }
-    
+{
+    "initCmd": "",
+    "start": "npm run db:migrate && node server.js"
+}
