@@ -52,6 +52,12 @@ export default {
     await queryInterface.createTable('workout_logs', {
       id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
       user_id: { type: Sequelize.INTEGER, allowNull: false, references: { model: 'users', key: 'id' }, onDelete: 'CASCADE' },
+      routine_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: { model: 'routines', key: 'id' },
+        onDelete: 'SET NULL',
+      },
       routine_name: { type: Sequelize.STRING(255), allowNull: false },
       workout_date: { type: Sequelize.DATE, allowNull: false },
       duration_seconds: { type: Sequelize.INTEGER, allowNull: false },

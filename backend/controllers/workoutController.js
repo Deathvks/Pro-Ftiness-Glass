@@ -29,7 +29,7 @@ export const logWorkoutSession = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { routineName, duration_seconds, calories_burned, details, notes } = req.body;
+  const { routineName, duration_seconds, calories_burned, details, notes, routineId } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -37,6 +37,7 @@ export const logWorkoutSession = async (req, res, next) => {
     const newWorkoutLog = await WorkoutLog.create({
       user_id: userId,
       routine_name: routineName,
+      routine_id: routineId,
       workout_date: new Date(),
       duration_seconds,
       calories_burned,
