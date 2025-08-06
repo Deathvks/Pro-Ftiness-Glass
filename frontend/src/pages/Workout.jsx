@@ -8,6 +8,7 @@ import { useToast } from '../hooks/useToast';
 
 const Workout = ({ timer, setView }) => {
   const { addToast } = useToast();
+  // --- INICIO DE LA MODIFICACIÓN ---
   const { 
     activeWorkout, 
     logWorkout, 
@@ -15,7 +16,9 @@ const Workout = ({ timer, setView }) => {
     updateActiveWorkoutSet,
     isWorkoutPaused,
     togglePauseWorkout,
-    workoutStartTime
+    workoutStartTime,
+    isResting,
+    startRestTimer
   } = useAppStore(state => ({
     activeWorkout: state.activeWorkout,
     logWorkout: state.logWorkout,
@@ -24,13 +27,15 @@ const Workout = ({ timer, setView }) => {
     isWorkoutPaused: state.isWorkoutPaused,
     togglePauseWorkout: state.togglePauseWorkout,
     workoutStartTime: state.workoutStartTime,
+    isResting: state.isResting,
+    startRestTimer: state.startRestTimer,
   }));
   
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [notes, setNotes] = useState('');
-  const [isResting, setIsResting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   if (!activeWorkout) {
     return (
@@ -75,18 +80,15 @@ const Workout = ({ timer, setView }) => {
   };
 
   const confirmFinishWorkout = async () => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Verificamos si al menos una serie tiene datos de repeticiones o peso.
     const isAnySetFilled = activeWorkout.exercises.some(ex =>
       ex.setsDone.some(set => (set.reps && set.reps !== '') || (set.weight_kg && set.weight_kg !== ''))
     );
 
     if (!isAnySetFilled) {
       addToast('No has registrado ningún dato. Completa al menos una serie para guardar.', 'error');
-      setShowFinishModal(false); // Cerramos el modal
-      return; // Detenemos la ejecución
+      setShowFinishModal(false);
+      return;
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     setIsSaving(true);
     const workoutData = {
@@ -158,13 +160,15 @@ const Workout = ({ timer, setView }) => {
                         </span>
                         <input type="number" placeholder="0" value={set.weight_kg} onChange={(e) => updateActiveWorkoutSet(exIndex, setIndex, 'weight_kg', e.target.value)} className={baseInputClasses} />
                         <input type="number" placeholder="0" value={set.reps} onChange={(e) => updateActiveWorkoutSet(exIndex, setIndex, 'reps', e.target.value)} className={baseInputClasses} />
+                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
                         <button 
-                          onClick={() => setIsResting(true)}
+                          onClick={() => startRestTimer(60)}
                           className="p-3 rounded-md bg-bg-secondary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50 transition h-full flex items-center justify-center"
                           title="Iniciar descanso"
                         >
                             <Clock size={20} />
                         </button>
+                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                     </div>
                 ))}
             </div>
@@ -186,7 +190,9 @@ const Workout = ({ timer, setView }) => {
         ></textarea>
       </GlassCard>
 
-      {isResting && <RestTimerModal onClose={() => setIsResting(false)} />}
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {isResting && <RestTimerModal />}
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {showFinishModal &&
         <ConfirmationModal
