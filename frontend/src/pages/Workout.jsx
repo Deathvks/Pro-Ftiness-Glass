@@ -51,7 +51,13 @@ const Workout = ({ timer, setView }) => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  const handleFinishClick = () => setShowFinishModal(true);
+  const handleFinishClick = () => {
+    if (timer === 0) {
+      addToast('Debes iniciar el cronómetro para poder guardar el entrenamiento.', 'error');
+      return;
+    }
+    setShowFinishModal(true);
+  };
 
   const handleBackClick = () => {
     if (workoutStartTime) {
@@ -69,8 +75,22 @@ const Workout = ({ timer, setView }) => {
   };
 
   const confirmFinishWorkout = async () => {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Verificamos si al menos una serie tiene datos de repeticiones o peso.
+    const isAnySetFilled = activeWorkout.exercises.some(ex =>
+      ex.setsDone.some(set => (set.reps && set.reps !== '') || (set.weight_kg && set.weight_kg !== ''))
+    );
+
+    if (!isAnySetFilled) {
+      addToast('No has registrado ningún dato. Completa al menos una serie para guardar.', 'error');
+      setShowFinishModal(false); // Cerramos el modal
+      return; // Detenemos la ejecución
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
     setIsSaving(true);
     const workoutData = {
+        routineId: activeWorkout.routineId,
         routineName: activeWorkout.routineName,
         duration_seconds: timer,
         notes: notes,

@@ -1,35 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, X, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, Pause, X, ArrowLeft } from 'lucide-react';
 import GlassCard from './GlassCard';
 
 const RestTimerModal = ({ onClose }) => {
   const [duration, setDuration] = useState(60);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isActive, setIsActive] = useState(false);
-  const [view, setView] = useState('select'); // 'select' o 'timer'
+  const [view, setView] = useState('select');
+  
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Usamos una 'ref' para guardar la hora exacta en que el contador debe terminar.
+  // Esto no se pierde si el navegador se congela.
+  const endTimeRef = useRef(null);
 
-  useEffect(() => {
-    if (!isActive || timeLeft <= 0) {
-      if (timeLeft <= 0 && view === 'timer') {
-        // Opcional: Sonido de notificación
-      }
-      return;
+  // Función para recalcular el tiempo restante basándose en la hora de finalización.
+  const updateTimer = useCallback(() => {
+    if (!endTimeRef.current) return;
+    
+    const remaining = Math.round((endTimeRef.current - Date.now()) / 1000);
+    const newTimeLeft = Math.max(0, remaining);
+
+    if (newTimeLeft === 0) {
+      setIsActive(false);
+      // Opcional: Sonido de notificación al finalizar
     }
-    const intervalId = setInterval(() => {
-      setTimeLeft(prevTime => prevTime - 1);
-    }, 1000);
+    setTimeLeft(newTimeLeft);
+  }, []);
+
+  // Efecto principal que maneja el intervalo del contador.
+  useEffect(() => {
+    if (!isActive) return;
+
+    const intervalId = setInterval(updateTimer, 500); // Se ejecuta más frecuente para mayor precisión visual
     return () => clearInterval(intervalId);
-  }, [isActive, timeLeft, view]);
+  }, [isActive, updateTimer]);
+
+  // Efecto que detecta cuando el usuario vuelve a la pestaña del navegador.
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isActive) {
+        updateTimer(); // Actualiza el tiempo inmediatamente al volver.
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isActive, updateTimer]);
 
   const startTimer = (selectedDuration) => {
     setDuration(selectedDuration);
     setTimeLeft(selectedDuration);
+    // Calculamos y guardamos la hora de finalización.
+    endTimeRef.current = Date.now() + selectedDuration * 1000;
     setIsActive(true);
     setView('timer');
   };
 
+  const togglePause = () => {
+    setIsActive(currentIsActive => {
+      const newIsActive = !currentIsActive;
+      if (newIsActive) {
+        // Al reanudar, calculamos una nueva hora de finalización.
+        endTimeRef.current = Date.now() + timeLeft * 1000;
+      } else {
+        // Al pausar, simplemente detenemos el intervalo (se hace en el useEffect).
+        updateTimer(); // Aseguramos que el tiempo se guarde con precisión al pausar.
+      }
+      return newIsActive;
+    });
+  };
+
+  const adjustTime = (seconds) => {
+    if (endTimeRef.current) {
+        endTimeRef.current += seconds * 1000;
+        updateTimer();
+    }
+  };
+
+  // --- FIN DE LA MODIFICACIÓN ---
+
   const goBackToSelect = () => {
     setIsActive(false);
+    endTimeRef.current = null;
     setView('select');
   };
 
@@ -39,7 +90,7 @@ const RestTimerModal = ({ onClose }) => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const progress = view === 'timer' ? ((duration - timeLeft) / duration) * 100 : 0;
+  const progress = view === 'timer' && duration > 0 ? ((duration - timeLeft) / duration) * 100 : 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
@@ -87,11 +138,7 @@ const RestTimerModal = ({ onClose }) => {
             <h3 className="text-xl font-bold mb-4">Tiempo de Descanso</h3>
             <div className="relative w-48 h-48 mx-auto flex items-center justify-center">
               <svg className="w-full h-full" viewBox="0 0 100 100">
-                {/* --- INICIO DE LA CORRECCIÓN --- */}
-                {/* Se cambia 'text-bg-secondary' por 'text-glass-border' para que sea visible en ambos temas */}
                 <circle className="text-glass-border" strokeWidth="8" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
-                {/* --- FIN DE LA CORRECCIÓN --- */}
-                
                 <circle
                   className="text-accent"
                   strokeWidth="8"
@@ -111,13 +158,13 @@ const RestTimerModal = ({ onClose }) => {
               </div>
             </div>
             <div className="flex justify-center items-center gap-6 mt-6">
-              <button onClick={() => setTimeLeft(t => t - 10)} className="p-4 rounded-full bg-bg-secondary hover:bg-white/10 transition font-semibold">
+              <button onClick={() => adjustTime(-10)} className="p-4 rounded-full bg-bg-secondary hover:bg-white/10 transition font-semibold">
                 -10s
               </button>
-              <button onClick={() => setIsActive(!isActive)} className="p-5 rounded-full bg-accent text-bg-secondary transition hover:scale-105">
+              <button onClick={togglePause} className="p-5 rounded-full bg-accent text-bg-secondary transition hover:scale-105">
                 {isActive ? <Pause size={28} /> : <Play size={28} />}
               </button>
-              <button onClick={() => setTimeLeft(t => t + 10)} className="p-4 rounded-full bg-bg-secondary hover:bg-white/10 transition font-semibold">
+              <button onClick={() => adjustTime(10)} className="p-4 rounded-full bg-bg-secondary hover:bg-white/10 transition font-semibold">
                 +10s
               </button>
             </div>

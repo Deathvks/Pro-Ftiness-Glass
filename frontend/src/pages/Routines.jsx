@@ -33,9 +33,12 @@ const Routines = ({ setView }) => {
   const completedToday = useMemo(() => {
     if (!Array.isArray(workoutLog)) return [];
     const today = new Date();
-    return workoutLog
-      .filter(log => isSameDay(log.workout_date, today))
-      .map(log => log.routine_name);
+    // Creamos un Set de IDs de rutinas completadas hoy para una búsqueda más eficiente
+    return new Set(
+      workoutLog
+        .filter(log => isSameDay(log.workout_date, today) && log.routine_id != null)
+        .map(log => log.routine_id)
+    );
   }, [workoutLog]);
 
   const handleSave = async (routineToSave) => {
@@ -93,7 +96,8 @@ const Routines = ({ setView }) => {
 
       <div className="flex flex-col gap-6">
         {routines && routines.length > 0 ? routines.map(routine => {
-          const isCompleted = completedToday.includes(routine.name);
+          // Ahora comprobamos si el ID de la rutina está en el Set de completadas
+          const isCompleted = completedToday.has(routine.id);
           return (
             <GlassCard key={routine.id} className="p-6 flex flex-col gap-4">
               <div className="flex justify-between items-start pb-4 border-b border-glass-border">
@@ -123,12 +127,10 @@ const Routines = ({ setView }) => {
               )}
 
               <button
-                // --- INICIO DE LA MODIFICACIÓN ---
                 onClick={() => {
                   startWorkout(routine);
                   setView('workout');
                 }}
-                // --- FIN DE LA MODIFICACIÓN ---
                 disabled={isCompleted}
                 className={`flex items-center justify-center gap-2 w-full mt-2 py-3 rounded-md font-semibold transition ${
                   isCompleted 
