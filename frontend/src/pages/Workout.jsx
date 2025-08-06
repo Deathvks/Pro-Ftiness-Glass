@@ -8,7 +8,6 @@ import { useToast } from '../hooks/useToast';
 
 const Workout = ({ timer, setView }) => {
   const { addToast } = useToast();
-  // --- INICIO DE LA MODIFICACIÓN ---
   const { 
     activeWorkout, 
     logWorkout, 
@@ -18,7 +17,7 @@ const Workout = ({ timer, setView }) => {
     togglePauseWorkout,
     workoutStartTime,
     isResting,
-    startRestTimer
+    openRestModal
   } = useAppStore(state => ({
     activeWorkout: state.activeWorkout,
     logWorkout: state.logWorkout,
@@ -28,14 +27,13 @@ const Workout = ({ timer, setView }) => {
     togglePauseWorkout: state.togglePauseWorkout,
     workoutStartTime: state.workoutStartTime,
     isResting: state.isResting,
-    startRestTimer: state.startRestTimer,
+    openRestModal: state.openRestModal,
   }));
   
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   if (!activeWorkout) {
     return (
@@ -160,15 +158,13 @@ const Workout = ({ timer, setView }) => {
                         </span>
                         <input type="number" placeholder="0" value={set.weight_kg} onChange={(e) => updateActiveWorkoutSet(exIndex, setIndex, 'weight_kg', e.target.value)} className={baseInputClasses} />
                         <input type="number" placeholder="0" value={set.reps} onChange={(e) => updateActiveWorkoutSet(exIndex, setIndex, 'reps', e.target.value)} className={baseInputClasses} />
-                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
                         <button 
-                          onClick={() => startRestTimer(60)}
+                          onClick={openRestModal}
                           className="p-3 rounded-md bg-bg-secondary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50 transition h-full flex items-center justify-center"
                           title="Iniciar descanso"
                         >
                             <Clock size={20} />
                         </button>
-                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                     </div>
                 ))}
             </div>
@@ -190,9 +186,7 @@ const Workout = ({ timer, setView }) => {
         ></textarea>
       </GlassCard>
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
       {isResting && <RestTimerModal />}
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {showFinishModal &&
         <ConfirmationModal

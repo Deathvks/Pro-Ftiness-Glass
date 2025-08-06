@@ -1,3 +1,4 @@
+// ... (imports y otras funciones sin cambios)
 import { create } from 'zustand';
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
@@ -5,12 +6,10 @@ import * as routineService from '../services/routineService';
 import * as workoutService from '../services/workoutService';
 import * as bodyweightService from '../services/bodyweightService';
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Funciones auxiliares para gestionar el estado completo en localStorage
 
 const getFullStateFromStorage = () => {
   try {
-    const state = { activeWorkout: null, workoutStartTime: null, isWorkoutPaused: false, workoutAccumulatedTime: 0, isResting: false, restTimerEndTime: null };
+    const state = { activeWorkout: null, workoutStartTime: null, isWorkoutPaused: false, workoutAccumulatedTime: 0, isResting: false, restTimerEndTime: null, restTimerInitialDuration: null };
     
     const activeWorkout = JSON.parse(localStorage.getItem('activeWorkout'));
     if (activeWorkout) {
@@ -23,19 +22,19 @@ const getFullStateFromStorage = () => {
     const isResting = JSON.parse(localStorage.getItem('isResting'));
     const restTimerEndTime = JSON.parse(localStorage.getItem('restTimerEndTime'));
     if (isResting && restTimerEndTime) {
-      // Si el temporizador de descanso ya ha terminado, lo limpiamos
       if (Date.now() > restTimerEndTime) {
         clearRestTimerInStorage();
       } else {
         state.isResting = isResting;
         state.restTimerEndTime = restTimerEndTime;
+        state.restTimerInitialDuration = JSON.parse(localStorage.getItem('restTimerInitialDuration'));
       }
     }
     return state;
   } catch {
     clearWorkoutInStorage();
     clearRestTimerInStorage();
-    return { activeWorkout: null, workoutStartTime: null, isWorkoutPaused: false, workoutAccumulatedTime: 0, isResting: false, restTimerEndTime: null };
+    return { activeWorkout: null, workoutStartTime: null, isWorkoutPaused: false, workoutAccumulatedTime: 0, isResting: false, restTimerEndTime: null, restTimerInitialDuration: null };
   }
 };
 
@@ -56,13 +55,14 @@ const clearWorkoutInStorage = () => {
 const setRestTimerInStorage = (state) => {
     localStorage.setItem('isResting', JSON.stringify(state.isResting));
     localStorage.setItem('restTimerEndTime', JSON.stringify(state.restTimerEndTime));
+    localStorage.setItem('restTimerInitialDuration', JSON.stringify(state.restTimerInitialDuration));
 };
 
 const clearRestTimerInStorage = () => {
     localStorage.removeItem('isResting');
     localStorage.removeItem('restTimerEndTime');
+    localStorage.removeItem('restTimerInitialDuration');
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 const useAppStore = create((set, get) => ({
   // --- ESTADO ---
@@ -78,6 +78,7 @@ const useAppStore = create((set, get) => ({
 
   // --- ACCIONES ---
   
+  // ... (otras acciones sin cambios)
   showPRNotification: (newPRs) => {
     set({ prNotification: newPRs });
     setTimeout(() => set({ prNotification: null }), 7000);
@@ -140,6 +141,7 @@ const useAppStore = create((set, get) => ({
       workoutAccumulatedTime: 0,
       isResting: false,
       restTimerEndTime: null,
+      restTimerInitialDuration: null,
     });
   },
 
@@ -203,6 +205,7 @@ const useAppStore = create((set, get) => ({
       workoutAccumulatedTime: 0,
       isResting: false,
       restTimerEndTime: null,
+      restTimerInitialDuration: null,
     });
   },
 
@@ -219,13 +222,17 @@ const useAppStore = create((set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
   
+  openRestModal: () => {
+    set({ isResting: true });
+  },
+  
   // --- INICIO DE LA MODIFICACIÓN ---
-  // Acciones para el temporizador de descanso
   startRestTimer: (durationInSeconds) => {
     const endTime = Date.now() + durationInSeconds * 1000;
     const newState = {
         isResting: true,
         restTimerEndTime: endTime,
+        restTimerInitialDuration: durationInSeconds,
     };
     set(newState);
     setRestTimerInStorage(newState);
@@ -236,6 +243,7 @@ const useAppStore = create((set, get) => ({
     set({
         isResting: false,
         restTimerEndTime: null,
+        restTimerInitialDuration: null,
     });
   },
   // --- FIN DE LA MODIFICACIÓN ---

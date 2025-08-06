@@ -7,11 +7,13 @@ const RestTimerModal = () => {
   const {
     isResting,
     restTimerEndTime,
+    restTimerInitialDuration,
     startRestTimer,
     stopRestTimer,
   } = useAppStore(state => ({
     isResting: state.isResting,
     restTimerEndTime: state.restTimerEndTime,
+    restTimerInitialDuration: state.restTimerInitialDuration,
     startRestTimer: state.startRestTimer,
     stopRestTimer: state.stopRestTimer,
   }));
@@ -44,6 +46,10 @@ const RestTimerModal = () => {
   const handleStart = (duration) => {
     if(duration > 0) {
       startRestTimer(duration);
+      // --- INICIO DE LA CORRECCIÓN ---
+      // Sincronizamos el estado local 'timeLeft' inmediatamente para evitar el parpadeo.
+      setTimeLeft(duration);
+      // --- FIN DE LA CORRECCIÓN ---
       setView('timer');
     }
   };
@@ -59,8 +65,9 @@ const RestTimerModal = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const totalDuration = restTimerEndTime ? (restTimerEndTime - (Date.now() - timeLeft * 1000)) / 1000 : 0;
-  const progress = totalDuration > 0 ? ((totalDuration - timeLeft) / totalDuration) * 100 : 0;
+  const progress = restTimerInitialDuration > 0
+    ? ((restTimerInitialDuration - timeLeft) / restTimerInitialDuration) * 100
+    : 0;
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
@@ -73,6 +80,29 @@ const RestTimerModal = () => {
         {view === 'select' && (
           <div>
             <h3 className="text-xl font-bold mb-6">Seleccionar Descanso</h3>
+            
+            <div className="relative w-48 h-48 mx-auto mb-6 flex items-center justify-center">
+              <svg className="w-full h-full" viewBox="0 0 100 100">
+                <circle className="text-glass-border" strokeWidth="8" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                <circle
+                  className="text-accent"
+                  strokeWidth="8"
+                  strokeDasharray="283"
+                  strokeDashoffset={283}
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="45"
+                  cx="50"
+                  cy="50"
+                  style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
+                />
+              </svg>
+              <div className="absolute font-mono text-5xl font-bold text-text-secondary">
+                0:00
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-4 mb-6">
               {[60, 120, 180].map(time => (
                 <button 
