@@ -8,9 +8,6 @@ import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail
 
 const { User } = models;
 
-// Almacén temporal para códigos de verificación
-const verificationCodes = new Map();
-
 // Iniciar sesión de usuario
 export const loginUser = async (req, res, next) => {
   const errors = validationResult(req);
@@ -226,15 +223,15 @@ export const updateEmailForVerification = async (req, res, next) => {
     if (existingUser && existingUser.id !== userId) {
       return res.status(409).json({ error: 'El email ya está en uso.' });
     }
-
-    await user.update({ email: newEmail });
-
+    
+    // Actualizamos el email y generamos un nuevo código
     const verificationCode = generateVerificationCode();
     await sendVerificationEmail(newEmail, verificationCode);
 
-    verificationCodes.set(newEmail, {
-        code: verificationCode,
-        expires: Date.now() + 10 * 60 * 1000
+    await user.update({ 
+        email: newEmail,
+        verification_code: verificationCode,
+        verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
     });
 
     res.json({ message: 'Email actualizado y código de verificación enviado.' });
@@ -242,8 +239,9 @@ export const updateEmailForVerification = async (req, res, next) => {
     next(error);
   }
 };
+
 // Solicitar reseteo de contraseña
-export const forgotPassword = async (req, res) => {
+export const forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
         const user = await User.findOne({ where: { email } });
@@ -253,27 +251,30 @@ export const forgotPassword = async (req, res) => {
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
-        // El token que se guarda en la BBDD se hashea, pero el que se envía por email va sin hashear.
-        user.password_reset_token = crypto.createHash('sha256').update(resetToken).digest('hex');
-        user.password_reset_expires = Date.now() + 10 * 60 * 1000; // 10 minutos
-        await user.save();
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-        try {
-            // Se usa la variable de entorno para construir la URL correctamente.
-            const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-            await sendPasswordResetEmail(user.email, resetUrl);
-            
-            res.json({ message: 'Se ha enviado un email para restablecer tu contraseña.' });
-        } catch (emailError) {
-            console.error('Error enviando email de reseteo:', emailError);
-            user.password_reset_token = null;
-            user.password_reset_expires = null;
-            await user.save();
-            res.status(500).json({ message: 'No se pudo enviar el email de reseteo. Inténtalo de nuevo más tarde.' });
+        user.password_reset_token = hashedToken;
+        user.password_reset_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+        await user.save();
+        
+        // **PASO DE DEPURACIÓN**: Comprobamos el valor en los logs de Zeabur
+        console.log(`[DEBUG] FRONTEND_URL: ${process.env.FRONTEND_URL}`);
+
+        const frontendUrl = process.env.FRONTEND_URL;
+        if (!frontendUrl) {
+             console.error('La variable de entorno FRONTEND_URL no está definida.');
+             return res.status(500).json({ message: 'Error de configuración del servidor.' });
         }
+
+        const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+        await sendPasswordResetEmail(user.email, resetUrl);
+        
+        res.json({ message: 'Se ha enviado un email para restablecer tu contraseña.' });
+
     } catch (error) {
         console.error("Error en forgotPassword:", error);
-        res.status(500).json({ message: 'Error interno del servidor.' });
+        // Usamos next(error) para pasar el control al manejador de errores global.
+        next(error);
     }
 };
 
@@ -286,9 +287,11 @@ export const resetPassword = async (req, res, next) => {
   
   try {
     const { token, password } = req.body;
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
     const user = await User.findOne({
       where: {
-        password_reset_token: token,
+        password_reset_token: hashedToken,
         password_reset_expires_at: { [Op.gt]: new Date() },
       },
     });
@@ -297,13 +300,10 @@ export const resetPassword = async (req, res, next) => {
       return res.status(400).json({ error: 'El token no es válido o ha expirado.' });
     }
     
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Comprobar si la nueva contraseña es igual a la actual
     const isSamePassword = await bcrypt.compare(password, user.password_hash);
     if (isSamePassword) {
       return res.status(400).json({ error: 'La nueva contraseña no puede ser igual a la anterior.' });
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const salt = await bcrypt.genSalt(10);
     user.password_hash = await bcrypt.hash(password, salt);
@@ -317,10 +317,11 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
+// Exportación final para las rutas
 const authController = {
   register,
   verifyEmail,
-  registerUser,
+  registerUser, // Para compatibilidad
   loginUser,
   logoutUser,
   resendVerificationEmail,
