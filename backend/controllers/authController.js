@@ -224,7 +224,6 @@ export const updateEmailForVerification = async (req, res, next) => {
       return res.status(409).json({ error: 'El email ya está en uso.' });
     }
     
-    // Actualizamos el email y generamos un nuevo código
     const verificationCode = generateVerificationCode();
     await sendVerificationEmail(newEmail, verificationCode);
 
@@ -254,12 +253,9 @@ export const forgotPassword = async (req, res, next) => {
         const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
         user.password_reset_token = hashedToken;
-        user.password_reset_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+        user.password_reset_expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
         await user.save();
         
-        // **PASO DE DEPURACIÓN**: Comprobamos el valor en los logs de Zeabur
-        console.log(`[DEBUG] FRONTEND_URL: ${process.env.FRONTEND_URL}`);
-
         const frontendUrl = process.env.FRONTEND_URL;
         if (!frontendUrl) {
              console.error('La variable de entorno FRONTEND_URL no está definida.');
@@ -273,7 +269,6 @@ export const forgotPassword = async (req, res, next) => {
 
     } catch (error) {
         console.error("Error en forgotPassword:", error);
-        // Usamos next(error) para pasar el control al manejador de errores global.
         next(error);
     }
 };
@@ -287,17 +282,15 @@ export const resetPassword = async (req, res, next) => {
   
   try {
     const { token, password } = req.body;
-    
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Hasheamos el token que viene del frontend para que coincida con el de la BBDD
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-    // --- FIN DE LA CORRECCIÓN ---
 
     const user = await User.findOne({
       where: {
-        // Buscamos por el token hasheado, no el original
         password_reset_token: hashedToken,
-        password_reset_expires_at: { [Op.gt]: new Date() },
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Se usa el nombre de columna correcto: 'password_reset_expires'
+        password_reset_expires: { [Op.gt]: new Date() },
+        // --- FIN DE LA CORRECCIÓN ---
       },
     });
 
@@ -313,7 +306,7 @@ export const resetPassword = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     user.password_hash = await bcrypt.hash(password, salt);
     user.password_reset_token = null;
-    user.password_reset_expires_at = null;
+    user.password_reset_expires = null;
     await user.save();
 
     res.json({ message: 'Contraseña actualizada correctamente.' });
