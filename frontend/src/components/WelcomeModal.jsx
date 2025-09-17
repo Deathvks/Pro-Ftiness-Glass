@@ -40,7 +40,7 @@ const WelcomeModal = ({ onClose }) => {
               </div>
               <div>
                 {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.12.10!</h2>
+                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.12.11!</h2>
                 {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <p className="text-sm text-text-secondary">Novedades y mejoras</p>
               </div>
