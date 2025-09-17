@@ -1,0 +1,36 @@
+{
+  "name": "backend",
+  "version": "2.5.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node start.js",
+    "db:migrate": "sequelize-cli db:migrate --env production",
+    "db:migrate:dev": "sequelize-cli db:migrate",
+    "db:seed": "sequelize-cli db:seed:all --env production",
+    "db:seed:undo": "sequelize-cli db:seed:undo:all --env production",
+    "db:seed:dev": "sequelize-cli db:seed:all",
+    "db:seed:undo:dev": "sequelize-cli db:seed:undo:all"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.2",
+    "nodemailer": "^7.0.6",
+    "nodemon": "^3.1.10",
+    "sequelize": "^6.37.7",
+    "sequelize-cli": "^6.6.3"
+  }
+}

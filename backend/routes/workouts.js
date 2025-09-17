@@ -1,0 +1,25 @@
+import express from 'express';
+import { body } from 'express-validator';
+import workoutController from '../controllers/workoutController.js';
+import authenticateToken from '../middleware/authenticateToken.js';
+
+const router = express.Router();
+
+router.use(authenticateToken);
+
+// --- INICIO DE LA VALIDACIÓN ---
+const workoutLogValidationRules = [
+    body('routineName').trim().notEmpty().withMessage('El nombre de la rutina es requerido.'),
+    body('duration_seconds').isInt({ min: 0 }).withMessage('La duración debe ser un número.'),
+    body('details.*.exerciseName').trim().notEmpty().withMessage('El nombre del ejercicio es requerido.'),
+    body('details.*.setsDone.*.reps').isInt({ min: 0 }).withMessage('Las repeticiones deben ser un número.'),
+    body('details.*.setsDone.*.weight_kg').isFloat({ min: 0 }).withMessage('El peso debe ser un número.')
+];
+// --- FIN ---
+
+router.get('/workouts', workoutController.getWorkoutHistory);
+router.post('/workouts', workoutLogValidationRules, workoutController.logWorkoutSession);
+router.put('/workouts/:workoutId', workoutController.updateWorkoutLog);
+router.delete('/workouts/:workoutId', workoutController.deleteWorkoutLog);
+
+export default router;
