@@ -64,13 +64,13 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Se cambia el nombre para que coincida con la base de datos (sin '_at')
-    password_reset_expires: {
+    // --- CORRECCIÓN ---
+    // Volvemos al nombre original que espera la aplicación
+    password_reset_expires_at: {
       type: DataTypes.DATE,
       allowNull: true,
     },
-    // --- FIN DE LA CORRECCIÓN ---
+    // --- FIN ---
   },
   {
     tableName: 'users',

@@ -8,7 +8,8 @@ import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail
 
 const { User } = models;
 
-// Iniciar sesión de usuario
+// --- FUNCIONES DE AUTENTICACIÓN ---
+
 export const loginUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -35,7 +36,7 @@ export const loginUser = async (req, res, next) => {
       
       await user.update({
         verification_code: verificationCode,
-        verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000), // 10 minutos de expiración
+        verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
       });
     }
 
@@ -49,12 +50,10 @@ export const loginUser = async (req, res, next) => {
   }
 };
 
-// Cerrar sesión de usuario
 export const logoutUser = (req, res) => {
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
 
-// Registro con verificación por email
 export const register = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -109,10 +108,6 @@ export const register = async (req, res, next) => {
   }
 };
 
-// Mantener la función original para compatibilidad
-export const registerUser = register;
-
-// Verificar código y marcar usuario como verificado
 export const verifyEmail = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -170,7 +165,6 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 
-// Reenviar código de verificación
 export const resendVerificationEmail = async (req, res, next) => {
   const { email } = req.body;
   
@@ -204,7 +198,6 @@ export const resendVerificationEmail = async (req, res, next) => {
   }
 };
 
-// Actualizar email para verificación
 export const updateEmailForVerification = async (req, res, next) => {
   const { email: newEmail } = req.body;
   const { userId } = req.user;
@@ -239,7 +232,6 @@ export const updateEmailForVerification = async (req, res, next) => {
   }
 };
 
-// Solicitar reseteo de contraseña
 export const forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
@@ -253,12 +245,12 @@ export const forgotPassword = async (req, res, next) => {
         const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
         user.password_reset_token = hashedToken;
-        user.password_reset_expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+        // **CORRECCIÓN CLAVE**: Usamos el nombre de columna correcto del modelo
+        user.password_reset_expires_at = new Date(Date.now() + 10 * 60 * 1000); 
         await user.save();
         
         const frontendUrl = process.env.FRONTEND_URL;
         if (!frontendUrl) {
-             console.error('La variable de entorno FRONTEND_URL no está definida.');
              return res.status(500).json({ message: 'Error de configuración del servidor.' });
         }
 
@@ -268,12 +260,10 @@ export const forgotPassword = async (req, res, next) => {
         res.json({ message: 'Se ha enviado un email para restablecer tu contraseña.' });
 
     } catch (error) {
-        console.error("Error en forgotPassword:", error);
         next(error);
     }
 };
 
-// Resetear la contraseña con el token
 export const resetPassword = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -287,10 +277,8 @@ export const resetPassword = async (req, res, next) => {
     const user = await User.findOne({
       where: {
         password_reset_token: hashedToken,
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Se usa el nombre de columna correcto: 'password_reset_expires'
-        password_reset_expires: { [Op.gt]: new Date() },
-        // --- FIN DE LA CORRECCIÓN ---
+        // **CORRECCIÓN CLAVE**: Usamos el nombre de columna correcto del modelo
+        password_reset_expires_at: { [Op.gt]: new Date() },
       },
     });
 
@@ -306,7 +294,7 @@ export const resetPassword = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     user.password_hash = await bcrypt.hash(password, salt);
     user.password_reset_token = null;
-    user.password_reset_expires = null;
+    user.password_reset_expires_at = null;
     await user.save();
 
     res.json({ message: 'Contraseña actualizada correctamente.' });
@@ -315,11 +303,11 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-// Exportación final para las rutas
+// Se agrupan todas las funciones en un objeto para exportar, por consistencia.
 const authController = {
+  registerUser: register,
   register,
   verifyEmail,
-  registerUser, // Para compatibilidad
   loginUser,
   logoutUser,
   resendVerificationEmail,
