@@ -242,28 +242,39 @@ export const updateEmailForVerification = async (req, res, next) => {
     next(error);
   }
 };
-
 // Solicitar reseteo de contraseña
-export const forgotPassword = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ where: { email } });
 
-    if (!user) {
-      return res.json({ message: 'Si tu email está registrado, recibirás un enlace para restablecer tu contraseña.' });
+        if (!user) {
+            return res.status(404).json({ message: 'No se encontró un usuario con ese email.' });
+        }
+
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        // El token que se guarda en la BBDD se hashea, pero el que se envía por email va sin hashear.
+        user.password_reset_token = crypto.createHash('sha256').update(resetToken).digest('hex');
+        user.password_reset_expires = Date.now() + 10 * 60 * 1000; // 10 minutos
+        await user.save();
+
+        try {
+            // Se usa la variable de entorno para construir la URL correctamente.
+            const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+            await sendPasswordResetEmail(user.email, resetUrl);
+            
+            res.json({ message: 'Se ha enviado un email para restablecer tu contraseña.' });
+        } catch (emailError) {
+            console.error('Error enviando email de reseteo:', emailError);
+            user.password_reset_token = null;
+            user.password_reset_expires = null;
+            await user.save();
+            res.status(500).json({ message: 'No se pudo enviar el email de reseteo. Inténtalo de nuevo más tarde.' });
+        }
+    } catch (error) {
+        console.error("Error en forgotPassword:", error);
+        res.status(500).json({ message: 'Error interno del servidor.' });
     }
-
-    const token = crypto.randomBytes(32).toString('hex');
-    user.password_reset_token = token;
-    user.password_reset_expires_at = new Date(Date.now() + 3600000); // 1 hora de validez
-    await user.save();
-
-    await sendPasswordResetEmail(user.email, token);
-
-    res.json({ message: 'Si tu email está registrado, recibirás un enlace para restablecer tu contraseña.' });
-  } catch (error) {
-    next(error);
-  }
 };
 
 // Resetear la contraseña con el token
