@@ -221,54 +221,39 @@ const Routines = ({ setView }) => {
 
                 return (
                   <GlassCard key={routine.id} className="p-5 md:p-6">
-                    <div className="flex items-start justify-between gap-4 pb-4 border-b border-[--glass-border]">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-3">
-                          <h2 className="text-lg md:text-xl font-bold truncate">{routine.name}</h2>
-                          {isCompleted && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-xs font-semibold">
-                              <CheckCircle size={14} /> Completada hoy
-                            </span>
-                          )}
-                        </div>
-                        {routine.description && (
-                          <p className="text-sm text-text-secondary mt-1 line-clamp-2">{routine.description}</p>
+                    {/* --- INICIO DE LA CORRECCIÓN --- */}
+                    <div className="flex items-center justify-between gap-4 mb-3">
+                      {/* Fila superior para badges e info secundaria */}
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary min-w-0">
+                        {isCompleted && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold">
+                            <CheckCircle size={14} /> Completada hoy
+                          </span>
                         )}
-                        <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-text-secondary">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
-                            <Dumbbell size={14} /> {totalExercises} ejercicio{totalExercises !== 1 ? 's' : ''}
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
-                            <CalendarClock size={14} />
-                            {lastUsed ? new Date(lastUsed).toLocaleDateString('es-ES') : 'Sin uso reciente'}
-                          </span>
-                        </div>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
+                          <Dumbbell size={14} /> {totalExercises} ejercicio{totalExercises !== 1 ? 's' : ''}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
+                          <CalendarClock size={14} />
+                          {lastUsed ? new Date(lastUsed).toLocaleDateString('es-ES') : 'Sin uso'}
+                        </span>
                       </div>
-
+                      {/* Fila superior para los iconos de acción */}
                       <div className="shrink-0 flex items-center gap-1">
-                        <button
-                          onClick={() => setEditingRoutine(routine)}
-                          className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent transition"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => duplicateRoutine(routine)}
-                          className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent transition"
-                          title="Duplicar"
-                        >
-                          <Plus size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(routine.id)}
-                          className="p-2 rounded-full text-text-muted hover:bg-red/20 hover:text-red transition"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        <button onClick={() => setEditingRoutine(routine)} className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent" title="Editar"><Edit size={18} /></button>
+                        <button onClick={() => duplicateRoutine(routine)} className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent" title="Duplicar"><Plus size={18} /></button>
+                        <button onClick={() => handleDeleteClick(routine.id)} className="p-2 rounded-full text-text-muted hover:bg-red/20 hover:text-red" title="Eliminar"><Trash2 size={18} /></button>
                       </div>
                     </div>
+
+                    {/* Contenedor para el título y la descripción */}
+                    <div className="pb-4 border-b border-[--glass-border]">
+                      <h2 className="text-lg md:text-xl font-bold text-text-primary">{routine.name}</h2>
+                      {routine.description && (
+                        <p className="text-sm text-text-secondary mt-1 line-clamp-2">{routine.description}</p>
+                      )}
+                    </div>
+                    {/* --- FIN DE LA CORRECCIÓN --- */}
 
                     {exerciseGroups.length > 0 && (
                       <div className="mt-4">

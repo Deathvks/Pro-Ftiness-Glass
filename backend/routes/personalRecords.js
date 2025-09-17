@@ -7,7 +7,12 @@ const router = express.Router();
 // Todas las rutas aquí requieren autenticación
 router.use(authenticateToken);
 
-// GET /api/records -> Devuelve todos los PRs del usuario
+// --- INICIO DE LA MODIFICACIÓN ---
+// GET /api/records/exercises -> Devuelve los nombres de los ejercicios con PRs
+router.get('/records/exercises', personalRecordController.getPersonalRecordExerciseNames);
+// --- FIN DE LA MODIFICACIÓN ---
+
+// GET /api/records -> Devuelve todos los PRs del usuario con filtros
 router.get('/records', personalRecordController.getPersonalRecords);
 
 export default router;
