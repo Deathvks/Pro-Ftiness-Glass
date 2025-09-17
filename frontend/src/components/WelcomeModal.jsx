@@ -1,17 +1,24 @@
 import React from 'react';
-import { X, Sparkles, KeyRound, Wand2 } from 'lucide-react';
+import { X, Sparkles, KeyRound, Wand2, Calculator } from 'lucide-react';
 
 const WelcomeModal = ({ onClose }) => {
   const features = [
     {
       icon: <KeyRound className="w-6 h-6 text-blue-400" />,
       title: "Recuperación de Contraseña",
-      description: "¡Ya no te preocupes si olvidas tu contraseña! Hemos añadido un flujo completo para que puedas restablecerla de forma segura desde la pantalla de inicio de sesión."
+      description: "Hemos añadido un flujo completo para que puedas restablecer tu contraseña de forma segura si la olvidas."
     },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    {
+      icon: <Calculator className="w-6 h-6 text-emerald-400" />,
+      title: "Recálculo de Macros en Nutrición",
+      description: "Al seleccionar una comida guardada, ahora puedes ajustar los gramos y todos los macros se recalcularán automáticamente."
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
     {
       icon: <Wand2 className="w-6 h-6 text-purple-400" />,
       title: "Ajustes de Interfaz",
-      description: "Hemos mejorado la responsividad de los títulos y la disposición de los enlaces en las pantallas de autenticación para una experiencia más limpia."
+      description: "Hemos mejorado la responsividad y los estilos en las pantallas de autenticación para una experiencia más limpia."
     }
   ];
 
@@ -32,7 +39,9 @@ const WelcomeModal = ({ onClose }) => {
                 <Sparkles className="w-6 h-6 text-accent" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.11.0!</h2>
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.11.1!</h2>
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <p className="text-sm text-text-secondary">Novedades y mejoras</p>
               </div>
             </div>

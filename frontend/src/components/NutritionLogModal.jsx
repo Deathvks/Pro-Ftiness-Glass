@@ -29,25 +29,11 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     fats100: '',
   });
   
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const [baseMacros, setBaseMacros] = useState(null); // Almacena los macros por gramo de un favorito
+  // --- FIN DE LA MODIFICACIÓN ---
+
   const [originalData, setOriginalData] = useState(null);
-
-  const round = (val, decimals = 0) => {
-    const n = parseFloat(val);
-    if (isNaN(n)) return 0;
-    const p = Math.pow(10, decimals);
-    return Math.round(n * p) / p;
-  };
-
-  const computeFromPer100 = (cal100, p100, c100, f100, grams) => {
-    const factor = (parseFloat(grams) || 0) / 100;
-    return {
-      calories: Math.round((parseFloat(cal100) || 0) * factor),
-      protein_g: round((parseFloat(p100) || 0) * factor, 1),
-      carbs_g: round((parseFloat(c100) || 0) * factor, 1),
-      fats_g: round((parseFloat(f100) || 0) * factor, 1),
-      weight_g: parseFloat(grams) || 0,
-    };
-  };
 
   const { favoriteMeals, addFavoriteMeal, deleteFavoriteMeal } = useAppStore(state => ({
     favoriteMeals: state.favoriteMeals,
@@ -83,16 +69,31 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
   }, [view]);
   
   const handleSelectFavorite = (meal) => {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Si la comida guardada tiene un peso, calculamos los macros por gramo.
+    // Si no, asumimos que los macros son para la porción tal cual.
+    const mealWeight = parseFloat(meal.weight_g) || 0;
+    if (mealWeight > 0) {
+        setBaseMacros({
+            calories: (parseFloat(meal.calories) || 0) / mealWeight,
+            protein_g: (parseFloat(meal.protein_g) || 0) / mealWeight,
+            carbs_g: (parseFloat(meal.carbs_g) || 0) / mealWeight,
+            fats_g: (parseFloat(meal.fats_g) || 0) / mealWeight,
+        });
+    } else {
+        // Si no hay peso, no podemos recalcular, así que reseteamos baseMacros.
+        setBaseMacros(null);
+    }
+
     setFormData({
       description: meal.name,
       calories: meal.calories,
       protein_g: meal.protein_g,
       carbs_g: meal.carbs_g,
       fats_g: meal.fats_g,
-      // --- INICIO DE LA MODIFICACIÓN ---
       weight_g: meal.weight_g || '',
-      // --- FIN DE LA MODIFICACIÓN ---
     });
+    // --- FIN DE LA MODIFICACIÓN ---
     setView('manual');
   };
   
@@ -101,21 +102,56 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     const result = await deleteFavoriteMeal(mealId);
     addToast(result.message, result.success ? 'success' : 'error');
   };
+  
+  const round = (val, decimals = 1) => {
+    const n = parseFloat(val);
+    if (isNaN(n)) return 0;
+    const p = Math.pow(10, decimals);
+    return Math.round(n * p) / p;
+  };
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Este efecto se dispara cuando el peso cambia y hay macros base de un favorito.
+  useEffect(() => {
+      if (baseMacros) {
+          const newWeight = parseFloat(formData.weight_g) || 0;
+          setFormData(prev => ({
+              ...prev,
+              calories: Math.round(baseMacros.calories * newWeight),
+              protein_g: round(baseMacros.protein_g * newWeight),
+              carbs_g: round(baseMacros.carbs_g * newWeight),
+              fats_g: round(baseMacros.fats_g * newWeight),
+          }));
+      }
+  }, [formData.weight_g, baseMacros]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (['calories', 'protein_g', 'carbs_g', 'fats_g', 'weight_g'].includes(name)) {
-      if (/^\d*\.?\d*$/.test(value)) {
-        if (name === 'weight_g' && per100Mode) {
-          const computed = computeFromPer100(per100.calories100, per100.protein100, per100.carbs100, per100.fats100, value);
-          setFormData(prev => ({ ...prev, ...computed }));
-        } else {
-          setFormData(prev => ({ ...prev, [name]: value }));
-        }
-      }
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+    // Permitir solo números y un punto decimal
+    const isNumericField = ['calories', 'protein_g', 'carbs_g', 'fats_g', 'weight_g'].includes(name);
+
+    if (isNumericField && !/^\d*\.?\d*$/.test(value)) {
+        return; // No actualizar si el formato no es válido
     }
+
+    // Si se edita manualmente un macro, desactivamos el recálculo automático
+    if (baseMacros && name !== 'weight_g' && name !== 'description') {
+        setBaseMacros(null);
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  // --- FIN DE LA MODIFICACIÓN ---
+  
+  const computeFromPer100 = (cal100, p100, c100, f100, grams) => {
+    const factor = (parseFloat(grams) || 0) / 100;
+    return {
+      calories: Math.round((parseFloat(cal100) || 0) * factor),
+      protein_g: round((parseFloat(p100) || 0) * factor, 1),
+      carbs_g: round((parseFloat(c100) || 0) * factor, 1),
+      fats_g: round((parseFloat(f100) || 0) * factor, 1),
+      weight_g: parseFloat(grams) || 0,
+    };
   };
 
   const handleChangePer100 = (e) => {
@@ -143,9 +179,6 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     }
   }, [per100Mode]);
   
-  const isAlreadyFavorite = () => favoriteMeals.some(meal => meal.name.toLowerCase().trim() === formData.description.toLowerCase().trim());
-  const getExistingFavoriteMeal = () => favoriteMeals.find(meal => meal.name.toLowerCase().trim() === formData.description.toLowerCase().trim());
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.description || !formData.calories) {
@@ -163,15 +196,15 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     };
 
     if (logToEdit && originalData) {
-      const hasChanges = Object.keys(formData).some(key => formData[key] !== originalData[key]) || saveAsFavorite || removeFromFavorites;
+      const hasChanges = Object.keys(formData).some(key => String(formData[key]) !== String(originalData[key])) || saveAsFavorite || removeFromFavorites;
       if (!hasChanges) {
-        addToast('No se han realizado cambios en la comida.', 'error');
+        addToast('No se han realizado cambios en la comida.', 'info');
         return;
       }
     }
 
     if (logToEdit) {
-      const existingFavorite = getExistingFavoriteMeal();
+      const existingFavorite = favoriteMeals.find(meal => meal.name.toLowerCase().trim() === formData.description.toLowerCase().trim());
       if (removeFromFavorites && existingFavorite) {
         await deleteFavoriteMeal(existingFavorite.id);
       } else if (saveAsFavorite && !existingFavorite) {
@@ -225,7 +258,7 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
           <button onClick={() => setView('manual')} className={`${baseButtonClasses} ${view === 'manual' ? activeModeClasses : inactiveModeClasses}`}>
             <Plus size={16} className="inline mr-1" /> Manual
           </button>
-          <button onClick={() => setView('favorites')} className={`${baseButtonClasses} ${view === 'favorites' ? activeModeClasses : inactiveModeClasses}`}>
+          <button onClick={() => { setView('favorites'); setBaseMacros(null); }} className={`${baseButtonClasses} ${view === 'favorites' ? activeModeClasses : inactiveModeClasses}`}>
             <BookMarked size={16} className="inline mr-1" /> Guardadas
           </button>
         </div>
@@ -295,13 +328,11 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
               <div key={meal.id} onClick={() => handleSelectFavorite(meal)} className={`flex items-center justify-between p-3 border rounded-md cursor-pointer ${favoriteItemBg} ${isDarkTheme ? 'border-glass-border' : 'border-gray-200'}`}>
                 <div>
                   <p className="font-semibold text-text-primary">{meal.name}</p>
-                  {/* --- INICIO DE LA MODIFICACIÓN --- */}
                   <p className="text-xs text-text-secondary">
                     {meal.calories} kcal
                     {meal.weight_g && ` (${meal.weight_g}g)`}
                     {' · '}P {meal.protein_g}g · C {meal.carbs_g}g · G {meal.fats_g}g
                   </p>
-                  {/* --- FIN DE LA MODIFICACIÓN --- */}
                 </div>
                 <button className="text-text-secondary hover:text-red-500 p-2" onClick={(e) => handleDeleteFavorite(meal.id, e)}><Trash2 size={18} /></button>
               </div>
