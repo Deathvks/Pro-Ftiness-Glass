@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle } from 'lucide-react';
+import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
@@ -47,11 +47,45 @@ const Dashboard = ({ setView }) => {
     
     const latestWeight = sortedWeightLog.length > 0 ? parseFloat(sortedWeightLog[0].weight_kg) : (userProfile?.weight || null);
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const weightTrend = useMemo(() => {
+        if (sortedWeightLog.length < 2) return null;
+
+        const latest = parseFloat(sortedWeightLog[0].weight_kg);
+        const previous = parseFloat(sortedWeightLog[1].weight_kg);
+        const goal = userProfile?.goal;
+        const diff = latest - previous;
+
+        if (Math.abs(diff) < 0.1) {
+            return { icon: Minus, color: 'text-text-muted', bg: 'bg-bg-secondary' };
+        }
+
+        const isGaining = diff > 0;
+
+        if (goal === 'gain') {
+            return isGaining
+                ? { icon: ArrowUp, color: 'text-green', bg: 'bg-green/10' }
+                : { icon: ArrowDown, color: 'text-red', bg: 'bg-red/10' };
+        }
+        if (goal === 'lose') {
+            return !isGaining
+                ? { icon: ArrowDown, color: 'text-green', bg: 'bg-green/10' }
+                : { icon: ArrowUp, color: 'text-red', bg: 'bg-red/10' };
+        }
+        
+        return isGaining
+            ? { icon: ArrowUp, color: 'text-text-secondary', bg: 'bg-bg-secondary' }
+            : { icon: ArrowDown, color: 'text-text-secondary', bg: 'bg-bg-secondary' };
+    }, [sortedWeightLog, userProfile?.goal]);
+    // --- FIN DE LA MODIFICACIÓN ---
+
     const weeklyLogs = useMemo(() => {
         const today = new Date();
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1); 
+        const startOfWeek = new Date(today.getFullYear(), today.getMonth(), diff);
         startOfWeek.setHours(0, 0, 0, 0);
+        
         return workoutLog.filter(log => new Date(log.workout_date) >= startOfWeek);
     }, [workoutLog]);
 
@@ -131,7 +165,6 @@ const Dashboard = ({ setView }) => {
                     <button onClick={() => setView('nutrition')} className="hover:scale-105 transition-transform"><CircularProgress value={nutritionTotals.calories} maxValue={calorieTarget} label="Calorías" icon={Flame} colorClass="text-amber-400"/></button>
                     <button onClick={() => setView('nutrition')} className="hover:scale-105 transition-transform"><CircularProgress value={parseFloat(nutritionTotals.protein.toFixed(1))} maxValue={proteinTarget} label="Proteína" icon={Beef} colorClass="text-rose-400"/></button>
                     <button onClick={() => setModal({ type: 'water' })} className="hover:scale-105 transition-transform"><CircularProgress value={waterLog?.quantity_ml || 0} maxValue={waterTarget} label="Agua" icon={Droplet} colorClass="text-sky-400"/></button>
-                    {/* --- INICIO DE LA CORRECCIÓN --- */}
                     <button onClick={() => setModal({ type: 'creatine' })} className="hover:scale-105 transition-transform">
                         <CircularProgress
                             value={todaysCreatineLog.length}
@@ -142,7 +175,6 @@ const Dashboard = ({ setView }) => {
                             displayText={todaysCreatineLog.length > 0 ? `${todaysCreatineLog.length} toma${todaysCreatineLog.length > 1 ? 's' : ''}` : 'Sin tomas'}
                         />
                     </button>
-                    {/* --- FIN DE LA CORRECCIÓN --- */}
                 </div>
             </GlassCard>
 
@@ -183,10 +215,19 @@ const Dashboard = ({ setView }) => {
                     <h2 className="text-xl font-bold">Registro de Peso</h2>
                     <div className="text-center">
                         <p className="text-sm text-text-secondary">Peso Actual</p>
-                        <p className="text-5xl font-extrabold">
-                            {latestWeight ? latestWeight.toFixed(1) : '--'}
-                            <span className="text-2xl font-bold text-text-muted ml-1">kg</span>
-                        </p>
+                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                        <div className="flex items-center justify-center gap-3">
+                            <p className="text-5xl font-extrabold">
+                                {latestWeight ? latestWeight.toFixed(1) : '--'}
+                                <span className="text-2xl font-bold text-text-muted ml-1">kg</span>
+                            </p>
+                            {weightTrend && (
+                                <div className={`p-2 rounded-full ${weightTrend.bg}`} title={`Tendencia: ${weightTrend.text}`}>
+                                    <weightTrend.icon size={24} className={weightTrend.color} />
+                                </div>
+                            )}
+                        </div>
+                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                     </div>
                     <div className="flex flex-col gap-2">
                         <h3 className="font-semibold text-text-secondary">Historial Reciente</h3>

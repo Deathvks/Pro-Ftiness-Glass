@@ -29,9 +29,7 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     fats100: '',
   });
   
-  // --- INICIO DE LA MODIFICACIÓN ---
-  const [baseMacros, setBaseMacros] = useState(null); // Almacena los macros por gramo de un favorito
-  // --- FIN DE LA MODIFICACIÓN ---
+  const [baseMacros, setBaseMacros] = useState(null);
 
   const [originalData, setOriginalData] = useState(null);
 
@@ -69,9 +67,6 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
   }, [view]);
   
   const handleSelectFavorite = (meal) => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Si la comida guardada tiene un peso, calculamos los macros por gramo.
-    // Si no, asumimos que los macros son para la porción tal cual.
     const mealWeight = parseFloat(meal.weight_g) || 0;
     if (mealWeight > 0) {
         setBaseMacros({
@@ -81,7 +76,6 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
             fats_g: (parseFloat(meal.fats_g) || 0) / mealWeight,
         });
     } else {
-        // Si no hay peso, no podemos recalcular, así que reseteamos baseMacros.
         setBaseMacros(null);
     }
 
@@ -93,7 +87,6 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
       fats_g: meal.fats_g,
       weight_g: meal.weight_g || '',
     });
-    // --- FIN DE LA MODIFICACIÓN ---
     setView('manual');
   };
   
@@ -110,8 +103,6 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     return Math.round(n * p) / p;
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Este efecto se dispara cuando el peso cambia y hay macros base de un favorito.
   useEffect(() => {
       if (baseMacros) {
           const newWeight = parseFloat(formData.weight_g) || 0;
@@ -127,21 +118,18 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Permitir solo números y un punto decimal
     const isNumericField = ['calories', 'protein_g', 'carbs_g', 'fats_g', 'weight_g'].includes(name);
 
     if (isNumericField && !/^\d*\.?\d*$/.test(value)) {
-        return; // No actualizar si el formato no es válido
+        return;
     }
 
-    // Si se edita manualmente un macro, desactivamos el recálculo automático
     if (baseMacros && name !== 'weight_g' && name !== 'description') {
         setBaseMacros(null);
     }
     
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  // --- FIN DE LA MODIFICACIÓN ---
   
   const computeFromPer100 = (cal100, p100, c100, f100, grams) => {
     const factor = (parseFloat(grams) || 0) / 100;
@@ -150,20 +138,33 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
       protein_g: round((parseFloat(p100) || 0) * factor, 1),
       carbs_g: round((parseFloat(c100) || 0) * factor, 1),
       fats_g: round((parseFloat(f100) || 0) * factor, 1),
-      weight_g: parseFloat(grams) || 0,
     };
   };
 
   const handleChangePer100 = (e) => {
     const { name, value } = e.target;
     if (!/^\d*\.?\d*$/.test(value)) return;
-    const newPer100 = { ...per100, [name]: value };
-    setPer100(newPer100);
-    if (per100Mode) {
-      const computed = computeFromPer100(newPer100.calories100, newPer100.protein100, newPer100.carbs100, newPer100.fats100, formData.weight_g);
-      setFormData(prev => ({ ...prev, ...computed }));
-    }
+    setPer100(prev => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    if (per100Mode) {
+      const computed = computeFromPer100(
+        per100.calories100,
+        per100.protein100,
+        per100.carbs100,
+        per100.fats100,
+        formData.weight_g
+      );
+      setFormData(prev => ({
+        ...prev,
+        calories: computed.calories,
+        protein_g: computed.protein_g,
+        carbs_g: computed.carbs_g,
+        fats_g: computed.fats_g
+      }));
+    }
+  }, [formData.weight_g, per100, per100Mode]);
 
   useEffect(() => {
     if (per100Mode) {
@@ -268,7 +269,15 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
             <div className="flex items-center justify-between -mt-2">
               <label className="text-sm font-medium text-text-secondary">Introducir valores por 100 g</label>
               <label className="inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={per100Mode} onChange={(e) => setPer100Mode(e.target.checked)} />
+                {/* --- INICIO DE LA CORRECCIÓN --- */}
+                <input type="checkbox" className="sr-only peer" checked={per100Mode} onChange={(e) => {
+                  const isChecked = e.target.checked;
+                  setPer100Mode(isChecked);
+                  if (isChecked && !formData.weight_g) {
+                    setFormData(prev => ({ ...prev, weight_g: '100' }));
+                  }
+                }} />
+                {/* --- FIN DE LA CORRECCIÓN --- */}
                 <div className={`w-10 h-6 rounded-full peer-checked:bg-accent relative transition ${isDarkTheme ? 'bg-bg-secondary border-glass-border' : 'bg-gray-200 border-gray-300'}`}>
                   <div className={`absolute top-1 left-1 w-4 h-4 rounded-full transition peer-checked:translate-x-4 ${isDarkTheme ? 'bg-bg-primary' : 'bg-white'}`} />
                 </div>
