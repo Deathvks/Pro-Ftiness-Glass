@@ -287,10 +287,15 @@ export const resetPassword = async (req, res, next) => {
   
   try {
     const { token, password } = req.body;
+    
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Hasheamos el token que viene del frontend para que coincida con el de la BBDD
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    // --- FIN DE LA CORRECCIÓN ---
 
     const user = await User.findOne({
       where: {
+        // Buscamos por el token hasheado, no el original
         password_reset_token: hashedToken,
         password_reset_expires_at: { [Op.gt]: new Date() },
       },
