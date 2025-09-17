@@ -238,24 +238,28 @@ export const forgotPassword = async (req, res, next) => {
         const user = await User.findOne({ where: { email } });
 
         if (!user) {
-            return res.status(404).json({ message: 'No se encontró un usuario con ese email.' });
+            // No revelamos si el usuario existe o no por seguridad.
+            return res.json({ message: 'Si existe una cuenta con ese email, se ha enviado un enlace para restablecer tu contraseña.' });
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
         const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
         user.password_reset_token = hashedToken;
-        // **CORRECCIÓN CLAVE**: Usamos el nombre de columna correcto del modelo
-        user.password_reset_expires_at = new Date(Date.now() + 10 * 60 * 1000); 
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Aumentamos la expiración a 1 hora (60 minutos * 60 segundos * 1000 milisegundos)
+        user.password_reset_expires_at = new Date(Date.now() + 60 * 60 * 1000); 
+        // --- FIN DE LA CORRECCIÓN ---
         await user.save();
         
         const frontendUrl = process.env.FRONTEND_URL;
         if (!frontendUrl) {
-             return res.status(500).json({ message: 'Error de configuración del servidor.' });
+             console.error("FATAL: FRONTEND_URL no está definida en .env");
+             return res.status(500).json({ error: 'Error de configuración del servidor.' });
         }
-
-        const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
-        await sendPasswordResetEmail(user.email, resetUrl);
+        
+        // Enviamos el token sin hashear en la URL
+        await sendPasswordResetEmail(user.email, resetToken);
         
         res.json({ message: 'Se ha enviado un email para restablecer tu contraseña.' });
 
@@ -277,8 +281,10 @@ export const resetPassword = async (req, res, next) => {
     const user = await User.findOne({
       where: {
         password_reset_token: hashedToken,
-        // **CORRECCIÓN CLAVE**: Usamos el nombre de columna correcto del modelo
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Usamos el nombre de columna correcto para la consulta
         password_reset_expires_at: { [Op.gt]: new Date() },
+        // --- FIN DE LA CORRECCIÓN ---
       },
     });
 

@@ -64,13 +64,13 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    // --- CORRECCIÓN ---
-    // Volvemos al nombre original que espera la aplicación
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Se corrige el nombre de la columna para que coincida con la migración.
     password_reset_expires_at: {
       type: DataTypes.DATE,
       allowNull: true,
     },
-    // --- FIN ---
+    // --- FIN DE LA CORRECCIÓN ---
   },
   {
     tableName: 'users',
