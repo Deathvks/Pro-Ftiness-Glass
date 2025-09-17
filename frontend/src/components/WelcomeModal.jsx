@@ -1,25 +1,25 @@
 import React from 'react';
-import { X, Sparkles, KeyRound, Wand2, Calculator } from 'lucide-react';
+import { X, Sparkles, KeyRound, Wand2, Calculator, Brush, RefreshCw } from 'lucide-react';
 
 const WelcomeModal = ({ onClose }) => {
   const features = [
-    {
-      icon: <KeyRound className="w-6 h-6 text-blue-400" />,
-      title: "Recuperación de Contraseña",
-      description: "Hemos añadido un flujo completo para que puedas restablecer tu contraseña de forma segura si la olvidas."
-    },
     // --- INICIO DE LA MODIFICACIÓN ---
     {
-      icon: <Calculator className="w-6 h-6 text-emerald-400" />,
-      title: "Recálculo de Macros en Nutrición",
-      description: "Al seleccionar una comida guardada, ahora puedes ajustar los gramos y todos los macros se recalcularán automáticamente."
+      icon: <Brush className="w-6 h-6 text-emerald-400" />,
+      title: "Mejoras Visuales en el Dashboard",
+      description: "Hemos rediseñado el resumen diario para que todos los elementos (calorías, proteínas, agua y creatina) se muestren perfectamente alineados."
     },
-    // --- FIN DE LA MODIFICACIÓN ---
     {
       icon: <Wand2 className="w-6 h-6 text-purple-400" />,
-      title: "Ajustes de Interfaz",
-      description: "Hemos mejorado la responsividad y los estilos en las pantallas de autenticación para una experiencia más limpia."
+      title: "Corrección de Tema Claro",
+      description: "Solucionamos varios problemas visuales en los modales para que ahora se muestren correctamente al usar el tema claro."
+    },
+    {
+      icon: <RefreshCw className="w-6 h-6 text-sky-400" />,
+      title: "Actualización de Datos Mejorada",
+      description: "El dashboard ahora refresca tus datos de nutrición y creatina automáticamente al volver a él, sin necesidad de recargar la página."
     }
+    // --- FIN DE LA MODIFICACIÓN ---
   ];
 
   return (
@@ -40,7 +40,7 @@ const WelcomeModal = ({ onClose }) => {
               </div>
               <div>
                 {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.11.1!</h2>
+                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.12.0!</h2>
                 {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <p className="text-sm text-text-secondary">Novedades y mejoras</p>
               </div>

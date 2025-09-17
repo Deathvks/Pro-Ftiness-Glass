@@ -5,6 +5,7 @@ import * as bodyWeightService from '../services/bodyweightService';
 import * as nutritionService from '../services/nutritionService';
 import * as favoriteMealService from '../services/favoriteMealService';
 import * as templateRoutineService from '../services/templateRoutineService';
+import * as creatinaService from '../services/creatinaService'; // Importamos el servicio de creatina
 
 // Función para obtener la fecha actual en formato YYYY-MM-DD
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
@@ -21,6 +22,10 @@ const initialState = {
     nutritionSummary: { nutrition: [], water: [] },
     favoriteMeals: [],
     templateRoutines: {},
+    // --- INICIO DE LA MODIFICACIÓN ---
+    todaysCreatineLog: [],
+    creatineStats: null,
+    // --- FIN DE LA MODIFICACIÓN ---
 };
 
 // Definimos el "slice" que gestiona los datos de la aplicación.
@@ -48,6 +53,7 @@ export const createDataSlice = (set, get) => ({
             set({ userProfile: profileData, isAuthenticated: true });
 
             if (profileData.goal) {
+                const today = get().selectedDate;
                 const [
                     routines,
                     workouts,
@@ -55,13 +61,21 @@ export const createDataSlice = (set, get) => ({
                     nutrition,
                     favoriteMeals,
                     templateRoutines,
+                    // --- INICIO DE LA MODIFICACIÓN ---
+                    todaysCreatine,
+                    creatineStats,
+                    // --- FIN DE LA MODIFICACIÓN ---
                 ] = await Promise.all([
                     routineService.getRoutines(),
                     workoutService.getWorkouts(),
                     bodyWeightService.getHistory(),
-                    nutritionService.getNutritionLogsByDate(get().selectedDate),
+                    nutritionService.getNutritionLogsByDate(today),
                     favoriteMealService.getFavoriteMeals(),
                     templateRoutineService.getTemplateRoutines(),
+                    // --- INICIO DE LA MODIFICACIÓN ---
+                    creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
+                    creatinaService.getCreatinaStats(),
+                    // --- FIN DE LA MODIFICACIÓN ---
                 ]);
                 set({
                     routines,
@@ -71,6 +85,10 @@ export const createDataSlice = (set, get) => ({
                     waterLog: nutrition.water,
                     favoriteMeals,
                     templateRoutines,
+                    // --- INICIO DE LA MODIFICACIÓN ---
+                    todaysCreatineLog: todaysCreatine.data || [],
+                    creatineStats: creatineStats.data || null,
+                    // --- FIN DE LA MODIFICACIÓN ---
                 });
             }
         } catch (error) {
@@ -85,10 +103,14 @@ export const createDataSlice = (set, get) => ({
     fetchDataForDate: async (date) => {
         set({ selectedDate: date, isLoading: true });
         try {
-            const nutrition = await nutritionService.getNutritionLogsByDate(date);
+            const [nutrition, todaysCreatine] = await Promise.all([
+                nutritionService.getNutritionLogsByDate(date),
+                creatinaService.getCreatinaLogs({ startDate: date, endDate: date })
+            ]);
             set({
                 nutritionLog: nutrition.nutrition,
                 waterLog: nutrition.water,
+                todaysCreatineLog: todaysCreatine.data || [],
             });
         } catch (error) {
             console.error("Error al cargar datos de nutrición:", error);

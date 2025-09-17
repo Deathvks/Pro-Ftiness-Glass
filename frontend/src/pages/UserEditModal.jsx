@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
-import CustomSelect from '../components/CustomSelect'; // Importamos el nuevo componente
+import CustomSelect from '../components/CustomSelect';
 
 const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
@@ -10,6 +10,20 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
     email: user.email || '',
     role: user.role || 'user',
   });
+
+  // --- INICIO DE LA CORRECCIÓN ---
+  const [isDarkTheme, setIsDarkTheme] = useState(() =>
+    typeof document !== 'undefined' && !document.body.classList.contains('light-theme')
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDarkTheme(!document.body.classList.contains('light-theme'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+  // --- FIN DE LA CORRECCIÓN ---
 
   const handleChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -33,7 +47,9 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
       onClick={onCancel}
     >
       <GlassCard
-        className="relative w-full max-w-md p-8 m-4"
+        // --- INICIO DE LA CORRECCIÓN ---
+        className={`relative w-full max-w-md p-8 m-4 ${!isDarkTheme ? '!bg-white/95 !border-black/10' : ''}`}
+        // --- FIN DE LA CORRECCIÓN ---
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onCancel} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition">
@@ -53,14 +69,12 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
           </div>
           <div>
             <label htmlFor="role" className="block text-sm font-medium text-text-secondary mb-2">Rol</label>
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
             <CustomSelect
               value={formData.role}
               onChange={(value) => handleChange('role', value)}
               options={roleOptions}
               placeholder="Seleccionar rol"
             />
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
           </div>
           <button
             type="submit"

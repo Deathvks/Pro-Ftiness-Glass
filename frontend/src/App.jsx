@@ -36,6 +36,9 @@ export default function App() {
     showWelcomeModal,
     checkWelcomeModal,
     closeWelcomeModal,
+    // --- INICIO DE LA CORRECCIÓN ---
+    fetchDataForDate, // Añadido para poder refrescar los datos del día
+    // --- FIN DE LA CORRECCIÓN ---
   } = useAppStore();
 
   const [view, setView] = useState(() => {
@@ -70,8 +73,6 @@ export default function App() {
   const { isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
   const [timer, setTimer] = useState(0);
   
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Este efecto se ejecuta una sola vez al cargar la app para gestionar la ruta de reseteo.
   useEffect(() => {
     const handleUrlChange = () => {
       if (window.location.pathname === '/reset-password' && !isAuthenticated) {
@@ -79,14 +80,11 @@ export default function App() {
       }
     };
     
-    // Comprobar la ruta al cargar
     handleUrlChange();
     
-    // Escuchar cambios en la URL (por si el usuario navega con los botones del navegador)
     window.addEventListener('popstate', handleUrlChange);
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, [isAuthenticated]);
-  // --- FIN DE LA CORRECCIÓN ---
 
   useEffect(() => {
     let interval = null;
@@ -114,6 +112,17 @@ export default function App() {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+  
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Este efecto se asegura de que los datos del día se actualicen
+    // cada vez que el usuario navega a la vista del 'dashboard'.
+    useEffect(() => {
+        if (view === 'dashboard' && isAuthenticated) {
+            const today = new Date().toISOString().split('T')[0];
+            fetchDataForDate(today);
+        }
+    }, [view, isAuthenticated, fetchDataForDate]);
+    // --- FIN DE LA CORRECCIÓN ---
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -173,8 +182,6 @@ export default function App() {
   }
   
   if (!isAuthenticated) {
-    // --- INICIO DE LA CORRECCIÓN ---
-    // La renderización ahora depende del estado 'authView'
     switch (authView) {
         case 'register':
             return <RegisterScreen showLogin={() => setAuthView('login')} />;
@@ -182,7 +189,7 @@ export default function App() {
             return <ForgotPasswordScreen showLogin={() => setAuthView('login')} />;
         case 'resetPassword':
             return <ResetPasswordScreen showLogin={() => {
-                window.history.pushState({}, '', '/'); // Limpiamos la URL
+                window.history.pushState({}, '', '/');
                 setAuthView('login');
             }} />;
         default:
@@ -191,7 +198,6 @@ export default function App() {
                 showForgotPassword={() => setAuthView('forgotPassword')} 
             />;
     }
-    // --- FIN DE LA CORRECCIÓN ---
   }
 
   if (userProfile && !userProfile.goal) {
