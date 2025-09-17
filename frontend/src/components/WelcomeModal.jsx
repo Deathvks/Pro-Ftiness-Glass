@@ -1,17 +1,17 @@
 import React from 'react';
-import { X, Sparkles, Droplet, Palette } from 'lucide-react';
+import { X, Sparkles, KeyRound, Wand2 } from 'lucide-react';
 
 const WelcomeModal = ({ onClose }) => {
   const features = [
     {
-      icon: <Droplet className="w-6 h-6 text-blue-400" />,
-      title: "Arreglo conteo de creatina",
-      description: "Ahora la creatina cuenta bien las tomas y se reinician bien"
+      icon: <KeyRound className="w-6 h-6 text-blue-400" />,
+      title: "Recuperación de Contraseña",
+      description: "¡Ya no te preocupes si olvidas tu contraseña! Hemos añadido un flujo completo para que puedas restablecerla de forma segura desde la pantalla de inicio de sesión."
     },
     {
-      icon: <Palette className="w-6 h-6 text-purple-400" />,
-      title: "Nuevos colores de acento",
-      description: "10 nuevos colores disponibles en ajustes con paginación para una mejor experiencia"
+      icon: <Wand2 className="w-6 h-6 text-purple-400" />,
+      title: "Ajustes de Interfaz",
+      description: "Hemos mejorado la responsividad de los títulos y la disposición de los enlaces en las pantallas de autenticación para una experiencia más limpia."
     }
   ];
 
@@ -32,7 +32,7 @@ const WelcomeModal = ({ onClose }) => {
                 <Sparkles className="w-6 h-6 text-accent" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.10.2!</h2>
+                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.11.0!</h2>
                 <p className="text-sm text-text-secondary">Novedades y mejoras</p>
               </div>
             </div>

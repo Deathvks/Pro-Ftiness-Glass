@@ -30,3 +30,29 @@ export const updateEmailForVerification = (newEmail) => {
     body: { email: newEmail }
   });
 };
+
+// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Envía una solicitud para restablecer la contraseña de un usuario.
+ * @param {string} email - El email del usuario.
+ */
+export const forgotPassword = (email) => {
+  return apiClient('/auth/forgot-password', {
+    method: 'POST',
+    body: { email },
+  });
+};
+
+/**
+ * Restablece la contraseña de un usuario usando un token.
+ * @param {object} resetData - Datos con el token y la nueva contraseña.
+ * @param {string} resetData.token - El token de restablecimiento.
+ * @param {string} resetData.password - La nueva contraseña.
+ */
+export const resetPassword = (resetData) => {
+  return apiClient('/auth/reset-password', {
+    method: 'POST',
+    body: resetData,
+  });
+};
+// --- FIN DE LA MODIFICACIÓN ---

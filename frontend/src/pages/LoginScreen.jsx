@@ -5,7 +5,7 @@ import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 
-const LoginScreen = ({ showRegister }) => {
+const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const handleLogin = useAppStore(state => state.handleLogin);
     const { addToast } = useToast();
     const [email, setEmail] = useState('');
@@ -38,10 +38,7 @@ const LoginScreen = ({ showRegister }) => {
             const errorMessage = err.message || 'Error al iniciar sesión.';
             addToast(errorMessage, 'error');
             setErrors({ api: errorMessage });
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Limpiamos el campo de contraseña en caso de error para que el usuario pueda reintentar.
             setPassword('');
-            // --- FIN DE LA MODIFICACIÓN ---
             setIsLoading(false);
         }
     };
@@ -87,11 +84,19 @@ const LoginScreen = ({ showRegister }) => {
                             {isLoading ? <Spinner /> : <><LogIn size={18} /> <span>Iniciar Sesión</span></>}
                         </button>
                     </form>
+                    
+                    <div className="text-center mt-6 text-sm">
+                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                        <button onClick={showForgotPassword} className="text-accent hover:opacity-80 transition-opacity font-medium">
+                            ¿Olvidaste tu contraseña?
+                        </button>
+                        <span className="text-text-muted mx-2">|</span>
+                        <button onClick={showRegister} className="text-accent hover:opacity-80 transition-opacity font-medium">
+                            Regístrate
+                        </button>
+                        {/* --- FIN DE LA MODIFICACIÓN --- */}
+                    </div>
                 </GlassCard>
-
-                <button onClick={showRegister} className="mt-6 text-text-muted hover:text-text-primary transition">
-                    ¿No tienes cuenta? Regístrate
-                </button>
             </div>
         </div>
     );

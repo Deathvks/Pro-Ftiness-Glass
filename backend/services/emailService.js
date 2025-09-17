@@ -42,3 +42,39 @@ export const sendVerificationEmail = async (email, code) => {
     return { success: false, message: 'Error enviando código' };
   }
 };
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Enviar email para resetear contraseña
+export const sendPasswordResetEmail = async (email, token) => {
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Restablecimiento de Contraseña - Pro Fitness Glass',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4F46E5;">Restablecimiento de Contraseña</h2>
+        <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar:</p>
+        <div style="text-align: center; margin: 20px 0;">
+          <a 
+            href="${resetUrl}" 
+            style="background-color: #4F46E5; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold;"
+          >
+            Restablecer Contraseña
+          </a>
+        </div>
+        <p>Este enlace expirará en 1 hora.</p>
+        <p>Si no solicitaste esto, puedes ignorar este email de forma segura.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true, message: 'Email de restablecimiento enviado.' };
+  } catch (error) {
+    console.error('Error enviando email de reseteo:', error);
+    return { success: false, message: 'Error al enviar el email.' };
+  }
+};
+// --- FIN DE LA MODIFICACIÓN ---

@@ -1,8 +1,10 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
+import { Op } from 'sequelize';
+import crypto from 'crypto';
 import models from '../models/index.js';
-import { generateVerificationCode, sendVerificationEmail } from '../services/emailService.js';
+import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
 
 const { User } = models;
 
@@ -30,8 +32,6 @@ export const loginUser = async (req, res, next) => {
       return res.status(401).json({ error: 'Credenciales inválidas.' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Si el usuario no está verificado, le enviamos un nuevo código al iniciar sesión.
     if (!user.is_verified) {
       const verificationCode = generateVerificationCode();
       await sendVerificationEmail(email, verificationCode);
@@ -41,7 +41,6 @@ export const loginUser = async (req, res, next) => {
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000), // 10 minutos de expiración
       });
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const payload = { userId: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
@@ -178,8 +177,6 @@ export const verifyEmail = async (req, res, next) => {
 export const resendVerificationEmail = async (req, res, next) => {
   const { email } = req.body;
   
-  console.log('Email recibido para reenvío:', email);
-
   try {
     const user = await User.findOne({ where: { email } });
     
@@ -246,6 +243,69 @@ export const updateEmailForVerification = async (req, res, next) => {
   }
 };
 
+// Solicitar reseteo de contraseña
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.json({ message: 'Si tu email está registrado, recibirás un enlace para restablecer tu contraseña.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    user.password_reset_token = token;
+    user.password_reset_expires_at = new Date(Date.now() + 3600000); // 1 hora de validez
+    await user.save();
+
+    await sendPasswordResetEmail(user.email, token);
+
+    res.json({ message: 'Si tu email está registrado, recibirás un enlace para restablecer tu contraseña.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Resetear la contraseña con el token
+export const resetPassword = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  
+  try {
+    const { token, password } = req.body;
+    const user = await User.findOne({
+      where: {
+        password_reset_token: token,
+        password_reset_expires_at: { [Op.gt]: new Date() },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'El token no es válido o ha expirado.' });
+    }
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Comprobar si la nueva contraseña es igual a la actual
+    const isSamePassword = await bcrypt.compare(password, user.password_hash);
+    if (isSamePassword) {
+      return res.status(400).json({ error: 'La nueva contraseña no puede ser igual a la anterior.' });
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    const salt = await bcrypt.genSalt(10);
+    user.password_hash = await bcrypt.hash(password, salt);
+    user.password_reset_token = null;
+    user.password_reset_expires_at = null;
+    await user.save();
+
+    res.json({ message: 'Contraseña actualizada correctamente.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const authController = {
   register,
   verifyEmail,
@@ -253,7 +313,9 @@ const authController = {
   loginUser,
   logoutUser,
   resendVerificationEmail,
-  updateEmailForVerification
+  updateEmailForVerification,
+  forgotPassword,
+  resetPassword,
 };
 
 export default authController;

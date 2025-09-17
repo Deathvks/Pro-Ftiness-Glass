@@ -47,11 +47,13 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`block w-full text-left px-3 py-2 hover:bg-accent/10 transition-colors rounded-md text-sm ${
+              /* --- INICIO DE LA MODIFICACIÓN --- */
+              className={`block w-full text-left px-3 py-2 transition-colors duration-200 rounded-md text-sm ${
                 value === option.value 
                   ? 'bg-accent/10 text-accent font-medium' 
-                  : 'text-text-primary'
+                  : 'text-text-primary hover:bg-accent/10 hover:text-accent'
               }`}
+              /* --- FIN DE LA MODIFICACIÓN --- */
             >
               {option.label}
             </button>

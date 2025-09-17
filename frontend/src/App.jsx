@@ -16,10 +16,12 @@ import ProfileEditor from './pages/ProfileEditor';
 import AccountEditor from './pages/AccountEditor';
 import PRToast from './components/PRToast';
 import ConfirmationModal from './components/ConfirmationModal';
-import WelcomeModal from './components/WelcomeModal'; // Nuevo import
+import WelcomeModal from './components/WelcomeModal';
 import AdminPanel from './pages/AdminPanel.jsx';
 import EmailVerificationModal from './components/EmailVerificationModal';
 import EmailVerification from './components/EmailVerification';
+import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
+import ResetPasswordScreen from './pages/ResetPasswordScreen';
 
 export default function App() {
   const {
@@ -31,9 +33,9 @@ export default function App() {
     handleLogout: performLogout,
     activeWorkout,
     workoutStartTime,
-    showWelcomeModal, // Nuevo estado
-    checkWelcomeModal, // Nueva acción
-    closeWelcomeModal, // Nueva acción
+    showWelcomeModal,
+    checkWelcomeModal,
+    closeWelcomeModal,
   } = useAppStore();
 
   const [view, setView] = useState(() => {
@@ -55,7 +57,8 @@ export default function App() {
     localStorage.setItem('lastView', view);
   }, [view]);
 
-  const [isLoginView, setIsLoginView] = useState(true);
+  const [authView, setAuthView] = useState('login');
+  
   const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
   const [showCodeVerificationModal, setShowCodeVerificationModal] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
@@ -66,6 +69,24 @@ export default function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
   const [timer, setTimer] = useState(0);
+  
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Este efecto se ejecuta una sola vez al cargar la app para gestionar la ruta de reseteo.
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (window.location.pathname === '/reset-password' && !isAuthenticated) {
+        setAuthView('resetPassword');
+      }
+    };
+    
+    // Comprobar la ruta al cargar
+    handleUrlChange();
+    
+    // Escuchar cambios en la URL (por si el usuario navega con los botones del navegador)
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, [isAuthenticated]);
+  // --- FIN DE LA CORRECCIÓN ---
 
   useEffect(() => {
     let interval = null;
@@ -125,7 +146,6 @@ export default function App() {
     }
   }, [isAuthenticated, userProfile]);
 
-  // MOVER ESTE useEffect AQUÍ - ANTES de los returns condicionales
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
       checkWelcomeModal();
@@ -143,21 +163,35 @@ export default function App() {
 
   const navigate = useCallback((viewName, options = {}) => {
     setView(viewName);
-    // Guardar opciones de navegación para que los componentes puedan acceder a ellas
     if (options.forceTab) {
       localStorage.setItem('routinesForceTab', options.forceTab);
     }
   }, []);
 
-  // Ahora los returns condicionales están DESPUÉS de todos los hooks
   if (isLoading) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
-
+  
   if (!isAuthenticated) {
-    return isLoginView
-      ? <LoginScreen onLogin={fetchInitialData} showRegister={() => setIsLoginView(false)} />
-      : <RegisterScreen showLogin={() => setIsLoginView(true)} />;
+    // --- INICIO DE LA CORRECCIÓN ---
+    // La renderización ahora depende del estado 'authView'
+    switch (authView) {
+        case 'register':
+            return <RegisterScreen showLogin={() => setAuthView('login')} />;
+        case 'forgotPassword':
+            return <ForgotPasswordScreen showLogin={() => setAuthView('login')} />;
+        case 'resetPassword':
+            return <ResetPasswordScreen showLogin={() => {
+                window.history.pushState({}, '', '/'); // Limpiamos la URL
+                setAuthView('login');
+            }} />;
+        default:
+            return <LoginScreen 
+                showRegister={() => setAuthView('register')} 
+                showForgotPassword={() => setAuthView('forgotPassword')} 
+            />;
+    }
+    // --- FIN DE LA CORRECCIÓN ---
   }
 
   if (userProfile && !userProfile.goal) {
@@ -170,9 +204,7 @@ export default function App() {
       case 'progress': return <Progress darkMode={theme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout timer={timer} setView={navigate} />;
-      // --- INICIO DE LA MODIFICACIÓN ---
       case 'nutrition': return <Nutrition setView={navigate} />;
-      // --- FIN DE LA MODIFICACIÓN ---
       case 'settings':
         return (
           <SettingsScreen
@@ -191,7 +223,6 @@ export default function App() {
     }
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <Home size={24} /> },
     { id: 'nutrition', label: 'Nutrición', icon: <Utensils size={24} /> },
@@ -199,14 +230,6 @@ export default function App() {
     { id: 'routines', label: 'Rutinas', icon: <Dumbbell size={24} /> },
     { id: 'settings', label: 'Ajustes', icon: <Settings size={24} /> },
   ];
-  // --- FIN DE LA MODIFICACIÓN ---
-
-  // ELIMINAR este useEffect de aquí ya que lo movimos arriba
-  // useEffect(() => {
-  //   if (isAuthenticated && userProfile && !isLoading) {
-  //     checkWelcomeModal();
-  //   }
-  // }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal]);
 
   return (
     <div className="relative flex w-full h-full overflow-hidden">
@@ -252,7 +275,6 @@ export default function App() {
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {/* Modal de Bienvenida */}
       {showWelcomeModal && (
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
@@ -299,7 +321,7 @@ export default function App() {
           email={verificationEmail}
           onSuccess={() => {
             setShowCodeVerificationModal(false);
-            fetchInitialData(); // Recargar datos para que is_verified se actualice
+            fetchInitialData();
           }}
           onBack={() => {
             setShowCodeVerificationModal(false);
@@ -311,5 +333,3 @@ export default function App() {
     </div>
   );
 }
-
-// Add this useEffect INSIDE the component

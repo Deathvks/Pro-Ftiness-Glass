@@ -61,6 +61,17 @@ const User = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Campos para el reseteo de contraseña
+    password_reset_token: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    password_reset_expires_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
   },
   {
     tableName: 'users',
