@@ -31,21 +31,20 @@ const NutritionView = ({ axisColor }) => {
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const dataMap = new Map();
 
-        // --- INICIO DE LA CORRECCIÓN ---
         const today = new Date();
         const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
-        // Determinamos hasta qué día mostrar datos: el día actual si es el mes en curso, o el último día del mes si es un mes pasado.
         const lastDayToShow = isCurrentMonth ? today.getDate() : daysInMonth;
 
-        // Creamos la estructura de datos solo hasta el día que corresponde.
         for (let i = 1; i <= lastDayToShow; i++) {
             const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             dataMap.set(dateKey, {
-                date: i, 
+                // --- INICIO DE LA MODIFICACIÓN ---
+                date: dateKey, // Usar la fecha completa como clave para el tooltip
+                day: i, // Usar solo el día para el eje X
+                // --- FIN DE LA MODIFICACIÓN ---
                 Calorías: 0, Proteínas: 0, Carbs: 0, Grasas: 0, Agua: 0
             });
         }
-        // --- FIN DE LA CORRECCIÓN ---
     
         (nutritionSummary.nutrition || []).forEach(item => {
             if (dataMap.has(item.date)) {
@@ -74,7 +73,6 @@ const NutritionView = ({ axisColor }) => {
                 <h2 className="text-xl font-bold capitalize">{summaryDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}</h2>
                 <button 
                     onClick={() => changeSummaryMonth(1)} 
-                    // Deshabilitamos el botón si estamos en el mes actual o uno futuro
                     disabled={new Date(summaryDate.getFullYear(), summaryDate.getMonth() + 1, 1) > new Date()}
                     className="p-2 rounded-full hover:bg-white/10 transition disabled:opacity-50"
                 >

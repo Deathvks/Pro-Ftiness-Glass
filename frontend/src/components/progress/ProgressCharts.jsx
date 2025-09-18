@@ -6,7 +6,11 @@ import Spinner from '../Spinner';
 // Tooltip personalizado para todos los gráficos
 export const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-        const formattedDate = new Date(label).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Se corrige el 'new Date(label)' que asumía que 'label' era un timestamp.
+        // Ahora, 'label' es la fecha completa 'YYYY-MM-DD', así que la parseamos correctamente.
+        const formattedDate = new Date(payload[0].payload.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        // --- FIN DE LA MODIFICACIÓN ---
         return (
             <div className="p-3 bg-bg-secondary border border-glass-border rounded-md shadow-lg text-sm">
                 <p className="font-semibold text-text-secondary">Fecha: {formattedDate}</p>
@@ -24,14 +28,16 @@ export const CustomTooltip = ({ active, payload, label }) => {
 // Gráfico de Calorías y Macronutrientes
 export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
     <>
-        {/* --- INICIO DE LA REORDENACIÓN --- */}
         <GlassCard className="p-6">
             <h2 className="text-xl font-bold mb-4">Consumo de Calorías</h2>
             {isLoading ? <div className="flex justify-center items-center h-[300px]"><Spinner/></div> :
             <ResponsiveContainer width="100%" height={300}>
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
                 <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
-                    <XAxis dataKey="date" stroke={axisColor} fontSize={12} />
+                    {/* El eje X ahora muestra el 'día', pero el tooltip usará la 'fecha' completa */}
+                    <XAxis dataKey="day" stroke={axisColor} fontSize={12} />
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                     <YAxis stroke={axisColor} fontSize={12} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-accent-transparent)' }} />
                     <Legend wrapperStyle={{ color: axisColor }} />
@@ -45,9 +51,12 @@ export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
              <h2 className="text-xl font-bold mb-4">Resumen de Macros</h2>
              {isLoading ? <div className="flex justify-center items-center h-[300px]"><Spinner/></div> :
              <ResponsiveContainer width="100%" height={300}>
+                 {/* --- INICIO DE LA MODIFICACIÓN --- */}
                  <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                      <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
-                     <XAxis dataKey="date" stroke={axisColor} fontSize={12} />
+                     {/* El eje X ahora muestra el 'día', pero el tooltip usará la 'fecha' completa */}
+                     <XAxis dataKey="day" stroke={axisColor} fontSize={12} />
+                     {/* --- FIN DE LA MODIFICACIÓN --- */}
                      <YAxis stroke={axisColor} fontSize={12} />
                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-accent-transparent)' }}/>
                      <Legend wrapperStyle={{ color: axisColor }} />
@@ -63,9 +72,12 @@ export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
             <h2 className="text-xl font-bold mb-4">Consumo de Agua</h2>
             {isLoading ? <div className="flex justify-center items-center h-[300px]"><Spinner/></div> :
             <ResponsiveContainer width="100%" height={300}>
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
-                    <XAxis dataKey="date" stroke={axisColor} fontSize={12} />
+                    {/* El eje X ahora muestra el 'día', pero el tooltip usará la 'fecha' completa */}
+                    <XAxis dataKey="day" stroke={axisColor} fontSize={12} />
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                     <YAxis stroke={axisColor} fontSize={12} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ color: axisColor }} />
@@ -74,7 +86,6 @@ export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
             </ResponsiveContainer>
             }
         </GlassCard>
-        {/* --- FIN DE LA REORDENACIÓN --- */}
     </>
 );
 
