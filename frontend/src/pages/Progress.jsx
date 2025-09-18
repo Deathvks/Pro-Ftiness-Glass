@@ -1,12 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import useAppStore from '../store/useAppStore';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
+
+// --- INICIO DE LA CORRECCIÓN DE RUTAS ---
 import DailyDetailView from '../components/progress/DailyDetailView';
 import CalendarView from '../components/progress/CalendarView';
 import { BodyWeightChart } from '../components/progress/ProgressCharts';
 import ExerciseView from '../components/progress/ExerciseView';
 import NutritionView from '../components/progress/NutritionView';
 import RecordsView from '../components/progress/RecordsView';
+// --- FIN DE LA CORRECCIÓN DE RUTAS ---
 
 const Progress = ({ darkMode }) => {
     const { workoutLog, bodyWeightLog } = useAppStore(state => ({
@@ -75,10 +78,6 @@ const Progress = ({ darkMode }) => {
 
     const axisColor = darkMode ? "#94a3b8" : "#475569";
 
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Se elimina toda la lógica de gestión de estado y efectos
-    // que antes estaban aquí para la vista de nutrición.
-    // Ahora cada vista es independiente.
     const renderView = () => {
         switch (viewType) {
             case 'exercise':
@@ -95,7 +94,6 @@ const Progress = ({ darkMode }) => {
                 return null;
         }
     };
-    // --- FIN DE LA CORRECCIÓN ---
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
@@ -118,4 +116,4 @@ const Progress = ({ darkMode }) => {
     );
 };
 
-export default Progress;
+export default React.memo(Progress);
