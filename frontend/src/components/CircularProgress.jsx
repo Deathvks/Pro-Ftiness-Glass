@@ -3,7 +3,10 @@ import React from 'react';
 // Se añade 'displayText' como un nuevo prop opcional
 const CircularProgress = ({ value, maxValue, label, icon, colorClass = 'text-accent', displayText }) => {
     const Icon = icon;
-    const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Se limita el porcentaje a un máximo de 100 para que el círculo no siga girando.
+    const percentage = maxValue > 0 ? Math.min((value / maxValue) * 100, 100) : 0;
+    // --- FIN DE LA MODIFICACIÓN ---
     const circumference = 2 * Math.PI * 45; // Radio de 45
     const offset = circumference - (percentage / 100) * circumference;
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Calendar, TrendingUp, Zap, Save, Trash2, Edit } from 'lucide-react';
+import { X, Plus, Calendar, TrendingUp, Zap, Save, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { useToast } from '../hooks/useToast';
 import * as creatinaService from '../services/creatinaService';
@@ -23,6 +23,13 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
         averageGrams: 0,
         thisWeekDays: 0
     });
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+    const totalPages = Math.ceil(creatinaLogs.length / itemsPerPage);
+    const paginatedLogs = creatinaLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    // --- FIN DE LA MODIFICACIÓN ---
 
     useEffect(() => {
         fetchCreatinaData();
@@ -199,21 +206,32 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                                     {isLoading ? (
                                         <div className="text-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div><p className="text-text-muted mt-2">Cargando...</p></div>
                                     ) : creatinaLogs.length > 0 ? (
-                                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                                            {creatinaLogs.map((log) => (
-                                                <div key={log.id} className="flex justify-between items-center p-3 bg-bg-secondary rounded-lg border border-glass-border">
-                                                    <div>
-                                                        <p className="font-medium text-sm sm:text-base">{formatDateToShort(log.log_date)}</p>
-                                                        <p className="text-xs sm:text-sm text-text-muted">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'long' })}</p>
+                                        <>
+                                            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                                {paginatedLogs.map((log) => (
+                                                    <div key={log.id} className="flex justify-between items-center p-3 bg-bg-secondary rounded-lg border border-glass-border">
+                                                        <div>
+                                                            <p className="font-medium text-sm sm:text-base">{formatDateToShort(log.log_date)}</p>
+                                                            <p className="text-xs sm:text-sm text-text-muted">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'long' })}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-bold text-accent text-sm sm:text-base">{log.grams}g</p>
+                                                            <button onClick={() => handleEditLog(log)} className="p-1 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"><Edit size={16} /></button>
+                                                            <button onClick={() => handleDeleteClick(log)} className="p-1 text-red-400 hover:bg-red-500/20 rounded transition-colors"><Trash2 size={16} /></button>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-bold text-accent text-sm sm:text-base">{log.grams}g</p>
-                                                        <button onClick={() => handleEditLog(log)} className="p-1 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"><Edit size={16} /></button>
-                                                        <button onClick={() => handleDeleteClick(log)} className="p-1 text-red-400 hover:bg-red-500/20 rounded transition-colors"><Trash2 size={16} /></button>
-                                                    </div>
+                                                ))}
+                                            </div>
+                                            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                            {totalPages > 1 && (
+                                                <div className="flex justify-center items-center gap-4 mt-4">
+                                                    <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="p-2 rounded-full hover:bg-white/10 disabled:opacity-50 transition"><ChevronLeft /></button>
+                                                    <span className="text-sm text-text-secondary">Página {currentPage} de {totalPages}</span>
+                                                    <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="p-2 rounded-full hover:bg-white/10 disabled:opacity-50 transition"><ChevronRight /></button>
                                                 </div>
-                                            ))}
-                                        </div>
+                                            )}
+                                            {/* --- FIN DE LA MODIFICACIÓN --- */}
+                                        </>
                                     ) : (
                                         <div className="text-center py-8 text-text-muted"><Zap size={48} className="mx-auto mb-4 opacity-50" /><p>No hay registros</p><p className="text-sm">¡Comienza tu seguimiento!</p></div>
                                     )}
