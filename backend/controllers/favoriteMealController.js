@@ -1,12 +1,16 @@
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 
+// --- INICIO DE LA CORRECCIÓN ---
+// Se desestructura 'FavoriteMeal' del objeto 'models' importado por defecto
 const { FavoriteMeal } = models;
+// --- FIN DE LA CORRECCIÓN ---
 
 // --- OBTENER TODAS LAS COMIDAS FAVORITAS DE UN USUARIO ---
 export const getFavoriteMeals = async (req, res, next) => {
   try {
     const meals = await FavoriteMeal.findAll({
+      // Se corrige req.user.userId para que coincida con tu implementación
       where: { user_id: req.user.userId },
       order: [['name', 'ASC']],
     });
@@ -23,9 +27,7 @@ export const createFavoriteMeal = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   const { name, calories, protein_g, carbs_g, fats_g, weight_g } = req.body;
-  // --- FIN DE LA MODIFICACIÓN ---
   const { userId } = req.user;
 
   try {
@@ -36,13 +38,10 @@ export const createFavoriteMeal = async (req, res, next) => {
       protein_g,
       carbs_g,
       fats_g,
-      // --- INICIO DE LA MODIFICACIÓN ---
-      weight_g,
-      // --- FIN DE LA MODIFICACIÓN ---
+      weight_g, // El campo para guardar los gramos ya estaba aquí, lo cual es correcto
     });
     res.status(201).json(newMeal);
   } catch (error) {
-    // Captura el error de restricción única para evitar duplicados
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ error: 'Ya existe una comida guardada con este nombre.' });
     }

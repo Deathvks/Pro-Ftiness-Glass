@@ -29,7 +29,9 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     fats100: '',
   });
   
+  // --- INICIO DE LA MODIFICACIÓN ---
   const [baseMacros, setBaseMacros] = useState(null);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const [originalData, setOriginalData] = useState(null);
 
@@ -57,8 +59,24 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
       };
       setFormData(initialData);
       setOriginalData(initialData);
+
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Comprobar si la comida que se edita es una de las favoritas
+      const favoriteMatch = favoriteMeals.find(
+        (meal) => meal.name.toLowerCase().trim() === (logToEdit.description || '').toLowerCase().trim()
+      );
+
+      if (favoriteMatch && parseFloat(favoriteMatch.weight_g) > 0) {
+        setBaseMacros({
+            calories: (parseFloat(favoriteMatch.calories) || 0) / favoriteMatch.weight_g,
+            protein_g: (parseFloat(favoriteMatch.protein_g) || 0) / favoriteMatch.weight_g,
+            carbs_g: (parseFloat(favoriteMatch.carbs_g) || 0) / favoriteMatch.weight_g,
+            fats_g: (parseFloat(favoriteMatch.fats_g) || 0) / favoriteMatch.weight_g,
+        });
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
     }
-  }, [logToEdit]);
+  }, [logToEdit, favoriteMeals]);
   
   useEffect(() => {
     if (view === 'favorites') {

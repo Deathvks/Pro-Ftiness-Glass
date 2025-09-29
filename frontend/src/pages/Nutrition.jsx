@@ -167,6 +167,18 @@ const Nutrition = () => {
         });
         return mealData;
     }, [nutritionLog]);
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const mealTotals = useMemo(() => {
+        const totals = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
+        nutritionLog.forEach(log => {
+            if (totals[log.meal_type] !== undefined) {
+                totals[log.meal_type] += log.calories || 0;
+            }
+        });
+        return totals;
+    }, [nutritionLog]);
+    // --- FIN DE LA MODIFICACIÓN ---
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
@@ -227,12 +239,21 @@ const Nutrition = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {Object.entries(meals).map(([mealType, logs]) => (
                         <GlassCard key={mealType} className="p-6">
+                            {/* --- INICIO DE LA MODIFICACIÓN --- */}
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xl font-bold capitalize">{ {breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks'}[mealType] }</h3>
+                                <h3 className="text-xl font-bold capitalize">
+                                    { {breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks'}[mealType] }
+                                    {mealTotals[mealType] > 0 && (
+                                        <span className="text-base font-medium text-text-secondary ml-2">
+                                            ({mealTotals[mealType].toLocaleString('es-ES')} kcal)
+                                        </span>
+                                    )}
+                                </h3>
                                 <button onClick={() => setModal({ type: 'food', data: { mealType } })} className="p-2 -m-2 rounded-full text-accent hover:bg-accent-transparent transition">
                                     <Plus size={20} />
                                 </button>
                             </div>
+                            {/* --- FIN DE LA MODIFICACIÓN --- */}
                             <div className="flex flex-col gap-3">
                                 {logs.length > 0 ? logs.map(log => (
                                     <div key={log.id} className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative">
