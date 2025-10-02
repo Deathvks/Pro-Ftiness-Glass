@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, UtensilsCrossed, Sparkles, BrainCircuit, BugOff, X } from 'lucide-react';
+import { Award, UtensilsCrossed, Sparkles, BrainCircuit, BugOff, X, Gauge, TrendingUp } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
@@ -15,21 +15,26 @@ const WelcomeModal = ({ onClose }) => {
       description: "Hemos fusionado el editor de comidas en el nuevo modal. Ahora puedes corregir cualquier registro de forma rápida y sencilla desde el mismo lugar."
     },
     {
-      icon: <BrainCircuit className="text-accent" />,
-      titre: "Mejoras de Usabilidad",
-      description: "Hemos pulido la interfaz en varias pantallas para que la experiencia sea más fluida y agradable, corrigiendo pequeños errores de diseño y mejorando la responsividad."
+      icon: <Gauge className="text-accent" />,
+      titre: "Cálculo de Macros Mejorado",
+      description: "El cálculo de calorías y macros ahora utiliza el último peso corporal registrado en lugar del peso del perfil, haciendo que los objetivos diarios sean mucho más precisos."
     },
     {
-      icon: <BugOff className="text-accent" />,
-      titre: "Corrección de Errores",
-      description: "Hemos solucionado varios errores menores en el backend y frontend para mejorar la estabilidad y fiabilidad de la aplicación."
-    }
+      icon: <TrendingUp className="text-accent" />,
+      titre: "Flechas de Progreso",
+      description: "En la sección de Progreso, ahora verás flechas de tendencia junto a tus mediciones de peso, indicando si has subido, bajado o mantenido el peso respecto al registro anterior."
+    },
+    {
+      icon: <BrainCircuit className="text-accent" />,
+      titre: "Mejoras de Usabilidad y Diseño",
+      description: "Hemos pulido la interfaz, mejorado la responsividad en móviles y adaptado todos los componentes al modo claro para una experiencia más consistente."
+    },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto animate-[fade-in_0.3s_ease-out] bg-black/70 backdrop-blur-sm">
       <div 
-        className="relative w-11/12 max-w-lg p-6 m-4 overflow-hidden text-center rounded-lg shadow-xl 
+        className="relative w-full max-w-lg p-6 my-8 text-center rounded-lg shadow-xl 
                    bg-bg-secondary border border-glass-border"
       >
         
