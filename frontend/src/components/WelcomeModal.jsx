@@ -1,85 +1,69 @@
 import React from 'react';
-import { X, Sparkles, KeyRound, Wand2, Calculator, Brush, RefreshCw } from 'lucide-react';
+import { Award, UtensilsCrossed, Sparkles, BrainCircuit, BugOff, X } from 'lucide-react';
+import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
-  const features = [
-    // --- INICIO DE LA MODIFICACIÓN ---
+  const nouveautes = [
     {
-      icon: <Brush className="w-6 h-6 text-emerald-400" />,
-      title: "Mejoras Visuales en el Dashboard",
-      description: "Hemos rediseñado el resumen diario para que todos los elementos (calorías, proteínas, agua y creatina) se muestren perfectamente alineados."
+      icon: <UtensilsCrossed className="text-accent" />,
+      titre: "Rediseño del Registro de Comidas",
+      description: "Añadir comidas es ahora más rápido e intuitivo. El nuevo modal te permite buscar, añadir múltiples alimentos a la vez, guardarlos como favoritos y hasta calcular macros por cada 100g."
     },
     {
-      icon: <Wand2 className="w-6 h-6 text-purple-400" />,
-      title: "Corrección de Tema Claro",
-      description: "Solucionamos varios problemas visuales en los modales para que ahora se muestren correctamente al usar el tema claro."
+      icon: <Sparkles className="text-accent" />,
+      titre: "Editor de Comidas Integrado",
+      description: "Hemos fusionado el editor de comidas en el nuevo modal. Ahora puedes corregir cualquier registro de forma rápida y sencilla desde el mismo lugar."
     },
     {
-      icon: <RefreshCw className="w-6 h-6 text-sky-400" />,
-      title: "Actualización de Datos Mejorada",
-      description: "El dashboard ahora refresca tus datos de nutrición y creatina automáticamente al volver a él, sin necesidad de recargar la página."
+      icon: <BrainCircuit className="text-accent" />,
+      titre: "Mejoras de Usabilidad",
+      description: "Hemos pulido la interfaz en varias pantallas para que la experiencia sea más fluida y agradable, corrigiendo pequeños errores de diseño y mejorando la responsividad."
+    },
+    {
+      icon: <BugOff className="text-accent" />,
+      titre: "Corrección de Errores",
+      description: "Hemos solucionado varios errores menores en el backend y frontend para mejorar la estabilidad y fiabilidad de la aplicación."
     }
-    // --- FIN DE LA MODIFICACIÓN ---
   ];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
-      onClick={onClose}
-    >
-      <div
-        className="bg-bg-primary rounded-2xl shadow-xl m-4 w-full max-w-md flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+      <div 
+        className="relative w-11/12 max-w-lg p-6 m-4 overflow-hidden text-center rounded-lg shadow-xl 
+                   bg-bg-secondary border border-glass-border"
       >
-        {/* Header */}
-        <div className="p-6 pb-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-accent/20">
-                <Sparkles className="w-6 h-6 text-accent" />
-              </div>
-              <div>
-                {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                <h2 className="text-xl font-bold text-text-primary">¡Bienvenido a v2.12.11!</h2>
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
-                <p className="text-sm text-text-secondary">Novedades y mejoras</p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-bg-secondary transition-colors"
-            >
-              <X className="w-5 h-5 text-text-secondary" />
-            </button>
-          </div>
+        
+        <button 
+          onClick={onClose} 
+          className="absolute p-2 transition rounded-full top-4 right-4 hover:bg-white/10"
+        >
+          <X size={20} className="text-text-secondary" />
+        </button>
+
+        <div className="flex flex-col items-center">
+          <Award size={48} className="mb-3 text-accent" />
+          <h2 className="text-2xl font-bold text-text-primary">¡Novedades en FitTrack Pro!</h2>
+          <p className="mb-6 text-sm text-text-secondary">Versión {APP_VERSION}</p>
         </div>
 
-        {/* Features List (Scrollable) */}
-        <div className="overflow-y-auto px-6 space-y-3">
-          {features.map((feature, index) => (
-            <div key={index} className="flex items-start gap-3 p-4 rounded-xl
-                                        bg-bg-secondary hover:bg-bg-tertiary
-                                        transition-colors duration-200">
-              <div className="flex-shrink-0 mt-0.5">
-                {feature.icon}
-              </div>
+        <div className="space-y-4 text-left">
+          {nouveautes.map((item, index) => (
+            <div key={index} className="flex items-start gap-4 p-3 rounded-lg bg-bg-primary">
+              <div className="flex-shrink-0">{item.icon}</div>
               <div>
-                <h3 className="font-semibold text-text-primary mb-1">{feature.title}</h3>
-                <p className="text-sm text-text-secondary">{feature.description}</p>
+                <h3 className="font-semibold text-text-primary">{item.titre}</h3>
+                <p className="text-sm text-text-secondary">{item.description}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Action Button */}
-        <div className="p-6 pt-4 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="w-full px-6 py-3 rounded-xl font-semibold bg-accent text-white hover:bg-accent/90 transition-colors"
-          >
-            ¡Entendido!
-          </button>
-        </div>
+        <button 
+          onClick={onClose} 
+          className="w-full px-4 py-3 mt-8 font-bold rounded-lg bg-accent text-white transition hover:scale-[1.02]"
+        >
+          ¡Entendido!
+        </button>
       </div>
     </div>
   );

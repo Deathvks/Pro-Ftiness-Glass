@@ -47,7 +47,6 @@ const Dashboard = ({ setView }) => {
     
     const latestWeight = sortedWeightLog.length > 0 ? parseFloat(sortedWeightLog[0].weight_kg) : (userProfile?.weight || null);
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     const weightTrend = useMemo(() => {
         if (sortedWeightLog.length < 2) return null;
 
@@ -77,6 +76,37 @@ const Dashboard = ({ setView }) => {
             ? { icon: ArrowUp, color: 'text-text-secondary', bg: 'bg-bg-secondary' }
             : { icon: ArrowDown, color: 'text-text-secondary', bg: 'bg-bg-secondary' };
     }, [sortedWeightLog, userProfile?.goal]);
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const getTrendForLog = (currentLog, previousLog) => {
+        if (!previousLog) return null;
+
+        const current = parseFloat(currentLog.weight_kg);
+        const previous = parseFloat(previousLog.weight_kg);
+        const goal = userProfile?.goal;
+        const diff = current - previous;
+
+        if (Math.abs(diff) < 0.1) {
+            return { icon: Minus, color: 'text-text-muted' };
+        }
+
+        const isGaining = diff > 0;
+
+        if (goal === 'gain') {
+            return isGaining
+                ? { icon: ArrowUp, color: 'text-green' }
+                : { icon: ArrowDown, color: 'text-red' };
+        }
+        if (goal === 'lose') {
+            return !isGaining
+                ? { icon: ArrowDown, color: 'text-green' }
+                : { icon: ArrowUp, color: 'text-red' };
+        }
+        
+        return isGaining
+            ? { icon: ArrowUp, color: 'text-text-secondary' }
+            : { icon: ArrowDown, color: 'text-text-secondary' };
+    };
     // --- FIN DE LA MODIFICACIÓN ---
 
     const weeklyLogs = useMemo(() => {
@@ -215,10 +245,9 @@ const Dashboard = ({ setView }) => {
                     <h2 className="text-xl font-bold">Registro de Peso</h2>
                     <div className="text-center">
                         <p className="text-sm text-text-secondary">Peso Actual</p>
-                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
                         <div className="flex items-center justify-center gap-3">
                             <p className="text-5xl font-extrabold">
-                                {latestWeight ? latestWeight.toFixed(1) : '--'}
+                                {latestWeight ? latestWeight.toFixed(2) : '--'}
                                 <span className="text-2xl font-bold text-text-muted ml-1">kg</span>
                             </p>
                             {weightTrend && (
@@ -227,20 +256,25 @@ const Dashboard = ({ setView }) => {
                                 </div>
                             )}
                         </div>
-                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                     </div>
                     <div className="flex flex-col gap-2">
                         <h3 className="font-semibold text-text-secondary">Historial Reciente</h3>
-                        {sortedWeightLog.length > 0 ? sortedWeightLog.slice(0, 4).map((log, index) => (
-                            <div key={log.id} className="flex justify-between items-center bg-bg-secondary/50 p-3 rounded-md">
-                                <div>
-                                    <span className="font-semibold">{parseFloat(log.weight_kg).toFixed(1)} kg</span>
-                                    <span className="text-sm text-text-muted ml-2">{new Date(log.log_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</span>
+                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                        {sortedWeightLog.length > 0 ? sortedWeightLog.slice(0, 4).map((log, index) => {
+                            const trend = getTrendForLog(log, sortedWeightLog[index + 1]);
+                            return (
+                                <div key={log.id} className="flex justify-between items-center bg-bg-secondary/50 p-3 rounded-md">
+                                    <div className="flex items-center">
+                                        <span className="font-semibold">{parseFloat(log.weight_kg).toFixed(2)} kg</span>
+                                        {trend && <trend.icon size={16} className={`${trend.color} ml-1.5`} />}
+                                    </div>
+                                    <span className="text-sm text-text-muted">{new Date(log.log_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</span>
                                 </div>
-                            </div>
-                        )) : (
+                            );
+                        }) : (
                             <p className="text-text-muted text-center py-4">No hay registros de peso todavía.</p>
                         )}
+                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                     </div>
                     <button onClick={() => setShowWeightModal(true)} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
                         {todaysWeightLog ? <><Edit size={20} /><span>Editar Peso de Hoy</span></> : <><Plus size={20} /><span>Registrar Peso</span></>}
