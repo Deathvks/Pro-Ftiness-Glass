@@ -93,7 +93,7 @@ const Nutrition = () => {
                     const { tempId, name, base, saveAsFavorite, ...logData } = item;
                     return { ...logData, log_date: selectedDate, meal_type: modal.data.mealType };
                 });
-                await Promise.all(logs.map(log => nutritionService.addFoodLog(log)));
+                await nutritionService.addFoodLog(logs);
                 addToast(`${logs.length} alimento(s) añadido(s).`, 'success');
             }
             

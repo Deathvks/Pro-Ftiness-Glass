@@ -10,16 +10,6 @@ router.use(authenticateToken);
 
 // --- Reglas de Validación ---
 
-const addNutritionLogRules = [
-    body('log_date').isISO8601().toDate().withMessage('La fecha no es válida.'),
-    body('meal_type').isIn(['breakfast', 'lunch', 'dinner', 'snack']).withMessage('El tipo de comida no es válido.'),
-    body('description').trim().notEmpty().withMessage('La descripción es requerida.'),
-    body('calories').isInt({ min: 0 }).withMessage('Las calorías deben ser un número positivo.'),
-    body('protein_g').optional().isFloat({ min: 0 }).withMessage('Las proteínas deben ser un número positivo.'),
-    body('carbs_g').optional().isFloat({ min: 0 }).withMessage('Los carbohidratos deben ser un número positivo.'),
-    body('fats_g').optional().isFloat({ min: 0 }).withMessage('Las grasas deben ser un número positivo.'),
-];
-
 const updateNutritionLogRules = [
     body('description').trim().notEmpty().withMessage('La descripción es requerida.'),
     body('calories').isInt({ min: 0 }).withMessage('Las calorías deben ser un número positivo.'),
@@ -45,7 +35,7 @@ router.get('/nutrition/summary', nutritionController.getNutritionSummary);
 // --- FIN DE LA MODIFICACIÓN ---
 
 // POST /api/nutrition/food -> Añadir una comida
-router.post('/nutrition/food', addNutritionLogRules, nutritionController.addNutritionLog);
+router.post('/nutrition/food', nutritionController.addNutritionLog);
 
 // PUT /api/nutrition/food/:logId -> Actualizar una comida
 router.put('/nutrition/food/:logId', updateNutritionLogRules, nutritionController.updateNutritionLog);

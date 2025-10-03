@@ -102,22 +102,37 @@ export const getNutritionSummary = async (req, res, next) => {
 };
 
 
-// Añadir un nuevo registro de comida
+// Añadir uno o varios registros de comida
 export const addNutritionLog = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  try {
-    const { userId } = req.user;
-    const { log_date, meal_type, description, calories, protein_g, carbs_g, fats_g, weight_g } = req.body;
-    const newLog = await NutritionLog.create({
-      user_id: userId, log_date, meal_type, description, calories, protein_g, carbs_g, fats_g, weight_g
-    });
-    res.status(201).json(newLog);
-  } catch (error) {
-    next(error);
-  }
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+        const { userId } = req.user;
+        const logsData = Array.isArray(req.body) ? req.body : [req.body];
+
+        if (logsData.length === 0) {
+            return res.status(400).json({ message: 'No se han proporcionado datos para registrar.' });
+        }
+
+        const logsToCreate = logsData.map(log => ({
+            user_id: userId,
+            log_date: log.log_date,
+            meal_type: log.meal_type,
+            description: log.description,
+            calories: log.calories,
+            protein_g: log.protein_g,
+            carbs_g: log.carbs_g,
+            fats_g: log.fats_g,
+            weight_g: log.weight_g,
+        }));
+
+        const newLogs = await NutritionLog.bulkCreate(logsToCreate);
+        res.status(201).json(newLogs);
+    } catch (error) {
+        next(error);
+    }
 };
 
 // Actualizar un registro de comida
