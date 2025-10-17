@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode } from 'lucide-react';
+import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
@@ -8,6 +8,11 @@ const WelcomeModal = ({ onClose }) => {
       icon: <QrCode className="text-accent" />,
       titre: "Escaneo de Códigos de Barras",
       description: "Añade alimentos rápidamente escaneando el código de barras del producto. La información nutricional se rellenará automáticamente gracias a la base de datos de Open Food Facts."
+    },
+    {
+      icon: <Cookie className="text-accent" />,
+      titre: "Gestión de Privacidad y Cookies",
+      description: "Hemos añadido un banner de consentimiento para cumplir con la normativa de privacidad. Tu elección sobre guardar preferencias de personalización se almacena por cuenta y dispositivo."
     },
     {
       icon: <UtensilsCrossed className="text-accent" />,
