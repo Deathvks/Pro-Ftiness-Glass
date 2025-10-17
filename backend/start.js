@@ -66,7 +66,14 @@ async function start() {
     await runExecCommand('npx sequelize-cli db:migrate --env production');
     console.log('✅ Migrations completed.');
 
-    // 3. Iniciar el servidor principal
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // 3. Ejecutar los seeders para poblar la base de datos
+    console.log('🚀 Running database seeders...');
+    await runExecCommand('npx sequelize-cli db:seed:all --env production');
+    console.log('✅ Seeders completed.');
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // 4. Iniciar el servidor principal
     console.log('🚀 Starting application server...');
     runSpawnCommand('node', ['server.js']);
 
