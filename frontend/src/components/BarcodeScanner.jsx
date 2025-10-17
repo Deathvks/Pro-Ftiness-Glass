@@ -103,7 +103,9 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
                 <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-lg" />
                 <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-lg" />
                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-lg" />
-                <div className="scan-line absolute top-0 left-0 right-0 h-1 bg-accent shadow-[0_0_10px_theme(colors.accent)] rounded-full" />
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                <div className="scan-line absolute top-0 left-4 right-4 h-1 bg-accent shadow-[0_0_10px_theme(colors.accent)] rounded-full" />
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
               </div>
             </div>
           </div>
