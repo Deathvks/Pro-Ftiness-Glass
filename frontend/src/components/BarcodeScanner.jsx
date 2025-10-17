@@ -8,9 +8,10 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   const [scannerState, setScannerState] = useState('idle'); // 'idle', 'loading', 'scanning'
   const { addToast } = useToast();
   const scannerRef = useRef(null);
+  const scannerContainerId = 'barcode-scanner-container';
 
   const handleScanSuccess = useCallback((decodedText) => {
-    if (scannerRef.current) {
+    if (scannerRef.current && scannerRef.current.isScanning) {
       scannerRef.current.stop().catch(err => console.error("Error al detener el escáner:", err));
       scannerRef.current = null;
     }
@@ -27,51 +28,58 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   const handleActivateScanner = async () => {
     setScannerState('loading');
     try {
-      await Html5Qrcode.getCameras();
-      setScannerState('scanning');
+      // 1. Pedir permisos y obtener la lista de cámaras. Esto muestra el prompt nativo.
+      const cameras = await Html5Qrcode.getCameras();
+      if (cameras && cameras.length) {
+        setScannerState('scanning');
+      } else {
+        addToast('No se encontraron cámaras en este dispositivo.', 'error');
+        setScannerState('idle');
+      }
     } catch (err) {
       console.error("Error al solicitar permiso de cámara:", err);
       addToast('Permiso de cámara denegado. Revisa la configuración de tu navegador.', 'error');
       setScannerState('idle');
+      onClose(); // Cerramos si el permiso es denegado
     }
   };
   
   useEffect(() => {
-    if (scannerState !== 'scanning') {
+    if (scannerState !== 'scanning' || scannerRef.current) {
       return;
     }
 
-    const scannerContainerId = 'barcode-scanner-container';
-    const scannerElement = document.getElementById(scannerContainerId);
-    if (!scannerElement) {
-        return;
-    }
+    const startScanner = async () => {
+        const scannerElement = document.getElementById(scannerContainerId);
+        if (!scannerElement) return;
 
-    const html5Qrcode = new Html5Qrcode(scannerContainerId);
-    scannerRef.current = html5Qrcode;
+        const html5Qrcode = new Html5Qrcode(scannerContainerId, false);
+        scannerRef.current = html5Qrcode;
 
-    html5Qrcode.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      handleScanSuccess,
-      handleScanError
-    ).catch(err => {
-      console.warn("No se pudo iniciar la cámara trasera, intentando con cualquier cámara.", err);
-      html5Qrcode.start(
-        undefined,
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        handleScanSuccess,
-        handleScanError
-      ).catch(finalErr => {
-        addToast("No se pudo iniciar la cámara.", 'error');
-        console.error("Error final al iniciar la cámara:", finalErr);
-        onClose();
-      });
-    });
+        try {
+            const cameras = await Html5Qrcode.getCameras();
+            const rearCamera = cameras.find(camera => camera.label.toLowerCase().includes('back') || camera.label.toLowerCase().includes('trasera'));
+            const cameraId = rearCamera ? rearCamera.id : cameras[0].id;
+
+            await html5Qrcode.start(
+                cameraId,
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                handleScanSuccess,
+                handleScanError
+            );
+        } catch (err) {
+            console.error("Error al iniciar el escáner:", err);
+            addToast("No se pudo iniciar la cámara seleccionada.", "error");
+            onClose();
+        }
+    };
+
+    startScanner();
 
     return () => {
       if (scannerRef.current && scannerRef.current.isScanning) {
         scannerRef.current.stop().catch(err => console.error("Error al limpiar el escáner:", err));
+        scannerRef.current = null;
       }
     };
   }, [scannerState, handleScanSuccess, handleScanError, addToast, onClose]);
@@ -88,7 +96,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
       case 'scanning':
         return (
           <div className="relative w-full h-full scanner-wrapper">
-            <div id="barcode-scanner-container" className="w-full h-full" />
+            <div id={scannerContainerId} className="w-full h-full" />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="relative w-[250px] h-[250px]">
                 <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-lg" />
