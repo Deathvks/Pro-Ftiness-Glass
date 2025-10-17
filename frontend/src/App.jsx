@@ -22,6 +22,10 @@ import EmailVerificationModal from './components/EmailVerificationModal';
 import EmailVerification from './components/EmailVerification';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
+import CookieConsentBanner from './components/CookieConsentBanner';
+// --- INICIO DE LA MODIFICACIÓN ---
+import PrivacyPolicy from './pages/PrivacyPolicy';
+// --- FIN DE LA MODIFICACIÓN ---
 
 export default function App() {
   const {
@@ -36,17 +40,24 @@ export default function App() {
     showWelcomeModal,
     checkWelcomeModal,
     closeWelcomeModal,
-    // --- INICIO DE LA CORRECCIÓN ---
-    fetchDataForDate, // Añadido para poder refrescar los datos del día
-    // --- FIN DE LA CORRECCIÓN ---
+    fetchDataForDate,
+    cookieConsent,
+    checkCookieConsent,
+    handleAcceptCookies,
+    handleDeclineCookies,
   } = useAppStore();
 
+  // --- INICIO DE LA MODIFICACIÓN ---
   const [view, setView] = useState(() => {
     if (useAppStore.getState().activeWorkout) {
       return 'workout';
     }
     return localStorage.getItem('lastView') || 'dashboard';
   });
+
+  // Estado para controlar la vista anterior al mostrar la política de privacidad
+  const [previousView, setPreviousView] = useState(null);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const mainContentRef = useRef(null);
 
@@ -57,7 +68,10 @@ export default function App() {
   }, [view]);
 
   useEffect(() => {
-    localStorage.setItem('lastView', view);
+    // No guardar la vista de la política de privacidad como la última vista
+    if (view !== 'privacyPolicy') {
+      localStorage.setItem('lastView', view);
+    }
   }, [view]);
 
   const [authView, setAuthView] = useState('login');
@@ -100,29 +114,29 @@ export default function App() {
   }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime]);
 
   const setTheme = (newTheme) => {
-    localStorage.setItem('theme', newTheme);
+    if (cookieConsent) {
+        localStorage.setItem('theme', newTheme);
+    }
     setThemeState(newTheme);
   };
 
   const setAccent = (newAccent) => {
-    localStorage.setItem('accent', newAccent);
-    setAccentState(newAccent);
+      if (cookieConsent) {
+          localStorage.setItem('accent', newAccent);
+      }
+      setAccentState(newAccent);
   };
 
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
   
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Este efecto se asegura de que los datos del día se actualicen
-    // cada vez que el usuario navega a la vista del 'dashboard'.
     useEffect(() => {
         if (view === 'dashboard' && isAuthenticated) {
             const today = new Date().toISOString().split('T')[0];
             fetchDataForDate(today);
         }
     }, [view, isAuthenticated, fetchDataForDate]);
-    // --- FIN DE LA CORRECCIÓN ---
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -149,11 +163,15 @@ export default function App() {
   }, [accent]);
 
   useEffect(() => {
-    if (isAuthenticated && userProfile && !userProfile.is_verified) {
-      setShowEmailVerificationModal(true);
-      setVerificationEmail(userProfile.email);
+    if (isAuthenticated && userProfile) {
+      if (!userProfile.is_verified) {
+        setShowEmailVerificationModal(true);
+        setVerificationEmail(userProfile.email);
+      } else {
+        checkCookieConsent(userProfile.id);
+      }
     }
-  }, [isAuthenticated, userProfile]);
+  }, [isAuthenticated, userProfile, checkCookieConsent]);
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
@@ -176,6 +194,18 @@ export default function App() {
       localStorage.setItem('routinesForceTab', options.forceTab);
     }
   }, []);
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const handleShowPolicy = () => {
+    setPreviousView(view); // Guardamos la vista actual
+    setView('privacyPolicy');
+  };
+
+  const handleBackFromPolicy = () => {
+    setView(previousView || 'dashboard'); // Volvemos a la vista anterior o al dashboard
+    setPreviousView(null);
+  };
+  // --- FIN DE LA MODIFICACIÓN ---
 
   if (isLoading) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
@@ -225,6 +255,9 @@ export default function App() {
       case 'profileEditor': return <ProfileEditor onCancel={() => navigate('settings')} />;
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
       case 'adminPanel': return <AdminPanel onCancel={() => navigate('settings')} />;
+      // --- INICIO DE LA MODIFICACIÓN ---
+      case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
+      // --- FIN DE LA MODIFICACIÓN ---
       default: return <Dashboard setView={navigate} />;
     }
   };
@@ -283,6 +316,16 @@ export default function App() {
 
       {showWelcomeModal && (
         <WelcomeModal onClose={closeWelcomeModal} />
+      )}
+
+      {cookieConsent === null && (
+        <CookieConsentBanner
+          onAccept={handleAcceptCookies}
+          onDecline={handleDeclineCookies}
+          // --- INICIO DE LA MODIFICACIÓN ---
+          onShowPolicy={handleShowPolicy}
+          // --- FIN DE LA MODIFICACIÓN ---
+        />
       )}
 
       {showLogoutConfirm && (

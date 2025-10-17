@@ -20,6 +20,9 @@ export const createAuthSlice = (set, get) => ({
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    cookieConsent: null, // null = no se ha decidido, true = aceptado, false = rechazado
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // --- ACCIONES ---
 
@@ -41,6 +44,9 @@ export const createAuthSlice = (set, get) => ({
             token: null,
             userProfile: null,
             isLoading: false,
+            // --- INICIO DE LA MODIFICACIÓN ---
+            cookieConsent: null, // Resetea el consentimiento al cerrar sesión
+            // --- FIN DE LA MODIFICACIÓN ---
         });
     },
 
@@ -68,4 +74,39 @@ export const createAuthSlice = (set, get) => ({
         localStorage.setItem('lastSeenVersion', APP_VERSION);
         set({ showWelcomeModal: false });
     },
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Comprueba el consentimiento de cookies para el usuario actual.
+    checkCookieConsent: (userId) => {
+        const consent = localStorage.getItem(`cookie_consent_${userId}`);
+        if (consent === 'true') {
+            set({ cookieConsent: true });
+        } else if (consent === 'false') {
+            set({ cookieConsent: false });
+        } else {
+            set({ cookieConsent: null });
+        }
+    },
+
+    // Acepta las cookies y guarda la preferencia para el usuario actual.
+    handleAcceptCookies: () => {
+        const userId = get().userProfile?.id;
+        if (userId) {
+            localStorage.setItem(`cookie_consent_${userId}`, 'true');
+            set({ cookieConsent: true });
+        }
+    },
+
+    // Rechaza las cookies y guarda la preferencia para el usuario actual.
+    handleDeclineCookies: () => {
+        const userId = get().userProfile?.id;
+        if (userId) {
+            localStorage.setItem(`cookie_consent_${userId}`, 'false');
+            set({ cookieConsent: false });
+            // Opcional: limpiar las cookies/storage si se rechazan
+            localStorage.removeItem('theme');
+            localStorage.removeItem('accent');
+        }
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
 });
