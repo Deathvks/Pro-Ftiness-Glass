@@ -109,7 +109,6 @@ body.accent-orange {
   --color-accent-border: rgba(249, 115, 22, 0.28);
 }
 
-/* --- INICIO DE LA MODIFICACIÓN --- */
 /* LIME */
 body.accent-lime {
   --color-accent: #84cc16;
@@ -200,7 +199,7 @@ body.accent-neutral {
   --color-accent-transparent: rgba(115, 115, 115, 0.12);
   --color-accent-border: rgba(115, 115, 115, 0.28);
 }
-/* --- FIN DE LA MODIFICACIÓN --- */
+
 
 /* 5) COMPONENTES BASE */
 @layer components {
@@ -280,6 +279,46 @@ body.accent-neutral {
     font-size: 12px;
     line-height: 14px;
   }
+
+  /* --- INICIO DE LA MODIFICACIÓN --- */
+  /* Estilos para personalizar el escáner de QR */
+  @keyframes scan {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(240px); }
+  }
+  .scan-line {
+    animation: scan 2.5s infinite alternate ease-in-out;
+  }
+
+  /* Ocultar elementos no deseados de la librería html5-qrcode */
+  #barcode-scanner-container > div {
+    border: none !important;
+  }
+  
+  #barcode-scanner-container #qr-shaded-region {
+    border: none !important;
+  }
+  
+  /* Oculta los elementos internos del recuadro de la librería (imagen del teléfono, etc.) */
+  #barcode-scanner-container #qr-shaded-region * {
+    display: none !important;
+  }
+  
+  /* Oculta el desplegable de cámara, el botón de info y el pie de página */
+  #barcode-scanner-container #html5-qrcode-anchor-scan-type-change,
+  #barcode-scanner-container #html5-qrcode-select-camera,
+  #barcode-scanner-container #html5-qrcode-footnote,
+  #barcode-scanner-container a[href="https://scanapp.org"] { /* Oculta el enlace "Powered by ScanApp" */
+    display: none !important;
+  }
+  
+  /* Fuerza al vídeo a ocupar todo el espacio, ocultando cualquier borde residual */
+  #barcode-scanner-container video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+  /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
 /* 6) UTILIDADES */

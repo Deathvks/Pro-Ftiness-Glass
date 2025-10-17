@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-// --- INICIO DE LA CORRECCIÓN ---
-import { X, BookMarked, Plus, Trash2, ChevronLeft, ChevronRight, CheckCircle, Search, PlusCircle } from 'lucide-react';
-// --- FIN DE LA CORRECCIÓN ---
+// --- INICIO DE LA MODIFICACIÓN ---
+import { X, BookMarked, Plus, Trash2, ChevronLeft, ChevronRight, CheckCircle, Search, PlusCircle, QrCode } from 'lucide-react';
+import * as nutritionService from '../services/nutritionService';
+import BarcodeScanner from './BarcodeScanner'; // Importamos el nuevo componente
+// --- FIN DE LA MODIFICACIÓN ---
 import Spinner from './Spinner';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -61,6 +63,10 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     const [selectedMeals, setSelectedMeals] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const [showScanner, setShowScanner] = useState(false);
+    // --- FIN DE LA MODIFICACIÓN ---
+
     // Estados para la paginación de favoritos
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
@@ -73,13 +79,9 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     const { addToast } = useToast();
     
     // --- LÓGICA Y EFECTOS ---
-
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Filtrar favoritos por término de búsqueda de forma segura
     const filteredFavorites = favoriteMeals.filter(fav =>
         fav.name && fav.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    // --- FIN DE LA CORRECCIÓN ---
 
     // Paginación
     const totalPages = Math.ceil(filteredFavorites.length / itemsPerPage) || 1;
@@ -142,6 +144,37 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     }, [formData.weight_g, per100, per100Mode]);
     
     // --- HANDLERS ---
+    
+    const handleScanSuccess = async (barcode) => {
+        setShowScanner(false);
+        // Indicamos que estamos cargando
+        const tempLoadingToastId = addToast('Buscando producto...', 'info');
+        
+        try {
+            const product = await nutritionService.searchByBarcode(barcode);
+            setFormData({
+                description: product.name,
+                calories: Math.round(product.calories),
+                protein_g: product.protein_g,
+                carbs_g: product.carbs_g,
+                fats_g: product.fats_g,
+                weight_g: '100', // Asumimos 100g por defecto
+            });
+            setPer100Mode(true);
+            setPer100({
+                calories100: product.calories,
+                protein100: product.protein_g,
+                carbs100: product.carbs_g,
+                fats100: product.fats_g,
+            });
+            setView('manual');
+            addToast('Producto encontrado. Ajusta los gramos si es necesario.', 'success');
+        } catch (error) {
+            addToast(error.message || 'No se pudo encontrar el producto.', 'error');
+        } finally {
+            // Cerramos el toast de carga
+        }
+    };
 
     const handleToggleFavoriteSelection = (meal) => {
         setSelectedMeals(prev => {
@@ -257,6 +290,8 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
     const baseInputClasses = `w-full rounded-md px-3 py-2 text-text-primary bg-bg-secondary border-glass-border focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition`;
 
     return (
+        <>
+        {showScanner && <BarcodeScanner onScanSuccess={handleScanSuccess} onClose={() => setShowScanner(false)} />}
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-[fade-in_0.3s_ease-out]">
             <div className="bg-bg-primary rounded-2xl shadow-2xl w-full max-w-lg border border-glass-border transform transition-all duration-300 animate-[slide-up_0.4s_ease-out]">
                 {/* Header */}
@@ -271,6 +306,7 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
                         <div className="flex items-center justify-center gap-2 mx-auto p-1 rounded-full border border-glass-border bg-bg-secondary/30">
                             <TabButton active={view === 'favorites'} onClick={() => setView('favorites')}><BookMarked size={16} /> Favoritas</TabButton>
                             <TabButton active={view === 'manual'} onClick={() => setView('manual')}><Plus size={16} /> Manual</TabButton>
+                            <TabButton active={false} onClick={() => setShowScanner(true)}><QrCode size={16} /> Escanear</TabButton>
                         </div>
                     </div>
                 )}
@@ -382,6 +418,7 @@ const NutritionLogModal = ({ logToEdit, mealType, onSave, onClose, isLoading }) 
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

@@ -8,7 +8,6 @@ export const getNutritionLogsByDate = (date) => {
   return apiClient(`/nutrition?date=${date}`);
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 /**
  * Obtiene el resumen de datos de nutrición para un mes y año específicos.
  * @param {number} month - El mes (1-12).
@@ -17,7 +16,6 @@ export const getNutritionLogsByDate = (date) => {
 export const getNutritionSummary = (month, year) => {
     return apiClient(`/nutrition/summary?month=${month}&year=${year}`);
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 /**
  * Añade un nuevo registro de comida.
@@ -62,3 +60,13 @@ export const upsertWaterLog = (waterData) => {
     body: waterData,
   });
 };
+
+// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Busca un producto por su código de barras.
+ * @param {string} barcode - El código de barras del producto.
+ */
+export const searchByBarcode = (barcode) => {
+  return apiClient(`/nutrition/barcode/${barcode}`);
+};
+// --- FIN DE LA MODIFICACIÓN ---

@@ -29,9 +29,12 @@ const upsertWaterLogRules = [
 // GET /api/nutrition?date=YYYY-MM-DD -> Obtener logs de un día
 router.get('/nutrition', nutritionController.getLogsByDate);
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // GET /api/nutrition/summary?month=M&year=YYYY -> Obtener resumen de un mes
 router.get('/nutrition/summary', nutritionController.getNutritionSummary);
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// GET /api/nutrition/barcode/:barcode -> Buscar producto por código de barras
+router.get('/nutrition/barcode/:barcode', nutritionController.searchByBarcode);
 // --- FIN DE LA MODIFICACIÓN ---
 
 // POST /api/nutrition/food -> Añadir una comida

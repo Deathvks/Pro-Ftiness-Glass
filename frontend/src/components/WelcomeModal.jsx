@@ -1,9 +1,14 @@
 import React from 'react';
-import { Award, UtensilsCrossed, Sparkles, BrainCircuit, BugOff, X, Gauge, TrendingUp } from 'lucide-react';
+import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const nouveautes = [
+    {
+      icon: <QrCode className="text-accent" />,
+      titre: "Escaneo de Códigos de Barras",
+      description: "Añade alimentos rápidamente escaneando el código de barras del producto. La información nutricional se rellenará automáticamente gracias a la base de datos de Open Food Facts."
+    },
     {
       icon: <UtensilsCrossed className="text-accent" />,
       titre: "Rediseño del Registro de Comidas",
@@ -32,26 +37,36 @@ const WelcomeModal = ({ onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto animate-[fade-in_0.3s_ease-out] bg-black/70 backdrop-blur-sm">
-      <div 
-        className="relative w-full max-w-lg p-6 my-8 text-center rounded-lg shadow-xl 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Se elimina el 'overflow-y-auto' del contenedor principal. El scroll se gestionará dentro del modal.
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-[fade-in_0.3s_ease-out] bg-black/70 backdrop-blur-sm">
+      {/*
+        Se convierte el modal en un contenedor flex-col con altura máxima.
+        Esto permite que el contenido interno (la lista de novedades) sea el que haga scroll.
+      */}
+      <div
+        className="relative w-full max-w-lg flex flex-col max-h-[90vh] text-center rounded-lg shadow-xl
                    bg-bg-secondary border border-glass-border"
       >
-        
-        <button 
-          onClick={onClose} 
-          className="absolute p-2 transition rounded-full top-4 right-4 hover:bg-white/10"
-        >
-          <X size={20} className="text-text-secondary" />
-        </button>
 
-        <div className="flex flex-col items-center">
-          <Award size={48} className="mb-3 text-accent" />
-          <h2 className="text-2xl font-bold text-text-primary">¡Novedades en FitTrack Pro!</h2>
-          <p className="mb-6 text-sm text-text-secondary">Versión {APP_VERSION}</p>
+        {/* -- Cabecera (no se desplaza) -- */}
+        <div className="flex-shrink-0 p-6 pb-4">
+          <button
+            onClick={onClose}
+            className="absolute p-2 transition rounded-full top-4 right-4 hover:bg-white/10"
+          >
+            <X size={20} className="text-text-secondary" />
+          </button>
+
+          <div className="flex flex-col items-center">
+            <Award size={48} className="mb-3 text-accent" />
+            <h2 className="text-2xl font-bold text-text-primary">¡Novedades en FitTrack Pro!</h2>
+            <p className="mb-2 text-sm text-text-secondary">Versión {APP_VERSION}</p>
+          </div>
         </div>
 
-        <div className="space-y-4 text-left">
+        {/* -- Contenido (scrollable) -- */}
+        <div className="flex-grow overflow-y-auto px-6 space-y-4 text-left">
           {nouveautes.map((item, index) => (
             <div key={index} className="flex items-start gap-4 p-3 rounded-lg bg-bg-primary">
               <div className="flex-shrink-0">{item.icon}</div>
@@ -63,12 +78,16 @@ const WelcomeModal = ({ onClose }) => {
           ))}
         </div>
 
-        <button 
-          onClick={onClose} 
-          className="w-full px-4 py-3 mt-8 font-bold rounded-lg bg-accent text-white transition hover:scale-[1.02]"
-        >
-          ¡Entendido!
-        </button>
+        {/* -- Pie de página (no se desplaza) -- */}
+        <div className="flex-shrink-0 p-6 pt-4">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-3 font-bold rounded-lg bg-accent text-white transition hover:scale-[1.02]"
+          >
+            ¡Entendido!
+          </button>
+        </div>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
       </div>
     </div>
   );

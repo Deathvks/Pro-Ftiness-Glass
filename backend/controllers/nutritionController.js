@@ -4,6 +4,14 @@ import { Op, Sequelize } from 'sequelize';
 
 const { NutritionLog, WaterLog } = models;
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importamos 'axios' o usamos 'node-fetch' para hacer peticiones HTTP.
+// Por simplicidad, usaré node-fetch que es nativo en Node 18+.
+// Si usas una versión anterior, necesitarías instalar un paquete como 'axios' o 'node-fetch'.
+import fetch from 'node-fetch';
+// --- FIN DE LA MODIFICACIÓN ---
+
+
 // Obtener todos los registros de nutrición y agua para una fecha específica
 export const getLogsByDate = async (req, res, next) => {
   try {
@@ -187,13 +195,57 @@ export const upsertWaterLog = async (req, res, next) => {
   }
 };
 
+// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Busca un producto por código de barras en la API de Open Food Facts.
+ */
+export const searchByBarcode = async (req, res, next) => {
+    const { barcode } = req.params;
+
+    if (!barcode) {
+        return res.status(400).json({ error: 'Se requiere un código de barras.' });
+    }
+
+    try {
+        const apiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (data.status === 0 || !data.product) {
+            return res.status(404).json({ error: 'Producto no encontrado en Open Food Facts.' });
+        }
+
+        const product = data.product;
+        const nutriments = product.nutriments;
+        
+        // Mapeamos los datos de la API a nuestro formato
+        const formattedProduct = {
+            name: product.product_name || 'Nombre no disponible',
+            calories: nutriments['energy-kcal_100g'] || nutriments['energy-kj_100g'] / 4.184 || 0,
+            protein_g: nutriments.proteins_100g || 0,
+            carbs_g: nutriments.carbohydrates_100g || 0,
+            fats_g: nutriments.fat_100g || 0,
+            // Por defecto, la información es por 100g
+            weight_g: 100, 
+        };
+        
+        res.json(formattedProduct);
+
+    } catch (error) {
+        console.error('Error al buscar en Open Food Facts:', error);
+        next(error);
+    }
+};
+// --- FIN DE LA MODIFICACIÓN ---
+
 const nutritionController = {
     getLogsByDate,
     getNutritionSummary,
     addNutritionLog,
     updateNutritionLog,
     deleteNutritionLog,
-    upsertWaterLog
+    upsertWaterLog,
+    searchByBarcode, // <-- Exportamos la nueva función
 };
 
 export default nutritionController;
