@@ -291,29 +291,24 @@ body.accent-neutral {
   }
 
   /* Ocultar elementos no deseados de la librería html5-qrcode */
-  #barcode-scanner-container > div {
+  .scanner-wrapper > div,
+  .scanner-wrapper #qr-shaded-region {
     border: none !important;
+    border-radius: 0.5rem; /* Ajustar si es necesario para que coincida con tu diseño */
   }
   
-  #barcode-scanner-container #qr-shaded-region {
-    border: none !important;
-  }
-  
-  /* Oculta los elementos internos del recuadro de la librería (imagen del teléfono, etc.) */
-  #barcode-scanner-container #qr-shaded-region * {
+  .scanner-wrapper #qr-shaded-region * {
     display: none !important;
   }
   
-  /* Oculta el desplegable de cámara, el botón de info y el pie de página */
-  #barcode-scanner-container #html5-qrcode-anchor-scan-type-change,
-  #barcode-scanner-container #html5-qrcode-select-camera,
-  #barcode-scanner-container #html5-qrcode-footnote,
-  #barcode-scanner-container a[href="https://scanapp.org"] { /* Oculta el enlace "Powered by ScanApp" */
+  .scanner-wrapper #html5-qrcode-anchor-scan-type-change,
+  .scanner-wrapper #html5-qrcode-select-camera,
+  .scanner-wrapper #html5-qrcode-footnote,
+  .scanner-wrapper a[href="https://scanapp.org"] {
     display: none !important;
   }
   
-  /* Fuerza al vídeo a ocupar todo el espacio, ocultando cualquier borde residual */
-  #barcode-scanner-container video {
+  .scanner-wrapper video {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
@@ -343,11 +338,11 @@ body.accent-neutral {
     100% { opacity: 1 }
   }
   @keyframes toast-in {
-    0%   { transform: translateX(100%); opacity: 0; }
-    100% { transform: translateX(0);    opacity: 1; }
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0);    opacity: 1; }
   }
   @keyframes toast-out {
-    0%   { transform: translateX(0);    opacity: 1; }
-    100% { transform: translateX(100%); opacity: 0; }
+    from { transform: translateX(0);    opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
   }
 }

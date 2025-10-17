@@ -5,7 +5,10 @@ import Spinner from './Spinner';
 import { useToast } from '../hooks/useToast';
 
 const BarcodeScanner = ({ onScanSuccess, onClose }) => {
-  const [scannerState, setScannerState] = useState('idle'); // idle | loading | scanning
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Se simplifica el estado a 'idle' y 'scanning'. 'loading' se gestionará visualmente dentro de 'scanning'.
+  const [scannerState, setScannerState] = useState('idle'); // idle | scanning
+  // --- FIN DE LA MODIFICACIÓN ---
   const { addToast } = useToast();
   const scannerRef = useRef(null);
 
@@ -18,21 +21,20 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   }, [onScanSuccess]);
 
   const handleScanError = (error) => {
-    // Ignorar errores, se disparan constantemente
+    // Ignorar errores que no son fatales, como 'NotFoundException' que se dispara constantemente.
+    if (error && typeof error === 'string' && error.includes('NotFoundException')) {
+      return;
+    }
+    // Para otros errores, podríamos querer registrarlos o manejarlos.
+    console.warn("Error del escáner:", error);
   };
 
-  const handleActivateScanner = async () => {
-    setScannerState('loading');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      stream.getTracks().forEach(track => track.stop());
-      setScannerState('scanning');
-    } catch (err) {
-      console.error("Error al solicitar permiso de cámara:", err);
-      addToast('El permiso de la cámara es necesario para escanear.', 'error');
-      onClose();
-    }
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Ahora esta función solo cambia el estado para que el useEffect inicie el escáner.
+  const handleActivateScanner = () => {
+    setScannerState('scanning');
   };
+  // --- FIN DE LA MODIFICACIÓN ---
   
   useEffect(() => {
     if (scannerState !== 'scanning') {
@@ -42,14 +44,13 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
     const scannerContainer = document.getElementById('barcode-scanner-container');
     if (!scannerContainer) return;
     
-    // Ocultamos el contenedor hasta que el video esté listo
-    scannerContainer.style.opacity = '0';
-    scannerContainer.style.transition = 'opacity 0.4s ease-in-out';
+    // Mostramos un spinner mientras la librería pide permiso y carga la cámara.
+    scannerContainer.innerHTML = '<div class="flex flex-col items-center justify-center h-full gap-4"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div><p class="text-text-secondary">Iniciando cámara...</p></div>';
 
+    // La librería ahora se encarga de pedir el permiso.
     const scanner = new Html5QrcodeScanner('barcode-scanner-container', { fps: 10, qrbox: { width: 250, height: 250 } }, false);
     scannerRef.current = scanner;
     
-    // Observamos para saber cuándo se añade el video y hacerlo visible
     const observer = new MutationObserver((mutationsList) => {
       for(const mutation of mutationsList) {
         if (mutation.type === 'childList' && scannerContainer.querySelector('video')) {
@@ -61,7 +62,17 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
     });
 
     observer.observe(scannerContainer, { childList: true, subtree: true });
-    scanner.render(handleScanSuccess, handleScanError);
+    
+    // 'render' ahora solicitará el permiso de cámara.
+    scanner.render(handleScanSuccess, (error) => {
+        // Manejo de error mejorado: si el usuario deniega el permiso, lo notificamos y cerramos.
+        if (error.name === 'NotAllowedError' || (error.message && error.message.includes('Permission denied'))) {
+            addToast('El permiso de la cámara fue denegado.', 'error');
+            onClose();
+        } else {
+            handleScanError(error);
+        }
+    });
 
     return () => {
       if (scannerRef.current) {
@@ -69,25 +80,18 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
       }
       observer.disconnect();
     };
-  }, [scannerState, handleScanSuccess]);
+  }, [scannerState, handleScanSuccess, addToast, onClose]);
 
 
   const renderContent = () => {
     switch (scannerState) {
-      case 'loading':
-        return (
-          <div className="flex flex-col items-center justify-center gap-4">
-            <Spinner size={32} />
-            <p className="text-text-secondary">Solicitando permiso...</p>
-          </div>
-        );
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // El estado 'loading' se elimina, ahora 'scanning' maneja la carga inicial.
       case 'scanning':
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Se añade un overlay con la interfaz personalizada
         return (
-          <div className="relative w-full h-full">
-            <div id="barcode-scanner-container" className="w-full h-full"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative w-full h-full scanner-wrapper">
+            <div id="barcode-scanner-container" className="w-full h-full opacity-0 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="relative w-[250px] h-[250px]">
                 {/* Esquinas */}
                 <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-lg"></div>
@@ -100,7 +104,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
             </div>
           </div>
         );
-        // --- FIN DE LA MODIFICACIÓN ---
+      // --- FIN DE LA MODIFICACIÓN ---
       case 'idle':
       default:
         return (
