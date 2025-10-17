@@ -112,25 +112,43 @@ const Nutrition = () => {
         }
     };
 
-    const handleSaveFood = async (formData) => {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const handleSaveFood = async (formDataOrArray) => {
         setIsSubmitting(true);
         try {
-            if (modal.data?.id) { // Editando
-                await nutritionService.updateFoodLog(modal.data.id, formData);
+            const isArray = Array.isArray(formDataOrArray);
+    
+            if (modal.data?.id && !isArray) { // Editando (siempre es un objeto único)
+                await nutritionService.updateFoodLog(modal.data.id, formDataOrArray);
                 addToast('Comida actualizada.', 'success');
             } else { // Creando
-                const payload = { ...formData, log_date: selectedDate, meal_type: modal.data.mealType };
-                await nutritionService.addFoodLog(payload);
-                addToast('Comida añadida.', 'success');
+                const foodsToAdd = isArray ? formDataOrArray : [formDataOrArray];
+                
+                const payloads = foodsToAdd.map(food => ({
+                    ...food,
+                    log_date: selectedDate,
+                    meal_type: modal.data.mealType,
+                }));
+    
+                // Usamos Promise.all para enviar todas las peticiones en paralelo
+                await Promise.all(payloads.map(payload => nutritionService.addFoodLog(payload)));
+                
+                if (payloads.length > 1) {
+                    addToast(`${payloads.length} comidas añadidas.`, 'success');
+                } else {
+                    addToast('Comida añadida.', 'success');
+                }
             }
+            
             await fetchDataForDate(selectedDate);
             setModal({ type: null, data: null });
         } catch (error) {
-            addToast(error.message || 'Error al guardar la comida.', 'error');
+            addToast(error.message || 'Error al guardar la(s) comida(s).', 'error');
         } finally {
             setIsSubmitting(false);
         }
     };
+    // --- FIN DE LA MODIFICACIÓN ---
     
     const handleDeleteFood = async () => {
         if (!logToDelete) return;
@@ -168,7 +186,6 @@ const Nutrition = () => {
         return mealData;
     }, [nutritionLog]);
     
-    // --- INICIO DE LA MODIFICACIÓN ---
     const mealTotals = useMemo(() => {
         const totals = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
         nutritionLog.forEach(log => {
@@ -178,7 +195,6 @@ const Nutrition = () => {
         });
         return totals;
     }, [nutritionLog]);
-    // --- FIN DE LA MODIFICACIÓN ---
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
@@ -239,7 +255,6 @@ const Nutrition = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {Object.entries(meals).map(([mealType, logs]) => (
                         <GlassCard key={mealType} className="p-6">
-                            {/* --- INICIO DE LA MODIFICACIÓN --- */}
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-xl font-bold capitalize">
                                     { {breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks'}[mealType] }
@@ -253,7 +268,6 @@ const Nutrition = () => {
                                     <Plus size={20} />
                                 </button>
                             </div>
-                            {/* --- FIN DE LA MODIFICACIÓN --- */}
                             <div className="flex flex-col gap-3">
                                 {logs.length > 0 ? logs.map(log => (
                                     <div key={log.id} className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative">
