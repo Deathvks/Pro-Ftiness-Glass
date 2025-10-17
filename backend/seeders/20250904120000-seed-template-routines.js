@@ -381,6 +381,13 @@ export default {
 
     const t = await queryInterface.sequelize.transaction();
     try {
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Borrar datos existentes antes de insertar para evitar errores de duplicados.
+      // Es importante borrar primero los ejercicios debido a la clave foránea.
+      await queryInterface.bulkDelete('template_routine_exercises', null, { transaction: t });
+      await queryInterface.bulkDelete('template_routines', null, { transaction: t });
+      // --- FIN DE LA MODIFICACIÓN ---
+      
       for (const category of templates) {
         for (const routine of category.routines) {
           await queryInterface.bulkInsert('template_routines', [{
