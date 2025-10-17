@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, UserCog, Shield, LogOut, Info, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, UserCog, Shield, LogOut, Info, ChevronRight, Cookie } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 
@@ -35,7 +35,7 @@ export default function SettingsScreen({
   setView,
   onLogoutClick
 }) {
-  const { userProfile } = useAppStore();
+  const { userProfile, resetCookieConsent } = useAppStore();
   const [currentColorPage, setCurrentColorPage] = useState(0);
   
   const COLORS_PER_PAGE = 8;
@@ -187,6 +187,19 @@ export default function SettingsScreen({
               <div className="text-xs text-text-secondary">Email, contraseña</div>
             </div>
           </button>
+
+          {/* --- INICIO DE LA MODIFICACIÓN --- */}
+          <button
+            onClick={resetCookieConsent}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
+          >
+            <Cookie size={18} className="text-accent" />
+            <div>
+              <div className="text-sm font-semibold">Privacidad y Cookies</div>
+              <div className="text-xs text-text-secondary">Gestionar consentimiento</div>
+            </div>
+          </button>
+          {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           {userProfile?.role === 'admin' && (
             <button

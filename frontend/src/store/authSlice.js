@@ -20,9 +20,7 @@ export const createAuthSlice = (set, get) => ({
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
-    // --- INICIO DE LA MODIFICACIÓN ---
     cookieConsent: null, // null = no se ha decidido, true = aceptado, false = rechazado
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // --- ACCIONES ---
 
@@ -44,9 +42,7 @@ export const createAuthSlice = (set, get) => ({
             token: null,
             userProfile: null,
             isLoading: false,
-            // --- INICIO DE LA MODIFICACIÓN ---
             cookieConsent: null, // Resetea el consentimiento al cerrar sesión
-            // --- FIN DE LA MODIFICACIÓN ---
         });
     },
 
@@ -75,7 +71,6 @@ export const createAuthSlice = (set, get) => ({
         set({ showWelcomeModal: false });
     },
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Comprueba el consentimiento de cookies para el usuario actual.
     checkCookieConsent: (userId) => {
         const consent = localStorage.getItem(`cookie_consent_${userId}`);
@@ -106,6 +101,16 @@ export const createAuthSlice = (set, get) => ({
             // Opcional: limpiar las cookies/storage si se rechazan
             localStorage.removeItem('theme');
             localStorage.removeItem('accent');
+        }
+    },
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Resetea el consentimiento de cookies para que el banner vuelva a aparecer.
+    resetCookieConsent: () => {
+        const userId = get().userProfile?.id;
+        if (userId) {
+            localStorage.removeItem(`cookie_consent_${userId}`);
+            set({ cookieConsent: null });
         }
     },
     // --- FIN DE LA MODIFICACIÓN ---
