@@ -10,21 +10,40 @@ export const getWorkoutHistory = async (req, res, next) => {
       include: [{
         model: WorkoutLogDetail,
         as: 'WorkoutLogDetails',
-        include: [{
-          model: WorkoutLogSet,
-          as: 'WorkoutLogSets',
-          order: [['set_number', 'ASC']],
-        }],
-        order: [['id', 'ASC']],
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Se comenta temporalmente la inclusión de WorkoutLogSet para depurar
+        // include: [{
+        //   model: WorkoutLogSet,
+        //   as: 'WorkoutLogSets',
+        //   order: [['set_number', 'ASC']],
+        // }],
+        // --- FIN DE LA MODIFICACIÓN ---
+        order: [['id', 'ASC']], // Ordenar detalles por ID
       }],
-      order: [['workout_date', 'DESC']],
+      order: [['workout_date', 'DESC']], // Ordenar logs por fecha
     });
-    res.json(history);
+    // Añadir manualmente las series vacías si la inclusión está comentada
+    const historyWithEmptySets = history.map(log => {
+        const logJson = log.toJSON(); // Convertir a objeto plano
+        if (logJson.WorkoutLogDetails) {
+            logJson.WorkoutLogDetails = logJson.WorkoutLogDetails.map(detail => ({
+                ...detail,
+                WorkoutLogSets: detail.WorkoutLogSets || [], // Asegura que WorkoutLogSets exista, aunque esté vacío
+            }));
+        }
+        return logJson;
+    });
+
+    // res.json(history); // Devolvemos la versión modificada
+    res.json(historyWithEmptySets);
   } catch (error) {
+    console.error("Error en getWorkoutHistory:", error); // Añadir log para ver el error específico en backend
     next(error);
   }
 };
 
+
+// --- logWorkoutSession ---
 export const logWorkoutSession = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -36,15 +55,15 @@ export const logWorkoutSession = async (req, res, next) => {
   const t = await sequelize.transaction();
 
   try {
-    // Crear fecha local sin zona horaria para evitar problemas de conversión
     const today = new Date();
-    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // Corrección: Usar la fecha local sin manipular horas para evitar problemas de zona horaria al guardar
+    const localDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
     const newWorkoutLog = await WorkoutLog.create({
       user_id: userId,
       routine_name: routineName,
       routine_id: routineId,
-      workout_date: localDate,
+      workout_date: localDate, // Guardar solo la fecha
       duration_seconds,
       calories_burned,
       notes
@@ -52,69 +71,71 @@ export const logWorkoutSession = async (req, res, next) => {
 
     let newPRs = [];
 
-    for (const exercise of details) {
-      let totalVolume = 0;
-      let bestSetWeight = 0;
+    // Validar que 'details' existe y es un array antes de iterar
+    if (details && Array.isArray(details)) {
+        for (const exercise of details) {
+          let totalVolume = 0;
+          let bestSetWeight = 0;
 
-      if (exercise.setsDone && exercise.setsDone.length > 0) {
-        exercise.setsDone.forEach(set => {
-          const weight = parseFloat(set.weight_kg) || 0;
-          const reps = parseInt(set.reps, 10) || 0;
-          totalVolume += weight * reps;
-          if (weight > bestSetWeight) {
-            bestSetWeight = weight;
+          // Validar que 'setsDone' existe y es un array
+          if (exercise.setsDone && Array.isArray(exercise.setsDone)) {
+            exercise.setsDone.forEach(set => {
+              const weight = parseFloat(set.weight_kg) || 0;
+              const reps = parseInt(set.reps, 10) || 0;
+              totalVolume += weight * reps;
+              if (weight > bestSetWeight) {
+                bestSetWeight = weight;
+              }
+            });
           }
-        });
-      }
 
-      const newLogDetail = await WorkoutLogDetail.create({
-        workout_log_id: newWorkoutLog.id,
-        exercise_name: exercise.exerciseName,
-        total_volume: totalVolume,
-        best_set_weight: bestSetWeight,
-        superset_group_id: exercise.superset_group_id,
-      }, { transaction: t });
-
-      if (exercise.setsDone && exercise.setsDone.length > 0) {
-        const setsToCreate = exercise.setsDone.map(set => ({
-          log_detail_id: newLogDetail.id,
-          set_number: set.set_number,
-          reps: set.reps,
-          weight_kg: set.weight_kg,
-          // --- INICIO DE LA MODIFICACIÓN ---
-          // Usamos set_type en lugar de is_dropset
-          // is_dropset: set.is_dropset || false,
-          set_type: set.set_type || null, // Guardamos el tipo o null si es normal
-          // --- FIN DE LA MODIFICACIÓN ---
-        }));
-        await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
-      }
-
-      if (bestSetWeight > 0) {
-        const existingPR = await PersonalRecord.findOne({
-          where: {
-            user_id: userId,
-            exercise_name: exercise.exerciseName
-          },
-          transaction: t
-        });
-
-        if (!existingPR) {
-          await PersonalRecord.create({
-            user_id: userId,
+          const newLogDetail = await WorkoutLogDetail.create({
+            workout_log_id: newWorkoutLog.id,
             exercise_name: exercise.exerciseName,
-            weight_kg: bestSetWeight,
-            date: new Date()
+            total_volume: totalVolume,
+            best_set_weight: bestSetWeight,
+            superset_group_id: exercise.superset_group_id,
           }, { transaction: t });
-          newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
-        } else if (bestSetWeight > existingPR.weight_kg) {
-          existingPR.weight_kg = bestSetWeight;
-          existingPR.date = new Date();
-          await existingPR.save({ transaction: t });
-          newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
-        }
-      }
-    }
+
+          // Validar que 'setsDone' existe y tiene elementos antes de bulkCreate
+          if (exercise.setsDone && exercise.setsDone.length > 0) {
+            const setsToCreate = exercise.setsDone.map(set => ({
+              log_detail_id: newLogDetail.id,
+              set_number: set.set_number,
+              reps: set.reps,
+              weight_kg: set.weight_kg,
+              set_type: set.set_type || null,
+            }));
+            await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
+          }
+
+          // Lógica de PR (sin cambios, pero dentro del bucle validado)
+          if (bestSetWeight > 0) {
+            const existingPR = await PersonalRecord.findOne({
+              where: {
+                user_id: userId,
+                exercise_name: exercise.exerciseName
+              },
+              transaction: t
+            });
+
+            if (!existingPR) {
+              await PersonalRecord.create({
+                user_id: userId,
+                exercise_name: exercise.exerciseName,
+                weight_kg: bestSetWeight,
+                date: localDate // Usar la misma fecha local
+              }, { transaction: t });
+              newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
+            } else if (bestSetWeight > parseFloat(existingPR.weight_kg)) { // Comparar como números
+              existingPR.weight_kg = bestSetWeight;
+              existingPR.date = localDate; // Usar la misma fecha local
+              await existingPR.save({ transaction: t });
+              newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
+            }
+          }
+        } // Fin del bucle for
+    } // Fin de la validación de 'details'
 
     await t.commit();
     res.status(201).json({
@@ -128,11 +149,13 @@ export const logWorkoutSession = async (req, res, next) => {
   }
 };
 
+
+// --- updateWorkoutLog (sin cambios) ---
 export const updateWorkoutLog = async (req, res) => {
   res.status(501).json({ error: 'Funcionalidad de editar no implementada todavía.' });
 };
 
-// --- INICIO DE LA CORRECCIÓN ---
+// --- deleteWorkoutLog (sin cambios, ya fue corregido antes) ---
 export const deleteWorkoutLog = async (req, res, next) => {
   const { workoutId } = req.params;
   const { userId } = req.user;
@@ -150,30 +173,17 @@ export const deleteWorkoutLog = async (req, res, next) => {
       return res.status(404).json({ error: 'Registro de entrenamiento no encontrado.' });
     }
 
-    // Guardamos una copia de los detalles antes de que sean borrados en cascada
     const exercisesInWorkout = [...workoutLog.WorkoutLogDetails];
-
-    // Borramos el log (y sus detalles/series en cascada)
     await workoutLog.destroy({ transaction: t });
 
-    // Ahora, recalculamos los PRs para los ejercicios afectados
     for (const deletedDetail of exercisesInWorkout) {
       const exerciseName = deletedDetail.exercise_name;
-
-      // Buscamos si el récord actual fue establecido por el detalle que borramos
       const currentPR = await PersonalRecord.findOne({
-        where: {
-          user_id: userId,
-          exercise_name: exerciseName
-        },
+        where: { user_id: userId, exercise_name: exerciseName },
         transaction: t
       });
 
-      // Si no hay PR, o el PR era más alto que el de este entreno, no hay nada que hacer.
-      // Solo recalculamos si el PR actual podría haber sido el que acabamos de borrar.
-      if (currentPR && currentPR.weight_kg <= deletedDetail.best_set_weight) {
-
-        // Buscamos el nuevo mejor set en el resto de entrenamientos
+      if (currentPR && parseFloat(currentPR.weight_kg) <= parseFloat(deletedDetail.best_set_weight)) {
         const newBestLogDetail = await WorkoutLogDetail.findOne({
           include: [{
             model: WorkoutLog,
@@ -187,13 +197,11 @@ export const deleteWorkoutLog = async (req, res, next) => {
         });
 
         if (newBestLogDetail) {
-          // Si encontramos un nuevo mejor, actualizamos el PR
           const newBestWorkout = await WorkoutLog.findByPk(newBestLogDetail.workout_log_id, { attributes: ['workout_date'], transaction: t });
           currentPR.weight_kg = newBestLogDetail.best_set_weight;
           currentPR.date = newBestWorkout.workout_date;
           await currentPR.save({ transaction: t });
         } else {
-          // Si no quedan registros para ese ejercicio, borramos el PR
           await currentPR.destroy({ transaction: t });
         }
       }
@@ -207,7 +215,6 @@ export const deleteWorkoutLog = async (req, res, next) => {
     next(error);
   }
 };
-// --- FIN DE LA CORRECCIÓN ---
 
 const workoutController = {
   getWorkoutHistory,
