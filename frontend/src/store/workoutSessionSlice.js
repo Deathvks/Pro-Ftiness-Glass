@@ -13,14 +13,15 @@ export const createWorkoutSessionSlice = (set, get) => ({
     // Actualiza los datos de una serie específica (peso, reps, tipo).
     updateActiveWorkoutSet: (exIndex, setIndex, field, value) => {
         const session = get().activeWorkout;
+        // Validación: exIndex ES el índice real en el array de ejercicios
         if (!session || !session.exercises || !session.exercises[exIndex]?.setsDone?.[setIndex]) {
-            console.error("Attempted to update a non-existent set");
+            console.error("Attempted to update a non-existent set", { exIndex, setIndex, field, value, session });
             return;
         }
 
         // Crea una copia profunda para evitar mutaciones directas
         const newExercises = JSON.parse(JSON.stringify(session.exercises));
-        const setToUpdate = newExercises[exIndex].setsDone[setIndex];
+        const setToUpdate = newExercises[exIndex].setsDone[setIndex]; // Usa el exIndex real
 
         // Procesa el valor: vacío como '', números como números, tipo como string/null
         let processedValue;
@@ -45,12 +46,14 @@ export const createWorkoutSessionSlice = (set, get) => ({
     // Añade una serie de tipo avanzado (ej. Dropset) después de una serie existente.
     addAdvancedSet: (exIndex, setIndex, setType = 'dropset') => {
         const session = get().activeWorkout;
+         // Validación: exIndex ES el índice real
         if (!session || !session.exercises || !session.exercises[exIndex]?.setsDone?.[setIndex]) {
-            console.error("Attempted to add advanced set after non-existent set");
+            console.error("Attempted to add advanced set after non-existent set", { exIndex, setIndex, setType, session });
             return;
         }
 
         const newExercises = JSON.parse(JSON.stringify(session.exercises));
+        // Acceder al ejercicio correcto usando exIndex
         const targetExercise = newExercises[exIndex];
         const parentSet = targetExercise.setsDone[setIndex];
 
@@ -71,12 +74,14 @@ export const createWorkoutSessionSlice = (set, get) => ({
     // Elimina una serie avanzada O resetea el tipo de una serie normal marcada como avanzada.
     removeSetTypeOrAdvancedSet: (exIndex, setIndex) => {
         const session = get().activeWorkout;
+         // Validación: exIndex ES el índice real
         if (!session || !session.exercises || !session.exercises[exIndex]?.setsDone?.[setIndex]) {
-            console.error("Attempted to remove type from non-existent set");
+            console.error("Attempted to remove type from non-existent set", { exIndex, setIndex, session });
             return;
         }
 
         const newExercises = JSON.parse(JSON.stringify(session.exercises));
+        // Acceder al array de series correcto usando exIndex
         const exerciseSets = newExercises[exIndex].setsDone;
         const setToModify = exerciseSets[setIndex];
 
@@ -107,12 +112,14 @@ export const createWorkoutSessionSlice = (set, get) => ({
     // Reemplaza un ejercicio completo en la sesión activa.
     replaceExercise: (exIndex, newExerciseData) => {
         const session = get().activeWorkout;
+         // Validación: exIndex ES el índice real
         if (!session || !session.exercises || !session.exercises[exIndex]) {
-            console.error("Attempted to replace a non-existent exercise");
+            console.error("Attempted to replace a non-existent exercise", { exIndex, newExerciseData, session });
             return;
         }
 
         const newExercises = JSON.parse(JSON.stringify(session.exercises));
+        // Acceder al ejercicio correcto usando exIndex
         const oldExercise = newExercises[exIndex];
 
         // Determina el número de series para el nuevo ejercicio
@@ -127,7 +134,7 @@ export const createWorkoutSessionSlice = (set, get) => ({
         }));
 
         // Actualiza los datos del ejercicio en el índice correspondiente
-        newExercises[exIndex] = {
+        newExercises[exIndex] = { // Usa exIndex aquí también
             ...oldExercise, // Mantiene superset_group_id, exercise_order si existen
             exercise_list_id: newExerciseData.id || null, // ID de la lista de ejercicios si existe
             name: newExerciseData.name,

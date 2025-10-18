@@ -21,8 +21,6 @@ export const createWorkoutActionsSlice = (set, get) => ({
             if (storedState.activeWorkout && !get().activeWorkout) {
                 console.log("Found persisted workout, restoring state:", storedState);
                 set(storedState); // Restaura el estado
-                // Nota: Podrías añadir un toast aquí si lo deseas
-                // get().addToast('Entrenamiento anterior recuperado.', 'info');
             } else if (!storedState.activeWorkout && get().activeWorkout) {
                  console.warn("Workout in memory but not in storage, clearing memory state.");
                  get().clearWorkoutState(); // Limpia estado en memoria si no coincide
@@ -39,9 +37,13 @@ export const createWorkoutActionsSlice = (set, get) => ({
     startWorkout: (routine) => {
         // Extrae los ejercicios independientemente de si vienen de una rutina normal o plantilla
         const exercisesSource = routine.RoutineExercises || routine.TemplateRoutineExercises || [];
-        const exercises = exercisesSource.map((ex) => ({
-            // Asegura que todos los campos necesarios estén presentes
-            id: ex.id || `temp-${Date.now()}-${Math.random()}`, // ID original o temporal
+
+        // --- INICIO DE LA MODIFICACIÓN (Unique tempId) ---
+        const exercises = exercisesSource.map((ex, index) => ({
+            // Mantenemos el id original si existe (puede ser útil para referencias)
+            originalId: ex.id || null,
+            // Creamos un tempId único para esta sesión específica
+            tempId: `session-ex-${Date.now()}-${index}-${Math.random().toString(36).substring(7)}`,
             exercise_list_id: ex.exercise_list_id || null,
             name: ex.name,
             muscle_group: ex.muscle_group || '',
@@ -57,12 +59,13 @@ export const createWorkoutActionsSlice = (set, get) => ({
                 set_type: null, // Tipo de serie (null = normal)
             }))
         }));
+        // --- FIN DE LA MODIFICACIÓN ---
 
         const newState = {
             activeWorkout: {
                 routineId: routine.id || null, // ID de la rutina original (si existe)
                 routineName: routine.name,
-                exercises
+                exercises // Usar los ejercicios con el nuevo tempId
             },
             workoutStartTime: null, // No iniciar crono automáticamente
             isWorkoutPaused: true,  // Empezar pausado
@@ -134,7 +137,7 @@ export const createWorkoutActionsSlice = (set, get) => ({
             };
 
             // Validar si hay algo que guardar después de filtrar
-            if (preparedData.details.length === 0 && preparedData.exercises?.length > 0) {
+            if (preparedData.details.length === 0 && workoutData.details?.length > 0) { // Comprobamos si había ejercicios originalmente
                  // Si había ejercicios pero todos quedaron vacíos
                  return { success: false, message: 'No se registraron datos en ninguna serie.' };
             }

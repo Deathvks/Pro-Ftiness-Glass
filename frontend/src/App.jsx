@@ -56,9 +56,7 @@ export default function App() {
   }));
 
   const [view, setView] = useState(() => {
-    if (useAppStore.getState().activeWorkout) {
-      return 'workout';
-    }
+    // No forzar la vista workout aquí, dejar que el localStorage decida inicialmente
     return localStorage.getItem('lastView') || 'dashboard';
   });
 
@@ -81,8 +79,13 @@ export default function App() {
   }, [view]);
 
   useEffect(() => {
+    // Guardar lastView solo si NO es 'workout' Y hay un workout activo,
+    // o si no hay workout activo en absoluto.
+    const currentActiveWorkout = useAppStore.getState().activeWorkout;
     if (view !== 'privacyPolicy') {
-      localStorage.setItem('lastView', view);
+        if (!currentActiveWorkout || (currentActiveWorkout && view !== 'workout')) {
+             localStorage.setItem('lastView', view);
+        }
     }
   }, [view]);
 
@@ -132,16 +135,22 @@ export default function App() {
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      checkForPersistedWorkout();
+      checkForPersistedWorkout(); // Comprueba si hay workout persistido
       checkWelcomeModal();
       if (userProfile && !userProfile.is_verified) {
         setShowEmailVerificationModal(true);
         setVerificationEmail(userProfile.email);
       } else if (userProfile) {
         checkCookieConsent(userProfile.id);
+         // --- INICIO DE LA MODIFICACIÓN ---
+         // Si hay workout activo al cargar, ir a la vista de workout
+         if (useAppStore.getState().activeWorkout) {
+             setView('workout');
+         }
+         // --- FIN DE LA MODIFICACIÓN ---
       }
     }
-  }, [isAuthenticated, isLoading, userProfile, checkForPersistedWorkout, checkWelcomeModal, checkCookieConsent]);
+  }, [isAuthenticated, isLoading, userProfile, /* Eliminamos checkForPersistedWorkout de aquí */ checkWelcomeModal, checkCookieConsent]);
 
   useEffect(() => {
     if (view === 'dashboard' && isAuthenticated) {
@@ -176,7 +185,11 @@ export default function App() {
 
   const handleLogoutClick = () => setShowLogoutConfirm(true);
   const confirmLogout = () => {
-    performLogout();
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Indicar si se debe preservar el workout al hacer logout manual
+    const preserveWorkout = !!activeWorkout;
+    performLogout(preserveWorkout); // Pasar el flag
+    // --- FIN DE LA MODIFICACIÓN ---
     setShowLogoutConfirm(false);
   };
 
@@ -196,14 +209,17 @@ export default function App() {
     setView(previousView || 'dashboard');
     setPreviousView(null);
   };
-  
-  // Este es el useEffect que movimos
-  useEffect(() => {
-      const currentActiveWorkout = useAppStore.getState().activeWorkout;
-      if (currentActiveWorkout && view !== 'workout' && userProfile?.goal) {
-          setView('workout');
-      }
-  }, [activeWorkout, view, userProfile?.goal]);
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Eliminar este useEffect que forzaba la vista a 'workout'
+  // useEffect(() => {
+  //     const currentActiveWorkout = useAppStore.getState().activeWorkout;
+  //     if (currentActiveWorkout && view !== 'workout' && userProfile?.goal) {
+  //         setView('workout');
+  //     }
+  // }, [activeWorkout, view, userProfile?.goal]);
+  // --- FIN DE LA MODIFICACIÓN ---
+
 
   // --- La lógica de renderizado condicional va DESPUÉS de los Hooks ---
   if (isLoading) {
@@ -211,6 +227,7 @@ export default function App() {
   }
 
   if (!isAuthenticated) {
+    // ... (sin cambios en la lógica de autenticación)
     switch (authView) {
       case 'register':
         return <RegisterScreen showLogin={() => setAuthView('login')} />;
@@ -269,7 +286,8 @@ export default function App() {
 
   return (
     <div className="relative flex w-full h-full overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
+      {/* ... (Blob de fondo y Nav Desktop sin cambios) ... */}
+       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
       <nav className="hidden md:flex flex-col gap-10 p-8 w-64 h-full border-r border-[--glass-border] bg-bg-primary">
         <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 text-accent transition-transform hover:scale-105">
@@ -296,11 +314,13 @@ export default function App() {
         </button>
       </nav>
 
+
       <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
         {renderView()}
       </main>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 flex justify-around items-center bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]">
+      {/* ... (Nav Móvil sin cambios) ... */}
+       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 flex justify-around items-center bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]">
         {navItems.map(item => (
           <button key={item.id} onClick={() => navigate(item.id)} className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
             {item.icon}
@@ -309,6 +329,7 @@ export default function App() {
         ))}
       </nav>
 
+      {/* ... (PRToast, WelcomeModal, CookieConsentBanner, LogoutConfirm sin cambios) ... */}
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
       {showWelcomeModal && (
@@ -332,7 +353,9 @@ export default function App() {
         />
       )}
 
-      {activeWorkout && workoutStartTime && view !== 'workout' && (
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Modificar condición del botón "Volver al Entreno" */}
+      {activeWorkout && view !== 'workout' && ( // Solo depende de activeWorkout
         <button
           onClick={() => navigate('workout')}
           className="fixed bottom-24 right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
@@ -341,10 +364,12 @@ export default function App() {
           <span>Volver al Entreno</span>
         </button>
       )}
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       <div className="hidden md:block absolute bottom-4 right-4 z-50 bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">
         v{APP_VERSION}
       </div>
+      {/* ... (Modales de verificación de email sin cambios) ... */}
       {showEmailVerificationModal && userProfile && (
         <EmailVerificationModal
           currentEmail={verificationEmail}

@@ -1,83 +1,80 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, Play, Pause, Square, FileText, Clock, Link2, CornerDownRight, X, Repeat } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
-import ConfirmationModal from '../components/ConfirmationModal';
-import RestTimerModal from '../components/RestTimerModal';
-import CalorieInputModal from '../components/CalorieInputModal';
-import ExerciseReplaceModal from './ExerciseReplaceModal';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importar el nuevo modal
-import SetTypeSelectorModal from '../components/SetTypeSelectorModal';
-// --- FIN DE LA MODIFICACIÓN ---
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import { calculateCalories } from '../utils/helpers';
 
+// Importar los nuevos componentes modularizados
+import WorkoutHeader from '../components/workout/WorkoutHeader';
+import WorkoutTimerControls from '../components/workout/WorkoutTimerControls';
+import ExerciseList from '../components/workout/ExerciseList';
+import WorkoutNotes from '../components/workout/WorkoutNotes';
+import WorkoutModals from '../components/workout/WorkoutModals';
+
 const Workout = ({ timer, setView }) => {
-  const { addToast } = useToast();
-  const {
-    activeWorkout,
-    logWorkout,
-    stopWorkout,
-    updateActiveWorkoutSet,
-    addDropset,
-    removeSetType,
-    isWorkoutPaused,
-    togglePauseWorkout,
-    workoutStartTime,
-    isResting,
-    openRestModal,
-    userProfile
-  } = useAppStore(state => ({
-    activeWorkout: state.activeWorkout,
-    logWorkout: state.logWorkout,
-    stopWorkout: state.stopWorkout,
-    updateActiveWorkoutSet: state.updateActiveWorkoutSet,
-    addDropset: state.addDropset,
-    removeSetType: state.removeSetType, // Usar la nueva función
-    isWorkoutPaused: state.isWorkoutPaused,
-    togglePauseWorkout: state.togglePauseWorkout,
-    workoutStartTime: state.workoutStartTime,
-    isResting: state.isResting,
-    openRestModal: state.openRestModal,
-    userProfile: state.userProfile,
-  }));
+    // --- Hooks y Estado (se mantienen aquí) ---
+    const { addToast } = useToast();
+    const {
+        activeWorkout,
+        logWorkout,
+        stopWorkout,
+        updateActiveWorkoutSet, // Necesario para ExerciseList
+        addAdvancedSet, // Renombrado de addDropset
+        removeSetTypeOrAdvancedSet, // Renombrado de removeSetType // <-- Ya estaba aquí
+        isWorkoutPaused,
+        togglePauseWorkout,
+        workoutStartTime,
+        workoutAccumulatedTime, // Necesario para el timer
+        isResting,
+        openRestModal,
+        userProfile,
+        // Añadimos replaceExercise aquí si aún no está
+        replaceExercise
+    } = useAppStore(state => ({
+        activeWorkout: state.activeWorkout,
+        logWorkout: state.logWorkout,
+        stopWorkout: state.stopWorkout,
+        updateActiveWorkoutSet: state.updateActiveWorkoutSet,
+        addAdvancedSet: state.addAdvancedSet, // Usar el nuevo nombre de la acción
+        removeSetTypeOrAdvancedSet: state.removeSetTypeOrAdvancedSet, // Usar el nuevo nombre de la acción
+        isWorkoutPaused: state.isWorkoutPaused,
+        togglePauseWorkout: state.togglePauseWorkout,
+        workoutStartTime: state.workoutStartTime,
+        workoutAccumulatedTime: state.workoutAccumulatedTime,
+        isResting: state.isResting,
+        openRestModal: state.openRestModal,
+        userProfile: state.userProfile,
+        replaceExercise: state.replaceExercise, // Asegúrate de que esta acción exista en tu store
+    }));
 
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [wasTimerRunningOnFinish, setWasTimerRunningOnFinish] = useState(false);
-  const [showCalorieModal, setShowCalorieModal] = useState(false);
-  const [exerciseToReplace, setExerciseToReplace] = useState(null);
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Estado para el modal de tipo de serie
-  const [showSetTypeModal, setShowSetTypeModal] = useState(false);
-  const [setTypeModalData, setSetTypeModalData] = useState({ exIndex: null, setIndex: null, currentType: null });
-  // --- FIN DE LA MODIFICACIÓN ---
+    // Estados locales para modales y notas
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [notes, setNotes] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [wasTimerRunningOnFinish, setWasTimerRunningOnFinish] = useState(false);
+    const [showCalorieModal, setShowCalorieModal] = useState(false);
+    const [exerciseToReplaceIndex, setExerciseToReplaceIndex] = useState(null); // Cambiado a índice
+    const [showSetTypeModal, setShowSetTypeModal] = useState(false);
+    const [setTypeModalData, setSetTypeModalData] = useState({ exIndex: null, setIndex: null, currentType: null });
 
-  const exerciseGroups = useMemo(() => {
-    // ... (sin cambios en exerciseGroups) ...
-        if (!activeWorkout || !activeWorkout.exercises || activeWorkout.exercises.length === 0) return [];
+    // --- Lógica (se mantiene aquí) ---
+    const exerciseGroups = useMemo(() => {
+        if (!activeWorkout?.exercises || activeWorkout.exercises.length === 0) return [];
         const exercises = activeWorkout.exercises;
         const groups = [];
         let currentGroup = [];
-
         exercises.forEach(ex => {
-          if (ex.exercise_order === 0 && currentGroup.length > 0) {
-            groups.push(currentGroup);
-            currentGroup = [];
-          }
-          currentGroup.push(ex);
+            if (ex.exercise_order === 0 && currentGroup.length > 0) {
+                groups.push(currentGroup);
+                currentGroup = [];
+            }
+            currentGroup.push(ex);
         });
-
-        if (currentGroup.length > 0) {
-          groups.push(currentGroup);
-        }
+        if (currentGroup.length > 0) groups.push(currentGroup);
         return groups;
-  }, [activeWorkout]);
+    }, [activeWorkout]);
 
-  if (!activeWorkout) {
-    // ... (sin cambios aquí) ...
+    // Si no hay workout activo, mostrar mensaje
+    if (!activeWorkout) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <h2 className="text-2xl font-bold">No hay ningún entrenamiento activo.</h2>
@@ -87,344 +84,202 @@ const Workout = ({ timer, setView }) => {
                 </button>
             </div>
         );
-  }
+    }
 
-  const formatTime = (timeInSeconds) => {
-    // ... (sin cambios aquí) ...
-        const hours = String(Math.floor(timeInSeconds / 3600)).padStart(2, '0');
-        const minutes = String(Math.floor((timeInSeconds % 3600) / 60)).padStart(2, '0');
-        const seconds = String(timeInSeconds % 60).padStart(2, '0');
-        return `${hours}:${minutes}:${seconds}`;
-  };
+    // --- Handlers (se mantienen aquí, se pasarán como props) ---
 
-  const handleFinishClick = () => {
-    // ... (sin cambios aquí) ...
-        if (timer === 0) {
-          addToast('Debes iniciar el cronómetro para poder guardar el entrenamiento.', 'error');
-          return;
+    const handleFinishClick = () => {
+        if (timer === 0 && workoutStartTime === null) { // Solo mostrar si el timer nunca se inició
+            addToast('Debes iniciar el cronómetro para poder guardar el entrenamiento.', 'warning');
+            return;
         }
 
-        const isPaused = useAppStore.getState().isWorkoutPaused;
-        if (!isPaused) {
-          setWasTimerRunningOnFinish(true);
-          togglePauseWorkout();
+        const isPausedNow = useAppStore.getState().isWorkoutPaused;
+        if (!isPausedNow) {
+            setWasTimerRunningOnFinish(true);
+            togglePauseWorkout(); // Pausar si estaba corriendo
         } else {
-          setWasTimerRunningOnFinish(false);
+            setWasTimerRunningOnFinish(false);
         }
         setShowCalorieModal(true);
-  };
+    };
 
-  const handleBackClick = () => {
-    // ... (sin cambios aquí) ...
-        if (workoutStartTime) {
-          setShowCancelModal(true);
+    const handleBackClick = () => {
+        if (workoutStartTime || workoutAccumulatedTime > 0) { // Mostrar modal si el timer ha corrido alguna vez
+            setShowCancelModal(true);
         } else {
-          stopWorkout();
-          setView(activeWorkout.routineId ? 'routines' : 'dashboard');
+            stopWorkout(); // Descartar directamente si no se ha iniciado
+            setView(activeWorkout.routineId ? 'routines' : 'dashboard');
         }
-  };
+    };
 
-  const confirmCancelWorkout = () => {
-    // ... (sin cambios aquí) ...
-        const returnView = activeWorkout.routineId ? 'routines' : 'dashboard';
-        stopWorkout();
+    const confirmCancelWorkout = () => {
+        const targetView = activeWorkout?.routineId ? 'routines' : 'dashboard'; // Usa optional chaining
+        stopWorkout(); // Limpia estado y localStorage primero
         setShowCancelModal(false);
-        setView(returnView);
-  };
 
-  const handleCalorieInputComplete = async (calories) => {
-    // ... (sin cambios aquí, ya incluye set_type) ...
+        // Usamos requestAnimationFrame para asegurar que la navegación ocurra después
+        // de que las actualizaciones de estado se hayan procesado completamente.
+        requestAnimationFrame(() => {
+            setView(targetView);
+        });
+    };
+
+    const handleCalorieInputComplete = async (calories) => {
         const isCardioOnly = !activeWorkout.exercises || activeWorkout.exercises.length === 0;
 
         const isAnySetFilled = isCardioOnly || activeWorkout.exercises.some(ex =>
-          ex.setsDone.some(set => (set.reps && set.reps !== '') || (set.weight_kg && set.weight_kg !== ''))
+            ex.setsDone.some(set => (set.reps && set.reps !== '') || (set.weight_kg && set.weight_kg !== ''))
         );
 
         if (!isAnySetFilled) {
-          addToast('No has registrado ningún dato. Completa al menos una serie para guardar.', 'error');
-          setShowCalorieModal(false);
-          if (wasTimerRunningOnFinish) {
-            togglePauseWorkout();
-          }
-          return;
+            addToast('No has registrado ningún dato. Completa al menos una serie para guardar.', 'error');
+            setShowCalorieModal(false);
+            // Reanudar si estaba corriendo antes de intentar finalizar
+            if (wasTimerRunningOnFinish) {
+                togglePauseWorkout();
+            }
+            return;
         }
 
         setIsSaving(true);
+        // Calcula la duración final justo antes de guardar
+        const finalDurationSeconds = Math.floor((workoutAccumulatedTime + (workoutStartTime ? (Date.now() - workoutStartTime) : 0)) / 1000);
+
         const workoutData = {
             routineId: activeWorkout.routineId,
             routineName: activeWorkout.routineName,
-            duration_seconds: timer,
+            duration_seconds: finalDurationSeconds, // Usa la duración calculada
             notes: notes,
             calories_burned: calories,
             details: activeWorkout.exercises.map(ex => ({
                 exerciseName: ex.name,
                 superset_group_id: ex.superset_group_id,
-                setsDone: ex.setsDone.filter(set => set.reps !== '' && set.weight_kg !== '').map(set => ({
-                    set_number: set.set_number,
-                    reps: set.reps,
-                    weight_kg: set.weight_kg,
-                    set_type: set.set_type || null // Enviar null si no hay tipo
-                }))
-            }))
+                setsDone: ex.setsDone
+                    .filter(set => (set.reps !== '' && set.reps !== null && set.reps !== undefined) || (set.weight_kg !== '' && set.weight_kg !== null && set.weight_kg !== undefined)) // Filtrar series completas
+                    .map(set => ({
+                        set_number: set.set_number,
+                        reps: set.reps === '' ? 0 : parseInt(set.reps, 10) || 0,
+                        weight_kg: set.weight_kg === '' ? 0 : parseFloat(set.weight_kg) || 0,
+                        set_type: set.set_type || null
+                    }))
+            })).filter(ex => ex.setsDone.length > 0) // Filtrar ejercicios sin series completas
         };
 
         const result = await logWorkout(workoutData);
         if (result.success) {
-          addToast(result.message, 'success');
-          setShowCalorieModal(false);
-          setView('dashboard');
+            addToast(result.message, 'success');
+            setShowCalorieModal(false);
+            // stopWorkout() es llamado internamente por logWorkout si tiene éxito (a través de clearWorkoutState)
+            setView('dashboard'); // Navegar a dashboard después de guardar
         } else {
-          addToast(result.message, 'error');
-          if (wasTimerRunningOnFinish) {
-            togglePauseWorkout();
-          }
+            addToast(result.message || 'Error al guardar el entrenamiento', 'error');
+            // Reanudar si estaba corriendo antes de intentar finalizar y falló
+            if (wasTimerRunningOnFinish) {
+                togglePauseWorkout();
+            }
         }
         setIsSaving(false);
-  };
+    };
 
-  const hasWorkoutStarted = workoutStartTime !== null;
-  const handleDisabledInputClick = () => { addToast('Debes iniciar el cronómetro antes de registrar datos.', 'warning'); };
-  const handleDisabledButtonClick = () => { addToast('Debes iniciar el cronómetro antes de usar esta función.', 'warning'); };
-  const baseInputClasses = `w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition ${ !hasWorkoutStarted ? 'opacity-50 cursor-not-allowed' : '' }`;
-  const isSimpleWorkout = !activeWorkout.exercises || activeWorkout.exercises.length === 0;
 
-  const setTypeLabels = {
-    dropset: 'DS',
-    'myo-rep': 'MYO',
-    'rest-pause': 'RP',
-    descending: 'DSC'
-  };
+    const handleCalorieInputCancel = () => {
+        setShowCalorieModal(false);
+        // Reanudar si estaba corriendo antes de intentar finalizar y se canceló
+        if (wasTimerRunningOnFinish) {
+            togglePauseWorkout();
+        }
+    };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Abre el modal para seleccionar el tipo de serie
-  const openSetTypeSelector = (exIndex, setIndex, currentType) => {
-      setSetTypeModalData({ exIndex, setIndex, currentType });
-      setShowSetTypeModal(true);
-  };
+    // Handlers para los modales
+    const openSetTypeSelector = (exIndex, setIndex, currentType) => {
+        setSetTypeModalData({ exIndex, setIndex, currentType });
+        setShowSetTypeModal(true);
+    };
 
-  // Maneja la selección del tipo de serie desde el modal
-  const handleSetTypeSelect = (newType) => {
-      const { exIndex, setIndex } = setTypeModalData;
-      updateActiveWorkoutSet(exIndex, setIndex, 'set_type', newType);
-      setShowSetTypeModal(false); // Cierra el modal después de seleccionar
-  };
-  // --- FIN DE LA MODIFICACIÓN ---
+    const handleSetTypeSelect = (newType) => {
+        const { exIndex, setIndex, currentType } = setTypeModalData;
+        // Si el tipo seleccionado es el mismo que el actual y no es 'Normal' (null),
+        // interpretamos que el usuario quiere quitar el tipo especial.
+        if (newType === currentType && newType !== null) {
+            removeSetTypeOrAdvancedSet(exIndex, setIndex);
+        } else {
+            // Si es diferente o si selecciona 'Normal', actualizamos.
+            updateActiveWorkoutSet(exIndex, setIndex, 'set_type', newType);
+        }
+        setShowSetTypeModal(false);
+    };
 
-  return (
-    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-      {/* ... (Header y controles de pausa/fin sin cambios) ... */}
-            <button onClick={handleBackClick} className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4">
-                <ChevronLeft size={20} />
-                Volver
-            </button>
+    // Handler simplificado para añadir dropset (u otro tipo por defecto)
+    const handleAddAdvancedSet = (exIndex, setIndex, type = 'dropset') => {
+        addAdvancedSet(exIndex, setIndex, type);
+    }
 
-            <GlassCard className="p-6 mb-6">
-                <h1 className="text-3xl font-bold text-center sm:text-left">{activeWorkout.routineName}</h1>
-                <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4 mt-4">
-                    <div className="font-mono text-4xl sm:text-5xl font-bold">{formatTime(timer)}</div>
-                    <div className="flex gap-4">
-                        <button
-                            onClick={togglePauseWorkout}
-                            className="p-4 rounded-full transition text-bg-secondary bg-accent hover:bg-accent/80">
-                            {isWorkoutPaused ? <Play size={24} /> : <Pause size={24} />}
-                        </button>
-                        <button onClick={handleFinishClick} className="p-4 rounded-full bg-red text-bg-secondary transition hover:bg-red/80">
-                          <Square size={24} />
-                        </button>
-                    </div>
-                </div>
-                {!hasWorkoutStarted && (
-                  <div className="mt-4 p-3 bg-yellow/10 border border-yellow/20 rounded-md text-center">
-                    <p className="text-yellow font-medium">⏱️ Inicia el cronómetro para comenzar a registrar datos</p>
-                  </div>
-                )}
-            </GlassCard>
+    const hasWorkoutStarted = workoutStartTime !== null || workoutAccumulatedTime > 0;
+    const isSimpleWorkout = !activeWorkout.exercises || activeWorkout.exercises.length === 0;
 
-      {!isSimpleWorkout && (
-        <div className="flex flex-col gap-6">
-            {exerciseGroups.map((group, groupIndex) => (
-            <GlassCard key={groupIndex} className={`p-1 rounded-lg ${group.length > 1 ? 'bg-accent/10 border border-accent/20' : ''}`}>
-                {/* ... (Título de superserie sin cambios) ... */}
-                {group.length > 1 && (
-                <div className="flex items-center gap-2 p-3 text-accent font-semibold">
-                    <Link2 size={16} />
-                    <span>Superserie</span>
-                </div>
-                )}
-                <div className="flex flex-col gap-4">
-                {group.map((exercise, exIndexInGroup) => {
-                    const actualExIndex = activeWorkout.exercises.findIndex(ex => ex === exercise);
-                    return (
-                    <div key={actualExIndex} className="p-4">
-                        {/* ... (Header del ejercicio sin cambios) ... */}
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold">{exercise.name}</h3>
-                            <button
-                                onClick={() => setExerciseToReplace(actualExIndex)}
-                                className={`p-2 rounded-md transition ${
-                                  hasWorkoutStarted
-                                    ? 'bg-bg-primary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
-                                    : 'bg-bg-primary border border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-                                }`}
-                                title={hasWorkoutStarted ? "Reemplazar ejercicio" : "Inicia el cronómetro para reemplazar ejercicios"}
-                                disabled={!hasWorkoutStarted}
-                            >
-                                <Repeat size={16} />
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-[auto_1fr_1fr_auto_auto_auto] gap-2 items-center">
-                            {/* ... (Headers de columna sin cambios) ... */}
-                            <div className="text-center font-semibold text-text-secondary text-sm">Serie</div>
-                            <div className="text-center font-semibold text-text-secondary text-sm">Peso (kg)</div>
-                            <div className="text-center font-semibold text-text-secondary text-sm">Reps</div>
-                            <div className="text-center font-semibold text-text-secondary text-sm">Tipo</div>
-                            <div className="text-center font-semibold text-text-secondary text-sm">Añadir</div>
-                            <div className="text-center font-semibold text-text-secondary text-sm">Descanso</div>
-                            {exercise.setsDone.map((set, setIndex) => (
-                                <div key={setIndex} className="contents">
-                                    <span className={`text-center font-semibold bg-bg-primary border border-glass-border rounded-md px-3 py-3 ${set.set_type ? 'text-accent' : 'text-text-secondary'}`}>
-                                        {setTypeLabels[set.set_type] || set.set_number}
-                                    </span>
-                                    {/* ... (Inputs de peso y reps sin cambios) ... */}
-                                    <input
-                                      type="number"
-                                      placeholder="0"
-                                      value={set.weight_kg}
-                                      onChange={hasWorkoutStarted ? (e) => updateActiveWorkoutSet(actualExIndex, setIndex, 'weight_kg', e.target.value) : undefined}
-                                      onClick={!hasWorkoutStarted ? handleDisabledInputClick : undefined}
-                                      className={baseInputClasses}
-                                      disabled={!hasWorkoutStarted}
-                                      readOnly={!hasWorkoutStarted}
-                                    />
-                                    <input
-                                      type="number"
-                                      placeholder="0"
-                                      value={set.reps}
-                                      onChange={hasWorkoutStarted ? (e) => updateActiveWorkoutSet(actualExIndex, setIndex, 'reps', e.target.value) : undefined}
-                                      onClick={!hasWorkoutStarted ? handleDisabledInputClick : undefined}
-                                      className={baseInputClasses}
-                                      disabled={!hasWorkoutStarted}
-                                      readOnly={!hasWorkoutStarted}
-                                    />
+    // --- Renderizado ---
+    return (
+        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+            {/* Cabecera */}
+            <WorkoutHeader
+                routineName={activeWorkout.routineName}
+                onBackClick={handleBackClick}
+            />
 
-                                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                                    {/* Botón para abrir el modal de selección de tipo */}
-                                    <button
-                                        onClick={hasWorkoutStarted ? () => openSetTypeSelector(actualExIndex, setIndex, set.set_type) : handleDisabledButtonClick}
-                                        className={`p-3 rounded-md border transition h-full flex items-center justify-center text-xs font-bold ${
-                                            hasWorkoutStarted
-                                            ? set.set_type
-                                                ? 'bg-accent/10 border-accent/30 text-accent hover:bg-accent/20' // Estilo si tiene tipo
-                                                : 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50' // Estilo si es normal
-                                            : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed' // Estilo deshabilitado
-                                        }`}
-                                        title={hasWorkoutStarted ? "Cambiar tipo de serie" : "Inicia el cronómetro para marcar series"}
-                                        disabled={!hasWorkoutStarted}
-                                    >
-                                        {set.set_type ? setTypeLabels[set.set_type] : '-'}
-                                    </button>
-                                    {/* --- FIN DE LA MODIFICACIÓN --- */}
+            {/* Temporizador y Controles */}
+            <WorkoutTimerControls
+                timer={timer}
+                isWorkoutPaused={isWorkoutPaused}
+                hasWorkoutStarted={hasWorkoutStarted}
+                onTogglePause={togglePauseWorkout}
+                onFinishClick={handleFinishClick}
+            />
 
-                                    {/* ... (Botón de añadir dropset y descanso sin cambios) ... */}
-                                    <button
-                                        onClick={hasWorkoutStarted ? () => addDropset(actualExIndex, setIndex) : handleDisabledButtonClick}
-                                        className={`p-3 rounded-md border transition h-full flex items-center justify-center ${
-                                        hasWorkoutStarted
-                                            ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
-                                            : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-                                        }`}
-                                        title={hasWorkoutStarted ? "Añadir Dropset" : "Inicia el cronómetro para añadir dropsets"}
-                                        disabled={!hasWorkoutStarted}
-                                    >
-                                        <CornerDownRight size={20} />
-                                    </button>
-                                    <button
-                                        onClick={hasWorkoutStarted ? openRestModal : handleDisabledButtonClick}
-                                        className={`p-3 rounded-md border transition h-full flex items-center justify-center ${
-                                        hasWorkoutStarted
-                                            ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
-                                            : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-                                        }`}
-                                        title={hasWorkoutStarted ? "Iniciar descanso" : "Inicia el cronómetro para usar el temporizador de descanso"}
-                                        disabled={!hasWorkoutStarted}
-                                    >
-                                        <Clock size={20} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    );
-                })}
-                </div>
-            </GlassCard>
-            ))}
+            {/* Lista de Ejercicios (si no es simple workout) */}
+            {!isSimpleWorkout && (
+                <ExerciseList
+                    exerciseGroups={exerciseGroups}
+                    activeWorkout={activeWorkout} // Pasar activeWorkout completo
+                    hasWorkoutStarted={hasWorkoutStarted}
+                    // onSetInputChange={updateActiveWorkoutSet} // Ya no es necesario, se usa directamente en ExerciseList
+                    onSetTypeClick={openSetTypeSelector}
+                    onAddAdvancedSetClick={handleAddAdvancedSet} // Pasa el handler simplificado
+                    // --- INICIO DE LA MODIFICACIÓN (Pasar la prop para eliminar) ---
+                    onRemoveAdvancedSetClick={removeSetTypeOrAdvancedSet} // Pasa la acción del store
+                    // --- FIN DE LA MODIFICACIÓN ---
+                    onOpenRestModalClick={openRestModal}
+                    onReplaceExerciseClick={setExerciseToReplaceIndex} // Pasa el setter del índice
+                />
+            )}
+
+            {/* Notas */}
+            <WorkoutNotes
+                notes={notes}
+                setNotes={setNotes}
+                hasWorkoutStarted={hasWorkoutStarted}
+            />
+
+            {/* Modales */}
+            <WorkoutModals
+                showCancelModal={showCancelModal}
+                onConfirmCancel={confirmCancelWorkout}
+                onCancelCancel={() => setShowCancelModal(false)}
+                isResting={isResting}
+                showCalorieModal={showCalorieModal}
+                estimatedCalories={calculateCalories(timer, userProfile?.weight || 75)}
+                onCalorieInputComplete={handleCalorieInputComplete}
+                onCalorieInputCancel={handleCalorieInputCancel}
+                isSaving={isSaving}
+                exerciseToReplaceIndex={exerciseToReplaceIndex}
+                onCloseReplaceModal={() => setExerciseToReplaceIndex(null)}
+                showSetTypeModal={showSetTypeModal}
+                setTypeModalData={setTypeModalData}
+                onSetTypeSelect={handleSetTypeSelect}
+                onCloseSetTypeModal={() => setShowSetTypeModal(false)}
+            />
         </div>
-      )}
-
-      {/* ... (Textarea de notas y resto de modales sin cambios) ... */}
-            <GlassCard className="p-6 mt-6">
-                <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
-                  <FileText size={20} />
-                  Notas de la Sesión
-                </h2>
-                <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder={hasWorkoutStarted ? "¿Cómo te sentiste? ¿Alguna observación?..." : "Inicia el cronómetro para añadir notas..."}
-                    className={`w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition resize-none ${
-                      !hasWorkoutStarted ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    rows={4}
-                    disabled={!hasWorkoutStarted}
-                    readOnly={!hasWorkoutStarted}
-                />
-            </GlassCard>
-
-            {isResting && <RestTimerModal />}
-
-            {showCalorieModal &&
-                <CalorieInputModal
-                    estimatedCalories={calculateCalories(timer, userProfile?.weight || 75)}
-                    onComplete={handleCalorieInputComplete}
-                    onCancel={() => {
-                        setShowCalorieModal(false);
-                        if (wasTimerRunningOnFinish) {
-                            togglePauseWorkout();
-                        }
-                    }}
-                    isSaving={isSaving}
-                />
-            }
-
-            {exerciseToReplace !== null && (
-                <ExerciseReplaceModal
-                    exerciseIndex={exerciseToReplace}
-                    onClose={() => setExerciseToReplace(null)}
-                />
-            )}
-
-            {showCancelModal &&
-                <ConfirmationModal
-                    message="¿Seguro que quieres descartar este entrenamiento? Perderás todo el progreso."
-                    onConfirm={confirmCancelWorkout}
-                    onCancel={() => setShowCancelModal(false)}
-                    confirmText="Descartar"
-                />
-            }
-
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* Renderizar el modal de selección de tipo de serie */}
-            {showSetTypeModal && (
-                <SetTypeSelectorModal
-                    currentType={setTypeModalData.currentType}
-                    onSelect={handleSetTypeSelect}
-                    onClose={() => setShowSetTypeModal(false)}
-                />
-            )}
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
-    </div>
-  );
+    );
 };
 
 export default Workout;
