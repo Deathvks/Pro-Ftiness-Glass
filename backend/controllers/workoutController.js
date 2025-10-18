@@ -39,7 +39,7 @@ export const logWorkoutSession = async (req, res, next) => {
     // Crear fecha local sin zona horaria para evitar problemas de conversión
     const today = new Date();
     const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    
+
     const newWorkoutLog = await WorkoutLog.create({
       user_id: userId,
       routine_name: routineName,
@@ -81,7 +81,11 @@ export const logWorkoutSession = async (req, res, next) => {
           set_number: set.set_number,
           reps: set.reps,
           weight_kg: set.weight_kg,
-          is_dropset: set.is_dropset || false,
+          // --- INICIO DE LA MODIFICACIÓN ---
+          // Usamos set_type en lugar de is_dropset
+          // is_dropset: set.is_dropset || false,
+          set_type: set.set_type || null, // Guardamos el tipo o null si es normal
+          // --- FIN DE LA MODIFICACIÓN ---
         }));
         await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
       }
@@ -155,12 +159,12 @@ export const deleteWorkoutLog = async (req, res, next) => {
     // Ahora, recalculamos los PRs para los ejercicios afectados
     for (const deletedDetail of exercisesInWorkout) {
       const exerciseName = deletedDetail.exercise_name;
-      
+
       // Buscamos si el récord actual fue establecido por el detalle que borramos
       const currentPR = await PersonalRecord.findOne({
-        where: { 
-          user_id: userId, 
-          exercise_name: exerciseName 
+        where: {
+          user_id: userId,
+          exercise_name: exerciseName
         },
         transaction: t
       });
@@ -168,7 +172,7 @@ export const deleteWorkoutLog = async (req, res, next) => {
       // Si no hay PR, o el PR era más alto que el de este entreno, no hay nada que hacer.
       // Solo recalculamos si el PR actual podría haber sido el que acabamos de borrar.
       if (currentPR && currentPR.weight_kg <= deletedDetail.best_set_weight) {
-        
+
         // Buscamos el nuevo mejor set en el resto de entrenamientos
         const newBestLogDetail = await WorkoutLogDetail.findOne({
           include: [{

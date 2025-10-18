@@ -30,10 +30,17 @@ const WorkoutLogSet = sequelize.define(
       allowNull: false,
     },
     // --- INICIO DE LA MODIFICACIÓN ---
-    is_dropset: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
+    // Se elimina is_dropset y se añade set_type
+    // is_dropset: {
+    //   type: DataTypes.BOOLEAN,
+    //   allowNull: false,
+    //   defaultValue: false,
+    // },
+    set_type: {
+      type: DataTypes.STRING(20), // 'dropset', 'myo-rep', 'rest-pause', 'descending'
+      allowNull: true, // Null significa serie normal
+      defaultValue: null,
+      comment: 'Tipo de serie avanzada (null para normal)',
     },
     // --- FIN DE LA MODIFICACIÓN ---
   },

@@ -16,6 +16,17 @@ const DailyDetailView = ({ logs, onClose }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Mapa para mostrar nombres de tipos de series
+    const setTypeLabels = {
+        dropset: 'DS',
+        'myo-rep': 'MYO',
+        'rest-pause': 'RP',
+        descending: 'DSC'
+        // Añadir más si es necesario
+    };
+    // --- FIN DE LA MODIFICACIÓN ---
+
     const handleDeleteClick = (log) => {
         setLogToDelete(log);
         setShowDeleteConfirm(true);
@@ -152,11 +163,14 @@ const DailyDetailView = ({ logs, onClose }) => {
                                                                                 <span>
                                                                                     Serie {set.set_number}: <strong>{set.reps} reps</strong> con <strong>{set.weight_kg} kg</strong>
                                                                                 </span>
-                                                                                {set.is_dropset && (
+                                                                                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                                                                {/* Mostrar la etiqueta del tipo de serie si existe */}
+                                                                                {set.set_type && setTypeLabels[set.set_type] && (
                                                                                     <span className="bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full text-[10px]">
-                                                                                        DROPSET
+                                                                                        {setTypeLabels[set.set_type]}
                                                                                     </span>
                                                                                 )}
+                                                                                {/* --- FIN DE LA MODIFICACIÓN --- */}
                                                                             </li>
                                                                         ))
                                                                     ) : (

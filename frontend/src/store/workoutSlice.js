@@ -148,7 +148,11 @@ export const createWorkoutSlice = (set, get) => ({
                 set_number: i + 1,
                 reps: '',
                 weight_kg: '',
-                is_dropset: false,
+                // --- INICIO DE LA MODIFICACIÓN ---
+                // Reemplazar is_dropset con set_type
+                // is_dropset: false,
+                set_type: null, // null significa serie normal
+                // --- FIN DE LA MODIFICACIÓN ---
             }))
         }));
 
@@ -213,7 +217,9 @@ export const createWorkoutSlice = (set, get) => ({
         // --- INICIO DE LA MODIFICACIÓN ---
         // Asegurarse de que el valor vacío se guarda como tal, y los números como números
         let processedValue;
-        if (value === '') {
+        if (field === 'set_type') {
+            processedValue = value; // set_type es un string o null
+        } else if (value === '') {
             processedValue = '';
         } else {
              const numValue = parseFloat(value);
@@ -241,7 +247,11 @@ export const createWorkoutSlice = (set, get) => ({
             set_number: parentSet.set_number, // Mantiene el número de la serie padre visualmente
             reps: '',
             weight_kg: '',
-            is_dropset: true,
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Reemplazar is_dropset con set_type
+            // is_dropset: true,
+            set_type: 'dropset',
+            // --- FIN DE LA MODIFICACIÓN ---
         });
 
         // --- INICIO DE LA MODIFICACIÓN ---
@@ -255,25 +265,38 @@ export const createWorkoutSlice = (set, get) => ({
         setWorkoutInStorage({ ...get(), ...newState });
     },
 
-    // Elimina un dropset.
-    removeDropset: (exIndex, setIndex) => {
+    // Elimina un dropset (o resetea el tipo de la serie).
+    removeSetType: (exIndex, setIndex) => {
         const session = get().activeWorkout;
         if (!session) return;
 
         const newExercises = JSON.parse(JSON.stringify(session.exercises));
-        if (newExercises[exIndex].setsDone[setIndex]?.is_dropset) {
-            newExercises[exIndex].setsDone.splice(setIndex, 1);
+        const setToModify = newExercises[exIndex].setsDone[setIndex];
 
-             // --- INICIO DE LA MODIFICACIÓN ---
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Verificar si es una serie avanzada para eliminarla, o resetear el tipo si no lo es
+        if (setToModify?.set_type) {
+            // Si es un dropset añadido (no la serie original), eliminarlo
+            // Por ahora, la lógica simple asume que cualquier set_type distinto de null
+            // puede ser eliminado si es una fila adicional.
+            // Una lógica más robusta podría verificar si realmente fue añadido dinámicamente.
+            // Por ahora, asumimos que si tiene set_type, fue añadido y se puede borrar.
+             if (setIndex > 0 && newExercises[exIndex].setsDone[setIndex-1]?.set_number === setToModify.set_number) {
+                 newExercises[exIndex].setsDone.splice(setIndex, 1);
+             } else {
+                // Si es la serie original marcada como avanzada, solo reseteamos el tipo
+                 setToModify.set_type = null;
+             }
+
             // Re-enumerar visualmente si es necesario (opcional)
-            // --- FIN DE LA MODIFICACIÓN ---
 
             const newState = { activeWorkout: { ...session, exercises: newExercises } };
             set(newState);
             setWorkoutInStorage({ ...get(), ...newState });
         } else {
-            console.warn("Attempted to remove a non-dropset set using removeDropset");
+            console.warn("Attempted to remove a normal set using removeSetType");
         }
+        // --- FIN DE LA MODIFICACIÓN ---
     },
 
 
@@ -286,7 +309,10 @@ export const createWorkoutSlice = (set, get) => ({
         const oldExercise = newExercises[exIndex];
         // Crear nuevas 'setsDone' basadas en las series de la rutina (si existe) o mantener las antiguas
         const newSets = newExercise.sets ? Array.from({ length: newExercise.sets }, (_, i) => ({
-            set_number: i + 1, reps: '', weight_kg: '', is_dropset: false
+            set_number: i + 1, reps: '', weight_kg: '',
+            // --- INICIO DE LA MODIFICACIÓN ---
+            set_type: null // Usar set_type
+            // --- FIN DE LA MODIFICACIÓN ---
         })) : oldExercise.setsDone; // Mantener si el nuevo no especifica
 
         newExercises[exIndex] = {
@@ -355,7 +381,23 @@ export const createWorkoutSlice = (set, get) => ({
     // Guarda el entrenamiento en el backend.
     logWorkout: async (workoutData) => {
         try {
-            const responseData = await workoutService.logWorkout(workoutData);
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Asegurarse de que `set_type` se envía al backend
+            const preparedData = {
+                ...workoutData,
+                details: workoutData.details.map(ex => ({
+                    ...ex,
+                    setsDone: ex.setsDone.filter(set => set.reps !== '' && set.weight_kg !== '').map(set => ({
+                        set_number: set.set_number,
+                        reps: set.reps,
+                        weight_kg: set.weight_kg,
+                        set_type: set.set_type || null // Asegura que se envía null si no hay tipo
+                    }))
+                }))
+            };
+            const responseData = await workoutService.logWorkout(preparedData);
+            // --- FIN DE LA MODIFICACIÓN ---
+
             if (responseData.newPRs && responseData.newPRs.length > 0) {
                 get().showPRNotification(responseData.newPRs);
             }
