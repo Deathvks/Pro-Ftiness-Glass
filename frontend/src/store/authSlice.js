@@ -30,12 +30,24 @@ export const createAuthSlice = (set, get) => ({
         localStorage.setItem('fittrack_token', token);
         set({ token, isAuthenticated: true });
         await get().fetchInitialData(); // Llama a la acción del dataSlice
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Comprobar si hay un entrenamiento pendiente al iniciar sesión
+        await get().checkForPersistedWorkout();
+        // --- FIN DE LA MODIFICACIÓN ---
     },
 
     // Cierra sesión: limpia el token, el almacenamiento y resetea el estado completo.
-    handleLogout: () => {
+    handleLogout: (preserveWorkout = false) => {
+        const wasAuthenticated = get().isAuthenticated;
         clearAuthStorage();
-        get().clearWorkoutState(); // Llama a la acción del workoutSlice
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Solo limpiar el estado del workout si no se indica preservarlo O si el usuario no estaba autenticado (ej. limpieza inicial)
+        if (!preserveWorkout || !wasAuthenticated) {
+            get().clearWorkoutState(); // Llama a la acción del workoutSlice
+        } else {
+             console.log("Logout preservando workout state en localStorage.");
+        }
+        // --- FIN DE LA MODIFICACIÓN ---
         get().clearDataState();   // Llama a la acción del dataSlice
         set({
             isAuthenticated: false,
@@ -104,7 +116,6 @@ export const createAuthSlice = (set, get) => ({
         }
     },
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Resetea el consentimiento de cookies para que el banner vuelva a aparecer.
     resetCookieConsent: () => {
         const userId = get().userProfile?.id;
@@ -113,5 +124,4 @@ export const createAuthSlice = (set, get) => ({
             set({ cookieConsent: null });
         }
     },
-    // --- FIN DE LA MODIFICACIÓN ---
 });

@@ -23,31 +23,38 @@ import EmailVerification from './components/EmailVerification';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import CookieConsentBanner from './components/CookieConsentBanner';
-// --- INICIO DE LA MODIFICACIÓN ---
 import PrivacyPolicy from './pages/PrivacyPolicy';
-// --- FIN DE LA MODIFICACIÓN ---
 
 export default function App() {
+  // --- Todos los Hooks se mueven a la parte superior ---
   const {
-    isAuthenticated,
-    userProfile,
-    isLoading,
-    prNotification,
-    fetchInitialData,
-    handleLogout: performLogout,
-    activeWorkout,
-    workoutStartTime,
-    showWelcomeModal,
-    checkWelcomeModal,
-    closeWelcomeModal,
-    fetchDataForDate,
-    cookieConsent,
-    checkCookieConsent,
-    handleAcceptCookies,
-    handleDeclineCookies,
-  } = useAppStore();
+    isAuthenticated, userProfile, isLoading, prNotification,
+    fetchInitialData, performLogout, activeWorkout, workoutStartTime,
+    showWelcomeModal, checkWelcomeModal, closeWelcomeModal, fetchDataForDate,
+    cookieConsent, checkCookieConsent, handleAcceptCookies, handleDeclineCookies,
+    checkForPersistedWorkout, isWorkoutPaused, workoutAccumulatedTime
+  } = useAppStore(state => ({
+    isAuthenticated: state.isAuthenticated,
+    userProfile: state.userProfile,
+    isLoading: state.isLoading,
+    prNotification: state.prNotification,
+    fetchInitialData: state.fetchInitialData,
+    performLogout: state.handleLogout,
+    activeWorkout: state.activeWorkout,
+    workoutStartTime: state.workoutStartTime,
+    showWelcomeModal: state.showWelcomeModal,
+    checkWelcomeModal: state.checkWelcomeModal,
+    closeWelcomeModal: state.closeWelcomeModal,
+    fetchDataForDate: state.fetchDataForDate,
+    cookieConsent: state.cookieConsent,
+    checkCookieConsent: state.checkCookieConsent,
+    handleAcceptCookies: state.handleAcceptCookies,
+    handleDeclineCookies: state.handleDeclineCookies,
+    checkForPersistedWorkout: state.checkForPersistedWorkout,
+    isWorkoutPaused: state.isWorkoutPaused,
+    workoutAccumulatedTime: state.workoutAccumulatedTime,
+  }));
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   const [view, setView] = useState(() => {
     if (useAppStore.getState().activeWorkout) {
       return 'workout';
@@ -55,12 +62,18 @@ export default function App() {
     return localStorage.getItem('lastView') || 'dashboard';
   });
 
-  // Estado para controlar la vista anterior al mostrar la política de privacidad
   const [previousView, setPreviousView] = useState(null);
-  // --- FIN DE LA MODIFICACIÓN ---
-
   const mainContentRef = useRef(null);
+  const [authView, setAuthView] = useState('login');
+  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
+  const [showCodeVerificationModal, setShowCodeVerificationModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [theme, setThemeState] = useState(() => localStorage.getItem('theme') || 'system');
+  const [accent, setAccentState] = useState(() => localStorage.getItem('accent') || 'green');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [timer, setTimer] = useState(0);
 
+  // Todos los useEffects y useCallbacks se declaran aquí
   useEffect(() => {
     if (mainContentRef.current) {
       mainContentRef.current.scrollTop = 0;
@@ -68,34 +81,18 @@ export default function App() {
   }, [view]);
 
   useEffect(() => {
-    // No guardar la vista de la política de privacidad como la última vista
     if (view !== 'privacyPolicy') {
       localStorage.setItem('lastView', view);
     }
   }, [view]);
 
-  const [authView, setAuthView] = useState('login');
-  
-  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
-  const [showCodeVerificationModal, setShowCodeVerificationModal] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState('');
-
-  const [theme, setThemeState] = useState(() => localStorage.getItem('theme') || 'system');
-  const [accent, setAccentState] = useState(() => localStorage.getItem('accent') || 'green');
-
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const { isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
-  const [timer, setTimer] = useState(0);
-  
   useEffect(() => {
     const handleUrlChange = () => {
       if (window.location.pathname === '/reset-password' && !isAuthenticated) {
         setAuthView('resetPassword');
       }
     };
-    
     handleUrlChange();
-    
     window.addEventListener('popstate', handleUrlChange);
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, [isAuthenticated]);
@@ -105,38 +102,53 @@ export default function App() {
     if (workoutStartTime && !isWorkoutPaused) {
       interval = setInterval(() => {
         const elapsed = Date.now() - workoutStartTime;
-        setTimer(Math.floor((workoutAccumulatedTime + elapsed) / 1000));
+        const accumulated = typeof workoutAccumulatedTime === 'number' ? workoutAccumulatedTime : 0;
+        setTimer(Math.floor((accumulated + elapsed) / 1000));
       }, 1000);
     } else {
-      setTimer(Math.floor(workoutAccumulatedTime / 1000));
+      const accumulated = typeof workoutAccumulatedTime === 'number' ? workoutAccumulatedTime : 0;
+      setTimer(Math.floor(accumulated / 1000));
     }
     return () => clearInterval(interval);
   }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime]);
 
   const setTheme = (newTheme) => {
     if (cookieConsent) {
-        localStorage.setItem('theme', newTheme);
+      localStorage.setItem('theme', newTheme);
     }
     setThemeState(newTheme);
   };
 
   const setAccent = (newAccent) => {
-      if (cookieConsent) {
-          localStorage.setItem('accent', newAccent);
-      }
-      setAccentState(newAccent);
+    if (cookieConsent) {
+      localStorage.setItem('accent', newAccent);
+    }
+    setAccentState(newAccent);
   };
 
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
-  
-    useEffect(() => {
-        if (view === 'dashboard' && isAuthenticated) {
-            const today = new Date().toISOString().split('T')[0];
-            fetchDataForDate(today);
-        }
-    }, [view, isAuthenticated, fetchDataForDate]);
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      checkForPersistedWorkout();
+      checkWelcomeModal();
+      if (userProfile && !userProfile.is_verified) {
+        setShowEmailVerificationModal(true);
+        setVerificationEmail(userProfile.email);
+      } else if (userProfile) {
+        checkCookieConsent(userProfile.id);
+      }
+    }
+  }, [isAuthenticated, isLoading, userProfile, checkForPersistedWorkout, checkWelcomeModal, checkCookieConsent]);
+
+  useEffect(() => {
+    if (view === 'dashboard' && isAuthenticated) {
+      const today = new Date().toISOString().split('T')[0];
+      fetchDataForDate(today);
+    }
+  }, [view, isAuthenticated, fetchDataForDate]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -162,27 +174,7 @@ export default function App() {
     document.body.classList.add(`accent-${accent}`);
   }, [accent]);
 
-  useEffect(() => {
-    if (isAuthenticated && userProfile) {
-      if (!userProfile.is_verified) {
-        setShowEmailVerificationModal(true);
-        setVerificationEmail(userProfile.email);
-      } else {
-        checkCookieConsent(userProfile.id);
-      }
-    }
-  }, [isAuthenticated, userProfile, checkCookieConsent]);
-
-  useEffect(() => {
-    if (isAuthenticated && userProfile && !isLoading) {
-      checkWelcomeModal();
-    }
-  }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal]);
-
-  const handleLogoutClick = () => {
-    setShowLogoutConfirm(true);
-  };
-
+  const handleLogoutClick = () => setShowLogoutConfirm(true);
   const confirmLogout = () => {
     performLogout();
     setShowLogoutConfirm(false);
@@ -195,38 +187,45 @@ export default function App() {
     }
   }, []);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   const handleShowPolicy = () => {
-    setPreviousView(view); // Guardamos la vista actual
+    setPreviousView(view);
     setView('privacyPolicy');
   };
 
   const handleBackFromPolicy = () => {
-    setView(previousView || 'dashboard'); // Volvemos a la vista anterior o al dashboard
+    setView(previousView || 'dashboard');
     setPreviousView(null);
   };
-  // --- FIN DE LA MODIFICACIÓN ---
+  
+  // Este es el useEffect que movimos
+  useEffect(() => {
+      const currentActiveWorkout = useAppStore.getState().activeWorkout;
+      if (currentActiveWorkout && view !== 'workout' && userProfile?.goal) {
+          setView('workout');
+      }
+  }, [activeWorkout, view, userProfile?.goal]);
 
+  // --- La lógica de renderizado condicional va DESPUÉS de los Hooks ---
   if (isLoading) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
-  
+
   if (!isAuthenticated) {
     switch (authView) {
-        case 'register':
-            return <RegisterScreen showLogin={() => setAuthView('login')} />;
-        case 'forgotPassword':
-            return <ForgotPasswordScreen showLogin={() => setAuthView('login')} />;
-        case 'resetPassword':
-            return <ResetPasswordScreen showLogin={() => {
-                window.history.pushState({}, '', '/');
-                setAuthView('login');
-            }} />;
-        default:
-            return <LoginScreen 
-                showRegister={() => setAuthView('register')} 
-                showForgotPassword={() => setAuthView('forgotPassword')} 
-            />;
+      case 'register':
+        return <RegisterScreen showLogin={() => setAuthView('login')} />;
+      case 'forgotPassword':
+        return <ForgotPasswordScreen showLogin={() => setAuthView('login')} />;
+      case 'resetPassword':
+        return <ResetPasswordScreen showLogin={() => {
+          window.history.pushState({}, '', '/');
+          setAuthView('login');
+        }} />;
+      default:
+        return <LoginScreen
+          showRegister={() => setAuthView('register')}
+          showForgotPassword={() => setAuthView('forgotPassword')}
+        />;
     }
   }
 
@@ -255,9 +254,7 @@ export default function App() {
       case 'profileEditor': return <ProfileEditor onCancel={() => navigate('settings')} />;
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
       case 'adminPanel': return <AdminPanel onCancel={() => navigate('settings')} />;
-      // --- INICIO DE LA MODIFICACIÓN ---
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
-      // --- FIN DE LA MODIFICACIÓN ---
       default: return <Dashboard setView={navigate} />;
     }
   };
@@ -322,9 +319,7 @@ export default function App() {
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
           onDecline={handleDeclineCookies}
-          // --- INICIO DE LA MODIFICACIÓN ---
           onShowPolicy={handleShowPolicy}
-          // --- FIN DE LA MODIFICACIÓN ---
         />
       )}
 
