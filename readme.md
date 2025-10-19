@@ -4,7 +4,7 @@ Pro Fitness Glass es una aplicación web completa diseñada para ser tu compañe
 
 ![Imagen de la interfaz de Pro Fitness Glass]
 
-## ✨ Características Principales
+## ✨ Características Principales de Pro Fitness Glass
 
 * **Dashboard Interactivo:** Visualiza un resumen de tu actividad semanal, incluyendo sesiones, tiempo de entrenamiento y calorías quemadas.
 * **Gestión de Rutinas:** Crea, edita y elimina rutinas de entrenamiento personalizadas con ejercicios específicos, series y repeticiones.
