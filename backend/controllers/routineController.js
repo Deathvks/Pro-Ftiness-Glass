@@ -7,8 +7,9 @@ const { Routine, RoutineExercise, WorkoutLog, WorkoutLogDetail, PersonalRecord, 
 // OBTENER TODAS LAS RUTINAS
 export const getAllRoutines = async (req, res, next) => {
   try {
+    // CAMBIO: req.user.userId -> req.user.id
     const routines = await Routine.findAll({
-      where: { user_id: req.user.userId },
+      where: { user_id: req.user.id }, 
       include: [
         {
           model: RoutineExercise,
@@ -33,7 +34,7 @@ export const getRoutineById = async (req, res, next) => {
     const routine = await Routine.findOne({
       where: {
         id: req.params.id,
-        user_id: req.user.userId
+        user_id: req.user.id // CAMBIO: req.user.userId -> req.user.id
       },
       include: [{
         model: RoutineExercise,
@@ -78,7 +79,8 @@ export const createRoutine = async (req, res, next) => {
   }
 
   const { name, description, exercises = [] } = req.body;
-  const { userId } = req.user;
+  // CAMBIO: const { userId } = req.user; -> const { id: userId } = req.user;
+  const { id: userId } = req.user; 
   const t = await sequelize.transaction();
 
   try {
@@ -123,7 +125,8 @@ export const updateRoutine = async (req, res, next) => {
 
   const { id } = req.params;
   const { name, description, exercises = [] } = req.body;
-  const { userId } = req.user;
+  // CAMBIO: const { userId } = req.user; -> const { id: userId } = req.user;
+  const { id: userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
@@ -169,7 +172,7 @@ export const updateRoutine = async (req, res, next) => {
     if (renamedExercises.length > 0) {
         for (const rename of renamedExercises) {
             const workoutLogsForRoutine = await WorkoutLog.findAll({
-              where: { routine_id: id, user_id: req.user.userId },
+              where: { routine_id: id, user_id: userId }, // CAMBIO: req.user.userId -> userId
               attributes: ['id'],
               raw: true,
               transaction: t
@@ -185,7 +188,7 @@ export const updateRoutine = async (req, res, next) => {
     
             await PersonalRecord.update(
               { exercise_name: rename.newName },
-              { where: { user_id: req.user.userId, exercise_name: rename.oldName }, transaction: t }
+              { where: { user_id: userId, exercise_name: rename.oldName }, transaction: t } // CAMBIO: req.user.userId -> userId
             );
         }
     }
@@ -208,7 +211,8 @@ export const updateRoutine = async (req, res, next) => {
 // ELIMINAR UNA RUTINA
 export const deleteRoutine = async (req, res, next) => {
   const { id } = req.params;
-  const { userId } = req.user;
+  // CAMBIO: const { userId } = req.user; -> const { id: userId } = req.user;
+  const { id: userId } = req.user;
   const t = await sequelize.transaction();
 
   try {

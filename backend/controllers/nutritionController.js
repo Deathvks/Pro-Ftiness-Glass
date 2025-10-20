@@ -1,16 +1,18 @@
-const {
-    NutritionLog,
-    WaterLog,
-    sequelize
-} = require('../models');
-const {
-    Op
-} = require('sequelize');
-const axios = require('axios');
-const path = require('path'); // <-- IMPORTACIÓN AÑADIDA
-const fs = require('fs/promises'); // <-- IMPORTACIÓN AÑADIDA
-const { v4: uuidv4 } = require('uuid'); // <-- IMPORTACIÓN AÑADIDA
-const multer = require('multer'); // <-- IMPORTACIÓN AÑADIDA (Para manejo de errores)
+import db from '../models/index.js'; // CAMBIO: Importar db
+import { Op } from 'sequelize'; // CAMBIO: Sintaxis import
+import axios from 'axios'; // CAMBIO: Sintaxis import
+import path from 'path';
+import fs from 'fs/promises';
+import { v4 as uuidv4 } from 'uuid'; // CAMBIO: Sintaxis import
+import multer from 'multer';
+import { fileURLToPath } from 'url'; // CAMBIO: Requerido para __dirname
+
+// CAMBIO: Simulación de __dirname en ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// CAMBIO: Obtener modelos desde db
+const { NutritionLog, WaterLog, sequelize } = db;
 
 // --- INICIO DE LA MODIFICACIÓN ---
 // Helper para asegurar que el directorio de subida existe
@@ -30,7 +32,8 @@ const ensureUploadDirExists = async () => {
 /**
  * Obtiene todos los registros de nutrición y agua para una fecha específica.
  */
-exports.getNutritionLogsByDate = async (req, res, next) => {
+// CAMBIO: Quitar 'exports.' y definir como 'const'
+const getNutritionLogsByDate = async (req, res, next) => {
     try {
         const {
             date
@@ -73,7 +76,8 @@ exports.getNutritionLogsByDate = async (req, res, next) => {
 /**
  * Obtiene un resumen de datos de nutrición para un mes y año.
  */
-exports.getNutritionSummary = async (req, res, next) => {
+// CAMBIO: Quitar 'exports.' y definir como 'const'
+const getNutritionSummary = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const {
@@ -116,7 +120,8 @@ exports.getNutritionSummary = async (req, res, next) => {
 /**
  * Añade un nuevo registro de comida.
  */
-exports.addFoodLog = async (req, res, next) => {
+// CAMBIO: Quitar 'exports.' y definir como 'const'
+const addFoodLog = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const foodData = { ...req.body,
@@ -132,7 +137,8 @@ exports.addFoodLog = async (req, res, next) => {
 /**
  * Actualiza un registro de comida existente.
  */
-exports.updateFoodLog = async (req, res, next) => {
+// CAMBIO: Quitar 'exports.' y definir como 'const'
+const updateFoodLog = async (req, res, next) => {
     try {
         const {
             logId
@@ -162,7 +168,8 @@ exports.updateFoodLog = async (req, res, next) => {
 /**
  * Elimina un registro de comida.
  */
-exports.deleteFoodLog = async (req, res, next) => {
+// CAMBIO: Quitar 'exports.' y definir como 'const'
+const deleteFoodLog = async (req, res, next) => {
     try {
         const {
             logId
@@ -191,7 +198,8 @@ exports.deleteFoodLog = async (req, res, next) => {
 /**
  * Añade o actualiza la cantidad de agua para un día.
  */
-exports.upsertWaterLog = async (req, res, next) => {
+// CAMBIO: Quitar 'exports.' y definir como 'const'
+const upsertWaterLog = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const {
@@ -231,7 +239,8 @@ exports.upsertWaterLog = async (req, res, next) => {
 /**
  * Busca un producto por su código de barras usando la API de Open Food Facts.
  */
-exports.searchByBarcode = async (req, res, next) => {
+// CAMBIO: Quitar 'exports.' y definir como 'const'
+const searchByBarcode = async (req, res, next) => {
     try {
         const {
             barcode
@@ -275,7 +284,8 @@ exports.searchByBarcode = async (req, res, next) => {
 /**
  * Sube una imagen de comida y devuelve la URL.
  */
-exports.uploadFoodImage = async (req, res, next) => {
+// CAMBIO: Quitar 'exports.' y definir como 'const'
+const uploadFoodImage = async (req, res, next) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No se ha subido ningún archivo.' });
@@ -311,3 +321,15 @@ exports.uploadFoodImage = async (req, res, next) => {
     }
 };
 // --- FIN DE LA MODIFICACIÓN ---
+
+// CAMBIO: Agrupar todas las funciones en un 'export default'
+export default {
+    getNutritionLogsByDate,
+    getNutritionSummary,
+    addFoodLog,
+    updateFoodLog,
+    deleteFoodLog,
+    upsertWaterLog,
+    searchByBarcode,
+    uploadFoodImage
+};

@@ -17,10 +17,15 @@ const routineValidationRules = [
 ];
 // --- FIN ---
 
-router.get('/routines', routineController.getAllRoutines);
-router.post('/routines', routineValidationRules, routineController.createRoutine);
-router.get('/routines/:id', routineController.getRoutineById);
-router.put('/routines/:id', routineValidationRules, routineController.updateRoutine);
-router.delete('/routines/:id', routineController.deleteRoutine);
+// CAMBIO: '/routines' -> '/'
+router.get('/', routineController.getAllRoutines);
+// CAMBIO: '/routines' -> '/'
+router.post('/', routineValidationRules, routineController.createRoutine);
+// CAMBIO: '/routines/:id' -> '/:id'
+router.get('/:id', routineController.getRoutineById);
+// CAMBIO: '/routines/:id' -> '/:id'
+router.put('/:id', routineValidationRules, routineController.updateRoutine);
+// CAMBIO: '/routines/:id' -> '/:id'
+router.delete('/:id', routineController.deleteRoutine);
 
 export default router;

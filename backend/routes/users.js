@@ -30,9 +30,12 @@ const accountUpdateValidationRules = [
     body('currentPassword').if(body('newPassword').exists({ checkFalsy: true })).notEmpty().withMessage('La contraseña actual es requerida para establecer una nueva.')
 ];
 
-router.get('/users/me', userController.getMyProfile);
-router.put('/users/me', profileUpdateValidationRules, userController.updateMyProfile);
+// CAMBIO: Se quitó el prefijo '/users'
+router.get('/me', userController.getMyProfile);
+// CAMBIO: Se quitó el prefijo '/users'
+router.put('/me', profileUpdateValidationRules, userController.updateMyProfile);
 
-router.put('/users/me/account', accountUpdateValidationRules, userController.updateMyAccount);
+// CAMBIO: Se quitó el prefijo '/users'
+router.put('/me/account', accountUpdateValidationRules, userController.updateMyAccount);
 
 export default router;

@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import nutritionController from '../controllers/nutritionController.js';
+import authenticateToken from '../middleware/authenticateToken.js';
+import multer from 'multer'; // <-- IMPORTACIÓN MODIFICADA
+
 const router = express.Router();
-const nutritionController = require('../controllers/nutritionController');
-const authenticateToken = require('../middleware/authenticateToken');
-const multer = require('multer'); // <-- IMPORTACIÓN AÑADIDA
 
 // --- INICIO DE LA MODIFICACIÓN ---
 
@@ -53,4 +54,4 @@ router.post('/water', nutritionController.upsertWaterLog);
 // Buscar producto por código de barras
 router.get('/barcode/:barcode', nutritionController.searchByBarcode);
 
-module.exports = router;
+export default router; // <-- EXPORTACIÓN MODIFICADA

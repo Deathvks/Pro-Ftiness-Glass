@@ -1,23 +1,28 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { sequelize } = require('./models');
-const errorHandler = require('./middleware/errorHandler');
-const path = require('path');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import db from './models/index.js';
+import errorHandler from './middleware/errorHandler.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const authRoutes = require('./routes/auth');
-const bodyweightRoutes = require('./routes/bodyweight');
-const creatinaRoutes = require('./routes/creatina');
-const exerciseRoutes = require('./routes/exercises');
-const exerciseListRoutes = require('./routes/exerciseList');
-const favoriteMealsRoutes = require('./routes/favoriteMeals');
-const nutritionRoutes = require('./routes/nutrition');
-const personalRecordsRoutes = require('./routes/personalRecords');
-const routineRoutes = require('./routes/routines');
-const templateRoutinesRoutes = require('./routes/templateRoutines');
-const userRoutes = require('./routes/users');
-const workoutRoutes = require('./routes/workouts');
-const adminRoutes = require('./routes/admin');
+// Requerido en ESM para simular __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import authRoutes from './routes/auth.js';
+import bodyweightRoutes from './routes/bodyweight.js';
+import creatinaRoutes from './routes/creatina.js';
+import exerciseRoutes from './routes/exercises.js';
+import exerciseListRoutes from './routes/exerciseList.js';
+import favoriteMealsRoutes from './routes/favoriteMeals.js';
+import nutritionRoutes from './routes/nutrition.js';
+import personalRecordsRoutes from './routes/personalRecords.js';
+import routineRoutes from './routes/routines.js';
+import templateRoutinesRoutes from './routes/templateRoutines.js';
+import userRoutes from './routes/users.js';
+import workoutRoutes from './routes/workouts.js';
+import adminRoutes from './routes/admin.js';
 
 const app = express();
 
@@ -33,7 +38,8 @@ app.use('/api/bodyweight', bodyweightRoutes);
 app.use('/api/creatina', creatinaRoutes);
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/exercise-list', exerciseListRoutes);
-app.use('/api/favorite-meals', favoriteMealsRoutes);
+// CAMBIO: '/api/favorite-meals' -> '/api/meals'
+app.use('/api/meals', favoriteMealsRoutes);
 app.use('/api/nutrition', nutritionRoutes);
 app.use('/api/personal-records', personalRecordsRoutes);
 app.use('/api/routines', routineRoutes);
@@ -46,7 +52,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 
-sequelize.sync()
+db.sequelize.sync()
     .then(() => {
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
