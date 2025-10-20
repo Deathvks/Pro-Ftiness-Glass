@@ -53,6 +53,7 @@ body.light-theme {
 }
 
 /* 4) PALETAS DE ACENTO (solo cambian las vars del acento) */
+/* ... (paletas sin cambios) ... */
 /* GREEN (default) */
 body.accent-green {
   --color-accent: #22c55e;
@@ -221,6 +222,15 @@ body.accent-neutral {
     @apply text-text-primary;
   }
 
+  /* --- INICIO DE LA MODIFICACIÓN --- */
+  /* Quitar outline por defecto en focus y focus-visible para inputs y botones */
+  input:focus, textarea:focus, select:focus, button:focus,
+  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
+    @apply outline-none; /* Esto quita el outline azul/predeterminado */
+    /* Los estilos focus:ring-*, focus:border-* de Tailwind seguirán aplicándose */
+  }
+  /* --- FIN DE LA MODIFICACIÓN --- */
+
   /* Errores de formularios reutilizados en la app */
   .form-error-text {
     @apply text-red text-sm mt-1;
@@ -235,52 +245,53 @@ body.accent-neutral {
     -moz-appearance: none;
     outline: none !important;
   }
-  
+
   input[type="checkbox"]:checked {
     background-color: var(--color-accent) !important;
     border-color: var(--color-accent) !important;
     outline: none !important;
   }
-  
+
   input[type="checkbox"]:focus {
     outline: none !important;
     box-shadow: none !important;
   }
-  
+
   input[type="checkbox"]:focus-visible {
-    outline: none !important;
+    outline: none !important; /* Quitamos outline aquí también */
     box-shadow: 0 0 0 2px var(--color-accent-transparent) !important;
   }
-  
+
   /* En modo claro, usar fondo blanco para checkboxes no marcados */
   body.light-theme input[type="checkbox"] {
     background-color: white !important;
     border-color: #d1d5db !important;
     outline: none !important;
   }
-  
+
   body.light-theme input[type="checkbox"]:checked {
     background-color: var(--color-accent) !important;
     border-color: var(--color-accent) !important;
     outline: none !important;
   }
-  
+
   body.light-theme input[type="checkbox"]:focus-visible {
-    outline: none !important;
+    outline: none !important; /* Quitamos outline aquí también */
     box-shadow: 0 0 0 2px var(--color-accent-transparent) !important;
   }
-  
+
   /* Agregar el ícono de check personalizado */
   input[type="checkbox"]:checked::before {
     content: '✓';
     display: block;
     text-align: center;
-    color: white;
-    font-size: 12px;
-    line-height: 14px;
+    color: white; /* Color del check */
+    /* Ajustar tamaño y posición si es necesario */
+    font-size: 12px; /* ejemplo */
+    line-height: 14px; /* ejemplo */
   }
 
-  /* --- INICIO DE LA MODIFICACIÓN --- */
+
   /* Estilos para personalizar el escáner de QR */
   @keyframes scan {
     0% { transform: translateY(0); }
@@ -296,24 +307,23 @@ body.accent-neutral {
     border: none !important;
     border-radius: 0.5rem; /* Ajustar si es necesario para que coincida con tu diseño */
   }
-  
+
   .scanner-wrapper #qr-shaded-region * {
     display: none !important;
   }
-  
+
   .scanner-wrapper #html5-qrcode-anchor-scan-type-change,
   .scanner-wrapper #html5-qrcode-select-camera,
   .scanner-wrapper #html5-qrcode-footnote,
   .scanner-wrapper a[href="https://scanapp.org"] {
     display: none !important;
   }
-  
+
   .scanner-wrapper video {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
   }
-  /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
 /* 6) UTILIDADES */
