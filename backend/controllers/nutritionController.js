@@ -1,256 +1,313 @@
-import { validationResult } from 'express-validator';
-import models from '../models/index.js';
-import { Op, Sequelize } from 'sequelize';
-
-const { NutritionLog, WaterLog } = models;
+const {
+    NutritionLog,
+    WaterLog,
+    sequelize
+} = require('../models');
+const {
+    Op
+} = require('sequelize');
+const axios = require('axios');
+const path = require('path'); // <-- IMPORTACIÓN AÑADIDA
+const fs = require('fs/promises'); // <-- IMPORTACIÓN AÑADIDA
+const { v4: uuidv4 } = require('uuid'); // <-- IMPORTACIÓN AÑADIDA
+const multer = require('multer'); // <-- IMPORTACIÓN AÑADIDA (Para manejo de errores)
 
 // --- INICIO DE LA MODIFICACIÓN ---
-// Importamos 'axios' o usamos 'node-fetch' para hacer peticiones HTTP.
-// Por simplicidad, usaré node-fetch que es nativo en Node 18+.
-// Si usas una versión anterior, necesitarías instalar un paquete como 'axios' o 'node-fetch'.
-import fetch from 'node-fetch';
+// Helper para asegurar que el directorio de subida existe
+const UPLOAD_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
+
+const ensureUploadDirExists = async () => {
+    try {
+        await fs.access(UPLOAD_DIR);
+    } catch (error) {
+        // Si el directorio no existe, lo creamos recursivamente
+        await fs.mkdir(UPLOAD_DIR, { recursive: true });
+    }
+};
 // --- FIN DE LA MODIFICACIÓN ---
 
 
-// Obtener todos los registros de nutrición y agua para una fecha específica
-export const getLogsByDate = async (req, res, next) => {
-  try {
-    const { date } = req.query; // Formato YYYY-MM-DD
-    const { userId } = req.user;
+/**
+ * Obtiene todos los registros de nutrición y agua para una fecha específica.
+ */
+exports.getNutritionLogsByDate = async (req, res, next) => {
+    try {
+        const {
+            date
+        } = req.query;
+        const userId = req.user.id;
 
-    if (!date) {
-      return res.status(400).json({ error: 'Se requiere una fecha.' });
+        if (!date) {
+            return res.status(400).json({
+                error: 'La fecha es requerida.'
+            });
+        }
+
+        const nutritionLogs = await NutritionLog.findAll({
+            where: {
+                user_id: userId,
+                log_date: date
+            },
+            order: [
+                ['meal_type', 'ASC'],
+                ['created_at', 'ASC']
+            ],
+        });
+
+        const waterLog = await WaterLog.findOne({
+            where: {
+                user_id: userId,
+                log_date: date
+            }
+        });
+
+        res.json({
+            food: nutritionLogs,
+            water: waterLog ? waterLog.quantity_ml : 0
+        });
+    } catch (error) {
+        next(error);
     }
-
-    const nutritionLogs = await NutritionLog.findAll({
-      where: {
-        user_id: userId,
-        log_date: date,
-      },
-      order: [['created_at', 'ASC']],
-    });
-
-    const waterLog = await WaterLog.findOne({
-      where: {
-        user_id: userId,
-        log_date: date,
-      },
-    });
-
-    res.json({
-      nutrition: nutritionLogs,
-      water: waterLog || { quantity_ml: 0 },
-    });
-  } catch (error) {
-    next(error);
-  }
 };
 
-// Obtener un resumen de nutrición para un mes específico
-export const getNutritionSummary = async (req, res, next) => {
+/**
+ * Obtiene un resumen de datos de nutrición para un mes y año.
+ */
+exports.getNutritionSummary = async (req, res, next) => {
     try {
-        const { month, year } = req.query;
-        const { userId } = req.user;
+        const userId = req.user.id;
+        const {
+            month,
+            year
+        } = req.query;
 
         if (!month || !year) {
-            return res.status(400).json({ error: 'Se requiere mes y año.' });
+            return res.status(400).json({
+                error: "El mes y el año son requeridos."
+            });
         }
-        
-        const monthNumber = parseInt(month, 10);
-        const yearNumber = parseInt(year, 10);
 
-        const startDate = `${yearNumber}-${String(monthNumber).padStart(2, '0')}-01`;
-        
-        let nextMonth = monthNumber + 1;
-        let nextYear = yearNumber;
-        if (nextMonth > 12) {
-            nextMonth = 1;
-            nextYear += 1;
-        }
-        const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
-        
-        const dateFormatted = Sequelize.fn('DATE_FORMAT', Sequelize.col('log_date'), '%Y-%m-%d');
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0);
 
-        const nutritionSummary = await NutritionLog.findAll({
-            attributes: [
-                [dateFormatted, 'date'],
-                [Sequelize.fn('SUM', Sequelize.col('calories')), 'total_calories'],
-                [Sequelize.fn('SUM', Sequelize.col('protein_g')), 'total_protein'],
-                [Sequelize.fn('SUM', Sequelize.col('carbs_g')), 'total_carbs'],
-                [Sequelize.fn('SUM', Sequelize.col('fats_g')), 'total_fats'],
-            ],
+        const summary = await NutritionLog.findAll({
             where: {
                 user_id: userId,
                 log_date: {
-                    [Op.gte]: startDate,
-                    [Op.lt]: endDate,
-                }
-            },
-            group: [dateFormatted],
-            order: [[dateFormatted, 'ASC']],
-            raw: true,
-        });
-
-        const waterSummary = await WaterLog.findAll({
-            where: {
-                user_id: userId,
-                log_date: {
-                    [Op.gte]: startDate,
-                    [Op.lt]: endDate,
+                    [Op.between]: [startDate, endDate],
                 },
             },
-            order: [['log_date', 'ASC']],
-            raw: true,
+            attributes: [
+                'log_date', [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'],
+            ],
+            group: ['log_date'],
+            order: [
+                ['log_date', 'ASC']
+            ],
         });
 
-        res.json({ nutritionSummary, waterSummary });
+        res.json(summary);
     } catch (error) {
         next(error);
     }
 };
 
 
-// Añadir uno o varios registros de comida
-export const addNutritionLog = async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+/**
+ * Añade un nuevo registro de comida.
+ */
+exports.addFoodLog = async (req, res, next) => {
     try {
-        const { userId } = req.user;
-        const logsData = Array.isArray(req.body) ? req.body : [req.body];
+        const userId = req.user.id;
+        const foodData = { ...req.body,
+            user_id: userId
+        };
+        const newLog = await NutritionLog.create(foodData);
+        res.status(201).json(newLog);
+    } catch (error) {
+        next(error);
+    }
+};
 
-        if (logsData.length === 0) {
-            return res.status(400).json({ message: 'No se han proporcionado datos para registrar.' });
+/**
+ * Actualiza un registro de comida existente.
+ */
+exports.updateFoodLog = async (req, res, next) => {
+    try {
+        const {
+            logId
+        } = req.params;
+        const userId = req.user.id;
+        const foodData = req.body;
+
+        const log = await NutritionLog.findOne({
+            where: {
+                id: logId,
+                user_id: userId
+            }
+        });
+        if (!log) {
+            return res.status(404).json({
+                error: 'Registro de comida no encontrado.'
+            });
         }
 
-        const logsToCreate = logsData.map(log => ({
-            user_id: userId,
-            log_date: log.log_date,
-            meal_type: log.meal_type,
-            description: log.description,
-            calories: log.calories,
-            protein_g: log.protein_g,
-            carbs_g: log.carbs_g,
-            fats_g: log.fats_g,
-            weight_g: log.weight_g,
-            image_url: log.image_url, // --- MODIFICACIÓN ---
-        }));
-
-        const newLogs = await NutritionLog.bulkCreate(logsToCreate);
-        res.status(201).json(newLogs);
-    } catch (error) {
-        next(error);
-    }
-};
-
-// Actualizar un registro de comida
-export const updateNutritionLog = async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) { return res.status(400).json({ errors: errors.array() }); }
-    try {
-        const { logId } = req.params;
-        const { userId } = req.user;
-        // --- INICIO DE LA MODIFICACIÓN ---
-        const { description, calories, protein_g, carbs_g, fats_g, weight_g, image_url } = req.body;
-        // --- FIN DE LA MODIFICACIÓN ---
-        const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
-        if (!log) { return res.status(404).json({ error: 'Registro de comida no encontrado.' }); }
-        // --- INICIO DE LA MODIFICACIÓN ---
-        await log.update({ description, calories, protein_g, carbs_g, fats_g, weight_g, image_url });
-        // --- FIN DE LA MODIFICACIÓN ---
+        await log.update(foodData);
         res.json(log);
     } catch (error) {
         next(error);
     }
 };
 
-// Eliminar un registro de comida
-export const deleteNutritionLog = async (req, res, next) => {
-  try {
-    const { logId } = req.params;
-    const { userId } = req.user;
-    const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
-    if (!log) { return res.status(404).json({ error: 'Registro de comida no encontrado.' }); }
-    await log.destroy();
-    res.json({ message: 'Registro de comida eliminado.' });
-  } catch (error) {
-    next(error);
-  }
+/**
+ * Elimina un registro de comida.
+ */
+exports.deleteFoodLog = async (req, res, next) => {
+    try {
+        const {
+            logId
+        } = req.params;
+        const userId = req.user.id;
+
+        const log = await NutritionLog.findOne({
+            where: {
+                id: logId,
+                user_id: userId
+            }
+        });
+        if (!log) {
+            return res.status(404).json({
+                error: 'Registro de comida no encontrado.'
+            });
+        }
+
+        await log.destroy();
+        res.status(204).send();
+    } catch (error) {
+        next(error);
+    }
 };
 
-// Añadir o actualizar el registro de agua del día
-export const upsertWaterLog = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) { return res.status(400).json({ errors: errors.array() }); }
-  try {
-    const { userId } = req.user;
-    const { log_date, quantity_ml } = req.body;
-    const [waterLog, created] = await WaterLog.findOrCreate({
-      where: { user_id: userId, log_date: log_date },
-      defaults: { quantity_ml: quantity_ml }
-    });
-    if (!created) {
-      waterLog.quantity_ml = quantity_ml;
-      await waterLog.save();
+/**
+ * Añade o actualiza la cantidad de agua para un día.
+ */
+exports.upsertWaterLog = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const {
+            log_date,
+            quantity_ml
+        } = req.body;
+
+        if (!log_date || quantity_ml === undefined) {
+            return res.status(400).json({
+                error: 'Fecha y cantidad son requeridas.'
+            });
+        }
+
+        let waterLog = await WaterLog.findOne({
+            where: {
+                user_id: userId,
+                log_date
+            }
+        });
+        if (waterLog) {
+            waterLog.quantity_ml = quantity_ml;
+            await waterLog.save();
+        } else {
+            waterLog = await WaterLog.create({
+                user_id: userId,
+                log_date,
+                quantity_ml
+            });
+        }
+        res.json(waterLog);
+    } catch (error) {
+        next(error);
     }
-    res.json(waterLog);
-  } catch (error) {
-    next(error);
-  }
 };
+
+
+/**
+ * Busca un producto por su código de barras usando la API de Open Food Facts.
+ */
+exports.searchByBarcode = async (req, res, next) => {
+    try {
+        const {
+            barcode
+        } = req.params;
+        const apiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+
+        const response = await axios.get(apiUrl);
+
+        if (response.data.status === 0) {
+            return res.status(404).json({
+                error: 'Producto no encontrado.'
+            });
+        }
+
+        const product = response.data.product;
+        const nutriments = product.nutriments;
+
+        // Mapear los datos de la API a nuestro formato
+        const foodData = {
+            description: product.product_name || 'Nombre no disponible',
+            calories: nutriments['energy-kcal_100g'] || 0,
+            protein: nutriments.proteins_100g || 0,
+            carbs: nutriments.carbohydrates_100g || 0,
+            fats: nutriments.fat_100g || 0,
+            weight_g: 100, // Por defecto, los valores son por 100g
+        };
+
+        res.json(foodData);
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            return res.status(404).json({
+                error: 'Producto no encontrado en la base de datos de Open Food Facts.'
+            });
+        }
+        next(error);
+    }
+};
+
 
 // --- INICIO DE LA MODIFICACIÓN ---
 /**
- * Busca un producto por código de barras en la API de Open Food Facts.
+ * Sube una imagen de comida y devuelve la URL.
  */
-export const searchByBarcode = async (req, res, next) => {
-    const { barcode } = req.params;
-
-    if (!barcode) {
-        return res.status(400).json({ error: 'Se requiere un código de barras.' });
-    }
-
+exports.uploadFoodImage = async (req, res, next) => {
     try {
-        const apiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-
-        if (data.status === 0 || !data.product) {
-            return res.status(404).json({ error: 'Producto no encontrado en Open Food Facts.' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'No se ha subido ningún archivo.' });
         }
 
-        const product = data.product;
-        const nutriments = product.nutriments;
+        // Asegurarse de que el directorio de subida existe
+        await ensureUploadDirExists();
+
+        // Generar un nombre de archivo único para evitar colisiones
+        const fileExtension = path.extname(req.file.originalname);
+        const uniqueFilename = `${uuidv4()}${fileExtension}`;
+        const filePath = path.join(UPLOAD_DIR, uniqueFilename);
         
-        // Mapeamos los datos de la API a nuestro formato
-        const formattedProduct = {
-            name: product.product_name || 'Nombre no disponible',
-            calories: nutriments['energy-kcal_100g'] || nutriments['energy-kj_100g'] / 4.184 || 0,
-            protein_g: nutriments.proteins_100g || 0,
-            carbs_g: nutriments.carbohydrates_100g || 0,
-            fats_g: nutriments.fat_100g || 0,
-            // Por defecto, la información es por 100g
-            weight_g: 100, 
-        };
-        
-        res.json(formattedProduct);
+        // Guardar el buffer de la imagen en el sistema de archivos
+        await fs.writeFile(filePath, req.file.buffer);
+
+        // Construir la URL pública para acceder a la imagen
+        // Esta URL depende de cómo se sirvan los archivos estáticos en Express
+        const imageUrl = `${req.protocol}://${req.get('host')}/images/food/${uniqueFilename}`;
+
+        res.status(201).json({ imageUrl });
 
     } catch (error) {
-        console.error('Error al buscar en Open Food Facts:', error);
+        // Capturar errores específicos de Multer (ej: tamaño de archivo)
+        if (error instanceof multer.MulterError) {
+             return res.status(400).json({ error: `Error de Multer: ${error.message}` });
+        }
+        // Capturar otros errores personalizados (ej: formato de archivo)
+        if (error.message.includes('Formato de imagen no válido')) {
+            return res.status(400).json({ error: error.message });
+        }
         next(error);
     }
 };
 // --- FIN DE LA MODIFICACIÓN ---
-
-const nutritionController = {
-    getLogsByDate,
-    getNutritionSummary,
-    addNutritionLog,
-    updateNutritionLog,
-    deleteNutritionLog,
-    upsertWaterLog,
-    searchByBarcode, // <-- Exportamos la nueva función
-};
-
-export default nutritionController;

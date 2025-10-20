@@ -1,81 +1,56 @@
-import express from 'express';
-import { body } from 'express-validator';
-import nutritionController from '../controllers/nutritionController.js';
-import authenticateToken from '../middleware/authenticateToken.js';
+const express = require('express');
+const router = express.Router();
+const nutritionController = require('../controllers/nutritionController');
+const authenticateToken = require('../middleware/authenticateToken');
+const multer = require('multer'); // <-- IMPORTACIÓN AÑADIDA
+
 // --- INICIO DE LA MODIFICACIÓN ---
-import multer from 'multer';
-import path from 'path';
 
-// Configurar multer para almacenamiento en disco
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Esta ruta es relativa a la raíz del proyecto backend
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
+// Configuración de Multer para la subida de imágenes
+// Usamos memoryStorage para procesar la imagen en el controlador antes de guardarla
+const storage = multer.memoryStorage();
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Límite de 5MB
+    fileFilter: (req, file, cb) => {
+        // Aceptar solo formatos de imagen comunes
+        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/gif') {
+            cb(null, true);
+        } else {
+            cb(new Error('Formato de imagen no válido. Solo se permite JPEG, PNG o GIF.'), false);
+        }
+    }
 });
-
-const upload = multer({ storage: storage });
 // --- FIN DE LA MODIFICACIÓN ---
 
-const router = express.Router();
-
-// Todas las rutas en este fichero requieren que el usuario esté autenticado
+// Middleware de autenticación para todas las rutas de nutrición
 router.use(authenticateToken);
 
-// --- Reglas de Validación ---
+// Obtener registros de nutrición y agua para una fecha
+router.get('/', nutritionController.getNutritionLogsByDate);
 
-const updateNutritionLogRules = [
-    body('description').trim().notEmpty().withMessage('La descripción es requerida.'),
-    body('calories').isInt({ min: 0 }).withMessage('Las calorías deben ser un número positivo.'),
-    body('protein_g').optional().isFloat({ min: 0 }).withMessage('Las proteínas deben ser un número positivo.'),
-    body('carbs_g').optional().isFloat({ min: 0 }).withMessage('Los carbohidratos deben ser un número positivo.'),
-    body('fats_g').optional().isFloat({ min: 0 }).withMessage('Las grasas deben ser un número positivo.'),
-];
-
-const upsertWaterLogRules = [
-    body('log_date').isISO8601().toDate().withMessage('La fecha no es válida.'),
-    body('quantity_ml').isInt({ min: 0 }).withMessage('La cantidad de agua debe ser un número positivo.'),
-];
-
-
-// --- Rutas ---
-
-// GET /api/nutrition?date=YYYY-MM-DD -> Obtener logs de un día
-router.get('/nutrition', nutritionController.getLogsByDate);
-
-// GET /api/nutrition/summary?month=M&year=YYYY -> Obtener resumen de un mes
-router.get('/nutrition/summary', nutritionController.getNutritionSummary);
-
-// GET /api/nutrition/barcode/:barcode -> Buscar producto por código de barras
-router.get('/nutrition/barcode/:barcode', nutritionController.searchByBarcode);
-
-// POST /api/nutrition/food -> Añadir una comida
-router.post('/nutrition/food', nutritionController.addNutritionLog);
+// Obtener resumen de nutrición para un mes
+router.get('/summary', nutritionController.getNutritionSummary);
 
 // --- INICIO DE LA MODIFICACIÓN ---
-// POST /api/nutrition/food/image -> Subir una imagen para una comida
-router.post('/nutrition/food/image', upload.single('foodImage'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send({ error: 'No se ha subido ningún archivo.' });
-  }
-  // Devolvemos la URL donde se ha guardado el archivo
-  // La URL será relativa al servidor, ej: /uploads/foodImage-1678886400000.jpg
-  res.status(201).json({ imageUrl: `/${req.file.path.replace(/\\/g, '/')}` });
-});
+// Ruta para subir la imagen de una comida.
+// Se usa upload.single('foodImage') donde 'foodImage' coincide con el nombre del campo en el FormData del frontend
+router.post('/food/image', upload.single('foodImage'), nutritionController.uploadFoodImage);
 // --- FIN DE LA MODIFICACIÓN ---
 
-// PUT /api/nutrition/food/:logId -> Actualizar una comida
-router.put('/nutrition/food/:logId', updateNutritionLogRules, nutritionController.updateNutritionLog);
+// Añadir un nuevo registro de comida
+router.post('/food', nutritionController.addFoodLog);
 
-// DELETE /api/nutrition/food/:logId -> Eliminar una comida
-router.delete('/nutrition/food/:logId', nutritionController.deleteNutritionLog);
+// Actualizar un registro de comida
+router.put('/food/:logId', nutritionController.updateFoodLog);
 
-// POST /api/nutrition/water -> Añadir o actualizar el agua de un día
-router.post('/nutrition/water', upsertWaterLogRules, nutritionController.upsertWaterLog);
+// Eliminar un registro de comida
+router.delete('/food/:logId', nutritionController.deleteFoodLog);
 
+// Añadir o actualizar un registro de agua
+router.post('/water', nutritionController.upsertWaterLog);
 
-export default router;
+// Buscar producto por código de barras
+router.get('/barcode/:barcode', nutritionController.searchByBarcode);
+
+module.exports = router;

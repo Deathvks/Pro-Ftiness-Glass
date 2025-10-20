@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import useAppStore from '../store/useAppStore'; // <-- IMPORTACIÓN AÑADIDA
+import useAppStore from '../store/useAppStore';
 
 /**
  * Obtiene los registros de nutrición y agua para una fecha específica.
@@ -79,27 +79,29 @@ export const uploadFoodImage = (imageFile) => {
     const formData = new FormData();
     formData.append('foodImage', imageFile);
 
-    // No usamos apiClient directamente porque necesitamos enviar FormData,
-    // pero sí obtenemos el token de la misma forma que lo hace apiClient.
     const token = useAppStore.getState().token;
     const headers = {};
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    return fetch(`${import.meta.env.VITE_API_BASE_URL}/api/nutrition/food/image`, {
+    // Se construye la URL base correctamente desde las variables de entorno
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    // Se elimina el '/api' duplicado. apiClient ya lo añade.
+    // La URL correcta debe ser, por ejemplo: http://localhost:3001/api/nutrition/food/image
+    return fetch(`${API_BASE_URL}/nutrition/food/image`, {
         method: 'POST',
         body: formData,
         headers,
-    }).then(async response => { // Se añade async para poder usar await en el cuerpo del error
+    }).then(async response => {
         if (!response.ok) {
-            // Intentamos leer el cuerpo del error para dar un mensaje más específico
             let errorMessage = 'Error al subir la imagen.';
             try {
                 const errorData = await response.json();
                 errorMessage = errorData.error || errorData.message || errorMessage;
             } catch (e) {
-                // Si no hay cuerpo JSON, nos quedamos con el error genérico
+                // No hay cuerpo JSON, error genérico
             }
             throw new Error(errorMessage);
         }

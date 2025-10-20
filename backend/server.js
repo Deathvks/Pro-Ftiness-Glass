@@ -1,77 +1,57 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser';
-import helmet from 'helmet';
-import creatinaRoutes from './routes/creatina.js';
-// --- INICIO DE LA MODIFICACIÓN ---
-import path from 'path';
-import { fileURLToPath } from 'url';
-// --- FIN DE LA MODIFICACIÓN ---
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { sequelize } = require('./models');
+const errorHandler = require('./middleware/errorHandler');
+const path = require('path');
 
-dotenv.config();
-
-import authRoutes from './routes/auth.js';
-import routineRoutes from './routes/routines.js';
-import exerciseRoutes from './routes/exercises.js';
-import workoutRoutes from './routes/workouts.js';
-import bodyweightRoutes from './routes/bodyweight.js';
-import userRoutes from './routes/users.js';
-import exerciseListRoutes from './routes/exerciseList.js';
-import personalRecordRoutes from './routes/personalRecords.js';
-import adminRoutes from './routes/admin.js';
-import nutritionRoutes from './routes/nutrition.js';
-import favoriteMealRoutes from './routes/favoriteMeals.js';
-import templateRoutineRoutes from './routes/templateRoutines.js';
-import errorHandler from './middleware/errorHandler.js';
+const authRoutes = require('./routes/auth');
+const bodyweightRoutes = require('./routes/bodyweight');
+const creatinaRoutes = require('./routes/creatina');
+const exerciseRoutes = require('./routes/exercises');
+const exerciseListRoutes = require('./routes/exerciseList');
+const favoriteMealsRoutes = require('./routes/favoriteMeals');
+const nutritionRoutes = require('./routes/nutrition');
+const personalRecordsRoutes = require('./routes/personalRecords');
+const routineRoutes = require('./routes/routines');
+const templateRoutinesRoutes = require('./routes/templateRoutines');
+const userRoutes = require('./routes/users');
+const workoutRoutes = require('./routes/workouts');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
-// --- INICIO DE LA MODIFICACIÓN ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-// --- FIN DE LA MODIFICACIÓN ---
-
-app.set('trust proxy', 1);
-
-const PORT = process.env.PORT || 3001;
-
-// Middlewares
-app.use(helmet());
-
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN,
-  credentials: true,
-};
-app.use(cors(corsOptions));
-
+app.use(cors({
+    origin: process.env.CORS_ORIGIN,
+}));
 app.use(express.json());
-app.use(cookieParser());
-
-// --- INICIO DE LA MODIFICACIÓN ---
-// Servir archivos estáticos desde la carpeta 'uploads'
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// --- FIN DE LA MODIFICACIÓN ---
-
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api', routineRoutes);
-app.use('/api', exerciseRoutes);
-app.use('/api', workoutRoutes);
-app.use('/api', bodyweightRoutes);
-app.use('/api', userRoutes);
-app.use('/api', exerciseListRoutes);
-app.use('/api', personalRecordRoutes);
-app.use('/api', nutritionRoutes);
-app.use('/api', favoriteMealRoutes);
-app.use('/api', templateRoutineRoutes); 
+app.use('/api/bodyweight', bodyweightRoutes);
 app.use('/api/creatina', creatinaRoutes);
-
+app.use('/api/exercises', exerciseRoutes);
+app.use('/api/exercise-list', exerciseListRoutes);
+app.use('/api/favorite-meals', favoriteMealsRoutes);
+app.use('/api/nutrition', nutritionRoutes);
+app.use('/api/personal-records', personalRecordsRoutes);
+app.use('/api/routines', routineRoutes);
+app.use('/api/template-routines', templateRoutinesRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/workouts', workoutRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3001;
+
+sequelize.sync()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    })
+    .catch(err => {
+        console.error('Unable to connect to the database:', err);
+    });
