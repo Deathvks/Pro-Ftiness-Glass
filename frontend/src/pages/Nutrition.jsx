@@ -167,7 +167,9 @@ const Nutrition = () => {
 
     const totals = useMemo(() => {
         const result = { calories: 0, protein: 0, carbs: 0, fats: 0 };
-        nutritionLog.forEach(log => {
+        // --- INICIO DE LA MODIFICACIÓN ---
+        (nutritionLog || []).forEach(log => {
+        // --- FIN DE LA MODIFICACIÓN ---
             result.calories += log.calories || 0;
             result.protein += parseFloat(log.protein_g) || 0;
             result.carbs += parseFloat(log.carbs_g) || 0;
@@ -178,7 +180,9 @@ const Nutrition = () => {
 
     const meals = useMemo(() => {
         const mealData = { breakfast: [], lunch: [], dinner: [], snack: [] };
-        nutritionLog.forEach(log => {
+        // --- INICIO DE LA MODIFICACIÓN ---
+        (nutritionLog || []).forEach(log => {
+        // --- FIN DE LA MODIFICACIÓN ---
             if (mealData[log.meal_type]) {
                 mealData[log.meal_type].push(log);
             }
@@ -188,7 +192,9 @@ const Nutrition = () => {
     
     const mealTotals = useMemo(() => {
         const totals = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
-        nutritionLog.forEach(log => {
+        // --- INICIO DE LA MODIFICACIÓN ---
+        (nutritionLog || []).forEach(log => {
+        // --- FIN DE LA MODIFICACIÓN ---
             if (totals[log.meal_type] !== undefined) {
                 totals[log.meal_type] += log.calories || 0;
             }
@@ -224,7 +230,7 @@ const Nutrition = () => {
                             <h3 className="text-xl font-bold">Agua</h3>
                             <div className="flex items-center justify-center gap-4 my-4">
                                 <Droplet size={32} className="text-blue-400" />
-                                <p className="text-4xl font-bold">{waterLog.quantity_ml}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
+                                <p className="text-4xl font-bold">{(waterLog?.quantity_ml || 0)}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
                             </div>
                              <button onClick={() => setModal({ type: 'water', data: null })} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
                                 <Plus size={20} />
@@ -310,7 +316,7 @@ const Nutrition = () => {
 
             {modal.type === 'water' && (
                 <WaterLogModal
-                    initialQuantity={waterLog.quantity_ml}
+                    initialQuantity={waterLog?.quantity_ml || 0}
                     onClose={() => setModal({ type: null, data: null })}
                     onSave={handleSaveWater}
                     isLoading={isSubmitting}

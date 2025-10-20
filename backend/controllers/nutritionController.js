@@ -32,7 +32,7 @@ const ensureUploadDirExists = async () => {
 const getNutritionLogsByDate = async (req, res, next) => {
   try {
     const { date } = req.query;
-    const { userId } = req.user; // CORRECCIÓN: Usar req.user.userId
+    const { userId } = req.user; 
 
     if (!date) {
       return res.status(400).json({
@@ -42,7 +42,7 @@ const getNutritionLogsByDate = async (req, res, next) => {
 
     const nutritionLogs = await NutritionLog.findAll({
       where: {
-        user_id: userId, // CORRECCIÓN: Usar userId
+        user_id: userId, 
         log_date: date,
       },
       order: [
@@ -53,15 +53,20 @@ const getNutritionLogsByDate = async (req, res, next) => {
 
     const waterLog = await WaterLog.findOne({
       where: {
-        user_id: userId, // CORRECCIÓN: Usar userId
+        user_id: userId, 
         log_date: date,
       },
     });
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Devolvemos el objeto 'waterLog' completo (o null) en lugar de 'waterLog.quantity_ml' o 0.
+    // El dataSlice del frontend (nutrition.water || { quantity_ml: 0 }) gestionará el null.
     res.json({
-      food: nutritionLogs,
-      water: waterLog ? waterLog.quantity_ml : 0,
+      nutrition: nutritionLogs, // Renombrado de 'food' a 'nutrition' para coincidir con dataSlice
+      water: waterLog,
     });
+    // --- FIN DE LA MODIFICACIÓN ---
+
   } catch (error) {
     next(error);
   }
@@ -72,7 +77,7 @@ const getNutritionLogsByDate = async (req, res, next) => {
  */
 const getNutritionSummary = async (req, res, next) => {
   try {
-    const { userId } = req.user; // CORRECCIÓN: Usar req.user.userId
+    const { userId } = req.user; 
     const { month, year } = req.query;
 
     if (!month || !year) {
@@ -84,9 +89,12 @@ const getNutritionSummary = async (req, res, next) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
-    const summary = await NutritionLog.findAll({
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Renombrado 'summary' a 'nutritionSummary' y añadido 'waterSummary' 
+    // para coincidir con lo que espera el frontend (dataSlice).
+    const nutritionSummary = await NutritionLog.findAll({
       where: {
-        user_id: userId, // CORRECCIÓN: Usar userId
+        user_id: userId, 
         log_date: {
           [Op.between]: [startDate, endDate],
         },
@@ -99,7 +107,20 @@ const getNutritionSummary = async (req, res, next) => {
       order: [['log_date', 'ASC']],
     });
 
-    res.json(summary);
+    const waterSummary = await WaterLog.findAll({
+      where: {
+        user_id: userId,
+        log_date: {
+          [Op.between]: [startDate, endDate],
+        },
+      },
+      attributes: ['log_date', 'quantity_ml'],
+      order: [['log_date', 'ASC']],
+    });
+
+    res.json({ nutritionSummary, waterSummary });
+    // --- FIN DE LA MODIFICACIÓN ---
+
   } catch (error) {
     next(error);
   }
@@ -110,8 +131,38 @@ const getNutritionSummary = async (req, res, next) => {
  */
 const addFoodLog = async (req, res, next) => {
   try {
-    const { userId } = req.user; // CORRECCIÓN: Usar req.user.userId
-    const foodData = { ...req.body, user_id: userId };
+    const { userId } = req.user; 
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Sanitizamos el 'body' para coger solo los campos que el modelo 'NutritionLog' espera.
+    // Esto evita errores 500 si el frontend envía campos extra (como 'tempId', 'isFavorite', etc.).
+    const {
+      log_date,
+      meal_type,
+      description,
+      calories,
+      protein_g,
+      carbs_g,
+      fats_g,
+      weight_g,
+      image_url, // Este es el nuevo campo
+    } = req.body;
+
+    // Construimos el objeto de datos explícitamente.
+    const foodData = {
+      user_id: userId,
+      log_date,
+      meal_type,
+      description,
+      calories: calories || null,
+      protein_g: protein_g || null,
+      carbs_g: carbs_g || null,
+      fats_g: fats_g || null,
+      weight_g: weight_g || null,
+      image_url: image_url || null, // Permitir que image_url sea null
+    };
+    // --- FIN DE LA MODIFICACIÓN ---
+
     const newLog = await NutritionLog.create(foodData);
     res.status(201).json(newLog);
   } catch (error) {
@@ -125,13 +176,12 @@ const addFoodLog = async (req, res, next) => {
 const updateFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
-    const { userId } = req.user; // CORRECCIÓN: Usar req.user.userId
-    const foodData = req.body;
+    const { userId } = req.user; 
 
     const log = await NutritionLog.findOne({
       where: {
         id: logId,
-        user_id: userId, // CORRECCIÓN: Usar userId
+        user_id: userId, 
       },
     });
     if (!log) {
@@ -139,6 +189,33 @@ const updateFoodLog = async (req, res, next) => {
         .status(404)
         .json({ error: 'Registro de comida no encontrado.' });
     }
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Sanitizamos el 'body' aquí también para la actualización.
+    const {
+      description,
+      calories,
+      protein_g,
+      carbs_g,
+      fats_g,
+      weight_g,
+      image_url,
+      meal_type,
+      log_date,
+    } = req.body;
+
+    const foodData = {
+      description,
+      calories: calories || null,
+      protein_g: protein_g || null,
+      carbs_g: carbs_g || null,
+      fats_g: fats_g || null,
+      weight_g: weight_g || null,
+      image_url: image_url || null,
+      meal_type,
+      log_date,
+    };
+    // --- FIN DE LA MODIFICACIÓN ---
 
     await log.update(foodData);
     res.json(log);
@@ -153,12 +230,12 @@ const updateFoodLog = async (req, res, next) => {
 const deleteFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
-    const { userId } = req.user; // CORRECCIÓN: Usar req.user.userId
+    const { userId } = req.user; 
 
     const log = await NutritionLog.findOne({
       where: {
         id: logId,
-        user_id: userId, // CORRECCIÓN: Usar userId
+        user_id: userId, 
       },
     });
     if (!log) {
@@ -179,7 +256,7 @@ const deleteFoodLog = async (req, res, next) => {
  */
 const upsertWaterLog = async (req, res, next) => {
   try {
-    const { userId } = req.user; // CORRECCIÓN: Usar req.user.userId
+    const { userId } = req.user; 
     const { log_date, quantity_ml } = req.body;
 
     if (!log_date || quantity_ml === undefined) {
@@ -190,7 +267,7 @@ const upsertWaterLog = async (req, res, next) => {
 
     let waterLog = await WaterLog.findOne({
       where: {
-        user_id: userId, // CORRECCIÓN: Usar userId
+        user_id: userId, 
         log_date,
       },
     });
@@ -199,7 +276,7 @@ const upsertWaterLog = async (req, res, next) => {
       await waterLog.save();
     } else {
       waterLog = await WaterLog.create({
-        user_id: userId, // CORRECCIÓN: Usar userId
+        user_id: userId, 
         log_date,
         quantity_ml,
       });
@@ -227,15 +304,17 @@ const searchByBarcode = async (req, res, next) => {
     const product = response.data.product;
     const nutriments = product.nutriments;
 
-    // Mapear los datos de la API a nuestro formato
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Renombrado de campos para coincidir con nuestro modelo (protein -> protein_g, etc.)
     const foodData = {
-      description: product.product_name || 'Nombre no disponible',
+      name: product.product_name || 'Nombre no disponible', // 'name' es lo que espera el frontend
       calories: nutriments['energy-kcal_100g'] || 0,
-      protein: nutriments.proteins_100g || 0,
-      carbs: nutriments.carbohydrates_100g || 0,
-      fats: nutriments.fat_100g || 0,
+      protein_g: nutriments.proteins_100g || 0,
+      carbs_g: nutriments.carbohydrates_100g || 0,
+      fats_g: nutriments.fat_100g || 0,
       weight_g: 100, // Por defecto, los valores son por 100g
     };
+    // --- FIN DE LA MODIFICACIÓN ---
 
     res.json(foodData);
   } catch (error) {
@@ -270,9 +349,16 @@ const uploadFoodImage = async (req, res, next) => {
 
     // Construir la URL pública para acceder a la imagen
     // Esta URL depende de cómo se sirvan los archivos estáticos en Express
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Aseguramos que la URL devuelta sea relativa al servidor
+    // El frontend ya tiene la API_BASE_URL (http://localhost:3001/api)
+    // El servidor estático de express sirve '/images'
+    // PERO, la API base ya incluye /api, y el servidor estático no.
+    // Devolvemos la URL completa
     const imageUrl = `${req.protocol}://${req.get(
       'host'
     )}/images/food/${uniqueFilename}`;
+    // --- FIN DE LA MODIFICACIÓN ---
 
     res.status(201).json({ imageUrl });
   } catch (error) {

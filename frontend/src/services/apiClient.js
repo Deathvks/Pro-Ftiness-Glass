@@ -11,7 +11,10 @@ if (!API_BASE_URL) {
 const apiClient = async (endpoint, options = {}) => {
     const token = useAppStore.getState().token;
     const { body, ...customConfig } = options;
-    const headers = { 'Content-Type': 'application/json' };
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Headers por defecto.
+    const headers = { ...customConfig.headers };
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -20,15 +23,30 @@ const apiClient = async (endpoint, options = {}) => {
     const config = {
         method: body ? 'POST' : 'GET',
         ...customConfig,
-        headers: { ...headers, ...customConfig.headers },
+        headers,
     };
 
+    // Diferenciamos entre body de tipo FormData (para subida de archivos) 
+    // y body de tipo JSON (para todo lo demás).
     if (body) {
-        config.body = JSON.stringify(body);
+        if (body instanceof FormData) {
+            // Si es FormData, NO establecemos Content-Type. 
+            // El navegador lo hará automáticamente con el 'boundary' correcto.
+            config.body = body;
+        } else {
+            // Si es un objeto JSON, sí establecemos Content-Type y lo convertimos a string.
+            headers['Content-Type'] = 'application/json';
+            config.body = JSON.stringify(body);
+        }
     }
+    // --- FIN DE LA MODIFICACIÓN ---
 
     try {
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Revertimos el cambio: quitamos el /api hardcodeado. 
+        // La URL base ya lo incluye.
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        // --- FIN DE LA MODIFICACIÓN ---
 
         if (!response.ok) {
             // Si la respuesta es un error (ej: 4xx, 5xx), intentamos leer el cuerpo del error.

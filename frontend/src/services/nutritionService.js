@@ -88,8 +88,7 @@ export const uploadFoodImage = (imageFile) => {
     // Se construye la URL base correctamente desde las variables de entorno
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-    // Se elimina el '/api' duplicado. apiClient ya lo añade.
-    // La URL correcta debe ser, por ejemplo: http://localhost:3001/api/nutrition/food/image
+    // Se elimina el '/api' duplicado. La variable API_BASE_URL ya lo incluye.
     return fetch(`${API_BASE_URL}/nutrition/food/image`, {
         method: 'POST',
         body: formData,
