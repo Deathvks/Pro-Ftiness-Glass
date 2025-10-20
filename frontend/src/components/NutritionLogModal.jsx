@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { X, BookMarked, Plus, Trash2, ChevronLeft, ChevronRight, CheckCircle, Search, PlusCircle, QrCode, Clock, Edit } from 'lucide-react'; // Añadidos Clock y Edit
 import * as nutritionService from '../services/nutritionService';
 import BarcodeScanner from './BarcodeScanner';
-import Spinner from './Spinner';
+import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import ConfirmationModal from './ConfirmationModal';
@@ -224,8 +224,11 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
     const confirmDeleteFavorite = async () => { if (!mealToDelete) return; const result = await deleteFavoriteMeal(mealToDelete.id); addToast(result.message, result.success ? 'success' : 'error'); setMealToDelete(null); };
 
     // Añadir item a la lista temporal
-    const handleAddItem = (item, isManual = false) => {
-        const baseWeight = parseFloat(item.weight_g) || (isManual ? 0 : (item.name ? 100 : 0)); // Evitar NaN si el nombre no existe
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Añadido parámetro 'origin' para saber de dónde viene el item
+    const handleAddItem = (item, origin = 'manual') => {
+    // --- FIN DE LA MODIFICACIÓN ---
+        const baseWeight = parseFloat(item.weight_g) || (origin === 'manual' ? 0 : (item.name ? 100 : 0)); // Evitar NaN si el nombre no existe
         const newItem = {
             ...item, tempId: `item-${Date.now()}-${Math.random()}`,
             description: item.name,
@@ -241,17 +244,24 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                 protein_g: (parseFloat(item.protein_g) || 0) / baseWeight,
                 carbs_g: (parseFloat(item.carbs_g) || 0) / baseWeight,
                 fats_g: (parseFloat(item.fats_g) || 0) / baseWeight
-            } : null
+            } : null,
+            // --- INICIO DE LA MODIFICACIÓN ---
+            origin: origin // Guardamos el origen
+            // --- FIN DE LA MODIFICACIÓN ---
         };
         setItemsToAdd(prev => [...prev, newItem]);
         addToast(`${item.name} añadido a la lista.`, 'success');
-        if (isManual) { // Si se añadió manualmente, limpiar el form
+        if (origin === 'manual') { // Si se añadió manualmente, limpiar el form
             setManualFormState(initialManualFormState);
             setBaseMacros(null);
             setOriginalData(null);
         }
     };
-    const handleAddManualItem = (item) => handleAddItem(item, true); // Wrapper para añadir manualmente
+    // Wrappers específicos para cada origen
+    const handleAddManualItem = (item) => handleAddItem(item, 'manual');
+    const handleAddFavoriteItem = (item) => handleAddItem(item, 'favorite');
+    const handleAddRecentItem = (item) => handleAddItem(item, 'recent');
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // Quitar item de la lista temporal
     const handleRemoveItem = (tempId) => {
@@ -386,7 +396,9 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
         if (activeTab === 'favorites') {
              return <FavoritesList
                 items={paginatedFavorites}
-                onAdd={handleAddItem}
+                // --- INICIO DE LA MODIFICACIÓN ---
+                onAdd={handleAddFavoriteItem} // Usar el wrapper específico
+                // --- FIN DE LA MODIFICACIÓN ---
                 onDelete={handleDeleteFavorite}
                 onEdit={handleEditFavorite} // --- NUEVO --- Pasamos la función para editar favoritos
                 currentPage={favoritesPage}
@@ -396,7 +408,9 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
         }
         if (activeTab === 'recent') {
             // Pasamos handleEditFavorite también a recientes, por si un reciente también es favorito
-            return <RecentList items={filteredRecents} onAdd={handleAddItem} onEdit={handleEditFavorite} />;
+            // --- INICIO DE LA MODIFICACIÓN ---
+            return <RecentList items={filteredRecents} onAdd={handleAddRecentItem} onEdit={handleEditFavorite} />; // Usar el wrapper específico
+            // --- FIN DE LA MODIFICACIÓN ---
         }
         return null;
     };
