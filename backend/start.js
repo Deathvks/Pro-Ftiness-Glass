@@ -1,86 +1,72 @@
-import { exec, spawn } from 'child_process';
-import sequelize from './db.js';
+const { exec } = require('child_process');
+const { sequelize } = require('./models');
+const server = require('./server');
 
-const RETRY_DELAY_MS = 5000; // Esperar 5 segundos entre intentos
-const MAX_RETRIES = 12; // Intentarlo durante un máximo de 60 segundos
+const PORT = process.env.PORT || 5000;
 
-// Usamos 'exec' para comandos cortos como las migraciones
-function runExecCommand(command) {
+/**
+ * Ejecuta un comando en la shell y lo muestra en la consola en tiempo real.
+ * @param {string} command - El comando a ejecutar.
+ * @returns {Promise<string>} - El resultado del comando.
+ */
+function runCommand(command) {
   return new Promise((resolve, reject) => {
-    console.log(`> ${command}`);
-    const process = exec(command, (error, stdout, stderr) => {
+    const childProcess = exec(command, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error executing command: ${command}\n${stderr}`);
-        reject(error);
+        // El objeto 'error' contiene el código de salida y otros detalles.
+        // Rechazamos la promesa con un mensaje claro que incluye el error estándar.
+        reject(new Error(`Error ejecutando comando: ${command}\n${stderr}`));
         return;
       }
-      if (stdout) console.log(stdout);
       resolve(stdout);
     });
+
+    // Redirigir la salida estándar y de error del proceso hijo al proceso principal
+    // para obtener un registro en tiempo real, útil en plataformas como Zeabur.
+    childProcess.stdout.pipe(process.stdout);
+    childProcess.stderr.pipe(process.stderr);
   });
 }
 
-// Usamos 'spawn' para el proceso del servidor, que es de larga duración
-function runSpawnCommand(command, args) {
-    console.log(`> ${command} ${args.join(' ')}`);
-    const child = spawn(command, args, {
-        // Esto asegura que los logs del servidor se muestren en los logs de Zeabur
-        stdio: 'inherit' 
-    });
-
-    child.on('close', (code) => {
-        console.log(`Server process exited with code ${code}`);
-        process.exit(code);
-    });
-
-    child.on('error', (err) => {
-        console.error('Failed to start server process.', err);
-        process.exit(1);
-    });
-}
-
-async function waitForDatabase() {
-  for (let i = 1; i <= MAX_RETRIES; i++) {
-    try {
-      await sequelize.authenticate();
-      console.log('✅ Database connection successful.');
-      return;
-    } catch (error) {
-      console.log(`Attempt ${i}/${MAX_RETRIES}: Database not ready, retrying in ${RETRY_DELAY_MS / 1000}s...`);
-      if (i === MAX_RETRIES) {
-        console.error('❌ Could not connect to the database after multiple retries. Aborting.');
-        throw error;
-      }
-      await new Promise(res => setTimeout(res, RETRY_DELAY_MS));
-    }
-  }
-}
-
+/**
+ * Función principal para iniciar la aplicación.
+ * Conecta con la base de datos, ejecuta migraciones, seeders y finalmente inicia el servidor.
+ */
 async function start() {
   try {
-    // 1. Esperar a que la base de datos esté disponible
-    await waitForDatabase();
-
-    // 2. Ejecutar las migraciones de la base de datos
-    console.log('🚀 Running database migrations...');
-    await runExecCommand('npx sequelize-cli db:migrate --env production');
-    console.log('✅ Migrations completed.');
-
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // 3. Ejecutar los seeders para poblar la base de datos
-    console.log('🚀 Running database seeders...');
-    await runExecCommand('npx sequelize-cli db:seed:all --env production');
-    console.log('✅ Seeders completed.');
-    // --- FIN DE LA MODIFICACIÓN ---
-
-    // 4. Iniciar el servidor principal
-    console.log('🚀 Starting application server...');
-    runSpawnCommand('node', ['server.js']);
-
+    // 1. Verificar la conexión a la base de datos.
+    await sequelize.authenticate();
+    console.log('✅ Database connection successful.');
   } catch (error) {
-    console.error('❌ Failed to start the application.', error.message);
-    process.exit(1);
+    console.error('❌ Error de conexión con la base de datos:', error);
+    process.exit(1); // Detiene la ejecución si la conexión falla.
   }
+
+  try {
+    // 2. Ejecutar las migraciones de la base de datos.
+    console.log('🚀 Running database migrations...');
+    await runCommand('npx sequelize-cli db:migrate --env production');
+    console.log('✅ Migrations completed.');
+  } catch (error) {
+    console.error('❌ Fallo al ejecutar las migraciones.', error.message);
+    process.exit(1); // Detiene la ejecución si las migraciones fallan.
+  }
+
+  try {
+    // 3. Ejecutar los seeders para poblar la base de datos.
+    console.log('🚀 Running database seeders...');
+    await runCommand('npx sequelize-cli db:seed:all --env production');
+    console.log('✅ Seeders completed.');
+  } catch (error) {
+    console.error('❌ Fallo al ejecutar los seeders.', error.message);
+    process.exit(1); // Detiene la ejecución si los seeders fallan.
+  }
+
+  // 4. Si todo lo anterior tiene éxito, iniciar el servidor.
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
 }
 
+// Iniciar la aplicación.
 start();

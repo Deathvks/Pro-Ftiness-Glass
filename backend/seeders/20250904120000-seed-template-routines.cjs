@@ -341,27 +341,36 @@ module.exports = {
 
     const t = await queryInterface.sequelize.transaction();
     try {
-      // Borrar datos existentes antes de insertar para evitar errores de duplicados.
       await queryInterface.bulkDelete('template_routine_exercises', null, { transaction: t });
       await queryInterface.bulkDelete('template_routines', null, { transaction: t });
       
       for (const category of templates) {
         for (const routine of category.routines) {
-          const [routineId] = await queryInterface.bulkInsert('template_routines', [{
+          // --- INICIO DE LA CORRECCIÓN ---
+          // Usamos 'insert' en lugar de 'bulkInsert' para una sola fila,
+          // ya que devuelve el ID de forma fiable en MySQL.
+          const insertedRoutineId = await queryInterface.insert(null, 'template_routines', {
             name: routine.name,
             description: routine.description,
             category: category.category,
-          }], { transaction: t, returning: ['id'] });
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }, { transaction: t });
+          // --- FIN DE LA CORRECCIÓN ---
 
-          const exercisesToInsert = routine.exercises.map(ex => ({
-            template_routine_id: routineId.id,
-            name: ex.name,
-            sets: ex.sets,
-            reps: ex.reps,
-          }));
+          if (routine.exercises && routine.exercises.length > 0) {
+            const exercisesToInsert = routine.exercises.map(ex => ({
+              template_routine_id: insertedRoutineId, // Usamos el ID devuelto
+              name: ex.name,
+              sets: ex.sets,
+              reps: ex.reps,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }));
 
-          if (exercisesToInsert.length > 0) {
-            await queryInterface.bulkInsert('template_routine_exercises', exercisesToInsert, { transaction: t });
+            if (exercisesToInsert.length > 0) {
+              await queryInterface.bulkInsert('template_routine_exercises', exercisesToInsert, { transaction: t });
+            }
           }
         }
       }
