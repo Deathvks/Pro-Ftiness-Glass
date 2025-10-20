@@ -1,5 +1,8 @@
 import React from 'react';
-import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importamos el icono de Github
+import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github } from 'lucide-react';
+// --- FIN DE LA MODIFICACIÓN ---
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
@@ -42,13 +45,7 @@ const WelcomeModal = ({ onClose }) => {
   ];
 
   return (
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Se elimina el 'overflow-y-auto' del contenedor principal. El scroll se gestionará dentro del modal.
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-[fade-in_0.3s_ease-out] bg-black/70 backdrop-blur-sm">
-      {/*
-        Se convierte el modal en un contenedor flex-col con altura máxima.
-        Esto permite que el contenido interno (la lista de novedades) sea el que haga scroll.
-      */}
       <div
         className="relative w-full max-w-lg flex flex-col max-h-[90vh] text-center rounded-lg shadow-xl
                    bg-bg-secondary border border-glass-border"
@@ -85,14 +82,29 @@ const WelcomeModal = ({ onClose }) => {
 
         {/* -- Pie de página (no se desplaza) -- */}
         <div className="flex-shrink-0 p-6 pt-4">
+          
+          {/* --- INICIO DE LA MODIFICACIÓN --- */}
+          {/* Enlace a GitHub añadido aquí */}
+          <a
+            href="https://github.com/deathvks/fittrack-pro"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors mb-4"
+          >
+            <Github size={16} />
+            <span>
+              FitTrack Pro es un proyecto de código abierto. ¡Tu apoyo es fundamental!
+            </span>
+          </a>
+          {/* --- FIN DE LA MODIFICACIÓN --- */}
+
           <button
             onClick={onClose}
-            className="w-full px-4 py-3 font-bold rounded-lg bg-accent text-white transition hover:scale-[1.02]"
+            className="w-full px-4 py-3 font-bold rounded-lg bg-accent text-white dark:text-bg-secondary transition hover:scale-[1.02]"
           >
             ¡Entendido!
           </button>
         </div>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
       </div>
     </div>
   );

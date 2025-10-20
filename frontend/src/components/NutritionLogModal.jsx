@@ -36,6 +36,11 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
     const [baseMacros, setBaseMacros] = useState(null); // Macros por gramo para recálculo
     const [originalData, setOriginalData] = useState(null); // Datos originales al empezar a editar
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Nuevo estado para controlar qué tipo de modo está activo (lista o manual/scan)
+    const [addModeType, setAddModeType] = useState(null); // null | 'list' | 'manual'
+    // --- FIN DE LA MODIFICACIÓN ---
+
     const [showScanner, setShowScanner] = useState(false);
     const ITEMS_PER_PAGE = 5;
 
@@ -167,6 +172,14 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
         }
     }, [manualFormState.formData.weight_g, manualFormState.per100Data, manualFormState.per100Mode, isEditingLog, editingListItemId, editingFavorite, computeFromPer100]); // <-- Añadido editingFavorite
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Resetea el modo de adición si la lista temporal se vacía
+    useEffect(() => {
+        if (itemsToAdd.length === 0) {
+            setAddModeType(null);
+        }
+    }, [itemsToAdd]);
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // Resetear página al cambiar filtros
     useEffect(() => { setFavoritesPage(1); }, [searchTerm, activeTab]);
@@ -213,6 +226,9 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
             });
             setOriginalData(initialFormData); // Guardar datos originales
             setActiveTab('manual'); // Cambiar a la pestaña manual
+            // --- INICIO DE LA MODIFICACIÓN ---
+            setAddModeType('manual'); // Marcar que estamos en modo manual/scan
+            // --- FIN DE LA MODIFICACIÓN ---
 
         } catch (error) {
             addToast(error.message || 'No se pudo encontrar el producto.', 'error', 5000, tempLoadingToastId); // Reemplaza el toast
@@ -224,10 +240,16 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
     const confirmDeleteFavorite = async () => { if (!mealToDelete) return; const result = await deleteFavoriteMeal(mealToDelete.id); addToast(result.message, result.success ? 'success' : 'error'); setMealToDelete(null); };
 
     // Añadir item a la lista temporal
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Añadido parámetro 'origin' para saber de dónde viene el item
     const handleAddItem = (item, origin = 'manual') => {
-    // --- FIN DE LA MODIFICACIÓN ---
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Establecer el modo de adición según el origen
+        if (origin === 'manual' || origin === 'scan') { // 'scan' no se usa como origin pero podría ser
+            setAddModeType('manual');
+        } else {
+            setAddModeType('list');
+        }
+        // --- FIN DE LA MODIFICACIÓN ---
+
         const baseWeight = parseFloat(item.weight_g) || (origin === 'manual' ? 0 : (item.name ? 100 : 0)); // Evitar NaN si el nombre no existe
         const newItem = {
             ...item, tempId: `item-${Date.now()}-${Math.random()}`,
@@ -245,9 +267,7 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                 carbs_g: (parseFloat(item.carbs_g) || 0) / baseWeight,
                 fats_g: (parseFloat(item.fats_g) || 0) / baseWeight
             } : null,
-            // --- INICIO DE LA MODIFICACIÓN ---
             origin: origin // Guardamos el origen
-            // --- FIN DE LA MODIFICACIÓN ---
         };
         setItemsToAdd(prev => [...prev, newItem]);
         addToast(`${item.name} añadido a la lista.`, 'success');
@@ -261,7 +281,6 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
     const handleAddManualItem = (item) => handleAddItem(item, 'manual');
     const handleAddFavoriteItem = (item) => handleAddItem(item, 'favorite');
     const handleAddRecentItem = (item) => handleAddItem(item, 'recent');
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // Quitar item de la lista temporal
     const handleRemoveItem = (tempId) => {
@@ -343,6 +362,9 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
         setManualFormState(initialManualFormState);
         setBaseMacros(null);
         setOriginalData(null);
+        // --- INICIO DE LA MODIFICACIÓN ---
+        setAddModeType(null); // Resetea el modo
+        // --- FIN DE LA MODIFICACIÓN ---
         onSave(itemData);
     };
 
@@ -396,9 +418,7 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
         if (activeTab === 'favorites') {
              return <FavoritesList
                 items={paginatedFavorites}
-                // --- INICIO DE LA MODIFICACIÓN ---
                 onAdd={handleAddFavoriteItem} // Usar el wrapper específico
-                // --- FIN DE LA MODIFICACIÓN ---
                 onDelete={handleDeleteFavorite}
                 onEdit={handleEditFavorite} // --- NUEVO --- Pasamos la función para editar favoritos
                 currentPage={favoritesPage}
@@ -408,9 +428,7 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
         }
         if (activeTab === 'recent') {
             // Pasamos handleEditFavorite también a recientes, por si un reciente también es favorito
-            // --- INICIO DE LA MODIFICACIÓN ---
             return <RecentList items={filteredRecents} onAdd={handleAddRecentItem} onEdit={handleEditFavorite} />; // Usar el wrapper específico
-            // --- FIN DE LA MODIFICACIÓN ---
         }
         return null;
     };
@@ -438,10 +456,37 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                                     </div>
                                 )}
                                 <div className="flex flex-wrap items-center justify-center gap-2">
-                                    <TabButton active={activeTab === 'favorites'} onClick={() => { setActiveTab('favorites'); setEditingListItemId(null); setEditingFavorite(null); }}><BookMarked size={16} /> Favoritas</TabButton>
-                                    <TabButton active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); setEditingListItemId(null); setEditingFavorite(null); }}><Clock size={16} /> Recientes</TabButton>
-                                    <TabButton active={activeTab === 'manual'} onClick={() => { setActiveTab('manual'); setEditingListItemId(null); setEditingFavorite(null); }}><Edit size={16} /> Manual</TabButton>
-                                    <TabButton active={false} onClick={() => setShowScanner(true)}><QrCode size={16} /> Escanear</TabButton>
+                                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                    {/* Pasamos la prop 'disabled' a los TabButton */}
+                                    <TabButton
+                                        active={activeTab === 'favorites'}
+                                        onClick={() => { setActiveTab('favorites'); setEditingListItemId(null); setEditingFavorite(null); }}
+                                        disabled={addModeType === 'manual'} // Deshabilitado si estamos en modo manual/scan
+                                    >
+                                        <BookMarked size={16} /> Favoritas
+                                    </TabButton>
+                                    <TabButton
+                                        active={activeTab === 'recent'}
+                                        onClick={() => { setActiveTab('recent'); setEditingListItemId(null); setEditingFavorite(null); }}
+                                        disabled={addModeType === 'manual'} // Deshabilitado si estamos en modo manual/scan
+                                    >
+                                        <Clock size={16} /> Recientes
+                                    </TabButton>
+                                    <TabButton
+                                        active={activeTab === 'manual'}
+                                        onClick={() => { setActiveTab('manual'); setEditingListItemId(null); setEditingFavorite(null); }}
+                                        disabled={addModeType === 'list'} // Deshabilitado si estamos añadiendo desde listas
+                                    >
+                                        <Edit size={16} /> Manual
+                                    </TabButton>
+                                    <TabButton
+                                        active={false}
+                                        onClick={() => setShowScanner(true)}
+                                        disabled={addModeType === 'list'} // Deshabilitado si estamos añadiendo desde listas
+                                    >
+                                        <QrCode size={16} /> Escanear
+                                    </TabButton>
+                                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                                 </div>
                             </div>
                         )}
