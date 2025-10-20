@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import useAppStore from '../store/useAppStore'; // <-- IMPORTACIÓN AÑADIDA
 
 /**
  * Obtiene los registros de nutrición y agua para una fecha específica.
@@ -69,7 +70,7 @@ export const searchByBarcode = (barcode) => {
   return apiClient(`/nutrition/barcode/${barcode}`);
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
+// --- INICIO DE LA CORRECCIÓN ---
 /**
  * Sube una imagen de comida al servidor.
  * @param {File} imageFile - El archivo de la imagen a subir.
@@ -78,7 +79,8 @@ export const uploadFoodImage = (imageFile) => {
     const formData = new FormData();
     formData.append('foodImage', imageFile);
 
-    // No usamos apiClient directamente porque necesitamos enviar FormData
+    // No usamos apiClient directamente porque necesitamos enviar FormData,
+    // pero sí obtenemos el token de la misma forma que lo hace apiClient.
     const token = useAppStore.getState().token;
     const headers = {};
     if (token) {
@@ -89,11 +91,19 @@ export const uploadFoodImage = (imageFile) => {
         method: 'POST',
         body: formData,
         headers,
-    }).then(response => {
+    }).then(async response => { // Se añade async para poder usar await en el cuerpo del error
         if (!response.ok) {
-            throw new Error('Error al subir la imagen.');
+            // Intentamos leer el cuerpo del error para dar un mensaje más específico
+            let errorMessage = 'Error al subir la imagen.';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorData.message || errorMessage;
+            } catch (e) {
+                // Si no hay cuerpo JSON, nos quedamos con el error genérico
+            }
+            throw new Error(errorMessage);
         }
         return response.json();
     });
 };
-// --- FIN DE LA MODIFICACIÓN ---
+// --- FIN DE LA CORRECCIÓN ---
