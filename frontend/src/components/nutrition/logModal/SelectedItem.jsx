@@ -10,7 +10,12 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => (
             className="p-1.5 rounded-full hover:bg-bg-secondary transition-colors flex-shrink-0"
             title="Guardar en favoritos"
         >
-            <Star size={16} className={`transition-all ${item.isFavorite ? 'text-amber-400 fill-amber-400' : 'text-text-muted'}`} />
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            <Star
+                size={16}
+                className={`transition-all ${item.isFavorite ? 'text-accent fill-accent' : 'text-text-muted'}`} // Usa text-accent y fill-accent
+            />
+             {/* --- FIN DE LA MODIFICACIÓN --- */}
         </button>
         {/* Nombre y calorías (clicable para editar) */}
         <div
@@ -24,7 +29,6 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => (
         {/* Gramos */}
         <div className="text-right flex-shrink-0 w-20">
             <p className="font-semibold text-sm text-text-primary">
-                {/* Asegurarse de que el peso se muestre como número o 0 */}
                 {parseFloat(item.weight_g) || 0}
                 <span className="text-xs text-text-muted"> g</span>
             </p>
@@ -32,7 +36,7 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => (
         {/* Botón para eliminar de la lista */}
         <button
             onClick={() => onRemove(item.tempId)}
-            type="button" // Evita envío de formulario
+            type="button"
             className="text-red hover:bg-red/20 rounded-full p-1.5 flex-shrink-0"
             title="Eliminar de la lista"
         >
