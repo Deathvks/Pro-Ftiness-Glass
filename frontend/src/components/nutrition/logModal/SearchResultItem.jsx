@@ -1,12 +1,10 @@
 import React from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit } from 'lucide-react'; // Importado Edit
 
-const SearchResultItem = ({ item, onAdd, onDelete }) => (
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Añadimos onClick al div principal y cursor-pointer
+const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => ( // Recibimos onEdit
     <div
         onClick={() => onAdd(item)}
-        className="flex items-center justify-between p-3 rounded-lg bg-bg-primary hover:bg-bg-secondary transition-colors border border-glass-border cursor-pointer group" // Añadido cursor-pointer
+        className="flex items-center justify-between p-3 rounded-lg bg-bg-primary hover:bg-bg-secondary transition-colors border border-glass-border cursor-pointer group"
     >
         {/* Detalles de la comida */}
         <div className="min-w-0 pr-2">
@@ -19,34 +17,49 @@ const SearchResultItem = ({ item, onAdd, onDelete }) => (
 
         {/* Botones de acción */}
         <div className="flex items-center flex-shrink-0 ml-2">
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* Botón de editar (si aplica) */}
+            {onEdit && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation(); // Evita activar onAdd
+                        onEdit(item);
+                    }}
+                    type="button"
+                    className="p-2 rounded-full text-text-muted hover:text-accent hover:bg-accent/10 transition z-10"
+                    title="Editar favorito"
+                >
+                    <Edit size={16} />
+                </button>
+            )}
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
+
             {/* Botón de eliminar (si aplica) */}
             {onDelete && (
                 <button
                     onClick={(e) => {
-                        e.stopPropagation(); // MUY IMPORTANTE: Evita que el clic en borrar active el onClick del div padre (que añadiría el item)
+                        e.stopPropagation(); // Evita activar onAdd
                         onDelete(item);
                     }}
                     type="button"
-                    className="p-2 rounded-full text-text-muted hover:text-red hover:bg-red/10 transition z-10" // Añadido z-10 por si acaso
+                    className="p-2 rounded-full text-text-muted hover:text-red hover:bg-red/10 transition z-10"
                     title="Eliminar de favoritos"
                 >
                     <Trash2 size={16} />
                 </button>
             )}
-            {/* Botón de añadir (ahora solo visual, sin onClick) */}
+            {/* Botón de añadir (visual) */}
             <button
-                // Quitamos el onClick de aquí, ya que el div padre maneja la acción
                 type="button"
-                className="p-2 rounded-full text-accent group-hover:bg-accent-transparent transition pointer-events-none" // pointer-events-none para asegurar que no interfiera
+                className="p-2 rounded-full text-accent group-hover:bg-accent-transparent transition pointer-events-none"
                 title="Añadir a la lista"
-                aria-hidden="true" // Es decorativo si el padre es clickeable
-                tabIndex={-1} // No enfocable
+                aria-hidden="true"
+                tabIndex={-1}
             >
                 <Plus size={18} />
             </button>
         </div>
     </div>
-    // --- FIN DE LA MODIFICACIÓN ---
 );
 
 export default SearchResultItem;

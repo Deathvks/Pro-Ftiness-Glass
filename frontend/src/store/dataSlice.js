@@ -22,10 +22,8 @@ const initialState = {
     nutritionSummary: { nutrition: [], water: [] },
     favoriteMeals: [],
     templateRoutines: {},
-    // --- INICIO DE LA MODIFICACIÓN ---
     todaysCreatineLog: [],
     creatineStats: null,
-    // --- FIN DE LA MODIFICACIÓN ---
 };
 
 // Definimos el "slice" que gestiona los datos de la aplicación.
@@ -61,10 +59,8 @@ export const createDataSlice = (set, get) => ({
                     nutrition,
                     favoriteMeals,
                     templateRoutines,
-                    // --- INICIO DE LA MODIFICACIÓN ---
                     todaysCreatine,
                     creatineStats,
-                    // --- FIN DE LA MODIFICACIÓN ---
                 ] = await Promise.all([
                     routineService.getRoutines(),
                     workoutService.getWorkouts(),
@@ -72,10 +68,8 @@ export const createDataSlice = (set, get) => ({
                     nutritionService.getNutritionLogsByDate(today),
                     favoriteMealService.getFavoriteMeals(),
                     templateRoutineService.getTemplateRoutines(),
-                    // --- INICIO DE LA MODIFICACIÓN ---
                     creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
                     creatinaService.getCreatinaStats(),
-                    // --- FIN DE LA MODIFICACIÓN ---
                 ]);
                 set({
                     routines,
@@ -85,10 +79,8 @@ export const createDataSlice = (set, get) => ({
                     waterLog: nutrition.water,
                     favoriteMeals,
                     templateRoutines,
-                    // --- INICIO DE LA MODIFICACIÓN ---
                     todaysCreatineLog: todaysCreatine.data || [],
                     creatineStats: creatineStats.data || null,
-                    // --- FIN DE LA MODIFICACIÓN ---
                 });
             }
         } catch (error) {
@@ -133,7 +125,7 @@ export const createDataSlice = (set, get) => ({
             console.error("Error al cargar el resumen de nutrición:", error);
         }
     },
-    
+
     // Añade una comida a la lista de favoritos.
     addFavoriteMeal: async (mealData) => {
         try {
@@ -146,6 +138,23 @@ export const createDataSlice = (set, get) => ({
             return { success: false, message: error.message };
         }
     },
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Actualiza una comida favorita existente.
+    updateFavoriteMeal: async (mealId, mealData) => {
+        try {
+            const updatedMeal = await favoriteMealService.updateFavoriteMeal(mealId, mealData);
+            set(state => ({
+                favoriteMeals: state.favoriteMeals.map(meal =>
+                    meal.id === mealId ? updatedMeal : meal
+                ).sort((a, b) => a.name.localeCompare(b.name))
+            }));
+            return { success: true, message: 'Comida favorita actualizada.' };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // Elimina una comida de la lista de favoritos.
     deleteFavoriteMeal: async (mealId) => {

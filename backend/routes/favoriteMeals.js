@@ -15,9 +15,7 @@ const favoriteMealValidationRules = [
   body('protein_g').optional().isFloat({ min: 0 }).withMessage('Las proteínas deben ser un número positivo.'),
   body('carbs_g').optional().isFloat({ min: 0 }).withMessage('Los carbohidratos deben ser un número positivo.'),
   body('fats_g').optional().isFloat({ min: 0 }).withMessage('Las grasas deben ser un número positivo.'),
-  // --- INICIO DE LA MODIFICACIÓN ---
   body('weight_g').optional().isFloat({ min: 0 }).withMessage('Los gramos deben ser un número positivo.'),
-  // --- FIN DE LA MODIFICACIÓN ---
 ];
 
 // --- Definición de Rutas ---
@@ -27,6 +25,11 @@ router.get('/meals', favoriteMealController.getFavoriteMeals);
 
 // POST /api/meals -> Crear una nueva comida favorita
 router.post('/meals', favoriteMealValidationRules, favoriteMealController.createFavoriteMeal);
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// PUT /api/meals/:mealId -> Actualizar una comida favorita existente
+router.put('/meals/:mealId', favoriteMealValidationRules, favoriteMealController.updateFavoriteMeal);
+// --- FIN DE LA MODIFICACIÓN ---
 
 // DELETE /api/meals/:mealId -> Eliminar una comida favorita
 router.delete('/meals/:mealId', favoriteMealController.deleteFavoriteMeal);

@@ -9,7 +9,7 @@ export const getFavoriteMeals = () => {
 
 /**
  * Guarda una nueva comida en la lista de favoritos.
- * @param {object} mealData - Datos de la comida (name, calories, macros).
+ * @param {object} mealData - Datos de la comida (name, calories, macros, weight_g).
  */
 export const createFavoriteMeal = (mealData) => {
   return apiClient('/meals', {
@@ -17,6 +17,20 @@ export const createFavoriteMeal = (mealData) => {
     body: mealData,
   });
 };
+
+// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Actualiza una comida favorita existente.
+ * @param {number} mealId - ID de la comida a actualizar.
+ * @param {object} mealData - Nuevos datos de la comida (name, calories, macros, weight_g).
+ */
+export const updateFavoriteMeal = (mealId, mealData) => {
+  return apiClient(`/meals/${mealId}`, {
+    method: 'PUT',
+    body: mealData,
+  });
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 /**
  * Elimina una comida de la lista de favoritos.

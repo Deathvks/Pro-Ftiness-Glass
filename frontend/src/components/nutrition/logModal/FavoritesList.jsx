@@ -1,11 +1,12 @@
 import React from 'react';
 import SearchResultItem from './SearchResultItem'; // Importa el componente de item
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit } from 'lucide-react'; // Importado Edit
 
 const FavoritesList = ({
     items,
     onAdd,
     onDelete,
+    onEdit, // <-- 1. Recibir la nueva prop onEdit
     currentPage,
     totalPages,
     onPageChange
@@ -19,7 +20,8 @@ const FavoritesList = ({
                             key={`fav-${meal.id}`}
                             item={meal}
                             onAdd={onAdd}
-                            onDelete={onDelete} // Pasamos la función onDelete
+                            onDelete={onDelete}
+                            onEdit={onEdit} // <-- 2. Pasar onEdit a SearchResultItem
                         />
                     ))
                 ) : (

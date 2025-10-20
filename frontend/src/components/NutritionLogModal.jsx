@@ -24,23 +24,27 @@ const initialManualFormState = {
 
 const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) => {
     // --- ESTADOS ---
-    const isEditing = Boolean(logToEdit);
+    const isEditingLog = Boolean(logToEdit); // Renombrado para claridad
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState(isEditing ? 'manual' : 'favorites');
+    const [activeTab, setActiveTab] = useState(isEditingLog ? 'manual' : 'favorites');
     const [itemsToAdd, setItemsToAdd] = useState([]);
-    const [favoritesPage, setFavoritesPage] = useState(1); // Renombrado a favoritesPage para claridad
-    const [mealToDelete, setMealToDelete] = useState(null);
-    const [editingListItemId, setEditingListItemId] = useState(null);
+    const [favoritesPage, setFavoritesPage] = useState(1);
+    const [mealToDelete, setMealToDelete] = useState(null); // Para borrar favoritos
+    const [editingListItemId, setEditingListItemId] = useState(null); // Para editar item de la lista temporal
+    const [editingFavorite, setEditingFavorite] = useState(null); // --- NUEVO --- Para editar un favorito directamente
     const [manualFormState, setManualFormState] = useState(initialManualFormState);
-    const [baseMacros, setBaseMacros] = useState(null);
-    const [originalData, setOriginalData] = useState(null);
+    const [baseMacros, setBaseMacros] = useState(null); // Macros por gramo para recálculo
+    const [originalData, setOriginalData] = useState(null); // Datos originales al empezar a editar
 
     const [showScanner, setShowScanner] = useState(false);
     const ITEMS_PER_PAGE = 5;
 
     const { addToast } = useToast();
-    const { favoriteMeals, addFavoriteMeal, deleteFavoriteMeal } = useAppStore(state => ({
-        favoriteMeals: state.favoriteMeals, addFavoriteMeal: state.addFavoriteMeal, deleteFavoriteMeal: state.deleteFavoriteMeal,
+    const { favoriteMeals, addFavoriteMeal, deleteFavoriteMeal, updateFavoriteMeal } = useAppStore(state => ({ // <-- Añadido updateFavoriteMeal
+        favoriteMeals: state.favoriteMeals,
+        addFavoriteMeal: state.addFavoriteMeal,
+        deleteFavoriteMeal: state.deleteFavoriteMeal,
+        updateFavoriteMeal: state.updateFavoriteMeal, // <-- Añadido updateFavoriteMeal
     }));
 
     const [isDarkTheme, setIsDarkTheme] = useState(() => typeof document !== 'undefined' && !document.body.classList.contains('light-theme'));
@@ -76,8 +80,11 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
 
     const round = (val, d = 1) => { const n = parseFloat(val); return isNaN(n) ? '' : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); };
 
+    // Efecto para cargar datos en el formulario manual al editar (log, item de lista o favorito)
     useEffect(() => {
-        const itemToEdit = isEditing ? logToEdit : itemsToAdd.find(item => item.tempId === editingListItemId);
+        // Determina qué se está editando: un log existente, un item de la lista temporal, o un favorito directamente
+        const itemToEdit = isEditingLog ? logToEdit : editingFavorite || itemsToAdd.find(item => item.tempId === editingListItemId);
+
         if (itemToEdit) {
             const initialWeight = parseFloat(itemToEdit.weight_g);
             const initialCalories = parseFloat(itemToEdit.calories);
@@ -85,6 +92,7 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
             const initialCarbs = parseFloat(itemToEdit.carbs_g);
             const initialFats = parseFloat(itemToEdit.fats_g);
 
+            // Calcula macros base por gramo si hay peso inicial válido
             if (!isNaN(initialWeight) && initialWeight > 0) {
                 setBaseMacros({
                     calories: (initialCalories || 0) / initialWeight,
@@ -94,6 +102,7 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                 });
             } else { setBaseMacros(null); }
 
+            // Prepara los datos para el formulario
             const currentFormData = {
                 description: itemToEdit.description || itemToEdit.name || '',
                 calories: String(itemToEdit.calories || ''),
@@ -104,17 +113,20 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
             };
             setManualFormState({
                 formData: currentFormData,
-                per100Data: { calories: '', protein_g: '', carbs_g: '', fats_g: '' },
+                per100Data: { calories: '', protein_g: '', carbs_g: '', fats_g: '' }, // Resetear 100g mode al editar
                 per100Mode: false,
-                isFavorite: itemToEdit.isFavorite || false
+                isFavorite: itemToEdit.isFavorite || false // Hereda si es favorito (para items de lista)
             });
-            setOriginalData(currentFormData);
+            setOriginalData(currentFormData); // Guarda los datos originales para comparar
         }
-    }, [editingListItemId, isEditing, logToEdit, itemsToAdd]);
+    }, [editingListItemId, isEditingLog, logToEdit, itemsToAdd, editingFavorite]); // <-- Añadido editingFavorite
 
+    // Efecto para recalcular macros si cambia el peso y hay macros base
     useEffect(() => {
-        if (baseMacros && (isEditing || editingListItemId)) {
+        // Solo recalcula si estamos editando (un log, un item de lista o un favorito) Y tenemos macros base
+        if (baseMacros && (isEditingLog || editingListItemId || editingFavorite)) {
             const newWeight = parseFloat(manualFormState.formData.weight_g) || 0;
+            // Solo recalcula si el peso realmente cambió respecto al original
             if (String(newWeight) !== String(originalData?.weight_g || '')) {
                 setManualFormState(prev => ({
                     ...prev,
@@ -128,8 +140,9 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                 }));
             }
         }
-    }, [manualFormState.formData.weight_g, baseMacros, isEditing, editingListItemId, originalData, round]); // Añadido round a las dependencias
+    }, [manualFormState.formData.weight_g, baseMacros, isEditingLog, editingListItemId, editingFavorite, originalData, round]); // <-- Añadido editingFavorite y originalData
 
+    // Efecto para recalcular desde el modo 100g (solo al añadir nuevo manual)
     const computeFromPer100 = useCallback((cal, p, c, f, g) => {
         const factor = (parseFloat(g) || 0) / 100;
         return {
@@ -138,10 +151,11 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
             carbs_g: round((parseFloat(c) || 0) * factor),
             fats_g: round((parseFloat(f) || 0) * factor),
         };
-    }, [round]); // Añadido round a las dependencias
+    }, [round]);
 
     useEffect(() => {
-        if (manualFormState.per100Mode && !isEditing && !editingListItemId) {
+        // Solo recalcula si está en modo 100g Y NO estamos editando (ni log, ni item, ni favorito)
+        if (manualFormState.per100Mode && !isEditingLog && !editingListItemId && !editingFavorite) {
             const computed = computeFromPer100(
                 manualFormState.per100Data.calories,
                 manualFormState.per100Data.protein_g,
@@ -151,20 +165,25 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
             );
             setManualFormState(prev => ({ ...prev, formData: { ...prev.formData, ...computed } }));
         }
-    }, [manualFormState.formData.weight_g, manualFormState.per100Data, manualFormState.per100Mode, isEditing, editingListItemId, computeFromPer100]);
+    }, [manualFormState.formData.weight_g, manualFormState.per100Data, manualFormState.per100Mode, isEditingLog, editingListItemId, editingFavorite, computeFromPer100]); // <-- Añadido editingFavorite
 
 
+    // Resetear página al cambiar filtros
     useEffect(() => { setFavoritesPage(1); }, [searchTerm, activeTab]);
-    useEffect(() => { if (editingListItemId || isEditing) setActiveTab('manual'); }, [editingListItemId, isEditing]);
+    // Cambiar a tab manual si se empieza a editar
+    useEffect(() => { if (editingListItemId || isEditingLog || editingFavorite) setActiveTab('manual'); }, [editingListItemId, isEditingLog, editingFavorite]); // <-- Añadido editingFavorite
 
+    // Escanear código de barras
     const handleScanSuccess = async (barcode) => {
         setShowScanner(false);
-        const tempLoadingToastId = addToast('Buscando producto...', 'info');
+        const tempLoadingToastId = addToast('Buscando producto...', 'info', null); // Sin auto-cierre
         try {
             const product = await nutritionService.searchByBarcode(barcode);
-            const weightG = product.weight_g || 100;
+            addToast('Producto encontrado.', 'success', 3000, tempLoadingToastId); // Reemplaza el toast
 
-             const perGramMacros = {
+            // Llenar formulario manual con datos del producto
+            const weightG = product.weight_g || 100;
+            const perGramMacros = {
                 calories: (parseFloat(product.calories) || 0) / weightG,
                 protein_g: (parseFloat(product.protein_g) || 0) / weightG,
                 carbs_g: (parseFloat(product.carbs_g) || 0) / weightG,
@@ -172,16 +191,18 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
             };
             setBaseMacros(perGramMacros);
 
+            const initialFormData = {
+                description: product.name,
+                calories: String(Math.round(product.calories)),
+                protein_g: round(product.protein_g),
+                carbs_g: round(product.carbs_g),
+                fats_g: round(product.fats_g),
+                weight_g: String(weightG),
+            };
+
             setManualFormState({
-                formData: {
-                    description: product.name,
-                    calories: String(Math.round(product.calories)),
-                    protein_g: round(product.protein_g),
-                    carbs_g: round(product.carbs_g),
-                    fats_g: round(product.fats_g),
-                    weight_g: String(weightG),
-                },
-                per100Data: {
+                formData: initialFormData,
+                per100Data: { // Guardar valores por 100g también
                     calories: String(product.calories),
                     protein_g: String(product.protein_g),
                     carbs_g: String(product.carbs_g),
@@ -190,81 +211,162 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                 per100Mode: false,
                 isFavorite: false,
             });
+            setOriginalData(initialFormData); // Guardar datos originales
+            setActiveTab('manual'); // Cambiar a la pestaña manual
 
-            setOriginalData({
-                 description: product.name,
-                 calories: String(Math.round(product.calories)),
-                 protein_g: round(product.protein_g),
-                 carbs_g: round(product.carbs_g),
-                 fats_g: round(product.fats_g),
-                 weight_g: String(weightG),
-            });
-
-            setActiveTab('manual'); // Cambiado de setView a setActiveTab
-            addToast('Producto encontrado. Ajusta los gramos si es necesario.', 'success');
         } catch (error) {
-            addToast(error.message || 'No se pudo encontrar el producto.', 'error');
+            addToast(error.message || 'No se pudo encontrar el producto.', 'error', 5000, tempLoadingToastId); // Reemplaza el toast
         }
     };
 
+    // Borrar favorito
     const handleDeleteFavorite = (meal) => { setMealToDelete(meal); };
     const confirmDeleteFavorite = async () => { if (!mealToDelete) return; const result = await deleteFavoriteMeal(mealToDelete.id); addToast(result.message, result.success ? 'success' : 'error'); setMealToDelete(null); };
 
+    // Añadir item a la lista temporal
     const handleAddItem = (item, isManual = false) => {
+        const baseWeight = parseFloat(item.weight_g) || (isManual ? 0 : (item.name ? 100 : 0)); // Evitar NaN si el nombre no existe
         const newItem = {
             ...item, tempId: `item-${Date.now()}-${Math.random()}`,
             description: item.name,
-            isFavorite: item.isFavorite || false,
+            isFavorite: item.isFavorite || false, // Hereda si es favorito
             calories: parseFloat(item.calories) || 0,
             protein_g: parseFloat(item.protein_g) || 0,
             carbs_g: parseFloat(item.carbs_g) || 0,
             fats_g: parseFloat(item.fats_g) || 0,
-            weight_g: parseFloat(item.weight_g) || null,
+            weight_g: parseFloat(item.weight_g) || null, // Guardar como número o null
+            // Calcula base macros si hay peso
+            base: baseWeight > 0 ? {
+                calories: (parseFloat(item.calories) || 0) / baseWeight,
+                protein_g: (parseFloat(item.protein_g) || 0) / baseWeight,
+                carbs_g: (parseFloat(item.carbs_g) || 0) / baseWeight,
+                fats_g: (parseFloat(item.fats_g) || 0) / baseWeight
+            } : null
         };
         setItemsToAdd(prev => [...prev, newItem]);
         addToast(`${item.name} añadido a la lista.`, 'success');
-        if (isManual) {
+        if (isManual) { // Si se añadió manualmente, limpiar el form
             setManualFormState(initialManualFormState);
             setBaseMacros(null);
             setOriginalData(null);
         }
     };
-    const handleAddManualItem = (item) => handleAddItem(item, true);
-    const handleRemoveItem = (tempId) => { if (editingListItemId === tempId) { setEditingListItemId(null); setManualFormState(initialManualFormState); setBaseMacros(null); setOriginalData(null); } setItemsToAdd(prev => prev.filter(item => item.tempId !== tempId)); };
-    const handleToggleFavorite = (tempId) => { setItemsToAdd(prevItems => prevItems.map(item => item.tempId === tempId ? { ...item, isFavorite: !item.isFavorite } : item)); };
-    const handleEditListItem = (tempId) => { setEditingListItemId(tempId); };
+    const handleAddManualItem = (item) => handleAddItem(item, true); // Wrapper para añadir manualmente
 
-    const handleSaveListItem = (updatedItem) => {
-        setItemsToAdd(prev => prev.map(item => item.tempId === updatedItem.tempId ? updatedItem : item));
-        setEditingListItemId(null);
-        addToast(`${updatedItem.name} actualizado.`, 'success');
-        setManualFormState(initialManualFormState);
-        setBaseMacros(null);
-        setOriginalData(null);
+    // Quitar item de la lista temporal
+    const handleRemoveItem = (tempId) => {
+        if (editingListItemId === tempId) { // Si se elimina el item que se estaba editando
+            setEditingListItemId(null); // Limpiar ID de edición
+            setManualFormState(initialManualFormState); // Resetear formulario
+            setBaseMacros(null);
+            setOriginalData(null);
+        }
+        setItemsToAdd(prev => prev.filter(item => item.tempId !== tempId));
     };
 
-    const handleSaveList = async () => { if (itemsToAdd.length === 0) return addToast('No has añadido ninguna comida.', 'info'); const newFavorites = itemsToAdd.filter(item => item.isFavorite); if (newFavorites.length > 0) { try { await Promise.all(newFavorites.map(fav => addFavoriteMeal({ name: fav.description, calories: fav.calories, protein_g: fav.protein_g, carbs_g: fav.carbs_g, fats_g: fav.fats_g, weight_g: fav.weight_g }))); addToast(`${newFavorites.length} comida(s) guardada(s) en favoritos.`, 'success'); } catch (error) { addToast('Error al guardar en favoritos.', 'error'); } } onSave(itemsToAdd); };
+    // Marcar/desmarcar item de lista como favorito para guardar
+    const handleToggleFavorite = (tempId) => { setItemsToAdd(prevItems => prevItems.map(item => item.tempId === tempId ? { ...item, isFavorite: !item.isFavorite } : item)); };
 
+    // Iniciar edición de un item de la lista temporal
+    const handleEditListItem = (tempId) => {
+        setEditingFavorite(null); // Asegura que no estemos editando un favorito
+        setEditingListItemId(tempId);
+        setActiveTab('manual'); // Cambia a la pestaña manual
+    };
+
+    // --- NUEVO --- Iniciar edición de una comida favorita directamente
+    const handleEditFavorite = (favoriteMeal) => {
+        setEditingListItemId(null); // Asegura que no estemos editando un item de la lista
+        setEditingFavorite(favoriteMeal); // Guarda el favorito a editar
+        setActiveTab('manual'); // Cambia a la pestaña manual
+    };
+
+    // Guardar cambios de un item de la lista temporal
+    const handleSaveListItem = (updatedItem) => {
+        setItemsToAdd(prev => prev.map(item => item.tempId === updatedItem.tempId ? updatedItem : item));
+        setEditingListItemId(null); // Finaliza edición de item de lista
+        addToast(`${updatedItem.name} actualizado.`, 'success');
+        setManualFormState(initialManualFormState); // Resetea formulario
+        setBaseMacros(null);
+        setOriginalData(null);
+        setActiveTab('favorites'); // Vuelve a favoritos por defecto
+    };
+
+    // Guardar toda la lista temporal (y nuevos favoritos)
+    const handleSaveList = async () => {
+        if (itemsToAdd.length === 0) return addToast('No has añadido ninguna comida.', 'info');
+        // Identificar los que se marcaron como favoritos para guardarlos
+        const newFavorites = itemsToAdd.filter(item => item.isFavorite);
+        if (newFavorites.length > 0) {
+            try {
+                // Guarda cada nuevo favorito individualmente
+                await Promise.all(newFavorites.map(fav => addFavoriteMeal({
+                    name: fav.description, calories: fav.calories, protein_g: fav.protein_g,
+                    carbs_g: fav.carbs_g, fats_g: fav.fats_g, weight_g: fav.weight_g
+                })));
+                addToast(`${newFavorites.length} comida(s) guardada(s) en favoritos.`, 'success');
+            } catch (error) {
+                addToast(error.message || 'Error al guardar en favoritos.', 'error');
+                // Continuamos aunque falle guardar favoritos
+            }
+        }
+        onSave(itemsToAdd); // Llama a onSave con la lista completa
+    };
+
+    // Guardar un único item añadido manualmente (y opcionalmente como favorito)
     const handleSaveSingle = async (itemData) => {
         const item = itemData[0];
+        // Si se marcó para guardar como favorito
         if (item.saveAsFavorite) {
-            try { await addFavoriteMeal({ name: item.description, calories: item.calories, protein_g: item.protein_g, carbs_g: item.carbs_g, fats_g: item.fats_g, weight_g: item.weight_g }); addToast(`'${item.description}' guardado en favoritos.`, 'success'); } catch (error) { addToast(error.message || 'Error al guardar en favoritos.', 'error'); }
+            try {
+                await addFavoriteMeal({
+                    name: item.description, calories: item.calories, protein_g: item.protein_g,
+                    carbs_g: item.carbs_g, fats_g: item.fats_g, weight_g: item.weight_g
+                });
+                addToast(`'${item.description}' guardado en favoritos.`, 'success');
+            } catch (error) {
+                addToast(error.message || 'Error al guardar en favoritos.', 'error');
+                // Continuamos aunque falle guardar favorito
+            }
         }
+        // Resetea el formulario y llama a onSave con el item
         setManualFormState(initialManualFormState);
         setBaseMacros(null);
         setOriginalData(null);
         onSave(itemData);
     };
 
-    const handleSaveEdit = (formData) => {
-        onSave([{ ...logToEdit, ...formData }], true);
-        setBaseMacros(null);
-        setOriginalData(null);
+    // Guardar cambios de un log existente O de un favorito editado
+    const handleSaveEdit = async (formData) => {
+        let result;
+        if (editingFavorite) { // Si estamos editando un favorito
+            result = await updateFavoriteMeal(editingFavorite.id, {
+                ...editingFavorite, // Mantener datos originales
+                ...formData // Sobrescribir con los del formulario
+            });
+            if (result.success) {
+                addToast(result.message, 'success');
+                setEditingFavorite(null); // Finaliza edición de favorito
+                setManualFormState(initialManualFormState); // Resetea formulario
+                setBaseMacros(null);
+                setOriginalData(null);
+                setActiveTab('favorites'); // Vuelve a la lista de favoritos
+            } else {
+                addToast(result.message, 'error');
+            }
+        } else if (isEditingLog) { // Si estamos editando un log existente
+            onSave([{ ...logToEdit, ...formData }], true); // Llama a la función onSave original para logs
+            setBaseMacros(null);
+            setOriginalData(null);
+            // No reseteamos form aquí, onSave lo gestiona al cerrar modal
+        }
     };
 
-    const mealTitles = { breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' };
-    const title = isEditing ? `Editar ${logToEdit.description}` : `Añadir a ${mealTitles[mealType]}`;
 
+    const mealTitles = { breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' };
+    const title = isEditingLog ? `Editar ${logToEdit.description}` : editingFavorite ? `Editar Favorito: ${editingFavorite.name}` : `Añadir a ${mealTitles[mealType]}`;
+
+    // --- RENDERIZADO ---
     const renderListContent = () => {
         if (activeTab === 'manual') {
             const editingItem = itemsToAdd.find(item => item.tempId === editingListItemId);
@@ -272,11 +374,11 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                 onAddManual={handleAddManualItem}
                 isLoading={isLoading}
                 onSaveSingle={handleSaveSingle}
-                showFavoriteToggle={itemsToAdd.length === 0 && !editingListItemId && !isEditing}
-                isEditing={isEditing}
-                editingListItem={editingItem}
-                onSaveEdit={handleSaveEdit}
-                onSaveListItem={handleSaveListItem}
+                showFavoriteToggle={itemsToAdd.length === 0 && !editingListItemId && !isEditingLog && !editingFavorite}
+                isEditing={isEditingLog || !!editingFavorite} // True si editamos log O favorito
+                editingListItem={editingItem} // Solo para editar item de la lista temporal
+                onSaveEdit={handleSaveEdit} // Para guardar cambios de log o favorito
+                onSaveListItem={handleSaveListItem} // Para guardar cambios de item temporal
                 formState={manualFormState}
                 onFormStateChange={setManualFormState}
             />;
@@ -286,15 +388,15 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                 items={paginatedFavorites}
                 onAdd={handleAddItem}
                 onDelete={handleDeleteFavorite}
-                // --- INICIO DE LA CORRECCIÓN ---
-                currentPage={favoritesPage} // Pasar el estado correcto
-                // --- FIN DE LA CORRECCIÓN ---
+                onEdit={handleEditFavorite} // --- NUEVO --- Pasamos la función para editar favoritos
+                currentPage={favoritesPage}
                 totalPages={totalPages}
-                onPageChange={setFavoritesPage} // Pasar el setter correcto
+                onPageChange={setFavoritesPage}
              />;
         }
         if (activeTab === 'recent') {
-            return <RecentList items={filteredRecents} onAdd={handleAddItem} />;
+            // Pasamos handleEditFavorite también a recientes, por si un reciente también es favorito
+            return <RecentList items={filteredRecents} onAdd={handleAddItem} onEdit={handleEditFavorite} />;
         }
         return null;
     };
@@ -312,7 +414,8 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
 
                     {/* Contenido Principal (Tabs + Lista/Form) */}
                     <div className="flex-grow overflow-hidden flex flex-col">
-                        {!isEditing && (
+                        {/* No mostrar tabs si estamos editando un log o un favorito */}
+                        {!(isEditingLog || editingFavorite) && (
                             <div className="p-5 flex-shrink-0">
                                 {activeTab !== 'manual' && (
                                     <div className="relative mb-4">
@@ -321,9 +424,9 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                                     </div>
                                 )}
                                 <div className="flex flex-wrap items-center justify-center gap-2">
-                                    <TabButton active={activeTab === 'favorites'} onClick={() => { setActiveTab('favorites'); setEditingListItemId(null); }}><BookMarked size={16} /> Favoritas</TabButton>
-                                    <TabButton active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); setEditingListItemId(null); }}><Clock size={16} /> Recientes</TabButton>
-                                    <TabButton active={activeTab === 'manual'} onClick={() => { setActiveTab('manual'); setEditingListItemId(null); }}><Edit size={16} /> Manual</TabButton>
+                                    <TabButton active={activeTab === 'favorites'} onClick={() => { setActiveTab('favorites'); setEditingListItemId(null); setEditingFavorite(null); }}><BookMarked size={16} /> Favoritas</TabButton>
+                                    <TabButton active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); setEditingListItemId(null); setEditingFavorite(null); }}><Clock size={16} /> Recientes</TabButton>
+                                    <TabButton active={activeTab === 'manual'} onClick={() => { setActiveTab('manual'); setEditingListItemId(null); setEditingFavorite(null); }}><Edit size={16} /> Manual</TabButton>
                                     <TabButton active={false} onClick={() => setShowScanner(true)}><QrCode size={16} /> Escanear</TabButton>
                                 </div>
                             </div>
@@ -333,8 +436,8 @@ const NutritionLogModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) 
                         </div>
                     </div>
 
-                    {/* Footer con lista seleccionada y botón de guardar */}
-                    {!isEditing && !editingListItemId && itemsToAdd.length > 0 && (
+                    {/* Footer con lista seleccionada y botón de guardar (solo si NO estamos editando log o favorito) */}
+                    {!isEditingLog && !editingFavorite && itemsToAdd.length > 0 && (
                         <div className="p-5 border-t border-glass-border flex-shrink-0 animate-[fade-in-up_0.3s_ease-out]">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-semibold text-text-primary">Añadir ({itemsToAdd.length})</h4>
