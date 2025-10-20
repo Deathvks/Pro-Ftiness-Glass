@@ -3,28 +3,43 @@ import { Op } from 'sequelize';
 
 const { ExerciseList } = models;
 
-// Obtener ejercicios, con opción de búsqueda
-export const getExercises = async (req, res, next) => { // <-- Añadido 'next'
+// Obtener ejercicios, con opción de búsqueda y filtro por grupo muscular
+export const getExercises = async (req, res, next) => {
     try {
-        const { search } = req.query;
+        const { search, muscle_group } = req.query;
 
         const options = {
-            order: [['name', 'ASC']],
-            limit: 20
+            where: {},
+            order: [['name', 'ASC']]
         };
 
+        // Si se proporciona un término de búsqueda, se añade al filtro
         if (search) {
-            options.where = {
-                name: {
-                    [Op.like]: `%${search}%`
-                }
+            options.where.name = {
+                [Op.like]: `%${search}%`
             };
+        }
+
+        // Si se proporciona un grupo muscular (y no es 'Todos'), se añade al filtro
+        if (muscle_group && muscle_group !== 'Todos') {
+            // Mapear categorías genéricas a categorías específicas
+            if (muscle_group === 'Brazos') {
+                options.where.muscle_group = {
+                    [Op.in]: ['Bíceps', 'Tríceps']
+                };
+            } else if (muscle_group === 'Piernas') {
+                options.where.muscle_group = {
+                    [Op.in]: ['Cuádriceps', 'Isquiotibiales', 'Pantorrillas']
+                };
+            } else {
+                options.where.muscle_group = muscle_group;
+            }
         }
 
         const exercises = await ExerciseList.findAll(options);
         res.json(exercises);
     } catch (error) {
-        next(error); // <-- Pasar el error al middleware
+        next(error);
     }
 };
 

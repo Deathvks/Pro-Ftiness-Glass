@@ -1,20 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils } from 'lucide-react';
 import useAppStore from './store/useAppStore';
+import { APP_VERSION } from './config/version';
 
-// --- Importaciones ---
 import Dashboard from './pages/Dashboard';
 import Progress from './pages/Progress';
 import Routines from './pages/Routines';
 import Workout from './pages/Workout';
+import Nutrition from './pages/Nutrition';
 import SettingsScreen from './pages/SettingsScreen';
 import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
 import OnboardingScreen from './pages/OnboardingScreen';
 import ProfileEditor from './pages/ProfileEditor';
+import AccountEditor from './pages/AccountEditor';
 import PRToast from './components/PRToast';
 import ConfirmationModal from './components/ConfirmationModal';
+import WelcomeModal from './components/WelcomeModal';
 import AdminPanel from './pages/AdminPanel.jsx';
+import EmailVerificationModal from './components/EmailVerificationModal';
+import EmailVerification from './components/EmailVerification';
+import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
+import ResetPasswordScreen from './pages/ResetPasswordScreen';
+import CookieConsentBanner from './components/CookieConsentBanner';
+// --- INICIO DE LA MODIFICACIÓN ---
+import PrivacyPolicy from './pages/PrivacyPolicy';
+// --- FIN DE LA MODIFICACIÓN ---
 
 export default function App() {
   const {
@@ -25,27 +36,69 @@ export default function App() {
     fetchInitialData,
     handleLogout: performLogout,
     activeWorkout,
+    workoutStartTime,
+    showWelcomeModal,
+    checkWelcomeModal,
+    closeWelcomeModal,
+    fetchDataForDate,
+    cookieConsent,
+    checkCookieConsent,
+    handleAcceptCookies,
+    handleDeclineCookies,
   } = useAppStore();
 
+  // --- INICIO DE LA MODIFICACIÓN ---
   const [view, setView] = useState(() => {
     if (useAppStore.getState().activeWorkout) {
       return 'workout';
     }
     return localStorage.getItem('lastView') || 'dashboard';
   });
-  
+
+  // Estado para controlar la vista anterior al mostrar la política de privacidad
+  const [previousView, setPreviousView] = useState(null);
+  // --- FIN DE LA MODIFICACIÓN ---
+
+  const mainContentRef = useRef(null);
+
   useEffect(() => {
-    localStorage.setItem('lastView', view);
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
   }, [view]);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  const [isLoginView, setIsLoginView] = useState(true);
-  // --- FIN DE LA MODIFICACIÓN ---
+  useEffect(() => {
+    // No guardar la vista de la política de privacidad como la última vista
+    if (view !== 'privacyPolicy') {
+      localStorage.setItem('lastView', view);
+    }
+  }, [view]);
+
+  const [authView, setAuthView] = useState('login');
   
+  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
+  const [showCodeVerificationModal, setShowCodeVerificationModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+
   const [theme, setThemeState] = useState(() => localStorage.getItem('theme') || 'system');
+  const [accent, setAccentState] = useState(() => localStorage.getItem('accent') || 'green');
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const { workoutStartTime, isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
+  const { isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
   const [timer, setTimer] = useState(0);
+  
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (window.location.pathname === '/reset-password' && !isAuthenticated) {
+        setAuthView('resetPassword');
+      }
+    };
+    
+    handleUrlChange();
+    
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     let interval = null;
@@ -61,13 +114,29 @@ export default function App() {
   }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime]);
 
   const setTheme = (newTheme) => {
-    localStorage.setItem('theme', newTheme);
+    if (cookieConsent) {
+        localStorage.setItem('theme', newTheme);
+    }
     setThemeState(newTheme);
+  };
+
+  const setAccent = (newAccent) => {
+      if (cookieConsent) {
+          localStorage.setItem('accent', newAccent);
+      }
+      setAccentState(newAccent);
   };
 
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+  
+    useEffect(() => {
+        if (view === 'dashboard' && isAuthenticated) {
+            const today = new Date().toISOString().split('T')[0];
+            fetchDataForDate(today);
+        }
+    }, [view, isAuthenticated, fetchDataForDate]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -87,6 +156,29 @@ export default function App() {
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   }, [theme]);
 
+  useEffect(() => {
+    const toRemove = Array.from(document.body.classList).filter(c => c.startsWith('accent-'));
+    toRemove.forEach(c => document.body.classList.remove(c));
+    document.body.classList.add(`accent-${accent}`);
+  }, [accent]);
+
+  useEffect(() => {
+    if (isAuthenticated && userProfile) {
+      if (!userProfile.is_verified) {
+        setShowEmailVerificationModal(true);
+        setVerificationEmail(userProfile.email);
+      } else {
+        checkCookieConsent(userProfile.id);
+      }
+    }
+  }, [isAuthenticated, userProfile, checkCookieConsent]);
+
+  useEffect(() => {
+    if (isAuthenticated && userProfile && !isLoading) {
+      checkWelcomeModal();
+    }
+  }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal]);
+
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
   };
@@ -96,18 +188,46 @@ export default function App() {
     setShowLogoutConfirm(false);
   };
 
-  const navigate = useCallback((viewName) => {
+  const navigate = useCallback((viewName, options = {}) => {
     setView(viewName);
+    if (options.forceTab) {
+      localStorage.setItem('routinesForceTab', options.forceTab);
+    }
   }, []);
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const handleShowPolicy = () => {
+    setPreviousView(view); // Guardamos la vista actual
+    setView('privacyPolicy');
+  };
+
+  const handleBackFromPolicy = () => {
+    setView(previousView || 'dashboard'); // Volvemos a la vista anterior o al dashboard
+    setPreviousView(null);
+  };
+  // --- FIN DE LA MODIFICACIÓN ---
 
   if (isLoading) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
-
+  
   if (!isAuthenticated) {
-    return isLoginView
-      ? <LoginScreen onLogin={fetchInitialData} showRegister={() => setIsLoginView(false)} />
-      : <RegisterScreen showLogin={() => setIsLoginView(true)} />;
+    switch (authView) {
+        case 'register':
+            return <RegisterScreen showLogin={() => setAuthView('login')} />;
+        case 'forgotPassword':
+            return <ForgotPasswordScreen showLogin={() => setAuthView('login')} />;
+        case 'resetPassword':
+            return <ResetPasswordScreen showLogin={() => {
+                window.history.pushState({}, '', '/');
+                setAuthView('login');
+            }} />;
+        default:
+            return <LoginScreen 
+                showRegister={() => setAuthView('register')} 
+                showForgotPassword={() => setAuthView('forgotPassword')} 
+            />;
+    }
   }
 
   if (userProfile && !userProfile.goal) {
@@ -120,15 +240,31 @@ export default function App() {
       case 'progress': return <Progress darkMode={theme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout timer={timer} setView={navigate} />;
-      case 'settings': return <SettingsScreen theme={theme} setTheme={setTheme} setView={navigate} onLogoutClick={handleLogoutClick} />;
+      case 'nutrition': return <Nutrition setView={navigate} />;
+      case 'settings':
+        return (
+          <SettingsScreen
+            theme={theme}
+            setTheme={setTheme}
+            accent={accent}
+            setAccent={setAccent}
+            setView={navigate}
+            onLogoutClick={handleLogoutClick}
+          />
+        );
       case 'profileEditor': return <ProfileEditor onCancel={() => navigate('settings')} />;
+      case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
       case 'adminPanel': return <AdminPanel onCancel={() => navigate('settings')} />;
+      // --- INICIO DE LA MODIFICACIÓN ---
+      case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
+      // --- FIN DE LA MODIFICACIÓN ---
       default: return <Dashboard setView={navigate} />;
     }
   };
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <Home size={24} /> },
+    { id: 'nutrition', label: 'Nutrición', icon: <Utensils size={24} /> },
     { id: 'progress', label: 'Progreso', icon: <BarChart2 size={24} /> },
     { id: 'routines', label: 'Rutinas', icon: <Dumbbell size={24} /> },
     { id: 'settings', label: 'Ajustes', icon: <Settings size={24} /> },
@@ -139,9 +275,9 @@ export default function App() {
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
       <nav className="hidden md:flex flex-col gap-10 p-8 w-64 h-full border-r border-[--glass-border] bg-bg-primary">
-        <button onClick={() => navigate('dashboard')} className="flex items-center gap-4 text-accent transition-transform hover:scale-105">
-          <Dumbbell size={32} />
-          <h1 className="text-xl font-bold text-text-primary whitespace-nowrap">FitTrack Pro</h1>
+        <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 text-accent transition-transform hover:scale-105">
+          <Dumbbell className="h-7 w-7 flex-shrink-0" />
+          <h1 className="text-xl font-bold text-text-primary whitespace-nowrap">Pro Fitness Glass</h1>
         </button>
         <div className="flex flex-col gap-4">
           {navItems.map(item => (
@@ -163,7 +299,7 @@ export default function App() {
         </button>
       </nav>
 
-      <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
+      <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
         {renderView()}
       </main>
 
@@ -178,16 +314,30 @@ export default function App() {
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {showLogoutConfirm && (
-        <ConfirmationModal
-            message="¿Estás seguro de que quieres cerrar sesión?"
-            onConfirm={confirmLogout}
-            onCancel={() => setShowLogoutConfirm(false)}
-            confirmText="Cerrar Sesión"
+      {showWelcomeModal && (
+        <WelcomeModal onClose={closeWelcomeModal} />
+      )}
+
+      {cookieConsent === null && (
+        <CookieConsentBanner
+          onAccept={handleAcceptCookies}
+          onDecline={handleDeclineCookies}
+          // --- INICIO DE LA MODIFICACIÓN ---
+          onShowPolicy={handleShowPolicy}
+          // --- FIN DE LA MODIFICACIÓN ---
         />
       )}
 
-      {activeWorkout && view !== 'workout' && (
+      {showLogoutConfirm && (
+        <ConfirmationModal
+          message="¿Estás seguro de que quieres cerrar sesión?"
+          onConfirm={confirmLogout}
+          onCancel={() => setShowLogoutConfirm(false)}
+          confirmText="Cerrar Sesión"
+        />
+      )}
+
+      {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => navigate('workout')}
           className="fixed bottom-24 right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
@@ -198,8 +348,37 @@ export default function App() {
       )}
 
       <div className="hidden md:block absolute bottom-4 right-4 z-50 bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">
-        v1.3.0
+        v{APP_VERSION}
       </div>
+      {showEmailVerificationModal && userProfile && (
+        <EmailVerificationModal
+          currentEmail={verificationEmail}
+          onEmailUpdated={(newEmail) => {
+            setVerificationEmail(newEmail);
+            setShowEmailVerificationModal(false);
+            setShowCodeVerificationModal(true);
+          }}
+          onCodeSent={() => {
+            setShowEmailVerificationModal(false);
+            setShowCodeVerificationModal(true);
+          }}
+        />
+      )}
+
+      {showCodeVerificationModal && (
+        <EmailVerification
+          email={verificationEmail}
+          onSuccess={() => {
+            setShowCodeVerificationModal(false);
+            fetchInitialData();
+          }}
+          onBack={() => {
+            setShowCodeVerificationModal(false);
+            setShowEmailVerificationModal(true);
+          }}
+          backButtonText="Volver"
+        />
+      )}
     </div>
   );
 }

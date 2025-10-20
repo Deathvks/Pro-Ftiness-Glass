@@ -2,12 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import GlassCard from './GlassCard';
 
-// --- INICIO DE LA CORRECCIÓN ---
-// Se cambia el nombre del prop de 'onLogWeight' a 'onSave' para que coincida
-// con lo que se le pasa desde el Dashboard.
 const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
-// --- FIN DE LA CORRECCIÓN ---
   const [weight, setWeight] = useState('');
+
+  // --- INICIO DE LA CORRECCIÓN ---
+  const [isDarkTheme, setIsDarkTheme] = useState(() =>
+    typeof document !== 'undefined' && !document.body.classList.contains('light-theme')
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDarkTheme(!document.body.classList.contains('light-theme'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+  // --- FIN DE LA CORRECCIÓN ---
 
   useEffect(() => {
     if (existingLog) {
@@ -18,8 +28,6 @@ const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
   const handleSaveClick = () => {
     const newWeight = parseFloat(weight);
     if (!isNaN(newWeight) && newWeight > 0) {
-      // --- CORRECCIÓN ---
-      // Ahora se llama a 'onSave', que es la función correcta.
       onSave({ weight: newWeight });
       onClose();
     } else {
@@ -38,7 +46,9 @@ const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
       onClick={onClose}
     >
       <GlassCard
-        className="relative w-full max-w-md p-8 m-4"
+        // --- INICIO DE LA CORRECCIÓN ---
+        className={`relative w-full max-w-md p-8 m-4 ${!isDarkTheme ? '!bg-white/95 !border-black/10' : ''}`}
+        // --- FIN DE LA CORRECCIÓN ---
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition">

@@ -1,96 +1,95 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { searchExercises } from '../services/exerciseService';
+import React, { useMemo } from 'react';
+import { X } from 'lucide-react';
 
-const ExerciseSearchInput = ({ value, onChange, onSelect }) => {
-    const [results, setResults] = useState([]);
-    const [isOpen, setIsOpen] = useState(false);
-    const searchRef = useRef(null);
-    const hasInteracted = useRef(false);
+export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], onClose }) {
+  const historyByDay = useMemo(() => {
+    const groups = {};
+    for (const log of workoutLog || []) {
+      const details = (log.WorkoutLogDetails || []).filter(d => d.exercise_name === exerciseName);
+      if (!details.length) continue;
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (searchRef.current && !searchRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+      const dateKey = new Date(log.workout_date).toISOString().split('T')[0];
+      if (!groups[dateKey]) groups[dateKey] = [];
 
-    const fetchExercises = useCallback(async (searchQuery) => {
-        if (searchQuery.length < 2) {
-            setResults([]);
-            setIsOpen(false);
-            return;
-        }
-        try {
-            const data = await searchExercises(searchQuery);
-            
-            if (data.length > 0) {
-                setResults(data);
-                setIsOpen(true);
-            } else {
-                setResults([]);
-                setIsOpen(false);
-            }
-        } catch (error) {
-            console.error(error);
-            setResults([]);
-            setIsOpen(false);
-        }
-    }, []);
+      for (const d of details) {
+        const sets = d.WorkoutLogSets && d.WorkoutLogSets.length > 0 ? d.WorkoutLogSets : [];
+        sets.sort((a, b) => (a.set_number || 0) - (b.set_number || 0));
+        groups[dateKey].push(...sets);
+      }
+    }
 
-    useEffect(() => {
-        if (!hasInteracted.current) {
-            return;
-        }
+    return Object.entries(groups)
+      .sort(([a], [b]) => new Date(b) - new Date(a))
+      .map(([dateKey, sets]) => ({ dateKey, sets }));
+  }, [workoutLog, exerciseName]);
 
-        const handler = setTimeout(() => {
-            fetchExercises(value);
-        }, 300);
+  const formatDate = (iso) =>
+    new Date(iso).toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
 
-        return () => clearTimeout(handler);
-    }, [value, fetchExercises]);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.25s_ease-out]">
+      {/* ⬇️ más espacio en desktop */}
+      <div className="relative w-full max-w-2xl m-4 sm:m-6 md:m-12 lg:m-16 rounded-3xl border border-[--glass-border] bg-bg-secondary shadow-2xl p-6">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"
+          aria-label="Cerrar"
+        >
+          <X size={22} />
+        </button>
 
-    const handleSelect = (exercise) => {
-        hasInteracted.current = false;
-        onSelect(exercise);
-        setIsOpen(false);
-    };
+        <h2 className="text-2xl md:text-3xl font-extrabold text-center">Historial de {exerciseName}</h2>
+        <div className="h-px bg-[--glass-border] my-4" />
 
-    const handleInputChange = (e) => {
-        hasInteracted.current = true;
-        onChange(e);
-    };
-    
-    const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
+        <div className="rounded-3xl bg-bg-primary border border-[--glass-border] p-4 md:p-5 max-h-[60vh] overflow-y-auto">
+          {historyByDay.length === 0 ? (
+            <div className="text-center text-text-muted py-12">
+              No hay series registradas para este ejercicio.
+            </div>
+          ) : (
+            historyByDay.map(({ dateKey, sets }, idx) => (
+              <div
+                key={dateKey}
+                className={idx > 0 ? 'pt-5 mt-5 border-t border-[--glass-border]' : ''}
+              >
+                <h3 className="text-accent font-bold mb-3 capitalize">
+                  {formatDate(dateKey)}
+                </h3>
 
-    return (
-        <div className="relative w-full" ref={searchRef}>
-            <input
-                type="text"
-                value={value}
-                onChange={handleInputChange}
-                onFocus={() => { if(value) hasInteracted.current = true; }}
-                placeholder="Buscar o escribir ejercicio..."
-                className={baseInputClasses}
-            />
-            {isOpen && results.length > 0 && (
-                <div className="absolute top-full mt-2 w-full bg-bg-secondary border border-glass-border rounded-md shadow-lg max-h-60 overflow-y-auto z-10">
-                    {results.map(ex => (
-                        <button
-                            key={ex.id}
-                            type="button"
-                            onClick={() => handleSelect(ex)}
-                            className="block w-full text-left px-4 py-2 hover:bg-accent-transparent transition-colors"
-                        >
-                            {ex.name} <span className="text-xs text-text-muted">({ex.muscle_group})</span>
-                        </button>
+                {sets.length === 0 ? (
+                  <div className="text-text-muted text-sm">No se registraron series.</div>
+                ) : (
+                  <ul className="space-y-3">
+                    {sets.map((set, i) => (
+                      <li
+                        key={`${dateKey}-${i}`}
+                        className="flex items-center justify-between rounded-2xl px-4 py-2 text-sm bg-bg-secondary/60 border border-[--glass-border]"
+                      >
+                        <span>
+                          Serie {set.set_number ?? i + 1}:{' '}
+                          <strong>{Number(set.reps ?? 0)} reps</strong> con{' '}
+                          <strong>{Number(set.weight_kg ?? 0).toFixed(2)} kg</strong>
+                        </span>
+
+                        {set.is_dropset && (
+                          <span className="ml-3 shrink-0 bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full text-[10px]">
+                            DROPSET
+                          </span>
+                        )}
+                      </li>
                     ))}
-                </div>
-            )}
+                  </ul>
+                )}
+              </div>
+            ))
+          )}
         </div>
-    );
-};
-
-export default ExerciseSearchInput;
+      </div>
+    </div>
+  );
+}

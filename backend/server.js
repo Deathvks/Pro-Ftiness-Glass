@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import creatinaRoutes from './routes/creatina.js';
 
 dotenv.config();
 
@@ -15,6 +16,11 @@ import userRoutes from './routes/users.js';
 import exerciseListRoutes from './routes/exerciseList.js';
 import personalRecordRoutes from './routes/personalRecords.js';
 import adminRoutes from './routes/admin.js';
+import nutritionRoutes from './routes/nutrition.js';
+import favoriteMealRoutes from './routes/favoriteMeals.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import templateRoutineRoutes from './routes/templateRoutines.js'; // Se importan las nuevas rutas
+// --- FIN DE LA MODIFICACIÓN ---
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
@@ -26,10 +32,8 @@ const PORT = process.env.PORT || 3001;
 // Middlewares
 app.use(helmet());
 
-console.log(`[CORS] Configurando CORS para el origen explícito: ${process.env.FRONTEND_URL}`);
-
 const corsOptions = {
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.CORS_ORIGIN,
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -39,7 +43,7 @@ app.use(cookieParser());
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes); // Rutas de admin
+app.use('/api/admin', adminRoutes);
 app.use('/api', routineRoutes);
 app.use('/api', exerciseRoutes);
 app.use('/api', workoutRoutes);
@@ -47,6 +51,14 @@ app.use('/api', bodyweightRoutes);
 app.use('/api', userRoutes);
 app.use('/api', exerciseListRoutes);
 app.use('/api', personalRecordRoutes);
+app.use('/api', nutritionRoutes);
+app.use('/api', favoriteMealRoutes);
+// --- INICIO DE LA MODIFICACIÓN ---
+app.use('/api', templateRoutineRoutes); // Se usan las nuevas rutas
+// ... Rutas
+app.use('/api/creatina', creatinaRoutes);
+// --- FIN DE LA MODIFICACIÓN ---
+
 
 app.use(errorHandler);
 

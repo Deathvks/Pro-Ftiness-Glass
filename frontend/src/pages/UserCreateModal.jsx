@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
+import CustomSelect from '../components/CustomSelect';
 
 const UserCreateModal = ({ onSave, onCancel, isLoading }) => {
     const [formData, setFormData] = useState({
@@ -11,8 +12,21 @@ const UserCreateModal = ({ onSave, onCancel, isLoading }) => {
         role: 'user',
     });
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
+    // --- INICIO DE LA CORRECCIÓN ---
+    const [isDarkTheme, setIsDarkTheme] = useState(() =>
+        typeof document !== 'undefined' && !document.body.classList.contains('light-theme')
+    );
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+        setIsDarkTheme(!document.body.classList.contains('light-theme'));
+        });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
+    // --- FIN DE LA CORRECCIÓN ---
+
+    const handleChange = (name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -23,13 +37,20 @@ const UserCreateModal = ({ onSave, onCancel, isLoading }) => {
 
     const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
 
+    const roleOptions = [
+        { value: 'user', label: 'Usuario' },
+        { value: 'admin', label: 'Admin' },
+    ];
+
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
             onClick={onCancel}
         >
             <GlassCard
-                className="relative w-full max-w-md p-8 m-4"
+                // --- INICIO DE LA CORRECCIÓN ---
+                className={`relative w-full max-w-md p-8 m-4 ${!isDarkTheme ? '!bg-white/95 !border-black/10' : ''}`}
+                // --- FIN DE LA CORRECCIÓN ---
                 onClick={(e) => e.stopPropagation()}
             >
                 <button onClick={onCancel} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition">
@@ -41,22 +62,24 @@ const UserCreateModal = ({ onSave, onCancel, isLoading }) => {
                 <form onSubmit={handleSaveClick} className="flex flex-col gap-4">
                     <div>
                         <label htmlFor="name" className="block text-sm font-medium text-text-secondary mb-2">Nombre</label>
-                        <input id="name" name="name" type="text" value={formData.name} onChange={handleChange} required className={baseInputClasses} />
+                        <input id="name" name="name" type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} required className={baseInputClasses} />
                     </div>
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-2">Email</label>
-                        <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required className={baseInputClasses} />
+                        <input id="email" name="email" type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} required className={baseInputClasses} />
                     </div>
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-2">Contraseña</label>
-                        <input id="password" name="password" type="password" value={formData.password} onChange={handleChange} required className={baseInputClasses} />
+                        <input id="password" name="password" type="password" value={formData.password} onChange={(e) => handleChange('password', e.target.value)} required className={baseInputClasses} />
                     </div>
                     <div>
                         <label htmlFor="role" className="block text-sm font-medium text-text-secondary mb-2">Rol</label>
-                        <select id="role" name="role" value={formData.role} onChange={handleChange} className={baseInputClasses}>
-                            <option value="user">Usuario</option>
-                            <option value="admin">Admin</option>
-                        </select>
+                        <CustomSelect
+                            value={formData.role}
+                            onChange={(value) => handleChange('role', value)}
+                            options={roleOptions}
+                            placeholder="Seleccionar rol"
+                        />
                     </div>
                     <button
                         type="submit"

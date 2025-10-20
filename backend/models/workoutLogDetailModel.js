@@ -1,3 +1,4 @@
+/* backend/models/workoutLogDetailModel.js */
 import { DataTypes } from "sequelize";
 import sequelize from "../db.js";
 
@@ -21,8 +22,6 @@ const WorkoutLogDetail = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: false,
     },
-    // --- ESTAS SON LAS LÍNEAS IMPORTANTES ---
-    // Definen las nuevas columnas que añadimos a la base de datos
     total_volume: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
@@ -31,7 +30,20 @@ const WorkoutLogDetail = sequelize.define(
       type: DataTypes.DECIMAL(6, 2),
       allowNull: true,
     },
-    // --- FIN DE LA SECCIÓN IMPORTANTE ---
+    // --- LÍNEA AÑADIDA ---
+    // Guarda el ID del grupo de la superserie para poder agruparlos en el historial.
+    superset_group_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Añadimos el campo para guardar el 1RM estimado
+    estimated_1rm: {
+        type: DataTypes.DECIMAL(6, 2),
+        allowNull: true,
+        comment: 'Estimación del 1RM basada en la mejor serie del ejercicio en este log.'
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
   },
   {
     tableName: 'workout_log_details',

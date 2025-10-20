@@ -5,10 +5,21 @@ const { User } = models;
 // Obtener una lista de todos los usuarios
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.findAll({
+    let users = await User.findAll({
       attributes: { exclude: ['password_hash'] }, // Nunca exponer las contraseñas
       order: [['created_at', 'DESC']],
     });
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Mover al administrador actual al principio de la lista
+    const adminUserId = req.user.userId;
+    users = users.sort((a, b) => {
+      if (a.id === adminUserId) return -1;
+      if (b.id === adminUserId) return 1;
+      return 0; // Mantener el orden original para los demás
+    });
+    // --- FIN DE LA MODIFICACIÓN ---
+
     res.json(users);
   } catch (error) {
     next(error);
