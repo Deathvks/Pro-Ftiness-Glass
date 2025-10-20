@@ -1,8 +1,5 @@
 import React from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importamos el icono de Github
 import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github } from 'lucide-react';
-// --- FIN DE LA MODIFICACIÓN ---
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
@@ -62,7 +59,9 @@ const WelcomeModal = ({ onClose }) => {
 
           <div className="flex flex-col items-center">
             <Award size={48} className="mb-3 text-accent" />
-            <h2 className="text-2xl font-bold text-text-primary">¡Novedades en FitTrack Pro!</h2>
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            <h2 className="text-2xl font-bold text-text-primary">¡Novedades en Pro Fitness Glass!</h2>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
             <p className="mb-2 text-sm text-text-secondary">Versión {APP_VERSION}</p>
           </div>
         </div>
@@ -83,8 +82,6 @@ const WelcomeModal = ({ onClose }) => {
         {/* -- Pie de página (no se desplaza) -- */}
         <div className="flex-shrink-0 p-6 pt-4">
           
-          {/* --- INICIO DE LA MODIFICACIÓN --- */}
-          {/* Enlace a GitHub añadido aquí */}
           <a
             href="https://github.com/deathvks/fittrack-pro"
             target="_blank"
@@ -93,10 +90,11 @@ const WelcomeModal = ({ onClose }) => {
           >
             <Github size={16} />
             <span>
-              FitTrack Pro es un proyecto de código abierto. ¡Tu apoyo es fundamental!
+              {/* --- INICIO DE LA MODIFICACIÓN --- */}
+              Pro Fitness Glass es un proyecto de código abierto. ¡Tu apoyo es fundamental!
+              {/* --- FIN DE LA MODIFICACIÓN --- */}
             </span>
           </a>
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           <button
             onClick={onClose}
