@@ -1,3 +1,4 @@
+/* backend/db.js */
 import { Sequelize } from 'sequelize';
 import config from './config/config.cjs'; // <-- Cambio aquí
 
@@ -14,7 +15,10 @@ const sequelize = new Sequelize(
     timezone: dbConfig.timezone,
     port: dbConfig.port,
     dialectOptions: dbConfig.dialectOptions || {},
-    logging: env === 'development' ? console.log : false,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Cambia console.log a false para desactivar siempre los logs
+    logging: false, // env === 'development' ? console.log : false,
+    // --- FIN DE LA MODIFICACIÓN ---
   }
 );
 

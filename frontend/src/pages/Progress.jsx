@@ -1,3 +1,4 @@
+/* frontend/src/pages/Progress.jsx */
 import React, { useState, useMemo } from 'react';
 import useAppStore from '../store/useAppStore';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
@@ -54,13 +55,17 @@ const Progress = ({ darkMode }) => {
         recentLogs.forEach(log => {
             if (log.WorkoutLogDetails) {
                 log.WorkoutLogDetails.forEach(detail => {
-                    if (detail.best_set_weight > 0) {
+                    // --- INICIO DE LA MODIFICACIÓN ---
+                    // Solo añadir si hay peso máximo o 1RM estimado
+                    if (detail.best_set_weight > 0 || (detail.estimated_1rm && detail.estimated_1rm > 0)) {
                         if (!progress[detail.exercise_name]) progress[detail.exercise_name] = [];
                         progress[detail.exercise_name].push({
                             date: new Date(log.workout_date).getTime(),
-                            'Peso Máximo (kg)': detail.best_set_weight,
+                            'Peso Máximo (kg)': detail.best_set_weight || 0, // Asegurar que sea 0 si es null/undefined
+                            '1RM Estimado (kg)': detail.estimated_1rm || 0, // Añadir el 1RM estimado
                         });
                     }
+                    // --- FIN DE LA MODIFICACIÓN ---
                 });
             }
         });

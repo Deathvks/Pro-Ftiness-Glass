@@ -1,3 +1,4 @@
+/* frontend/src/components/progress/ProgressCharts.jsx */
 import React from 'react';
 import { ResponsiveContainer, LineChart, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
 import GlassCard from '../GlassCard';
@@ -6,17 +7,20 @@ import Spinner from '../Spinner';
 // Tooltip personalizado para todos los gráficos
 export const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Se corrige el 'new Date(label)' que asumía que 'label' era un timestamp.
-        // Ahora, 'label' es la fecha completa 'YYYY-MM-DD', así que la parseamos correctamente.
-        const formattedDate = new Date(payload[0].payload.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-        // --- FIN DE LA MODIFICACIÓN ---
+        const dateKey = payload[0]?.payload?.date; // Intentar obtener la fecha completa del payload
+        // Si no está en el payload, intentamos usar el 'label' (que podría ser el timestamp)
+        const dateValue = dateKey ? new Date(dateKey) : (label ? new Date(label) : null);
+        const formattedDate = dateValue
+            ? dateValue.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+            : 'Fecha desconocida';
+
         return (
             <div className="p-3 bg-bg-secondary border border-glass-border rounded-md shadow-lg text-sm">
                 <p className="font-semibold text-text-secondary">Fecha: {formattedDate}</p>
                 {payload.map((p, i) => (
                     <p key={i} style={{ color: p.color }}>
-                        {p.name}: <strong>{Number(p.value).toLocaleString('es-ES')} {p.unit || ''}</strong>
+                        {/* Aseguramos que el nombre se muestre correctamente */}
+                        {p.name || p.dataKey}: <strong>{Number(p.value).toLocaleString('es-ES')} {p.unit || ''}</strong>
                     </p>
                 ))}
             </div>
@@ -24,6 +28,7 @@ export const CustomTooltip = ({ active, payload, label }) => {
     }
     return null;
 };
+
 
 // Gráfico de Calorías y Macronutrientes
 export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
@@ -92,16 +97,53 @@ export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
 // Gráfico de Progreso por Ejercicio
 export const ExerciseChart = ({ data, axisColor, exerciseName }) => (
     <GlassCard className="p-6">
-        <h2 className="text-xl font-bold mb-4">Progresión de Peso (Último Mes)</h2>
+        <h2 className="text-xl font-bold mb-4">Progresión de Fuerza (Último Mes)</h2>
         {data && data.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" />
-                    <XAxis type="number" dataKey="date" domain={['dataMin', 'dataMax']} tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} stroke={axisColor} fontSize={12} />
-                    <YAxis stroke={axisColor} fontSize={12} domain={['dataMin - 5', 'dataMax + 5']} />
+                    <XAxis
+                        type="number"
+                        dataKey="date"
+                        domain={['dataMin', 'dataMax']}
+                        tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
+                        stroke={axisColor}
+                        fontSize={12}
+                    />
+                    <YAxis
+                        stroke={axisColor}
+                        fontSize={12}
+                        // --- INICIO DE LA MODIFICACIÓN ---
+                        // Ajusta el dominio para que quepan ambos valores (max weight y 1RM)
+                        domain={[dataMin => Math.max(0, Math.floor(dataMin / 5) * 5 - 10), dataMax => Math.ceil(dataMax / 5) * 5 + 10]}
+                        // --- FIN DE LA MODIFICACIÓN ---
+                        allowDataOverflow={true}
+                    />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ color: axisColor }} />
-                    <Line type="monotone" dataKey="Peso Máximo (kg)" stroke="#818cf8" strokeWidth={2} dot={{ r: 4, fill: '#818cf8' }} activeDot={{ r: 8 }} />
+                    {/* Línea para el Peso Máximo levantado */}
+                    <Line
+                        type="monotone"
+                        dataKey="Peso Máximo (kg)"
+                        stroke="#818cf8" // Color índigo
+                        strokeWidth={2}
+                        dot={{ r: 4, fill: '#818cf8' }}
+                        activeDot={{ r: 8 }}
+                        name="Peso Máx." // Nombre más corto para la leyenda
+                    />
+                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                    {/* Línea para el 1RM Estimado */}
+                    <Line
+                        type="monotone"
+                        dataKey="1RM Estimado (kg)"
+                        stroke="var(--color-accent)" // Usa el color de acento de la app
+                        strokeWidth={2}
+                        strokeDasharray="5 5" // Línea discontinua para diferenciar
+                        dot={{ r: 4, fill: 'var(--color-accent)' }}
+                        activeDot={{ r: 8 }}
+                        name="1RM Est." // Nombre más corto para la leyenda
+                    />
+                     {/* --- FIN DE LA MODIFICACIÓN --- */}
                 </LineChart>
             </ResponsiveContainer>
         ) : (
@@ -111,6 +153,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => (
         )}
     </GlassCard>
 );
+
 
 // Gráfico de Evolución del Peso Corporal
 export const BodyWeightChart = ({ data, axisColor }) => (
