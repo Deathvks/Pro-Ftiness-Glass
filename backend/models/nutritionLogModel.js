@@ -16,11 +16,7 @@ const NutritionLog = sequelize.define('NutritionLog', {
     }
   },
   log_date: {
-    // --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
-    // Se cambia de DATE a DATEONLY para que coincida con la migración
-    // y se elimine la información de la hora, que es la causa del problema.
     type: DataTypes.DATEONLY,
-    // --- FIN DE LA CORRECCIÓN DEFINITIVA ---
     allowNull: false,
   },
   meal_type: {
@@ -53,6 +49,13 @@ const NutritionLog = sequelize.define('NutritionLog', {
     allowNull: true,
     comment: 'Peso de la comida en gramos'
   },
+  // --- INICIO DE LA MODIFICACIÓN ---
+  image_url: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    comment: 'URL de la imagen de la comida'
+  },
+  // --- FIN DE LA MODIFICACIÓN ---
 }, {
   tableName: 'nutrition_logs',
   timestamps: true,

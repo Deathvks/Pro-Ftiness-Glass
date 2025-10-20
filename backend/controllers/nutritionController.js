@@ -134,6 +134,7 @@ export const addNutritionLog = async (req, res, next) => {
             carbs_g: log.carbs_g,
             fats_g: log.fats_g,
             weight_g: log.weight_g,
+            image_url: log.image_url, // --- MODIFICACIÓN ---
         }));
 
         const newLogs = await NutritionLog.bulkCreate(logsToCreate);
@@ -150,10 +151,14 @@ export const updateNutritionLog = async (req, res, next) => {
     try {
         const { logId } = req.params;
         const { userId } = req.user;
-        const { description, calories, protein_g, carbs_g, fats_g, weight_g } = req.body;
+        // --- INICIO DE LA MODIFICACIÓN ---
+        const { description, calories, protein_g, carbs_g, fats_g, weight_g, image_url } = req.body;
+        // --- FIN DE LA MODIFICACIÓN ---
         const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
         if (!log) { return res.status(404).json({ error: 'Registro de comida no encontrado.' }); }
-        await log.update({ description, calories, protein_g, carbs_g, fats_g, weight_g });
+        // --- INICIO DE LA MODIFICACIÓN ---
+        await log.update({ description, calories, protein_g, carbs_g, fats_g, weight_g, image_url });
+        // --- FIN DE LA MODIFICACIÓN ---
         res.json(log);
     } catch (error) {
         next(error);

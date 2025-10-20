@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import creatinaRoutes from './routes/creatina.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import path from 'path';
+import { fileURLToPath } from 'url';
+// --- FIN DE LA MODIFICACIÓN ---
 
 dotenv.config();
 
@@ -18,12 +22,15 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import adminRoutes from './routes/admin.js';
 import nutritionRoutes from './routes/nutrition.js';
 import favoriteMealRoutes from './routes/favoriteMeals.js';
-// --- INICIO DE LA MODIFICACIÓN ---
-import templateRoutineRoutes from './routes/templateRoutines.js'; // Se importan las nuevas rutas
-// --- FIN DE LA MODIFICACIÓN ---
+import templateRoutineRoutes from './routes/templateRoutines.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
+
+// --- INICIO DE LA MODIFICACIÓN ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// --- FIN DE LA MODIFICACIÓN ---
 
 app.set('trust proxy', 1);
 
@@ -41,6 +48,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Servir archivos estáticos desde la carpeta 'uploads'
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// --- FIN DE LA MODIFICACIÓN ---
+
+
 // Rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -53,11 +66,8 @@ app.use('/api', exerciseListRoutes);
 app.use('/api', personalRecordRoutes);
 app.use('/api', nutritionRoutes);
 app.use('/api', favoriteMealRoutes);
-// --- INICIO DE LA MODIFICACIÓN ---
-app.use('/api', templateRoutineRoutes); // Se usan las nuevas rutas
-// ... Rutas
+app.use('/api', templateRoutineRoutes); 
 app.use('/api/creatina', creatinaRoutes);
-// --- FIN DE LA MODIFICACIÓN ---
 
 
 app.use(errorHandler);

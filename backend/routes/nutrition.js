@@ -2,6 +2,24 @@ import express from 'express';
 import { body } from 'express-validator';
 import nutritionController from '../controllers/nutritionController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import multer from 'multer';
+import path from 'path';
+
+// Configurar multer para almacenamiento en disco
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Esta ruta es relativa a la raíz del proyecto backend
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
+// --- FIN DE LA MODIFICACIÓN ---
 
 const router = express.Router();
 
@@ -32,13 +50,23 @@ router.get('/nutrition', nutritionController.getLogsByDate);
 // GET /api/nutrition/summary?month=M&year=YYYY -> Obtener resumen de un mes
 router.get('/nutrition/summary', nutritionController.getNutritionSummary);
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // GET /api/nutrition/barcode/:barcode -> Buscar producto por código de barras
 router.get('/nutrition/barcode/:barcode', nutritionController.searchByBarcode);
-// --- FIN DE LA MODIFICACIÓN ---
 
 // POST /api/nutrition/food -> Añadir una comida
 router.post('/nutrition/food', nutritionController.addNutritionLog);
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// POST /api/nutrition/food/image -> Subir una imagen para una comida
+router.post('/nutrition/food/image', upload.single('foodImage'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send({ error: 'No se ha subido ningún archivo.' });
+  }
+  // Devolvemos la URL donde se ha guardado el archivo
+  // La URL será relativa al servidor, ej: /uploads/foodImage-1678886400000.jpg
+  res.status(201).json({ imageUrl: `/${req.file.path.replace(/\\/g, '/')}` });
+});
+// --- FIN DE LA MODIFICACIÓN ---
 
 // PUT /api/nutrition/food/:logId -> Actualizar una comida
 router.put('/nutrition/food/:logId', updateNutritionLogRules, nutritionController.updateNutritionLog);

@@ -4,7 +4,7 @@ import { useToast } from './useToast';
 import * as nutritionService from '../services/nutritionService';
 
 const initialManualFormState = {
-    formData: { description: '', calories: '', protein_g: '', carbs_g: '', fats_g: '', weight_g: '' },
+    formData: { description: '', calories: '', protein_g: '', carbs_g: '', fats_g: '', weight_g: '', image_url: null },
     per100Data: { calories: '', protein_g: '', carbs_g: '', fats_g: '' },
     per100Mode: false, isFavorite: false,
 };
@@ -23,6 +23,9 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     const [originalData, setOriginalData] = useState(null);
     const [addModeType, setAddModeType] = useState(null);
     const [showScanner, setShowScanner] = useState(false);
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const [isUploading, setIsUploading] = useState(false);
+    // --- FIN DE LA MODIFICACIÓN ---
     const ITEMS_PER_PAGE = 5;
 
     const { addToast } = useToast();
@@ -78,7 +81,8 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
             } else { setBaseMacros(null); }
             const currentFormData = {
                 description: itemToEdit.description || itemToEdit.name || '', calories: String(itemToEdit.calories || ''), protein_g: String(itemToEdit.protein_g || ''),
-                carbs_g: String(itemToEdit.carbs_g || ''), fats_g: String(itemToEdit.fats_g || ''), weight_g: String(itemToEdit.weight_g || '')
+                carbs_g: String(itemToEdit.carbs_g || ''), fats_g: String(itemToEdit.fats_g || ''), weight_g: String(itemToEdit.weight_g || ''),
+                image_url: itemToEdit.image_url || null
             };
             setManualFormState({
                 formData: currentFormData,
@@ -193,9 +197,6 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     const handleRemoveItem = (tempId) => { if (editingListItemId === tempId) { setEditingListItemId(null); setManualFormState(initialManualFormState); setBaseMacros(null); setOriginalData(null); } setItemsToAdd(prev => prev.filter(item => item.tempId !== tempId)); };
     const handleToggleFavorite = (tempId) => { setItemsToAdd(prevItems => prevItems.map(item => item.tempId === tempId ? { ...item, isFavorite: !item.isFavorite } : item)); };
 
-    // --- CORRECCIÓN ---
-    // Se elimina `setActiveTab('manual')` de estas dos funciones.
-    // El useEffect ya se encarga de cambiar la pestaña cuando comienza una edición.
     const handleEditListItem = (tempId) => {
         setEditingFavorite(null);
         setEditingListItemId(tempId);
@@ -249,6 +250,25 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
             setBaseMacros(null); setOriginalData(null);
         }
     };
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const handleImageUpload = async (file) => {
+        if (!file) return;
+        setIsUploading(true);
+        try {
+            const response = await nutritionService.uploadFoodImage(file);
+            setManualFormState(prev => ({
+                ...prev,
+                formData: { ...prev.formData, image_url: response.imageUrl }
+            }));
+            addToast('Imagen subida con éxito.', 'success');
+        } catch (error) {
+            addToast(error.message || 'Error al subir la imagen.', 'error');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+    // --- FIN DE LA MODIFICACIÓN ---
 
     const mealTitles = { breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' };
     const title = isEditingLog ? `Editar ${logToEdit.description}` : editingFavorite ? `Editar Favorito: ${editingFavorite.name}` : `Añadir a ${mealTitles[mealType]}`;
@@ -261,5 +281,8 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         handleAddRecentItem, handleRemoveItem, handleToggleFavorite, handleEditListItem, handleEditFavorite,
         handleSaveListItem, handleSaveList, handleSaveSingle, handleSaveEdit, handleScanSuccess,
         handleDeleteFavorite, confirmDeleteFavorite, title, addModeType,
+        // --- INICIO DE LA MODIFICACIÓN ---
+        isUploading, handleImageUpload
+        // --- FIN DE LA MODIFICACIÓN ---
     };
 };

@@ -61,12 +61,39 @@ export const upsertWaterLog = (waterData) => {
   });
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 /**
  * Busca un producto por su código de barras.
  * @param {string} barcode - El código de barras del producto.
  */
 export const searchByBarcode = (barcode) => {
   return apiClient(`/nutrition/barcode/${barcode}`);
+};
+
+// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Sube una imagen de comida al servidor.
+ * @param {File} imageFile - El archivo de la imagen a subir.
+ */
+export const uploadFoodImage = (imageFile) => {
+    const formData = new FormData();
+    formData.append('foodImage', imageFile);
+
+    // No usamos apiClient directamente porque necesitamos enviar FormData
+    const token = useAppStore.getState().token;
+    const headers = {};
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return fetch(`${import.meta.env.VITE_API_BASE_URL}/api/nutrition/food/image`, {
+        method: 'POST',
+        body: formData,
+        headers,
+    }).then(response => {
+        if (!response.ok) {
+            throw new Error('Error al subir la imagen.');
+        }
+        return response.json();
+    });
 };
 // --- FIN DE LA MODIFICACIÓN ---
