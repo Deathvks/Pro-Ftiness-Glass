@@ -30,13 +30,16 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                 className="relative w-full h-40 bg-bg-primary border-2 border-dashed border-glass-border rounded-lg flex items-center justify-center cursor-pointer hover:border-accent transition-colors"
                 onClick={handleImageClick}
             >
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
                 <input
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     className="hidden"
                     accept="image/*"
+                    capture="environment" // Pide directamente la cámara trasera
                 />
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 {isUploading ? (
                     <Spinner />
                 ) : imageUrl ? (
