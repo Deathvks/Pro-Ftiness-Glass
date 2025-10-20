@@ -73,8 +73,6 @@ module.exports = {
           }
         ]
       },
-
-      // 2. PÉRDIDA DE GRASA (SEGUNDO)
       {
         category: 'Pérdida de Grasa',
         routines: [
@@ -148,8 +146,6 @@ module.exports = {
           }
         ]
       },
-
-      // 3. MEJORES RUTINAS DE PECHO
       {
         category: 'Mejores Rutinas de Pecho',
         routines: [
@@ -189,8 +185,6 @@ module.exports = {
           }
         ]
       },
-
-      // 4. MEJORES RUTINAS DE ESPALDA
       {
         category: 'Mejores Rutinas de Espalda',
         routines: [
@@ -231,8 +225,6 @@ module.exports = {
           }
         ]
       },
-
-      // 5. PIERNAS - ENFOQUE CUÁDRICEPS
       {
         category: 'Piernas - Enfoque Cuádriceps',
         routines: [
@@ -261,8 +253,6 @@ module.exports = {
           }
         ]
       },
-
-      // 6. PIERNAS - ENFOQUE GLÚTEOS
       {
         category: 'Piernas - Enfoque Glúteos',
         routines: [
@@ -292,8 +282,6 @@ module.exports = {
           }
         ]
       },
-
-      // 7. MEJORES RUTINAS DE ABDOMINALES
       {
         category: 'Mejores Rutinas de Abdominales',
         routines: [
@@ -343,37 +331,43 @@ module.exports = {
     try {
       await queryInterface.bulkDelete('template_routine_exercises', null, { transaction: t });
       await queryInterface.bulkDelete('template_routines', null, { transaction: t });
-      
-      for (const category of templates) {
-        for (const routine of category.routines) {
-          // --- INICIO DE LA CORRECCIÓN ---
-          // Usamos 'insert' en lugar de 'bulkInsert' para una sola fila,
-          // ya que devuelve el ID de forma fiable en MySQL.
-          const insertedRoutineId = await queryInterface.insert(null, 'template_routines', {
-            name: routine.name,
-            description: routine.description,
-            category: category.category,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }, { transaction: t });
-          // --- FIN DE LA CORRECCIÓN ---
 
-          if (routine.exercises && routine.exercises.length > 0) {
-            const exercisesToInsert = routine.exercises.map(ex => ({
-              template_routine_id: insertedRoutineId, // Usamos el ID devuelto
-              name: ex.name,
-              sets: ex.sets,
-              reps: ex.reps,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            }));
+      // 1. Preparar y insertar todas las rutinas.
+      const allRoutinesData = templates.flatMap(category =>
+        category.routines.map(routine => ({
+          name: routine.name,
+          description: routine.description,
+          category: category.category,
+        }))
+      );
+      await queryInterface.bulkInsert('template_routines', allRoutinesData, { transaction: t });
 
-            if (exercisesToInsert.length > 0) {
-              await queryInterface.bulkInsert('template_routine_exercises', exercisesToInsert, { transaction: t });
-            }
-          }
-        }
+      // 2. Recuperar las rutinas insertadas para obtener sus IDs.
+      const insertedRoutines = await queryInterface.sequelize.query(
+        'SELECT id, name FROM template_routines',
+        { type: Sequelize.QueryTypes.SELECT, transaction: t }
+      );
+      const routineIdMap = new Map(insertedRoutines.map(r => [r.name, r.id]));
+
+      // 3. Preparar todos los ejercicios con los IDs correctos.
+      const allExercisesData = templates.flatMap(category =>
+        category.routines.flatMap(routine => {
+          const routineId = routineIdMap.get(routine.name);
+          if (!routineId) return [];
+          return routine.exercises.map(ex => ({
+            template_routine_id: routineId,
+            name: ex.name,
+            sets: ex.sets,
+            reps: ex.reps,
+          }));
+        })
+      );
+
+      // 4. Insertar todos los ejercicios.
+      if (allExercisesData.length > 0) {
+        await queryInterface.bulkInsert('template_routine_exercises', allExercisesData, { transaction: t });
       }
+
       await t.commit();
     } catch (error) {
       await t.rollback();
