@@ -18,16 +18,12 @@ import personalRecordRoutes from './routes/personalRecords.js';
 import adminRoutes from './routes/admin.js';
 import nutritionRoutes from './routes/nutrition.js';
 import favoriteMealRoutes from './routes/favoriteMeals.js';
-// --- INICIO DE LA MODIFICACIÓN ---
-import templateRoutineRoutes from './routes/templateRoutines.js'; // Se importan las nuevas rutas
-// --- FIN DE LA MODIFICACIÓN ---
+import templateRoutineRoutes from './routes/templateRoutines.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
 
 app.set('trust proxy', 1);
-
-const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(helmet());
@@ -53,15 +49,10 @@ app.use('/api', exerciseListRoutes);
 app.use('/api', personalRecordRoutes);
 app.use('/api', nutritionRoutes);
 app.use('/api', favoriteMealRoutes);
-// --- INICIO DE LA MODIFICACIÓN ---
-app.use('/api', templateRoutineRoutes); // Se usan las nuevas rutas
-// ... Rutas
+app.use('/api', templateRoutineRoutes);
 app.use('/api/creatina', creatinaRoutes);
-// --- FIN DE LA MODIFICACIÓN ---
 
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-});
+export default app;
