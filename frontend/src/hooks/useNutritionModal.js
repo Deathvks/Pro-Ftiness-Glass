@@ -9,6 +9,14 @@ const initialManualFormState = {
     per100Mode: false, isFavorite: false,
 };
 
+// --- INICIO DE LA CORRECCIÓN ---
+// Mover la función `round` fuera del hook para que no se recree en cada render.
+const round = (val, d = 1) => {
+    const n = parseFloat(val);
+    return isNaN(n) ? '' : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
+};
+// --- FIN DE LA CORRECCIÓN ---
+
 export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     const isEditingLog = Boolean(logToEdit);
     const [searchTerm, setSearchTerm] = useState('');
@@ -23,9 +31,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     const [originalData, setOriginalData] = useState(null);
     const [addModeType, setAddModeType] = useState(null);
     const [showScanner, setShowScanner] = useState(false);
-    // --- INICIO DE LA MODIFICACIÓN ---
     const [isUploading, setIsUploading] = useState(false);
-    // --- FIN DE LA MODIFICACIÓN ---
     const ITEMS_PER_PAGE = 5;
 
     const { addToast } = useToast();
@@ -65,7 +71,6 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     }, [filteredFavorites, favoritesPage, ITEMS_PER_PAGE]);
 
     const totalPages = Math.ceil(filteredFavorites.length / ITEMS_PER_PAGE) || 1;
-    const round = (val, d = 1) => { const n = parseFloat(val); return isNaN(n) ? '' : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); };
 
     useEffect(() => {
         const itemToEdit = isEditingLog ? logToEdit : editingFavorite || itemsToAdd.find(item => item.tempId === editingListItemId);
@@ -109,7 +114,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
                 }));
             }
         }
-    }, [manualFormState.formData.weight_g, baseMacros, isEditingLog, editingListItemId, editingFavorite, originalData, round]);
+    }, [manualFormState.formData.weight_g, baseMacros, isEditingLog, editingListItemId, editingFavorite, originalData]);
 
     const computeFromPer100 = useCallback((cal, p, c, f, g) => {
         const factor = (parseFloat(g) || 0) / 100;
@@ -119,7 +124,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
             carbs_g: round((parseFloat(c) || 0) * factor),
             fats_g: round((parseFloat(f) || 0) * factor),
         };
-    }, [round]);
+    }, []);
 
     useEffect(() => {
         if (manualFormState.per100Mode && !isEditingLog && !editingListItemId && !editingFavorite) {
@@ -251,7 +256,6 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         }
     };
     
-    // --- INICIO DE LA MODIFICACIÓN ---
     const handleImageUpload = async (file) => {
         if (!file) return;
         setIsUploading(true);
@@ -268,7 +272,6 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
             setIsUploading(false);
         }
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const mealTitles = { breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' };
     const title = isEditingLog ? `Editar ${logToEdit.description}` : editingFavorite ? `Editar Favorito: ${editingFavorite.name}` : `Añadir a ${mealTitles[mealType]}`;
@@ -281,8 +284,6 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         handleAddRecentItem, handleRemoveItem, handleToggleFavorite, handleEditListItem, handleEditFavorite,
         handleSaveListItem, handleSaveList, handleSaveSingle, handleSaveEdit, handleScanSuccess,
         handleDeleteFavorite, confirmDeleteFavorite, title, addModeType,
-        // --- INICIO DE LA MODIFICACIÓN ---
         isUploading, handleImageUpload
-        // --- FIN DE LA MODIFICACIÓN ---
     };
 };

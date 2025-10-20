@@ -1,27 +1,31 @@
 import React from 'react';
-import SearchResultItem from './SearchResultItem'; // Importa el componente de item
-import { ChevronLeft, ChevronRight, Edit } from 'lucide-react'; // Importado Edit
+import SearchResultItem from './SearchResultItem';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const FavoritesList = ({
-    items,
+    // --- INICIO DE LA CORRECCIÓN ---
+    favorites, // Cambiado de `items` a `favorites` para coincidir con la prop recibida
+    // --- FIN DE LA CORRECCIÓN ---
     onAdd,
     onDelete,
-    onEdit, // <-- 1. Recibir la nueva prop onEdit
+    onEdit,
     currentPage,
     totalPages,
     onPageChange
 }) => {
     return (
-        <div className="flex flex-col h-full"> {/* Asegura que ocupe el espacio disponible */}
-            <div className="space-y-2 flex-grow overflow-y-auto pr-1"> {/* Contenedor scrollable */}
-                {items.length > 0 ? (
-                    items.map(meal => (
+        <div className="flex flex-col h-full">
+            <div className="space-y-2 flex-grow overflow-y-auto pr-1">
+                {/* --- INICIO DE LA CORRECCIÓN --- */}
+                {favorites.length > 0 ? (
+                    favorites.map(meal => (
+                // --- FIN DE LA CORRECCIÓN ---
                         <SearchResultItem
                             key={`fav-${meal.id}`}
                             item={meal}
                             onAdd={onAdd}
                             onDelete={onDelete}
-                            onEdit={onEdit} // <-- 2. Pasar onEdit a SearchResultItem
+                            onEdit={onEdit}
                         />
                     ))
                 ) : (
@@ -30,7 +34,6 @@ const FavoritesList = ({
                     </p>
                 )}
             </div>
-            {/* Paginación (solo si hay más de una página) */}
             {totalPages > 1 && (
                 <div className="flex-shrink-0 flex items-center justify-center pt-3 gap-4">
                     <button
