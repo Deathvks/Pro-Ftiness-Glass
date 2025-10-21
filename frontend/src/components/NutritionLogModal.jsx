@@ -1,4 +1,6 @@
-/* frontend/src/components/NutritionLogModal.jsx */
+/*
+frontend/src/components/NutritionLogModal.jsx
+*/
 import React from 'react';
 import { X, Star, Trash2, Edit, Check, Plus, Search, Camera, BookMarked, Clock, QrCode } from 'lucide-react';
 import BarcodeScanner from './BarcodeScanner';
@@ -63,7 +65,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                         isLoading={false}
                         isEditing={isEditingLog || !!editingFavorite}
                         editingListItem={itemsToAdd.find(item => item.tempId === editingListItemId)}
-                        showFavoriteToggle={!isEditingLog}
+                        showFavoriteToggle={!editingFavorite}
                         formState={manualFormState}
                         onFormStateChange={setManualFormState}
                         isUploading={isUploading}

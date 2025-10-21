@@ -1,132 +1,221 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { debounce } from 'lodash';
-import { getRecentFoods, searchFood } from '../../../services/nutritionService';
-import { getFavoriteMeals } from '../../../services/favoriteMealService';
-import { useToast } from '../../../hooks/useToast';
-
+/*
+frontend/src/components/nutrition/FoodSearchModal/FoodSearchModal.jsx
+*/
+import React, { useState, useEffect } from 'react';
+import { XMarkIcon, QrCodeIcon } from '@heroicons/react/24/solid';
 import SearchBar from './SearchBar';
 import SearchResults from './SearchResults';
 import Favorites from './Favorites';
 import Recent from './Recent';
 import FoodEntryForm from './FoodEntryForm';
+import BarcodeScanner from '../../BarcodeScanner';
+import { nutritionService } from '../../../services/nutritionService';
 
-const FoodSearchModal = ({ isOpen, onClose, onSave, mealType, date, logToEdit, isLoading }) => {
+function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [recentFoods, setRecentFoods] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [view, setView] = useState('search');
-  const [selectedFood, setSelectedFood] = useState(null);
-  const { addToast } = useToast();
-
-  const fetchFavorites = useCallback(async () => {
-    try {
-      const favs = await getFavoriteMeals();
-      setFavorites(favs);
-    } catch (error) {
-      addToast('Error fetching favorite foods', 'error');
-    }
-  }, [addToast]);
-
-  const fetchRecentFoods = useCallback(async () => {
-    try {
-      const recent = await getRecentFoods();
-      setRecentFoods(recent);
-    } catch (error) {
-      addToast('Error fetching recent foods', 'error');
-    }
-  }, [addToast]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('search'); // 'search', 'favorites', 'recent'
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isPer100g, setIsPer100g] = useState(false); // Estado para controlar el interruptor
 
   useEffect(() => {
+    // Reset state when modal opens
     if (isOpen) {
-      if (logToEdit) {
-        setSelectedFood(logToEdit);
-      } else {
-        setSelectedFood(null);
-        setSearchTerm('');
-        setSearchResults([]);
-        setView('search');
-        fetchFavorites();
-        fetchRecentFoods();
-      }
+      resetModalState();
     }
-  }, [isOpen, logToEdit, fetchFavorites, fetchRecentFoods]);
+  }, [isOpen]);
 
-  const performSearch = async (term) => {
-    if (term.length > 2) {
-      setLoading(true);
-      try {
-        const results = await searchFood(term);
-        setSearchResults(results);
-      } catch (error) {
-        addToast('Error searching for food', 'error');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setSearchResults([]);
-    }
+  const resetModalState = () => {
+    setSearchTerm('');
+    setSearchResults([]);
+    setSelectedItem(null);
+    setIsLoading(false);
+    setError(null);
+    setActiveTab('search');
+    setIsScannerOpen(false);
+    setIsPer100g(false); // Asegurarse de resetear al cerrar
   };
 
-  const debouncedSearch = useCallback(debounce(performSearch, 500), [addToast]);
-
-  useEffect(() => {
-    debouncedSearch(searchTerm);
-    return () => debouncedSearch.cancel();
-  }, [searchTerm, debouncedSearch]);
+  const handleSearch = async (term) => {
+    if (!term) {
+      setSearchResults([]);
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const results = await nutritionService.searchFood(term);
+      setSearchResults(results);
+    } catch (err) {
+      setError('Error al buscar alimentos. Inténtalo de nuevo.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSelectFood = (food) => {
-    setSelectedFood(food);
-  };
-
-  const handleBackToSearch = () => {
-    setSelectedFood(null);
+    const preparedFood = {
+      ...food,
+      calories_per_100g: food.calories_per_100g || food.calories_per_serving || food.calories || 0,
+      protein_per_100g: food.protein_per_100g || food.protein_per_serving || food.protein || 0,
+      carbs_per_100g: food.carbs_per_100g || food.carbs_per_serving || food.carbs || 0,
+      fat_per_100g: food.fat_per_100g || food.fat_per_serving || food.fat || 0,
+    };
+    setSelectedItem(preparedFood);
+    setIsScannerOpen(false); // Close scanner if open
   };
   
+  const handleScanSuccess = (foodData) => {
+    handleSelectFood(foodData);
+    setIsPer100g(true); // <-- REQUERIDO: Activar "Por 100g" al escanear
+    setIsScannerOpen(false);
+  };
+
+  const handleAddFoodEntry = (entry) => {
+    onAddFood(entry);
+    setSelectedItem(null); // Go back to search
+    setIsPer100g(false); // <-- REQUERIDO: Desactivar "Por 100g" al añadir
+  };
+
+  const handleCancelEntry = () => {
+    setSelectedItem(null);
+    setIsPer100g(false); // <-- REQUERIDO: Desactivar "Por 100g" al cancelar
+  };
+
+  const handleCloseModal = () => {
+    resetModalState();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-gray-800 p-4 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl text-white">
-            {logToEdit ? 'Edit Food' : `Add Food to ${mealType}`}
-          </h2>
-          <button onClick={onClose} className="text-white">&times;</button>
-        </div>
+  const renderContent = () => {
+    if (selectedItem) {
+      return (
+        <FoodEntryForm
+          selectedItem={selectedItem}
+          onAdd={handleAddFoodEntry}
+          onCancel={handleCancelEntry}
+          mealType={mealType}
+          logDate={logDate}
+          isPer100g={isPer100g} // Pasar el estado
+          setIsPer100g={setIsPer100g} // Pasar el actualizador
+        />
+      );
+    }
 
-        {selectedFood ? (
-          <FoodEntryForm
-            food={selectedFood}
-            onSave={onSave}
-            onClose={onClose}
-            onBack={logToEdit ? null : handleBackToSearch}
-            mealType={mealType}
-            date={date}
-            isEditing={!!logToEdit}
+    if (isScannerOpen) {
+      return (
+        <BarcodeScanner
+          onScanSuccess={handleScanSuccess}
+          onClose={() => setIsScannerOpen(false)}
+        />
+      );
+    }
+
+    return (
+      <>
+        <div className="flex items-center mb-4">
+          <SearchBar
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onSearch={handleSearch}
             isLoading={isLoading}
           />
-        ) : (
-          <>
-            <div className="mb-4">
-              <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-              <div className="flex justify-around mt-2">
-                <button onClick={() => setView('search')} className={`px-4 py-2 ${view === 'search' ? 'border-b-2 border-blue-500' : ''}`}>Search</button>
-                <button onClick={() => setView('favorites')} className={`px-4 py-2 ${view === 'favorites' ? 'border-b-2 border-blue-500' : ''}`}>Favorites</button>
-                <button onClick={() => setView('recent')} className={`px-4 py-2 ${view === 'recent' ? 'border-b-2 border-blue-500' : ''}`}>Recent</button>
-              </div>
-            </div>
-            <div className="overflow-y-auto">
-              {view === 'search' && <SearchResults results={searchResults} onSelect={handleSelectFood} loading={loading} />}
-              {view === 'favorites' && <Favorites favorites={favorites} onSelect={handleSelectFood} />}
-              {view === 'recent' && <Recent recentFoods={recentFoods} onSelect={handleSelectFood} />}
-            </div>
-          </>
-        )}
+          <button
+            onClick={() => setIsScannerOpen(true)}
+            className="p-2 ml-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Escanear código de barras"
+          >
+            <QrCodeIcon className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="flex border-b border-gray-700 mb-4">
+          <TabButton
+            title="Buscar"
+            isActive={activeTab === 'search'}
+            onClick={() => setActiveTab('search')}
+          />
+          <TabButton
+            title="Favoritos"
+            isActive={activeTab === 'favorites'}
+            onClick={() => setActiveTab('favorites')}
+          U          />
+          <TabButton
+            title="Recientes"
+            isActive={activeTab === 'recent'}
+            onClick={() => setActiveTab('recent')}
+          />
+        </div>
+
+        <div className="overflow-y-auto max-h-[60vh]">
+          {error && <p className="text-red-400 text-center">{error}</p>}
+          
+          {activeTab === 'search' && (
+            <SearchResults
+              results={searchResults}
+              onSelect={handleSelectFood}
+              isLoading={isLoading}
+            />
+          )}
+          {activeTab === 'favorites' && (
+            <Favorites 
+              onSelect={handleSelectFood} 
+              logDate={logDate} // Pass logDate to fetch recents from that day if needed
+            />
+          )}
+          {activeTab === 'recent' && (
+            <Recent 
+              onSelect={handleSelectFood} 
+              logDate={logDate} // Pass logDate to fetch recents from that day
+            />
+          )}
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <h2 className="text-xl font-bold text-white">
+            {selectedItem ? 'Detalles del Alimento' : `Añadir a ${mealType}`}
+          </h2>
+          <button
+            onClick={handleCloseModal}
+            className="text-gray-400 hover:text-white"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <div className="p-4">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );
-};
+}
+
+const TabButton = ({ title, isActive, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex-1 py-2 px-4 text-sm font-medium text-center transition-colors duration-200
+      ${
+        isActive
+          ? 'border-b-2 border-blue-500 text-white'
+          : 'text-gray-400 hover:text-gray-200 border-b-2 border-transparent'
+      }
+    `}
+  >
+    {title}
+  </button>
+);
 
 export default FoodSearchModal;
