@@ -23,7 +23,9 @@ export const createFavoriteMeal = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, calories, protein_g, carbs_g, fats_g, weight_g } = req.body;
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const { name, calories, protein_g, carbs_g, fats_g, weight_g, image_url } = req.body;
+  // --- FIN DE LA MODIFICACIÓN ---
   const { userId } = req.user;
 
   try {
@@ -35,6 +37,9 @@ export const createFavoriteMeal = async (req, res, next) => {
       carbs_g,
       fats_g,
       weight_g,
+      // --- INICIO DE LA MODIFICACIÓN ---
+      image_url: image_url || null, // Guardar image_url
+      // --- FIN DE LA MODIFICACIÓN ---
     });
     res.status(201).json(newMeal);
   } catch (error) {
@@ -55,7 +60,9 @@ export const updateFavoriteMeal = async (req, res, next) => {
 
   const { mealId } = req.params;
   const { userId } = req.user;
-  const { name, calories, protein_g, carbs_g, fats_g, weight_g } = req.body;
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const { name, calories, protein_g, carbs_g, fats_g, weight_g, image_url } = req.body;
+  // --- FIN DE LA MODIFICACIÓN ---
 
   try {
     const meal = await FavoriteMeal.findOne({
@@ -83,6 +90,9 @@ export const updateFavoriteMeal = async (req, res, next) => {
     meal.carbs_g = carbs_g;
     meal.fats_g = fats_g;
     meal.weight_g = weight_g;
+    // --- INICIO DE LA MODIFICACIÓN ---
+    meal.image_url = image_url; // Actualizar image_url
+    // --- FIN DE LA MODIFICACIÓN ---
 
     await meal.save();
     res.json(meal);

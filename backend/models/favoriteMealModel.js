@@ -45,6 +45,11 @@ const FavoriteMeal = sequelize.define(
       comment: 'Peso de la comida en gramos'
     },
     // --- FIN DE LA MODIFICACIÓN ---
+    image_url: { // <-- Nuevo campo para guardar la URL de la imagen
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'URL de la imagen de la comida'
+    }
   },
   {
     tableName: 'favorite_meals',

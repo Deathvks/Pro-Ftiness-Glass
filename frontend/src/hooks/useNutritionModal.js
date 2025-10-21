@@ -43,7 +43,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
 
     const [isDarkTheme] = useState(() => typeof document !== 'undefined' && !document.body.classList.contains('light-theme'));
 
-    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
 
     // 1. Estado para las comidas recientes (de la API) y estado de carga
     const [recentMeals, setRecentMeals] = useState([]);
@@ -77,17 +77,8 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     }, [activeTab, addToast]); // Depender solo de activeTab y addToast
 
     // 3. ELIMINAMOS EL ANTIGUO useMemo de recentMeals (que usaba favoriteMeals)
-    /*
-    const recentMeals = useMemo(() => {
-        const sorted = [...favoriteMeals].sort((a, b) => {
-            const dateA = new Date(a.updated_at || a.created_at || 0);
-            const dateB = new Date(b.updated_at || b.created_at || 0);
-            return dateB - dateA;
-        });
-        return sorted.slice(0, 10);
-    }, [favoriteMeals]);
-    */
-    // --- FIN DE LA MODIFICACIÓN ---
+
+    // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
 
 
     const filteredFavorites = useMemo(() =>
@@ -97,13 +88,13 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         [favoriteMeals, searchTerm]
     );
 
-    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
     // 4. Actualizamos filteredRecents para usar 'description' (de la API) en lugar de 'name'
     const filteredRecents = useMemo(() =>
         recentMeals.filter(meal => meal.description && meal.description.toLowerCase().includes(searchTerm.toLowerCase())),
         [recentMeals, searchTerm]
     );
-    // --- FIN DE LA MODIFICACIÓN ---
+    // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
 
     const paginatedFavorites = useMemo(() => {
         const startIndex = (favoritesPage - 1) * ITEMS_PER_PAGE;
@@ -115,10 +106,10 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     useEffect(() => {
         const itemToEdit = isEditingLog ? logToEdit : editingFavorite || itemsToAdd.find(item => item.tempId === editingListItemId);
         if (itemToEdit) {
-            // --- INICIO DE LA MODIFICACIÓN ---
+            // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
             // Aseguramos compatibilidad si viene de 'recientes' (description) o 'favoritos' (name)
             const description = itemToEdit.description || itemToEdit.name || '';
-            // --- FIN DE LA MODIFICACIÓN ---
+            // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
 
             const initialWeight = parseFloat(itemToEdit.weight_g);
             if (initialWeight > 0) {
@@ -130,12 +121,12 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
                 });
             } else { setBaseMacros(null); }
             const currentFormData = {
-                // --- INICIO DE LA MODIFICACIÓN ---
+                // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
                 description: description, // Usamos la variable description
-                // --- FIN DE LA MODIFICACIÓN ---
+                // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
                 calories: String(itemToEdit.calories || ''), protein_g: String(itemToEdit.protein_g || ''),
                 carbs_g: String(itemToEdit.carbs_g || ''), fats_g: String(itemToEdit.fats_g || ''), weight_g: String(itemToEdit.weight_g || ''),
-                image_url: itemToEdit.image_url || null
+                image_url: itemToEdit.image_url || null // <-- Incluimos image_url
             };
             setManualFormState({
                 formData: currentFormData,
@@ -207,7 +198,8 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
             });
             const initialFormData = {
                 description: product.name, calories: String(Math.round(product.calories)), protein_g: round(product.protein_g),
-                carbs_g: round(product.carbs_g), fats_g: round(product.fats_g), weight_g: String(weightG)
+                carbs_g: round(product.carbs_g), fats_g: round(product.fats_g), weight_g: String(weightG),
+                image_url: product.image_url || null // <-- Añadir image_url al escanear
             };
             setManualFormState({
                 formData: initialFormData, per100Data: {
@@ -230,30 +222,31 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         if (origin === 'manual' || origin === 'scan') setAddModeType('manual');
         else setAddModeType('list');
         
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Usar 'item.name' (de favoritos) o 'item.description' (de recientes)
+        // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
+        // Usar 'item.name' (de favoritos) o 'item.description' (de recientes/logs)
         const description = item.name || item.description;
-        // --- FIN DE LA MODIFICACIÓN ---
+        // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
 
         const baseWeight = parseFloat(item.weight_g) || (origin === 'manual' ? 0 : (description ? 100 : 0));
         const newItem = {
             ...item, tempId: `item-${Date.now()}-${Math.random()}`, 
-            // --- INICIO DE LA MODIFICACIÓN ---
+            // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
             description: description, // Asegurar que 'description' se establece correctamente
             name: description, // También establecer 'name' por si acaso
-            // --- FIN DE LA MODIFICACIÓN ---
+            // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
             isFavorite: item.isFavorite || false,
             calories: parseFloat(item.calories) || 0, protein_g: parseFloat(item.protein_g) || 0, carbs_g: parseFloat(item.carbs_g) || 0,
             fats_g: parseFloat(item.fats_g) || 0, weight_g: parseFloat(item.weight_g) || null,
+            image_url: item.image_url || null, // <-- Aseguramos que la URL de la imagen se copia
             base: baseWeight > 0 ? {
                 calories: (parseFloat(item.calories) || 0) / baseWeight, protein_g: (parseFloat(item.protein_g) || 0) / baseWeight,
                 carbs_g: (parseFloat(item.carbs_g) || 0) / baseWeight, fats_g: (parseFloat(item.fats_g) || 0) / baseWeight
             } : null, origin
         };
         setItemsToAdd(prev => [...prev, newItem]);
-        // --- INICIO DE LA MODIFICACIÓN ---
+        // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
         addToast(`${description} añadido a la lista.`, 'success');
-        // --- FIN DE LA MODIFICACIÓN ---
+        // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
         if (origin === 'manual') { setManualFormState(initialManualFormState); setBaseMacros(null); setOriginalData(null); }
     };
 
@@ -274,12 +267,12 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     };
     
     const handleSaveListItem = (updatedItem) => { 
-        // --- INICIO DE LA MODIFICACIÓN ---
+        // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
         const description = updatedItem.description || updatedItem.name;
         setItemsToAdd(prev => prev.map(item => item.tempId === updatedItem.tempId ? updatedItem : item)); 
         setEditingListItemId(null); 
         addToast(`${description} actualizado.`, 'success'); 
-        // --- FIN DE LA MODIFICACIÓN ---
+        // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
         setManualFormState(initialManualFormState); 
         setBaseMacros(null); 
         setOriginalData(null); 
@@ -291,7 +284,16 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         const newFavorites = itemsToAdd.filter(item => item.isFavorite);
         if (newFavorites.length > 0) {
             try {
-                await Promise.all(newFavorites.map(fav => addFavoriteMeal({ name: fav.description, calories: fav.calories, protein_g: fav.protein_g, carbs_g: fav.carbs_g, fats_g: fav.fats_g, weight_g: fav.weight_g })));
+                // MODIFICACIÓN: Incluir image_url al guardar favoritos
+                await Promise.all(newFavorites.map(fav => addFavoriteMeal({ 
+                    name: fav.description, 
+                    calories: fav.calories, 
+                    protein_g: fav.protein_g, 
+                    carbs_g: fav.carbs_g, 
+                    fats_g: fav.fats_g, 
+                    weight_g: fav.weight_g,
+                    image_url: fav.image_url || null // <-- Incluimos image_url
+                })));
                 addToast(`${newFavorites.length} comida(s) guardada(s) en favoritos.`, 'success');
             } catch (error) {
                 addToast(error.message || 'Error al guardar en favoritos.', 'error');
@@ -304,7 +306,16 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         const item = itemData[0];
         if (item.saveAsFavorite) {
             try {
-                await addFavoriteMeal({ name: item.description, calories: item.calories, protein_g: item.protein_g, carbs_g: item.carbs_g, fats_g: item.fats_g, weight_g: item.weight_g });
+                // MODIFICACIÓN: Incluir image_url al guardar favoritos
+                await addFavoriteMeal({ 
+                    name: item.description, 
+                    calories: item.calories, 
+                    protein_g: item.protein_g, 
+                    carbs_g: item.carbs_g, 
+                    fats_g: item.fats_g, 
+                    weight_g: item.weight_g,
+                    image_url: item.image_url || null // <-- Incluimos image_url
+                });
                 addToast(`'${item.description}' guardado en favoritos.`, 'success');
             } catch (error) {
                 addToast(error.message || 'Error al guardar en favoritos.', 'error');
@@ -324,7 +335,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
                 (parseFloat(originalData.carbs_g) || 0) !== formData.carbs_g ||
                 (parseFloat(originalData.fats_g) || 0) !== formData.fats_g ||
                 (parseFloat(originalData.weight_g) || null) !== formData.weight_g ||
-                originalData.image_url !== formData.image_url;
+                originalData.image_url !== formData.image_url; // <-- INICIO MODIFICACIÓN: Chequeo de image_url
 
             if (!hasChanged) {
                 addToast('No se detectaron cambios.', 'info');
@@ -346,11 +357,17 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         }
 
         if (editingFavorite) {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Asegurarse de que el 'name' (usado por favoritos) se actualiza
-            const dataToUpdate = { ...editingFavorite, ...formData, name: formData.description };
+            // formData ya incluye image_url
+            const dataToUpdate = { 
+                ...editingFavorite, 
+                ...formData, 
+                name: formData.description,
+                image_url: formData.image_url // <-- Asegurar que se pasa la URL de la imagen
+            }; 
+            
             const result = await updateFavoriteMeal(editingFavorite.id, dataToUpdate);
-            // --- FIN DE LA MODIFICACIÓN ---
+            // --- FIN MODIFICACIÓN ---
+
             if (result.success) {
                 addToast(result.message, 'success');
                 setEditingFavorite(null); setManualFormState(initialManualFormState);
@@ -363,7 +380,15 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     };
     
     const handleImageUpload = async (file) => {
-        if (!file) return;
+        if (!file) {
+            // Caso donde el usuario elimina la imagen
+            setManualFormState(prev => ({
+                ...prev,
+                formData: { ...prev.formData, image_url: null }
+            }));
+            return;
+        }
+
         setIsUploading(true);
         try {
             const response = await nutritionService.uploadFoodImage(file);
@@ -386,10 +411,10 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         isEditingLog, editingFavorite, searchTerm, setSearchTerm, activeTab, setActiveTab, itemsToAdd,
         favoritesPage, setFavoritesPage, mealToDelete, setMealToDelete, editingListItemId,
         manualFormState, setManualFormState, showScanner, setShowScanner, paginatedFavorites,
-        // --- INICIO DE LA MODIFICACIÓN ---
+        // --- INICIO DE LA MODIFICACIÓN (YA ACEPTADA) ---
         // Pasar los nuevos recientes y el estado de carga
         filteredRecents, isLoadingRecents, 
-        // --- FIN DE LA MODIFICACIÓN ---
+        // --- FIN DE LA MODIFICACIÓN (YA ACEPTADA) ---
         totalPages, isDarkTheme, handleAddItem, handleAddManualItem, handleAddFavoriteItem,
         handleAddRecentItem, handleRemoveItem, handleToggleFavorite, handleEditListItem, handleEditFavorite,
         handleSaveListItem, handleSaveList, handleSaveSingle, handleSaveEdit, handleScanSuccess,

@@ -6,7 +6,7 @@ import { useToast } from '../../../hooks/useToast';
 import useAppStore from '../../../store/useAppStore'; // Importar useAppStore
 
 const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
-    // ... (código existente del componente ImageUpload sin cambios) ...
+    // ... (código para ImageUpload)
     const fileInputRef = useRef(null);
 
     const handleImageClick = () => {
@@ -22,7 +22,7 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
 
     const handleRemoveImage = (e) => {
         e.stopPropagation();
-        onImageUpload(null);
+        onImageUpload(null); // <-- Llama con null para indicar que la imagen se elimina
     };
 
     return (
@@ -200,7 +200,8 @@ const ManualEntryForm = ({
     const handleAddToList = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        onAddManual({ name: finalData.description, isFavorite, ...finalData });
+        // Modificación para asegurar que image_url se pasa al añadir
+        onAddManual({ name: finalData.description, isFavorite, image_url: finalData.image_url, ...finalData });
     };
 
     const handleSaveEdited = () => {
@@ -212,14 +213,14 @@ const ManualEntryForm = ({
     const handleUpdateListItem = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // Pasamos el estado actual de isFavorite (controlado por la checkbox)
-        onSaveListItem({ ...editingListItem, ...finalData, name: finalData.description, isFavorite });
+        // Pasamos el estado actual de isFavorite (controlado por la checkbox) y image_url
+        onSaveListItem({ ...editingListItem, ...finalData, name: finalData.description, isFavorite, image_url: finalData.image_url });
     };
 
      const handleSaveAndClose = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // Pasamos el estado actual de isFavorite
+        // Pasamos el estado actual de isFavorite y image_url
         const dataToSave = { ...finalData, name: finalData.description, saveAsFavorite: isFavorite, image_url: formData.image_url };
         onSaveSingle([dataToSave]);
     };

@@ -1,145 +1,211 @@
-import React from 'react';
-import { Plus, Trash2, Edit2, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import GlassCard from '../GlassCard';
+import NutritionLogModal from '../NutritionLogModal';
+import ConfirmationModal from '../ConfirmationModal';
+import useAppStore from '../../store/useAppStore';
+import { useToast } from '../../hooks/useToast';
+import { deleteNutritionLog } from '../../services/nutritionService';
+import { formatNumber } from '../../utils/helpers';
+import Spinner from '../Spinner';
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Eliminamos la dependencia de VITE_API_BASE_URL
-// const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-// --- FIN DE LA MODIFICACIÓN ---
-
-const MealLogItem = ({ log, onEdit, onDelete }) => (
-  <li className="flex items-center gap-3 py-3">
-    {log.image_url && (
-      <div className="flex-shrink-0">
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* Usamos directamente log.image_url */}
-        <img
-          src={log.image_url}
-          alt={log.description}
-          className="w-16 h-16 object-cover rounded-lg bg-bg-secondary"
-        />
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
-      </div>
-    )}
-    <div className="flex-grow">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="font-semibold text-text-primary capitalize">{log.description}</p>
-          <p className="text-sm text-text-muted">
-            {Math.round(log.calories)} kcal
-            {log.weight_g > 0 && ` (${log.weight_g}g)`}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => onEdit(log)} className="text-text-muted hover:text-accent transition-colors"><Edit2 size={18} /></button>
-          <button onClick={() => onDelete(log)} className="text-text-muted hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
-        </div>
-      </div>
-      <div className="flex justify-start gap-4 text-xs text-text-secondary mt-1">
-        <span>P: {parseFloat(log.protein_g) || 0}g</span>
-        <span>C: {parseFloat(log.carbs_g) || 0}g</span>
-        <span>G: {parseFloat(log.fats_g) || 0}g</span>
-      </div>
-    </div>
-  </li>
+// Icono para mostrar si la comida es favorita
+const FavoriteIcon = () => (
+    <span className="text-yellow-400 text-lg">★</span>
 );
 
-const MealSection = ({ title, mealType, logs, onAdd, onEdit, onDelete, isOpen, onToggle }) => {
-  const totalCalories = logs.reduce((sum, log) => sum + log.calories, 0);
+const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
+    // Buscar si el log tiene un favorito coincidente (por nombre)
+    const isFavorite = favorites.some(fav => fav.name === log.description);
+    
+    // Función para obtener la URL de la imagen
+    const imageUrl = log.image_url; 
 
-  return (
-    <div className="bg-glass border border-glass-border rounded-xl backdrop-blur-lg">
-      <button
-        onClick={() => onToggle(mealType)}
-        className="flex justify-between items-center w-full p-4"
-      >
-        <div>
-          <h3 className="font-bold text-lg text-text-primary text-left">{title}</h3>
-          <p className="text-sm text-text-secondary text-left">{Math.round(totalCalories)} kcal</p>
+    return (
+        <div className="flex justify-between items-center py-2 px-3 hover:bg-bg-secondary rounded-lg transition-colors group">
+            <div className="flex items-center space-x-3 min-w-0">
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                {/* 1. Mostrar la imagen si existe */}
+                {imageUrl && (
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-glass-border">
+                        <img 
+                            src={imageUrl} 
+                            alt={log.description} 
+                            className="w-full h-full object-cover" 
+                        />
+                    </div>
+                )}
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
+                
+                <div className="flex flex-col min-w-0">
+                    <span className="text-text-primary text-sm font-medium truncate">
+                        {isFavorite && <FavoriteIcon />}
+                        <span className={`${isFavorite ? 'ml-1' : ''}`}>{log.description}</span>
+                    </span>
+                    <span className="text-text-muted text-xs">
+                        {log.weight_g ? `${formatNumber(log.weight_g, 1)} g - ` : ''}
+                        {formatNumber(log.calories, 0)} kcal
+                    </span>
+                </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+                <span className="text-text-secondary text-sm hidden sm:block">
+                    {formatNumber(log.protein_g, 1)}P / {formatNumber(log.carbs_g, 1)}C / {formatNumber(log.fats_g, 1)}F
+                </span>
+                <button
+                    onClick={() => onEdit(log, mealType)}
+                    className="p-1 text-text-muted hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={`Editar ${log.description}`}
+                >
+                    <Edit size={16} />
+                </button>
+                <button
+                    onClick={() => onDelete(log.id, mealType)}
+                    className="p-1 text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={`Eliminar ${log.description}`}
+                >
+                    <Trash2 size={16} />
+                </button>
+            </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="p-2 rounded-full bg-accent/20">
-            {isOpen ? <ChevronUp size={20} className="text-accent" /> : <ChevronDown size={20} className="text-accent" />}
-          </div>
-        </div>
-      </button>
-
-      {isOpen && (
-        <div className="px-4 pb-4 animate-[fade-in-down_0.3s_ease-out]">
-          <ul className="divide-y divide-glass-border">
-            {logs.map(log => (
-              <MealLogItem key={log.id} log={log} onEdit={onEdit} onDelete={onDelete} />
-            ))}
-          </ul>
-          <button
-            onClick={() => onAdd(mealType)}
-            className="w-full flex items-center justify-center gap-2 mt-3 py-3 text-accent font-semibold bg-accent/10 hover:bg-accent/20 rounded-lg transition-colors"
-          >
-            <Plus size={18} /> Añadir Comida
-          </button>
-        </div>
-      )}
-    </div>
-  );
+    );
 };
 
-const MealsSection = ({ nutritionLogs, onAddFood, onEditFood, onDeleteFood, openSections, toggleSection }) => {
-  const meals = {
-    breakfast: [],
-    lunch: [],
-    dinner: [],
-    snack: [],
-  };
 
-  nutritionLogs.forEach(log => {
-    if (meals[log.meal_type]) {
-      meals[log.meal_type].push(log);
-    }
-  });
+const MealsSection = ({ title, mealType, logs, todayLogs, fetchNutritionLogs, selectedDate, setTotalCaloriesGoal }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [logToEdit, setLogToEdit] = useState(null);
+    const [logToDelete, setLogToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const { addToast } = useToast();
+    const { favorites } = useAppStore(state => ({ favorites: state.favoriteMeals }));
 
-  return (
-    <div className="space-y-4">
-      <MealSection
-        title="Desayuno"
-        mealType="breakfast"
-        logs={meals.breakfast}
-        onAdd={onAddFood}
-        onEdit={onEditFood}
-        onDelete={onDeleteFood}
-        isOpen={openSections.breakfast}
-        onToggle={toggleSection}
-      />
-      <MealSection
-        title="Almuerzo"
-        mealType="lunch"
-        logs={meals.lunch}
-        onAdd={onAddFood}
-        onEdit={onEditFood}
-        onDelete={onDeleteFood}
-        isOpen={openSections.lunch}
-        onToggle={toggleSection}
-      />
-      <MealSection
-        title="Cena"
-        mealType="dinner"
-        logs={meals.dinner}
-        onAdd={onAddFood}
-        onEdit={onEditFood}
-        onDelete={onDeleteFood}
-        isOpen={openSections.dinner}
-        onToggle={toggleSection}
-      />
-      <MealSection
-        title="Snacks"
-        mealType="snack"
-        logs={meals.snack}
-        onAdd={onAddFood}
-        onEdit={onEditFood}
-        onDelete={onDeleteFood}
-        isOpen={openSections.snack}
-        onToggle={toggleSection}
-      />
-    </div>
-  );
+    const handleOpenModal = (log = null) => {
+        setLogToEdit(log);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setLogToEdit(null);
+    };
+
+    const handleDeleteClick = (logId) => {
+        setLogToDelete({ logId, mealType });
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!logToDelete) return;
+        setIsDeleting(true);
+        try {
+            const { message } = await deleteNutritionLog(logToDelete.logId);
+            addToast(message, 'success');
+            await fetchNutritionLogs(selectedDate);
+            setLogToDelete(null);
+        } catch (error) {
+            addToast(error.message || 'Error al eliminar la comida.', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+    
+    const handleSaveLog = async (newLogs, isEdit = false) => {
+        handleCloseModal();
+        if (newLogs.length === 0) return;
+
+        try {
+            if (isEdit) {
+                // Si es edición, newLogs contiene un solo elemento que es el log editado
+                // La llamada a la API de edición ocurre dentro del hook
+                addToast('Comida actualizada con éxito.', 'success');
+            } else {
+                // Si es adición, los logs se envían en NutritionLogModal
+                // Ya se guardaron al llamar a handleSaveSingle o handleSaveList en useNutritionModal
+            }
+            
+            await fetchNutritionLogs(selectedDate);
+            addToast(`Comida${newLogs.length > 1 ? 's' : ''} registrada(s) con éxito.`, 'success');
+        } catch (error) {
+            addToast(error.message || 'Error al guardar el registro de nutrición.', 'error');
+        }
+    };
+    
+    // Suma de macros para la sección
+    const sectionSummary = logs.reduce((acc, log) => {
+        acc.calories += log.calories || 0;
+        acc.protein_g += log.protein_g || 0;
+        acc.carbs_g += log.carbs_g || 0;
+        acc.fats_g += log.fats_g || 0;
+        return acc;
+    }, { calories: 0, protein_g: 0, carbs_g: 0, fats_g: 0 });
+
+
+    return (
+        <GlassCard className="p-4 flex flex-col">
+            <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
+                <button
+                    onClick={() => handleOpenModal()}
+                    className="p-2 rounded-full bg-accent text-white hover:bg-accent/90 transition-colors shadow-lg"
+                    aria-label={`Añadir comida a ${title}`}
+                >
+                    <Plus size={18} />
+                </button>
+            </div>
+            
+            {/* Resumen de Macros */}
+            <div className="grid grid-cols-4 text-center text-sm font-medium text-text-secondary bg-bg-secondary p-2 rounded-lg mb-4">
+                <div className="text-text-primary">{formatNumber(sectionSummary.calories, 0)}</div>
+                <div>{formatNumber(sectionSummary.protein_g, 1)}P</div>
+                <div>{formatNumber(sectionSummary.carbs_g, 1)}C</div>
+                <div>{formatNumber(sectionSummary.fats_g, 1)}G</div>
+            </div>
+
+            {/* Lista de Logs */}
+            <div className="flex-grow min-h-[50px]">
+                {logs.length === 0 ? (
+                    <p className="text-center text-text-muted mt-4">Añade una comida</p>
+                ) : (
+                    <div className="space-y-1">
+                        {logs.map(log => (
+                            <MealLogItem
+                                key={log.id}
+                                log={log}
+                                favorites={favorites}
+                                mealType={mealType}
+                                onEdit={handleOpenModal}
+                                onDelete={handleDeleteClick}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <NutritionLogModal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                mealType={mealType}
+                onSave={handleSaveLog}
+                logToEdit={logToEdit}
+                todayLogs={todayLogs}
+                fetchNutritionLogs={fetchNutritionLogs}
+                setTotalCaloriesGoal={setTotalCaloriesGoal}
+                selectedDate={selectedDate}
+            />
+
+            <ConfirmationModal
+                isOpen={!!logToDelete}
+                onClose={() => setLogToDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title="Eliminar Comida"
+                message={`¿Estás seguro de que deseas eliminar este registro de comida (${logToDelete?.mealType})?`}
+                confirmText={isDeleting ? <Spinner size={16} /> : "Eliminar"}
+                isDanger={true}
+                isLoading={isDeleting}
+            />
+        </GlassCard>
+    );
 };
 
 export default MealsSection;
