@@ -33,7 +33,7 @@ const ensureUploadDirExists = async () => {
 const getNutritionLogsByDate = async (req, res, next) => {
   try {
     const { date } = req.query;
-    const { userId } = req.user; 
+    const { userId } = req.user;
 
     if (!date) {
       return res.status(400).json({
@@ -43,18 +43,23 @@ const getNutritionLogsByDate = async (req, res, next) => {
 
     const nutritionLogs = await NutritionLog.findAll({
       where: {
-        user_id: userId, 
+        user_id: userId,
         log_date: date,
       },
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Cambiamos 'created_at' por 'id'
+      // 'created_at' podría no existir si 'timestamps: false' está en el modelo
+      // o si la migración de producción es diferente. 'id' es más seguro.
       order: [
         ['meal_type', 'ASC'],
-        ['created_at', 'ASC'],
+        ['id', 'ASC'],
       ],
+      // --- FIN DE LA MODIFICACIÓN ---
     });
 
     const waterLog = await WaterLog.findOne({
       where: {
-        user_id: userId, 
+        user_id: userId,
         log_date: date,
       },
     });
@@ -76,7 +81,7 @@ const getNutritionLogsByDate = async (req, res, next) => {
  */
 const getNutritionSummary = async (req, res, next) => {
   try {
-    const { userId } = req.user; 
+    const { userId } = req.user;
     const { month, year } = req.query;
 
     if (!month || !year) {
@@ -88,11 +93,11 @@ const getNutritionSummary = async (req, res, next) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
-    // Renombrado 'summary' a 'nutritionSummary' y añadido 'waterSummary' 
+    // Renombrado 'summary' a 'nutritionSummary' y añadido 'waterSummary'
     // para coincidir con lo que espera el frontend (dataSlice).
     const nutritionSummary = await NutritionLog.findAll({
       where: {
-        user_id: userId, 
+        user_id: userId,
         log_date: {
           [Op.between]: [startDate, endDate],
         },
@@ -134,7 +139,7 @@ const getNutritionSummary = async (req, res, next) => {
  */
 const addFoodLog = async (req, res, next) => {
   try {
-    const { userId } = req.user; 
+    const { userId } = req.user;
 
     // Sanitizamos el 'body' para coger solo los campos que el modelo 'NutritionLog' espera.
     // Esto evita errores 500 si el frontend envía campos extra (como 'tempId', 'isFavorite', etc.).
@@ -177,12 +182,12 @@ const addFoodLog = async (req, res, next) => {
 const updateFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
-    const { userId } = req.user; 
+    const { userId } = req.user;
 
     const log = await NutritionLog.findOne({
       where: {
         id: logId,
-        user_id: userId, 
+        user_id: userId,
       },
     });
     if (!log) {
@@ -229,17 +234,17 @@ const updateFoodLog = async (req, res, next) => {
 const deleteFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
-    const { userId } = req.user; 
+    const { userId } = req.user;
 
     const log = await NutritionLog.findOne({
       where: {
         id: logId,
-        user_id: userId, 
+        user_id: userId,
       },
     });
     if (!log) {
       return res
-        .status(404)
+        .status(4404)
         .json({ error: 'Registro de comida no encontrado.' });
     }
 
@@ -255,7 +260,7 @@ const deleteFoodLog = async (req, res, next) => {
  */
 const upsertWaterLog = async (req, res, next) => {
   try {
-    const { userId } = req.user; 
+    const { userId } = req.user;
     const { log_date, quantity_ml } = req.body;
 
     if (!log_date || quantity_ml === undefined) {
@@ -266,7 +271,7 @@ const upsertWaterLog = async (req, res, next) => {
 
     let waterLog = await WaterLog.findOne({
       where: {
-        user_id: userId, 
+        user_id: userId,
         log_date,
       },
     });
@@ -275,7 +280,7 @@ const upsertWaterLog = async (req, res, next) => {
       await waterLog.save();
     } else {
       waterLog = await WaterLog.create({
-        user_id: userId, 
+        user_id: userId,
         log_date,
         quantity_ml,
       });
