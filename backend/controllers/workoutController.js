@@ -34,7 +34,52 @@ export const getWorkoutHistory = async (req, res, next) => {
       }],
       order: [['workout_date', 'DESC']],
     });
-    res.json(history);
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Convertir a JSON plano para poder modificarlo antes de enviarlo
+    const plainHistory = history.map(log => log.get({ plain: true }));
+
+    // Iterar sobre los resultados para calcular el 1RM si falta
+    plainHistory.forEach(log => {
+      if (log.WorkoutLogDetails) {
+        log.WorkoutLogDetails.forEach(detail => {
+          // Si estimated_1rm no existe o es 0/null, lo calculamos al vuelo
+          if (!detail.estimated_1rm) {
+            
+            let bestSetWeight = 0;
+            let bestSetFor1RM = null;
+
+            if (detail.WorkoutLogSets && detail.WorkoutLogSets.length > 0) {
+              detail.WorkoutLogSets.forEach(set => {
+                const weight = parseFloat(set.weight_kg) || 0;
+                const reps = parseInt(set.reps, 10) || 0;
+
+                if (weight > 0 && reps > 0) {
+                  if (weight > bestSetWeight) {
+                    bestSetWeight = weight;
+                    bestSetFor1RM = set;
+                  } 
+                  // Esta lógica es la misma que en logWorkoutSession
+                  else if (weight === bestSetWeight && reps > (parseInt(bestSetFor1RM?.reps, 10) || 0)) {
+                    bestSetFor1RM = set;
+                  }
+                }
+              });
+            }
+
+            if (bestSetFor1RM) {
+              // Asignamos el valor calculado al objeto que se enviará al frontend
+              detail.estimated_1rm = calculate1RM(bestSetFor1RM.weight_kg, bestSetFor1RM.reps);
+            }
+            // Si no hay series válidas, se quedará como null (o 0 si calculate1RM lo devuelve)
+          }
+        });
+      }
+    });
+
+    res.json(plainHistory); // Enviamos el historial modificado
+    // --- FIN DE LA MODIFICACIÓN ---
+
   } catch (error) {
     next(error);
   }

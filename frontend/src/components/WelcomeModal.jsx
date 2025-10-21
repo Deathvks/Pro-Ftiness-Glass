@@ -1,5 +1,7 @@
+/* frontend/src/components/WelcomeModal.jsx */
 import React from 'react';
 // --- INICIO DE LA MODIFICACIÓN ---
+// No se necesitan nuevos iconos, reutilizamos 'Gauge' o 'TrendingUp' que ya están
 import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github, Camera } from 'lucide-react';
 // --- FIN DE LA MODIFICACIÓN ---
 import { APP_VERSION } from '../config/version';
@@ -26,11 +28,16 @@ const WelcomeModal = ({ onClose }) => {
       titre: "Editor de Comidas Integrado",
       description: "Hemos fusionado el editor de comidas en el nuevo modal. Ahora puedes corregir cualquier registro de forma rápida y sencilla desde el mismo lugar."
     },
-    // --- INICIO DE LA MODIFICACIÓN ---
     {
       icon: <Camera className="text-accent" />,
       titre: "Fotos en tus Comidas",
       description: "Añade un toque visual a tu diario. Ahora puedes subir una foto para cada registro de comida, ayudándote a recordar qué comiste."
+    },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    {
+      icon: <TrendingUp className="text-accent" />, // Reutilizamos icono
+      titre: "Estimación de 1 RM en Progreso",
+      description: "La gráfica de 'Progresión de Fuerza' ahora muestra tu 1RM estimado (Una Repetición Máxima), calculado automáticamente a partir de tus mejores series y visible incluso en registros antiguos."
     },
     // --- FIN DE LA MODIFICACIÓN ---
     {
