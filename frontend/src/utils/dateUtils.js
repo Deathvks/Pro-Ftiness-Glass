@@ -52,7 +52,6 @@ export const daysBetween = (date1, date2) => {
   return Math.round(Math.abs((firstDate - secondDate) / oneDay));
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Formatear fecha a formato corto DD/MM/YYYY
 export const formatDateToShort = (dateString) => {
     if (!dateString) return '';
@@ -61,5 +60,14 @@ export const formatDateToShort = (dateString) => {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
+};
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Formatear fecha para la query (YYYY-MM-DD)
+export const formatDateForQuery = (date) => {
+  const year = date.getUTCFullYear();
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = date.getUTCDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 // --- FIN DE LA MODIFICACIÓN ---

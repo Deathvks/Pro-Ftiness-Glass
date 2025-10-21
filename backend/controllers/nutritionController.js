@@ -1,10 +1,11 @@
+/* backend/controllers/nutritionController.js */
 import db from '../models/index.js';
 import { Op } from 'sequelize';
 import axios from 'axios';
 import path from 'path';
 import fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
-import multer from 'multer';
+import multer from 'multer'; // Importación necesaria para 'instanceof multer.MulterError'
 import { fileURLToPath } from 'url';
 
 // Simulación de __dirname en ESM
@@ -58,14 +59,12 @@ const getNutritionLogsByDate = async (req, res, next) => {
       },
     });
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Devolvemos el objeto 'waterLog' completo (o null) en lugar de 'waterLog.quantity_ml' o 0.
     // El dataSlice del frontend (nutrition.water || { quantity_ml: 0 }) gestionará el null.
     res.json({
       nutrition: nutritionLogs, // Renombrado de 'food' a 'nutrition' para coincidir con dataSlice
       water: waterLog,
     });
-    // --- FIN DE LA MODIFICACIÓN ---
 
   } catch (error) {
     next(error);
@@ -89,7 +88,6 @@ const getNutritionSummary = async (req, res, next) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Renombrado 'summary' a 'nutritionSummary' y añadido 'waterSummary' 
     // para coincidir con lo que espera el frontend (dataSlice).
     const nutritionSummary = await NutritionLog.findAll({
@@ -99,10 +97,16 @@ const getNutritionSummary = async (req, res, next) => {
           [Op.between]: [startDate, endDate],
         },
       },
+      // --- INICIO DE LA MODIFICACIÓN (PARA ARREGLAR GRÁFICAS) ---
       attributes: [
-        'log_date',
+        ['log_date', 'date'], // Renombrar 'log_date' a 'date' para el frontend
         [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'],
+        // Añadir sumas de macros que faltaban
+        [sequelize.fn('sum', sequelize.col('protein_g')), 'total_protein'],
+        [sequelize.fn('sum', sequelize.col('carbs_g')), 'total_carbs'],
+        [sequelize.fn('sum', sequelize.col('fats_g')), 'total_fats'],
       ],
+      // --- FIN DE LA MODIFICACIÓN ---
       group: ['log_date'],
       order: [['log_date', 'ASC']],
     });
@@ -119,7 +123,6 @@ const getNutritionSummary = async (req, res, next) => {
     });
 
     res.json({ nutritionSummary, waterSummary });
-    // --- FIN DE LA MODIFICACIÓN ---
 
   } catch (error) {
     next(error);
@@ -133,7 +136,6 @@ const addFoodLog = async (req, res, next) => {
   try {
     const { userId } = req.user; 
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Sanitizamos el 'body' para coger solo los campos que el modelo 'NutritionLog' espera.
     // Esto evita errores 500 si el frontend envía campos extra (como 'tempId', 'isFavorite', etc.).
     const {
@@ -161,7 +163,6 @@ const addFoodLog = async (req, res, next) => {
       weight_g: weight_g || null,
       image_url: image_url || null, // Permitir que image_url sea null
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const newLog = await NutritionLog.create(foodData);
     res.status(201).json(newLog);
@@ -190,7 +191,6 @@ const updateFoodLog = async (req, res, next) => {
         .json({ error: 'Registro de comida no encontrado.' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Sanitizamos el 'body' aquí también para la actualización.
     const {
       description,
@@ -215,7 +215,6 @@ const updateFoodLog = async (req, res, next) => {
       meal_type,
       log_date,
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     await log.update(foodData);
     res.json(log);
@@ -304,7 +303,6 @@ const searchByBarcode = async (req, res, next) => {
     const product = response.data.product;
     const nutriments = product.nutriments;
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Renombrado de campos para coincidir con nuestro modelo (protein -> protein_g, etc.)
     const foodData = {
       name: product.product_name || 'Nombre no disponible', // 'name' es lo que espera el frontend
@@ -314,7 +312,6 @@ const searchByBarcode = async (req, res, next) => {
       fats_g: nutriments.fat_100g || 0,
       weight_g: 100, // Por defecto, los valores son por 100g
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     res.json(foodData);
   } catch (error) {
@@ -329,6 +326,8 @@ const searchByBarcode = async (req, res, next) => {
 
 /**
  * Sube una imagen de comida y devuelve la URL.
+ * Esta función es llamada DESPUÉS de que el middleware 'upload' (en nutrition.js)
+ * procese la imagen y la ponga en 'req.file'.
  */
 const uploadFoodImage = async (req, res, next) => {
   try {
@@ -349,7 +348,7 @@ const uploadFoodImage = async (req, res, next) => {
 
     // Construir la URL pública para acceder a la imagen
     // Esta URL depende de cómo se sirvan los archivos estáticos en Express
-    // --- INICIO DE LA MODIFICACIÓN ---
+    
     // Aseguramos que la URL devuelta sea relativa al servidor
     // El frontend ya tiene la API_BASE_URL (http://localhost:3001/api)
     // El servidor estático de express sirve '/images'
@@ -358,7 +357,6 @@ const uploadFoodImage = async (req, res, next) => {
     const imageUrl = `${req.protocol}://${req.get(
       'host'
     )}/images/food/${uniqueFilename}`;
-    // --- FIN DE LA MODIFICACIÓN ---
 
     res.status(201).json({ imageUrl });
   } catch (error) {

@@ -1,3 +1,4 @@
+/* backend/server.js */
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -41,7 +42,12 @@ app.use('/api/exercise-list', exerciseListRoutes);
 // CAMBIO: '/api/favorite-meals' -> '/api/meals'
 app.use('/api/meals', favoriteMealsRoutes);
 app.use('/api/nutrition', nutritionRoutes);
-app.use('/api/personal-records', personalRecordsRoutes);
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Se cambia '/api/personal-records' por '/api/records' para coincidir con el frontend
+app.use('/api/records', personalRecordsRoutes);
+// --- FIN DE LA MODIFICACIÓN ---
+
 app.use('/api/routines', routineRoutes);
 app.use('/api/template-routines', templateRoutinesRoutes);
 app.use('/api/users', userRoutes);

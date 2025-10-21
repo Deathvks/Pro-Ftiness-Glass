@@ -1,3 +1,4 @@
+/* backend/routes/personalRecords.js */
 import express from 'express';
 import personalRecordController from '../controllers/personalRecordController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
@@ -9,10 +10,12 @@ router.use(authenticateToken);
 
 // --- INICIO DE LA MODIFICACIÓN ---
 // GET /api/records/exercises -> Devuelve los nombres de los ejercicios con PRs
-router.get('/records/exercises', personalRecordController.getPersonalRecordExerciseNames);
-// --- FIN DE LA MODIFICACIÓN ---
+// (Se quita '/records' del prefijo, ya está definido en server.js)
+router.get('/exercises', personalRecordController.getPersonalRecordExerciseNames);
 
 // GET /api/records -> Devuelve todos los PRs del usuario con filtros
-router.get('/records', personalRecordController.getPersonalRecords);
+// (Se quita '/records' y se usa '/' para la raíz de /api/records)
+router.get('/', personalRecordController.getPersonalRecords);
+// --- FIN DE LA MODIFICACIÓN ---
 
 export default router;
