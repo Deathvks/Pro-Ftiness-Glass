@@ -22,10 +22,7 @@ function FoodEntryForm({
   });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Guardar la URL de la imagen original por separado
   const [originalImageUrl, setOriginalImageUrl] = useState(null);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   useEffect(() => {
     if (selectedItem) {
@@ -37,11 +34,8 @@ function FoodEntryForm({
       };
       setNutritionalInfo(info);
       setGrams(selectedItem.weight_g || 100);
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // La URL ya es completa, no necesita prefijo
       setPreview(selectedItem.image_url || null);
       setOriginalImageUrl(selectedItem.image_url || null);
-      // --- FIN DE LA MODIFICACIÓN ---
       setFile(null);
     }
   }, [selectedItem]);
@@ -59,13 +53,9 @@ function FoodEntryForm({
       : selectedItem?.carbs || 0;
     const baseFat = isPer100g ? nutritionalInfo.fat : selectedItem?.fat || 0;
 
-    // Si no es por 100g, los gramos no deberían afectar las macros (se asume que es una unidad)
     if (!isPer100g) {
-      // Si el item tiene weight_g, es una entrada de log (que ya fue calculada)
-      // Si no, es un item de búsqueda (OFF/favorito) y tomamos sus valores base
       const weight = parseFloat(grams) || 0;
       if (selectedItem?.serving_size_g && selectedItem.serving_size_g > 0) {
-        // Es un item de búsqueda de OpenFoodFacts, recalcular basado en serving size
         const servingFactor = weight / selectedItem.serving_size_g;
         return {
           calories: (selectedItem.calories_per_serving || 0) * servingFactor,
@@ -74,7 +64,6 @@ function FoodEntryForm({
           fat: (selectedItem.fat_per_serving || 0) * servingFactor,
         };
       }
-      // Si es entrada manual o favorito sin serving_size_g, los valores son absolutos
       return {
         calories: baseCalories,
         protein: baseProtein,
@@ -83,7 +72,6 @@ function FoodEntryForm({
       };
     }
 
-    // Cálculo por 100g
     return {
       calories: baseCalories * factor,
       protein: baseProtein * factor,
@@ -101,38 +89,35 @@ function FoodEntryForm({
   };
 
   const handleAddClick = async () => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    let imageUrl = originalImageUrl; // Empezar con la URL original
-    // --- FIN DE LA MODIFICACIÓN ---
+    let imageUrl = originalImageUrl;
 
     if (file) {
       try {
         const formData = new FormData();
-        formData.append('image', file);
-        const response = await nutritionService.uploadImage(formData);
-        imageUrl = response.imageUrl; // Sobrescribir solo si se sube una nueva
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // El backend espera 'foodImage', no 'image'
+        formData.append('foodImage', file);
+        // Asumimos que la función de servicio es 'uploadFoodImage'
+        // (o la que maneje el envío de FormData)
+        const response = await nutritionService.uploadFoodImage(formData);
+        // --- FIN DE LA MODIFICACIÓN ---
+        imageUrl = response.imageUrl;
       } catch (error) {
         console.error('Error uploading image:', error);
       }
     }
 
     const entry = {
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Normalizar el nombre (puede venir como 'name' o 'description')
       description:
         selectedItem.name || selectedItem.description || 'Alimento',
-      // --- FIN DE LA MODIFICACIÓN ---
       calories: parseFloat(calculatedMacros.calories.toFixed(1)),
-      protein_g: parseFloat(calculatedMacros.protein.toFixed(1)), // Corregido
-      carbs_g: parseFloat(calculatedMacros.carbs.toFixed(1)), // Corregido
-      fats_g: parseFloat(calculatedMacros.fat.toFixed(1)), // Corregido
+      protein_g: parseFloat(calculatedMacros.protein.toFixed(1)),
+      carbs_g: parseFloat(calculatedMacros.carbs.toFixed(1)),
+      fats_g: parseFloat(calculatedMacros.fat.toFixed(1)),
       weight_g: parseFloat(grams) || 0,
       meal_type: mealType,
       log_date: logDate,
-      // --- INICIO DE LA MODIFICACIÓN ---
-      image_url: imageUrl, // Usar la URL final (nueva o la original)
-      // --- FIN DE LA MODIFICACIÓN ---
-      // Campos por 100g para referencia futura (si se guarda como favorito)
+      image_url: imageUrl,
       calories_per_100g: nutritionalInfo.calories,
       protein_per_100g: nutritionalInfo.protein,
       carbs_per_100g: nutritionalInfo.carbs,
@@ -148,11 +133,9 @@ function FoodEntryForm({
 
   return (
     <div className="p-4 bg-gray-800 rounded-lg max-h-[80vh] overflow-y-auto">
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
       <h3 className="text-lg font-bold text-white mb-3 text-center truncate">
         {selectedItem.name || selectedItem.description}
       </h3>
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       <div className="flex items-center space-x-4 mb-4">
         <div
