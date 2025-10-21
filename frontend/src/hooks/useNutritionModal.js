@@ -9,13 +9,11 @@ const initialManualFormState = {
     per100Mode: false, isFavorite: false,
 };
 
-// --- INICIO DE LA CORRECCIÓN ---
 // Mover la función `round` fuera del hook para que no se recree en cada render.
 const round = (val, d = 1) => {
     const n = parseFloat(val);
     return isNaN(n) ? '' : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
 };
-// --- FIN DE LA CORRECCIÓN ---
 
 export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     const isEditingLog = Boolean(logToEdit);
@@ -243,6 +241,42 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     };
 
     const handleSaveEdit = async (formData) => {
+        
+        // --- INICIO DE LA MODIFICACIÓN ---
+        if (originalData && (isEditingLog || editingFavorite)) {
+            // Comparamos los datos nuevos (formData, con números) 
+            // con los datos originales (originalData, con strings)
+            const hasChanged = 
+                originalData.description !== formData.description ||
+                (parseFloat(originalData.calories) || 0) !== formData.calories ||
+                (parseFloat(originalData.protein_g) || 0) !== formData.protein_g ||
+                (parseFloat(originalData.carbs_g) || 0) !== formData.carbs_g ||
+                (parseFloat(originalData.fats_g) || 0) !== formData.fats_g ||
+                (parseFloat(originalData.weight_g) || null) !== formData.weight_g ||
+                originalData.image_url !== formData.image_url;
+
+            if (!hasChanged) {
+                addToast('No se detectaron cambios.', 'info');
+                
+                // Cerramos el formulario de edición y reseteamos el estado
+                if (editingFavorite) {
+                    setEditingFavorite(null);
+                    setActiveTab('favorites');
+                }
+                
+                // Si editábamos un log, simplemente cerramos el modal
+                if (isEditingLog) {
+                    onClose(); // Usamos onClose para cerrar el modal sin guardar
+                }
+                
+                setManualFormState(initialManualFormState);
+                setBaseMacros(null);
+                setOriginalData(null);
+                return; // Salir de la función
+            }
+        }
+        // --- FIN DE LA MODIFICACIÓN ---
+
         if (editingFavorite) {
             const result = await updateFavoriteMeal(editingFavorite.id, { ...editingFavorite, ...formData });
             if (result.success) {

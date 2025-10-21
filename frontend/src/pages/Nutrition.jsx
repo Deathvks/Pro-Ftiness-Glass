@@ -118,10 +118,20 @@ const Nutrition = () => {
         try {
             const isArray = Array.isArray(formDataOrArray);
     
-            if (modal.data?.id && !isArray) { // Editando (siempre es un objeto único)
-                await nutritionService.updateFoodLog(modal.data.id, formDataOrArray);
+            // Si modal.data.id existe, SIEMPRE es una edición.
+            if (modal.data?.id) {
+                // Si es una edición, los datos (formDataOrArray) deberían ser un objeto.
+                // Si por error viniera como un array, cogemos el primer elemento.
+                const formData = isArray ? formDataOrArray[0] : formDataOrArray;
+
+                if (!formData) {
+                     throw new Error("No se proporcionaron datos para la actualización.");
+                }
+
+                await nutritionService.updateFoodLog(modal.data.id, formData);
                 addToast('Comida actualizada.', 'success');
-            } else { // Creando
+            
+            } else { // Creando (puede ser uno o varios)
                 const foodsToAdd = isArray ? formDataOrArray : [formDataOrArray];
                 
                 const payloads = foodsToAdd.map(food => ({
@@ -167,9 +177,7 @@ const Nutrition = () => {
 
     const totals = useMemo(() => {
         const result = { calories: 0, protein: 0, carbs: 0, fats: 0 };
-        // --- INICIO DE LA MODIFICACIÓN ---
         (nutritionLog || []).forEach(log => {
-        // --- FIN DE LA MODIFICACIÓN ---
             result.calories += log.calories || 0;
             result.protein += parseFloat(log.protein_g) || 0;
             result.carbs += parseFloat(log.carbs_g) || 0;
@@ -180,9 +188,7 @@ const Nutrition = () => {
 
     const meals = useMemo(() => {
         const mealData = { breakfast: [], lunch: [], dinner: [], snack: [] };
-        // --- INICIO DE LA MODIFICACIÓN ---
         (nutritionLog || []).forEach(log => {
-        // --- FIN DE LA MODIFICACIÓN ---
             if (mealData[log.meal_type]) {
                 mealData[log.meal_type].push(log);
             }
@@ -192,9 +198,7 @@ const Nutrition = () => {
     
     const mealTotals = useMemo(() => {
         const totals = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
-        // --- INICIO DE LA MODIFICACIÓN ---
         (nutritionLog || []).forEach(log => {
-        // --- FIN DE LA MODIFICACIÓN ---
             if (totals[log.meal_type] !== undefined) {
                 totals[log.meal_type] += log.calories || 0;
             }
@@ -214,13 +218,13 @@ const Nutrition = () => {
                 {/* Sección de Resumen y Suplementos */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
                     <GlassCard className="lg:col-span-3 p-6">
-                         <h3 className="text-xl font-bold mb-4">Resumen del Día</h3>
-                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <h3 className="text-xl font-bold mb-4">Resumen del Día</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <StatCard icon={<Flame size={24} />} title="Calorías" value={totals.calories.toLocaleString('es-ES')} unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} />
                             <StatCard icon={<Beef size={24} />} title="Proteínas" value={totals.protein.toFixed(1)} unit={`/ ${proteinTarget} g`} />
                             <StatCard icon={<Wheat size={24} />} title="Carbs" value={totals.carbs.toFixed(1)} unit="g" />
                             <StatCard icon={<Salad size={24} />} title="Grasas" value={totals.fats.toFixed(1)} unit="g" />
-                         </div>
+                        </div>
                     </GlassCard>
                     
                     {/* Sección de Suplementos */}

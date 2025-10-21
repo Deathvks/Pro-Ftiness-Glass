@@ -5,7 +5,6 @@ import { useToast } from '../../../hooks/useToast';
 
 const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
     const fileInputRef = useRef(null);
-    const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const handleImageClick = () => {
         fileInputRef.current?.click();
@@ -42,7 +41,10 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                     <Spinner />
                 ) : imageUrl ? (
                     <>
-                        <img src={`${VITE_API_BASE_URL}${imageUrl}`} alt="Previsualización de la comida" className="w-full h-full object-cover rounded-lg" />
+                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                        {/* Cambiamos object-cover a object-contain y aseguramos que la imagen se centre y no se recorte */}
+                        <img src={imageUrl} alt="Previsualización de la comida" className="max-w-full max-h-full object-contain rounded-lg" />
+                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                         <button
                             onClick={handleRemoveImage}
                             className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 text-white hover:bg-black/80 transition-opacity"

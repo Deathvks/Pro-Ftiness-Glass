@@ -1,18 +1,23 @@
 import React from 'react';
 import { Plus, Trash2, Edit2, ChevronDown, ChevronUp } from 'lucide-react';
 
-const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// --- INICIO DE LA MODIFICACIÓN ---
+// Eliminamos la dependencia de VITE_API_BASE_URL
+// const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// --- FIN DE LA MODIFICACIÓN ---
 
 const MealLogItem = ({ log, onEdit, onDelete }) => (
-  // --- INICIO DE LA MODIFICACIÓN ---
   <li className="flex items-center gap-3 py-3">
     {log.image_url && (
       <div className="flex-shrink-0">
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* Usamos directamente log.image_url */}
         <img
-          src={`${VITE_API_BASE_URL}${log.image_url}`}
+          src={log.image_url}
           alt={log.description}
           className="w-16 h-16 object-cover rounded-lg bg-bg-secondary"
         />
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
       </div>
     )}
     <div className="flex-grow">
@@ -36,7 +41,6 @@ const MealLogItem = ({ log, onEdit, onDelete }) => (
       </div>
     </div>
   </li>
-  // --- FIN DE LA MODIFICACIÓN ---
 );
 
 const MealSection = ({ title, mealType, logs, onAdd, onEdit, onDelete, isOpen, onToggle }) => {
