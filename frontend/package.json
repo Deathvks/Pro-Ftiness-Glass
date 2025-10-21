@@ -12,6 +12,7 @@
     "start": "serve -s dist"
   },
   "dependencies": {
+    "@mui/icons-material": "^7.3.4",
     "date-fns": "^4.1.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.525.0",

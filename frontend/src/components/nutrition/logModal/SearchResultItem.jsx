@@ -1,3 +1,4 @@
+/* frontend/src/components/nutrition/logModal/SearchResultItem.jsx */
 import React from 'react';
 import { Plus, Trash2, Edit } from 'lucide-react'; // Importado Edit
 
@@ -8,7 +9,10 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => ( // Recibimos o
     >
         {/* Detalles de la comida */}
         <div className="min-w-0 pr-2">
-            <p className="font-semibold truncate text-text-primary">{item.name}</p>
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* Mostrar item.name o item.description */}
+            <p className="font-semibold truncate text-text-primary">{item.name || item.description}</p>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
             <p className="text-xs text-text-muted">
                 {Math.round(item.calories)} kcal
                 {item.weight_g ? ` (${parseFloat(item.weight_g)}g)` : ''}
@@ -17,7 +21,6 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => ( // Recibimos o
 
         {/* Botones de acción */}
         <div className="flex items-center flex-shrink-0 ml-2">
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
             {/* Botón de editar (si aplica) */}
             {onEdit && (
                 <button
@@ -32,7 +35,6 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => ( // Recibimos o
                     <Edit size={16} />
                 </button>
             )}
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             {/* Botón de eliminar (si aplica) */}
             {onDelete && (

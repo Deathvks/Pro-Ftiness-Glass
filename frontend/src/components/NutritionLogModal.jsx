@@ -1,3 +1,4 @@
+/* frontend/src/components/NutritionLogModal.jsx */
 import React from 'react';
 import { X, Star, Trash2, Edit, Check, Plus, Search, Camera, BookMarked, Clock, QrCode } from 'lucide-react';
 import BarcodeScanner from './BarcodeScanner';
@@ -17,7 +18,10 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
         isEditingLog, editingFavorite, searchTerm, setSearchTerm, activeTab, setActiveTab,
         itemsToAdd, favoritesPage, setFavoritesPage, mealToDelete, setMealToDelete,
         editingListItemId, manualFormState, setManualFormState, showScanner, setShowScanner,
-        paginatedFavorites, filteredRecents, totalPages, isDarkTheme,
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // 1. Añadir 'isLoadingRecents' de la desestructuración
+        paginatedFavorites, filteredRecents, isLoadingRecents, totalPages, isDarkTheme,
+        // --- FIN DE LA MODIFICACIÓN ---
         handleAddManualItem, handleAddFavoriteItem, handleAddRecentItem, handleRemoveItem,
         handleToggleFavorite, handleEditListItem, handleEditFavorite, handleSaveListItem,
         handleSaveList, handleSaveSingle, handleSaveEdit, handleScanSuccess,
@@ -41,10 +45,14 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                     onPageChange={setFavoritesPage}
                 />;
             case 'recent':
+                // --- INICIO DE LA MODIFICACIÓN ---
+                // 2. Pasar 'items' (en lugar de 'recents') y 'isLoading'
                 return <RecentList
-                    recents={filteredRecents}
+                    items={filteredRecents}
                     onAdd={handleAddRecentItem}
+                    isLoading={isLoadingRecents}
                 />;
+                // --- FIN DE LA MODIFICACIÓN ---
             case 'manual':
                 return (
                     <ManualEntryForm

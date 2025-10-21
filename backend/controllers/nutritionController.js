@@ -46,13 +46,10 @@ const getNutritionLogsByDate = async (req, res, next) => {
         user_id: userId,
         log_date: date,
       },
-      // --- INICIO DE LA MODIFICACIÓN (YA APLICADA) ---
-      // Usamos 'id' en lugar de 'created_at' para compatibilidad
       order: [
         ['meal_type', 'ASC'],
         ['id', 'ASC'],
       ],
-      // --- FIN DE LA MODIFICACIÓN ---
     });
 
     const waterLog = await WaterLog.findOne({
@@ -72,7 +69,6 @@ const getNutritionLogsByDate = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN (NUEVA FUNCIÓN) ---
 /**
  * Obtiene las comidas registradas recientemente por el usuario.
  * Devuelve una lista de las últimas 20 comidas únicas (por descripción).
@@ -113,13 +109,17 @@ const getRecentMeals = async (req, res, next) => {
     }
 
     // 3. Devolvemos las últimas 20 comidas únicas
-    res.json(uniqueMeals.slice(0, 20));
+    const result = uniqueMeals.slice(0, 20);
+    res.json(result);
 
-  } catch (error) {
+  } catch (error)
+ {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Log eliminado
+    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 
 /**
@@ -210,6 +210,9 @@ const addFoodLog = async (req, res, next) => {
     const newLog = await NutritionLog.create(foodData);
     res.status(201).json(newLog);
   } catch (error) {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Log eliminado
+    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -261,6 +264,9 @@ const updateFoodLog = async (req, res, next) => {
     await log.update(foodData);
     res.json(log);
   } catch (error) {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Log eliminado
+    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -288,6 +294,9 @@ const deleteFoodLog = async (req, res, next) => {
     await log.destroy();
     res.status(204).send();
   } catch (error) {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Log eliminado
+    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -324,6 +333,9 @@ const upsertWaterLog = async (req, res, next) => {
     }
     res.json(waterLog);
   } catch (error) {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Log eliminado
+    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -351,11 +363,14 @@ const searchByBarcode = async (req, res, next) => {
       protein_g: nutriments.proteins_100g || 0,
       carbs_g: nutriments.carbohydrates_100g || 0,
       fats_g: nutriments.fat_100g || 0,
-      weight_g: 100,
+      weight_g: 100, // Por defecto asumimos 100g para los datos de OFF
     };
 
     res.json(foodData);
   } catch (error) {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Log eliminado
+    // --- FIN DE LA MODIFICACIÓN ---
     if (error.response && error.response.status === 404) {
       return res.status(404).json({
         error: 'Producto no encontrado en la base de datos de Open Food Facts.',
@@ -382,12 +397,18 @@ const uploadFoodImage = async (req, res, next) => {
 
     await fs.writeFile(filePath, req.file.buffer);
 
-    const imageUrl = `${req.protocol}://${req.get(
-      'host'
-    )}/images/food/${uniqueFilename}`;
+    // Construir la URL completa correctamente
+    const baseUrl = process.env.VITE_API_BASE_URL || `${req.protocol}://${req.get('host')}`;
+    // Quitamos /api de la baseUrl si existe al final
+    const cleanBaseUrl = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
+    
+    const imageUrl = `${cleanBaseUrl}/images/food/${uniqueFilename}`;
 
     res.status(201).json({ imageUrl });
   } catch (error) {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Log eliminado
+    // --- FIN DE LA MODIFICACIÓN ---
     if (error instanceof multer.MulterError) {
       return res
         .status(400)
@@ -400,12 +421,10 @@ const uploadFoodImage = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Agrupar todas las funciones en un 'export default'
-// Añadir 'getRecentMeals' a la exportación
 export default {
   getNutritionLogsByDate,
-  getRecentMeals, // <-- Añadido
+  getRecentMeals,
   getNutritionSummary,
   addFoodLog,
   updateFoodLog,
@@ -414,4 +433,3 @@ export default {
   searchByBarcode,
   uploadFoodImage,
 };
-// --- FIN DE LA MODIFICACIÓN ---
