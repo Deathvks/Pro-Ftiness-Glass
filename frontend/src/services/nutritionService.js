@@ -1,3 +1,4 @@
+/* frontend/src/services/nutritionService.js */
 import apiClient from './apiClient';
 import useAppStore from '../store/useAppStore';
 
@@ -8,6 +9,15 @@ import useAppStore from '../store/useAppStore';
 export const getNutritionLogsByDate = (date) => {
   return apiClient(`/nutrition?date=${date}`);
 };
+
+// --- INICIO DE LA MODIFICACIÓN (NUEVA FUNCIÓN) ---
+/**
+ * Obtiene las comidas registradas recientemente por el usuario.
+ */
+export const getRecentMeals = () => {
+  return apiClient('/nutrition/recent');
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 /**
  * Obtiene el resumen de datos de nutrición para un mes y año específicos.

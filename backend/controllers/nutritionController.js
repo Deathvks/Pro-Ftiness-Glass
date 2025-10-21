@@ -33,7 +33,7 @@ const ensureUploadDirExists = async () => {
 const getNutritionLogsByDate = async (req, res, next) => {
   try {
     const { date } = req.query;
-    const { userId } = req.user; 
+    const { userId } = req.user;
 
     if (!date) {
       return res.status(400).json({
@@ -43,26 +43,27 @@ const getNutritionLogsByDate = async (req, res, next) => {
 
     const nutritionLogs = await NutritionLog.findAll({
       where: {
-        user_id: userId, 
+        user_id: userId,
         log_date: date,
       },
+      // --- INICIO DE LA MODIFICACIÓN (YA APLICADA) ---
+      // Usamos 'id' en lugar de 'created_at' para compatibilidad
       order: [
         ['meal_type', 'ASC'],
-        ['created_at', 'ASC'],
+        ['id', 'ASC'],
       ],
+      // --- FIN DE LA MODIFICACIÓN ---
     });
 
     const waterLog = await WaterLog.findOne({
       where: {
-        user_id: userId, 
+        user_id: userId,
         log_date: date,
       },
     });
 
-    // Devolvemos el objeto 'waterLog' completo (o null) en lugar de 'waterLog.quantity_ml' o 0.
-    // El dataSlice del frontend (nutrition.water || { quantity_ml: 0 }) gestionará el null.
     res.json({
-      nutrition: nutritionLogs, // Renombrado de 'food' a 'nutrition' para coincidir con dataSlice
+      nutrition: nutritionLogs,
       water: waterLog,
     });
 
@@ -71,12 +72,62 @@ const getNutritionLogsByDate = async (req, res, next) => {
   }
 };
 
+// --- INICIO DE LA MODIFICACIÓN (NUEVA FUNCIÓN) ---
+/**
+ * Obtiene las comidas registradas recientemente por el usuario.
+ * Devuelve una lista de las últimas 20 comidas únicas (por descripción).
+ */
+const getRecentMeals = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+
+    // 1. Obtenemos los últimos 50 registros (para tener variedad)
+    const recentLogs = await NutritionLog.findAll({
+      where: {
+        user_id: userId,
+      },
+      limit: 50,
+      order: [['id', 'DESC']], // Ordenamos por ID descendente (más recientes primero)
+      attributes: [
+        'id',
+        'description',
+        'calories',
+        'protein_g',
+        'carbs_g',
+        'fats_g',
+        'weight_g',
+        'image_url',
+      ],
+    });
+
+    // 2. Filtramos para obtener entradas únicas basadas en 'description' (ignorando may/min)
+    const uniqueMeals = [];
+    const descriptionsSeen = new Set();
+
+    for (const log of recentLogs) {
+      const lowerCaseDescription = log.description.toLowerCase();
+      if (!descriptionsSeen.has(lowerCaseDescription)) {
+        descriptionsSeen.add(lowerCaseDescription);
+        uniqueMeals.push(log);
+      }
+    }
+
+    // 3. Devolvemos las últimas 20 comidas únicas
+    res.json(uniqueMeals.slice(0, 20));
+
+  } catch (error) {
+    next(error);
+  }
+};
+// --- FIN DE LA MODIFICACIÓN ---
+
+
 /**
  * Obtiene un resumen de datos de nutrición para un mes y año.
  */
 const getNutritionSummary = async (req, res, next) => {
   try {
-    const { userId } = req.user; 
+    const { userId } = req.user;
     const { month, year } = req.query;
 
     if (!month || !year) {
@@ -88,25 +139,20 @@ const getNutritionSummary = async (req, res, next) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
-    // Renombrado 'summary' a 'nutritionSummary' y añadido 'waterSummary' 
-    // para coincidir con lo que espera el frontend (dataSlice).
     const nutritionSummary = await NutritionLog.findAll({
       where: {
-        user_id: userId, 
+        user_id: userId,
         log_date: {
           [Op.between]: [startDate, endDate],
         },
       },
-      // --- INICIO DE LA MODIFICACIÓN (PARA ARREGLAR GRÁFICAS) ---
       attributes: [
-        ['log_date', 'date'], // Renombrar 'log_date' a 'date' para el frontend
+        ['log_date', 'date'],
         [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'],
-        // Añadir sumas de macros que faltaban
         [sequelize.fn('sum', sequelize.col('protein_g')), 'total_protein'],
         [sequelize.fn('sum', sequelize.col('carbs_g')), 'total_carbs'],
         [sequelize.fn('sum', sequelize.col('fats_g')), 'total_fats'],
       ],
-      // --- FIN DE LA MODIFICACIÓN ---
       group: ['log_date'],
       order: [['log_date', 'ASC']],
     });
@@ -134,10 +180,8 @@ const getNutritionSummary = async (req, res, next) => {
  */
 const addFoodLog = async (req, res, next) => {
   try {
-    const { userId } = req.user; 
+    const { userId } = req.user;
 
-    // Sanitizamos el 'body' para coger solo los campos que el modelo 'NutritionLog' espera.
-    // Esto evita errores 500 si el frontend envía campos extra (como 'tempId', 'isFavorite', etc.).
     const {
       log_date,
       meal_type,
@@ -147,10 +191,9 @@ const addFoodLog = async (req, res, next) => {
       carbs_g,
       fats_g,
       weight_g,
-      image_url, // Este es el nuevo campo
+      image_url,
     } = req.body;
 
-    // Construimos el objeto de datos explícitamente.
     const foodData = {
       user_id: userId,
       log_date,
@@ -161,7 +204,7 @@ const addFoodLog = async (req, res, next) => {
       carbs_g: carbs_g || null,
       fats_g: fats_g || null,
       weight_g: weight_g || null,
-      image_url: image_url || null, // Permitir que image_url sea null
+      image_url: image_url || null,
     };
 
     const newLog = await NutritionLog.create(foodData);
@@ -177,12 +220,12 @@ const addFoodLog = async (req, res, next) => {
 const updateFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
-    const { userId } = req.user; 
+    const { userId } = req.user;
 
     const log = await NutritionLog.findOne({
       where: {
         id: logId,
-        user_id: userId, 
+        user_id: userId,
       },
     });
     if (!log) {
@@ -191,7 +234,6 @@ const updateFoodLog = async (req, res, next) => {
         .json({ error: 'Registro de comida no encontrado.' });
     }
 
-    // Sanitizamos el 'body' aquí también para la actualización.
     const {
       description,
       calories,
@@ -229,12 +271,12 @@ const updateFoodLog = async (req, res, next) => {
 const deleteFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
-    const { userId } = req.user; 
+    const { userId } = req.user;
 
     const log = await NutritionLog.findOne({
       where: {
         id: logId,
-        user_id: userId, 
+        user_id: userId,
       },
     });
     if (!log) {
@@ -255,7 +297,7 @@ const deleteFoodLog = async (req, res, next) => {
  */
 const upsertWaterLog = async (req, res, next) => {
   try {
-    const { userId } = req.user; 
+    const { userId } = req.user;
     const { log_date, quantity_ml } = req.body;
 
     if (!log_date || quantity_ml === undefined) {
@@ -266,7 +308,7 @@ const upsertWaterLog = async (req, res, next) => {
 
     let waterLog = await WaterLog.findOne({
       where: {
-        user_id: userId, 
+        user_id: userId,
         log_date,
       },
     });
@@ -275,7 +317,7 @@ const upsertWaterLog = async (req, res, next) => {
       await waterLog.save();
     } else {
       waterLog = await WaterLog.create({
-        user_id: userId, 
+        user_id: userId,
         log_date,
         quantity_ml,
       });
@@ -303,14 +345,13 @@ const searchByBarcode = async (req, res, next) => {
     const product = response.data.product;
     const nutriments = product.nutriments;
 
-    // Renombrado de campos para coincidir con nuestro modelo (protein -> protein_g, etc.)
     const foodData = {
-      name: product.product_name || 'Nombre no disponible', // 'name' es lo que espera el frontend
+      name: product.product_name || 'Nombre no disponible',
       calories: nutriments['energy-kcal_100g'] || 0,
       protein_g: nutriments.proteins_100g || 0,
       carbs_g: nutriments.carbohydrates_100g || 0,
       fats_g: nutriments.fat_100g || 0,
-      weight_g: 100, // Por defecto, los valores son por 100g
+      weight_g: 100,
     };
 
     res.json(foodData);
@@ -326,8 +367,6 @@ const searchByBarcode = async (req, res, next) => {
 
 /**
  * Sube una imagen de comida y devuelve la URL.
- * Esta función es llamada DESPUÉS de que el middleware 'upload' (en nutrition.js)
- * procese la imagen y la ponga en 'req.file'.
  */
 const uploadFoodImage = async (req, res, next) => {
   try {
@@ -335,38 +374,25 @@ const uploadFoodImage = async (req, res, next) => {
       return res.status(400).json({ error: 'No se ha subido ningún archivo.' });
     }
 
-    // Asegurarse de que el directorio de subida existe
     await ensureUploadDirExists();
 
-    // Generar un nombre de archivo único para evitar colisiones
     const fileExtension = path.extname(req.file.originalname);
     const uniqueFilename = `${uuidv4()}${fileExtension}`;
     const filePath = path.join(UPLOAD_DIR, uniqueFilename);
 
-    // Guardar el buffer de la imagen en el sistema de archivos
     await fs.writeFile(filePath, req.file.buffer);
 
-    // Construir la URL pública para acceder a la imagen
-    // Esta URL depende de cómo se sirvan los archivos estáticos en Express
-    
-    // Aseguramos que la URL devuelta sea relativa al servidor
-    // El frontend ya tiene la API_BASE_URL (http://localhost:3001/api)
-    // El servidor estático de express sirve '/images'
-    // PERO, la API base ya incluye /api, y el servidor estático no.
-    // Devolvemos la URL completa
     const imageUrl = `${req.protocol}://${req.get(
       'host'
     )}/images/food/${uniqueFilename}`;
 
     res.status(201).json({ imageUrl });
   } catch (error) {
-    // Capturar errores específicos de Multer (ej: tamaño de archivo)
     if (error instanceof multer.MulterError) {
       return res
         .status(400)
         .json({ error: `Error de Multer: ${error.message}` });
     }
-    // Capturar otros errores personalizados (ej: formato de archivo)
     if (error.message.includes('Formato de imagen no válido')) {
       return res.status(400).json({ error: error.message });
     }
@@ -374,9 +400,12 @@ const uploadFoodImage = async (req, res, next) => {
   }
 };
 
+// --- INICIO DE LA MODIFICACIÓN ---
 // Agrupar todas las funciones en un 'export default'
+// Añadir 'getRecentMeals' a la exportación
 export default {
   getNutritionLogsByDate,
+  getRecentMeals, // <-- Añadido
   getNutritionSummary,
   addFoodLog,
   updateFoodLog,
@@ -385,3 +414,4 @@ export default {
   searchByBarcode,
   uploadFoodImage,
 };
+// --- FIN DE LA MODIFICACIÓN ---

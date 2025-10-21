@@ -1,3 +1,4 @@
+/* backend/routes/nutrition.js */
 import express from 'express';
 import nutritionController from '../controllers/nutritionController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
@@ -32,6 +33,11 @@ router.get('/', nutritionController.getNutritionLogsByDate);
 
 // Obtener resumen de nutrición para un mes
 router.get('/summary', nutritionController.getNutritionSummary);
+
+// --- INICIO DE LA MODIFICACIÓN (NUEVA RUTA) ---
+// Obtener comidas registradas recientemente
+router.get('/recent', nutritionController.getRecentMeals);
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- INICIO DE LA MODIFICACIÓN ---
 // Ruta para subir la imagen de una comida.

@@ -1,7 +1,11 @@
+/* frontend/src/components/nutrition/logModal/RecentList.jsx */
 import React from 'react';
 import SearchResultItem from './SearchResultItem'; // Importa el componente de item
 
-const RecentList = ({ items, onAdd }) => {
+// --- INICIO DE LA MODIFICACIÓN ---
+// Asignamos un valor por defecto a 'items' para evitar el error si es 'undefined'
+const RecentList = ({ items = [], onAdd }) => {
+// --- FIN DE LA MODIFICACIÓN ---
     return (
         <div className="space-y-2 flex-grow overflow-y-auto pr-1"> {/* Contenedor scrollable */}
             {items.length > 0 ? (

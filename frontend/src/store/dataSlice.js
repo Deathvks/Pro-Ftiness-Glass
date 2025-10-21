@@ -1,3 +1,4 @@
+/* frontend/src/store/dataSlice.js */
 import * as userService from '../services/userService';
 import * as routineService from '../services/routineService';
 import * as workoutService from '../services/workoutService';
@@ -21,6 +22,9 @@ const initialState = {
     selectedDate: getTodayDateString(),
     nutritionSummary: { nutrition: [], water: [] },
     favoriteMeals: [],
+    // --- INICIO DE LA MODIFICACIÓN ---
+    recentMeals: [], // Añadir estado para comidas recientes
+    // --- FIN DE LA MODIFICACIÓN ---
     templateRoutines: {},
     todaysCreatineLog: [],
     creatineStats: null,
@@ -52,12 +56,16 @@ export const createDataSlice = (set, get) => ({
 
             if (profileData.goal) {
                 const today = get().selectedDate;
+
+                // --- INICIO DE LA MODIFICACIÓN ---
+                // Añadimos 'nutritionService.getRecentMeals()' a la carga inicial
                 const [
                     routines,
                     workouts,
                     bodyweight,
                     nutrition,
                     favoriteMeals,
+                    recentMeals, // Nueva variable
                     templateRoutines,
                     todaysCreatine,
                     creatineStats,
@@ -67,6 +75,7 @@ export const createDataSlice = (set, get) => ({
                     bodyWeightService.getHistory(),
                     nutritionService.getNutritionLogsByDate(today),
                     favoriteMealService.getFavoriteMeals(),
+                    nutritionService.getRecentMeals(), // Asumimos que esta función existe
                     templateRoutineService.getTemplateRoutines(),
                     creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
                     creatinaService.getCreatinaStats(),
@@ -75,15 +84,15 @@ export const createDataSlice = (set, get) => ({
                     routines,
                     workoutLog: workouts,
                     bodyWeightLog: bodyweight,
-                    // --- INICIO DE LA MODIFICACIÓN ---
                     nutritionLog: nutrition.nutrition || [],
                     waterLog: nutrition.water || { quantity_ml: 0 },
-                    // --- FIN DE LA MODIFICACIÓN ---
                     favoriteMeals,
+                    recentMeals: recentMeals || [], // Guardar comidas recientes en el estado
                     templateRoutines,
                     todaysCreatineLog: todaysCreatine.data || [],
                     creatineStats: creatineStats.data || null,
                 });
+                // --- FIN DE LA MODIFICACIÓN ---
             }
         } catch (error) {
             console.error("Error de autenticación o carga de datos:", error);
@@ -102,10 +111,8 @@ export const createDataSlice = (set, get) => ({
                 creatinaService.getCreatinaLogs({ startDate: date, endDate: date })
             ]);
             set({
-                // --- INICIO DE LA MODIFICACIÓN ---
                 nutritionLog: nutrition.nutrition || [],
                 waterLog: nutrition.water || { quantity_ml: 0 },
-                // --- FIN DE LA MODIFICACIÓN ---
                 todaysCreatineLog: todaysCreatine.data || [],
             });
         } catch (error) {
@@ -143,7 +150,6 @@ export const createDataSlice = (set, get) => ({
         }
     },
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Actualiza una comida favorita existente.
     updateFavoriteMeal: async (mealId, mealData) => {
         try {
@@ -158,7 +164,6 @@ export const createDataSlice = (set, get) => ({
             return { success: false, message: error.message };
         }
     },
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // Elimina una comida de la lista de favoritos.
     deleteFavoriteMeal: async (mealId) => {
@@ -197,6 +202,9 @@ export const createDataSlice = (set, get) => ({
 
     // Resetea el estado de los datos al cerrar sesión.
     clearDataState: () => {
-        set(initialState);
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Limpiar 'recentMeals' al cerrar sesión
+        set({...initialState});
+        // --- FIN DE LA MODIFICACIÓN ---
     },
 });
