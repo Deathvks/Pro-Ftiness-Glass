@@ -27,6 +27,12 @@ import adminRoutes from './routes/admin.js';
 
 const app = express();
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Confiar en el proxy (necesario para express-rate-limit en Zeabur)
+// Esto soluciona el error ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+app.set('trust proxy', 1);
+// --- FIN DE LA MODIFICACIÓN ---
+
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
 }));
