@@ -1,6 +1,4 @@
-/*
-frontend/src/components/nutrition/FoodSearchModal/FoodSearchModal.jsx
-*/
+/* frontend/src/components/nutrition/FoodSearchModal/FoodSearchModal.jsx */
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, QrCodeIcon } from '@heroicons/react/24/solid';
 import SearchBar from './SearchBar';
@@ -57,18 +55,52 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
     }
   };
 
+  // --- INICIO DE LA MODIFICACIÓN ---
   const handleSelectFood = (food) => {
+    // Normalizar nombre de 'name' (Favoritos) o 'description' (Recientes) o 'food_name' (Búsqueda)
+    const description =
+      food.name || food.description || food.food_name || 'Alimento';
+
     const preparedFood = {
       ...food,
-      calories_per_100g: food.calories_per_100g || food.calories_per_serving || food.calories || 0,
-      protein_per_100g: food.protein_per_100g || food.protein_per_serving || food.protein || 0,
-      carbs_per_100g: food.carbs_per_100g || food.carbs_per_serving || food.carbs || 0,
-      fat_per_100g: food.fat_per_100g || food.fat_per_serving || food.fat || 0,
+      description, // Usar el nombre normalizado
+      name: description, // Asegurar que 'name' exista para el formulario
+
+      // Preservar la URL de la imagen si viene de Favoritos o Recientes
+      image_url: food.image_url || null,
+
+      // Corregir la normalización de macros para 'per 100g'
+      // Asegurarse de usar _g para Favoritos/Recientes
+      calories_per_100g:
+        food.calories_per_100g ||
+        food.calories_per_serving ||
+        food.calories ||
+        0,
+      protein_per_100g:
+        food.protein_per_100g ||
+        food.protein_per_serving ||
+        food.protein_g ||
+        food.protein ||
+        0,
+      carbs_per_100g:
+        food.carbs_per_100g ||
+        food.carbs_per_serving ||
+        food.carbs_g ||
+        food.carbs ||
+        0,
+      fat_per_100g:
+        food.fat_per_100g ||
+        food.fat_per_serving ||
+        food.fats_g ||
+        food.fat ||
+        0,
     };
+    // --- FIN DE LA MODIFICACIÓN ---
+
     setSelectedItem(preparedFood);
     setIsScannerOpen(false); // Close scanner if open
   };
-  
+
   const handleScanSuccess = (foodData) => {
     handleSelectFood(foodData);
     setIsPer100g(true); // <-- REQUERIDO: Activar "Por 100g" al escanear
@@ -145,7 +177,7 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
             title="Favoritos"
             isActive={activeTab === 'favorites'}
             onClick={() => setActiveTab('favorites')}
-          U          />
+          />
           <TabButton
             title="Recientes"
             isActive={activeTab === 'recent'}
@@ -155,7 +187,7 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
 
         <div className="overflow-y-auto max-h-[60vh]">
           {error && <p className="text-red-400 text-center">{error}</p>}
-          
+
           {activeTab === 'search' && (
             <SearchResults
               results={searchResults}
@@ -164,14 +196,14 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
             />
           )}
           {activeTab === 'favorites' && (
-            <Favorites 
-              onSelect={handleSelectFood} 
+            <Favorites
+              onSelect={handleSelectFood}
               logDate={logDate} // Pass logDate to fetch recents from that day if needed
             />
           )}
           {activeTab === 'recent' && (
-            <Recent 
-              onSelect={handleSelectFood} 
+            <Recent
+              onSelect={handleSelectFood}
               logDate={logDate} // Pass logDate to fetch recents from that day
             />
           )}
@@ -194,10 +226,8 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
-        
-        <div className="p-4">
-          {renderContent()}
-        </div>
+
+        <div className="p-4">{renderContent()}</div>
       </div>
     </div>
   );

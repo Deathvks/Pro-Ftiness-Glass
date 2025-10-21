@@ -1,19 +1,17 @@
-/*
-frontend/src/components/nutrition/FoodSearchModal/FoodEntryForm.jsx
-*/
+/* frontend/src/components/nutrition/FoodSearchModal/FoodEntryForm.jsx */
 import React, { useState, useEffect, useMemo } from 'react';
 import { CameraIcon } from '@heroicons/react/24/solid';
 import { nutritionService } from '../../../services/nutritionService';
 
-function FoodEntryForm({ 
-  selectedItem, 
-  onAdd, 
-  onCancel, 
-  onUpdate, 
-  mealType, 
+function FoodEntryForm({
+  selectedItem,
+  onAdd,
+  onCancel,
+  onUpdate,
+  mealType,
   logDate,
-  isPer100g, 
-  setIsPer100g 
+  isPer100g,
+  setIsPer100g,
 }) {
   const [grams, setGrams] = useState(100);
   const [nutritionalInfo, setNutritionalInfo] = useState({
@@ -24,6 +22,10 @@ function FoodEntryForm({
   });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Guardar la URL de la imagen original por separado
+  const [originalImageUrl, setOriginalImageUrl] = useState(null);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   useEffect(() => {
     if (selectedItem) {
@@ -35,40 +37,50 @@ function FoodEntryForm({
       };
       setNutritionalInfo(info);
       setGrams(selectedItem.weight_g || 100);
-      setPreview(selectedItem.image_url ? `${import.meta.env.VITE_API_URL}/${selectedItem.image_url}` : null);
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // La URL ya es completa, no necesita prefijo
+      setPreview(selectedItem.image_url || null);
+      setOriginalImageUrl(selectedItem.image_url || null);
+      // --- FIN DE LA MODIFICACIÓN ---
       setFile(null);
     }
   }, [selectedItem]);
 
   const calculatedMacros = useMemo(() => {
     const factor = isPer100g ? (parseFloat(grams) || 0) / 100 : 1;
-    const baseCalories = isPer100g ? nutritionalInfo.calories : (selectedItem?.calories || 0);
-    const baseProtein = isPer100g ? nutritionalInfo.protein : (selectedItem?.protein || 0);
-    const baseCarbs = isPer100g ? nutritionalInfo.carbs : (selectedItem?.carbs || 0);
-    const baseFat = isPer100g ? nutritionalInfo.fat : (selectedItem?.fat || 0);
+    const baseCalories = isPer100g
+      ? nutritionalInfo.calories
+      : selectedItem?.calories || 0;
+    const baseProtein = isPer100g
+      ? nutritionalInfo.protein
+      : selectedItem?.protein || 0;
+    const baseCarbs = isPer100g
+      ? nutritionalInfo.carbs
+      : selectedItem?.carbs || 0;
+    const baseFat = isPer100g ? nutritionalInfo.fat : selectedItem?.fat || 0;
 
     // Si no es por 100g, los gramos no deberían afectar las macros (se asume que es una unidad)
     if (!isPer100g) {
       // Si el item tiene weight_g, es una entrada de log (que ya fue calculada)
       // Si no, es un item de búsqueda (OFF/favorito) y tomamos sus valores base
-       const weight = parseFloat(grams) || 0;
-       if (selectedItem?.serving_size_g && selectedItem.serving_size_g > 0) {
-         // Es un item de búsqueda de OpenFoodFacts, recalcular basado en serving size
-         const servingFactor = weight / selectedItem.serving_size_g;
-         return {
-           calories: (selectedItem.calories_per_serving || 0) * servingFactor,
-           protein: (selectedItem.protein_per_serving || 0) * servingFactor,
-           carbs: (selectedItem.carbs_per_serving || 0) * servingFactor,
-           fat: (selectedItem.fat_per_serving || 0) * servingFactor,
-         };
-       }
-       // Si es entrada manual o favorito sin serving_size_g, los valores son absolutos
-       return {
-         calories: baseCalories,
-         protein: baseProtein,
-         carbs: baseCarbs,
-         fat: baseFat,
-       };
+      const weight = parseFloat(grams) || 0;
+      if (selectedItem?.serving_size_g && selectedItem.serving_size_g > 0) {
+        // Es un item de búsqueda de OpenFoodFacts, recalcular basado en serving size
+        const servingFactor = weight / selectedItem.serving_size_g;
+        return {
+          calories: (selectedItem.calories_per_serving || 0) * servingFactor,
+          protein: (selectedItem.protein_per_serving || 0) * servingFactor,
+          carbs: (selectedItem.carbs_per_serving || 0) * servingFactor,
+          fat: (selectedItem.fat_per_serving || 0) * servingFactor,
+        };
+      }
+      // Si es entrada manual o favorito sin serving_size_g, los valores son absolutos
+      return {
+        calories: baseCalories,
+        protein: baseProtein,
+        carbs: baseCarbs,
+        fat: baseFat,
+      };
     }
 
     // Cálculo por 100g
@@ -89,30 +101,37 @@ function FoodEntryForm({
   };
 
   const handleAddClick = async () => {
-    let imageUrl = selectedItem.image_url;
+    // --- INICIO DE LA MODIFICACIÓN ---
+    let imageUrl = originalImageUrl; // Empezar con la URL original
+    // --- FIN DE LA MODIFICACIÓN ---
 
     if (file) {
       try {
         const formData = new FormData();
         formData.append('image', file);
         const response = await nutritionService.uploadImage(formData);
-        imageUrl = response.imageUrl;
+        imageUrl = response.imageUrl; // Sobrescribir solo si se sube una nueva
       } catch (error) {
         console.error('Error uploading image:', error);
-        // Opcional: mostrar un error al usuario
       }
     }
-    
+
     const entry = {
-      name: selectedItem.name,
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Normalizar el nombre (puede venir como 'name' o 'description')
+      description:
+        selectedItem.name || selectedItem.description || 'Alimento',
+      // --- FIN DE LA MODIFICACIÓN ---
       calories: parseFloat(calculatedMacros.calories.toFixed(1)),
-      protein: parseFloat(calculatedMacros.protein.toFixed(1)),
-      carbs: parseFloat(calculatedMacros.carbs.toFixed(1)),
-      fat: parseFloat(calculatedMacros.fat.toFixed(1)),
+      protein_g: parseFloat(calculatedMacros.protein.toFixed(1)), // Corregido
+      carbs_g: parseFloat(calculatedMacros.carbs.toFixed(1)), // Corregido
+      fats_g: parseFloat(calculatedMacros.fat.toFixed(1)), // Corregido
       weight_g: parseFloat(grams) || 0,
       meal_type: mealType,
       log_date: logDate,
-      image_url: imageUrl || selectedItem.image_url, // Usar la nueva o la existente
+      // --- INICIO DE LA MODIFICACIÓN ---
+      image_url: imageUrl, // Usar la URL final (nueva o la original)
+      // --- FIN DE LA MODIFICACIÓN ---
       // Campos por 100g para referencia futura (si se guarda como favorito)
       calories_per_100g: nutritionalInfo.calories,
       protein_per_100g: nutritionalInfo.protein,
@@ -129,15 +148,23 @@ function FoodEntryForm({
 
   return (
     <div className="p-4 bg-gray-800 rounded-lg max-h-[80vh] overflow-y-auto">
-      <h3 className="text-lg font-bold text-white mb-3 text-center truncate">{selectedItem.name}</h3>
-      
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      <h3 className="text-lg font-bold text-white mb-3 text-center truncate">
+        {selectedItem.name || selectedItem.description}
+      </h3>
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
+
       <div className="flex items-center space-x-4 mb-4">
-        <div 
+        <div
           className="w-24 h-24 rounded-lg bg-gray-700 flex items-center justify-center cursor-pointer relative overflow-hidden"
           onClick={() => document.getElementById('foodImageUpload').click()}
         >
           {preview ? (
-            <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-full h-full object-cover"
+            />
           ) : (
             <CameraIcon className="w-10 h-10 text-gray-500" />
           )}
@@ -151,7 +178,10 @@ function FoodEntryForm({
         </div>
 
         <div className="flex-1">
-          <label htmlFor="grams" className="block text-sm font-medium text-gray-300 mb-1">
+          <label
+            htmlFor="grams"
+            className="block text-sm font-medium text-gray-300 mb-1"
+          >
             Gramos
           </label>
           <input
@@ -181,41 +211,71 @@ function FoodEntryForm({
 
       {isPer100g && (
         <div className="mb-4 p-3 bg-gray-700 rounded-lg">
-          <h4 className="text-md font-semibold text-white mb-2">Valores Nutricionales (por 100g)</h4>
+          <h4 className="text-md font-semibold text-white mb-2">
+            Valores Nutricionales (por 100g)
+          </h4>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <label className="block text-xs font-medium text-gray-400">Calorías</label>
+              <label className="block text-xs font-medium text-gray-400">
+                Calorías
+              </label>
               <input
                 type="number"
                 value={nutritionalInfo.calories}
-                onChange={(e) => setNutritionalInfo(prev => ({ ...prev, calories: parseFloat(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setNutritionalInfo((prev) => ({
+                    ...prev,
+                    calories: parseFloat(e.target.value) || 0,
+                  }))
+                }
                 className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded-md text-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400">Proteínas</label>
+              <label className="block text-xs font-medium text-gray-400">
+                Proteínas
+              </label>
               <input
                 type="number"
                 value={nutritionalInfo.protein}
-                onChange={(e) => setNutritionalInfo(prev => ({ ...prev, protein: parseFloat(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setNutritionalInfo((prev) => ({
+                    ...prev,
+                    protein: parseFloat(e.target.value) || 0,
+                  }))
+                }
                 className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded-md text-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400">Carbohidratos</label>
+              <label className="block text-xs font-medium text-gray-400">
+                Carbohidratos
+              </label>
               <input
                 type="number"
                 value={nutritionalInfo.carbs}
-                onChange={(e) => setNutritionalInfo(prev => ({ ...prev, carbs: parseFloat(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setNutritionalInfo((prev) => ({
+                    ...prev,
+                    carbs: parseFloat(e.target.value) || 0,
+                  }))
+                }
                 className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded-md text-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400">Grasas</label>
+              <label className="block text-xs font-medium text-gray-400">
+                Grasas
+              </label>
               <input
                 type="number"
                 value={nutritionalInfo.fat}
-                onChange={(e) => setNutritionalInfo(prev => ({ ...prev, fat: parseFloat(e.target.value) || 0 }))}
+                onChange={(e) =>
+                  setNutritionalInfo((prev) => ({
+                    ...prev,
+                    fat: parseFloat(e.target.value) || 0,
+                  }))
+                }
                 className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded-md text-white"
               />
             </div>
@@ -224,23 +284,33 @@ function FoodEntryForm({
       )}
 
       <div className="mb-4">
-        <h4 className="text-md font-semibold text-white mb-2">Macros Calculados ({grams || 0}g)</h4>
+        <h4 className="text-md font-semibold text-white mb-2">
+          Macros Calculados ({grams || 0}g)
+        </h4>
         <div className="grid grid-cols-4 gap-2 text-center">
           <div className="bg-gray-700 p-2 rounded-lg">
             <span className="text-xs text-gray-400">Kcal</span>
-            <span className="block text-lg font-bold text-white">{calculatedMacros.calories.toFixed(0)}</span>
+            <span className="block text-lg font-bold text-white">
+              {calculatedMacros.calories.toFixed(0)}
+            </span>
           </div>
           <div className="bg-gray-700 p-2 rounded-lg">
             <span className="text-xs text-blue-400">Prot</span>
-            <span className="block text-lg font-bold text-white">{calculatedMacros.protein.toFixed(1)}</span>
+            <span className="block text-lg font-bold text-white">
+              {calculatedMacros.protein.toFixed(1)}
+            </span>
           </div>
           <div className="bg-gray-700 p-2 rounded-lg">
             <span className="text-xs text-green-400">Carbs</span>
-            <span className="block text-lg font-bold text-white">{calculatedMacros.carbs.toFixed(1)}</span>
+            <span className="block text-lg font-bold text-white">
+              {calculatedMacros.carbs.toFixed(1)}
+            </span>
           </div>
           <div className="bg-gray-700 p-2 rounded-lg">
             <span className="text-xs text-yellow-400">Grasas</span>
-            <span className="block text-lg font-bold text-white">{calculatedMacros.fat.toFixed(1)}</span>
+            <span className="block text-lg font-bold text-white">
+              {calculatedMacros.fat.toFixed(1)}
+            </span>
           </div>
         </div>
       </div>
