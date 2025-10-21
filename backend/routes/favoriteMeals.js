@@ -20,18 +20,22 @@ const favoriteMealValidationRules = [
 
 // --- Definición de Rutas ---
 
-// GET /api/meals -> Obtener todas las comidas favoritas del usuario
-router.get('/meals', favoriteMealController.getFavoriteMeals);
+// GET /api/favorite-meals -> Obtener todas las comidas favoritas del usuario
+// CAMBIO: '/meals' -> '/'
+router.get('/', favoriteMealController.getFavoriteMeals);
 
-// POST /api/meals -> Crear una nueva comida favorita
-router.post('/meals', favoriteMealValidationRules, favoriteMealController.createFavoriteMeal);
+// POST /api/favorite-meals -> Crear una nueva comida favorita
+// CAMBIO: '/meals' -> '/'
+router.post('/', favoriteMealValidationRules, favoriteMealController.createFavoriteMeal);
 
 // --- INICIO DE LA MODIFICACIÓN ---
-// PUT /api/meals/:mealId -> Actualizar una comida favorita existente
-router.put('/meals/:mealId', favoriteMealValidationRules, favoriteMealController.updateFavoriteMeal);
+// PUT /api/favorite-meals/:mealId -> Actualizar una comida favorita existente
+// CAMBIO: '/meals/:mealId' -> '/:mealId'
+router.put('/:mealId', favoriteMealValidationRules, favoriteMealController.updateFavoriteMeal);
 // --- FIN DE LA MODIFICACIÓN ---
 
-// DELETE /api/meals/:mealId -> Eliminar una comida favorita
-router.delete('/meals/:mealId', favoriteMealController.deleteFavoriteMeal);
+// DELETE /api/favorite-meals/:mealId -> Eliminar una comida favorita
+// CAMBIO: '/meals/:mealId' -> '/:mealId'
+router.delete('/:mealId', favoriteMealController.deleteFavoriteMeal);
 
 export default router;

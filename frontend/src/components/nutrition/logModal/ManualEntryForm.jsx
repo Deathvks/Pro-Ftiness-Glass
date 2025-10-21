@@ -1,9 +1,70 @@
-import React, { useCallback } from 'react'; // Importado useCallback
-import { Save, Plus, Star, Check } from 'lucide-react'; // Eliminado ChevronsRight que no se usa aquí
+import React, { useCallback, useRef } from 'react';
+import { Save, Plus, Star, Check, Camera, X } from 'lucide-react';
 import Spinner from '../../Spinner';
 import { useToast } from '../../../hooks/useToast';
 
-// Componente reutilizado para los inputs
+const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
+    const fileInputRef = useRef(null);
+
+    const handleImageClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            onImageUpload(file);
+        }
+    };
+
+    const handleRemoveImage = (e) => {
+        e.stopPropagation();
+        onImageUpload(null);
+    };
+
+    return (
+        <div className="mt-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">Foto de la Comida (Opcional)</label>
+            <div
+                className="relative w-full h-40 bg-bg-primary border-2 border-dashed border-glass-border rounded-lg flex items-center justify-center cursor-pointer hover:border-accent transition-colors"
+                onClick={handleImageClick}
+            >
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/*"
+                    capture="environment"
+                />
+                {isUploading ? (
+                    <Spinner />
+                ) : imageUrl ? (
+                    <>
+                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                        {/* Cambiamos object-cover a object-contain y aseguramos que la imagen se centre y no se recorte */}
+                        <img src={imageUrl} alt="Previsualización de la comida" className="max-w-full max-h-full object-contain rounded-lg" />
+                        {/* --- FIN DE LA MODIFICACIÓN --- */}
+                        <button
+                            onClick={handleRemoveImage}
+                            className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 text-white hover:bg-black/80 transition-opacity"
+                            aria-label="Eliminar imagen"
+                        >
+                            <X size={16} />
+                        </button>
+                    </>
+                ) : (
+                    <div className="text-center text-text-muted">
+                        <Camera size={32} className="mx-auto" />
+                        <p className="mt-1 text-sm">Añadir foto</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
 const InputField = ({ label, name, value, onChange, placeholder = '', inputMode = 'text', required = false, type = 'text', className = '' }) => (
     <div>
         <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
@@ -20,7 +81,6 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
     </div>
 );
 
-// Componente para mostrar los macros calculados en modo por 100g
 const CalculatedMacros = ({ formData }) => (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Cal</p><p className="font-semibold">{Math.round(formData.calories) || 0}</p></div>
@@ -40,15 +100,12 @@ const ManualEntryForm = ({
     editingListItem,
     showFavoriteToggle,
     formState,
-    onFormStateChange
+    onFormStateChange,
+    isUploading,
+    onImageUpload
 }) => {
     const { addToast } = useToast();
     const { formData, per100Data, per100Mode, isFavorite } = formState;
-
-    const round = (val, decimals = 1) => {
-        const n = parseFloat(val);
-        return isNaN(n) ? '' : (Math.round(n * Math.pow(10, decimals)) / Math.pow(10, decimals)).toFixed(decimals);
-    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -72,6 +129,14 @@ const ManualEntryForm = ({
         onFormStateChange({ ...formState, isFavorite: !isFavorite });
     };
 
+    const handleImageUpdate = (fileOrNull) => {
+        if (fileOrNull === null) {
+            onFormStateChange({ ...formState, formData: { ...formData, image_url: null } });
+        } else {
+            onImageUpload(fileOrNull);
+        }
+    };
+
     const validateAndGetData = useCallback(() => {
         const finalData = { ...formData };
 
@@ -89,7 +154,7 @@ const ManualEntryForm = ({
         }
 
         Object.keys(finalData).forEach(key => {
-            if (key !== 'description') {
+            if (key !== 'description' && key !== 'image_url') {
                  if (key === 'weight_g') {
                     finalData[key] = parseFloat(finalData[key]) || null;
                  } else {
@@ -121,11 +186,9 @@ const ManualEntryForm = ({
      const handleSaveAndClose = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        const dataToSave = { ...finalData, name: finalData.description, saveAsFavorite: isFavorite };
+        const dataToSave = { ...finalData, name: finalData.description, saveAsFavorite: isFavorite, image_url: formData.image_url };
         onSaveSingle([dataToSave]);
     };
-
-    const baseInputClasses = "w-full bg-bg-primary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
 
     return (
         <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4 animate-[fade-in_0.3s] pt-2">
@@ -136,6 +199,12 @@ const ManualEntryForm = ({
                 onChange={handleChange}
                 required
                 placeholder="Ej: Pechuga de pollo con arroz"
+            />
+            
+            <ImageUpload
+                imageUrl={formData.image_url}
+                onImageUpload={handleImageUpdate}
+                isUploading={isUploading}
             />
 
             {!isEditing && !editingListItem && (
@@ -166,7 +235,6 @@ const ManualEntryForm = ({
                             inputMode="decimal"
                             required={per100Mode}
                         />
-                        {/* El icono ChevronsRight ya no es necesario aquí con los nuevos estilos */}
                     </div>
                     <CalculatedMacros formData={formData} />
                 </>
@@ -182,43 +250,39 @@ const ManualEntryForm = ({
                 </>
             )}
 
-            {/* Botón Guardar en Favoritos */}
             {showFavoriteToggle && (
-                // --- INICIO DE LA MODIFICACIÓN ---
                 <button
                     type="button"
                     onClick={handleFavoriteChange}
                     className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all border
                         ${isFavorite
-                            ? 'bg-accent-transparent text-accent border-accent-border' // Usa variables de acento
+                            ? 'bg-accent-transparent text-accent border-accent-border'
                             : 'bg-bg-primary text-text-secondary border-glass-border'
                         } mt-1`}
                 >
                     <Star
                         size={18}
-                        className={`transition-all ${isFavorite ? 'fill-accent' : ''}`} // Usa fill-accent
+                        className={`transition-all ${isFavorite ? 'fill-accent' : ''}`}
                     />
                     Guardar esta comida en favoritos
                 </button>
-                // --- FIN DE LA MODIFICACIÓN ---
             )}
 
-            {/* Botones de Acción Final */}
             {isEditing ? (
-                <button type="button" onClick={handleSaveEdited} disabled={isLoading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white disabled:opacity-50 mt-2">
-                    {isLoading ? <Spinner /> : <><Save size={18} className="mr-2" /> Guardar Cambios</>}
+                <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white disabled:opacity-50 mt-2">
+                    {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Guardar Cambios</>}
                 </button>
             ) : editingListItem ? (
-                <button type="button" onClick={handleUpdateListItem} disabled={isLoading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white disabled:opacity-50 mt-2">
-                    {isLoading ? <Spinner /> : <><Save size={18} className="mr-2" /> Actualizar Comida</>}
+                <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white disabled:opacity-50 mt-2">
+                    {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Actualizar Comida</>}
                 </button>
             ) : (
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                    <button type="button" onClick={handleAddToList} disabled={isLoading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-50`}>
-                        {isLoading ? <Spinner /> : <><Plus size={18} className="mr-2" /> Añadir a la lista</>}
+                    <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-50`}>
+                        {isLoading || isUploading ? <Spinner /> : <><Plus size={18} className="mr-2" /> Añadir a la lista</>}
                     </button>
-                    <button type="button" onClick={handleSaveAndClose} disabled={isLoading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50`}>
-                        {isLoading ? <Spinner /> : <><Check size={18} className="mr-2" /> Añadir y Guardar</>}
+                    <button type="button" onClick={handleSaveAndClose} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50`}>
+                        {isLoading || isUploading ? <Spinner /> : <><Check size={18} className="mr-2" /> Añadir y Guardar</>}
                     </button>
                 </div>
             )}

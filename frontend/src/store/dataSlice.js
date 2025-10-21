@@ -75,8 +75,10 @@ export const createDataSlice = (set, get) => ({
                     routines,
                     workoutLog: workouts,
                     bodyWeightLog: bodyweight,
-                    nutritionLog: nutrition.nutrition,
-                    waterLog: nutrition.water,
+                    // --- INICIO DE LA MODIFICACIÓN ---
+                    nutritionLog: nutrition.nutrition || [],
+                    waterLog: nutrition.water || { quantity_ml: 0 },
+                    // --- FIN DE LA MODIFICACIÓN ---
                     favoriteMeals,
                     templateRoutines,
                     todaysCreatineLog: todaysCreatine.data || [],
@@ -100,8 +102,10 @@ export const createDataSlice = (set, get) => ({
                 creatinaService.getCreatinaLogs({ startDate: date, endDate: date })
             ]);
             set({
-                nutritionLog: nutrition.nutrition,
-                waterLog: nutrition.water,
+                // --- INICIO DE LA MODIFICACIÓN ---
+                nutritionLog: nutrition.nutrition || [],
+                waterLog: nutrition.water || { quantity_ml: 0 },
+                // --- FIN DE LA MODIFICACIÓN ---
                 todaysCreatineLog: todaysCreatine.data || [],
             });
         } catch (error) {

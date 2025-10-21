@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import useAppStore from '../store/useAppStore';
 
 /**
  * Obtiene los registros de nutrición y agua para una fecha específica.
@@ -61,7 +62,6 @@ export const upsertWaterLog = (waterData) => {
   });
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 /**
  * Busca un producto por su código de barras.
  * @param {string} barcode - El código de barras del producto.
@@ -69,4 +69,42 @@ export const upsertWaterLog = (waterData) => {
 export const searchByBarcode = (barcode) => {
   return apiClient(`/nutrition/barcode/${barcode}`);
 };
-// --- FIN DE LA MODIFICACIÓN ---
+
+// --- INICIO DE LA CORRECCIÓN ---
+/**
+ * Sube una imagen de comida al servidor.
+ * @param {File} imageFile - El archivo de la imagen a subir.
+ */
+export const uploadFoodImage = (imageFile) => {
+    const formData = new FormData();
+    formData.append('foodImage', imageFile);
+
+    const token = useAppStore.getState().token;
+    const headers = {};
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Se construye la URL base correctamente desde las variables de entorno
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    // Se elimina el '/api' duplicado. La variable API_BASE_URL ya lo incluye.
+    return fetch(`${API_BASE_URL}/nutrition/food/image`, {
+        method: 'POST',
+        body: formData,
+        headers,
+    }).then(async response => {
+        if (!response.ok) {
+            let errorMessage = 'Error al subir la imagen.';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorData.message || errorMessage;
+            } catch (e) {
+                // No hay cuerpo JSON, error genérico
+            }
+            throw new Error(errorMessage);
+        }
+        return response.json();
+    });
+};
+// --- FIN DE LA CORRECCIÓN ---

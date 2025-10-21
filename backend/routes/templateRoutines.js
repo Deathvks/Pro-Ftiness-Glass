@@ -10,6 +10,7 @@ router.use(authenticateToken);
 // --- Definición de Rutas ---
 
 // GET /api/template-routines -> Obtener todas las rutinas predefinidas
-router.get('/template-routines', templateRoutineController.getAllTemplateRoutines);
+// CAMBIO: '/template-routines' -> '/'
+router.get('/', templateRoutineController.getAllTemplateRoutines);
 
 export default router;

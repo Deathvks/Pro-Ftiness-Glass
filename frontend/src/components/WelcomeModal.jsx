@@ -1,5 +1,7 @@
 import React from 'react';
-import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github, Camera } from 'lucide-react';
+// --- FIN DE LA MODIFICACIÓN ---
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
@@ -24,6 +26,13 @@ const WelcomeModal = ({ onClose }) => {
       titre: "Editor de Comidas Integrado",
       description: "Hemos fusionado el editor de comidas en el nuevo modal. Ahora puedes corregir cualquier registro de forma rápida y sencilla desde el mismo lugar."
     },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    {
+      icon: <Camera className="text-accent" />,
+      titre: "Fotos en tus Comidas",
+      description: "Añade un toque visual a tu diario. Ahora puedes subir una foto para cada registro de comida, ayudándote a recordar qué comiste."
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
     {
       icon: <Gauge className="text-accent" />,
       titre: "Cálculo de Macros Mejorado",
@@ -59,9 +68,7 @@ const WelcomeModal = ({ onClose }) => {
 
           <div className="flex flex-col items-center">
             <Award size={48} className="mb-3 text-accent" />
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
             <h2 className="text-2xl font-bold text-text-primary">¡Novedades en Pro Fitness Glass!</h2>
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
             <p className="mb-2 text-sm text-text-secondary">Versión {APP_VERSION}</p>
           </div>
         </div>
@@ -90,9 +97,7 @@ const WelcomeModal = ({ onClose }) => {
           >
             <Github size={16} />
             <span>
-              {/* --- INICIO DE LA MODIFICACIÓN --- */}
               Pro Fitness Glass es un proyecto de código abierto. ¡Tu apoyo es fundamental!
-              {/* --- FIN DE LA MODIFICACIÓN --- */}
             </span>
           </a>
 

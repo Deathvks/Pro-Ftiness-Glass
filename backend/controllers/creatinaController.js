@@ -17,10 +17,11 @@ export const getCreatinaLogs = async (req, res, next) => {
       };
     }
     
+    // Si no se especifican fechas, aplicamos el límite por defecto de 30
     const logs = await CreatinaLog.findAll({
       where: whereClause,
       order: [['log_date', 'DESC'], ['id', 'DESC']],
-      limit: parseInt(limit)
+      limit: (startDate && endDate) ? undefined : parseInt(limit) // Aplicar límite solo si no hay filtro de fecha
     });
 
     res.json({ data: logs });
@@ -143,7 +144,6 @@ export const getCreatinaLogByDate = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 export const getCreatinaStats = async (req, res, next) => {
     try {
         const { userId } = req.user;
@@ -201,15 +201,24 @@ export const getCreatinaStats = async (req, res, next) => {
             }
         }
         
-        // Cálculo de la semana actual (de Lunes a Domingo)
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Cálculo de la semana actual (de Lunes a Hoy)
         const todayForWeek = new Date();
         const dayOfWeek = todayForWeek.getUTCDay(); // 0=Dom, 1=Lun, ...
-        const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1; // Lunes es 0
+        // Ajuste para que Lunes sea 0 (0 -> 6, 1 -> 0, 2 -> 1, ...)
+        const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1; 
+        
         const startOfWeek = new Date(todayForWeek);
         startOfWeek.setUTCDate(todayForWeek.getUTCDate() - offset);
-        startOfWeek.setUTCHours(0, 0, 0, 0);
-
-        const thisWeekDays = uniqueDates.filter(date => new Date(date) >= startOfWeek).length;
+        startOfWeek.setUTCHours(0, 0, 0, 0); // Inicio del lunes
+        
+        // Convertimos las fechas únicas a objetos Date para comparar
+        const thisWeekDays = uniqueDates.filter(dateStr => {
+            const logDate = new Date(dateStr);
+            logDate.setUTCHours(0, 0, 0, 0); // Asegurar comparación solo por fecha
+            return logDate >= startOfWeek && logDate <= todayForWeek;
+        }).length;
+        // --- FIN DE LA MODIFICACIÓN ---
         
         res.json({
             data: {
@@ -224,7 +233,6 @@ export const getCreatinaStats = async (req, res, next) => {
         next(error);
     }
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 const creatinaController = {
   getCreatinaLogs,

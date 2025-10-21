@@ -3,7 +3,9 @@ import { X, Plus, Calendar, TrendingUp, Zap, Save, Trash2, Edit, ChevronLeft, Ch
 import GlassCard from './GlassCard';
 import { useToast } from '../hooks/useToast';
 import * as creatinaService from '../services/creatinaService';
-import { formatDateForDisplay, formatDateToShort } from '../utils/dateUtils';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { formatDateForDisplay, formatDateToShort, formatDateForQuery } from '../utils/dateUtils';
+// --- FIN DE LA MODIFICACIÓN ---
 import ConfirmationModal from './ConfirmationModal';
 
 const CreatinaTracker = ({ onClose, selectedDate }) => {
@@ -24,30 +26,45 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
         thisWeekDays: 0
     });
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
     const totalPages = Math.ceil(creatinaLogs.length / itemsPerPage);
     const paginatedLogs = creatinaLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-    // --- FIN DE LA MODIFICACIÓN ---
 
     useEffect(() => {
         fetchCreatinaData();
         setGrams(''); // Limpiar el input al cambiar de día
     }, [selectedDate]);
 
+    // --- INICIO DE LA MODIFICACIÓN ---
     const fetchCreatinaData = async () => {
         setIsLoading(true);
         try {
+            // Calcular inicio de semana (Lunes) y hoy
+            const today = new Date();
+            // Aseguramos UTC para consistencia con el backend
+            const dayOfWeek = today.getUTCDay(); // 0=Dom, 1=Lun, ...
+            // Ajuste para que Lunes sea 0 (0 -> 6, 1 -> 0, 2 -> 1, ...)
+            const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1; 
+            
+            const startOfWeek = new Date(today);
+            startOfWeek.setUTCDate(today.getUTCDate() - offset);
+            
+            const startDate = formatDateForQuery(startOfWeek);
+            const endDate = formatDateForQuery(today);
+
             const [logsResponse, statsResponse, dailyLogsResponse] = await Promise.all([
-                creatinaService.getCreatinaLogs(),
+                // Pedir solo los logs de la semana actual (Lunes a Hoy) para el historial reciente
+                creatinaService.getCreatinaLogs({ startDate, endDate }),
                 creatinaService.getCreatinaStats(),
+                // Pedir los logs del día seleccionado para el formulario de añadir toma
                 creatinaService.getCreatinaLogs({ startDate: selectedDate, endDate: selectedDate })
             ]);
             
             setCreatinaLogs(logsResponse.data || []);
             setStats(statsResponse.data || stats);
             setDailyLogs(dailyLogsResponse.data || []);
+            setCurrentPage(1); // Resetear paginación
 
         } catch (error) {
             console.error('Error fetching creatina data:', error);
@@ -56,6 +73,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
             setIsLoading(false);
         }
     };
+    // --- FIN DE LA MODIFICACIÓN ---
     
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -145,6 +163,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
         setLogToDelete(log);
     };
 
+C
     const confirmDelete = async () => {
         if (!logToDelete) return;
 
@@ -212,7 +231,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                                                     <div key={log.id} className="flex justify-between items-center p-3 bg-bg-secondary rounded-lg border border-glass-border">
                                                         <div>
                                                             <p className="font-medium text-sm sm:text-base">{formatDateToShort(log.log_date)}</p>
-                                                            <p className="text-xs sm:text-sm text-text-muted">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'long' })}</p>
+                                                            <p className="text-xs sm:text-sm text-text-muted">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' })}</p>
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <p className="font-bold text-accent text-sm sm:text-base">{log.grams}g</p>
@@ -222,7 +241,6 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                                                     </div>
                                                 ))}
                                             </div>
-                                            {/* --- INICIO DE LA MODIFICACIÓN --- */}
                                             {totalPages > 1 && (
                                                 <div className="flex justify-center items-center gap-4 mt-4">
                                                     <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="p-2 rounded-full hover:bg-white/10 disabled:opacity-50 transition"><ChevronLeft /></button>
@@ -230,7 +248,6 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                                                     <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="p-2 rounded-full hover:bg-white/10 disabled:opacity-50 transition"><ChevronRight /></button>
                                                 </div>
                                             )}
-                                            {/* --- FIN DE LA MODIFICACIÓN --- */}
                                         </>
                                     ) : (
                                         <div className="text-center py-8 text-text-muted"><Zap size={48} className="mx-auto mb-4 opacity-50" /><p>No hay registros</p><p className="text-sm">¡Comienza tu seguimiento!</p></div>

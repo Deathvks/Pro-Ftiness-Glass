@@ -148,7 +148,9 @@ const Dashboard = ({ setView }) => {
     }, [latestWeight]);
     
     const nutritionTotals = useMemo(() => {
-        return nutritionLog.reduce((acc, log) => {
+        // --- INICIO DE LA MODIFICACIÓN ---
+        return (nutritionLog || []).reduce((acc, log) => {
+        // --- FIN DE LA MODIFICACIÓN ---
             acc.calories += log.calories || 0;
             acc.protein += parseFloat(log.protein_g) || 0;
             return acc;

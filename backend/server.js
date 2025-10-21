@@ -1,58 +1,69 @@
+/* backend/server.js */
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser';
-import helmet from 'helmet';
-import creatinaRoutes from './routes/creatina.js';
+import db from './models/index.js';
+import errorHandler from './middleware/errorHandler.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+// Requerido en ESM para simular __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import authRoutes from './routes/auth.js';
-import routineRoutes from './routes/routines.js';
-import exerciseRoutes from './routes/exercises.js';
-import workoutRoutes from './routes/workouts.js';
 import bodyweightRoutes from './routes/bodyweight.js';
-import userRoutes from './routes/users.js';
+import creatinaRoutes from './routes/creatina.js';
+import exerciseRoutes from './routes/exercises.js';
 import exerciseListRoutes from './routes/exerciseList.js';
-import personalRecordRoutes from './routes/personalRecords.js';
-import adminRoutes from './routes/admin.js';
+import favoriteMealsRoutes from './routes/favoriteMeals.js';
 import nutritionRoutes from './routes/nutrition.js';
-import favoriteMealRoutes from './routes/favoriteMeals.js';
-import templateRoutineRoutes from './routes/templateRoutines.js';
-import errorHandler from './middleware/errorHandler.js';
+import personalRecordsRoutes from './routes/personalRecords.js';
+import routineRoutes from './routes/routines.js';
+import templateRoutinesRoutes from './routes/templateRoutines.js';
+import userRoutes from './routes/users.js';
+import workoutRoutes from './routes/workouts.js';
+import adminRoutes from './routes/admin.js';
 
 const app = express();
 
-app.set('trust proxy', 1);
-
-// Middlewares
-app.use(helmet());
-
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN,
-  credentials: true,
-};
-app.use(cors(corsOptions));
-
+app.use(cors({
+    origin: process.env.CORS_ORIGIN,
+}));
 app.use(express.json());
-app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api', routineRoutes);
-app.use('/api', exerciseRoutes);
-app.use('/api', workoutRoutes);
-app.use('/api', bodyweightRoutes);
-app.use('/api', userRoutes);
-app.use('/api', exerciseListRoutes);
-app.use('/api', personalRecordRoutes);
-app.use('/api', nutritionRoutes);
-app.use('/api', favoriteMealRoutes);
-app.use('/api', templateRoutineRoutes);
+app.use('/api/bodyweight', bodyweightRoutes);
 app.use('/api/creatina', creatinaRoutes);
+app.use('/api/exercises', exerciseRoutes);
+app.use('/api/exercise-list', exerciseListRoutes);
+// CAMBIO: '/api/favorite-meals' -> '/api/meals'
+app.use('/api/meals', favoriteMealsRoutes);
+app.use('/api/nutrition', nutritionRoutes);
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Se cambia '/api/personal-records' por '/api/records' para coincidir con el frontend
+app.use('/api/records', personalRecordsRoutes);
+// --- FIN DE LA MODIFICACIÓN ---
+
+app.use('/api/routines', routineRoutes);
+app.use('/api/template-routines', templateRoutinesRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/workouts', workoutRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);
 
-export default app;
+const PORT = process.env.PORT || 3001;
+
+db.sequelize.sync()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    })
+    .catch(err => {
+        console.error('Unable to connect to the database:', err);
+    });

@@ -1,10 +1,13 @@
+/* frontend/src/pages/PrivacyPolicy.jsx */
 import React from 'react';
-import { ChevronLeft, Cookie, Palette, Moon, Sun, Camera } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Se añade el icono 'Shield'
+import { ChevronLeft, Cookie, Palette, Moon, Sun, Camera, Shield } from 'lucide-react';
+// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../components/GlassCard';
 
 const PrivacyPolicy = ({ onBack }) => {
   return (
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Se añade un z-index alto (z-[110]) para que esta vista se muestre
     // siempre por encima del banner de cookies (que tiene z-[100]).
     <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto">
@@ -13,18 +16,20 @@ const PrivacyPolicy = ({ onBack }) => {
           <ChevronLeft size={20} />
           Volver
         </button>
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-8">Política de Cookies y Almacenamiento Local</h1>
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        <h1 className="text-3xl md:text-4xl font-extrabold mb-8">Política de Privacidad y Avisos Legales</h1>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         <GlassCard className="p-6 md:p-8">
           <div className="space-y-8 text-text-secondary">
             <p className="text-lg">
-              En FitTrack-Pro, tu privacidad es fundamental. A continuación, te explicamos de forma clara y sencilla qué información guardamos en tu dispositivo y por qué.
+              En FitTrack-Pro, tu privacidad es fundamental. A continuación, te explicamos de forma clara y sencilla qué información guardamos y por qué.
             </p>
 
             <div className="space-y-3">
               <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
                 <Cookie className="text-accent" />
-                ¿Qué guardamos?
+                Almacenamiento Local (Preferencias)
               </h2>
               <p>
                 Esta aplicación utiliza el <strong>Almacenamiento Local</strong> (<code>localStorage</code>) de tu navegador, una tecnología similar a las cookies, para guardar exclusivamente tus <strong>preferencias de personalización visual</strong>.
@@ -38,39 +43,70 @@ const PrivacyPolicy = ({ onBack }) => {
                   <strong>Color de acento:</strong> El color que eliges para los botones y elementos destacados <Palette size={16} className="inline-block mx-1" />.
                 </li>
               </ul>
-            </div>
-
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary">¿Por qué lo guardamos?</h2>
-              <p>
-                Guardamos estas preferencias con un único objetivo: <strong>mejorar tu experiencia de usuario</strong>. Al hacerlo, la aplicación recordará tu configuración visual cada vez que inicies sesión, para que no tengas que volver a configurarla.
-              </p>
-              <p className="font-semibold text-text-primary">
+              <p className="font-semibold text-text-primary pt-2">
                 No utilizamos cookies ni almacenamiento local para rastrearte, mostrar publicidad ni compartir tus datos con terceros.
               </p>
             </div>
 
             <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary">¿Qué pasa si no aceptas?</h2>
+              <h2 className="text-xl font-bold text-text-primary">¿Qué pasa si no aceptas (Cookies)?</h2>
               <p>
-                Si decides no aceptar, no guardaremos ninguna preferencia de personalización en tu dispositivo. La aplicación seguirá siendo <strong>100% funcional</strong>, pero volverá a la apariencia por defecto cada vez que inicies una nueva sesión.
+                Si decides no aceptar el uso del almacenamiento local, no guardaremos ninguna preferencia de personalización en tu dispositivo. La aplicación seguirá siendo <strong>100% funcional</strong>, pero volverá a la apariencia por defecto cada vez que inicies una nueva sesión.
               </p>
             </div>
 
             <div className="space-y-3">
               <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
                 <Camera className="text-accent" />
-                Permiso de la Cámara
+                Permiso de la Cámara (Escáner)
               </h2>
               <p>
                 Al usar la función de escaneo de códigos de barras, la aplicación te pedirá permiso para acceder a tu cámara. Este permiso se gestiona directamente a través de tu navegador y es necesario únicamente para esa función. <strong>Las imágenes de la cámara se procesan en tu dispositivo y no se almacenan ni se envían a nuestros servidores.</strong>
               </p>
             </div>
+
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
+                <Camera className="text-accent" />
+                Fotos de Comidas
+              </h2>
+              <p>
+                La aplicación te permite subir fotos de tus comidas para llevar un registro visual en tu diario de nutrición.
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  <strong>Almacenamiento:</strong> Estas imágenes se suben y almacenan de forma segura en nuestros servidores.
+                </li>
+                <li>
+                  <strong>Privacidad:</strong> Las fotos son privadas y están asociadas únicamente a tu cuenta. Se utilizan solo para que puedas consultarlas en tu historial personal. No se comparten con terceros ni se usan para ningún otro propósito.
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
+                <Shield className="text-accent" />
+                Avisos Legales
+              </h2>
+              <p>
+                FitTrack-Pro es una herramienta de seguimiento y consulta diseñada para fines informativos y educativos.
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  <strong>Sin Asesoramiento Médico:</strong> La información y los datos proporcionados por la aplicación no constituyen asesoramiento médico, diagnóstico ni tratamiento. Consulta siempre a un profesional de la salud cualificado antes de tomar decisiones sobre tu dieta o rutina de ejercicios.
+                </li>
+                <li>
+                  <strong>Uso Bajo Tu Responsabilidad:</strong> El uso de esta aplicación es bajo tu entera responsabilidad. El desarrollador no se hace responsable de ninguna lesión, problema de salud o resultado adverso derivado del uso de la información contenida en la aplicación.
+                </li>
+              </ul>
+            </div>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
+
           </div>
         </GlassCard>
       </div>
     </div>
-    // --- FIN DE LA MODIFICACIÓN ---
   );
 };
 

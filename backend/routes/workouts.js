@@ -17,9 +17,13 @@ const workoutLogValidationRules = [
 ];
 // --- FIN ---
 
-router.get('/workouts', workoutController.getWorkoutHistory);
-router.post('/workouts', workoutLogValidationRules, workoutController.logWorkoutSession);
-router.put('/workouts/:workoutId', workoutController.updateWorkoutLog);
-router.delete('/workouts/:workoutId', workoutController.deleteWorkoutLog);
+// CAMBIO: '/workouts' -> '/'
+router.get('/', workoutController.getWorkoutHistory);
+// CAMBIO: '/workouts' -> '/'
+router.post('/', workoutLogValidationRules, workoutController.logWorkoutSession);
+// CAMBIO: '/workouts/:workoutId' -> '/:workoutId'
+router.put('/:workoutId', workoutController.updateWorkoutLog);
+// CAMBIO: '/workouts/:workoutId' -> '/:workoutId'
+router.delete('/:workoutId', workoutController.deleteWorkoutLog);
 
 export default router;

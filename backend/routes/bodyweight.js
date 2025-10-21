@@ -11,11 +11,13 @@ const weightValidationRule = [
     body('weight').isFloat({ gt: 0 }).withMessage('El peso debe ser un número positivo.')
 ];
 
-router.get('/bodyweight', bodyweightController.getBodyWeightHistory);
+// CAMBIO: '/bodyweight' -> '/'
+router.get('/', bodyweightController.getBodyWeightHistory);
 // --- INICIO DE LA CORRECCIÓN ---
-// Se cambia la regla de validación para que ambas rutas usen 'weight'
-router.post('/bodyweight', weightValidationRule, bodyweightController.logBodyWeight);
+// CAMBIO: '/bodyweight' -> '/'
+router.post('/', weightValidationRule, bodyweightController.logBodyWeight);
 // --- FIN DE LA CORRECCIÓN ---
-router.put('/bodyweight/today', weightValidationRule, bodyweightController.updateTodayBodyWeight);
+// CAMBIO: '/bodyweight/today' -> '/today'
+router.put('/today', weightValidationRule, bodyweightController.updateTodayBodyWeight);
 
 export default router;

@@ -1,53 +1,57 @@
 import express from 'express';
-import { body } from 'express-validator';
 import nutritionController from '../controllers/nutritionController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
+import multer from 'multer'; // <-- IMPORTACIÓN MODIFICADA
 
 const router = express.Router();
 
-// Todas las rutas en este fichero requieren que el usuario esté autenticado
-router.use(authenticateToken);
-
-// --- Reglas de Validación ---
-
-const updateNutritionLogRules = [
-    body('description').trim().notEmpty().withMessage('La descripción es requerida.'),
-    body('calories').isInt({ min: 0 }).withMessage('Las calorías deben ser un número positivo.'),
-    body('protein_g').optional().isFloat({ min: 0 }).withMessage('Las proteínas deben ser un número positivo.'),
-    body('carbs_g').optional().isFloat({ min: 0 }).withMessage('Los carbohidratos deben ser un número positivo.'),
-    body('fats_g').optional().isFloat({ min: 0 }).withMessage('Las grasas deben ser un número positivo.'),
-];
-
-const upsertWaterLogRules = [
-    body('log_date').isISO8601().toDate().withMessage('La fecha no es válida.'),
-    body('quantity_ml').isInt({ min: 0 }).withMessage('La cantidad de agua debe ser un número positivo.'),
-];
-
-
-// --- Rutas ---
-
-// GET /api/nutrition?date=YYYY-MM-DD -> Obtener logs de un día
-router.get('/nutrition', nutritionController.getLogsByDate);
-
-// GET /api/nutrition/summary?month=M&year=YYYY -> Obtener resumen de un mes
-router.get('/nutrition/summary', nutritionController.getNutritionSummary);
-
 // --- INICIO DE LA MODIFICACIÓN ---
-// GET /api/nutrition/barcode/:barcode -> Buscar producto por código de barras
-router.get('/nutrition/barcode/:barcode', nutritionController.searchByBarcode);
+
+// Configuración de Multer para la subida de imágenes
+// Usamos memoryStorage para procesar la imagen en el controlador antes de guardarla
+const storage = multer.memoryStorage();
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Límite de 5MB
+    fileFilter: (req, file, cb) => {
+        // Aceptar solo formatos de imagen comunes
+        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/gif') {
+            cb(null, true);
+        } else {
+            cb(new Error('Formato de imagen no válido. Solo se permite JPEG, PNG o GIF.'), false);
+        }
+    }
+});
 // --- FIN DE LA MODIFICACIÓN ---
 
-// POST /api/nutrition/food -> Añadir una comida
-router.post('/nutrition/food', nutritionController.addNutritionLog);
+// Middleware de autenticación para todas las rutas de nutrición
+router.use(authenticateToken);
 
-// PUT /api/nutrition/food/:logId -> Actualizar una comida
-router.put('/nutrition/food/:logId', updateNutritionLogRules, nutritionController.updateNutritionLog);
+// Obtener registros de nutrición y agua para una fecha
+router.get('/', nutritionController.getNutritionLogsByDate);
 
-// DELETE /api/nutrition/food/:logId -> Eliminar una comida
-router.delete('/nutrition/food/:logId', nutritionController.deleteNutritionLog);
+// Obtener resumen de nutrición para un mes
+router.get('/summary', nutritionController.getNutritionSummary);
 
-// POST /api/nutrition/water -> Añadir o actualizar el agua de un día
-router.post('/nutrition/water', upsertWaterLogRules, nutritionController.upsertWaterLog);
+// --- INICIO DE LA MODIFICACIÓN ---
+// Ruta para subir la imagen de una comida.
+// Se usa upload.single('foodImage') donde 'foodImage' coincide con el nombre del campo en el FormData del frontend
+router.post('/food/image', upload.single('foodImage'), nutritionController.uploadFoodImage);
+// --- FIN DE LA MODIFICACIÓN ---
 
+// Añadir un nuevo registro de comida
+router.post('/food', nutritionController.addFoodLog);
 
-export default router;
+// Actualizar un registro de comida
+router.put('/food/:logId', nutritionController.updateFoodLog);
+
+// Eliminar un registro de comida
+router.delete('/food/:logId', nutritionController.deleteFoodLog);
+
+// Añadir o actualizar un registro de agua
+router.post('/water', nutritionController.upsertWaterLog);
+
+// Buscar producto por código de barras
+router.get('/barcode/:barcode', nutritionController.searchByBarcode);
+
+export default router; // <-- EXPORTACIÓN MODIFICADA

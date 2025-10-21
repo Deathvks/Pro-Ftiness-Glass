@@ -1,81 +1,143 @@
 import React from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import GlassCard from '../GlassCard';
+import { Plus, Trash2, Edit2, ChevronDown, ChevronUp } from 'lucide-react';
 
-const MealCard = ({ mealType, logs, onAdd, onEdit, onDelete, mealTotals }) => {
-  const mealTitles = {
-    breakfast: 'Desayuno',
-    lunch: 'Almuerzo',
-    dinner: 'Cena',
-    snack: 'Snacks'
-  };
+// --- INICIO DE LA MODIFICACIÓN ---
+// Eliminamos la dependencia de VITE_API_BASE_URL
+// const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// --- FIN DE LA MODIFICACIÓN ---
+
+const MealLogItem = ({ log, onEdit, onDelete }) => (
+  <li className="flex items-center gap-3 py-3">
+    {log.image_url && (
+      <div className="flex-shrink-0">
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* Usamos directamente log.image_url */}
+        <img
+          src={log.image_url}
+          alt={log.description}
+          className="w-16 h-16 object-cover rounded-lg bg-bg-secondary"
+        />
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
+      </div>
+    )}
+    <div className="flex-grow">
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="font-semibold text-text-primary capitalize">{log.description}</p>
+          <p className="text-sm text-text-muted">
+            {Math.round(log.calories)} kcal
+            {log.weight_g > 0 && ` (${log.weight_g}g)`}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={() => onEdit(log)} className="text-text-muted hover:text-accent transition-colors"><Edit2 size={18} /></button>
+          <button onClick={() => onDelete(log)} className="text-text-muted hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
+        </div>
+      </div>
+      <div className="flex justify-start gap-4 text-xs text-text-secondary mt-1">
+        <span>P: {parseFloat(log.protein_g) || 0}g</span>
+        <span>C: {parseFloat(log.carbs_g) || 0}g</span>
+        <span>G: {parseFloat(log.fats_g) || 0}g</span>
+      </div>
+    </div>
+  </li>
+);
+
+const MealSection = ({ title, mealType, logs, onAdd, onEdit, onDelete, isOpen, onToggle }) => {
+  const totalCalories = logs.reduce((sum, log) => sum + log.calories, 0);
 
   return (
-    <GlassCard className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold capitalize">
-          {mealTitles[mealType]}
-          {mealTotals[mealType] > 0 && (
-            <span className="text-base font-medium text-text-secondary ml-2">
-              ({mealTotals[mealType].toLocaleString('es-ES')} kcal)
-            </span>
-          )}
-        </h3>
-        <button onClick={() => onAdd(mealType)} className="p-2 -m-2 rounded-full text-accent hover:bg-accent-transparent transition">
-          <Plus size={20} />
-        </button>
-      </div>
-      <div className="flex flex-col gap-3">
-        {logs.length > 0 ? logs.map(log => (
-          <div key={log.id} className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative">
-            <div className="pr-20 sm:pr-16">
-              <p className="font-semibold">
-                {log.description}
-                {log.weight_g && ` (${log.weight_g}g)`}
-              </p>
-              <p className="text-sm text-text-secondary">
-                {log.calories} kcal • {log.protein_g || 0}g Prot • {log.carbs_g || 0}g Carbs • {log.fats_g || 0}g Grasas
-              </p>
-            </div>
-            <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col sm:flex-row gap-1 sm:gap-1">
-              <button
-                onClick={() => onEdit({ ...log, mealType })}
-                className="p-2 rounded-full bg-bg-primary hover:bg-accent/20 hover:text-accent transition-all duration-200 shadow-sm border border-glass-border"
-                title="Editar comida"
-              >
-                <Edit size={14} className="sm:w-4 sm:h-4" />
-              </button>
-              <button
-                onClick={() => onDelete(log)}
-                className="p-2 rounded-full bg-bg-primary hover:bg-red-500/20 hover:text-red-500 transition-all duration-200 shadow-sm border border-glass-border"
-                title="Eliminar comida"
-              >
-                <Trash2 size={14} className="sm:w-4 sm:h-4" />
-              </button>
-            </div>
+    <div className="bg-glass border border-glass-border rounded-xl backdrop-blur-lg">
+      <button
+        onClick={() => onToggle(mealType)}
+        className="flex justify-between items-center w-full p-4"
+      >
+        <div>
+          <h3 className="font-bold text-lg text-text-primary text-left">{title}</h3>
+          <p className="text-sm text-text-secondary text-left">{Math.round(totalCalories)} kcal</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="p-2 rounded-full bg-accent/20">
+            {isOpen ? <ChevronUp size={20} className="text-accent" /> : <ChevronDown size={20} className="text-accent" />}
           </div>
-        )) : (
-          <p className="text-sm text-text-muted text-center py-4">No hay registros para esta comida.</p>
-        )}
-      </div>
-    </GlassCard>
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="px-4 pb-4 animate-[fade-in-down_0.3s_ease-out]">
+          <ul className="divide-y divide-glass-border">
+            {logs.map(log => (
+              <MealLogItem key={log.id} log={log} onEdit={onEdit} onDelete={onDelete} />
+            ))}
+          </ul>
+          <button
+            onClick={() => onAdd(mealType)}
+            className="w-full flex items-center justify-center gap-2 mt-3 py-3 text-accent font-semibold bg-accent/10 hover:bg-accent/20 rounded-lg transition-colors"
+          >
+            <Plus size={18} /> Añadir Comida
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 
-const MealsSection = ({ meals, mealTotals, onAddFood, onEditFood, onDeleteFood }) => {
+const MealsSection = ({ nutritionLogs, onAddFood, onEditFood, onDeleteFood, openSections, toggleSection }) => {
+  const meals = {
+    breakfast: [],
+    lunch: [],
+    dinner: [],
+    snack: [],
+  };
+
+  nutritionLogs.forEach(log => {
+    if (meals[log.meal_type]) {
+      meals[log.meal_type].push(log);
+    }
+  });
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {Object.entries(meals).map(([mealType, logs]) => (
-        <MealCard
-          key={mealType}
-          mealType={mealType}
-          logs={logs}
-          mealTotals={mealTotals}
-          onAdd={onAddFood}
-          onEdit={onEditFood}
-          onDelete={onDeleteFood}
-        />
-      ))}
+    <div className="space-y-4">
+      <MealSection
+        title="Desayuno"
+        mealType="breakfast"
+        logs={meals.breakfast}
+        onAdd={onAddFood}
+        onEdit={onEditFood}
+        onDelete={onDeleteFood}
+        isOpen={openSections.breakfast}
+        onToggle={toggleSection}
+      />
+      <MealSection
+        title="Almuerzo"
+        mealType="lunch"
+        logs={meals.lunch}
+        onAdd={onAddFood}
+        onEdit={onEditFood}
+        onDelete={onDeleteFood}
+        isOpen={openSections.lunch}
+        onToggle={toggleSection}
+      />
+      <MealSection
+        title="Cena"
+        mealType="dinner"
+        logs={meals.dinner}
+        onAdd={onAddFood}
+        onEdit={onEditFood}
+        onDelete={onDeleteFood}
+        isOpen={openSections.dinner}
+        onToggle={toggleSection}
+      />
+      <MealSection
+        title="Snacks"
+        mealType="snack"
+        logs={meals.snack}
+        onAdd={onAddFood}
+        onEdit={onEditFood}
+        onDelete={onDeleteFood}
+        isOpen={openSections.snack}
+        onToggle={toggleSection}
+      />
     </div>
   );
 };
