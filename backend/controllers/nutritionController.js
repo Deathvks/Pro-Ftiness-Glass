@@ -10,12 +10,13 @@ import { fileURLToPath } from 'url';
 
 // Simulación de __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename); // Esto será /app/backend/controllers
 
 // Obtener modelos desde db
 const { NutritionLog, WaterLog, sequelize } = db;
 
 // Helper para asegurar que el directorio de subida existe
+// La ruta es correcta: /app/backend/public/images/food
 const UPLOAD_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 
 const ensureUploadDirExists = async () => {
@@ -114,9 +115,6 @@ const getRecentMeals = async (req, res, next) => {
 
   } catch (error)
  {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Log eliminado
-    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -210,9 +208,6 @@ const addFoodLog = async (req, res, next) => {
     const newLog = await NutritionLog.create(foodData);
     res.status(201).json(newLog);
   } catch (error) {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Log eliminado
-    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -264,9 +259,6 @@ const updateFoodLog = async (req, res, next) => {
     await log.update(foodData);
     res.json(log);
   } catch (error) {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Log eliminado
-    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -294,9 +286,6 @@ const deleteFoodLog = async (req, res, next) => {
     await log.destroy();
     res.status(204).send();
   } catch (error) {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Log eliminado
-    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -333,9 +322,6 @@ const upsertWaterLog = async (req, res, next) => {
     }
     res.json(waterLog);
   } catch (error) {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Log eliminado
-    // --- FIN DE LA MODIFICACIÓN ---
     next(error);
   }
 };
@@ -368,9 +354,6 @@ const searchByBarcode = async (req, res, next) => {
 
     res.json(foodData);
   } catch (error) {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Log eliminado
-    // --- FIN DE LA MODIFICACIÓN ---
     if (error.response && error.response.status === 404) {
       return res.status(404).json({
         error: 'Producto no encontrado en la base de datos de Open Food Facts.',
@@ -381,7 +364,7 @@ const searchByBarcode = async (req, res, next) => {
 };
 
 /**
- * Sube una imagen de comida y devuelve la URL.
+ * Sube una imagen de comida y devuelve la URL relativa.
  */
 const uploadFoodImage = async (req, res, next) => {
   try {
@@ -397,18 +380,14 @@ const uploadFoodImage = async (req, res, next) => {
 
     await fs.writeFile(filePath, req.file.buffer);
 
-    // Construir la URL completa correctamente
-    const baseUrl = process.env.VITE_API_BASE_URL || `${req.protocol}://${req.get('host')}`;
-    // Quitamos /api de la baseUrl si existe al final
-    const cleanBaseUrl = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
-    
-    const imageUrl = `${cleanBaseUrl}/images/food/${uniqueFilename}`;
+    // --- INICIO DE LA MODIFICACIÓN (URL Relativa) ---
+    // Construir la URL relativa que el frontend puede usar directamente
+    // Asumiendo que el frontend sabe que las imágenes están en /images/food/
+    const imageUrl = `/images/food/${uniqueFilename}`;
+    // --- FIN DE LA MODIFICACIÓN ---
 
     res.status(201).json({ imageUrl });
   } catch (error) {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Log eliminado
-    // --- FIN DE LA MODIFICACIÓN ---
     if (error instanceof multer.MulterError) {
       return res
         .status(400)
