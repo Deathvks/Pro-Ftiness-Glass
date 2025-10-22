@@ -1,8 +1,8 @@
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import models from '../models/index.js';
-import fs from 'fs/promises'; // <-- Importamos fs para borrar ficheros
-import path from 'path'; // <-- Importamos path para construir rutas
+import fs from 'fs/promises';
+import path from 'path';
 
 const { User, BodyWeightLog, sequelize } = models;
 
@@ -72,11 +72,10 @@ export const updateMyProfile = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN: Actualización de updateMyAccount ---
+// --- INICIO DE LA MODIFICACIÓN (Versión 2) ---
 export const updateMyAccount = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    // Si hay errores de validación, y se subió un fichero, hay que borrarlo
     if (req.file) {
       await fs.unlink(req.file.path);
     }
@@ -87,7 +86,6 @@ export const updateMyAccount = async (req, res, next) => {
 
   try {
     const { userId } = req.user;
-    // Obtenemos 'username' del body
     const { name, username, email, currentPassword, newPassword } = req.body;
 
     const user = await User.findByPk(userId);
@@ -98,85 +96,86 @@ export const updateMyAccount = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // 1. Guardar la ruta de la imagen antigua (si existe) para borrarla DESPUÉS de guardar
+    // 1. Guardar ruta imagen antigua
     if (user.profile_image_url) {
-        // El path en la BBDD es /images/profiles/filename.jpg
-        // El path en el disco es public/images/profiles/filename.jpg
-        // process.cwd() apunta a la raíz del backend
         oldImagePath = path.join(process.cwd(), 'public', user.profile_image_url);
     }
 
-    // 2. Si se sube un nuevo fichero (req.file viene de multer)
+    // Objeto para guardar solo los campos que vamos a actualizar
+    const fieldsToUpdate = {};
+
+    // 2. Si se sube una nueva imagen
     if (req.file) {
-        // El path de multer es (ej) 'public/images/profiles/user-1-12345.jpg'
-        // Guardamos la URL pública (sin 'public')
         const publicUrl = `/images/profiles/${req.file.filename}`;
-        user.profile_image_url = publicUrl;
-        
-        // Si la nueva imagen es la misma que la antigua, no borramos la antigua
+        fieldsToUpdate.profile_image_url = publicUrl; // Añadir al objeto de actualización
+
         if(oldImagePath && path.basename(oldImagePath) === req.file.filename) {
-            oldImagePath = null;
+            oldImagePath = null; // No borrar si es la misma imagen
         }
     }
+    // Si no hay req.file, NO añadimos profile_image_url a fieldsToUpdate
 
-    // 3. Si se intenta cambiar la contraseña
+    // 3. Si se intenta cambiar contraseña
     if (newPassword) {
       if (!currentPassword) {
-        // Borramos el fichero subido si la validación falla aquí
         if (req.file) await fs.unlink(req.file.path);
         return res.status(400).json({ error: 'La contraseña actual es requerida para cambiarla.' });
       }
       const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
       if (!isMatch) {
-        // Borramos el fichero subido si la validación falla aquí
         if (req.file) await fs.unlink(req.file.path);
         return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
       }
       const salt = await bcrypt.genSalt(10);
-      user.password_hash = await bcrypt.hash(newPassword, salt);
+      fieldsToUpdate.password_hash = await bcrypt.hash(newPassword, salt); // Añadir al objeto de actualización
     }
 
-    // 4. Actualizar el resto de campos
-    user.name = name;
-    user.username = username;
-    user.email = email;
+    // 4. Actualizar otros campos (SOLO si se proporcionan y son diferentes)
+    if (name !== undefined && name !== user.name) fieldsToUpdate.name = name;
+    if (username !== undefined && username !== user.username) fieldsToUpdate.username = username;
+    if (email !== undefined && email !== user.email) fieldsToUpdate.email = email;
 
-    // 5. Guardar en la BBDD
-    await user.save();
+    // 5. Guardar en BBDD (SOLO los campos especificados en fieldsToUpdate)
+    // Usamos user.update en lugar de user.save()
+    if (Object.keys(fieldsToUpdate).length > 0) {
+        await user.update(fieldsToUpdate);
+    }
 
-    // 6. Si todo fue bien, borrar la imagen antigua (si existía)
-    if (oldImagePath) {
+    // 6. Borrar imagen antigua si procede
+    if (oldImagePath && fieldsToUpdate.profile_image_url) { // Solo borrar si subimos una NUEVA imagen
       try {
         await fs.unlink(oldImagePath);
       } catch (unlinkError) {
         console.warn(`No se pudo borrar la imagen antigua: ${oldImagePath}`, unlinkError);
-        // No bloqueamos la respuesta por esto, solo lo logueamos
       }
     }
 
+    // 7. Recargar datos frescos desde la BBDD
+    await user.reload();
+
+    // 8. Enviar respuesta actualizada
     const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
     res.json(userWithoutPassword);
 
   } catch (error) {
-    // Si la BBDD falla (ej: username duplicado), borramos el fichero que acabamos de subir
+    // Manejo de errores (borrar fichero subido si falla la BBDD)
     if (req.file) {
-        await fs.unlink(req.file.path);
+        try { await fs.unlink(req.file.path); } catch (e) {}
     }
-    
+
     if (error.name === 'SequelizeUniqueConstraintError') {
-      // Error específico para email o username duplicado
       return res.status(409).json({ error: 'El email o nombre de usuario ya está en uso.' });
     }
-    
+
     next(error);
   }
 };
-// --- FIN DE LA MODIFICACIÓN ---
+// --- FIN DE LA MODIFICACIÓN (Versión 2) ---
 
 const userController = {
   getMyProfile,
   updateMyProfile,
-  updateMyAccount // <-- Exportar la nueva función
+  updateMyAccount
 };
 
 export default userController;

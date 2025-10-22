@@ -1,13 +1,19 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React from 'react';
 // --- INICIO DE LA MODIFICACIÓN ---
-// No se necesitan nuevos iconos, reutilizamos 'Gauge' o 'TrendingUp' que ya están
-import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github, Camera } from 'lucide-react';
+import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github, Camera, IdCard } from 'lucide-react'; // <-- Añadido 'IdCard'
 // --- FIN DE LA MODIFICACIÓN ---
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const nouveautes = [
+    // --- INICIO DE LA MODIFICACIÓN (Nueva Novedad) ---
+    {
+      icon: <IdCard className="text-accent" />,
+      titre: "Página de Perfil Renovada",
+      description: "Presentamos la nueva página de 'Mi Cuenta'. Ahora puedes subir tu propia foto de perfil y elegir un nombre de usuario (@username) único para personalizar tu experiencia."
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
     {
       icon: <QrCode className="text-accent" />,
       titre: "Escaneo de Códigos de Barras",
@@ -33,13 +39,11 @@ const WelcomeModal = ({ onClose }) => {
       titre: "Fotos en tus Comidas",
       description: "Añade un toque visual a tu diario. Ahora puedes subir una foto para cada registro de comida, ayudándote a recordar qué comiste."
     },
-    // --- INICIO DE LA MODIFICACIÓN ---
     {
       icon: <TrendingUp className="text-accent" />, // Reutilizamos icono
       titre: "Estimación de 1 RM en Progreso",
       description: "La gráfica de 'Progresión de Fuerza' ahora muestra tu 1RM estimado (Una Repetición Máxima), calculado automáticamente a partir de tus mejores series y visible incluso en registros antiguos."
     },
-    // --- FIN DE LA MODIFICACIÓN ---
     {
       icon: <Gauge className="text-accent" />,
       titre: "Cálculo de Macros Mejorado",
