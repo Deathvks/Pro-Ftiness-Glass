@@ -36,13 +36,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// --- INICIO DE LA MODIFICACIÓN (Ruta Estática Absoluta) ---
-// Usamos la ruta absoluta que coincide con el montaje del volumen
-// en lugar de depender de path.join(__dirname, 'public')
-const staticPath = '/app/backend/public';
+// --- INICIO DE LA REVERSIÓN ---
+// Volvemos a usar path.join(__dirname, 'public')
+const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath));
 console.log(`Sirviendo archivos estáticos desde: ${staticPath}`); // Log para verificar
-// --- FIN DE LA MODIFICACIÓN ---
+// --- FIN DE LA REVERSIÓN ---
 
 // Middleware para actualizar 'lastSeen' en cada petición
 app.use(async (req, res, next) => { // <-- Marcado como async
@@ -52,25 +51,20 @@ app.use(async (req, res, next) => { // <-- Marcado como async
   if (token) {
     try {
       // Verificamos el token
-      // Usamos verify de forma síncrona o manejamos la promesa
       const payload = jwt.verify(token, process.env.JWT_SECRET);
 
       // Si es válido, actualizamos lastSeen en la DB
-      if (payload && payload.userId) { // <-- Corregido: usa payload.userId como en authenticateToken
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Usamos await para esperar a que la actualización termine
+      if (payload && payload.userId) {
         await db.User.update(
           { lastSeen: new Date() },
-          { where: { id: payload.userId } } // <-- Corregido: usa payload.userId
+          { where: { id: payload.userId } }
         );
-        // --- FIN DE LA MODIFICACIÓN ---
       }
     } catch (err) {
       // Si el token es inválido (expirado, etc.), no hacemos nada
-      // console.error("Error verifying token for lastSeen update:", err.message); // Log opcional
     }
   }
-  next(); // Continuamos a la siguiente ruta DESPUÉS de intentar actualizar
+  next();
 });
 
 // Rutas de la API
@@ -103,5 +97,4 @@ db.sequelize.sync()
     console.error('Unable to connect to the database:', err);
   });
 
-// --- Exportación opcional si usas start.js ---
 // export default app; // Descomenta si usas start.js
