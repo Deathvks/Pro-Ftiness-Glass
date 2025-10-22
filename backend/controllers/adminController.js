@@ -1,83 +1,18 @@
-import bcrypt from 'bcryptjs';
-import models from '../models/index.js';
-const { User } = models;
+/* backend/controllers/adminController.js */
+import db from '../models/index.js';
+const User = db.User;
 
-// Obtener una lista de todos los usuarios
+// Obtener todos los usuarios
 export const getAllUsers = async (req, res, next) => {
   try {
-    let users = await User.findAll({
-      attributes: { exclude: ['password_hash'] }, // Nunca exponer las contraseñas
-      order: [['created_at', 'DESC']],
+    const users = await User.findAll({
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Añadimos 'lastSeen' a los atributos seleccionados
+      attributes: ['id', 'name', 'email', 'role', 'is_verified', 'username', 'profile_image_url', 'lastSeen'],
+      // --- FIN DE LA MODIFICACIÓN ---
+      order: [['id', 'ASC']],
     });
-
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Mover al administrador actual al principio de la lista
-    const adminUserId = req.user.userId;
-    users = users.sort((a, b) => {
-      if (a.id === adminUserId) return -1;
-      if (b.id === adminUserId) return 1;
-      return 0; // Mantener el orden original para los demás
-    });
-    // --- FIN DE LA MODIFICACIÓN ---
-
     res.json(users);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Actualizar un usuario por su ID
-export const updateUser = async (req, res, next) => {
-  const { userId } = req.params;
-  const { name, email, role } = req.body;
-
-  // Evitar que un admin se quite el rol a sí mismo si es el único
-  if (parseInt(userId, 10) === req.user.userId && role !== 'admin') {
-    try {
-      const adminCount = await User.count({ where: { role: 'admin' } });
-      if (adminCount <= 1) {
-        return res.status(400).json({ error: 'No puedes eliminar el rol del único administrador.' });
-      }
-    } catch (error) {
-      return next(error);
-    }
-  }
-
-  try {
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado.' });
-    }
-
-    user.name = name ?? user.name;
-    user.email = email ?? user.email;
-    user.role = role ?? user.role;
-    
-    await user.save();
-    
-    const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
-    res.json(userWithoutPassword);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Eliminar un usuario por su ID
-export const deleteUser = async (req, res, next) => {
-  const { userId } = req.params;
-
-  // Evitar que un admin se borre a sí mismo
-  if (parseInt(userId, 10) === req.user.userId) {
-    return res.status(400).json({ error: 'No puedes eliminar tu propia cuenta de administrador.' });
-  }
-
-  try {
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado.' });
-    }
-    await user.destroy();
-    res.json({ message: 'Usuario eliminado correctamente.' });
   } catch (error) {
     next(error);
   }
@@ -85,36 +20,129 @@ export const deleteUser = async (req, res, next) => {
 
 // Crear un nuevo usuario
 export const createUser = async (req, res, next) => {
-  const { name, email, password, role } = req.body;
-
+  const { username, email, password, role, is_verified } = req.body;
   try {
-    const existingUser = await User.findOne({ where: { email } });
+    // Validar que el username o email no existan ya
+    const existingUser = await User.findOne({ 
+      where: { 
+        [db.Sequelize.Op.or]: [{ email }, { username }]
+      } 
+    });
     if (existingUser) {
-      return res.status(409).json({ error: 'El email ya está en uso.' });
+      if (existingUser.email === email) {
+        return res.status(409).json({ message: 'El correo electrónico ya está en uso.' });
+      }
+      if (existingUser.username === username) {
+        return res.status(409).json({ message: 'El nombre de usuario ya está en uso.' });
+      }
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(password, salt);
-
     const newUser = await User.create({
-      name,
+      username,
+      name: username, // Rellenamos 'name' con 'username' por consistencia
       email,
-      password_hash,
-      role,
+      password, // La contraseña será hasheada por el hook del modelo
+      role: role || 'user',
+      is_verified: is_verified || false,
     });
 
-    const { password_hash: _, ...userWithoutPassword } = newUser.get({ plain: true });
-    res.status(201).json(userWithoutPassword);
+    // No enviamos la contraseña en la respuesta
+    const userResponse = {
+      id: newUser.id,
+      username: newUser.username,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      is_verified: newUser.is_verified,
+      profile_image_url: newUser.profile_image_url,
+      lastSeen: newUser.lastSeen, // Incluimos lastSeen
+    };
+
+    res.status(201).json(userResponse);
   } catch (error) {
     next(error);
   }
 };
 
-const adminController = {
-  getAllUsers,
-  updateUser,
-  deleteUser,
-  createUser,
+// Actualizar un usuario
+export const updateUser = async (req, res, next) => {
+  const { id } = req.params;
+  const { username, email, role, is_verified, password } = req.body;
+
+  try {
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Validar que el username o email no existan en OTRO usuario
+    const existingUser = await User.findOne({
+      where: {
+        [db.Sequelize.Op.or]: [{ email }, { username }],
+        id: { [db.Sequelize.Op.ne]: id } // Excluimos al usuario actual
+      }
+    });
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return res.status(409).json({ message: 'El correo electrónico ya está en uso por otro usuario.' });
+      }
+      if (existingUser.username === username) {
+        return res.status(409).json({ message: 'El nombre de usuario ya está en uso por otro usuario.' });
+      }
+    }
+
+    // Construir objeto de actualización
+    const updateData = {
+      username,
+      email,
+      role,
+      is_verified,
+    };
+    
+    // Si se proporciona una contraseña, se actualizará
+    // El hook 'beforeSave' en el modelo se encargará de hashearla
+    if (password) {
+      updateData.password = password;
+    }
+    
+    // Rellenamos 'name' por consistencia si 'username' cambia
+    if (username) {
+      updateData.name = username;
+    }
+
+    await user.update(updateData);
+
+    // No enviamos la contraseña en la respuesta
+    const userResponse = {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      is_verified: user.is_verified,
+      profile_image_url: user.profile_image_url,
+      lastSeen: user.lastSeen, // Incluimos lastSeen
+    };
+
+    res.json(userResponse);
+  } catch (error) {
+    next(error);
+  }
 };
 
-export default adminController;
+// Eliminar un usuario
+export const deleteUser = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    await user.destroy();
+    res.status(200).json({ message: 'Usuario eliminado correctamente' });
+  } catch (error) {
+    next(error);
+  }
+};

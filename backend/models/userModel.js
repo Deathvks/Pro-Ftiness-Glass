@@ -1,96 +1,140 @@
-import { DataTypes } from "sequelize";
-import sequelize from "../db.js";
+/* backend/models/userModel.js */
+const { Model, DataTypes } = require('sequelize');
+const bcrypt = require('bcryptjs');
 
-const User = sequelize.define(
-  "User",
-  {
+module.exports = (sequelize) => {
+  class User extends Model {
+    static associate(models) {
+      User.hasMany(models.WorkoutLog, { foreignKey: 'userId' });
+      User.hasMany(models.PersonalRecord, { foreignKey: 'userId' });
+      User.hasMany(models.Routine, { foreignKey: 'userId' });
+      User.hasMany(models.BodyWeight, { foreignKey: 'userId' });
+      User.hasMany(models.NutritionLog, { foreignKey: 'userId' });
+      User.hasMany(models.FavoriteMeal, { foreignKey: 'userId' });
+      User.hasMany(models.TemplateRoutine, { foreignKey: 'userId' });
+      User.hasMany(models.CreatinaLog, { foreignKey: 'userId' });
+    }
+
+    // Método para verificar la contraseña
+    validPassword(password) {
+      return bcrypt.compareSync(password, this.password);
+    }
+  }
+
+  User.init({
     id: {
       type: DataTypes.INTEGER,
-      autoIncrement: true,
       primaryKey: true,
-    },
-    email: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      unique: true,
-    },
-    password_hash: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
+      autoIncrement: true
     },
     name: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
+      type: DataTypes.STRING,
+      allowNull: true // Permitimos nulo temporalmente por la migración de 'username'
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true
+      }
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false
     },
     role: {
-      type: DataTypes.ENUM('user', 'admin'),
-      allowNull: false,
-      defaultValue: 'user',
+      type: DataTypes.STRING,
+      defaultValue: 'user' // 'user' o 'admin'
     },
-    gender: {
-      type: DataTypes.ENUM('male', 'female', 'other'),
-      allowNull: true,
+    goal: {
+      type: DataTypes.STRING, // 'loss', 'maintenance', 'gain'
+      allowNull: true
+    },
+    weight: {
+      type: DataTypes.FLOAT,
+      allowNull: true
+    },
+    height: {
+      type: DataTypes.FLOAT,
+      allowNull: true
     },
     age: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: true
     },
-    height: {
+    gender: {
+      type: DataTypes.STRING, // 'male', 'female', 'other'
+      allowNull: true
+    },
+    activityLevel: {
+      type: DataTypes.STRING, // 'sedentary', 'light', 'moderate', 'active', 'very_active'
+      allowNull: true
+    },
+    targetCalories: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: true
     },
-    activity_level: {
-      type: DataTypes.DECIMAL(4, 3),
-      allowNull: true,
+    targetProtein: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
-    goal: {
-      type: DataTypes.ENUM('lose', 'maintain', 'gain'),
-      allowNull: true,
+    targetCarbs: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    targetFat: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
     is_verified: {
       type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
+      defaultValue: false
     },
-    // --- INICIO DE LA MODIFICACIÓN ---
-    username: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-      unique: true,
-      comment: 'Nombre de usuario público',
-    },
-    profile_image_url: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      comment: 'URL de la imagen de perfil del usuario',
-    },
-    // --- FIN DE LA MODIFICACIÓN ---
     verification_code: {
-      type: DataTypes.STRING(6),
-      allowNull: true,
+      type: DataTypes.STRING,
+      allowNull: true
     },
-    verification_code_expires_at: {
+    verification_expires: {
       type: DataTypes.DATE,
-      allowNull: true,
+      allowNull: true
     },
     password_reset_token: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Se corrige el nombre de la columna para que coincida con la migración.
-    password_reset_expires_at: {
+    password_reset_expires: {
       type: DataTypes.DATE,
       allowNull: true,
     },
-    // --- FIN DE LA CORRECCIÓN ---
-  },
-  {
-    tableName: 'users',
-    timestamps: true,
-    updatedAt: false,
-    createdAt: 'created_at',
-  }
-);
+    username: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true
+    },
+    profile_image_url: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    lastSeen: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
+  }, {
+    sequelize,
+    modelName: 'User',
+    hooks: {
+      // Hook para hashear la contraseña antes de crear o actualizar el usuario
+      beforeSave: async (user, options) => {
+        if (user.changed('password')) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      }
+    }
+  });
 
-export default User;
+  return User;
+};

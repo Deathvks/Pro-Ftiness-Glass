@@ -1,3 +1,4 @@
+/* frontend/src/pages/AdminPanel.jsx */
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
@@ -7,6 +8,50 @@ import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
 import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adminService';
 import { useToast } from '../hooks/useToast';
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Definimos el umbral para considerar a un usuario "online" (5 minutos)
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
+// Componente para el indicador de estado
+const StatusIndicator = ({ lastSeen }) => {
+  const [isOnline, setIsOnline] = useState(false);
+
+  useEffect(() => {
+    const checkStatus = () => {
+      if (!lastSeen) {
+        setIsOnline(false);
+        return;
+      }
+      const lastSeenDate = new Date(lastSeen);
+      const now = new Date();
+      setIsOnline(now - lastSeenDate < ONLINE_THRESHOLD_MS);
+    };
+
+    checkStatus();
+    // Actualizamos el estado cada 30 segundos
+    const interval = setInterval(checkStatus, 30000); 
+
+    return () => clearInterval(interval);
+  }, [lastSeen]);
+
+  if (isOnline) {
+    return (
+      <div className="flex items-center justify-center gap-1.5">
+        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        <span className="text-xs font-medium text-green-500">Online</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-1.5">
+      <div className="w-2 h-2 rounded-full bg-text-muted" />
+      <span className="text-xs font-medium text-text-muted">Offline</span>
+    </div>
+  );
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 const AdminPanel = ({ onCancel }) => {
   const [users, setUsers] = useState([]);
@@ -64,7 +109,7 @@ const AdminPanel = ({ onCancel }) => {
     setIsUpdating(true);
     try {
       const newUser = await createUser(userData);
-      setUsers([newUser, ...users]);
+      setUsers([newUser, ...users]); // Añadimos el nuevo usuario al principio
       addToast('Usuario creado con éxito.', 'success');
       setIsCreatingUser(false);
     } catch (error) {
@@ -105,16 +150,33 @@ const AdminPanel = ({ onCancel }) => {
                   <tr>
                     <th className="p-3">Nombre</th>
                     <th className="p-3">Email</th>
+                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                    <th className="p-3 text-center">Estado</th>
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                     <th className="p-3 text-center">Rol</th>
                     <th className="p-3 text-center">Verificado</th>
                     <th className="p-3 text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(user => (
+                  {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                  {/* Ordenamos por 'lastSeen' descendente (más recientes primero) */}
+                  {[...users]
+                    .sort((a, b) => {
+                      const dateA = a.lastSeen ? new Date(a.lastSeen) : new Date(0);
+                      const dateB = b.lastSeen ? new Date(b.lastSeen) : new Date(0);
+                      return dateB - dateA;
+                    })
+                    .map(user => (
+                  // --- FIN DE LA MODIFICACIÓN ---
                     <tr key={user.id} className="border-b border-glass-border last:border-b-0">
-                      <td className="p-3 font-semibold align-middle">{user.name}</td>
+                      <td className="p-3 font-semibold align-middle">{user.username || user.name}</td>
                       <td className="p-3 text-text-secondary align-middle">{user.email}</td>
+                      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                      <td className="p-3 align-middle text-center">
+                        <StatusIndicator lastSeen={user.lastSeen} />
+                      </td>
+                      {/* --- FIN DE LA MODIFICACIÓN --- */}
                       <td className="p-3 align-middle text-center">
                         <span className={`inline-flex items-center px-2 py-1 text-xs font-bold rounded-full capitalize ${user.role === 'admin' ? 'bg-accent-transparent text-accent' : 'bg-bg-secondary text-text-secondary'}`}>
                           {user.role}
@@ -149,11 +211,19 @@ const AdminPanel = ({ onCancel }) => {
 
             {/* Vista de tarjetas para pantallas pequeñas */}
             <div className="md:hidden space-y-4">
-              {users.map(user => (
+              {/* --- INICIO DE LA MODIFICACIÓN --- */}
+              {[...users]
+                .sort((a, b) => {
+                  const dateA = a.lastSeen ? new Date(a.lastSeen) : new Date(0);
+                  const dateB = b.lastSeen ? new Date(b.lastSeen) : new Date(0);
+                  return dateB - dateA;
+                })
+                .map(user => (
+              // --- FIN DE LA MODIFICACIÓN ---
                 <div key={user.id} className="bg-glass-light border border-glass-border rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg truncate">{user.name}</h3>
+                      <h3 className="font-semibold text-lg truncate">{user.username || user.name}</h3>
                       <p className="text-text-secondary text-sm truncate">{user.email}</p>
                     </div>
                     <div className="flex gap-2 ml-2">
@@ -166,7 +236,9 @@ const AdminPanel = ({ onCancel }) => {
                     </div>
                   </div>
                   
-                  <div className="flex justify-between items-center">
+                  {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                  <div className="flex flex-wrap justify-between items-center gap-y-2">
+                  {/* --- FIN DE LA MODIFICACIÓN --- */}
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-text-secondary">Rol:</span>
@@ -190,6 +262,13 @@ const AdminPanel = ({ onCancel }) => {
                         )}
                       </div>
                     </div>
+                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                    {/* Añadimos el estado a la vista móvil */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-text-secondary">Estado:</span>
+                      <StatusIndicator lastSeen={user.lastSeen} />
+                    </div>
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                   </div>
                 </div>
               ))}

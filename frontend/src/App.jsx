@@ -1,3 +1,4 @@
+/* frontend/src/App.jsx */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils, User } from 'lucide-react';
 import useAppStore from './store/useAppStore';

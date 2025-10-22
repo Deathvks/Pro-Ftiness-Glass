@@ -6,6 +6,9 @@ import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+// --- INICIO DE LA MODIFICACIÓN ---
+import jwt from 'jsonwebtoken'; // Para decodificar el token
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Requerido en ESM para simular __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +41,37 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Middleware para actualizar 'lastSeen' en cada petición
+// Este middleware no bloquea, solo intenta actualizar
+app.use(async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token) {
+    try {
+      // Verificamos el token
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Si es válido, actualizamos lastSeen en la DB
+      // Usamos 'db.User' ya que 'db' es el índice de modelos importado
+      if (payload && payload.id) {
+        // No esperamos a que termine (no-blocking) para no retrasar la respuesta
+        db.User.update(
+          { lastSeen: new Date() },
+          { where: { id: payload.id } }
+        );
+      }
+    } catch (err) {
+      // Si el token es inválido (expirado, etc.), no hacemos nada
+      // y simplemente continuamos. El middleware 'authenticateToken'
+      // real se encargará de bloquear la ruta si es necesario.
+    }
+  }
+  next(); // Siempre continuamos a la siguiente ruta
+});
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
