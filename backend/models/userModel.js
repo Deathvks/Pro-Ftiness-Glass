@@ -52,6 +52,19 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    username: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      unique: true,
+      comment: 'Nombre de usuario público',
+    },
+    profile_image_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'URL de la imagen de perfil del usuario',
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
     verification_code: {
       type: DataTypes.STRING(6),
       allowNull: true,
