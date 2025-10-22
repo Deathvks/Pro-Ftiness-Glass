@@ -1,5 +1,8 @@
 /* frontend/src/pages/Progress.jsx */
 import React, { useState, useMemo } from 'react';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { User } from 'lucide-react';
+// --- FIN DE LA MODIFICACIÓN ---
 import useAppStore from '../store/useAppStore';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 
@@ -12,11 +15,14 @@ import NutritionView from '../components/progress/NutritionView';
 import RecordsView from '../components/progress/RecordsView';
 // --- FIN DE LA CORRECCIÓN DE RUTAS ---
 
-const Progress = ({ darkMode }) => {
-    const { workoutLog, bodyWeightLog } = useAppStore(state => ({
+// --- INICIO DE LA MODIFICACIÓN ---
+const Progress = ({ darkMode, setView }) => {
+    const { workoutLog, bodyWeightLog, userProfile } = useAppStore(state => ({
         workoutLog: state.workoutLog,
         bodyWeightLog: state.bodyWeightLog,
+        userProfile: state.userProfile, // Añadido para el icono de perfil
     }));
+// --- FIN DE LA MODIFICACIÓN ---
 
     const [viewType, setViewType] = useState('exercise');
     const [detailedLog, setDetailedLog] = useState(null);
@@ -102,7 +108,30 @@ const Progress = ({ darkMode }) => {
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* Header para Móvil */}
+            <div className="md:hidden flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-extrabold">Progreso</h1>
+                <button 
+                    onClick={() => setView('profile')} 
+                    className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
+                >
+                    {userProfile?.profile_image_url ? (
+                        <img 
+                            src={userProfile.profile_image_url} 
+                            alt="Perfil" 
+                            className="w-full h-full rounded-full object-cover" 
+                        />
+                    ) : (
+                        <User size={24} className="text-text-secondary" />
+                    )}
+                </button>
+            </div>
+            
+            {/* Header para PC (modificado) */}
+            <div className="hidden md:flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <h1 className="text-4xl font-extrabold">Tu Progreso</h1>
                 <div className="flex flex-wrap gap-2">
                     <button onClick={() => setViewType('exercise')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'exercise' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Por Ejercicio</button>

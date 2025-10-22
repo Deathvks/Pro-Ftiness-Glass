@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils, User } from 'lucide-react';
+// --- FIN DE LA MODIFICACIÓN ---
 import useAppStore from './store/useAppStore';
 import { APP_VERSION } from './config/version';
 
@@ -23,8 +25,9 @@ import EmailVerification from './components/EmailVerification';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import CookieConsentBanner from './components/CookieConsentBanner';
-// --- INICIO DE LA MODIFICACIÓN ---
 import PrivacyPolicy from './pages/PrivacyPolicy';
+// --- INICIO DE LA MODIFICACIÓN ---
+import Profile from './pages/Profile';
 // --- FIN DE LA MODIFICACIÓN ---
 
 export default function App() {
@@ -47,7 +50,6 @@ export default function App() {
     handleDeclineCookies,
   } = useAppStore();
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   const [view, setView] = useState(() => {
     if (useAppStore.getState().activeWorkout) {
       return 'workout';
@@ -55,9 +57,7 @@ export default function App() {
     return localStorage.getItem('lastView') || 'dashboard';
   });
 
-  // Estado para controlar la vista anterior al mostrar la política de privacidad
   const [previousView, setPreviousView] = useState(null);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const mainContentRef = useRef(null);
 
@@ -69,7 +69,9 @@ export default function App() {
 
   useEffect(() => {
     // No guardar la vista de la política de privacidad como la última vista
-    if (view !== 'privacyPolicy') {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    if (view !== 'privacyPolicy' && view !== 'profile') { // Tampoco guardar 'profile' si se navega desde un botón de header
+    // --- FIN DE LA MODIFICACIÓN ---
       localStorage.setItem('lastView', view);
     }
   }, [view]);
@@ -195,7 +197,6 @@ export default function App() {
     }
   }, []);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   const handleShowPolicy = () => {
     setPreviousView(view); // Guardamos la vista actual
     setView('privacyPolicy');
@@ -205,7 +206,6 @@ export default function App() {
     setView(previousView || 'dashboard'); // Volvemos a la vista anterior o al dashboard
     setPreviousView(null);
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
   if (isLoading) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
@@ -255,8 +255,9 @@ export default function App() {
       case 'profileEditor': return <ProfileEditor onCancel={() => navigate('settings')} />;
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
       case 'adminPanel': return <AdminPanel onCancel={() => navigate('settings')} />;
-      // --- INICIO DE LA MODIFICACIÓN ---
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
+      // --- INICIO DE LA MODIFICACIÓN ---
+      case 'profile': return <Profile onCancel={() => navigate('dashboard')} />;
       // --- FIN DE LA MODIFICACIÓN ---
       default: return <Dashboard setView={navigate} />;
     }
@@ -293,10 +294,26 @@ export default function App() {
             </button>
           ))}
         </div>
-        <button onClick={handleLogoutClick} className="mt-auto flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors duration-200">
-          <LogOut size={24} />
-          <span className="whitespace-nowrap">Cerrar Sesión</span>
-        </button>
+        
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        <div className="mt-auto flex flex-col gap-2">
+          <div className="h-px bg-[--glass-border] my-2"></div>
+          <button
+            onClick={() => navigate('profile')}
+            className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === 'profile'
+                ? 'bg-accent text-bg-secondary'
+                : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
+              }`}>
+            <User size={24} />
+            <span className="whitespace-nowrap">Perfil</span>
+          </button>
+          <button onClick={handleLogoutClick} className="flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors duration-200">
+            <LogOut size={24} />
+            <span className="whitespace-nowrap">Cerrar Sesión</span>
+          </button>
+        </div>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
+
       </nav>
 
       <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
@@ -322,9 +339,7 @@ export default function App() {
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
           onDecline={handleDeclineCookies}
-          // --- INICIO DE LA MODIFICACIÓN ---
           onShowPolicy={handleShowPolicy}
-          // --- FIN DE LA MODIFICACIÓN ---
         />
       )}
 

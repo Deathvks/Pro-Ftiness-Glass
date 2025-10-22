@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle, ArrowUp, ArrowDown, Minus, User } from 'lucide-react';
+// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
@@ -77,7 +79,6 @@ const Dashboard = ({ setView }) => {
             : { icon: ArrowDown, color: 'text-text-secondary', bg: 'bg-bg-secondary' };
     }, [sortedWeightLog, userProfile?.goal]);
     
-    // --- INICIO DE LA MODIFICACIÓN ---
     const getTrendForLog = (currentLog, previousLog) => {
         if (!previousLog) return null;
 
@@ -107,7 +108,6 @@ const Dashboard = ({ setView }) => {
             ? { icon: ArrowUp, color: 'text-text-secondary' }
             : { icon: ArrowDown, color: 'text-text-secondary' };
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const weeklyLogs = useMemo(() => {
         const today = new Date();
@@ -148,9 +148,7 @@ const Dashboard = ({ setView }) => {
     }, [latestWeight]);
     
     const nutritionTotals = useMemo(() => {
-        // --- INICIO DE LA MODIFICACIÓN ---
         return (nutritionLog || []).reduce((acc, log) => {
-        // --- FIN DE LA MODIFICACIÓN ---
             acc.calories += log.calories || 0;
             acc.protein += parseFloat(log.protein_g) || 0;
             return acc;
@@ -182,7 +180,30 @@ const Dashboard = ({ setView }) => {
     
     return (
         <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-            <h1 className="text-4xl font-extrabold mb-8">Dashboard</h1>
+            
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* Header para Móvil */}
+            <div className="md:hidden flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-extrabold">Dashboard</h1>
+                <button 
+                    onClick={() => setView('profile')} 
+                    className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
+                >
+                    {userProfile?.profile_image_url ? (
+                        <img 
+                            src={userProfile.profile_image_url} 
+                            alt="Perfil" 
+                            className="w-full h-full rounded-full object-cover" 
+                        />
+                    ) : (
+                        <User size={24} className="text-text-secondary" />
+                    )}
+                </button>
+            </div>
+            
+            {/* Header para PC (existente) */}
+            <h1 className="hidden md:block text-4xl font-extrabold mb-8">Dashboard</h1>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <StatCard icon={<Dumbbell size={24} />} title="Sesiones Semanales" value={weeklySessions} unit="" />
@@ -261,7 +282,6 @@ const Dashboard = ({ setView }) => {
                     </div>
                     <div className="flex flex-col gap-2">
                         <h3 className="font-semibold text-text-secondary">Historial Reciente</h3>
-                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
                         {sortedWeightLog.length > 0 ? sortedWeightLog.slice(0, 4).map((log, index) => {
                             const trend = getTrendForLog(log, sortedWeightLog[index + 1]);
                             return (
@@ -276,7 +296,6 @@ const Dashboard = ({ setView }) => {
                         }) : (
                             <p className="text-text-muted text-center py-4">No hay registros de peso todavía.</p>
                         )}
-                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                     </div>
                     <button onClick={() => setShowWeightModal(true)} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
                         {todaysWeightLog ? <><Edit size={20} /><span>Editar Peso de Hoy</span></> : <><Plus size={20} /><span>Registrar Peso</span></>}

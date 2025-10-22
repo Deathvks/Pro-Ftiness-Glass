@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, User } from 'lucide-react';
+// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -44,7 +46,9 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
 
 
 // Componente principal de la página de Nutrición
-const Nutrition = () => {
+// --- INICIO DE LA MODIFICACIÓN ---
+const Nutrition = ({ setView }) => {
+// --- FIN DE LA MODIFICACIÓN ---
     const { addToast } = useToast();
     const {
         userProfile,
@@ -112,7 +116,6 @@ const Nutrition = () => {
         }
     };
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     const handleSaveFood = async (formDataOrArray) => {
         setIsSubmitting(true);
         try {
@@ -125,7 +128,7 @@ const Nutrition = () => {
                 const formData = isArray ? formDataOrArray[0] : formDataOrArray;
 
                 if (!formData) {
-                     throw new Error("No se proporcionaron datos para la actualización.");
+                    throw new Error("No se proporcionaron datos para la actualización.");
                 }
 
                 await nutritionService.updateFoodLog(modal.data.id, formData);
@@ -158,7 +161,6 @@ const Nutrition = () => {
             setIsSubmitting(false);
         }
     };
-    // --- FIN DE LA MODIFICACIÓN ---
     
     const handleDeleteFood = async () => {
         if (!logToDelete) return;
@@ -208,11 +210,35 @@ const Nutrition = () => {
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-            <h1 className="text-4xl font-extrabold mb-4">Seguimiento de Nutrición</h1>
+            
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* Header para Móvil */}
+            <div className="md:hidden flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-extrabold">Nutrición</h1>
+                <button 
+                    onClick={() => setView('profile')} 
+                    className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
+                >
+                    {userProfile?.profile_image_url ? (
+                        <img 
+                            src={userProfile.profile_image_url} 
+                            alt="Perfil" 
+                            className="w-full h-full rounded-full object-cover" 
+                        />
+                    ) : (
+                        <User size={24} className="text-text-secondary" />
+                    )}
+                </button>
+            </div>
+            
+            {/* Header para PC (existente modificado) */}
+            <h1 className="hidden md:block text-4xl font-extrabold mb-4">Nutrición</h1>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
+
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
 
             {isLoading && !isSubmitting ? (
-                 <div className="flex justify-center items-center py-10"><Spinner size={40}/></div>
+                    <div className="flex justify-center items-center py-10"><Spinner size={40}/></div>
             ) : (
             <>
                 {/* Sección de Resumen y Suplementos */}
@@ -236,7 +262,7 @@ const Nutrition = () => {
                                 <Droplet size={32} className="text-blue-400" />
                                 <p className="text-4xl font-bold">{(waterLog?.quantity_ml || 0)}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
                             </div>
-                             <button onClick={() => setModal({ type: 'water', data: null })} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
+                                <button onClick={() => setModal({ type: 'water', data: null })} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
                                 <Plus size={20} />
                                 <span>Añadir / Editar Agua</span>
                             </button>
@@ -328,13 +354,13 @@ const Nutrition = () => {
             )}
 
             {modal.type === 'food' && (
-                 <NutritionLogModal
+                <NutritionLogModal
                     onClose={() => setModal({ type: null, data: null })}
                     onSave={handleSaveFood}
                     isLoading={isSubmitting}
                     mealType={modal.data.mealType}
                     logToEdit={modal.data.id ? modal.data : null}
-                 />
+                />
             )}
             
             {logToDelete && (

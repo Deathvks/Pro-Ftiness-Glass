@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Plus, Edit, Trash2, Play, CheckCircle, Link2,
-  Search, CalendarClock, Dumbbell, BookCopy, Compass
+  Search, CalendarClock, Dumbbell, BookCopy, Compass,
+  // --- INICIO DE LA MODIFICACIÓN ---
+  User
+  // --- FIN DE LA MODIFICACIÓN ---
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -15,12 +18,15 @@ import TemplateRoutines from './TemplateRoutines'; // Importamos el nuevo compon
 
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
-  const { routines, workoutLog, fetchInitialData, startWorkout } = useAppStore(state => ({
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const { routines, workoutLog, fetchInitialData, startWorkout, userProfile } = useAppStore(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
     startWorkout: state.startWorkout,
+    userProfile: state.userProfile, // Añadido para el icono de perfil
   }));
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -174,7 +180,30 @@ const Routines = ({ setView }) => {
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 md:p-8 animate-[fade-in_0.5s_ease-out]">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+      
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Header para Móvil */}
+      <div className="md:hidden flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-extrabold">Rutinas</h1>
+          <button 
+              onClick={() => setView('profile')} 
+              className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
+          >
+              {userProfile?.profile_image_url ? (
+                  <img 
+                      src={userProfile.profile_image_url} 
+                      alt="Perfil" 
+                      className="w-full h-full rounded-full object-cover" 
+                  />
+              ) : (
+                  <User size={24} className="text-text-secondary" />
+              )}
+          </button>
+      </div>
+
+      {/* Header para PC (modificado) */}
+      <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
         <h1 className="text-3xl md:text-4xl font-extrabold">Rutinas</h1>
         {activeTab === 'myRoutines' && (
           <button

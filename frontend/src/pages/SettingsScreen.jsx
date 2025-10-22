@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, UserCog, Shield, LogOut, Info, ChevronRight, Cookie } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importamos 'User' y eliminamos 'UserCog'
+import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield, LogOut, Info, ChevronRight, Cookie } from 'lucide-react';
+// --- FIN DE LA MODIFICACIÓN ---
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 
@@ -93,7 +96,30 @@ export default function SettingsScreen({
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Header para Móvil */}
+      <div className="md:hidden flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-extrabold">Ajustes</h1>
+          <button 
+              onClick={() => setView('profile')} 
+              className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
+          >
+              {userProfile?.profile_image_url ? (
+                  <img 
+                      src={userProfile.profile_image_url} 
+                      alt="Perfil" 
+                      className="w-full h-full rounded-full object-cover" 
+                  />
+              ) : (
+                  <User size={24} className="text-text-secondary" />
+              )}
+          </button>
+      </div>
+
+      {/* Header para PC (modificado para ocultar en móvil) */}
+      <div className="hidden md:flex items-center justify-between mb-6">
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
         <button
           onClick={() => setView('dashboard')}
           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition"
@@ -172,23 +198,15 @@ export default function SettingsScreen({
           >
             <User size={18} className="text-accent" />
             <div>
-              <div className="text-sm font-semibold">Editar perfil</div>
-              <div className="text-xs text-text-secondary">Nombre, objetivos, etc.</div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setView('accountEditor')}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
-          >
-            <UserCog size={18} className="text-accent" />
-            <div>
-              <div className="text-sm font-semibold">Seguridad y cuenta</div>
-              <div className="text-xs text-text-secondary">Email, contraseña</div>
+              <div className="text-sm font-semibold">Editar perfil físico</div>
+              <div className="text-xs text-text-secondary">Objetivos, actividad, etc.</div>
             </div>
           </button>
 
           {/* --- INICIO DE LA MODIFICACIÓN --- */}
+          {/* Botón 'accountEditor' (Seguridad y cuenta) eliminado */}
+          {/* --- FIN DE LA MODIFICACIÓN --- */}
+
           <button
             onClick={resetCookieConsent}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
@@ -199,8 +217,9 @@ export default function SettingsScreen({
               <div className="text-xs text-text-secondary">Gestionar consentimiento</div>
             </div>
           </button>
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
 
+          {/* --- INICIO DE LA MODIFICACIÓN --- */}
+          {/* Panel de administración RESTAURADO */}
           {userProfile?.role === 'admin' && (
             <button
               onClick={() => setView('adminPanel')}
@@ -213,6 +232,7 @@ export default function SettingsScreen({
               </div>
             </button>
           )}
+          {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           <div className="h-px bg-[--glass-border] my-1" />
 
