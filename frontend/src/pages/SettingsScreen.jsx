@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 // --- INICIO DE LA MODIFICACIÓN ---
-// Importamos 'User' y eliminamos 'UserCog'
+// 'User' ya estaba importado, 'UserCog' eliminado
 import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield, LogOut, Info, ChevronRight, Cookie } from 'lucide-react';
 // --- FIN DE LA MODIFICACIÓN ---
 import useAppStore from '../store/useAppStore';
@@ -95,27 +95,11 @@ export default function SettingsScreen({
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto">
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Ajustamos padding
+    <div className="px-4 pb-4 md:p-8 max-w-5xl mx-auto">
       
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* Header para Móvil */}
-      <div className="md:hidden flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-extrabold">Ajustes</h1>
-          <button 
-              onClick={() => setView('profile')} 
-              className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
-          >
-              {userProfile?.profile_image_url ? (
-                  <img 
-                      src={userProfile.profile_image_url} 
-                      alt="Perfil" 
-                      className="w-full h-full rounded-full object-cover" 
-                  />
-              ) : (
-                  <User size={24} className="text-text-secondary" />
-              )}
-          </button>
-      </div>
+      {/* Header para Móvil (ELIMINADO) */}
 
       {/* Header para PC (modificado para ocultar en móvil) */}
       <div className="hidden md:flex items-center justify-between mb-6">
@@ -127,13 +111,19 @@ export default function SettingsScreen({
           <ChevronLeft size={18} />
           <span className="text-sm font-medium">Volver</span>
         </button>
-
-        <h1 className="text-xl md:text-2xl font-bold">Ajustes</h1>
+        
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* Añadimos margen superior para PC */}
+        <h1 className="text-xl md:text-2xl font-bold mt-10 md:mt-0">Ajustes</h1>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         <div className="w-[90px]" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Añadimos margen superior en móvil */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 md:mt-0">
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
         <section className="lg:col-span-2 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5">
           <div className="flex items-center gap-2 mb-4">
             <Palette size={18} className="text-accent" />

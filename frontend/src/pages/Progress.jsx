@@ -1,7 +1,7 @@
 /* frontend/src/pages/Progress.jsx */
 import React, { useState, useMemo } from 'react';
 // --- INICIO DE LA MODIFICACIÓN ---
-import { User } from 'lucide-react';
+// 'User' importado ha sido eliminado
 // --- FIN DE LA MODIFICACIÓN ---
 import useAppStore from '../store/useAppStore';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
@@ -16,11 +16,11 @@ import RecordsView from '../components/progress/RecordsView';
 // --- FIN DE LA CORRECCIÓN DE RUTAS ---
 
 // --- INICIO DE LA MODIFICACIÓN ---
-const Progress = ({ darkMode, setView }) => {
-    const { workoutLog, bodyWeightLog, userProfile } = useAppStore(state => ({
+// Eliminamos userProfile y setView de las props/estado si ya no se usan aquí
+const Progress = ({ darkMode }) => {
+    const { workoutLog, bodyWeightLog } = useAppStore(state => ({
         workoutLog: state.workoutLog,
         bodyWeightLog: state.bodyWeightLog,
-        userProfile: state.userProfile, // Añadido para el icono de perfil
     }));
 // --- FIN DE LA MODIFICACIÓN ---
 
@@ -107,32 +107,19 @@ const Progress = ({ darkMode, setView }) => {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Ajustamos padding
+        <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
             
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* Header para Móvil */}
-            <div className="md:hidden flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-extrabold">Progreso</h1>
-                <button 
-                    onClick={() => setView('profile')} 
-                    className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
-                >
-                    {userProfile?.profile_image_url ? (
-                        <img 
-                            src={userProfile.profile_image_url} 
-                            alt="Perfil" 
-                            className="w-full h-full rounded-full object-cover" 
-                        />
-                    ) : (
-                        <User size={24} className="text-text-secondary" />
-                    )}
-                </button>
-            </div>
+            {/* Header para Móvil (ELIMINADO) */}
             
             {/* Header para PC (modificado) */}
             <div className="hidden md:flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             {/* --- FIN DE LA MODIFICACIÓN --- */}
-                <h1 className="text-4xl font-extrabold">Tu Progreso</h1>
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                {/* Añadimos margen superior para PC */}
+                <h1 className="text-4xl font-extrabold mt-10 md:mt-0">Tu Progreso</h1>
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <div className="flex flex-wrap gap-2">
                     <button onClick={() => setViewType('exercise')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'exercise' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Por Ejercicio</button>
                     <button onClick={() => setViewType('nutrition')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'nutrition' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Nutrición</button>
@@ -141,6 +128,17 @@ const Progress = ({ darkMode, setView }) => {
                     <button onClick={() => setViewType('calendar')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'calendar' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Calendario</button>
                 </div>
             </div>
+            
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* Añadimos margen superior al contenedor de pestañas en móvil */}
+            <div className="md:hidden flex flex-wrap gap-2 mt-6 sm:mt-0 mb-6">
+                <button onClick={() => setViewType('exercise')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'exercise' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Por Ejercicio</button>
+                <button onClick={() => setViewType('nutrition')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'nutrition' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Nutrición</button>
+                <button onClick={() => setViewType('records')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'records' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Récords</button>
+                <button onClick={() => setViewType('bodyWeight')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'bodyWeight' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Peso Corporal</button>
+                <button onClick={() => setViewType('calendar')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'calendar' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Calendario</button>
+            </div>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             {renderView()}
 

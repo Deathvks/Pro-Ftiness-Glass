@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 // --- INICIO DE LA MODIFICACIÓN ---
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap } from 'lucide-react';
 // --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
@@ -13,7 +13,7 @@ import CreatinaTracker from '../components/CreatinaTracker';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
 
-// Componente para el selector de fecha (sin cambios)
+// Componente para el selector de fecha
 const DateNavigator = ({ selectedDate, onDateChange }) => {
     const today = new Date();
     const date = new Date(selectedDate);
@@ -27,7 +27,9 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
     const isToday = today.toISOString().split('T')[0] === selectedDate;
 
     return (
-        <div className="flex items-center justify-between mb-8">
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Añadimos margen superior en móvil
+        <div className="flex items-center justify-between mb-8 mt-6 sm:mt-0">
             <button onClick={() => changeDay(-1)} className="p-2 rounded-full hover:bg-white/10 transition">
                 <ChevronLeft />
             </button>
@@ -46,9 +48,7 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
 
 
 // Componente principal de la página de Nutrición
-// --- INICIO DE LA MODIFICACIÓN ---
 const Nutrition = ({ setView }) => {
-// --- FIN DE LA MODIFICACIÓN ---
     const { addToast } = useToast();
     const {
         userProfile,
@@ -170,7 +170,8 @@ const Nutrition = ({ setView }) => {
             addToast('Comida eliminada.', 'success');
             await fetchDataForDate(selectedDate);
             setLogToDelete(null);
-        } catch (error) {
+        } catch (error)
+            {
             addToast(error.message || 'Error al eliminar la comida.', 'error');
         } finally {
             setIsSubmitting(false);
@@ -209,30 +210,14 @@ const Nutrition = ({ setView }) => {
     }, [nutritionLog]);
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Ajustamos padding
+        <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
             
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* Header para Móvil */}
-            <div className="md:hidden flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-extrabold">Nutrición</h1>
-                <button 
-                    onClick={() => setView('profile')} 
-                    className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
-                >
-                    {userProfile?.profile_image_url ? (
-                        <img 
-                            src={userProfile.profile_image_url} 
-                            alt="Perfil" 
-                            className="w-full h-full rounded-full object-cover" 
-                        />
-                    ) : (
-                        <User size={24} className="text-text-secondary" />
-                    )}
-                </button>
-            </div>
+            {/* Header para Móvil (ELIMINADO) */}
             
             {/* Header para PC (existente modificado) */}
-            <h1 className="hidden md:block text-4xl font-extrabold mb-4">Nutrición</h1>
+            <h1 className="hidden md:block text-4xl font-extrabold mb-4 mt-10 md:mt-0">Nutrición</h1>
             {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />

@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils, User } from 'lucide-react';
-// --- FIN DE LA MODIFICACIÓN ---
 import useAppStore from './store/useAppStore';
 import { APP_VERSION } from './config/version';
 
@@ -26,9 +24,12 @@ import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-// --- INICIO DE LA MODIFICACIÓN ---
 import Profile from './pages/Profile';
-// --- FIN DE LA MODIFICACIÓN ---
+
+// Obtenemos la URL base del backend desde las variables de entorno
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Eliminamos '/api' del final si existe para obtener solo la base del backend
+const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 export default function App() {
   const {
@@ -68,9 +69,9 @@ export default function App() {
   }, [view]);
 
   useEffect(() => {
-    // No guardar la vista de la política de privacidad como la última vista
     // --- INICIO DE LA MODIFICACIÓN ---
-    if (view !== 'privacyPolicy' && view !== 'profile') { // Tampoco guardar 'profile' si se navega desde un botón de header
+    // Eliminamos 'profile' de la condición para que SÍ se guarde en localStorage.
+    if (view !== 'privacyPolicy') {
     // --- FIN DE LA MODIFICACIÓN ---
       localStorage.setItem('lastView', view);
     }
@@ -233,11 +234,23 @@ export default function App() {
   if (userProfile && !userProfile.goal) {
     return <OnboardingScreen />;
   }
+  
+  const pageTitles = {
+    dashboard: 'Dashboard',
+    nutrition: 'Nutrición',
+    progress: 'Progreso',
+    routines: 'Rutinas',
+    settings: 'Ajustes',
+    // --- INICIO DE LA MODIFICACIÓN ---
+    profile: 'Perfil' // Añadimos el título para la vista de perfil
+    // --- FIN DE LA MODIFICACIÓN ---
+  };
+  const currentTitle = pageTitles[view];
 
   const renderView = () => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigate} />;
-      case 'progress': return <Progress darkMode={theme !== 'light'} />;
+      case 'progress': return <Progress darkMode={theme !== 'light'} setView={navigate} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout timer={timer} setView={navigate} />;
       case 'nutrition': return <Nutrition setView={navigate} />;
@@ -256,9 +269,7 @@ export default function App() {
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
       case 'adminPanel': return <AdminPanel onCancel={() => navigate('settings')} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
-      // --- INICIO DE LA MODIFICACIÓN ---
-      case 'profile': return <Profile onCancel={() => navigate('dashboard')} />;
-      // --- FIN DE LA MODIFICACIÓN ---
+      case 'profile': return <Profile onCancel={() => navigate(previousView || 'dashboard')} />;
       default: return <Dashboard setView={navigate} />;
     }
   };
@@ -284,27 +295,42 @@ export default function App() {
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => navigate(item.id)}
+              onClick={() => {
+                setPreviousView(view); // Guardar vista actual al navegar
+                navigate(item.id);
+              }}
               className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === item.id
                   ? 'bg-accent text-bg-secondary'
                   : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
                 }`}>
               {item.icon}
-              <span className="whitespace-nowrap">{item.label}</span>
+              <span className="whitespace-noww-rap">{item.label}</span>
             </button>
           ))}
         </div>
         
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
         <div className="mt-auto flex flex-col gap-2">
           <div className="h-px bg-[--glass-border] my-2"></div>
           <button
-            onClick={() => navigate('profile')}
+            onClick={() => {
+              setPreviousView(view); // Guardar vista actual
+              navigate('profile');
+            }}
             className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === 'profile'
                 ? 'bg-accent text-bg-secondary'
                 : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
               }`}>
-            <User size={24} />
+            
+            {userProfile && userProfile.profile_image_url ? (
+                <img 
+                    src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`} 
+                    alt="Perfil" 
+                    className="w-6 h-6 rounded-full object-cover"
+                />
+            ) : (
+                <User size={24} />
+            )}
+            
             <span className="whitespace-nowrap">Perfil</span>
           </button>
           <button onClick={handleLogoutClick} className="flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors duration-200">
@@ -312,17 +338,50 @@ export default function App() {
             <span className="whitespace-nowrap">Cerrar Sesión</span>
           </button>
         </div>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       </nav>
 
       <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
+        
+        {/* Header Común para Móvil */}
+        {currentTitle && (
+          <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
+            <h1 className="text-3xl font-extrabold">{currentTitle}</h1>
+            <button
+              onClick={() => {
+                setPreviousView(view); // Guardar vista actual
+                navigate('profile');
+              }}
+              // --- INICIO DE LA MODIFICACIÓN ---
+              // Ocultamos el botón de perfil si ya estamos en el perfil
+              className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
+              // --- FIN DE LA MODIFICACIÓN ---
+            >
+              {userProfile?.profile_image_url ? (
+                <img
+                  src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
+                  alt="Perfil"
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <User size={24} className="text-text-secondary" />
+              )}
+            </button>
+          </div>
+        )}
+
         {renderView()}
       </main>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 flex justify-around items-center bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]">
         {navItems.map(item => (
-          <button key={item.id} onClick={() => navigate(item.id)} className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
+          <button 
+            key={item.id} 
+            onClick={() => {
+              setPreviousView(view); // Guardar vista actual
+              navigate(item.id);
+            }} 
+            className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
             {item.icon}
             <span className="text-xs font-medium">{item.label}</span>
           </button>

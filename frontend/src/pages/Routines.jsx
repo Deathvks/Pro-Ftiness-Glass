@@ -3,7 +3,7 @@ import {
   Plus, Edit, Trash2, Play, CheckCircle, Link2,
   Search, CalendarClock, Dumbbell, BookCopy, Compass,
   // --- INICIO DE LA MODIFICACIÓN ---
-  User
+  // User eliminado
   // --- FIN DE LA MODIFICACIÓN ---
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
@@ -19,12 +19,12 @@ import TemplateRoutines from './TemplateRoutines'; // Importamos el nuevo compon
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
   // --- INICIO DE LA MODIFICACIÓN ---
-  const { routines, workoutLog, fetchInitialData, startWorkout, userProfile } = useAppStore(state => ({
+  const { routines, workoutLog, fetchInitialData, startWorkout } = useAppStore(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
     startWorkout: state.startWorkout,
-    userProfile: state.userProfile, // Añadido para el icono de perfil
+    // userProfile eliminado
   }));
   // --- FIN DE LA MODIFICACIÓN ---
 
@@ -179,32 +179,19 @@ const Routines = ({ setView }) => {
   const inactiveModeClasses = "bg-bg-secondary hover:bg-white/10 text-text-secondary";
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 md:p-8 animate-[fade-in_0.5s_ease-out]">
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Ajustamos padding
+    <div className="w-full max-w-6xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease-out]">
       
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* Header para Móvil */}
-      <div className="md:hidden flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-extrabold">Rutinas</h1>
-          <button 
-              onClick={() => setView('profile')} 
-              className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
-          >
-              {userProfile?.profile_image_url ? (
-                  <img 
-                      src={userProfile.profile_image_url} 
-                      alt="Perfil" 
-                      className="w-full h-full rounded-full object-cover" 
-                  />
-              ) : (
-                  <User size={24} className="text-text-secondary" />
-              )}
-          </button>
-      </div>
+      {/* Header para Móvil (ELIMINADO) */}
 
       {/* Header para PC (modificado) */}
       <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
       {/* --- FIN DE LA MODIFICACIÓN --- */}
-        <h1 className="text-3xl md:text-4xl font-extrabold">Rutinas</h1>
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* Añadimos margen superior para PC */}
+        <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0">Rutinas</h1>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
         {activeTab === 'myRoutines' && (
           <button
             onClick={() => setEditingRoutine({ name: '', description: '', exercises: [] })}
@@ -216,7 +203,10 @@ const Routines = ({ setView }) => {
         )}
       </div>
 
-      <div className="flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-glass-border w-fit">
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Añadimos margen superior en móvil */}
+      <div className="flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-glass-border w-fit mt-6 md:mt-0">
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
           <button onClick={() => setActiveTab('myRoutines')} className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses}`}>
             <BookCopy size={16} /> Mis Rutinas
           </button>

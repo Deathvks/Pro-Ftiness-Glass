@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle, ArrowUp, ArrowDown, Minus, User } from 'lucide-react';
-// --- FIN DE LA MODIFICACIÓN ---
+import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
@@ -179,33 +177,15 @@ const Dashboard = ({ setView }) => {
     };
     
     return (
-        <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+            
+            {/* Header para PC (MANTENIDO) */}
+            <h1 className="hidden md:block text-4xl font-extrabold mb-8 mt-10 md:mt-0">Dashboard</h1>
             
             {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* Header para Móvil */}
-            <div className="md:hidden flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-extrabold">Dashboard</h1>
-                <button 
-                    onClick={() => setView('profile')} 
-                    className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden"
-                >
-                    {userProfile?.profile_image_url ? (
-                        <img 
-                            src={userProfile.profile_image_url} 
-                            alt="Perfil" 
-                            className="w-full h-full rounded-full object-cover" 
-                        />
-                    ) : (
-                        <User size={24} className="text-text-secondary" />
-                    )}
-                </button>
-            </div>
-            
-            {/* Header para PC (existente) */}
-            <h1 className="hidden md:block text-4xl font-extrabold mb-8">Dashboard</h1>
+            {/* Añadimos mt-6 solo en móvil (y tabletas sm), para separar del header */}
+            <div className="mt-6 sm:mt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             {/* --- FIN DE LA MODIFICACIÓN --- */}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <StatCard icon={<Dumbbell size={24} />} title="Sesiones Semanales" value={weeklySessions} unit="" />
                 <StatCard icon={<Target size={24} />} title="Objetivo Calorías" value={calorieTarget?.toLocaleString('es-ES') ?? 'N/A'} unit="kcal" />
                 <StatCard icon={<Clock size={24} />} title="Tiempo Semanal" value={weeklyTimeDisplay} unit="" />
