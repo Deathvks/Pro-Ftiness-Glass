@@ -1,7 +1,6 @@
 import apiClient from './apiClient';
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Obtener registros de creatina, ahora con filtros opcionales
+// Obtener registros de creatina, ahora con filtros opcionales (startDate, endDate)
 export const getCreatinaLogs = async (params = {}) => {
     try {
         const urlParams = new URLSearchParams(params);
@@ -12,32 +11,14 @@ export const getCreatinaLogs = async (params = {}) => {
         throw new Error(error.message || 'Error al obtener registros de creatina');
     }
 };
-// --- FIN DE LA MODIFICACIÓN ---
-
-// Obtener registro de creatina por fecha específica
-export const getCreatinaLogByDate = async (date) => {
-    try {
-        const response = await apiClient(`/creatina/${date}`);
-        return response;
-    } catch (error) {
-        // Verificar si es un error 404 (registro no encontrado)
-        if (error.message?.includes('Not Found') || error.message?.includes('404')) {
-            return { data: null }; // Retornar null cuando no hay registro
-        }
-        console.error('Error fetching creatina log by date:', error);
-        throw error; // Re-lanzar otros errores
-    }
-};
 
 // Crear nuevo registro de creatina
 export const createCreatinaLog = async (logData) => {
     try {
-        // --- INICIO DE LA MODIFICACIÓN ---
         const response = await apiClient('/creatina', {
             method: 'POST',
             body: logData
         });
-        // --- FIN DE LA MODIFICACIÓN ---
         return response;
     } catch (error) {
         console.error('Error creating creatina log:', error);
@@ -48,12 +29,10 @@ export const createCreatinaLog = async (logData) => {
 // Actualizar registro de creatina existente
 export const updateCreatinaLog = async (id, logData) => {
     try {
-        // --- INICIO DE LA MODIFICACIÓN ---
         const response = await apiClient(`/creatina/${id}`, {
             method: 'PUT',
             body: logData
         });
-        // --- FIN DE LA MODIFICACIÓN ---
         return response;
     } catch (error) {
         console.error('Error updating creatina log:', error);

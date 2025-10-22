@@ -124,26 +124,6 @@ export const deleteCreatinaLog = async (req, res, next) => {
   }
 };
 
-export const getCreatinaLogByDate = async (req, res, next) => {
-  try {
-    const userId = req.user.userId;
-    const { date } = req.params;
-
-    const logs = await CreatinaLog.findAll({
-      where: {
-        user_id: userId,
-        log_date: date
-      },
-      order: [['id', 'ASC']]
-    });
-
-    res.json({ data: logs });
-  } catch (error) {
-    console.error('Error en getCreatinaLogByDate:', error);
-    next(error);
-  }
-};
-
 export const getCreatinaStats = async (req, res, next) => {
     try {
         const { userId } = req.user;
@@ -201,7 +181,6 @@ export const getCreatinaStats = async (req, res, next) => {
             }
         }
         
-        // --- INICIO DE LA MODIFICACIÓN ---
         // Cálculo de la semana actual (de Lunes a Hoy)
         const todayForWeek = new Date();
         const dayOfWeek = todayForWeek.getUTCDay(); // 0=Dom, 1=Lun, ...
@@ -218,7 +197,6 @@ export const getCreatinaStats = async (req, res, next) => {
             logDate.setUTCHours(0, 0, 0, 0); // Asegurar comparación solo por fecha
             return logDate >= startOfWeek && logDate <= todayForWeek;
         }).length;
-        // --- FIN DE LA MODIFICACIÓN ---
         
         res.json({
             data: {
@@ -236,7 +214,6 @@ export const getCreatinaStats = async (req, res, next) => {
 
 const creatinaController = {
   getCreatinaLogs,
-  getCreatinaLogByDate,
   createCreatinaLog,
   updateCreatinaLog,
   deleteCreatinaLog,

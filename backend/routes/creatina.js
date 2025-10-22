@@ -3,7 +3,6 @@ import { body } from 'express-validator';
 import authenticateToken from '../middleware/authenticateToken.js';
 import {
   getCreatinaLogs,
-  getCreatinaLogByDate, // Añadir esta importación
   createCreatinaLog,
   updateCreatinaLog,
   deleteCreatinaLog,
@@ -39,14 +38,11 @@ const validateCreatinaUpdate = [
 // Rutas protegidas
 router.use(authenticateToken);
 
-// GET /api/creatina - Obtener registros
+// GET /api/creatina - Obtener registros (soporta filtros startDate y endDate)
 router.get('/', getCreatinaLogs);
 
 // GET /api/creatina/stats - Obtener estadísticas
 router.get('/stats', getCreatinaStats);
-
-// GET /api/creatina/:date - Obtener registro por fecha específica
-router.get('/:date', getCreatinaLogByDate); // Añadir esta ruta
 
 // POST /api/creatina - Crear registro
 router.post('/', validateCreatinaLog, createCreatinaLog);

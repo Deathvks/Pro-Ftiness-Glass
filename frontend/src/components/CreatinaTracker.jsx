@@ -163,7 +163,6 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
         setLogToDelete(log);
     };
 
-C
     const confirmDelete = async () => {
         if (!logToDelete) return;
 
