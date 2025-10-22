@@ -25,6 +25,9 @@ import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profile from './pages/Profile';
+// --- INICIO DE LA MODIFICACIÓN ---
+import Sidebar from './components/Sidebar'; // Importamos el nuevo componente
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Obtenemos la URL base del backend desde las variables de entorno
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -69,10 +72,7 @@ export default function App() {
   }, [view]);
 
   useEffect(() => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Eliminamos 'profile' de la condición para que SÍ se guarde en localStorage.
     if (view !== 'privacyPolicy') {
-    // --- FIN DE LA MODIFICACIÓN ---
       localStorage.setItem('lastView', view);
     }
   }, [view]);
@@ -241,9 +241,7 @@ export default function App() {
     progress: 'Progreso',
     routines: 'Rutinas',
     settings: 'Ajustes',
-    // --- INICIO DE LA MODIFICACIÓN ---
-    profile: 'Perfil' // Añadimos el título para la vista de perfil
-    // --- FIN DE LA MODIFICACIÓN ---
+    profile: 'Perfil'
   };
   const currentTitle = pageTitles[view];
 
@@ -286,60 +284,18 @@ export default function App() {
     <div className="relative flex w-full h-full overflow-hidden">
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
-      <nav className="hidden md:flex flex-col gap-10 p-8 w-64 h-full border-r border-[--glass-border] bg-bg-primary">
-        <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 text-accent transition-transform hover:scale-105">
-          <Dumbbell className="h-7 w-7 flex-shrink-0" />
-          <h1 className="text-xl font-bold text-text-primary whitespace-nowrap">Pro Fitness Glass</h1>
-        </button>
-        <div className="flex flex-col gap-4">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setPreviousView(view); // Guardar vista actual al navegar
-                navigate(item.id);
-              }}
-              className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === item.id
-                  ? 'bg-accent text-bg-secondary'
-                  : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
-                }`}>
-              {item.icon}
-              <span className="whitespace-noww-rap">{item.label}</span>
-            </button>
-          ))}
-        </div>
-        
-        <div className="mt-auto flex flex-col gap-2">
-          <div className="h-px bg-[--glass-border] my-2"></div>
-          <button
-            onClick={() => {
-              setPreviousView(view); // Guardar vista actual
-              navigate('profile');
-            }}
-            className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === 'profile'
-                ? 'bg-accent text-bg-secondary'
-                : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
-              }`}>
-            
-            {userProfile && userProfile.profile_image_url ? (
-                <img 
-                    src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`} 
-                    alt="Perfil" 
-                    className="w-6 h-6 rounded-full object-cover"
-                />
-            ) : (
-                <User size={24} />
-            )}
-            
-            <span className="whitespace-nowrap">Perfil</span>
-          </button>
-          <button onClick={handleLogoutClick} className="flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors duration-200">
-            <LogOut size={24} />
-            <span className="whitespace-nowrap">Cerrar Sesión</span>
-          </button>
-        </div>
-
-      </nav>
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Reemplazamos el nav inline con el componente Sidebar */}
+      <Sidebar
+        view={view}
+        navigate={navigate}
+        setPreviousView={setPreviousView}
+        navItems={navItems}
+        userProfile={userProfile}
+        BACKEND_BASE_URL={BACKEND_BASE_URL}
+        handleLogoutClick={handleLogoutClick}
+      />
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
         
@@ -352,10 +308,7 @@ export default function App() {
                 setPreviousView(view); // Guardar vista actual
                 navigate('profile');
               }}
-              // --- INICIO DE LA MODIFICACIÓN ---
-              // Ocultamos el botón de perfil si ya estamos en el perfil
               className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
-              // --- FIN DE LA MODIFICACIÓN ---
             >
               {userProfile?.profile_image_url ? (
                 <img
