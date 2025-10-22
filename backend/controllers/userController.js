@@ -72,7 +72,7 @@ export const updateMyProfile = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN (Versión 2) ---
+// --- INICIO DE LA MODIFICACIÓN (Versión 3) ---
 export const updateMyAccount = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -130,10 +130,12 @@ export const updateMyAccount = async (req, res, next) => {
       fieldsToUpdate.password_hash = await bcrypt.hash(newPassword, salt); // Añadir al objeto de actualización
     }
 
-    // 4. Actualizar otros campos (SOLO si se proporcionan y son diferentes)
-    if (name !== undefined && name !== user.name) fieldsToUpdate.name = name;
-    if (username !== undefined && username !== user.username) fieldsToUpdate.username = username;
-    if (email !== undefined && email !== user.email) fieldsToUpdate.email = email;
+    // 4. Actualizar otros campos (SOLO si se proporcionan, no son vacíos y son diferentes)
+    // Se usa 'name &&' para asegurar que el campo no es undefined NI un string vacío ""
+    if (name && name !== user.name) fieldsToUpdate.name = name;
+    if (username && username !== user.username) fieldsToUpdate.username = username;
+    if (email && email !== user.email) fieldsToUpdate.email = email;
+
 
     // 5. Guardar en BBDD (SOLO los campos especificados en fieldsToUpdate)
     // Usamos user.update en lugar de user.save()
@@ -170,7 +172,7 @@ export const updateMyAccount = async (req, res, next) => {
     next(error);
   }
 };
-// --- FIN DE LA MODIFICACIÓN (Versión 2) ---
+// --- FIN DE LA MODIFICACIÓN (Versión 3) ---
 
 const userController = {
   getMyProfile,

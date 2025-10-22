@@ -81,23 +81,42 @@ router.put(
 // PUT /api/users/me/account (Actualizar datos de la cuenta)
 router.put(
   '/me/account',
-  // --- INICIO DE LA MODIFICACIÓN ---
   // 1. Aplicar middleware de Multer. 'profileImage' debe coincidir con el FormData
   upload.single('profileImage'), 
   
-  // 2. Validaciones
+  // --- INICIO DE LA MODIFICACIÓN (Validaciones) ---
+  
+  // 2. Validaciones (hechas opcionales para actualizaciones parciales)
   [
-    body('name').notEmpty().withMessage('El nombre es requerido.'),
-    body('username') // <-- Nueva validación
-      .notEmpty().withMessage('El nombre de usuario es requerido.')
-      .isLength({ min: 3, max: 30 }).withMessage('El nombre de usuario debe tener entre 3 y 30 caracteres.')
-      .matches(/^[a-zA-Z0-9_.-]+$/).withMessage('Nombre de usuario solo puede contener letras, números, _, . y -'),
-    body('email').isEmail().withMessage('Debe ser un email válido.'),
-    // Permite que el campo esté vacío, pero si tiene algo, debe tener min 6 chars
-    body('newPassword').optional({ checkFalsy: true }).isLength({ min: 6 }).withMessage('La nueva contraseña debe tener al menos 6 caracteres.')
+    // Name: Opcional, pero si se envía, debe tener una longitud válida.
+    body('name')
+      .optional({ checkFalsy: true }) // Permite que sea "" o undefined
+      .isLength({ min: 3, max: 50 })
+      .withMessage('Si se proporciona, el nombre debe tener entre 3 y 50 caracteres.'),
+      
+    // Username: Opcional, pero si se envía, debe ser válido.
+    body('username')
+      .optional({ checkFalsy: true }) // Permite que sea "" o undefined
+      .isLength({ min: 3, max: 30 })
+      .withMessage('Si se proporciona, el nombre de usuario debe tener entre 3 y 30 caracteres.')
+      .matches(/^[a-zA-Z0-9_.-]+$/)
+      .withMessage('Nombre de usuario solo puede contener letras, números, _, . y -'),
+      
+    // Email: Opcional, pero si se envía, debe ser un email.
+    body('email')
+      .optional({ checkFalsy: true }) // Permite que sea "" o undefined
+      .isEmail()
+      .withMessage('Si se proporciona, debe ser un email válido.'),
+      
+    // New Password: Ya estaba correcto.
+    body('newPassword')
+      .optional({ checkFalsy: true })
+      .isLength({ min: 6 })
+      .withMessage('La nueva contraseña debe tener al menos 6 caracteres.')
   ],
-  // 3. Controlador
   // --- FIN DE LA MODIFICACIÓN ---
+
+  // 3. Controlador
   userController.updateMyAccount
 );
 
