@@ -7,6 +7,7 @@ import authenticateToken from '../middleware/authenticateToken.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs'; // Usamos fs síncrono para crear el dir al inicio
+import { fileURLToPath } from 'url'; // Importamos esto
 // --- FIN DE LA MODIFICACIÓN ---
 
 const router = express.Router();
@@ -14,9 +15,13 @@ const router = express.Router();
 
 // --- INICIO DE LA MODIFICACIÓN: Configuración de Multer ---
 
+// Requerido en ESM para simular __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename); // Esto será /app/backend/routes
+
 // Directorio de subida para fotos de perfil
-// process.cwd() apunta a la raíz del backend
-const profileUploadDir = path.join(process.cwd(), 'public', 'images', 'profiles');
+// Usamos path.join con __dirname para subir un nivel (a /app/backend) y luego a public
+const profileUploadDir = path.join(__dirname, '..', 'public', 'images', 'profiles');
 
 // Asegurarse de que el directorio existe al iniciar
 if (!fs.existsSync(profileUploadDir)) {
