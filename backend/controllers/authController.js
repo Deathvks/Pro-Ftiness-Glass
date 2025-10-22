@@ -118,9 +118,10 @@ export const register = async (req, res, next) => {
       return res.status(500).json({ error: 'Error enviando código de verificación' });
     }
 
-    // Hash password here before create/update
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(password, salt);
+    // --- INICIO DE LA MODIFICACIÓN (Eliminamos hasheo) ---
+    // const salt = await bcrypt.genSalt(10);
+    // const password_hash = await bcrypt.hash(password, salt);
+    // --- FIN DE LA MODIFICACIÓN ---
 
 
     if (userToProcess) {
@@ -128,7 +129,10 @@ export const register = async (req, res, next) => {
         name: username,
         username: username,
         email: email,
-        password_hash: password_hash, // Use pre-hashed password
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Se pasa la contraseña en texto plano. El hook del modelo la hasheará.
+        password_hash: password,
+        // --- FIN DE LA MODIFICACIÓN ---
         verification_code: verificationCode,
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
         is_verified: false
@@ -138,7 +142,10 @@ export const register = async (req, res, next) => {
         name: username,
         username: username,
         email,
-        password_hash: password_hash, // Use pre-hashed password
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Se pasa la contraseña en texto plano. El hook del modelo la hasheará.
+        password_hash: password,
+        // --- FIN DE LA MODIFICACIÓN ---
         verification_code: verificationCode,
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
         is_verified: false
@@ -358,9 +365,15 @@ export const resetPassword = async (req, res, next) => {
       return res.status(400).json({ error: 'La nueva contraseña no puede ser igual a la anterior.' });
     }
 
+    // --- INICIO DE LA MODIFICACIÓN (Eliminamos hasheo) ---
     // Hash the new password before saving (Model hook should also handle this)
-    const salt = await bcrypt.genSalt(10);
-    user.password_hash = await bcrypt.hash(password, salt);
+    // const salt = await bcrypt.genSalt(10);
+    // user.password_hash = await bcrypt.hash(password, salt);
+    
+    // Se pasa la contraseña en texto plano. El hook del modelo la hasheará.
+    user.password_hash = password;
+    // --- FIN DE LA MODIFICACIÓN ---
+    
     user.password_reset_token = null;
     user.password_reset_expires_at = null;
     await user.save();

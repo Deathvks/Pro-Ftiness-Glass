@@ -126,8 +126,14 @@ export const updateMyAccount = async (req, res, next) => {
         if (req.file) await fs.unlink(req.file.path);
         return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
       }
-      const salt = await bcrypt.genSalt(10);
-      fieldsToUpdate.password_hash = await bcrypt.hash(newPassword, salt); // Añadir al objeto de actualización
+      
+      // --- INICIO DE LA CORRECCIÓN (BUG DOBLE HASH) ---
+      // const salt = await bcrypt.genSalt(10);
+      // fieldsToUpdate.password_hash = await bcrypt.hash(newPassword, salt); // ESTO ESTABA MAL (Doble hash)
+      
+      // AHORA: Pasamos el texto plano. El hook 'beforeSave' del modelo se encargará de hashear.
+      fieldsToUpdate.password_hash = newPassword;
+      // --- FIN DE LA CORRECCIÓN ---
     }
 
     // 4. Actualizar otros campos (SOLO si se proporcionan, no son vacíos y son diferentes)

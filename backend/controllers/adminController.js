@@ -41,7 +41,11 @@ export const createUser = async (req, res, next) => {
       username,
       name: username, // Rellenamos 'name' con 'username' por consistencia
       email,
-      password, // La contraseña será hasheada por el hook del modelo
+      // --- INICIO DE LA MODIFICACIÓN (BUG DOBLE HASH) ---
+      // Pasamos la contraseña en texto plano al campo 'password_hash'.
+      // El hook 'beforeSave' del modelo se encargará de hashearla.
+      password_hash: password, 
+      // --- FIN DE LA MODIFICACIÓN ---
       role: role || 'user',
       is_verified: is_verified || false,
     });
@@ -99,11 +103,14 @@ export const updateUser = async (req, res, next) => {
       is_verified,
     };
     
+    // --- INICIO DE LA MODIFICACIÓN (BUG DOBLE HASH) ---
     // Si se proporciona una contraseña, se actualizará
     // El hook 'beforeSave' en el modelo se encargará de hashearla
     if (password) {
-      updateData.password = password;
+      // Pasamos la contraseña en texto plano al campo 'password_hash'.
+      updateData.password_hash = password;
     }
+    // --- FIN DE LA MODIFICACIÓN ---
     
     // Rellenamos 'name' por consistencia si 'username' cambia
     if (username) {
