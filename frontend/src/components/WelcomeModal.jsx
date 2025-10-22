@@ -100,10 +100,13 @@ const WelcomeModal = ({ onClose }) => {
             href="https://github.com/deathvks/fittrack-pro"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors mb-4"
+            // --- INICIO DE LA CORRECCIÓN ---
+            // Usamos flex-col y sm:flex-row para manejar el wrapping en móvil y centrar verticalmente el ícono en dos líneas
+            className="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors mb-4"
+            // --- FIN DE LA CORRECCIÓN ---
           >
-            <Github size={16} />
-            <span>
+            <Github size={16} className="flex-shrink-0" />
+            <span className="text-center sm:text-left">
               Pro Fitness Glass es un proyecto de código abierto. ¡Tu apoyo es fundamental!
             </span>
           </a>
