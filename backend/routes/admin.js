@@ -1,6 +1,9 @@
 import express from 'express';
 import { body } from 'express-validator';
-import adminController from '../controllers/adminController.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importamos todas las exportaciones nombradas en un objeto 'adminController'
+import * as adminController from '../controllers/adminController.js';
+// --- FIN DE LA MODIFICACIÓN ---
 import authenticateToken from '../middleware/authenticateToken.js';
 import authorizeAdmin from '../middleware/authorizeAdmin.js';
 
