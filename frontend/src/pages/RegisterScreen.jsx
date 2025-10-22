@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import { useToast } from '../hooks/useToast';
-import { registerUser, resendVerificationEmail } from '../services/authService';
+import { registerUser } from '../services/authService'; // Eliminado resendVerificationEmail (no se usa aquí)
 import useAppStore from '../store/useAppStore';
 import EmailVerification from '../components/EmailVerification';
 
 const RegisterScreen = ({ showLogin }) => {
-    const [name, setName] = useState('');
+    // --- INICIO MODIFICACIÓN: Cambiar 'name' por 'username' ---
+    const [username, setUsername] = useState('');
+    // --- FIN MODIFICACIÓN ---
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
@@ -19,7 +21,16 @@ const RegisterScreen = ({ showLogin }) => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!name.trim()) newErrors.name = 'El nombre es requerido.';
+        // --- INICIO MODIFICACIÓN: Validar 'username' ---
+        if (!username.trim()) {
+            newErrors.username = 'El nombre de usuario es requerido.';
+        } else if (username.length < 3 || username.length > 30) {
+            newErrors.username = 'El nombre de usuario debe tener entre 3 y 30 caracteres.';
+        } else if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+             newErrors.username = 'Solo letras, números, _, . y -';
+        }
+        // --- FIN MODIFICACIÓN ---
+
         if (!email.trim()) {
             newErrors.email = 'El email es requerido.';
         } else if (!/\S+@\S+\.\S+/.test(email)) {
@@ -45,13 +56,32 @@ const RegisterScreen = ({ showLogin }) => {
         setIsLoading(true);
 
         try {
-            const response = await registerUser({ name, email, password });
+            // --- INICIO MODIFICACIÓN: Enviar 'username' ---
+            const response = await registerUser({ username, email, password });
+            // --- FIN MODIFICACIÓN ---
             addToast(response.message, 'success');
             setRegisteredEmail(email);
             setShowVerification(true);
         } catch (err) {
             const errorMessage = err.message || 'Error en el registro.';
-            setErrors({ api: errorMessage });
+            // --- INICIO MODIFICACIÓN: Manejar error específico de username ---
+            // Mapear errores del backend (si vienen en 'errors') a nuestro estado 'errors'
+            if (err.errors && Array.isArray(err.errors)) {
+                 const apiErrors = {};
+                 err.errors.forEach(error => {
+                     if (error.param) {
+                         apiErrors[error.param] = error.msg;
+                     }
+                 });
+                 setErrors(apiErrors);
+            } else if (errorMessage.toLowerCase().includes('nombre de usuario')) {
+                 setErrors({ username: errorMessage });
+            } else if (errorMessage.toLowerCase().includes('email')) {
+                 setErrors({ email: errorMessage });
+            } else {
+                 setErrors({ api: errorMessage });
+            }
+            // --- FIN MODIFICACIÓN ---
             addToast(errorMessage, 'error');
             setPassword('');
         } finally {
@@ -94,16 +124,19 @@ const RegisterScreen = ({ showLogin }) => {
                     <form onSubmit={handleRegister} className="flex flex-col gap-5" noValidate>
                         {errors.api && <p className="text-center text-red">{errors.api}</p>}
 
+                        {/* --- INICIO MODIFICACIÓN: Campo 'username' --- */}
                         <div>
                             <input
                                 type="text"
                                 placeholder="Nombre de usuario"
                                 className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                maxLength={30} // Añadido para consistencia con validación
                             />
-                            {errors.name && <p className="form-error-text text-left">{errors.name}</p>}
+                            {errors.username && <p className="form-error-text text-left">{errors.username}</p>}
                         </div>
+                        {/* --- FIN MODIFICACIÓN --- */}
 
                         <div>
                             <input

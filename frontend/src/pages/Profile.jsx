@@ -23,7 +23,9 @@ const Profile = ({ onCancel }) => {
     const fileInputRef = useRef(null);
 
     const [formData, setFormData] = useState({
-        name: userProfile.name || '',
+        // --- INICIO MODIFICACIÓN: Eliminar 'name' ---
+        // name: userProfile.name || '',
+        // --- FIN MODIFICACIÓN ---
         username: userProfile.username || '',
         email: userProfile.email || '',
         currentPassword: '',
@@ -46,8 +48,17 @@ const Profile = ({ onCancel }) => {
 
     const validate = () => {
         const newErrors = {};
-        if (!formData.name.trim()) newErrors.name = 'El nombre completo es requerido.';
-        if (!formData.username.trim()) newErrors.username = 'El nombre de usuario es requerido.';
+        // --- INICIO MODIFICACIÓN: Eliminar validación 'name' y ajustar 'username' ---
+        // if (!formData.name.trim()) newErrors.name = 'El nombre completo es requerido.';
+        if (!formData.username.trim()) {
+             newErrors.username = 'El nombre de usuario es requerido.';
+        } else if (formData.username.length < 3 || formData.username.length > 30) {
+            newErrors.username = 'El nombre de usuario debe tener entre 3 y 30 caracteres.';
+        } else if (!/^[a-zA-Z0-9_.-]+$/.test(formData.username)) {
+             newErrors.username = 'Solo letras, números, _, . y -';
+        }
+        // --- FIN MODIFICACIÓN ---
+
         if (!formData.email.trim()) newErrors.email = 'El email es requerido.';
         else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'El formato del email no es válido.';
 
@@ -72,7 +83,9 @@ const Profile = ({ onCancel }) => {
         setIsLoading(true);
 
         const data = new FormData();
-        data.append('name', formData.name);
+        // --- INICIO MODIFICACIÓN: Eliminar 'name' del envío ---
+        // data.append('name', formData.name);
+        // --- FIN MODIFICACIÓN ---
         data.append('username', formData.username);
         data.append('email', formData.email);
 
@@ -95,7 +108,17 @@ const Profile = ({ onCancel }) => {
             setProfileImageFile(null);
             onCancel();
         } catch (error) {
-            addToast(error.message || 'No se pudo actualizar el perfil.', 'error');
+            // --- INICIO MODIFICACIÓN: Manejar error de username duplicado ---
+             const errorMessage = error.message || 'No se pudo actualizar el perfil.';
+             if (errorMessage.toLowerCase().includes('nombre de usuario')) {
+                 setErrors({ username: errorMessage });
+             } else if (errorMessage.toLowerCase().includes('email')) {
+                 setErrors({ email: errorMessage });
+             } else {
+                 setErrors({ api: errorMessage }); // Error genérico
+             }
+            addToast(errorMessage, 'error');
+            // --- FIN MODIFICACIÓN ---
         } finally {
             setIsLoading(false);
         }
@@ -118,6 +141,10 @@ const Profile = ({ onCancel }) => {
 
             <GlassCard className="p-6">
                 <form onSubmit={handleSave} className="flex flex-col gap-6">
+                    
+                    {/* --- INICIO MODIFICACIÓN: Mostrar error API --- */}
+                    {errors.api && <p className="text-center text-red mb-4 -mt-2">{errors.api}</p>}
+                    {/* --- FIN MODIFICACIÓN --- */}
 
                     {/* Sección de Foto de Perfil */}
                     <div className="flex flex-col items-center gap-4">
@@ -155,14 +182,18 @@ const Profile = ({ onCancel }) => {
                     <div>
                         <h3 className="text-lg font-bold mb-4">Datos Básicos</h3>
                         <div className="flex flex-col gap-4">
+                            {/* --- INICIO MODIFICACIÓN: Eliminar campo 'name' --- */}
+                            {/*
                             <div>
                                 <label htmlFor="name" className="block text-sm font-medium text-text-secondary mb-2">Nombre Completo</label>
                                 <input id="name" name="name" type="text" value={formData.name} onChange={handleChange} className={baseInputClasses} />
                                 {errors.name && <p className="form-error-text mt-1">{errors.name}</p>}
                             </div>
+                            */}
+                            {/* --- FIN MODIFICACIÓN --- */}
                             <div>
                                 <label htmlFor="username" className="block text-sm font-medium text-text-secondary mb-2">Nombre de usuario</label>
-                                <input id="username" name="username" type="text" value={formData.username} onChange={handleChange} className={baseInputClasses} />
+                                <input id="username" name="username" type="text" value={formData.username} onChange={handleChange} className={baseInputClasses} maxLength={30} />
                                 {errors.username && <p className="form-error-text mt-1">{errors.username}</p>}
                             </div>
                             <div>

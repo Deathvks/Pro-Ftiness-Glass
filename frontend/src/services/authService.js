@@ -4,6 +4,8 @@ export const loginUser = (credentials) => {
     return apiClient('/auth/login', { body: credentials, method: 'POST' });
 };
 
+// Esta función ya es genérica. 'userData' contendrá {username, email, password}
+// No necesita cambios.
 export const registerUser = (userData) => {
     return apiClient('/auth/register', { body: userData, method: 'POST' });
 };
