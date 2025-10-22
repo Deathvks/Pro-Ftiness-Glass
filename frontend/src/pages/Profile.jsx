@@ -9,9 +9,15 @@ import Spinner from '../components/Spinner';
 import { updateUserAccount } from '../services/userService';
 
 // --- INICIO DE LA MODIFICACIÓN ---
+// Obtenemos la URL base del backend desde las variables de entorno
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Eliminamos '/api' del final si existe para obtener solo la base del backend
+const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+
 // Renombrado de AccountEditor a Profile
 const Profile = ({ onCancel }) => {
     const { userProfile, fetchInitialData } = useAppStore(state => ({
+// --- FIN DE LA MODIFICACIÓN ---
         userProfile: state.userProfile,
         fetchInitialData: state.fetchInitialData,
     }));
@@ -97,6 +103,13 @@ const Profile = ({ onCancel }) => {
             await updateUserAccount(data); 
             addToast('Perfil actualizado.', 'success');
             await fetchInitialData();
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Limpiamos el input de la imagen para evitar problemas de caché si se cancela y vuelve a entrar
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+            setProfileImageFile(null);
+            // --- FIN DE LA MODIFICACIÓN ---
             onCancel();
         } catch (error) {
             addToast(error.message || 'No se pudo actualizar el perfil.', 'error');
@@ -132,7 +145,14 @@ const Profile = ({ onCancel }) => {
                         />
                         <div className="relative w-32 h-32 rounded-full">
                             {imagePreview ? (
-                                <img src={imagePreview} alt="Perfil" className="w-32 h-32 rounded-full object-cover" />
+                                // --- INICIO DE LA MODIFICACIÓN ---
+                                // Comprobamos si la URL es relativa (de la DB) o un blob (preview)
+                                <img 
+                                    src={imagePreview.startsWith('blob:') || imagePreview.startsWith('http') ? imagePreview : `${BACKEND_BASE_URL}${imagePreview}`} 
+                                    alt="Perfil" 
+                                    className="w-32 h-32 rounded-full object-cover" 
+                                />
+                                // --- FIN DE LA MODIFICACIÓN ---
                             ) : (
                                 <div className="w-32 h-32 rounded-full bg-bg-secondary flex items-center justify-center border border-glass-border">
                                     <User size={64} className="text-text-muted" />
