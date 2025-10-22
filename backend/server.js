@@ -10,7 +10,7 @@ import jwt from 'jsonwebtoken'; // Para decodificar el token
 
 // Requerido en ESM para simular __dirname
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename); // Esperamos que sea /app/backend
 
 import authRoutes from './routes/auth.js';
 import bodyweightRoutes from './routes/bodyweight.js';
@@ -35,7 +35,14 @@ app.use(cors({
     origin: process.env.CORS_ORIGIN,
 }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// --- INICIO DE LA MODIFICACIÓN (Ruta Estática Absoluta) ---
+// Usamos la ruta absoluta que coincide con el montaje del volumen
+// en lugar de depender de path.join(__dirname, 'public')
+const staticPath = '/app/backend/public';
+app.use(express.static(staticPath));
+console.log(`Sirviendo archivos estáticos desde: ${staticPath}`); // Log para verificar
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Middleware para actualizar 'lastSeen' en cada petición
 app.use(async (req, res, next) => { // <-- Marcado como async
