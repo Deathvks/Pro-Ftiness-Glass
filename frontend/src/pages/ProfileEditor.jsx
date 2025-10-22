@@ -1,140 +1,190 @@
-import React, { useState } from 'react';
-import { ChevronLeft, Save } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
+import React, { useState, useRef } from 'react';
+import { Camera } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { updateUserProfile } from '../services/userService';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 
-const ProfileEditor = ({ onCancel }) => {
-  const { userProfile, updateUserProfile } = useAppStore(state => ({
-    userProfile: state.userProfile,
-    updateUserProfile: state.updateUserProfile,
-  }));
-  const { addToast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+const ProfileEditor = ({ onDone }) => {
+    const { user, fetchInitialData } = useAppStore(state => ({
+        user: state.user,
+        fetchInitialData: state.fetchInitialData,
+    }));
+    const { addToast } = useToast();
 
-  const [formData, setFormData] = useState({
-    gender: userProfile.gender || 'male',
-    age: userProfile.age || '',
-    height: userProfile.height || '',
-    activityLevel: userProfile.activity_level || 1.55,
-    goal: userProfile.goal || 'maintain'
-  });
+    const [username, setUsername] = useState(user?.username || '');
+    const [profileImage, setProfileImage] = useState(null);
+    const [previewImage, setPreviewImage] = useState(user?.profileImageUrl || null);
+    const [errors, setErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    const fileInputRef = useRef(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    const validateForm = () => {
+        const newErrors = {};
+        
+        if (!username.trim()) {
+            newErrors.username = 'El nombre de usuario es requerido.';
+        } else if (username.length < 3 || username.length > 30) {
+            newErrors.username = 'El nombre de usuario debe tener entre 3 y 30 caracteres.';
+        } else if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+             // --- INICIO MODIFICACIÓN: Aclarar error ---
+             newErrors.username = 'Solo letras, números, _, . y - (sin espacios).';
+             // --- FIN MODIFICACIÓN ---
+        }
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!formData.age || !formData.height) {
-        addToast("Por favor, completa todos los campos.", 'error');
-        return;
-    }
-    setIsLoading(true);
-    const result = await updateUserProfile(formData);
-    
-    if (result.success) {
-        addToast(result.message, 'success');
-        onCancel(); // Volver a la pantalla de ajustes
-    } else {
-        addToast(result.message, 'error');
-    }
-    setIsLoading(false);
-  };
+        if (profileImage && profileImage.size > 2 * 1024 * 1024) { // 2MB
+            newErrors.profileImage = 'La imagen no debe pesar más de 2MB.';
+        }
+        if (profileImage && !['image/jpeg', 'image/png', 'image/webp'].includes(profileImage.type)) {
+            newErrors.profileImage = 'Solo se permiten imágenes JPG, PNG o WebP.';
+        }
 
-  const activityLabels = {
-    1.2: 'Poco o nada',
-    1.375: 'Ejercicio ligero (1-3 días)',
-    1.55: 'Ejercicio moderado (3-5 días)',
-    1.725: 'Ejercicio fuerte (6-7 días)',
-    1.9: 'Ejercicio muy fuerte',
-  };
+        return newErrors;
+    };
 
-  const goalLabels = {
-    lose: 'Bajar peso',
-    maintain: 'Mantener peso',
-    gain: 'Subir peso',
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const formErrors = validateForm();
+        if (Object.keys(formErrors).length > 0) {
+            setErrors(formErrors);
+            return;
+        }
 
-  const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
-  const choiceButtonClasses = "text-center p-4 rounded-md border-2 border-glass-border font-semibold transition-all duration-200";
-  const activeChoiceButtonClasses = "border-accent bg-accent-transparent text-accent";
+        setErrors({});
+        setIsLoading(true);
 
-  return (
-    <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-        <button onClick={onCancel} className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4">
-            <ChevronLeft size={20} />
-            Volver a Ajustes
-        </button>
-        <h1 className="text-4xl font-extrabold mb-8">Editar Perfil</h1>
+        const formData = new FormData();
+        // Solo añadir campos si han cambiado
+        if (username !== user?.username) {
+            formData.append('username', username);
+        }
+        if (profileImage) {
+            formData.append('profileImage', profileImage);
+        }
 
-        <GlassCard className="p-6">
-            <form onSubmit={handleSave} className="flex flex-col gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Columna Izquierda */}
-                    <div className="flex flex-col gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-text-secondary mb-2">Género</label>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button type="button" onClick={() => setFormData({ ...formData, gender: 'male' })} className={`${choiceButtonClasses} ${formData.gender === 'male' ? activeChoiceButtonClasses : ''}`}>Hombre</button>
-                                <button type="button" onClick={() => setFormData({ ...formData, gender: 'female' })} className={`${choiceButtonClasses} ${formData.gender === 'female' ? activeChoiceButtonClasses : ''}`}>Mujer</button>
-                            </div>
-                        </div>
-                        <div>
-                            <label htmlFor="age" className="block text-sm font-medium text-text-secondary mb-2">Edad</label>
-                            <input id="age" name="age" type="number" value={formData.age} onChange={handleChange} required className={baseInputClasses} placeholder="Años" />
-                        </div>
-                        <div>
-                            <label htmlFor="height" className="block text-sm font-medium text-text-secondary mb-2">Altura (cm)</label>
-                            <input id="height" name="height" type="number" value={formData.height} onChange={handleChange} required className={baseInputClasses} placeholder="Ej: 175" />
-                        </div>
+        // Si no hay cambios, simplemente cerramos
+        if (!profileImage && username === user?.username) {
+            setIsLoading(false);
+            onDone();
+            return;
+        }
+
+        try {
+            const response = await updateUserProfile(formData);
+            await fetchInitialData(); // Recargar datos del usuario
+            addToast(response.message, 'success');
+            onDone();
+        } catch (err) {
+            const errorMessage = err.message || 'Error al actualizar el perfil.';
+            if (err.errors && Array.isArray(err.errors)) {
+                 const apiErrors = {};
+                 err.errors.forEach(error => {
+                     if (error.param) {
+                         apiErrors[error.param] = error.msg;
+                     }
+                 });
+                 setErrors(apiErrors);
+            } else if (errorMessage.toLowerCase().includes('nombre de usuario')) {
+                 setErrors({ username: errorMessage });
+            } else {
+                 setErrors({ api: errorMessage });
+            }
+            addToast(errorMessage, 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileImage(file);
+            setPreviewImage(URL.createObjectURL(file));
+            setErrors(prev => ({ ...prev, profileImage: null })); // Limpiar error de imagen
+        }
+    };
+
+    const handleImageClick = () => {
+        fileInputRef.current.click();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease_out]">
+            <div className="w-full max-w-sm text-center">
+                <h1 className="text-4xl font-extrabold mb-8">Editar Perfil</h1>
+
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                    {errors.api && <p className="text-center text-red">{errors.api}</p>}
+
+                    <div className="relative w-32 h-32 mx-auto mb-4">
+                        <img
+                            src={previewImage || '/logo.png'} // Fallback a logo si no hay imagen
+                            alt="Perfil"
+                            className="w-32 h-32 rounded-full object-cover border-2 border-accent shadow-lg"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleImageClick}
+                            className="absolute bottom-0 right-0 bg-accent text-bg-secondary p-2 rounded-full transition hover:scale-110"
+                            aria-label="Cambiar imagen de perfil"
+                        >
+                            <Camera size={20} />
+                        </button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageChange}
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                        />
+                    </div>
+                    {errors.profileImage && <p className="form-error-text -mt-3">{errors.profileImage}</p>}
+
+
+                    <div>
+                        <input
+                            type="text"
+                            placeholder="Nombre de usuario"
+                            className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            maxLength={30}
+                        />
+                        {errors.username && <p className="form-error-text text-left">{errors.username}</p>}
+                    </div>
+                    
+                    <div>
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition disabled:opacity-50"
+                            value={user?.email || ''}
+                            disabled
+                        />
+                        <p className="text-xs text-text-muted text-left mt-1">El email no se puede cambiar.</p>
                     </div>
 
-                    {/* Columna Derecha */}
-                    <div className="flex flex-col gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-text-secondary mb-2">Nivel de Actividad</label>
-                            <div className="flex flex-col gap-2">
-                                {Object.entries(activityLabels).map(([value, label]) => (
-                                <button 
-                                    key={value} 
-                                    type="button" 
-                                    onClick={() => setFormData({ ...formData, activityLevel: parseFloat(value) })} 
-                                    className={`w-full ${choiceButtonClasses} ${parseFloat(formData.activityLevel) === parseFloat(value) ? activeChoiceButtonClasses : ''}`}
-                                >
-                                    {label}
-                                </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-text-secondary mb-2">Objetivo</label>
-                             {/* --- INICIO DE LA CORRECCIÓN --- */}
-                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                             {/* --- FIN DE LA CORRECCIÓN --- */}
-                                {Object.entries(goalLabels).map(([value, label]) => (
-                                    <button key={value} type="button" onClick={() => setFormData({ ...formData, goal: value })} className={`${choiceButtonClasses} ${formData.goal === value ? activeChoiceButtonClasses : ''}`}>{label}</button>
-                                ))}
-                            </div>
-                        </div>
+                    <div className="flex gap-4">
+                        <button
+                            type="button"
+                            onClick={onDone}
+                            disabled={isLoading}
+                            className="flex-1 rounded-md bg-bg-secondary border border-glass-border text-text-primary font-semibold py-3 transition hover:bg-glass-border disabled:opacity-70"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="flex-1 flex items-center justify-center rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70"
+                        >
+                            {isLoading ? <Spinner /> : 'Guardar'}
+                        </button>
                     </div>
-                </div>
-
-                <div className="flex justify-center pt-6 border-t border-glass-border">
-                     <button 
-                        type="submit" 
-                        disabled={isLoading}
-                        className="flex items-center justify-center gap-2 px-6 py-3 w-40 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 disabled:opacity-70"
-                    >
-                        {isLoading ? <Spinner size={18}/> : <><Save size={18} /><span>Guardar</span></>}
-                    </button>
-                </div>
-            </form>
-        </GlassCard>
-    </div>
-  );
+                </form>
+            </div>
+        </div>
+    );
 };
 
 export default ProfileEditor;

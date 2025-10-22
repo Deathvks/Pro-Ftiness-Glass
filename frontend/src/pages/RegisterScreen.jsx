@@ -27,7 +27,9 @@ const RegisterScreen = ({ showLogin }) => {
         } else if (username.length < 3 || username.length > 30) {
             newErrors.username = 'El nombre de usuario debe tener entre 3 y 30 caracteres.';
         } else if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
-             newErrors.username = 'Solo letras, números, _, . y -';
+             // --- INICIO MODIFICACIÓN: Aclarar error ---
+             newErrors.username = 'Solo letras, números, _, . y - (sin espacios).';
+             // --- FIN MODIFICACIÓN ---
         }
         // --- FIN MODIFICACIÓN ---
 
@@ -115,7 +117,7 @@ const RegisterScreen = ({ showLogin }) => {
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease_out]">
             <div className="w-full max-w-sm text-center">
                 <h1 className="text-4xl font-extrabold">Crear Cuenta</h1>
                 <p className="text-text-secondary mb-8">Empieza a registrar tu progreso hoy mismo.</p>
