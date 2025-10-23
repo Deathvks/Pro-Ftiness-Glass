@@ -1,6 +1,7 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
+/* frontend/vite.config.js */
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -15,7 +16,8 @@ export default defineConfig({
       manifest: {
         name: 'Pro Fitness Glass',
         short_name: 'FitTrack-Pro',
-        description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
+        description:
+          'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
         theme_color: '#0c111b',
         background_color: '#0c111b',
         display: 'standalone',
@@ -25,22 +27,30 @@ export default defineConfig({
           {
             src: 'pwa-192x192.png', // Apuntamos al nuevo PNG
             sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png', // Apuntamos al nuevo PNG
-            sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'pwa-512x512.png', // Apuntamos al nuevo PNG
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
-      }
+          },
+          {
+            src: 'pwa-512x512.png', // Apuntamos al nuevo PNG
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
+          },
+        ],
+      },
       // --- FIN DE LA CORRECCIÓN ---
-    })
+    }),
   ],
-})
+
+  // --- INICIO DE LA MODIFICACIÓN (Optimiz) ---
+  // Añadir esta sección para optimizar el build
+  build: {
+    // Deshabilitar source maps para reducir el uso de memoria en el build
+    sourcemap: false,
+  },
+  // --- FIN DE LA MODIFICACIÓN ---
+});
