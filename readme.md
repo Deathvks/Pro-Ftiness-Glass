@@ -1,76 +1,134 @@
-# Pro Fitness Glass
+# Pro-Fitness-Glass
 
-Pro Fitness Glass es una aplicación web completa diseñada para ser tu compañero de fitness definitivo. Permite a los usuarios registrar sus entrenamientos, crear y gestionar rutinas personalizadas, y visualizar su progreso a lo largo del tiempo de una manera intuitiva y motivadora.
+Una aplicación web full-stack diseñada para el seguimiento integral del progreso en el fitness. Permite a los usuarios registrar entrenamientos, nutrición y métricas corporales en una interfaz moderna y reactiva.
 
-![Imagen de la interfaz de Pro Fitness Glass]
+## Características Principales
 
-## ✨ Características Principales de Pro Fitness Glass
+* **Autenticación de Usuarios:** Sistema completo de registro, inicio de sesión (con JWT), verificación por correo electrónico y recuperación de contraseña.
+* **Gestión de Perfil:** Los usuarios pueden actualizar su nombre de usuario, contraseña e imagen de perfil.
+* **Registro de Entrenamientos:**
+    * Creación, edición y eliminación de rutinas personalizadas.
+    * Registro detallado de entrenamientos (ejercicios, series, repeticiones, peso).
+    * Cálculo de 1RM (Máxima Repetición Estimada) para seguimiento de fuerza.
+    * Soporte para técnicas avanzadas como **Superseries** y **Dropsets**.
+* **Seguimiento de Nutrición:**
+    * Diario de comidas detallado (calorías, proteínas, carbohidratos, grasas) por día.
+    * Búsqueda de alimentos (integrada con API externa, p.ej., OpenFoodFacts).
+    * Gestión de "Comidas Favoritas" para un registro rápido.
+    * Registro de imágenes de comidas.
+* **Monitor de Progreso:**
+    * Gráficos visuales del historial de peso corporal.
+    * Registro y visualización de Récords Personales (PRs) por ejercicio.
+    * Calendario de actividad para ver los días de entrenamiento y nutrición registrados.
+* **Seguimientos Adicionales:**
+    * Tracker de toma de **Creatina**.
+* **Panel de Administración:**
+    * Gestión (CRUD) de usuarios y lista de ejercicios de la base de datos.
 
-* **Dashboard Interactivo:** Visualiza un resumen de tu actividad semanal, incluyendo sesiones, tiempo de entrenamiento y calorías quemadas.
-* **Gestión de Rutinas:** Crea, edita y elimina rutinas de entrenamiento personalizadas con ejercicios específicos, series y repeticiones.
-* **Registro de Entrenamientos:** Inicia una sesión de entrenamiento basada en tus rutinas, registra el peso y las repeticiones para cada serie y guarda el historial de tus sesiones.
-* **Seguimiento de Progreso:** Analiza tu evolución con gráficos interactivos que muestran el progreso en el levantamiento de peso por ejercicio, la evolución de tu peso corporal y las calorías quemadas.
-* **Calendario de Actividad:** Navega a través de un calendario para ver qué días has entrenado y acceder al detalle de cada sesión.
-* **Autenticación Segura:** Sistema de registro e inicio de sesión de usuarios con autenticación basada en tokens JWT.
-* **Perfil Personalizable:** Configura tus datos personales y objetivos de fitness para obtener un seguimiento más preciso.
+---
 
-## 🚀 Stack Tecnológico
+## Stack Tecnológico
 
-La aplicación está construida con un stack moderno y eficiente, separado en dos componentes principales:
-
-### Frontend
-
-* **Framework:** React 19 con Vite.
-* **Estilos:** Tailwind CSS para un diseño rápido, responsivo y personalizable.
-* **Visualización de Datos:** Recharts para la creación de gráficos interactivos.
-* **Iconos:** Lucide React.
+El proyecto sigue una arquitectura monorepo con dos componentes principales: `backend` y `frontend`.
 
 ### Backend
 
 * **Framework:** Node.js con Express.
-* **Base de Datos:** MySQL.
-* **ORM:** Sequelize para la gestión de la base de datos y los modelos.
-* **Autenticación:** JSON Web Tokens (JWT) con cookie-parser.
-* **Validación:** express-validator para validar los datos de entrada en las rutas de la API.
+* **Base de Datos:** PostgreSQL (gestionado con Sequelize ORM).
+* **Autenticación:** JSON Web Tokens (JWT).
+* **Migraciones:** Sequelize-CLI para la gestión del esquema de la BD.
+* **Servicios:** Nodemailer para el envío de correos transaccionales (verificación, reseteo de contraseña).
+* **Gestión de Ficheros:** Multer para la subida de imágenes (perfil, comidas).
 
-## ⚙️ Instalación y Puesta en Marcha
+### Frontend
 
-Sigue estos pasos para ejecutar el proyecto en tu entorno local.
+* **Framework:** React (construido con Vite).
+* **Estilos:** TailwindCSS para un diseño "utility-first" rápido y moderno.
+* **Gestión de Estado:** Zustand (para un manejo de estado global simple y reactivo).
+* **Enrutamiento:** React Router.
+* **Gráficos:** Recharts.
+* **Cliente API:** Axios (con interceptores para la gestión de tokens JWT).
 
-### Prerrequisitos
+---
 
-* Node.js (v18 o superior)
-* NPM o un gestor de paquetes compatible.
-* Una instancia de base de datos MySQL en ejecución.
+## Instalación y Configuración
 
-### 1. Configuración del Backend
+Es necesario configurar ambas partes del proyecto (backend y frontend) para un funcionamiento completo.
 
-```bash
-# Navega al directorio del backend
-cd backend
+### 1. Backend
 
-# Instala las dependencias
-npm install
+1.  Navega a la carpeta `backend`:
+    ```bash
+    cd backend
+    ```
+2.  Instala las dependencias:
+    ```bash
+    npm install
+    ```
+3.  **Configuración de la Base de Datos:**
+    * Asegúrate de tener PostgreSQL en ejecución.
+    * El fichero `backend/config/config.cjs` gestiona la configuración de Sequelize. Se recomienda usar variables de entorno.
+    * Crea un fichero `.env` en la raíz de `backend/` con las siguientes variables:
+    ```env
+    # Configuración de la Base de Datos (Ejemplo Development)
+    DB_USER=postgres
+    DB_PASS=tu_contraseña_de_postgres
+    DB_NAME=pro_fitness_db
+    DB_HOST=localhost
+    DB_DIALECT=postgres
 
-# Crea un archivo .env a partir del .env.example y configúralo
-# con las credenciales de tu base de datos y un secreto para JWT.
-# Ejemplo de .env:
-# DB_HOST=localhost
-# DB_USER=tu_usuario
-# DB_PASSWORD=tu_contraseña
-# DB_NAME=pro_fitness_glass
-# JWT_SECRET=tu_secreto_super_secreto
+    # Secreto para JWT
+    JWT_SECRET=tu_secreto_muy_seguro_para_jwt
 
-# Ejecuta el servidor de desarrollo
-npm start
+    # Credenciales de Nodemailer (para envío de emails)
+    EMAIL_HOST=smtp.tu_proveedor.com
+    EMAIL_PORT=587
+    EMAIL_USER=tu_email@dominio.com
+    EMAIL_PASS=tu_contraseña_de_email
+    ```
+4.  Ejecuta las migraciones de la base de datos para crear las tablas:
+    ```bash
+    npx sequelize-cli db:migrate
+    ```
+5.  (Opcional) Ejecuta los "seeders" para poblar la base de datos con datos iniciales (ej. lista de ejercicios):
+    ```bash
+    npx sequelize-cli db:seed:all
+    ```
 
-# Navega al directorio del frontend
-cd frontend
+### 2. Frontend
 
-# Instala las dependencias
-npm install
+1.  Navega a la carpeta `frontend`:
+    ```bash
+    cd frontend
+    ```
+2.  Instala las dependencias:
+    ```bash
+    npm install
+    ```
+3.  **Configuración de la API:**
+    * Crea un fichero `.env` en la raíz de `frontend/`.
+    * Define la variable de entorno que apunta a la URL de tu backend:
+    ```env
+    # URL donde se está ejecutando el backend
+    VITE_API_URL=http://localhost:3001
+    ```
 
-# Ejecuta el servidor de desarrollo
-npm run dev
+---
 
-La aplicación frontend estará disponible en http://localhost:5173.
+## Ejecución del Proyecto
+
+Debes iniciar ambos servidores (backend y frontend) en terminales separadas.
+
+1.  **Iniciar el Servidor Backend:**
+    * Desde la carpeta `backend`:
+    ```bash
+    npm start
+    ```
+    * El servidor se ejecutará en el puerto especificado (por defecto `3001`).
+
+2.  **Iniciar la Aplicación Frontend:**
+    * Desde la carpeta `frontend`:
+    ```bash
+    npm run dev
+    ```
+    * Vite iniciará la aplicación y estará disponible (por defecto en `http://localhost:5173`).

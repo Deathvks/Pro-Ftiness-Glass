@@ -37,8 +37,14 @@ function FoodEntryForm({
       setPreview(selectedItem.image_url || null);
       setOriginalImageUrl(selectedItem.image_url || null);
       setFile(null);
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Si el item viene del escáner, forzamos el modo por 100g
+      if (selectedItem.origin === 'scan') {
+        setIsPer100g(true);
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
     }
-  }, [selectedItem]);
+  }, [selectedItem, setIsPer100g]); // Añadimos setIsPer100g como dependencia
 
   const calculatedMacros = useMemo(() => {
     const factor = isPer100g ? (parseFloat(grams) || 0) / 100 : 1;
@@ -94,13 +100,8 @@ function FoodEntryForm({
     if (file) {
       try {
         const formData = new FormData();
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // El backend espera 'foodImage', no 'image'
         formData.append('foodImage', file);
-        // Asumimos que la función de servicio es 'uploadFoodImage'
-        // (o la que maneje el envío de FormData)
         const response = await nutritionService.uploadFoodImage(formData);
-        // --- FIN DE LA MODIFICACIÓN ---
         imageUrl = response.imageUrl;
       } catch (error) {
         console.error('Error uploading image:', error);

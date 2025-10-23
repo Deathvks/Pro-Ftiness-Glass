@@ -55,7 +55,6 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
     }
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   const handleSelectFood = (food) => {
     // Normalizar nombre de 'name' (Favoritos) o 'description' (Recientes) o 'food_name' (Búsqueda)
     const description =
@@ -95,7 +94,6 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
         food.fat ||
         0,
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     setSelectedItem(preparedFood);
     setIsScannerOpen(false); // Close scanner if open
@@ -103,19 +101,19 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
 
   const handleScanSuccess = (foodData) => {
     handleSelectFood(foodData);
-    setIsPer100g(true); // <-- REQUERIDO: Activar "Por 100g" al escanear
+    setIsPer100g(true); // Activar "Por 100g" al escanear
     setIsScannerOpen(false);
   };
 
   const handleAddFoodEntry = (entry) => {
     onAddFood(entry);
     setSelectedItem(null); // Go back to search
-    setIsPer100g(false); // <-- REQUERIDO: Desactivar "Por 100g" al añadir
+    setIsPer100g(false); // Desactivar "Por 100g" al añadir
   };
 
   const handleCancelEntry = () => {
     setSelectedItem(null);
-    setIsPer100g(false); // <-- REQUERIDO: Desactivar "Por 100g" al cancelar
+    setIsPer100g(false); // Desactivar "Por 100g" al cancelar
   };
 
   const handleCloseModal = () => {

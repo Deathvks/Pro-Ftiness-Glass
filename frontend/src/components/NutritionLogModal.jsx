@@ -20,10 +20,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
         isEditingLog, editingFavorite, searchTerm, setSearchTerm, activeTab, setActiveTab,
         itemsToAdd, favoritesPage, setFavoritesPage, mealToDelete, setMealToDelete,
         editingListItemId, manualFormState, setManualFormState, showScanner, setShowScanner,
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // 1. Añadir 'isLoadingRecents' de la desestructuración
         paginatedFavorites, filteredRecents, isLoadingRecents, totalPages, isDarkTheme,
-        // --- FIN DE LA MODIFICACIÓN ---
         handleAddManualItem, handleAddFavoriteItem, handleAddRecentItem, handleRemoveItem,
         handleToggleFavorite, handleEditListItem, handleEditFavorite, handleSaveListItem,
         handleSaveList, handleSaveSingle, handleSaveEdit, handleScanSuccess,
@@ -47,14 +44,11 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                     onPageChange={setFavoritesPage}
                 />;
             case 'recent':
-                // --- INICIO DE LA MODIFICACIÓN ---
-                // 2. Pasar 'items' (en lugar de 'recents') y 'isLoading'
                 return <RecentList
                     items={filteredRecents}
                     onAdd={handleAddRecentItem}
                     isLoading={isLoadingRecents}
                 />;
-                // --- FIN DE LA MODIFICACIÓN ---
             case 'manual':
                 return (
                     <ManualEntryForm
@@ -100,28 +94,47 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                     <div className="flex-grow overflow-hidden flex flex-col">
                         {!(isEditingLog || editingFavorite) && (
                             <div className="p-5 flex-shrink-0">
-                                {activeTab !== 'manual' && itemsToAdd.length === 0 && (
+                                
+                                {(activeTab === 'favorites' || activeTab === 'recent') && (
                                      <div className="relative mb-4">
                                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
-                                         <input type="text" placeholder="Buscar comida..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent" />
+                                         <input 
+                                            type="text" 
+                                            placeholder="Buscar comida..." 
+                                            value={searchTerm} 
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent" 
+                                        />
                                      </div>
                                 )}
-                                {itemsToAdd.length === 0 && (
-                                    <div className="flex flex-wrap items-center justify-center gap-2">
-                                        <TabButton active={activeTab === 'favorites'} onClick={() => { setActiveTab('favorites'); handleEditListItem(null); handleEditFavorite(null); }} disabled={addModeType === 'manual'}>
-                                            <BookMarked size={16} /> Favoritas
-                                        </TabButton>
-                                        <TabButton active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); handleEditListItem(null); handleEditFavorite(null); }} disabled={addModeType === 'manual'}>
-                                            <Clock size={16} /> Recientes
-                                        </TabButton>
-                                        <TabButton active={activeTab === 'manual'} onClick={() => { setActiveTab('manual'); handleEditListItem(null); handleEditFavorite(null); }} disabled={addModeType === 'list'}>
-                                            <Edit size={16} /> Manual
-                                        </TabButton>
-                                        <TabButton active={false} onClick={() => setShowScanner(true)} disabled={addModeType === 'list'}>
-                                            <QrCode size={16} /> Escanear
-                                        </TabButton>
-                                    </div>
-                                )}
+                                
+                                <div className="flex flex-wrap items-center justify-center gap-2">
+                                    {/* Estas pestañas son visibles si NO estamos en modo manual */}
+                                    {addModeType !== 'manual' && (
+                                        <>
+                                            {/* --- INICIO DE LA CORRECCIÓN --- */}
+                                            <TabButton active={activeTab === 'favorites'} onClick={() => { setActiveTab('favorites'); handleEditListItem(null); handleEditFavorite(null); }}>
+                                                <BookMarked size={16} /> Favoritas
+                                            </TabButton> 
+                                            {/* --- FIN DE LA CORRECCIÓN (Era </Button>) --- */}
+                                            <TabButton active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); handleEditListItem(null); handleEditFavorite(null); }}>
+                                                <Clock size={16} /> Recientes
+                                            </TabButton>
+                                        </>
+                                    )}
+
+                                    {/* Estas pestañas solo son visibles si la lista temporal está vacía */}
+                                    {itemsToAdd.length === 0 && (
+                                        <>
+                                            <TabButton active={activeTab === 'manual'} onClick={() => { setActiveTab('manual'); handleEditListItem(null); handleEditFavorite(null); }} disabled={addModeType === 'list'}>
+                                                <Edit size={16} /> Manual
+                                            </TabButton>
+                                            <TabButton active={false} onClick={() => setShowScanner(true)} disabled={addModeType === 'list'}>
+                                                <QrCode size={16} /> Escanear
+                                            </TabButton>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         )}
                         <div className="overflow-y-auto px-5 pb-3 flex-grow min-h-[200px]">
