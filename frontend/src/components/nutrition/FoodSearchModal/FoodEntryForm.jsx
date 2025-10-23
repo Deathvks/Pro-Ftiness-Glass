@@ -26,6 +26,7 @@ function FoodEntryForm({
 
   useEffect(() => {
     if (selectedItem) {
+      // Rellenar los inputs de "por 100g"
       const info = {
         calories: selectedItem.calories_per_100g || 0,
         protein: selectedItem.protein_per_100g || 0,
@@ -33,12 +34,15 @@ function FoodEntryForm({
         fat: selectedItem.fat_per_100g || 0,
       };
       setNutritionalInfo(info);
+
+      // Establecer gramos (usar 100g por defecto si es de scan o no hay peso)
       setGrams(selectedItem.weight_g || 100);
+
       setPreview(selectedItem.image_url || null);
       setOriginalImageUrl(selectedItem.image_url || null);
       setFile(null);
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Lógica autoritativa:
+
+      // Lógica autoritativa para el interruptor:
       // Si el item viene del escáner, forzamos el modo por 100g.
       // Si no (favorito, reciente, búsqueda), lo desactivamos.
       if (selectedItem.origin === 'scan') {
@@ -46,48 +50,40 @@ function FoodEntryForm({
       } else {
         setIsPer100g(false);
       }
-      // --- FIN DE LA MODIFICACIÓN ---
     }
   }, [selectedItem, setIsPer100g]); // Añadimos setIsPer100g como dependencia
 
+  // Lógica de cálculo de macros corregida
   const calculatedMacros = useMemo(() => {
-    const factor = isPer100g ? (parseFloat(grams) || 0) / 100 : 1;
-    const baseCalories = isPer100g
-      ? nutritionalInfo.calories
-      : selectedItem?.calories || 0;
-    const baseProtein = isPer100g
-      ? nutritionalInfo.protein
-      : selectedItem?.protein || 0;
-    const baseCarbs = isPer100g
-      ? nutritionalInfo.carbs
-      : selectedItem?.carbs || 0;
-    const baseFat = isPer100g ? nutritionalInfo.fat : selectedItem?.fat || 0;
+    const gramsValue = parseFloat(grams) || 0;
 
-    if (!isPer100g) {
-      const weight = parseFloat(grams) || 0;
-      if (selectedItem?.serving_size_g && selectedItem.serving_size_g > 0) {
-        const servingFactor = weight / selectedItem.serving_size_g;
-        return {
-          calories: (selectedItem.calories_per_serving || 0) * servingFactor,
-          protein: (selectedItem.protein_per_serving || 0) * servingFactor,
-          carbs: (selectedItem.carbs_per_serving || 0) * servingFactor,
-          fat: (selectedItem.fat_per_serving || 0) * servingFactor,
-        };
-      }
+    if (isPer100g) {
+      // --- MODO: Por 100g ---
+      // Usa los valores del estado 'nutritionalInfo', que son editables
+      // y se inicializaron con '..._per_100g'
+      const factor = gramsValue / 100;
       return {
-        calories: baseCalories,
-        protein: baseProtein,
-        carbs: baseCarbs,
-        fat: baseFat,
+        calories: (nutritionalInfo.calories || 0) * factor,
+        protein: (nutritionalInfo.protein || 0) * factor,
+        carbs: (nutritionalInfo.carbs || 0) * factor,
+        fat: (nutritionalInfo.fat || 0) * factor,
+      };
+    } else {
+      // --- MODO: Por Ración ---
+      // Usa los valores '..._per_serving' del 'selectedItem'
+      // que normalizamos en FoodSearchModal
+      const servingWeight = selectedItem.serving_weight_g || 100; // Fallback a 100g
+
+      // Evitar división por cero si servingWeight es 0
+      const numServings = servingWeight > 0 ? gramsValue / servingWeight : 0;
+
+      return {
+        calories: (selectedItem.calories_per_serving || 0) * numServings,
+        protein: (selectedItem.protein_per_serving || 0) * numServings,
+        carbs: (selectedItem.carbs_per_serving || 0) * numServings,
+        fat: (selectedItem.fat_per_serving || 0) * numServings,
       };
     }
-
-    return {
-      calories: baseCalories * factor,
-      protein: baseProtein * factor,
-      carbs: baseCarbs * factor,
-      fat: baseFat * factor,
-    };
   }, [grams, nutritionalInfo, isPer100g, selectedItem]);
 
   const handleFileChange = (e) => {
@@ -123,6 +119,7 @@ function FoodEntryForm({
       meal_type: mealType,
       log_date: logDate,
       image_url: imageUrl,
+      // Guardar siempre los valores base por 100g (del estado editable)
       calories_per_100g: nutritionalInfo.calories,
       protein_per_100g: nutritionalInfo.protein,
       carbs_per_100g: nutritionalInfo.carbs,
@@ -156,6 +153,7 @@ function FoodEntryForm({
           ) : (
             <CameraIcon className="w-10 h-10 text-gray-500" />
           )}
+          {/* --- INICIO DE LA CORRECCIÓN --- */}
           <input
             type="file"
             id="foodImageUpload"
@@ -163,6 +161,7 @@ function FoodEntryForm({
             className="hidden"
             onChange={handleFileChange}
           />
+          {/* --- FIN DE LA CORRECCIÓN (se eliminó el '}') --- */}
         </div>
 
         <div className="flex-1">
@@ -170,7 +169,9 @@ function FoodEntryForm({
             htmlFor="grams"
             className="block text-sm font-medium text-gray-300 mb-1"
           >
-            Gramos
+            {isPer100g
+              ? 'Gramos'
+              : `Gramos (Ración: ${selectedItem.serving_size || '100 g'})`}
           </label>
           <input
             type="number"
@@ -261,7 +262,7 @@ function FoodEntryForm({
                 onChange={(e) =>
                   setNutritionalInfo((prev) => ({
                     ...prev,
-                    fat: parseFloat(e.target.value) || 0,
+                    fat: parseFloat(e.g.target.value) || 0,
                   }))
                 }
                 className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded-md text-white"
