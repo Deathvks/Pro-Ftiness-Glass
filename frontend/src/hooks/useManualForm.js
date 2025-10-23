@@ -1,24 +1,31 @@
 /* frontend/src/hooks/useManualForm.js */
 import { useState, useEffect, useCallback } from 'react';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importar useToast
+import { useToast } from './useToast';
 import { initialManualFormState, round } from './useNutritionConstants';
+// --- FIN DE LA MODIFICACIÓN ---
 
 export const useManualForm = ({
-  itemToEdit, // Reemplaza: isEditingLog, editingListItemId, editingFavorite, logToEdit, itemsToAdd
+  itemToEdit,
   favoriteMeals,
-  isPer100g, // Recibimos el estado del padre
-  setIsPer100g, // Recibimos la función para actualizar al padre
+  isPer100g,
+  setIsPer100g,
 }) => {
   const [manualFormState, setManualFormState] = useState(
     initialManualFormState
   );
   const [baseMacros, setBaseMacros] = useState(null);
   const [originalData, setOriginalData] = useState(null);
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Obtener la función addToast
+  const { addToast } = useToast();
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const resetManualForm = useCallback(() => {
     setManualFormState(initialManualFormState);
     setBaseMacros(null);
     setOriginalData(null);
-    // Aseguramos que el estado del padre también se resetee
     setIsPer100g(false);
   }, [setIsPer100g]);
 
@@ -30,31 +37,27 @@ export const useManualForm = ({
       carbs_g: round((parseFloat(c) || 0) * factor),
       fats_g: round((parseFloat(f) || 0) * factor),
     };
-  }, [round]); // Añadido round como dependencia
+  }, [round]); // Asegúrate de que `round` esté disponible o importado
 
   // Efecto para popular el formulario al editar o al recibir datos de escaneo
   useEffect(() => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    try { // Envolvemos toda la lógica en un try...catch
+    try {
         if (itemToEdit) {
             const description = itemToEdit.description || itemToEdit.name || '';
             const initialWeight = parseFloat(itemToEdit.weight_g);
             const isScanOrigin = itemToEdit.origin === 'scan';
 
-            // 1. Determinar si hay datos válidos por 100g
             const hasValid100gData = (
-                (itemToEdit.calories_per_100g !== undefined && itemToEdit.calories_per_100g !== null && parseFloat(itemToEdit.calories_per_100g) >= 0) || // Permitir 0 aquí
+                (itemToEdit.calories_per_100g !== undefined && itemToEdit.calories_per_100g !== null && parseFloat(itemToEdit.calories_per_100g) >= 0) ||
                 (isScanOrigin && itemToEdit.calories !== undefined && itemToEdit.calories !== null && parseFloat(itemToEdit.calories) >= 0)
             );
 
-            // 2. Decidir el modo inicial: solo 'por 100g' si es scan Y tiene datos válidos por 100g
             const shouldBePer100g = isScanOrigin && hasValid100gData;
 
             let currentFormData;
             let currentPer100Data = { calories: '', protein_g: '', carbs_g: '', fats_g: '' };
 
             if (shouldBePer100g) {
-                // Poblar per100Data desde los campos _per_100g (o los campos directos si es scan)
                 const cal100 = itemToEdit.calories_per_100g ?? itemToEdit.calories ?? 0;
                 const prot100 = itemToEdit.protein_per_100g ?? itemToEdit.protein_g ?? 0;
                 const carb100 = itemToEdit.carbs_per_100g ?? itemToEdit.carbs_g ?? 0;
@@ -67,26 +70,23 @@ export const useManualForm = ({
                     fats_g: String(round(fat100, 1)),
                 };
 
-                // Poblar formData calculando para el peso inicial (que es 100g en scan)
                 currentFormData = {
                     description: description,
                     calories: String(round(cal100, 0)),
                     protein_g: String(round(prot100, 1)),
                     carbs_g: String(round(carb100, 1)),
                     fats_g: String(round(fat100, 1)),
-                    weight_g: '100', // Peso inicial para scan es 100g
+                    weight_g: '100',
                     image_url: itemToEdit.image_url || null,
                 };
-                setBaseMacros(null); // No necesitamos baseMacros en modo 100g inicial
+                setBaseMacros(null);
 
             } else {
-                // Modo normal (no es scan o no hay datos 100g válidos)
-                // Usar datos por ración o los datos directos del item
                 const calServing = itemToEdit.calories_per_serving ?? itemToEdit.calories ?? 0;
                 const protServing = itemToEdit.protein_per_serving ?? itemToEdit.protein_g ?? 0;
                 const carbServing = itemToEdit.carbs_per_serving ?? itemToEdit.carbs_g ?? 0;
                 const fatServing = itemToEdit.fat_per_serving ?? itemToEdit.fats_g ?? 0;
-                const weightServing = itemToEdit.serving_quantity ?? itemToEdit.weight_g ?? ''; // Prioridad serving_quantity
+                const weightServing = itemToEdit.serving_quantity ?? itemToEdit.weight_g ?? '';
 
                 currentFormData = {
                     description: description,
@@ -97,7 +97,7 @@ export const useManualForm = ({
                     weight_g: String(weightServing),
                     image_url: itemToEdit.image_url || null,
                 };
-                currentPer100Data = initialManualFormState.per100Data; // Dejar per100Data vacío
+                currentPer100Data = initialManualFormState.per100Data;
 
                 const currentWeightNum = parseFloat(weightServing);
                 if (currentWeightNum > 0) {
@@ -112,57 +112,50 @@ export const useManualForm = ({
                 }
             }
 
-            // 3. Actualizar el estado del formulario y del toggle en el padre
             setManualFormState({
               formData: currentFormData,
               per100Data: currentPer100Data,
-              per100Mode: shouldBePer100g, // Estado interno del hook
+              per100Mode: shouldBePer100g,
               isFavorite:
                 itemToEdit.isFavorite ||
                 favoriteMeals.some(
                   (fav) => fav.name.toLowerCase() === description.toLowerCase()
                 ),
             });
-            setOriginalData(currentFormData); // Guardar los datos iniciales
-            setIsPer100g(shouldBePer100g); // Sincronizar estado del padre
+            setOriginalData(currentFormData);
+            setIsPer100g(shouldBePer100g);
 
         } else {
-          // Si no hay itemToEdit, resetear todo (excepto si ya está reseteado)
-           if (manualFormState !== initialManualFormState) { // Comparación directa de objetos funciona aquí? Mejor comparar props
-               if (manualFormState.formData !== initialManualFormState.formData ||
-                   manualFormState.per100Data !== initialManualFormState.per100Data ||
-                   manualFormState.per100Mode !== initialManualFormState.per100Mode ||
-                   manualFormState.isFavorite !== initialManualFormState.isFavorite) {
-                  resetManualForm();
-               }
+           if (manualFormState.formData !== initialManualFormState.formData ||
+               manualFormState.per100Data !== initialManualFormState.per100Data ||
+               manualFormState.per100Mode !== initialManualFormState.per100Mode ||
+               manualFormState.isFavorite !== initialManualFormState.isFavorite) {
+              resetManualForm();
            }
         }
     } catch (error) {
-        // Loguear el error en la consola del servidor de desarrollo (Vite)
         console.error("Error processing itemToEdit in useManualForm:", error);
-        // Opcional: podrías intentar mostrar un toast aquí también, aunque podría no renderizarse si el error es grave
-        // addToast(`Error al procesar datos: ${error.message}`, 'error');
-        // Resetear el estado para intentar evitar la pantalla blanca
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Mostrar el error como un toast
+        addToast(`Error procesando datos: ${error.message}`, 'error');
+        // --- FIN DE LA MODIFICACIÓN ---
         resetManualForm();
     }
-    // --- FIN DE LA MODIFICACIÓN ---
   }, [
     itemToEdit,
     favoriteMeals,
     setIsPer100g,
     resetManualForm,
-    manualFormState, // Añadido para la comprobación anti-bucle
-    round // Añadido round
+    manualFormState,
+    round, // Añadir round a las dependencias
+    addToast // Añadir addToast a las dependencias
   ]);
 
   // Efecto para recalcular macros al cambiar peso (modo EDICIÓN NO 100g)
   useEffect(() => {
-    // Solo recalcular si hay baseMacros (es decir, NO modo 100g inicial) y hay datos originales
-    if (baseMacros && originalData) {
+    if (baseMacros && originalData && !isPer100g) {
       const newWeight = parseFloat(manualFormState.formData.weight_g) || 0;
-      // Recalcular solo si el peso ha cambiado respecto al original O si el modo 100g se desactivó
       if (String(newWeight) !== String(originalData?.weight_g || '') || !isPer100g) {
-         // Si isPer100g es false AHORA, pero SÍ teníamos baseMacros, recalculamos
          if (!isPer100g) {
              setManualFormState((prev) => ({
                  ...prev,
@@ -181,13 +174,12 @@ export const useManualForm = ({
     manualFormState.formData.weight_g,
     baseMacros,
     originalData,
-    isPer100g, // Ahora depende de isPer100g para reaccionar si se desactiva
+    isPer100g,
     round
   ]);
 
   // Efecto para recalcular macros al cambiar peso o datos "por 100g" (modo 100G activo)
   useEffect(() => {
-    // Se activa si estamos en modo por 100g
     if (isPer100g) {
       const computed = computeFromPer100(
         manualFormState.per100Data.calories,
@@ -196,10 +188,9 @@ export const useManualForm = ({
         manualFormState.per100Data.fats_g,
         manualFormState.formData.weight_g
       );
-      // Solo actualiza si los valores calculados son diferentes a los actuales en formData
       if (
           String(Math.round(computed.calories)) !== String(Math.round(manualFormState.formData.calories || 0)) ||
-          String(computed.protein_g) !== String(manualFormState.formData.protein_g || '0.0') || // Comparar con '0.0' si está vacío
+          String(computed.protein_g) !== String(manualFormState.formData.protein_g || '0.0') ||
           String(computed.carbs_g) !== String(manualFormState.formData.carbs_g || '0.0') ||
           String(computed.fats_g) !== String(manualFormState.formData.fats_g || '0.0')
       ) {
@@ -214,8 +205,8 @@ export const useManualForm = ({
     manualFormState.per100Data,
     isPer100g,
     computeFromPer100,
-    manualFormState.formData, // Para comparación
-    round // Añadido round como dependencia
+    manualFormState.formData,
+    round // Añadir round a las dependencias
   ]);
 
   return {
