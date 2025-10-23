@@ -12,9 +12,9 @@ import { calculateCalories } from '../utils/helpers';
 
 const Workout = ({ timer, setView }) => {
   const { addToast } = useToast();
-  const { 
-    activeWorkout, 
-    logWorkout, 
+  const {
+    activeWorkout,
+    logWorkout,
     stopWorkout,
     updateActiveWorkoutSet,
     addDropset,
@@ -24,10 +24,11 @@ const Workout = ({ timer, setView }) => {
     workoutStartTime,
     isResting,
     openRestModal,
-    userProfile
+    userProfile,
+    fetchInitialData // <-- Importar fetchInitialData
   } = useAppStore(state => ({
     activeWorkout: state.activeWorkout,
-    logWorkout: state.logWorkout, 
+    logWorkout: state.logWorkout,
     stopWorkout: state.stopWorkout,
     updateActiveWorkoutSet: state.updateActiveWorkoutSet,
     addDropset: state.addDropset,
@@ -38,8 +39,9 @@ const Workout = ({ timer, setView }) => {
     isResting: state.isResting,
     openRestModal: state.openRestModal,
     userProfile: state.userProfile,
+    fetchInitialData: state.fetchInitialData, // <-- Obtener fetchInitialData del store
   }));
-  
+
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -104,7 +106,7 @@ const Workout = ({ timer, setView }) => {
     const seconds = String(timeInSeconds % 60).padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
   };
-  
+
   const handleFinishClick = () => {
     if (timer === 0) {
       addToast('Debes iniciar el cronómetro para poder guardar el entrenamiento.', 'error');
@@ -173,7 +175,7 @@ const Workout = ({ timer, setView }) => {
                         }))
         }))
     };
-    
+
     // Guardamos los datos ANTES de llamar a logWorkout para el modal
     setCompletedWorkoutData(workoutData);
 
@@ -185,20 +187,17 @@ const Workout = ({ timer, setView }) => {
       setShowWorkoutSummaryModal(true);
     } else {
       addToast(result.message, 'error');
-      if (wasTimerRunningOnFinish) {
-        togglePauseWorkout();
-      }
       setCompletedWorkoutData(null); // Limpiar datos si falla
     }
     setIsSaving(false);
   };
-  
+
   const hasWorkoutStarted = workoutStartTime !== null;
-  
+
   const handleDisabledInputClick = () => {
     addToast('Debes iniciar el cronómetro antes de registrar datos.', 'warning');
   };
-  
+
   const handleDisabledButtonClick = () => {
     addToast('Debes iniciar el cronómetro antes de usar esta función.', 'warning');
   };
@@ -221,8 +220,8 @@ const Workout = ({ timer, setView }) => {
         <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4 mt-4">
             <div className="font-mono text-4xl sm:text-5xl font-bold">{formatTime(timer)}</div>
             <div className="flex gap-4">
-                <button 
-                    onClick={togglePauseWorkout} 
+                <button
+                    onClick={togglePauseWorkout}
                     className="p-4 rounded-full transition text-bg-secondary bg-accent hover:bg-accent/80">
                     {isWorkoutPaused ? <Play size={24} /> : <Pause size={24} />}
                 </button>
@@ -232,8 +231,8 @@ const Workout = ({ timer, setView }) => {
             </div>
         </div>
         {!hasWorkoutStarted && (
-          <div className="mt-4 p-3 bg-yellow/10 border border-yellow/20 rounded-md text-center">
-            <p className="text-yellow font-medium">⏱️ Inicia el cronómetro para comenzar a registrar datos</p>
+          <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-center">
+            <p className="text-yellow-600 dark:text-yellow-400 font-medium">⏱️ Inicia el cronómetro para comenzar a registrar datos</p>
           </div>
         )}
       </GlassCard>
@@ -258,8 +257,8 @@ const Workout = ({ timer, setView }) => {
                             <button
                                 onClick={() => setExerciseToReplace(actualExIndex)}
                                 className={`p-2 rounded-md transition ${
-                                  hasWorkoutStarted 
-                                    ? 'bg-bg-primary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50' 
+                                  hasWorkoutStarted
+                                    ? 'bg-bg-primary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
                                     : 'bg-bg-primary border border-glass-border text-text-muted opacity-50 cursor-not-allowed'
                                 }`}
                                 title={hasWorkoutStarted ? "Reemplazar ejercicio" : "Inicia el cronómetro para reemplazar ejercicios"}
@@ -279,33 +278,33 @@ const Workout = ({ timer, setView }) => {
                                     <span className="text-center font-semibold text-text-secondary bg-bg-primary border border-glass-border rounded-md px-3 py-3">
                                         {set.is_dropset ? 'DS' : set.set_number}
                                     </span>
-                                    <input 
-                                      type="number" 
-                                      placeholder="0" 
-                                      value={set.weight_kg} 
+                                    <input
+                                      type="number"
+                                      placeholder="0"
+                                      value={set.weight_kg}
                                       onChange={hasWorkoutStarted ? (e) => updateActiveWorkoutSet(actualExIndex, setIndex, 'weight_kg', e.target.value) : undefined}
                                       onClick={!hasWorkoutStarted ? handleDisabledInputClick : undefined}
                                       className={baseInputClasses}
                                       disabled={!hasWorkoutStarted}
                                       readOnly={!hasWorkoutStarted}
                                     />
-                                    <input 
-                                      type="number" 
-                                      placeholder="0" 
-                                      value={set.reps} 
+                                    <input
+                                      type="number"
+                                      placeholder="0"
+                                      value={set.reps}
                                       onChange={hasWorkoutStarted ? (e) => updateActiveWorkoutSet(actualExIndex, setIndex, 'reps', e.target.value) : undefined}
                                       onClick={!hasWorkoutStarted ? handleDisabledInputClick : undefined}
                                       className={baseInputClasses}
                                       disabled={!hasWorkoutStarted}
                                       readOnly={!hasWorkoutStarted}
                                     />
-                                    
+
                                     {set.is_dropset ? (
                                         <button
                                             onClick={hasWorkoutStarted ? () => removeDropset(actualExIndex, setIndex) : handleDisabledButtonClick}
                                             className={`p-3 rounded-md border transition h-full flex items-center justify-center ${
-                                              hasWorkoutStarted 
-                                                ? 'bg-bg-primary border-glass-border text-text-muted hover:bg-red/20 hover:text-red' 
+                                              hasWorkoutStarted
+                                                ? 'bg-bg-primary border-glass-border text-text-muted hover:bg-red/20 hover:text-red'
                                                 : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
                                             }`}
                                             title={hasWorkoutStarted ? "Eliminar Dropset" : "Inicia el cronómetro para eliminar dropsets"}
@@ -317,8 +316,8 @@ const Workout = ({ timer, setView }) => {
                                         <button
                                         onClick={hasWorkoutStarted ? () => addDropset(actualExIndex, setIndex) : handleDisabledButtonClick}
                                         className={`p-3 rounded-md border transition h-full flex items-center justify-center ${
-                                          hasWorkoutStarted 
-                                            ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50' 
+                                          hasWorkoutStarted
+                                            ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
                                             : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
                                         }`}
                                         title={hasWorkoutStarted ? "Añadir Dropset" : "Inicia el cronómetro para añadir dropsets"}
@@ -328,11 +327,11 @@ const Workout = ({ timer, setView }) => {
                                         </button>
                                     )}
 
-                                    <button 
+                                    <button
                                     onClick={hasWorkoutStarted ? openRestModal : handleDisabledButtonClick}
                                     className={`p-3 rounded-md border transition h-full flex items-center justify-center ${
-                                      hasWorkoutStarted 
-                                        ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50' 
+                                      hasWorkoutStarted
+                                        ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
                                         : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
                                     }`}
                                     title={hasWorkoutStarted ? "Iniciar descanso" : "Inicia el cronómetro para usar el temporizador de descanso"}
@@ -351,7 +350,7 @@ const Workout = ({ timer, setView }) => {
             ))}
         </div>
       )}
-      
+
       <GlassCard className="p-6 mt-6">
         <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
           <FileText size={20} />
@@ -387,7 +386,7 @@ const Workout = ({ timer, setView }) => {
       }
 
       {exerciseToReplace !== null && (
-        <ExerciseReplaceModal 
+        <ExerciseReplaceModal
             exerciseIndex={exerciseToReplace}
             onClose={() => setExerciseToReplace(null)}
         />
@@ -397,11 +396,12 @@ const Workout = ({ timer, setView }) => {
       {showWorkoutSummaryModal && completedWorkoutData && (
         <WorkoutSummaryModal
             workoutData={completedWorkoutData}
-            onClose={() => {
+            onClose={async () => { // <-- Hacer la función async
                 // ¡CAMBIO CLAVE AQUÍ!
                 setShowWorkoutSummaryModal(false);
                 setCompletedWorkoutData(null);
                 stopWorkout(); // Limpiamos el estado AHORA
+                await fetchInitialData(); // <-- LLAMAR A fetchInitialData AQUÍ
                 setView('dashboard'); // Navegar al dashboard al cerrar
             }}
         />

@@ -14,16 +14,16 @@ const formatTime = (timeInSeconds) => {
 };
 
 const WorkoutSummaryModal = ({ workoutData, onClose }) => {
-    
+
     const handleShare = async () => {
         // Asegúrate de que workoutData no sea null o undefined antes de desestructurar
         if (!workoutData) {
             console.error("No hay datos del entrenamiento para compartir.");
             return;
         }
-        
+
         const { routineName, duration_seconds, calories_burned, details } = workoutData;
-        
+
         // Comprobaciones adicionales por si acaso
         const safeRoutineName = routineName || "Entrenamiento";
         const safeDuration = duration_seconds || 0;
@@ -31,7 +31,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
         const safeDetails = details || [];
 
         const durationStr = formatTime(safeDuration);
-        
+
         let exerciseSummary = '';
         if (safeDetails.length > 0) {
             exerciseSummary = safeDetails.map(ex => {
@@ -72,14 +72,16 @@ ${exerciseSummary}
     };
 
     // Comprobación inicial robusta para workoutData
-    if (!workoutData) {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    if (!workoutData || typeof workoutData !== 'object' || Object.keys(workoutData).length === 0) {
+       console.error("WorkoutSummaryModal received invalid workoutData:", workoutData);
        return null; // O mostrar un estado de carga/error si prefieres
     }
+    // --- FIN DE LA MODIFICACIÓN ---
 
     const { routineName, duration_seconds, calories_burned, details, notes } = workoutData;
      // Comprobaciones adicionales por si acaso, usando valores por defecto
      const safeRoutineName = routineName || "Entrenamiento";
-     const safeDuration = duration_seconds || 0;
      const safeCalories = calories_burned || 0;
      const safeDetails = details || [];
      const safeNotes = notes || "";
@@ -109,11 +111,15 @@ ${exerciseSummary}
                         <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
                             <Clock size={24} className="mx-auto text-text-secondary mb-1" />
                             <span className="text-sm text-text-secondary">Duración</span>
-                            <p className="text-xl font-bold">{formatTime(safeDuration)}</p>
+                            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                            {/* Usar duration_seconds directamente aquí, ya que la comprobación inicial asegura que workoutData existe */}
+                            <p className="text-xl font-bold">{formatTime(duration_seconds || 0)}</p>
+                            {/* --- FIN DE LA MODIFICACIÓN --- */}
                         </div>
                         <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
                             <Flame size={24} className="mx-auto text-text-secondary mb-1" />
                             <span className="text-sm text-text-secondary">Calorías</span>
+                            {/* safeCalories ya tiene fallback a 0 */}
                             <p className="text-xl font-bold">{Math.round(safeCalories)} kcal</p>
                         </div>
                     </div>

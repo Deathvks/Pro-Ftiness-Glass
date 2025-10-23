@@ -161,7 +161,7 @@ export const createWorkoutSlice = (set, get) => ({
         const newExercises = JSON.parse(JSON.stringify(session.exercises));
         const targetExercise = newExercises[exIndex];
         const parentSet = targetExercise.setsDone[setIndex];
-        
+
         targetExercise.setsDone.splice(setIndex + 1, 0, {
             set_number: parentSet.set_number,
             reps: '',
@@ -178,7 +178,7 @@ export const createWorkoutSlice = (set, get) => ({
     removeDropset: (exIndex, setIndex) => {
         const session = get().activeWorkout;
         if (!session) return;
-        
+
         const newExercises = JSON.parse(JSON.stringify(session.exercises));
         if (newExercises[exIndex].setsDone[setIndex]?.is_dropset) {
             newExercises[exIndex].setsDone.splice(setIndex, 1);
@@ -221,7 +221,7 @@ export const createWorkoutSlice = (set, get) => ({
         set(newState);
         setRestTimerInStorage(newState);
     },
-    
+
     // Añade o resta tiempo al temporizador de descanso actual.
     addRestTime: (secondsToAdd) => {
         set((state) => {
@@ -257,7 +257,7 @@ export const createWorkoutSlice = (set, get) => ({
                 get().showPRNotification(responseData.newPRs);
             }
             // get().stopWorkout(); // <-- ¡CAMBIO AQUÍ! COMENTAMOS ESTA LÍNEA
-            await get().fetchInitialData();
+            // await get().fetchInitialData(); // <-- REMOVE THIS LINE
             return { success: true, message: 'Entrenamiento guardado.' };
         } catch (error) {
             return { success: false, message: `Error al guardar: ${error.message}` };
