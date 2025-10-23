@@ -1,7 +1,7 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React from 'react';
 // --- INICIO DE LA MODIFICACIÓN ---
-import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github, Camera, IdCard } from 'lucide-react'; // <-- Añadido 'IdCard'
+import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github, Camera, IdCard, ZoomIn } from 'lucide-react'; // <-- Añadido 'ZoomIn'
 // --- FIN DE LA MODIFICACIÓN ---
 import { APP_VERSION } from '../config/version';
 
@@ -9,11 +9,16 @@ const WelcomeModal = ({ onClose }) => {
   const nouveautes = [
     // --- INICIO DE LA MODIFICACIÓN (Nueva Novedad) ---
     {
+      icon: <ZoomIn className="text-accent" />,
+      titre: "Ampliación de Imagen de Perfil",
+      description: "Ahora puedes hacer clic en tu foto de perfil (tanto en la barra lateral como en la configuración) para verla ampliada en un elegante modal con desenfoque, al estilo de las redes sociales."
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
+    {
       icon: <IdCard className="text-accent" />,
       titre: "Página de Perfil Renovada",
       description: "Presentamos la nueva página de 'Mi Cuenta'. Ahora puedes subir tu propia foto de perfil y elegir un nombre de usuario (@username) único para personalizar tu experiencia."
     },
-    // --- FIN DE LA MODIFICACIÓN ---
     {
       icon: <QrCode className="text-accent" />,
       titre: "Escaneo de Códigos de Barras",
@@ -40,7 +45,7 @@ const WelcomeModal = ({ onClose }) => {
       description: "Añade un toque visual a tu diario. Ahora puedes subir una foto para cada registro de comida, ayudándote a recordar qué comiste."
     },
     {
-      icon: <TrendingUp className="text-accent" />, // Reutilizamos icono
+      icon: <TrendingUp className="text-accent" />,
       titre: "Estimación de 1 RM en Progreso",
       description: "La gráfica de 'Progresión de Fuerza' ahora muestra tu 1RM estimado (Una Repetición Máxima), calculado automáticamente a partir de tus mejores series y visible incluso en registros antiguos."
     },
@@ -99,15 +104,12 @@ const WelcomeModal = ({ onClose }) => {
 
         {/* -- Pie de página (no se desplaza) -- */}
         <div className="flex-shrink-0 p-6 pt-4">
-          
+
           <a
             href="https://github.com/deathvks/fittrack-pro"
             target="_blank"
             rel="noopener noreferrer"
-            // --- INICIO DE LA CORRECCIÓN ---
-            // Usamos flex-col y sm:flex-row para manejar el wrapping en móvil y centrar verticalmente el ícono en dos líneas
             className="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors mb-4"
-            // --- FIN DE LA CORRECCIÓN ---
           >
             <Github size={16} className="flex-shrink-0" />
             <span className="text-center sm:text-left">
