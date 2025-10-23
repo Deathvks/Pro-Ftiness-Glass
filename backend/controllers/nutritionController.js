@@ -332,25 +332,34 @@ const upsertWaterLog = async (req, res, next) => {
 const searchByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
-    const apiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Actualizado a la API v2 y solicitando campos específicos
+    const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,nutriments`;
 
     const response = await axios.get(apiUrl);
 
-    if (response.data.status === 0) {
+    // En v2, si el producto no existe, la API devuelve 404 (manejado por catch)
+    // o un objeto 'product' vacío o sin 'product_name'.
+    // El chequeo 'status === 0' es de la v0 y ya no es válido.
+
+    if (!response.data || !response.data.product || !response.data.product.product_name) {
       return res.status(404).json({ error: 'Producto no encontrado.' });
     }
 
     const product = response.data.product;
-    const nutriments = product.nutriments;
+    const nutriments = product.nutriments || {}; // Asegurar que nutriments sea un objeto
 
     const foodData = {
-      name: product.product_name || 'Nombre no disponible',
+      // Priorizar nombre en español, luego nombre genérico
+      name: product.product_name_es || product.product_name || 'Nombre no disponible',
       calories: nutriments['energy-kcal_100g'] || 0,
       protein_g: nutriments.proteins_100g || 0,
       carbs_g: nutriments.carbohydrates_100g || 0,
       fats_g: nutriments.fat_100g || 0,
       weight_g: 100, // Por defecto asumimos 100g para los datos de OFF
     };
+    // --- FIN DE LA MODIFICACIÓN ---
 
     res.json(foodData);
   } catch (error) {
@@ -359,6 +368,8 @@ const searchByBarcode = async (req, res, next) => {
         error: 'Producto no encontrado en la base de datos de Open Food Facts.',
       });
     }
+    // Log del error para depuración
+    console.error('Error en searchByBarcode:', error.message);
     next(error);
   }
 };

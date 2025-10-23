@@ -55,110 +55,111 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
     }
   };
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Esta función ha sido reestructurada para manejar la nueva respuesta
+  // simplificada de la API del backend para escaneos.
   const handleSelectFood = (food) => {
-    // --- INICIO DE LA MODIFICACIÓN ---
+    let preparedFood;
 
-    // 1. Normalizar Nombre
-    const description =
-      food.name || // Favoritos, Manual
-      food.description || // Recientes
-      food.food_name || // Búsqueda (FatSecret)
-      (food.product && food.product.product_name) || // Scan (OpenFoodFacts)
-      'Alimento';
+    // A. Si el item viene del ESCÁNER (backend API v2)
+    // La API ahora devuelve un objeto simple: { name, calories, protein_g, ... }
+    if (food.origin === 'scan') {
+      const description = food.name || 'Alimento Escaneado';
+      const weight_g = food.weight_g || 100; // El backend envía 100g
 
-    // 2. Normalizar Imagen
-    const image_url =
-      food.image_url || // Favoritos, Recientes
-      (food.product && food.product.image_url) || // Scan (OpenFoodFacts)
-      null;
+      preparedFood = {
+        ...food,
+        description,
+        name: description,
+        image_url: food.image_url || null,
 
-    // 3. Definir nutriments si viene de scan
-    const nutriments =
-      food.origin === 'scan' && food.product && food.product.nutriments
-        ? food.product.nutriments
-        : {};
+        // Los datos del backend (food.calories, etc.) SON por 100g
+        calories_per_100g: food.calories || 0,
+        protein_per_100g: food.protein_g || 0,
+        carbs_per_100g: food.carbs_g || 0,
+        fat_per_100g: food.fats_g || 0,
 
-    // 4. Construir el objeto normalizado
-    const preparedFood = {
-      ...food,
-      description,
-      name: description,
-      image_url,
+        // Usamos los datos de 100g como "ración" por defecto
+        serving_size: food.serving_size || `${weight_g} g`,
+        serving_weight_g: weight_g,
+        calories_per_serving: food.calories || 0,
+        protein_per_serving: food.protein_g || 0,
+        carbs_per_serving: food.carbs_g || 0,
+        fat_per_serving: food.fats_g || 0,
+      };
+    }
+    // B. Si el item viene de BÚSQUEDA (FatSecret), FAVORITOS o RECIENTES
+    else {
+      // Esta es la lógica de normalización anterior para otras fuentes
+      const description =
+        food.name || // Favoritos, Manual
+        food.description || // Recientes
+        food.food_name || // Búsqueda (FatSecret)
+        'Alimento';
 
-      // Macros por 100g
-      calories_per_100g:
-        food.calories_per_100g ||
-        (nutriments &&
-          (nutriments['energy-kcal_100g'] || nutriments.energy_100g)) || // Scan
-        food.calories_per_serving || // Búsqueda/Favs/Recents (fallback de FatSecret)
-        food.calories ||
-        0,
-      protein_per_100g:
-        food.protein_per_100g ||
-        (nutriments && nutriments.proteins_100g) || // Scan
-        food.protein_per_serving || // Búsqueda/Favs/Recents (fallback)
-        food.protein_g ||
-        food.protein ||
-        0,
-      carbs_per_100g:
-        food.carbs_per_100g ||
-        (nutriments && nutriments.carbohydrates_100g) || // Scan
-        food.carbs_per_serving || // Búsqueda/Favs/Recents (fallback)
-        food.carbs_g ||
-        food.carbs ||
-        0,
-      fat_per_100g:
-        food.fat_per_100g ||
-        (nutriments && nutriments.fat_100g) || // Scan
-        food.fat_per_serving || // Búsqueda/Favs/Recents (fallback)
-        food.fats_g ||
-        food.fat ||
-        0,
+      const image_url = food.image_url || null;
 
-      // Macros por Ración (importante para FoodEntryForm)
-      serving_size:
-        food.serving_size ||
-        (food.product && food.product.serving_size) || // Scan
-        '100 g',
-      serving_weight_g:
-        food.serving_weight_g ||
-        (food.product && parseFloat(food.product.serving_quantity)) || // Scan
-        100,
+      preparedFood = {
+        ...food,
+        description,
+        name: description,
+        image_url,
 
-      // Si vienen datos de ración, usarlos. Si no, usar los datos de 100g como ración.
-      calories_per_serving:
-        food.calories_per_serving ||
-        (nutriments && nutriments['energy-kcal_serving']) || // Scan (ración)
-        food.calories_per_100g || // Búsqueda (fallback 100g)
-        (nutriments &&
-          (nutriments['energy-kcal_100g'] || nutriments.energy_100g)) || // Scan (fallback 100g)
-        food.calories ||
-        0,
-      protein_per_serving:
-        food.protein_per_serving ||
-        (nutriments && nutriments.proteins_serving) || // Scan (ración)
-        food.protein_per_100g || // Búsqueda (fallback 100g)
-        (nutriments && nutriments.proteins_100g) || // Scan (fallback 100g)
-        food.protein_g ||
-        food.protein ||
-        0,
-      carbs_per_serving:
-        food.carbs_per_serving ||
-        (nutriments && nutriments.carbohydrates_serving) || // Scan (ración)
-        food.carbs_per_100g || // Búsqueda (fallback 100g)
-        (nutriments && nutriments.carbohydrates_100g) || // Scan (fallback 100g)
-        food.carbs_g ||
-        food.carbs ||
-        0,
-      fat_per_serving:
-        food.fat_per_serving ||
-        (nutriments && nutriments.fat_serving) || // Scan (ración)
-        food.fat_per_100g || // Búsqueda (fallback 100g)
-        (nutriments && nutriments.fat_100g) || // Scan (fallback 100g)
-        food.fats_g ||
-        food.fat ||
-        0,
-    };
+        // Macros por 100g
+        calories_per_100g:
+          food.calories_per_100g ||
+          food.calories_per_serving || // Fallback
+          food.calories ||
+          0,
+        protein_per_100g:
+          food.protein_per_100g ||
+          food.protein_per_serving || // Fallback
+          food.protein_g ||
+          food.protein ||
+          0,
+        carbs_per_100g:
+          food.carbs_per_100g ||
+          food.carbs_per_serving || // Fallback
+          food.carbs_g ||
+          food.carbs ||
+          0,
+        fat_per_100g:
+          food.fat_per_100g ||
+          food.fat_per_serving || // Fallback
+          food.fats_g ||
+          food.fat ||
+          0,
+
+        // Macros por Ración
+        serving_size: food.serving_size || '1 ración',
+        // Asumir 100g si no hay peso (importante para "Por 100g")
+        serving_weight_g: food.serving_weight_g || 100,
+
+        calories_per_serving:
+          food.calories_per_serving ||
+          food.calories_per_100g || // Fallback
+          food.calories ||
+          0,
+        protein_per_serving:
+          food.protein_per_serving ||
+          food.protein_per_100g || // Fallback
+          food.protein_g ||
+          food.protein ||
+          0,
+        carbs_per_serving:
+          food.carbs_per_serving ||
+          food.carbs_per_100g || // Fallback
+          food.carbs_g ||
+          food.carbs ||
+          0,
+        fat_per_serving:
+          food.fat_per_serving ||
+          food.fat_per_100g || // Fallback
+          food.fats_g ||
+          food.fat ||
+          0,
+      };
+    }
     // --- FIN DE LA MODIFICACIÓN ---
 
     setSelectedItem(preparedFood);
@@ -166,17 +167,13 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
   };
 
   const handleScanSuccess = (foodData) => {
-    // --- INICIO DE LA MODIFICACIÓN --- (Esta parte ya estaba en tu código)
     // Aseguramos que el item tenga el flag de origen 'scan'
-    // para que el formulario (FoodEntryForm) pueda reaccionar a él.
+    // para que la nueva lógica en 'handleSelectFood' lo detecte.
     const scannedFoodData = {
       ...foodData,
       origin: 'scan',
     };
     handleSelectFood(scannedFoodData);
-    // Ya no seteamos 'setIsPer100g(true)' aquí.
-    // Dejamos que el useEffect de FoodEntryForm lo gestione.
-    // --- FIN DE LA MODIFICACIÓN ---
     setIsScannerOpen(false);
   };
 
