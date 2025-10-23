@@ -38,9 +38,13 @@ function FoodEntryForm({
       setOriginalImageUrl(selectedItem.image_url || null);
       setFile(null);
       // --- INICIO DE LA MODIFICACIÓN ---
-      // Si el item viene del escáner, forzamos el modo por 100g
+      // Lógica autoritativa:
+      // Si el item viene del escáner, forzamos el modo por 100g.
+      // Si no (favorito, reciente, búsqueda), lo desactivamos.
       if (selectedItem.origin === 'scan') {
         setIsPer100g(true);
+      } else {
+        setIsPer100g(false);
       }
       // --- FIN DE LA MODIFICACIÓN ---
     }

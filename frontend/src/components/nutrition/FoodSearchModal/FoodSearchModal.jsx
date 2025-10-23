@@ -100,8 +100,17 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
   };
 
   const handleScanSuccess = (foodData) => {
-    handleSelectFood(foodData);
-    setIsPer100g(true); // Activar "Por 100g" al escanear
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Aseguramos que el item tenga el flag de origen 'scan'
+    // para que el formulario (FoodEntryForm) pueda reaccionar a él.
+    const scannedFoodData = {
+      ...foodData,
+      origin: 'scan',
+    };
+    handleSelectFood(scannedFoodData);
+    // Ya no seteamos 'setIsPer100g(true)' aquí.
+    // Dejamos que el useEffect de FoodEntryForm lo gestione.
+    // --- FIN DE LA MODIFICACIÓN ---
     setIsScannerOpen(false);
   };
 
