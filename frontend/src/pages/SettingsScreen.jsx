@@ -1,12 +1,11 @@
+/* frontend/src/pages/SettingsScreen.jsx */
 import React, { useState } from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-// 'User' ya estaba importado, 'UserCog' eliminado
-import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield, LogOut, Info, ChevronRight, Cookie } from 'lucide-react';
-// --- FIN DE LA MODIFICACIÓN ---
+import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield, LogOut, Info, ChevronRight, Cookie, Mail } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 
 const ACCENT_OPTIONS = [
+  // ... (opciones de color sin cambios) ...
   { id: 'green',  label: 'Verde',    hex: '#22c55e' },
   { id: 'blue',   label: 'Azul',     hex: '#3b82f6' },
   { id: 'violet', label: 'Violeta',  hex: '#8b5cf6' },
@@ -95,10 +94,8 @@ export default function SettingsScreen({
   };
 
   return (
-    // Ajustamos padding
     <div className="px-4 pb-4 md:p-8 max-w-5xl mx-auto">
-
-      {/* Header para PC (modificado para ocultar en móvil) */}
+      {/* Header para PC */}
       <div className="hidden md:flex items-center justify-between mb-6">
         <button
           onClick={() => setView('dashboard')}
@@ -107,21 +104,17 @@ export default function SettingsScreen({
           <ChevronLeft size={18} />
           <span className="text-sm font-medium">Volver</span>
         </button>
-
-        {/* Añadimos margen superior para PC */}
         <h1 className="text-xl md:text-2xl font-bold mt-10 md:mt-0">Ajustes</h1>
-
         <div className="w-[90px]" />
       </div>
 
-      {/* Añadimos margen superior en móvil */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 md:mt-0">
+        {/* --- Sección Personalización --- */}
         <section className="lg:col-span-2 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5">
           <div className="flex items-center gap-2 mb-4">
             <Palette size={18} className="text-accent" />
             <h2 className="text-lg font-semibold">Personalización</h2>
           </div>
-
           <div className="mb-6">
             <h3 className="text-sm font-medium text-text-secondary mb-3">Tema</h3>
             <div className="flex flex-wrap gap-3">
@@ -130,21 +123,16 @@ export default function SettingsScreen({
               <ThemeButton value="dark"   icon={Moon}       label="Oscuro" />
             </div>
           </div>
-
           <div>
             <h3 className="text-sm font-medium text-text-secondary mb-3">Color de la app</h3>
             <p className="text-xs text-text-muted mb-4">
               Cambia solo los elementos que usan el color de acento.
             </p>
-
-            {/* Grid de colores con paginación */}
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 mb-4">
               {currentColors.map(opt => (
                 <AccentSwatch key={opt.id} option={opt} />
               ))}
             </div>
-
-            {/* Controles de paginación */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2">
                 <button
@@ -154,11 +142,9 @@ export default function SettingsScreen({
                 >
                   <ChevronLeft size={16} />
                 </button>
-
                 <span className="text-sm text-text-secondary px-3">
                   {currentColorPage + 1} de {totalPages}
                 </span>
-
                 <button
                   onClick={() => setCurrentColorPage(prev => Math.min(totalPages - 1, prev + 1))}
                   disabled={currentColorPage === totalPages - 1}
@@ -171,14 +157,11 @@ export default function SettingsScreen({
           </div>
         </section>
 
+        {/* --- Sección Cuenta --- */}
         <aside className="rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 flex flex-col gap-3">
           <h2 className="text-lg font-semibold mb-1">Cuenta</h2>
-
           <button
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Cambiamos 'profileEditor' a 'physicalProfileEditor'
             onClick={() => setView('physicalProfileEditor')}
-            // --- FIN DE LA MODIFICACIÓN ---
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
           >
             <User size={18} className="text-accent" />
@@ -187,7 +170,6 @@ export default function SettingsScreen({
               <div className="text-xs text-text-secondary">Objetivos, actividad, etc.</div>
             </div>
           </button>
-
           <button
             onClick={resetCookieConsent}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
@@ -198,7 +180,16 @@ export default function SettingsScreen({
               <div className="text-xs text-text-secondary">Gestionar consentimiento</div>
             </div>
           </button>
-
+          <a
+            href="mailto:profitnessglass@gmail.com"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
+          >
+            <Mail size={18} className="text-accent" />
+            <div>
+              <div className="text-sm font-semibold">Soporte</div>
+              <div className="text-xs text-text-secondary">profitnessglass@gmail.com</div>
+            </div>
+          </a>
           {userProfile?.role === 'admin' && (
             <button
               onClick={() => setView('adminPanel')}
@@ -211,21 +202,22 @@ export default function SettingsScreen({
               </div>
             </button>
           )}
-
+          <div className="flex-grow"></div>
           <div className="h-px bg-[--glass-border] my-1" />
-
           <button
             onClick={onLogoutClick}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-accent text-bg-secondary font-semibold hover:opacity-95 transition"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-accent text-bg-secondary font-semibold hover:opacity-95 transition mt-auto"
           >
             <LogOut size={18} />
             Cerrar sesión
           </button>
         </aside>
 
-        <aside className="lg:hidden rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 flex flex-col gap-3">
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* --- Sección Información (ahora oculta en pantallas medianas y grandes) --- */}
+        <aside className="md:hidden lg:col-span-1 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 flex flex-col gap-3">
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
           <h2 className="text-lg font-semibold mb-1">Información</h2>
-
           <div className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border]">
             <Info size={18} className="text-accent" />
             <div>
