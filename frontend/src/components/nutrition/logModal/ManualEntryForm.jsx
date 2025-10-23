@@ -1,12 +1,18 @@
 /* frontend/src/components/nutrition/logModal/ManualEntryForm.jsx */
-import React, { useCallback, useRef, useMemo } from 'react'; // <--- CORRECCIÓN AQUÍ
+import React, { useCallback, useRef, useMemo, useState, useEffect } from 'react'; // <--- Añadido useState, useEffect
 import { Save, Plus, Star, Check, Camera, X } from 'lucide-react';
 import Spinner from '../../Spinner';
 import { useToast } from '../../../hooks/useToast';
 import useAppStore from '../../../store/useAppStore'; // Importar useAppStore
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Obtener la URL base del backend desde las variables de entorno
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Eliminar '/api' del final si existe para obtener solo la base del backend
+const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+// --- FIN DE LA MODIFICACIÓN ---
+
 const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
-    // ... (código para ImageUpload)
     const fileInputRef = useRef(null);
 
     const handleImageClick = () => {
@@ -22,7 +28,7 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
 
     const handleRemoveImage = (e) => {
         e.stopPropagation();
-        onImageUpload(null); // <-- Llama con null para indicar que la imagen se elimina
+        onImageUpload(null);
     };
 
     return (
@@ -45,8 +51,12 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                 ) : imageUrl ? (
                     <>
                         {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                        {/* Cambiamos object-cover a object-contain y aseguramos que la imagen se centre y no se recorte */}
-                        <img src={imageUrl} alt="Previsualización de la comida" className="max-w-full max-h-full object-contain rounded-lg" />
+                        {/* Construir la URL completa si es necesario */}
+                        <img
+                            src={imageUrl.startsWith('http') || imageUrl.startsWith('blob:') ? imageUrl : `${BACKEND_BASE_URL}${imageUrl}`}
+                            alt="Previsualización de la comida"
+                            className="max-w-full max-h-full object-contain rounded-lg"
+                        />
                         {/* --- FIN DE LA MODIFICACIÓN --- */}
                         <button
                             onClick={handleRemoveImage}
@@ -69,7 +79,6 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
 
 
 const InputField = ({ label, name, value, onChange, placeholder = '', inputMode = 'text', required = false, type = 'text', className = '' }) => (
-    // ... (código existente del componente InputField sin cambios) ...
     <div>
         <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
         <input
@@ -86,7 +95,6 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
 );
 
 const CalculatedMacros = ({ formData }) => (
-    // ... (código existente del componente CalculatedMacros sin cambios) ...
      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Cal</p><p className="font-semibold">{Math.round(formData.calories) || 0}</p></div>
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Prot</p><p className="font-semibold">{formData.protein_g || 0}</p></div>
@@ -101,46 +109,34 @@ const ManualEntryForm = ({
     onSaveEdit,
     onSaveListItem,
     isLoading,
-    isEditing, // Indica si se está editando un log existente
-    editingListItem, // Indica si se está editando un item de la lista temporal
-    showFavoriteToggle, // DEPRECATED: Ya no se usa directamente
+    isEditing,
+    editingListItem,
     formState,
     onFormStateChange,
     isUploading,
     onImageUpload,
-    editingFavorite // Prop que indica si se edita un favorito directamente
+    editingFavorite,
+    isPer100g,
+    setIsPer100g
 }) => {
     const { addToast } = useToast();
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // 1. Obtener la lista de favoritos del store
     const favoriteMeals = useAppStore(state => state.favoriteMeals);
-    // --- FIN DE LA MODIFICACIÓN ---
-    const { formData, per100Data, per100Mode, isFavorite } = formState;
+    const { formData, per100Data, isFavorite } = formState;
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // 2. Determinar si la comida actual ya es un favorito
     const isAlreadyFavorite = useMemo(() => {
-        // Si estamos editando un favorito directamente, ya lo es
         if (editingFavorite) return true;
-        // Si estamos editando un log o un item de la lista temporal, buscamos por nombre
         if (isEditing || editingListItem) {
             const currentName = formData.description?.trim().toLowerCase();
             return currentName && favoriteMeals.some(fav => fav.name.toLowerCase() === currentName);
         }
-        // Si estamos creando, no es favorito aún (a menos que el usuario marque la casilla)
         return false;
     }, [isEditing, editingListItem, editingFavorite, formData.description, favoriteMeals]);
 
-    // 3. Determinar si mostrar el botón/checkbox "Guardar en favoritos"
-    // - No mostrar si estamos editando un favorito directamente.
-    // - No mostrar si la comida ya está en favoritos (basado en el nombre).
-    // - Mostrar si estamos creando, editando un log, o editando un item temporal Y no está ya en favoritos.
     const shouldShowFavoriteOption = !editingFavorite && !isAlreadyFavorite;
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // ... (resto de funciones handleChange, handlePer100Change, etc., sin cambios) ...
      const handleChange = (e) => {
         const { name, value } = e.target;
+        // Permite números, punto decimal y el campo de descripción
         if (name === 'description' || /^\d*\.?\d*$/.test(value)) {
             onFormStateChange({ ...formState, formData: { ...formData, [name]: value } });
         }
@@ -148,13 +144,10 @@ const ManualEntryForm = ({
 
     const handlePer100Change = (e) => {
         const { name, value } = e.target;
+        // Permite solo números y punto decimal
         if (/^\d*\.?\d*$/.test(value)) {
             onFormStateChange({ ...formState, per100Data: { ...per100Data, [name]: value } });
         }
-    };
-
-    const handlePer100ModeChange = (e) => {
-        onFormStateChange({ ...formState, per100Mode: e.target.checked });
     };
 
     const handleFavoriteChange = () => {
@@ -169,38 +162,62 @@ const ManualEntryForm = ({
         }
     };
 
+    const round = (val, d = 1) => {
+      const n = parseFloat(val);
+      return isNaN(n)
+        ? ''
+        : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
+    };
+
+
     const validateAndGetData = useCallback(() => {
         const finalData = { ...formData };
 
-        if (per100Mode && !isEditing && !editingListItem && !editingFavorite) { // Añadido !editingFavorite
+        if (isPer100g && !isEditing && !editingListItem && !editingFavorite) {
             const weight = parseFloat(finalData.weight_g) || 0;
-            if (weight === 0) {
-                addToast('Los gramos a consumir son obligatorios en el modo por 100g.', 'error');
-                return null;
+            if (weight <= 0) { // Permitir 0 temporalmente, validar antes de guardar
+                // No mostrar error aquí, se hará al intentar guardar/añadir
             }
         }
 
-        if (!finalData.description || String(finalData.calories).trim() === '') {
+        if (!finalData.description?.trim() || String(finalData.calories).trim() === '') {
             addToast('La descripción y las calorías son obligatorias.', 'error');
             return null;
         }
 
+        // Validación final de peso en modo por 100g
+        if (isPer100g && !isEditing && !editingListItem && !editingFavorite) {
+            const weight = parseFloat(finalData.weight_g) || 0;
+             if (weight <= 0) {
+                 addToast('Los gramos a consumir deben ser mayores a 0 en el modo por 100g.', 'error');
+                 return null;
+             }
+        }
+
+
         Object.keys(finalData).forEach(key => {
             if (key !== 'description' && key !== 'image_url') {
                  if (key === 'weight_g') {
-                    finalData[key] = parseFloat(finalData[key]) || null;
+                    // Si weight_g está vacío o es 0, lo convertimos a null
+                    const weightVal = parseFloat(finalData[key]);
+                    finalData[key] = (!isNaN(weightVal) && weightVal > 0) ? weightVal : null;
                  } else {
+                    // Para otros campos numéricos, 0 es válido
                     finalData[key] = parseFloat(finalData[key]) || 0;
                  }
             }
         });
+        // Aseguramos que image_url sea null si está vacío
+        if (!finalData.image_url) {
+            finalData.image_url = null;
+        }
+
         return finalData;
-    }, [formData, per100Mode, isEditing, editingListItem, editingFavorite, addToast]); // Añadido editingFavorite
+    }, [formData, isPer100g, isEditing, editingListItem, editingFavorite, addToast]);
 
     const handleAddToList = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // Modificación para asegurar que image_url se pasa al añadir
         onAddManual({ name: finalData.description, isFavorite, image_url: finalData.image_url, ...finalData });
     };
 
@@ -213,14 +230,12 @@ const ManualEntryForm = ({
     const handleUpdateListItem = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // Pasamos el estado actual de isFavorite (controlado por la checkbox) y image_url
         onSaveListItem({ ...editingListItem, ...finalData, name: finalData.description, isFavorite, image_url: finalData.image_url });
     };
 
      const handleSaveAndClose = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // Pasamos el estado actual de isFavorite y image_url
         const dataToSave = { ...finalData, name: finalData.description, saveAsFavorite: isFavorite, image_url: formData.image_url };
         onSaveSingle([dataToSave]);
     };
@@ -243,29 +258,25 @@ const ManualEntryForm = ({
                 isUploading={isUploading}
             />
 
-            {/* Modo por 100g (solo al crear) */}
             {!isEditing && !editingListItem && !editingFavorite && (
                 <div className="flex items-center justify-between">
                     <label className="text-sm font-medium text-text-secondary">Valores por 100g</label>
                     <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={per100Mode} onChange={handlePer100ModeChange} />
+                        <input type="checkbox" className="sr-only peer" checked={isPer100g} onChange={(e) => setIsPer100g(e.target.checked)} />
                         <div className="w-10 h-6 bg-bg-primary rounded-full border border-glass-border peer-checked:bg-accent transition-colors"></div>
                         <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4"></div>
                     </label>
                 </div>
             )}
 
-            {/* Campos de Macros (condicionales) */}
-            {per100Mode && !isEditing && !editingListItem && !editingFavorite ? (
+            {isPer100g && !isEditing && !editingListItem && !editingFavorite ? (
                 <>
-                    {/* Campos por 100g */}
                     <div className="grid grid-cols-2 gap-4">
-                        <InputField label="Cal/100g" name="calories" value={per100Data.calories} onChange={handlePer100Change} inputMode="decimal" required={per100Mode} />
+                        <InputField label="Cal/100g" name="calories" value={per100Data.calories} onChange={handlePer100Change} inputMode="decimal" required={isPer100g} />
                         <InputField label="Prot/100g" name="protein_g" value={per100Data.protein_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Carbs/100g" name="carbs_g" value={per100Data.carbs_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Grasas/100g" name="fats_g" value={per100Data.fats_g} onChange={handlePer100Change} inputMode="decimal" />
                     </div>
-                    {/* Campo de Gramos Totales */}
                     <div className="relative">
                         <InputField
                             label="Gramos totales a consumir"
@@ -273,15 +284,13 @@ const ManualEntryForm = ({
                             value={formData.weight_g}
                             onChange={handleChange}
                             inputMode="decimal"
-                            required={per100Mode}
+                            required={isPer100g}
                         />
                     </div>
-                    {/* Macros Calculados */}
                     <CalculatedMacros formData={formData} />
                 </>
             ) : (
                 <>
-                    {/* Campos Totales */}
                     <InputField label="Calorías (kcal)" name="calories" value={formData.calories} onChange={handleChange} inputMode="decimal" required />
                     <div className="grid grid-cols-3 gap-4">
                         <InputField label="Proteínas (g)" name="protein_g" value={formData.protein_g} onChange={handleChange} inputMode="decimal" />
@@ -292,8 +301,6 @@ const ManualEntryForm = ({
                 </>
             )}
 
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* 4. Mostrar el botón/checkbox solo si shouldShowFavoriteOption es true */}
             {shouldShowFavoriteOption && (
                 <button
                     type="button"
@@ -311,19 +318,16 @@ const ManualEntryForm = ({
                     Guardar esta comida en favoritos
                 </button>
             )}
-             {/* --- FIN DE LA MODIFICACIÓN --- */}
 
-
-            {/* Botones de acción (condicionales según el modo) */}
-            {isEditing || editingFavorite ? ( // Editando log o favorito
+            {isEditing || editingFavorite ? (
                 <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white disabled:opacity-50 mt-2">
                     {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Guardar Cambios</>}
                 </button>
-            ) : editingListItem ? ( // Editando item de la lista temporal
+            ) : editingListItem ? (
                 <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white disabled:opacity-50 mt-2">
                     {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Actualizar Comida</>}
                 </button>
-            ) : ( // Creando nuevo item
+            ) : (
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">
                     <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-50`}>
                         {isLoading || isUploading ? <Spinner /> : <><Plus size={18} className="mr-2" /> Añadir a la lista</>}

@@ -25,7 +25,11 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
         handleToggleFavorite, handleEditListItem, handleEditFavorite, handleSaveListItem,
         handleSaveList, handleSaveSingle, handleSaveEdit, handleScanSuccess,
         handleDeleteFavorite, confirmDeleteFavorite, title, addModeType,
-        isUploading, handleImageUpload
+        isUploading, handleImageUpload,
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Extraer isPer100g y setIsPer100g del hook
+        isPer100g, setIsPer100g
+        // --- FIN DE LA MODIFICACIÓN ---
     } = useNutritionModal({ mealType, onSave, onClose, logToEdit });
 
     const renderContent = () => {
@@ -64,6 +68,12 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                         onFormStateChange={setManualFormState}
                         isUploading={isUploading}
                         onImageUpload={handleImageUpload}
+                        editingFavorite={editingFavorite} // Pasar prop editingFavorite
+                        // --- INICIO DE LA MODIFICACIÓN ---
+                        // Pasar isPer100g y setIsPer100g al formulario
+                        isPer100g={isPer100g}
+                        setIsPer100g={setIsPer100g}
+                        // --- FIN DE LA MODIFICACIÓN ---
                     />
                 );
             default: return null;
@@ -94,20 +104,20 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                     <div className="flex-grow overflow-hidden flex flex-col">
                         {!(isEditingLog || editingFavorite) && (
                             <div className="p-5 flex-shrink-0">
-                                
+
                                 {(activeTab === 'favorites' || activeTab === 'recent') && (
                                      <div className="relative mb-4">
                                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
-                                         <input 
-                                            type="text" 
-                                            placeholder="Buscar comida..." 
-                                            value={searchTerm} 
+                                         <input
+                                            type="text"
+                                            placeholder="Buscar comida..."
+                                            value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent" 
+                                            className="w-full pl-10 pr-4 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent"
                                         />
                                      </div>
                                 )}
-                                
+
                                 <div className="flex flex-wrap items-center justify-center gap-2">
                                     {/* Estas pestañas son visibles si NO estamos en modo manual */}
                                     {addModeType !== 'manual' && (
@@ -115,7 +125,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                                             {/* --- INICIO DE LA CORRECCIÓN --- */}
                                             <TabButton active={activeTab === 'favorites'} onClick={() => { setActiveTab('favorites'); handleEditListItem(null); handleEditFavorite(null); }}>
                                                 <BookMarked size={16} /> Favoritas
-                                            </TabButton> 
+                                            </TabButton>
                                             {/* --- FIN DE LA CORRECCIÓN (Era </Button>) --- */}
                                             <TabButton active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); handleEditListItem(null); handleEditFavorite(null); }}>
                                                 <Clock size={16} /> Recientes

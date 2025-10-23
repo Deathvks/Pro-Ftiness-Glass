@@ -46,6 +46,9 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
   const [addModeType, setAddModeType] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const [isPer100g, setIsPer100g] = useState(false); // Estado para controlar el interruptor globalmente en el modal
+  // --- FIN DE LA MODIFICACIÓN ---
   const ITEMS_PER_PAGE = 5;
 
   const { addToast } = useToast();
@@ -180,6 +183,10 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
           ), // <-- Sincronizar estado de favorito
       });
       setOriginalData(currentFormData);
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Si estamos editando, desactivamos el modo por 100g
+      setIsPer100g(false);
+      // --- FIN DE LA MODIFICACIÓN ---
     }
   }, [
     editingListItemId,
@@ -226,12 +233,15 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
   }, []);
 
   useEffect(() => {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Usamos el estado global isPer100g en lugar de manualFormState.per100Mode
     if (
-      manualFormState.per100Mode &&
+      isPer100g &&
       !isEditingLog &&
       !editingListItemId &&
       !editingFavorite
     ) {
+    // --- FIN DE LA MODIFICACIÓN ---
       const computed = computeFromPer100(
         manualFormState.per100Data.calories,
         manualFormState.per100Data.protein_g,
@@ -247,7 +257,9 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
   }, [
     manualFormState.formData.weight_g,
     manualFormState.per100Data,
-    manualFormState.per100Mode,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    isPer100g, // Usamos el estado global
+    // --- FIN DE LA MODIFICACIÓN ---
     isEditingLog,
     editingListItemId,
     editingFavorite,
@@ -273,35 +285,48 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
       const product = await nutritionService.searchByBarcode(barcode);
       addToast('Producto encontrado.', 'success', 3000, tempLoadingToastId);
       const weightG = product.weight_g || 100;
+
+      // Calcular macros base por 1g
+      const baseCalPerG = (parseFloat(product.calories_per_100g) || 0) / 100;
+      const baseProtPerG = (parseFloat(product.protein_per_100g) || 0) / 100;
+      const baseCarbPerG = (parseFloat(product.carbs_per_100g) || 0) / 100;
+      const baseFatPerG = (parseFloat(product.fat_per_100g) || 0) / 100;
+
       setBaseMacros({
-        calories: (parseFloat(product.calories) || 0) / weightG,
-        protein_g: (parseFloat(product.protein_g) || 0) / weightG,
-        carbs_g: (parseFloat(product.carbs_g) || 0) / weightG,
-        fats_g: (parseFloat(product.fats_g) || 0) / weightG,
+        calories: baseCalPerG,
+        protein_g: baseProtPerG,
+        carbs_g: baseCarbPerG,
+        fats_g: baseFatPerG,
       });
+
+      // Valores iniciales basados en 100g
       const initialFormData = {
         description: product.name,
-        calories: String(Math.round(product.calories)),
-        protein_g: round(product.protein_g),
-        carbs_g: round(product.carbs_g),
-        fats_g: round(product.fats_g),
-        weight_g: String(weightG),
-        image_url: product.image_url || null, // <-- Añadir image_url al escanear
+        calories: String(Math.round(baseCalPerG * 100)),
+        protein_g: round(baseProtPerG * 100),
+        carbs_g: round(baseCarbPerG * 100),
+        fats_g: round(baseFatPerG * 100),
+        weight_g: '100', // Empezar con 100g
+        image_url: product.image_url || null,
       };
       setManualFormState({
         formData: initialFormData,
-        per100Data: {
-          calories: String(product.calories),
-          protein_g: String(product.protein_g),
-          carbs_g: String(product.carbs_g),
-          fats_g: String(product.fats_g),
+        per100Data: { // Guardar los valores por 100g originales
+          calories: String(product.calories_per_100g || 0),
+          protein_g: String(product.protein_per_100g || 0),
+          carbs_g: String(product.carbs_per_100g || 0),
+          fats_g: String(product.fat_per_100g || 0),
         },
-        per100Mode: false,
+        per100Mode: false, // Empezar con modo manual normal
         isFavorite: false,
       });
       setOriginalData(initialFormData);
       setActiveTab('manual');
       setAddModeType('manual');
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Activar el interruptor por 100g al escanear
+      setIsPer100g(true);
+      // --- FIN DE LA MODIFICACIÓN ---
     } catch (error) {
       addToast(
         error.message || 'No se pudo encontrar el producto.',
@@ -366,6 +391,10 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
       setBaseMacros(null);
       setOriginalData(null);
     }
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Desactivar el interruptor por 100g al añadir a la lista
+    setIsPer100g(false);
+    // --- FIN DE LA MODIFICACIÓN ---
   };
 
   const handleAddManualItem = (item) => handleAddItem(item, 'manual');
@@ -391,11 +420,19 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
   const handleEditListItem = (tempId) => {
     setEditingFavorite(null);
     setEditingListItemId(tempId);
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Desactivar el interruptor por 100g al editar un item de la lista
+    setIsPer100g(false);
+    // --- FIN DE LA MODIFICACIÓN ---
   };
 
   const handleEditFavorite = (favoriteMeal) => {
     setEditingListItemId(null);
     setEditingFavorite(favoriteMeal);
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Desactivar el interruptor por 100g al editar un favorito
+    setIsPer100g(false);
+    // --- FIN DE LA MODIFICACIÓN ---
   };
 
   const handleSaveListItem = (updatedItem) => {
@@ -410,7 +447,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     setManualFormState(initialManualFormState);
     setBaseMacros(null);
     setOriginalData(null);
-    setActiveTab('favorites');
+    setActiveTab('favorites'); // O la pestaña que corresponda después de editar
   };
 
   const handleSaveList = async () => {
@@ -648,5 +685,10 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     addModeType,
     isUploading,
     handleImageUpload,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Exponer el estado y el setter del interruptor
+    isPer100g,
+    setIsPer100g,
+    // --- FIN DE LA MODIFICACIÓN ---
   };
 };
