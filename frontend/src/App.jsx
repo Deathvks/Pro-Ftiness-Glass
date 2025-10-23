@@ -4,6 +4,7 @@ import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils, User } from
 import useAppStore from './store/useAppStore';
 import { APP_VERSION } from './config/version';
 
+// ... (imports de componentes/páginas sin cambios)
 import Dashboard from './pages/Dashboard';
 import Progress from './pages/Progress';
 import Routines from './pages/Routines';
@@ -13,11 +14,8 @@ import SettingsScreen from './pages/SettingsScreen';
 import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
 import OnboardingScreen from './pages/OnboardingScreen';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Cambiamos ProfileEditor por PhysicalProfileEditor (representará la pantalla de edición física)
-import PhysicalProfileEditor from './pages/PhysicalProfileEditor'; // <-- Cambiamos el nombre del import
+import PhysicalProfileEditor from './pages/PhysicalProfileEditor';
 import AccountEditor from './pages/AccountEditor';
-// --- FIN DE LA MODIFICACIÓN ---
 import PRToast from './components/PRToast';
 import ConfirmationModal from './components/ConfirmationModal';
 import WelcomeModal from './components/WelcomeModal';
@@ -28,8 +26,9 @@ import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import Profile from './pages/Profile'; // Mantenemos Profile para la cuenta (username, email, pass)
+import Profile from './pages/Profile';
 import Sidebar from './components/Sidebar';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -54,15 +53,14 @@ export default function App() {
     handleDeclineCookies,
   } = useAppStore();
 
-  const [view, setView] = useState(() => {
-    if (useAppStore.getState().activeWorkout) {
-      return 'workout';
-    }
-    return localStorage.getItem('lastView') || 'dashboard';
-  });
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Ajustamos la lógica inicial de 'view'
+  const [view, setView] = useState('dashboard'); // Default inicial seguro
+  // Estado para saber si es la carga inicial post-autenticación
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const [previousView, setPreviousView] = useState(null);
-
   const mainContentRef = useRef(null);
 
   useEffect(() => {
@@ -71,11 +69,13 @@ export default function App() {
     }
   }, [view]);
 
+  // Guardar lastView solo si no es la carga inicial y no es privacyPolicy
   useEffect(() => {
-    if (view !== 'privacyPolicy') {
+    if (!isInitialLoad && view !== 'privacyPolicy') {
       localStorage.setItem('lastView', view);
     }
-  }, [view]);
+  }, [view, isInitialLoad]);
+
 
   const [authView, setAuthView] = useState('login');
 
@@ -130,9 +130,46 @@ export default function App() {
       setAccentState(newAccent);
   };
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Hook para cargar datos iniciales y establecer la vista correcta
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    const loadInitialDataAndSetView = async () => {
+      await fetchInitialData(); // Espera a que los datos se carguen
+
+      // Esta parte se ejecuta DESPUÉS de que fetchInitialData haya terminado y userProfile esté disponible
+      const loadedUserProfile = useAppStore.getState().userProfile;
+      const loadedActiveWorkout = useAppStore.getState().activeWorkout;
+
+      let targetView = 'dashboard'; // Por defecto, vamos al dashboard
+
+      if (loadedActiveWorkout) {
+        targetView = 'workout'; // Si hay un workout activo, vamos ahí
+      } else {
+        const lastView = localStorage.getItem('lastView');
+        // Solo restauramos lastView si existe, no es adminPanel para no-admins,
+        // y el usuario no acaba de completar el onboarding (userProfile.goal existe)
+        if (lastView && loadedUserProfile?.goal) {
+          if (lastView === 'adminPanel' && loadedUserProfile?.role !== 'admin') {
+            targetView = 'dashboard'; // Forzar dashboard si intentaba ir a admin sin ser admin
+          } else if (lastView !== 'login' && lastView !== 'register' && lastView !== 'forgotPassword' && lastView !== 'resetPassword') {
+            // Evitar restaurar vistas de autenticación
+             targetView = lastView;
+          }
+        }
+      }
+      setView(targetView);
+      setIsInitialLoad(false); // Marcar la carga inicial como completada
+    };
+
+    if (isAuthenticated) {
+      loadInitialDataAndSetView();
+    } else {
+      setIsInitialLoad(false); // No hay carga inicial si no está autenticado
+    }
+
+  }, [isAuthenticated, fetchInitialData]); // Dependencia clave: isAuthenticated
+  // --- FIN DE LA MODIFICACIÓN ---
+
 
     useEffect(() => {
         if (view === 'dashboard' && isAuthenticated) {
@@ -170,17 +207,17 @@ export default function App() {
       if (!userProfile.is_verified) {
         setShowEmailVerificationModal(true);
         setVerificationEmail(userProfile.email);
-      } else {
+      } else if (!isInitialLoad) { // Solo comprobar cookie si no es la carga inicial (ya se hace ahí)
         checkCookieConsent(userProfile.id);
       }
     }
-  }, [isAuthenticated, userProfile, checkCookieConsent]);
+  }, [isAuthenticated, userProfile, checkCookieConsent, isInitialLoad]); // Añadido isInitialLoad
 
   useEffect(() => {
-    if (isAuthenticated && userProfile && !isLoading) {
+    if (isAuthenticated && userProfile && !isLoading && !isInitialLoad) { // Solo comprobar welcome si no es la carga inicial
       checkWelcomeModal();
     }
-  }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal]);
+  }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal, isInitialLoad]); // Añadido isInitialLoad
 
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
@@ -192,11 +229,17 @@ export default function App() {
   };
 
   const navigate = useCallback((viewName, options = {}) => {
+    // Si estamos navegando DESPUÉS de la carga inicial,
+    // guardamos la vista actual como previousView
+    if (!isInitialLoad) {
+      setPreviousView(view);
+    }
     setView(viewName);
     if (options.forceTab) {
       localStorage.setItem('routinesForceTab', options.forceTab);
     }
-  }, []);
+  }, [view, isInitialLoad]); // Añadido isInitialLoad
+
 
   const handleShowPolicy = () => {
     setPreviousView(view);
@@ -208,9 +251,13 @@ export default function App() {
     setPreviousView(null);
   };
 
-  if (isLoading) {
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Mostramos 'Cargando...' mientras isInitialLoad es true Y isLoading es true
+  if (isLoading && isInitialLoad) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
+  // --- FIN DE LA MODIFICACIÓN ---
+
 
   if (!isAuthenticated) {
     switch (authView) {
@@ -231,9 +278,16 @@ export default function App() {
     }
   }
 
+  // Si el perfil existe pero falta el 'goal', mostramos Onboarding
   if (userProfile && !userProfile.goal) {
     return <OnboardingScreen />;
   }
+  // Si el perfil aún no se ha cargado (puede pasar brevemente después de login/register),
+  // mostramos cargando para evitar errores.
+  if (!userProfile) {
+     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
+  }
+
 
   const pageTitles = {
     dashboard: 'Dashboard',
@@ -263,15 +317,16 @@ export default function App() {
             onLogoutClick={handleLogoutClick}
           />
         );
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Cambiamos 'profileEditor' a 'physicalProfileEditor' y le pasamos el componente correcto
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />;
-      // Mantenemos 'accountEditor' como estaba
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
-      // Mantenemos 'profile' para la vista de username/email/pass
-      case 'profile': return <Profile onCancel={() => navigate(previousView || 'dashboard')} />;
-      // --- FIN DE LA MODIFICACIÓN ---
-      case 'adminPanel': return <AdminPanel onCancel={() => navigate('settings')} />;
+      case 'profile': return <Profile onCancel={() => navigate(previousView || 'settings')} />; // Volver a settings desde profile
+      case 'adminPanel':
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Asegurarse de que solo los admins puedan ver el panel
+        return userProfile?.role === 'admin'
+            ? <AdminPanel onCancel={() => navigate('settings')} />
+            : <Dashboard setView={navigate} />; // Redirigir si no es admin
+        // --- FIN DE LA MODIFICACIÓN ---
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       default: return <Dashboard setView={navigate} />;
     }
@@ -307,7 +362,7 @@ export default function App() {
             <button
               onClick={() => {
                 setPreviousView(view);
-                navigate('profile'); // Este botón ahora lleva a la pantalla de cuenta/username
+                navigate('profile');
               }}
               className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
             >
@@ -332,7 +387,10 @@ export default function App() {
           <button
             key={item.id}
             onClick={() => {
-              setPreviousView(view);
+              // --- INICIO DE LA MODIFICACIÓN ---
+              // No actualizamos previousView en la navegación móvil principal
+              // setPreviousView(view);
+              // --- FIN DE LA MODIFICACIÓN ---
               navigate(item.id);
             }}
             className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
@@ -398,7 +456,7 @@ export default function App() {
           email={verificationEmail}
           onSuccess={() => {
             setShowCodeVerificationModal(false);
-            fetchInitialData();
+            fetchInitialData(); // Asegurarse de recargar datos tras verificar
           }}
           onBack={() => {
             setShowCodeVerificationModal(false);
