@@ -122,7 +122,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     const itemToEdit = isEditingLog
       ? logToEdit
       : editingFavorite ||
-        itemsToAdd.find((item) => item.tempId === editingListItemId);
+      itemsToAdd.find((item) => item.tempId === editingListItemId);
     if (itemToEdit) {
       const description = itemToEdit.description || itemToEdit.name || '';
       const initialWeight = parseFloat(itemToEdit.weight_g);
@@ -255,20 +255,21 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
       // Extraer datos del objeto anidado 'product' y 'nutriments'
       const product = productData.product || {};
       const nutriments = product.nutriments || {};
-      const productName = product.product_name || 'Producto escaneado';
-      const productImageUrl = product.image_url || null;
+      const productName = product.product_name || product.generic_name || 'Producto escaneado';
+      const productImageUrl = product.image_url || product.image_front_url || null;
 
       // Obtener valores por 100g (usando diferentes claves posibles de OpenFoodFacts)
-      const calories100g = nutriments['energy-kcal_100g'] || nutriments.energy_100g || 0;
-      const protein100g = nutriments.proteins_100g || 0;
-      const carbs100g = nutriments.carbohydrates_100g || 0;
-      const fat100g = nutriments.fat_100g || 0;
+      // Usar || 0 al final para asegurar que sea un número si todo falla
+      const calories100g = parseFloat(nutriments['energy-kcal_100g'] || nutriments.energy_100g || nutriments['energy-kj_100g'] / 4.184) || 0;
+      const protein100g = parseFloat(nutriments.proteins_100g) || 0;
+      const carbs100g = parseFloat(nutriments.carbohydrates_100g) || 0;
+      const fat100g = parseFloat(nutriments.fat_100g) || 0;
 
       // Calcular macros base por 1g
-      const baseCalPerG = calories100g / 100;
-      const baseProtPerG = protein100g / 100;
-      const baseCarbPerG = carbs100g / 100;
-      const baseFatPerG = fat100g / 100;
+      const baseCalPerG = calories100g > 0 ? calories100g / 100 : 0;
+      const baseProtPerG = protein100g > 0 ? protein100g / 100 : 0;
+      const baseCarbPerG = carbs100g > 0 ? carbs100g / 100 : 0;
+      const baseFatPerG = fat100g > 0 ? fat100g / 100 : 0;
 
       // Valores iniciales basados en 100g
       const initialWeightNum = 100;
@@ -285,24 +286,24 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
 
       // Guardar los valores por 100g directamente del producto
       const per100Values = {
-        calories: String(calories100g),
-        protein_g: String(protein100g),
-        carbs_g: String(carbs100g),
-        fats_g: String(fat100g),
+        calories: String(round(calories100g, 0)), // Redondear calorías a entero
+        protein_g: String(round(protein100g, 1)),
+        carbs_g: String(round(carbs100g, 1)),
+        fats_g: String(round(fat100g, 1)),
       };
 
       // Establecer el estado del formulario manual
       setManualFormState({
         formData: initialFormData,
         per100Data: per100Values, // Usar los valores directos
-        per100Mode: false, // Legacy, irrelevante ahora
+        per100Mode: true, // Forzar modo por 100g al escanear
         isFavorite: false,
       });
 
-      setBaseMacros(null); // Not needed in per100 mode
-      setOriginalData(initialFormData);
-      setActiveTab('manual');
-      setAddModeType('manual');
+      setBaseMacros(null); // No necesario en modo por 100g
+      setOriginalData(initialFormData); // Guardar los datos originales
+      setActiveTab('manual'); // Cambiar a la pestaña manual
+      setAddModeType('manual'); // Indicar que estamos en modo manual
       setIsPer100g(true); // Activar el interruptor global
       // --- FIN DE LA MODIFICACIÓN ---
 
@@ -347,11 +348,11 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
       base:
         baseWeight > 0
           ? {
-              calories: (parseFloat(item.calories) || 0) / baseWeight,
-              protein_g: (parseFloat(item.protein_g) || 0) / baseWeight,
-              carbs_g: (parseFloat(item.carbs_g) || 0) / baseWeight,
-              fats_g: (parseFloat(item.fats_g) || 0) / baseWeight,
-            }
+            calories: (parseFloat(item.calories) || 0) / baseWeight,
+            protein_g: (parseFloat(item.protein_g) || 0) / baseWeight,
+            carbs_g: (parseFloat(item.carbs_g) || 0) / baseWeight,
+            fats_g: (parseFloat(item.fats_g) || 0) / baseWeight,
+          }
           : null,
       origin,
     };
@@ -577,8 +578,8 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
   const title = isEditingLog
     ? `Editar ${logToEdit.description}`
     : editingFavorite
-    ? `Editar Favorito: ${editingFavorite.name}`
-    : `Añadir a ${mealTitles[mealType]}`;
+      ? `Editar Favorito: ${editingFavorite.name}`
+      : `Añadir a ${mealTitles[mealType]}`;
 
   return {
     isEditingLog,

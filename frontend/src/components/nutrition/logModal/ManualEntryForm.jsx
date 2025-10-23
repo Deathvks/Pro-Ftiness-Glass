@@ -5,12 +5,10 @@ import Spinner from '../../Spinner';
 import { useToast } from '../../../hooks/useToast';
 import useAppStore from '../../../store/useAppStore'; // Importar useAppStore
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Obtener la URL base del backend desde las variables de entorno
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // Eliminar '/api' del final si existe para obtener solo la base del backend
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
-// --- FIN DE LA MODIFICACIÓN ---
 
 const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
     const fileInputRef = useRef(null);
@@ -50,14 +48,12 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                     <Spinner />
                 ) : imageUrl ? (
                     <>
-                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
                         {/* Construir la URL completa si es necesario */}
                         <img
                             src={imageUrl.startsWith('http') || imageUrl.startsWith('blob:') ? imageUrl : `${BACKEND_BASE_URL}${imageUrl}`}
                             alt="Previsualización de la comida"
                             className="max-w-full max-h-full object-contain rounded-lg"
                         />
-                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                         <button
                             onClick={handleRemoveImage}
                             className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 text-white hover:bg-black/80 transition-opacity"
@@ -94,14 +90,17 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
     </div>
 );
 
-const CalculatedMacros = ({ formData }) => (
+// --- INICIO DE LA MODIFICACIÓN ---
+// Componente para mostrar macros calculados, ajustado para recibir directamente los valores calculados
+const CalculatedMacros = ({ calories, protein, carbs, fats }) => (
      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Cal</p><p className="font-semibold">{Math.round(formData.calories) || 0}</p></div>
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Prot</p><p className="font-semibold">{formData.protein_g || 0}</p></div>
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Carbs</p><p className="font-semibold">{formData.carbs_g || 0} g</p></div>
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Grasas</p><p className="font-semibold">{formData.fats_g || 0} g</p></div>
+        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Cal</p><p className="font-semibold">{Math.round(calories) || 0}</p></div>
+        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Prot</p><p className="font-semibold">{protein || 0} g</p></div>
+        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Carbs</p><p className="font-semibold">{carbs || 0} g</p></div>
+        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Grasas</p><p className="font-semibold">{fats || 0} g</p></div>
     </div>
 );
+// --- FIN DE LA MODIFICACIÓN ---
 
 const ManualEntryForm = ({
     onAddManual,
@@ -162,16 +161,51 @@ const ManualEntryForm = ({
         }
     };
 
-    const round = (val, d = 1) => {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Mover la función round fuera del componente o usar useCallback si depende de props/state
+    const round = useCallback((val, d = 1) => {
       const n = parseFloat(val);
       return isNaN(n)
         ? ''
         : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
-    };
+    }, []); // No dependencies needed
 
+    // Calcular macros se hace aquí directamente
+    const calculatedMacros = useMemo(() => {
+      if (isPer100g) {
+        const weight = parseFloat(formData.weight_g) || 0;
+        const factor = weight / 100;
+        return {
+          calories: (parseFloat(per100Data.calories) || 0) * factor,
+          protein_g: round((parseFloat(per100Data.protein_g) || 0) * factor),
+          carbs_g: round((parseFloat(per100Data.carbs_g) || 0) * factor),
+          fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor),
+        };
+      } else {
+        // En modo manual normal, los valores calculados son los propios valores del formulario
+        return {
+          calories: parseFloat(formData.calories) || 0,
+          protein_g: round(formData.protein_g),
+          carbs_g: round(formData.carbs_g),
+          fats_g: round(formData.fats_g),
+        };
+      }
+    }, [formData, per100Data, isPer100g, round]);
+    // --- FIN DE LA MODIFICACIÓN ---
 
     const validateAndGetData = useCallback(() => {
-        const finalData = { ...formData };
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Usar los macros calculados en lugar de formData directamente
+        const finalData = {
+          description: formData.description,
+          calories: calculatedMacros.calories,
+          protein_g: calculatedMacros.protein_g,
+          carbs_g: calculatedMacros.carbs_g,
+          fats_g: calculatedMacros.fats_g,
+          weight_g: formData.weight_g, // El peso siempre viene de formData
+          image_url: formData.image_url,
+        };
+        // --- FIN DE LA MODIFICACIÓN ---
 
         if (isPer100g && !isEditing && !editingListItem && !editingFavorite) {
             const weight = parseFloat(finalData.weight_g) || 0;
@@ -202,7 +236,7 @@ const ManualEntryForm = ({
                     const weightVal = parseFloat(finalData[key]);
                     finalData[key] = (!isNaN(weightVal) && weightVal > 0) ? weightVal : null;
                  } else {
-                    // Para otros campos numéricos, 0 es válido
+                    // Para otros campos numéricos, 0 es válido y ya están calculados
                     finalData[key] = parseFloat(finalData[key]) || 0;
                  }
             }
@@ -213,12 +247,25 @@ const ManualEntryForm = ({
         }
 
         return finalData;
-    }, [formData, isPer100g, isEditing, editingListItem, editingFavorite, addToast]);
+    }, [formData, isPer100g, isEditing, editingListItem, editingFavorite, addToast, calculatedMacros]); // Añadir calculatedMacros
 
     const handleAddToList = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        onAddManual({ name: finalData.description, isFavorite, image_url: finalData.image_url, ...finalData });
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Añadir los valores `..._per_100g` al objeto que se añade a la lista
+        onAddManual({
+            ...finalData,
+            name: finalData.description,
+            isFavorite,
+            image_url: finalData.image_url,
+            // Guardar los valores base por 100g si estamos en ese modo
+            calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
+            protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
+            carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
+            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
+        });
+        // --- FIN DE LA MODIFICACIÓN ---
     };
 
     const handleSaveEdited = () => {
@@ -236,7 +283,20 @@ const ManualEntryForm = ({
      const handleSaveAndClose = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        const dataToSave = { ...finalData, name: finalData.description, saveAsFavorite: isFavorite, image_url: formData.image_url };
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Añadir los valores `..._per_100g` al objeto que se guarda
+        const dataToSave = {
+            ...finalData,
+            name: finalData.description,
+            saveAsFavorite: isFavorite,
+            image_url: formData.image_url,
+            // Guardar los valores base por 100g si estamos en ese modo
+            calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
+            protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
+            carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
+            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
+        };
+        // --- FIN DE LA MODIFICACIÓN ---
         onSaveSingle([dataToSave]);
     };
 
@@ -269,14 +329,17 @@ const ManualEntryForm = ({
                 </div>
             )}
 
-            {isPer100g && !isEditing && !editingListItem && !editingFavorite ? (
+            {isPer100g ? ( // Simplificado: si isPer100g está activo, mostramos los inputs de 100g
                 <>
+                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                    {/* Inputs para valores por 100g */}
                     <div className="grid grid-cols-2 gap-4">
                         <InputField label="Cal/100g" name="calories" value={per100Data.calories} onChange={handlePer100Change} inputMode="decimal" required={isPer100g} />
                         <InputField label="Prot/100g" name="protein_g" value={per100Data.protein_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Carbs/100g" name="carbs_g" value={per100Data.carbs_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Grasas/100g" name="fats_g" value={per100Data.fats_g} onChange={handlePer100Change} inputMode="decimal" />
                     </div>
+                    {/* Input para gramos totales */}
                     <div className="relative">
                         <InputField
                             label="Gramos totales a consumir"
@@ -287,10 +350,18 @@ const ManualEntryForm = ({
                             required={isPer100g}
                         />
                     </div>
-                    <CalculatedMacros formData={formData} />
+                    {/* Mostrar macros calculados */}
+                    <CalculatedMacros
+                      calories={calculatedMacros.calories}
+                      protein={calculatedMacros.protein_g}
+                      carbs={calculatedMacros.carbs_g}
+                      fats={calculatedMacros.fats_g}
+                    />
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                 </>
             ) : (
                 <>
+                   {/* Inputs para valores totales */}
                     <InputField label="Calorías (kcal)" name="calories" value={formData.calories} onChange={handleChange} inputMode="decimal" required />
                     <div className="grid grid-cols-3 gap-4">
                         <InputField label="Proteínas (g)" name="protein_g" value={formData.protein_g} onChange={handleChange} inputMode="decimal" />
@@ -320,11 +391,11 @@ const ManualEntryForm = ({
             )}
 
             {isEditing || editingFavorite ? (
-                <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white disabled:opacity-50 mt-2">
+                <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50 mt-2">
                     {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Guardar Cambios</>}
                 </button>
             ) : editingListItem ? (
-                <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white disabled:opacity-50 mt-2">
+                <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50 mt-2">
                     {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Actualizar Comida</>}
                 </button>
             ) : (

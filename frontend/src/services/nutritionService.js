@@ -10,14 +10,12 @@ export const getNutritionLogsByDate = (date) => {
   return apiClient(`/nutrition?date=${date}`);
 };
 
-// --- INICIO DE LA MODIFICACIÓN (NUEVA FUNCIÓN) ---
 /**
  * Obtiene las comidas registradas recientemente por el usuario.
  */
 export const getRecentMeals = () => {
   return apiClient('/nutrition/recent');
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 /**
  * Obtiene el resumen de datos de nutrición para un mes y año específicos.
@@ -30,24 +28,63 @@ export const getNutritionSummary = (month, year) => {
 
 /**
  * Añade un nuevo registro de comida.
- * @param {object} foodData - Datos de la comida (description, calories, macros, etc.).
+ * @param {object} foodData - Datos de la comida (description, calories, macros, weight_g, image_url, *_per_100g). // <-- Modificado
  */
 export const addFoodLog = (foodData) => {
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Aseguramos que los campos _per_100g se envíen si existen
+  const bodyData = {
+      description: foodData.description,
+      calories: foodData.calories,
+      protein_g: foodData.protein_g,
+      carbs_g: foodData.carbs_g,
+      fats_g: foodData.fats_g,
+      weight_g: foodData.weight_g,
+      meal_type: foodData.meal_type,
+      log_date: foodData.log_date,
+      image_url: foodData.image_url,
+      calories_per_100g: foodData.calories_per_100g,
+      protein_per_100g: foodData.protein_per_100g,
+      carbs_per_100g: foodData.carbs_per_100g,
+      fat_per_100g: foodData.fat_per_100g // Corregido: era fat_per_100g
+  };
+  // --- FIN DE LA MODIFICACIÓN ---
   return apiClient('/nutrition/food', {
     method: 'POST',
-    body: foodData,
+    body: bodyData, // Usamos bodyData modificado
   });
 };
 
 /**
  * Actualiza un registro de comida existente.
  * @param {number} logId - ID del registro a actualizar.
- * @param {object} foodData - Nuevos datos de la comida.
+ * @param {object} foodData - Nuevos datos de la comida (incluyendo *_per_100g opcionalmente). // <-- Modificado
  */
 export const updateFoodLog = (logId, foodData) => {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Incluimos los campos _per_100g si están presentes en foodData
+    const bodyData = { ...foodData }; // Copiamos para no modificar el original
+    // Limpiamos campos que no deben ir en el PUT si no han cambiado o son de control
+    delete bodyData.id;
+    delete bodyData.log_date;
+    delete bodyData.meal_type;
+    delete bodyData.tempId;
+    delete bodyData.base;
+    delete bodyData.origin;
+    delete bodyData.isFavorite; // Este campo no pertenece al log en sí
+    delete bodyData.name; // Usamos description
+
+    // Aseguramos que los campos *_per_100g se incluyan si existen en foodData
+    // (Ya deberían estar en la copia si venían)
+
+    // Si weight_g es null o 0, lo enviamos como null
+    if (bodyData.weight_g === 0 || bodyData.weight_g === '') {
+        bodyData.weight_g = null;
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
     return apiClient(`/nutrition/food/${logId}`, {
         method: 'PUT',
-        body: foodData,
+        body: bodyData, // Usamos bodyData modificado
     });
 };
 
@@ -80,7 +117,6 @@ export const searchByBarcode = (barcode) => {
   return apiClient(`/nutrition/barcode/${barcode}`);
 };
 
-// --- INICIO DE LA CORRECCIÓN ---
 /**
  * Sube una imagen de comida al servidor.
  * @param {File} imageFile - El archivo de la imagen a subir.
@@ -95,10 +131,8 @@ export const uploadFoodImage = (imageFile) => {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // Se construye la URL base correctamente desde las variables de entorno
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-    // Se elimina el '/api' duplicado. La variable API_BASE_URL ya lo incluye.
     return fetch(`${API_BASE_URL}/nutrition/food/image`, {
         method: 'POST',
         body: formData,
@@ -117,4 +151,3 @@ export const uploadFoodImage = (imageFile) => {
         return response.json();
     });
 };
-// --- FIN DE LA CORRECCIÓN ---
