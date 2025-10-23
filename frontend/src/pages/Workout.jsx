@@ -4,6 +4,7 @@ import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import RestTimerModal from '../components/RestTimerModal';
 import CalorieInputModal from '../components/CalorieInputModal';
+import WorkoutSummaryModal from '../components/WorkoutSummaryModal'; // <-- Verifica esta línea
 import ExerciseReplaceModal from './ExerciseReplaceModal';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -46,6 +47,10 @@ const Workout = ({ timer, setView }) => {
   const [showCalorieModal, setShowCalorieModal] = useState(false);
   const [exerciseToReplace, setExerciseToReplace] = useState(null);
 
+  // Nuevo estado para el modal de resumen
+  const [showWorkoutSummaryModal, setShowWorkoutSummaryModal] = useState(false);
+  const [completedWorkoutData, setCompletedWorkoutData] = useState(null);
+
   const exerciseGroups = useMemo(() => {
     if (!activeWorkout || !activeWorkout.exercises || activeWorkout.exercises.length === 0) return [];
     const exercises = activeWorkout.exercises;
@@ -53,11 +58,26 @@ const Workout = ({ timer, setView }) => {
     let currentGroup = [];
 
     exercises.forEach(ex => {
-      if (ex.exercise_order === 0 && currentGroup.length > 0) {
-        groups.push(currentGroup);
-        currentGroup = [];
+      // Corregir lógica: Un grupo nuevo empieza si el superset_group_id es null o diferente al anterior
+      if (!ex.superset_group_id || (currentGroup.length > 0 && ex.superset_group_id !== currentGroup[0].superset_group_id)) {
+          if (currentGroup.length > 0) {
+              groups.push(currentGroup);
+          }
+          currentGroup = [ex];
+      } else {
+           // Si el superset_group_id es el mismo o ambos son null (para ejercicios individuales consecutivos)
+           // En realidad, un ejercicio individual siempre empieza un grupo nuevo.
+           // Modificamos la lógica inicial:
+           if (currentGroup.length === 0) {
+              currentGroup.push(ex);
+           } else if (ex.superset_group_id && ex.superset_group_id === currentGroup[0].superset_group_id) {
+               currentGroup.push(ex);
+           } else {
+              // Si el ejercicio actual es individual o pertenece a un nuevo superset
+              groups.push(currentGroup);
+              currentGroup = [ex];
+           }
       }
-      currentGroup.push(ex);
     });
 
     if (currentGroup.length > 0) {
@@ -143,38 +163,46 @@ const Workout = ({ timer, setView }) => {
         details: activeWorkout.exercises.map(ex => ({
             exerciseName: ex.name,
             superset_group_id: ex.superset_group_id,
-            setsDone: ex.setsDone.filter(set => set.reps !== '' && set.weight_kg !== '')
+            // Filtrar setsDone aquí para asegurar que solo van datos válidos
+            setsDone: ex.setsDone.filter(set => (set.reps !== '' && set.reps !== null && !isNaN(parseInt(set.reps))) || (set.weight_kg !== '' && set.weight_kg !== null && !isNaN(parseFloat(set.weight_kg))))
+                        .map(set => ({ // Asegurar tipos correctos
+                            set_number: set.set_number,
+                            reps: parseInt(set.reps, 10) || 0,
+                            weight_kg: parseFloat(set.weight_kg) || 0,
+                            is_dropset: set.is_dropset || false
+                        }))
         }))
     };
     
+    // Guardamos los datos ANTES de llamar a logWorkout para el modal
+    setCompletedWorkoutData(workoutData);
+
     const result = await logWorkout(workoutData);
     if (result.success) {
       addToast(result.message, 'success');
+      // ¡CAMBIO AQUÍ! Mostrar el modal de resumen
       setShowCalorieModal(false);
-      setView('dashboard');
+      setShowWorkoutSummaryModal(true);
     } else {
       addToast(result.message, 'error');
       if (wasTimerRunningOnFinish) {
         togglePauseWorkout();
       }
+      setCompletedWorkoutData(null); // Limpiar datos si falla
     }
     setIsSaving(false);
   };
   
-  // Determinar si el cronómetro ha sido iniciado alguna vez
   const hasWorkoutStarted = workoutStartTime !== null;
   
-  // Función para manejar clicks en inputs deshabilitados
   const handleDisabledInputClick = () => {
     addToast('Debes iniciar el cronómetro antes de registrar datos.', 'warning');
   };
   
-  // Función para manejar clicks en botones deshabilitados
   const handleDisabledButtonClick = () => {
     addToast('Debes iniciar el cronómetro antes de usar esta función.', 'warning');
   };
 
-  // Definir las clases CSS para los inputs
   const baseInputClasses = `w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition ${
     !hasWorkoutStarted ? 'opacity-50 cursor-not-allowed' : ''
   }`;
@@ -222,9 +250,9 @@ const Workout = ({ timer, setView }) => {
                 )}
                 <div className="flex flex-col gap-4">
                 {group.map((exercise, exIndex) => {
-                    const actualExIndex = activeWorkout.exercises.findIndex(ex => ex === exercise);
+                    const actualExIndex = activeWorkout.exercises.findIndex(ex => ex.tempId === exercise.tempId); // Usar tempId si está disponible
                     return (
-                    <div key={actualExIndex} className="p-4">
+                    <div key={actualExIndex !== -1 ? actualExIndex : `${groupIndex}-${exIndex}`} className="p-4">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold">{exercise.name}</h3>
                             <button
@@ -365,6 +393,20 @@ const Workout = ({ timer, setView }) => {
         />
       )}
 
+      {/* Nuevo modal de resumen de entrenamiento */}
+      {showWorkoutSummaryModal && completedWorkoutData && (
+        <WorkoutSummaryModal
+            workoutData={completedWorkoutData}
+            onClose={() => {
+                // ¡CAMBIO CLAVE AQUÍ!
+                setShowWorkoutSummaryModal(false);
+                setCompletedWorkoutData(null);
+                stopWorkout(); // Limpiamos el estado AHORA
+                setView('dashboard'); // Navegar al dashboard al cerrar
+            }}
+        />
+      )}
+
       {showCancelModal &&
         <ConfirmationModal
             message="¿Seguro que quieres descartar este entrenamiento? Perderás todo el progreso."
@@ -377,4 +419,4 @@ const Workout = ({ timer, setView }) => {
   );
 };
 
-export default Workout;
+export default Workout; // <-- Asegúrate de que esta línea esté correcta

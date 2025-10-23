@@ -256,7 +256,7 @@ export const createWorkoutSlice = (set, get) => ({
             if (responseData.newPRs && responseData.newPRs.length > 0) {
                 get().showPRNotification(responseData.newPRs);
             }
-            get().stopWorkout();
+            // get().stopWorkout(); // <-- ¡CAMBIO AQUÍ! COMENTAMOS ESTA LÍNEA
             await get().fetchInitialData();
             return { success: true, message: 'Entrenamiento guardado.' };
         } catch (error) {
