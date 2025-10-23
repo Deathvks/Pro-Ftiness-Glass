@@ -1,156 +1,131 @@
-/* frontend/src/hooks/useScanAndUpload.js */
-import { useState } from 'react';
-import { useToast } from './useToast';
-import * as nutritionService from '../services/nutritionService';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importar initialManualFormState y round
-import { initialManualFormState, round } from './useNutritionConstants';
-// --- FIN DE LA MODIFICACIÓN ---
+/* frontend/src/hooks/useManualForm.js */
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { initialManualFormState, round } from './useNutritionConstants'; // Importar constantes
 
-// Helper para obtener valores numéricos de forma segura desde el objeto de nutrientes
-const getNutrientValue = (nutriments, keys, conversionFactor = 1) => {
-    if (!nutriments) return 0;
-    for (const key of keys) {
-        // Añadir comprobación extra por si la clave existe pero el valor es undefined/null
-        if (nutriments[key] !== undefined && nutriments[key] !== null) {
-            const value = parseFloat(nutriments[key]);
-            if (!isNaN(value)) {
-                // Devolver el valor directamente si es válido, incluso si es 0
-                return value * conversionFactor;
-            }
-        }
-    }
-    return 0; // Devuelve 0 si ninguna clave es válida o los valores no son números
-};
+export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer100g }) => {
+  const [manualFormState, setManualFormState] = useState(initialManualFormState);
+  const [baseMacros, setBaseMacros] = useState(null); // Estado para macros base por gramo
+  const [originalData, setOriginalData] = useState(null); // Datos originales al editar/escanear
 
+  // Efecto para inicializar/actualizar el formulario cuando 'itemToEdit' cambia
+  useEffect(() => {
+    if (itemToEdit) {
+      setOriginalData(itemToEdit); // Guardar los datos originales
+      const weight = parseFloat(itemToEdit.weight_g);
+      const hasPer100Data = itemToEdit.calories_per_100g != null; // Verificar si viene con datos /100g
 
-export const useScanAndUpload = ({
-  setShowScanner,
-  setManualFormState,
-  setBaseMacros, // Aunque no se usa directamente aquí, puede ser necesario para useManualForm
-  setOriginalData,
-  setActiveTab,
-  setAddModeType,
-  setIsPer100g,
-}) => {
-  const [isUploading, setIsUploading] = useState(false);
-  const { addToast } = useToast();
+      // Determinar si activar el modo por 100g
+      const shouldBePer100g = hasPer100Data && itemToEdit.origin !== 'manual';
+      setIsPer100g(shouldBePer100g);
 
-  const handleScanSuccess = async (barcode) => {
-    setShowScanner(false);
-    const tempLoadingToastId = addToast('Buscando producto...', 'info', null);
-    try {
-      const productData = await nutritionService.searchByBarcode(barcode);
-
-      // Log para depuración
-      console.log("Datos recibidos del escaneo:", productData);
-
-      const product = productData?.product || {};
-      const nutriments = product?.nutriments || {};
-      const productName = product.product_name || product.generic_name || product.brands || 'Producto escaneado';
-      const productImageUrl = product.image_url || product.image_front_url || null;
-
-      const calories100g = getNutrientValue(nutriments, ['energy-kcal_100g', 'energy_100g']) || getNutrientValue(nutriments, ['energy-kj_100g', 'energy_100g'], 1 / 4.184);
-      const protein100g = getNutrientValue(nutriments, ['proteins_100g']);
-      const carbs100g = getNutrientValue(nutriments, ['carbohydrates_100g']);
-      const fat100g = getNutrientValue(nutriments, ['fat_100g', 'fats_100g']);
-
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Modificamos la condición: Mostramos el error solo si NO se encuentra NINGÚN dato útil (ni nombre ni macros)
-      if (calories100g === 0 && protein100g === 0 && carbs100g === 0 && fat100g === 0 && productName === 'Producto escaneado') {
-          addToast('No se encontró información nutricional detallada para este producto.', 'error', 5000, tempLoadingToastId);
-          // Aún así, vamos al formulario manual para que el usuario pueda introducir datos si lo desea
-          setActiveTab('manual');
-          setAddModeType('manual');
-          setManualFormState(initialManualFormState); // Usar la constante importada
-          setIsPer100g(false);
-          setOriginalData(null); // No hay datos originales
-          setBaseMacros(null);
-          return;
-      }
-      // Si encontramos *algo* (nombre o algún macro), consideramos éxito
-      addToast('Producto encontrado.', 'success', 3000, tempLoadingToastId);
-      // --- FIN DE LA MODIFICACIÓN ---
-
-      const scannedItemData = {
-          description: productName,
-          // Usar valores por ración como fallback si existen, si no, los de 100g
-          calories: getNutrientValue(nutriments, ['energy-kcal_serving', 'energy_serving']) || getNutrientValue(nutriments, ['energy-kj_serving'], 1 / 4.184) || calories100g,
-          protein_g: getNutrientValue(nutriments, ['proteins_serving']) || protein100g,
-          carbs_g: getNutrientValue(nutriments, ['carbohydrates_serving']) || carbs100g,
-          fats_g: getNutrientValue(nutriments, ['fat_serving', 'fats_serving']) || fat100g,
-          weight_g: parseFloat(product.serving_quantity) || 100,
-          image_url: productImageUrl,
-          // Añadir explícitamente los campos _per_100g para que useManualForm pueda detectarlos
-          calories_per_100g: calories100g,
-          protein_per_100g: protein100g,
-          carbs_per_100g: carbs100g,
-          fat_per_100g: fat100g,
-          origin: 'scan',
+      let formData = {
+        description: itemToEdit.description || itemToEdit.name || '',
+        calories: round(itemToEdit.calories || 0, 0),
+        protein_g: round(itemToEdit.protein_g || 0, 1),
+        carbs_g: round(itemToEdit.carbs_g || 0, 1),
+        fats_g: round(itemToEdit.fats_g || 0, 1),
+        weight_g: round(itemToEdit.weight_g || (shouldBePer100g ? 100 : ''), 1), // Poner 100g por defecto si es /100g
+        image_url: itemToEdit.image_url || null,
       };
 
-       // Pasar los datos a useManualForm a través del estado del modal
-       setManualFormState({
-           itemToEdit: scannedItemData,
-           // El resto lo determinará useManualForm
-           per100Data: initialManualFormState.per100Data,
-           per100Mode: false, // Dejamos que useManualForm decida
-           isFavorite: false,
-       });
+      let per100Data = initialManualFormState.per100Data;
+      if (hasPer100Data) {
+        per100Data = {
+            calories: round(itemToEdit.calories_per_100g || 0, 0),
+            protein_g: round(itemToEdit.protein_per_100g || 0, 1),
+            carbs_g: round(itemToEdit.carbs_per_100g || 0, 1),
+            fats_g: round(itemToEdit.fat_per_100g || 0, 1), // Nota: puede ser 'fat' o 'fats'
+        };
+        // Si estamos en modo por 100g, recalcular macros iniciales según el peso
+        if (shouldBePer100g) {
+            const currentWeight = parseFloat(formData.weight_g) || 100;
+            const factor = currentWeight / 100;
+            formData = {
+                ...formData,
+                calories: round(parseFloat(per100Data.calories) * factor, 0),
+                protein_g: round(parseFloat(per100Data.protein_g) * factor, 1),
+                carbs_g: round(parseFloat(per100Data.carbs_g) * factor, 1),
+                fats_g: round(parseFloat(per100Data.fats_g) * factor, 1),
+            }
+        }
+      }
 
-      setBaseMacros(null);
-      setOriginalData(scannedItemData); // Guardar datos originales recibidos
-      setActiveTab('manual');
-      setAddModeType('manual');
-      // No forzamos setIsPer100g aquí
+      const isFavorite = favoriteMeals?.some(fav => fav.name.toLowerCase() === (itemToEdit.description || itemToEdit.name || '').toLowerCase()) || false;
 
-    } catch (error) {
-       console.error("Error detallado en handleScanSuccess:", error);
-      addToast(
-        error.message || 'No se pudo encontrar el producto o hubo un error de red.',
-        'error',
-        5000,
-        tempLoadingToastId
-      );
-       // Asegurar que volvemos a un estado consistente si falla
-       setActiveTab('manual');
-       setAddModeType('manual');
-       // --- INICIO DE LA MODIFICACIÓN ---
-       setManualFormState(initialManualFormState); // Usar la constante importada
-       // --- FIN DE LA MODIFICACIÓN ---
-       setIsPer100g(false);
-       setOriginalData(null);
-       setBaseMacros(null);
+      setManualFormState({
+        formData,
+        per100Data,
+        per100Mode: shouldBePer100g, // Sincronizar estado local
+        isFavorite,
+      });
+
+      // Calcular baseMacros si hay peso inicial > 0
+      if (weight > 0 && !hasPer100Data) { // Solo si no usamos /100g
+        setBaseMacros({
+          calories: (parseFloat(itemToEdit.calories) || 0) / weight,
+          protein_g: (parseFloat(itemToEdit.protein_g) || 0) / weight,
+          carbs_g: (parseFloat(itemToEdit.carbs_g) || 0) / weight,
+          fats_g: (parseFloat(itemToEdit.fats_g) || 0) / weight,
+        });
+      } else {
+        setBaseMacros(null);
+      }
+
+    } else {
+      // Si no hay itemToEdit, resetear todo
+      resetManualForm();
     }
-  };
+  }, [itemToEdit, favoriteMeals, setIsPer100g]); // Dependencia clave
 
-  const handleImageUpload = async (file) => {
-    // ... (sin cambios en esta función)
-    if (!file) {
-      setManualFormState((prev) => ({
+  // Efecto para recalcular macros cuando cambia el peso Y NO estamos en modo por 100g
+  useEffect(() => {
+      if (!isPer100g && baseMacros) {
+          const newWeight = parseFloat(manualFormState.formData.weight_g) || 0;
+          setManualFormState(prev => ({
+              ...prev,
+              formData: {
+                  ...prev.formData,
+                  calories: round(baseMacros.calories * newWeight, 0),
+                  protein_g: round(baseMacros.protein_g * newWeight, 1),
+                  carbs_g: round(baseMacros.carbs_g * newWeight, 1),
+                  fats_g: round(baseMacros.fats_g * newWeight, 1),
+              }
+          }));
+      }
+  }, [manualFormState.formData.weight_g, baseMacros, isPer100g]); // Añadida isPer100g
+
+  // Efecto para recalcular macros cuando cambia el peso Y SÍ estamos en modo por 100g
+  useEffect(() => {
+    if (isPer100g) {
+      const weight = parseFloat(manualFormState.formData.weight_g) || 0;
+      const factor = weight / 100;
+      setManualFormState(prev => ({
         ...prev,
-        formData: { ...prev.formData, image_url: null },
+        formData: {
+          ...prev.formData,
+          calories: round((parseFloat(prev.per100Data.calories) || 0) * factor, 0),
+          protein_g: round((parseFloat(prev.per100Data.protein_g) || 0) * factor, 1),
+          carbs_g: round((parseFloat(prev.per100Data.carbs_g) || 0) * factor, 1),
+          fats_g: round((parseFloat(prev.per100Data.fats_g) || 0) * factor, 1),
+        }
       }));
-      return;
     }
-    setIsUploading(true);
-    try {
-      const response = await nutritionService.uploadFoodImage(file);
-      setManualFormState((prev) => ({
-        ...prev,
-        formData: { ...prev.formData, image_url: response.imageUrl },
-      }));
-      addToast('Imagen subida con éxito.', 'success');
-    } catch (error) {
-      addToast(error.message || 'Error al subir la imagen.', 'error');
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  }, [manualFormState.formData.weight_g, manualFormState.per100Data, isPer100g]); // Dependencias correctas
+
+  // Función para resetear el estado del formulario
+  const resetManualForm = useCallback(() => {
+    setManualFormState(initialManualFormState);
+    setBaseMacros(null);
+    setOriginalData(null);
+    setIsPer100g(false); // Resetear modo por 100g también
+  }, [setIsPer100g]);
 
   return {
-    isUploading,
-    handleScanSuccess,
-    handleImageUpload,
+    manualFormState,
+    setManualFormState,
+    setBaseMacros, // Exponer si es necesario externamente
+    originalData,
+    setOriginalData,
+    resetManualForm,
   };
 };
