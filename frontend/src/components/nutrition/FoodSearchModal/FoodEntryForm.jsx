@@ -4,7 +4,7 @@ import { Switch } from '@headlessui/react';
 import { CameraIcon, StarIcon, CheckIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarIconOutline } from '@heroicons/react/24/outline';
 import { favoriteMealService } from '../../../services/favoriteMealService';
-import { nutritionService } from '../../../services/nutritionService'; // Para subir imagen
+import { nutritionService } from '../../../services/nutritionService';
 import { useToast } from '../../../contexts/ToastProvider';
 
 // Componente para un campo de entrada de macros
@@ -25,7 +25,7 @@ const MacroInput = ({ label, value, onChange, unit }) => (
         placeholder="0"
         value={value}
         onChange={onChange}
-        step="0.1" // Permite decimales
+        step="0.1"
         min="0"
       />
       <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-600 bg-gray-600 px-3 text-sm text-gray-300">
@@ -44,11 +44,8 @@ function FoodEntryForm({
   isPer100g,
   setIsPer100g,
 }) {
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Inicializamos el estado directamente desde 'selectedItem'
-  // para evitar el "flash" de "Producto escaneado" y ceros.
-  // Como 'isPer100g' es 'false' en la carga inicial (viene del modal padre),
-  // usamos los datos "por ración" por defecto.
+  // Usamos los datos "por ración" por defecto, el useEffect lo corregirá
   const [formData, setFormData] = useState({
     description: selectedItem.description || 'Alimento',
     weight_g: selectedItem.serving_weight_g || 100,
@@ -58,24 +55,23 @@ function FoodEntryForm({
     fats_g: selectedItem.fat_per_serving || 0,
     image_url: selectedItem.image_url || null,
   });
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  // Estado para favoritos
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteId, setFavoriteId] = useState(null);
-
-  // Estado para subida de imagen
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef(null);
   const { addToast } = useToast();
 
-  // Función para recalcular macros basado en el peso
   const recalculateMacros = (newWeight, per100gMode) => {
     if (!selectedItem) return {};
 
     const baseWeight = per100gMode
       ? 100
       : selectedItem.serving_weight_g || 100;
+    
+    // Evitar división por cero si el peso base no está definido
+    if (baseWeight === 0) return {};
+
     const factor = newWeight / baseWeight;
 
     const baseMacros = per100gMode
@@ -100,52 +96,60 @@ function FoodEntryForm({
     };
   };
 
-  // Efecto para actualizar el formulario cuando 'selectedItem' cambia
-  // O cuando 'isPer100g' cambia
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Lógica de 'useEffect' simplificada para evitar el 'return' prematuro.
   useEffect(() => {
     if (!selectedItem) return;
 
-    // Si es un scan, activar "Por 100g" automáticamente al cargar.
-    if (selectedItem.origin === 'scan' && !isPer100g) {
-      setIsPer100g(true);
-      // El resto del useEffect se ejecutará de nuevo
-      // cuando 'isPer100g' cambie, actualizando los macros.
-      return; // Salimos para esperar el re-render
-    }
+    // 1. Determinar si el toggle DEBE estar activado
+    // (si es un scan, forzamos a 'true', si no, respetamos su estado actual)
+    const shouldBePer100g = selectedItem.origin === 'scan' ? true : isPer100g;
 
+    // 2. Si el estado 'isPer100g' del padre no coincide, lo actualizamos.
+    // Esto causará un re-render, pero la lógica de abajo
+    // usará 'shouldBePer100g' para cargar los datos correctos *ahora*.
+    if (shouldBePer100g && !isPer100g) {
+      setIsPer100g(true);
+    }
+    
+    // 3. Seleccionar los datos correctos basados en 'shouldBePer100g'
     let baseData;
     let baseWeight;
 
-    if (isPer100g) {
+    if (shouldBePer100g) {
       // Usar datos "por 100g"
       baseData = {
         calories: selectedItem.calories_per_100g || 0,
         protein_g: selectedItem.protein_per_100g || 0,
         carbs_g: selectedItem.carbs_per_100g || 0,
-        fats_g: selectedItem.fat_per_100g || 0,
+        fats_g: selectedItem.fat_per_100g || 0, // Mapea selectedItem.fat_... a formData.fats_g
       };
-      baseWeight = 100; // Si estamos en "por 100g", el peso base es 100
+      baseWeight = 100;
     } else {
       // Usar datos "por ración"
       baseData = {
         calories: selectedItem.calories_per_serving || 0,
         protein_g: selectedItem.protein_per_serving || 0,
         carbs_g: selectedItem.carbs_per_serving || 0,
-        fats_g: selectedItem.fat_per_serving || 0,
+        fats_g: selectedItem.fat_per_serving || 0, // Mapea selectedItem.fat_... a formData.fats_g
       };
       baseWeight = selectedItem.serving_weight_g || 100;
     }
 
+    // 4. Actualizar el formulario
+    // Esta llamada ahora SÍ se ejecuta en el primer render
     setFormData({
       description: selectedItem.description || 'Alimento',
       image_url: selectedItem.image_url || null,
-      weight_g: baseWeight, // Actualizar el peso base también
-      ...baseData,
+      weight_g: baseWeight,
+      ...baseData, // Contiene { calories, protein_g, carbs_g, fats_g }
     });
 
-    // Comprobar si es favorito
+    // 5. Comprobar si es favorito
     checkIfFavorite(selectedItem.description);
-  }, [selectedItem, isPer100g, setIsPer100g]); // Dependencias
+    
+  }, [selectedItem, isPer100g, setIsPer100g]); // Dependencias correctas
+  // --- FIN DE LA MODIFICACIÓN ---
 
   // Comprobar si el item es favorito
   const checkIfFavorite = async (description) => {
@@ -167,7 +171,6 @@ function FoodEntryForm({
     }
   };
 
-  // Manejar cambios en los inputs de macros (cuando el usuario edita manualmente)
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -176,19 +179,17 @@ function FoodEntryForm({
     }));
   };
 
-  // Manejar cambios en el peso (recalcula macros)
   const handleWeightChange = (e) => {
     const newWeight = parseFloat(e.target.value) || 0;
     const recalculatedMacros = recalculateMacros(newWeight, isPer100g);
 
     setFormData((prev) => ({
       ...prev,
-      weight_g: e.target.value, // Guardar como string para permitir "10."
+      weight_g: e.target.value,
       ...recalculatedMacros,
     }));
   };
 
-  // Manejar el blur del input de peso (para formatear)
   const handleWeightBlur = (e) => {
     const finalWeight = parseFloat(e.target.value) || 0;
     setFormData((prev) => ({
@@ -197,27 +198,25 @@ function FoodEntryForm({
     }));
   };
 
-  // Manejar el toggle de favoritos
   const handleToggleFavorite = async () => {
     const mealData = {
       description: formData.description,
+      // Usar los datos base de 100g del selectedItem si existen
       calories: selectedItem.calories_per_100g || formData.calories || 0,
       protein_g: selectedItem.protein_per_100g || formData.protein_g || 0,
       carbs_g: selectedItem.carbs_per_100g || formData.carbs_g || 0,
       fats_g: selectedItem.fat_per_100g || formData.fats_g || 0,
-      weight_g: selectedItem.serving_weight_g || formData.weight_g || 100, // Guardar 100g o peso de ración
+      weight_g: 100, // Favoritos se guarda siempre por 100g
       image_url: formData.image_url || null,
     };
 
     try {
       if (isFavorite && favoriteId) {
-        // Eliminar de favoritos
         await favoriteMealService.deleteFavorite(favoriteId);
         setIsFavorite(false);
         setFavoriteId(null);
         addToast('Eliminado de favoritos', 'info');
       } else {
-        // Añadir a favoritos
         const newFavorite = await favoriteMealService.addFavorite(mealData);
         setIsFavorite(true);
         setFavoriteId(newFavorite.id);
@@ -229,19 +228,16 @@ function FoodEntryForm({
     }
   };
 
-  // Manejar subida de imagen
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validar tipo de imagen
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       addToast('Error: Solo se permiten archivos JPG, PNG o WEBP.', 'error');
       return;
     }
 
-    // Validar tamaño (ej: 5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       addToast('Error: El archivo no debe superar los 5MB.', 'error');
@@ -254,7 +250,6 @@ function FoodEntryForm({
 
     try {
       const res = await nutritionService.uploadFoodImage(uploadFormData);
-      // 'res.imageUrl' será algo como "/images/food/uuid-1234.jpg"
       setFormData((prev) => ({
         ...prev,
         image_url: res.imageUrl,
@@ -268,14 +263,12 @@ function FoodEntryForm({
       );
     } finally {
       setIsUploading(false);
-      // Resetear el input para permitir subir la misma imagen si se elimina
       if (fileInputRef.current) {
         fileInputRef.current.value = null;
       }
     }
   };
 
-  // Enviar el formulario
   const handleSubmit = (e) => {
     e.preventDefault();
     onAdd({
@@ -302,7 +295,6 @@ function FoodEntryForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Sección de Imagen y Descripción */}
       <div className="flex items-center space-x-3">
-        {/* Input de Imagen Oculto */}
         <input
           type="file"
           ref={fileInputRef}
@@ -310,7 +302,6 @@ function FoodEntryForm({
           accept="image/jpeg, image/png, image/webp"
           className="hidden"
         />
-        {/* Botón de Imagen */}
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -336,7 +327,6 @@ function FoodEntryForm({
           )}
         </button>
 
-        {/* Descripción y Favorito */}
         <div className="flex-1">
           <label
             htmlFor="description"
