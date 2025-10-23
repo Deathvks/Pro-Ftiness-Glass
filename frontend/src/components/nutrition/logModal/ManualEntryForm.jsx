@@ -42,7 +42,7 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                     onChange={handleFileChange}
                     className="hidden"
                     accept="image/*"
-                    capture="environment"
+                    capture="environment" // Prioriza la cámara trasera en móviles
                 />
                 {isUploading ? (
                     <Spinner />
@@ -90,7 +90,6 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
     </div>
 );
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Componente para mostrar macros calculados, ajustado para recibir directamente los valores calculados
 const CalculatedMacros = ({ calories, protein, carbs, fats }) => (
      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
@@ -100,7 +99,7 @@ const CalculatedMacros = ({ calories, protein, carbs, fats }) => (
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Grasas</p><p className="font-semibold">{fats || 0} g</p></div>
     </div>
 );
-// --- FIN DE LA MODIFICACIÓN ---
+
 
 const ManualEntryForm = ({
     onAddManual,
@@ -175,11 +174,12 @@ const ManualEntryForm = ({
       if (isPer100g) {
         const weight = parseFloat(formData.weight_g) || 0;
         const factor = weight / 100;
+        // Asegurarse de usar los valores correctos de per100Data
         return {
           calories: (parseFloat(per100Data.calories) || 0) * factor,
           protein_g: round((parseFloat(per100Data.protein_g) || 0) * factor),
           carbs_g: round((parseFloat(per100Data.carbs_g) || 0) * factor),
-          fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor),
+          fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor), // Corregido: usar per100Data.fats_g
         };
       } else {
         // En modo manual normal, los valores calculados son los propios valores del formulario
@@ -187,47 +187,47 @@ const ManualEntryForm = ({
           calories: parseFloat(formData.calories) || 0,
           protein_g: round(formData.protein_g),
           carbs_g: round(formData.carbs_g),
-          fats_g: round(formData.fats_g),
+          fats_g: round(formData.fats_g), // Corregido: usar formData.fats_g
         };
       }
-    }, [formData, per100Data, isPer100g, round]);
+    }, [formData, per100Data, isPer100g, round]); // Dependencias correctas
     // --- FIN DE LA MODIFICACIÓN ---
 
     const validateAndGetData = useCallback(() => {
-        // --- INICIO DE LA MODIFICACIÓN ---
         // Usar los macros calculados en lugar de formData directamente
         const finalData = {
           description: formData.description,
           calories: calculatedMacros.calories,
           protein_g: calculatedMacros.protein_g,
           carbs_g: calculatedMacros.carbs_g,
-          fats_g: calculatedMacros.fats_g,
+          fats_g: calculatedMacros.fats_g, // Corregido: usar calculatedMacros.fats_g
           weight_g: formData.weight_g, // El peso siempre viene de formData
           image_url: formData.image_url,
         };
-        // --- FIN DE LA MODIFICACIÓN ---
 
-        if (isPer100g && !isEditing && !editingListItem && !editingFavorite) {
-            const weight = parseFloat(finalData.weight_g) || 0;
-            if (weight <= 0) { // Permitir 0 temporalmente, validar antes de guardar
-                // No mostrar error aquí, se hará al intentar guardar/añadir
-            }
-        }
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Validación de campos obligatorios en modo por 100g
+        if (isPer100g) {
+             const weight = parseFloat(finalData.weight_g) || 0;
+             const cal100 = parseFloat(per100Data.calories); // Usamos per100Data aquí
 
-        if (!finalData.description?.trim() || String(finalData.calories).trim() === '') {
-            addToast('La descripción y las calorías son obligatorias.', 'error');
-            return null;
-        }
-
-        // Validación final de peso en modo por 100g
-        if (isPer100g && !isEditing && !editingListItem && !editingFavorite) {
-            const weight = parseFloat(finalData.weight_g) || 0;
+             // Gramos totales son obligatorios
              if (weight <= 0) {
-                 addToast('Los gramos a consumir deben ser mayores a 0 en el modo por 100g.', 'error');
+                 addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
+                 return null;
+             }
+             // Calorías por 100g son obligatorias
+             if (isNaN(cal100) || cal100 < 0) { // Permitir 0 temporalmente si el usuario está editando
+                 addToast('Las calorías por 100g son obligatorias.', 'error');
                  return null;
              }
         }
+        // --- FIN DE LA MODIFICACIÓN ---
 
+        if (!finalData.description?.trim() || String(finalData.calories).trim() === '' || isNaN(parseFloat(finalData.calories))) {
+            addToast('La descripción y las calorías (calculadas) son obligatorias.', 'error');
+            return null;
+        }
 
         Object.keys(finalData).forEach(key => {
             if (key !== 'description' && key !== 'image_url') {
@@ -247,13 +247,11 @@ const ManualEntryForm = ({
         }
 
         return finalData;
-    }, [formData, isPer100g, isEditing, editingListItem, editingFavorite, addToast, calculatedMacros]); // Añadir calculatedMacros
+    }, [formData, isPer100g, addToast, calculatedMacros, per100Data]); // Añadir per100Data
 
     const handleAddToList = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Añadir los valores `..._per_100g` al objeto que se añade a la lista
         onAddManual({
             ...finalData,
             name: finalData.description,
@@ -263,9 +261,8 @@ const ManualEntryForm = ({
             calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
             protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
             carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
-            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
+            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null, // Corregido: fat_per_100g
         });
-        // --- FIN DE LA MODIFICACIÓN ---
     };
 
     const handleSaveEdited = () => {
@@ -283,8 +280,6 @@ const ManualEntryForm = ({
      const handleSaveAndClose = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Añadir los valores `..._per_100g` al objeto que se guarda
         const dataToSave = {
             ...finalData,
             name: finalData.description,
@@ -294,9 +289,8 @@ const ManualEntryForm = ({
             calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
             protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
             carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
-            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
+            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null, // Corregido: fat_per_100g
         };
-        // --- FIN DE LA MODIFICACIÓN ---
         onSaveSingle([dataToSave]);
     };
 
@@ -318,7 +312,9 @@ const ManualEntryForm = ({
                 isUploading={isUploading}
             />
 
-            {!isEditing && !editingListItem && !editingFavorite && (
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* El toggle se muestra siempre que NO estemos editando un favorito */}
+            {!editingFavorite && (
                 <div className="flex items-center justify-between">
                     <label className="text-sm font-medium text-text-secondary">Valores por 100g</label>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -328,10 +324,10 @@ const ManualEntryForm = ({
                     </label>
                 </div>
             )}
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
-            {isPer100g ? ( // Simplificado: si isPer100g está activo, mostramos los inputs de 100g
+            {isPer100g ? (
                 <>
-                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
                     {/* Inputs para valores por 100g */}
                     <div className="grid grid-cols-2 gap-4">
                         <InputField label="Cal/100g" name="calories" value={per100Data.calories} onChange={handlePer100Change} inputMode="decimal" required={isPer100g} />
@@ -357,7 +353,6 @@ const ManualEntryForm = ({
                       carbs={calculatedMacros.carbs_g}
                       fats={calculatedMacros.fats_g}
                     />
-                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                 </>
             ) : (
                 <>

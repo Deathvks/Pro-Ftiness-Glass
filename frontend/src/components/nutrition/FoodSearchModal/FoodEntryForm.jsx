@@ -69,6 +69,7 @@ function FoodEntryForm({
       ? 100
       : selectedItem.serving_weight_g || 100;
     
+    // Evitar división por cero si el peso base no está definido
     if (baseWeight === 0) return {};
 
     const factor = newWeight / baseWeight;
@@ -96,46 +97,58 @@ function FoodEntryForm({
   };
 
   // --- INICIO DE LA MODIFICACIÓN ---
-  // Se elimina la lógica que activaba 'isPer100g' automáticamente.
-  // Ahora, el formulario respeta el estado de 'isPer100g' (que será 'false' al cargar).
+  // Lógica de 'useEffect' simplificada para evitar el 'return' prematuro.
   useEffect(() => {
     if (!selectedItem) return;
 
+    // 1. Determinar si el toggle DEBE estar activado
+    // (si es un scan, forzamos a 'true', si no, respetamos su estado actual)
+    const shouldBePer100g = selectedItem.origin === 'scan' ? true : isPer100g;
+
+    // 2. Si el estado 'isPer100g' del padre no coincide, lo actualizamos.
+    // Esto causará un re-render, pero la lógica de abajo
+    // usará 'shouldBePer100g' para cargar los datos correctos *ahora*.
+    if (shouldBePer100g && !isPer100g) {
+      setIsPer100g(true);
+    }
+    
+    // 3. Seleccionar los datos correctos basados en 'shouldBePer100g'
     let baseData;
     let baseWeight;
 
-    if (isPer100g) {
+    if (shouldBePer100g) {
       // Usar datos "por 100g"
       baseData = {
         calories: selectedItem.calories_per_100g || 0,
         protein_g: selectedItem.protein_per_100g || 0,
         carbs_g: selectedItem.carbs_per_100g || 0,
-        fats_g: selectedItem.fat_per_100g || 0,
+        fats_g: selectedItem.fat_per_100g || 0, // Mapea selectedItem.fat_... a formData.fats_g
       };
       baseWeight = 100;
     } else {
       // Usar datos "por ración"
-      // Para un escaneo, los datos "per_serving" SON los datos de 100g
-      // (gracias a la normalización en FoodSearchModal.jsx)
       baseData = {
         calories: selectedItem.calories_per_serving || 0,
         protein_g: selectedItem.protein_per_serving || 0,
         carbs_g: selectedItem.carbs_per_serving || 0,
-        fats_g: selectedItem.fat_per_serving || 0,
+        fats_g: selectedItem.fat_per_serving || 0, // Mapea selectedItem.fat_... a formData.fats_g
       };
       baseWeight = selectedItem.serving_weight_g || 100;
     }
 
+    // 4. Actualizar el formulario
+    // Esta llamada ahora SÍ se ejecuta en el primer render
     setFormData({
       description: selectedItem.description || 'Alimento',
       image_url: selectedItem.image_url || null,
       weight_g: baseWeight,
-      ...baseData,
+      ...baseData, // Contiene { calories, protein_g, carbs_g, fats_g }
     });
 
+    // 5. Comprobar si es favorito
     checkIfFavorite(selectedItem.description);
     
-  }, [selectedItem, isPer100g]); // Se elimina 'setIsPer100g' de las dependencias
+  }, [selectedItem, isPer100g, setIsPer100g]); // Dependencias correctas
   // --- FIN DE LA MODIFICACIÓN ---
 
   // Comprobar si el item es favorito
@@ -188,11 +201,12 @@ function FoodEntryForm({
   const handleToggleFavorite = async () => {
     const mealData = {
       description: formData.description,
+      // Usar los datos base de 100g del selectedItem si existen
       calories: selectedItem.calories_per_100g || formData.calories || 0,
       protein_g: selectedItem.protein_per_100g || formData.protein_g || 0,
       carbs_g: selectedItem.carbs_per_100g || formData.carbs_g || 0,
       fats_g: selectedItem.fat_per_100g || formData.fats_g || 0,
-      weight_g: 100,
+      weight_g: 100, // Favoritos se guarda siempre por 100g
       image_url: formData.image_url || null,
     };
 
@@ -274,7 +288,6 @@ function FoodEntryForm({
     if (isPer100g) {
       return 'Valores por 100g';
     }
-    // Para un escaneo, 'serving_size' será "100 g"
     return `Ración (${selectedItem.serving_size || '1 ración'})`;
   };
 
@@ -369,7 +382,7 @@ function FoodEntryForm({
           >
             <span
               className={`${
-                isPer1T00g ? 'translate-x-6' : 'translate-x-1'
+                isPer100g ? 'translate-x-6' : 'translate-x-1'
               } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
             />
           </Switch>

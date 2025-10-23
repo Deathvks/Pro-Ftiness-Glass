@@ -26,8 +26,8 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
         handleSaveList, handleSaveSingle, handleSaveEdit, handleScanSuccess,
         handleDeleteFavorite, confirmDeleteFavorite, title, addModeType,
         isUploading, handleImageUpload,
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Extraer isPer100g y setIsPer100g del hook
+        // --- INICIO DE LA MODIFICACIÓN (VERIFICACIÓN) ---
+        // Se extraen correctamente del hook
         isPer100g, setIsPer100g
         // --- FIN DE LA MODIFICACIÓN ---
     } = useNutritionModal({ mealType, onSave, onClose, logToEdit });
@@ -60,17 +60,17 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                         onSaveSingle={handleSaveSingle}
                         onSaveEdit={handleSaveEdit}
                         onSaveListItem={handleSaveListItem}
-                        isLoading={false}
+                        isLoading={false} // isLoading general del modal, no específico del form
                         isEditing={isEditingLog || !!editingFavorite}
                         editingListItem={itemsToAdd.find(item => item.tempId === editingListItemId)}
-                        showFavoriteToggle={!editingFavorite}
+                        showFavoriteToggle={!editingFavorite} // Reevaluado dentro del form
                         formState={manualFormState}
                         onFormStateChange={setManualFormState}
                         isUploading={isUploading}
                         onImageUpload={handleImageUpload}
                         editingFavorite={editingFavorite} // Pasar prop editingFavorite
-                        // --- INICIO DE LA MODIFICACIÓN ---
-                        // Pasar isPer100g y setIsPer100g al formulario
+                        // --- INICIO DE LA MODIFICACIÓN (VERIFICACIÓN) ---
+                        // Se pasan correctamente al componente ManualEntryForm
                         isPer100g={isPer100g}
                         setIsPer100g={setIsPer100g}
                         // --- FIN DE LA MODIFICACIÓN ---
@@ -119,24 +119,22 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                                 )}
 
                                 <div className="flex flex-wrap items-center justify-center gap-2">
-                                    {/* Estas pestañas son visibles si NO estamos en modo manual */}
-                                    {addModeType !== 'manual' && (
+                                    {/* Estas pestañas son visibles si NO estamos en modo manual y NO estamos editando */}
+                                    {addModeType !== 'manual' && !(isEditingLog || editingFavorite || editingListItemId) && (
                                         <>
-                                            {/* --- INICIO DE LA CORRECCIÓN --- */}
-                                            <TabButton active={activeTab === 'favorites'} onClick={() => { setActiveTab('favorites'); handleEditListItem(null); handleEditFavorite(null); }}>
+                                            <TabButton active={activeTab === 'favorites'} onClick={() => { setActiveTab('favorites'); }}>
                                                 <BookMarked size={16} /> Favoritas
                                             </TabButton>
-                                            {/* --- FIN DE LA CORRECCIÓN (Era </Button>) --- */}
-                                            <TabButton active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); handleEditListItem(null); handleEditFavorite(null); }}>
+                                            <TabButton active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); }}>
                                                 <Clock size={16} /> Recientes
                                             </TabButton>
                                         </>
                                     )}
 
-                                    {/* Estas pestañas solo son visibles si la lista temporal está vacía */}
-                                    {itemsToAdd.length === 0 && (
+                                    {/* Estas pestañas solo son visibles si la lista temporal está vacía y NO estamos editando */}
+                                    {itemsToAdd.length === 0 && !(isEditingLog || editingFavorite || editingListItemId) && (
                                         <>
-                                            <TabButton active={activeTab === 'manual'} onClick={() => { setActiveTab('manual'); handleEditListItem(null); handleEditFavorite(null); }} disabled={addModeType === 'list'}>
+                                            <TabButton active={activeTab === 'manual'} onClick={() => { setActiveTab('manual'); }} disabled={addModeType === 'list'}>
                                                 <Edit size={16} /> Manual
                                             </TabButton>
                                             <TabButton active={false} onClick={() => setShowScanner(true)} disabled={addModeType === 'list'}>
