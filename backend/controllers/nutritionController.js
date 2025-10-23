@@ -332,44 +332,61 @@ const upsertWaterLog = async (req, res, next) => {
 const searchByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
-    
-    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- INICIO DE LA MODIFICACIÓN (LOGS) ---
+    console.log(`[BACKEND] Buscando código de barras: ${barcode}`);
+    // --- FIN DE LA MODIFICACIÓN ---
+
     // Actualizado a la API v2 y solicitando campos específicos
-    const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,nutriments`;
+    const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
 
     const response = await axios.get(apiUrl);
+
+    // --- INICIO DE LA MODIFICACIÓN (LOGS) ---
+    console.log(`[BACKEND] Respuesta de OpenFoodFacts para ${barcode}:`, JSON.stringify(response.data, null, 2));
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // En v2, si el producto no existe, la API devuelve 404 (manejado por catch)
     // o un objeto 'product' vacío o sin 'product_name'.
     // El chequeo 'status === 0' es de la v0 y ya no es válido.
 
-    if (!response.data || !response.data.product || !response.data.product.product_name) {
-      return res.status(404).json({ error: 'Producto no encontrado.' });
+    // --- INICIO DE LA MODIFICACIÓN (Manejo respuesta v2) ---
+    if (!response.data || response.data.status === 0 || !response.data.product) {
+       console.log(`[BACKEND] Producto no encontrado en OFF para ${barcode}`);
+       return res.status(404).json({ error: 'Producto no encontrado.' });
     }
 
     const product = response.data.product;
     const nutriments = product.nutriments || {}; // Asegurar que nutriments sea un objeto
 
+    // Añadimos más fuentes para el nombre y la imagen
     const foodData = {
-      // Priorizar nombre en español, luego nombre genérico
-      name: product.product_name_es || product.product_name || 'Nombre no disponible',
-      calories: nutriments['energy-kcal_100g'] || 0,
-      protein_g: nutriments.proteins_100g || 0,
-      carbs_g: nutriments.carbohydrates_100g || 0,
-      fats_g: nutriments.fat_100g || 0,
-      weight_g: 100, // Por defecto asumimos 100g para los datos de OFF
+      product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
+      nutriments: nutriments,
+      image_url: product.image_url || product.image_front_url || null,
+      serving_quantity: product.serving_quantity || null
     };
     // --- FIN DE LA MODIFICACIÓN ---
 
-    res.json(foodData);
+    // --- INICIO DE LA MODIFICACIÓN (LOGS) ---
+    console.log(`[BACKEND] Datos procesados enviados al frontend para ${barcode}:`, JSON.stringify(foodData, null, 2));
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // Devolvemos el objeto product completo para que el frontend pueda procesarlo
+    res.json({ product: foodData }); // Asegurarse de enviar un objeto con la clave 'product'
+
   } catch (error) {
+    // --- INICIO DE LA MODIFICACIÓN (LOGS) ---
+    console.error(`[BACKEND] Error en searchByBarcode para ${req.params.barcode}:`, error.message);
+    if (error.response) {
+       console.error('[BACKEND] Detalles del error de respuesta:', error.response.status, error.response.data);
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
     if (error.response && error.response.status === 404) {
       return res.status(404).json({
         error: 'Producto no encontrado en la base de datos de Open Food Facts.',
       });
     }
-    // Log del error para depuración
-    console.error('Error en searchByBarcode:', error.message);
     next(error);
   }
 };
@@ -391,11 +408,8 @@ const uploadFoodImage = async (req, res, next) => {
 
     await fs.writeFile(filePath, req.file.buffer);
 
-    // --- INICIO DE LA MODIFICACIÓN (URL Relativa) ---
     // Construir la URL relativa que el frontend puede usar directamente
-    // Asumiendo que el frontend sabe que las imágenes están en /images/food/
     const imageUrl = `/images/food/${uniqueFilename}`;
-    // --- FIN DE LA MODIFICACIÓN ---
 
     res.status(201).json({ imageUrl });
   } catch (error) {
