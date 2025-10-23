@@ -1,222 +1,156 @@
-/* frontend/src/hooks/useManualForm.js */
-import { useState, useEffect, useCallback } from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importar useToast
+/* frontend/src/hooks/useScanAndUpload.js */
+import { useState } from 'react';
 import { useToast } from './useToast';
+import * as nutritionService from '../services/nutritionService';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importar initialManualFormState y round
 import { initialManualFormState, round } from './useNutritionConstants';
 // --- FIN DE LA MODIFICACIÓN ---
 
-export const useManualForm = ({
-  itemToEdit,
-  favoriteMeals,
-  isPer100g,
+// Helper para obtener valores numéricos de forma segura desde el objeto de nutrientes
+const getNutrientValue = (nutriments, keys, conversionFactor = 1) => {
+    if (!nutriments) return 0;
+    for (const key of keys) {
+        // Añadir comprobación extra por si la clave existe pero el valor es undefined/null
+        if (nutriments[key] !== undefined && nutriments[key] !== null) {
+            const value = parseFloat(nutriments[key]);
+            if (!isNaN(value)) {
+                // Devolver el valor directamente si es válido, incluso si es 0
+                return value * conversionFactor;
+            }
+        }
+    }
+    return 0; // Devuelve 0 si ninguna clave es válida o los valores no son números
+};
+
+
+export const useScanAndUpload = ({
+  setShowScanner,
+  setManualFormState,
+  setBaseMacros, // Aunque no se usa directamente aquí, puede ser necesario para useManualForm
+  setOriginalData,
+  setActiveTab,
+  setAddModeType,
   setIsPer100g,
 }) => {
-  const [manualFormState, setManualFormState] = useState(
-    initialManualFormState
-  );
-  const [baseMacros, setBaseMacros] = useState(null);
-  const [originalData, setOriginalData] = useState(null);
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Obtener la función addToast
+  const [isUploading, setIsUploading] = useState(false);
   const { addToast } = useToast();
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  const resetManualForm = useCallback(() => {
-    setManualFormState(initialManualFormState);
-    setBaseMacros(null);
-    setOriginalData(null);
-    setIsPer100g(false);
-  }, [setIsPer100g]);
-
-  const computeFromPer100 = useCallback((cal, p, c, f, g) => {
-    const factor = (parseFloat(g) || 0) / 100;
-    return {
-      calories: Math.round((parseFloat(cal) || 0) * factor),
-      protein_g: round((parseFloat(p) || 0) * factor),
-      carbs_g: round((parseFloat(c) || 0) * factor),
-      fats_g: round((parseFloat(f) || 0) * factor),
-    };
-  }, [round]); // Asegúrate de que `round` esté disponible o importado
-
-  // Efecto para popular el formulario al editar o al recibir datos de escaneo
-  useEffect(() => {
+  const handleScanSuccess = async (barcode) => {
+    setShowScanner(false);
+    const tempLoadingToastId = addToast('Buscando producto...', 'info', null);
     try {
-        if (itemToEdit) {
-            const description = itemToEdit.description || itemToEdit.name || '';
-            const initialWeight = parseFloat(itemToEdit.weight_g);
-            const isScanOrigin = itemToEdit.origin === 'scan';
+      const productData = await nutritionService.searchByBarcode(barcode);
 
-            const hasValid100gData = (
-                (itemToEdit.calories_per_100g !== undefined && itemToEdit.calories_per_100g !== null && parseFloat(itemToEdit.calories_per_100g) >= 0) ||
-                (isScanOrigin && itemToEdit.calories !== undefined && itemToEdit.calories !== null && parseFloat(itemToEdit.calories) >= 0)
-            );
+      // Log para depuración
+      console.log("Datos recibidos del escaneo:", productData);
 
-            const shouldBePer100g = isScanOrigin && hasValid100gData;
+      const product = productData?.product || {};
+      const nutriments = product?.nutriments || {};
+      const productName = product.product_name || product.generic_name || product.brands || 'Producto escaneado';
+      const productImageUrl = product.image_url || product.image_front_url || null;
 
-            let currentFormData;
-            let currentPer100Data = { calories: '', protein_g: '', carbs_g: '', fats_g: '' };
+      const calories100g = getNutrientValue(nutriments, ['energy-kcal_100g', 'energy_100g']) || getNutrientValue(nutriments, ['energy-kj_100g', 'energy_100g'], 1 / 4.184);
+      const protein100g = getNutrientValue(nutriments, ['proteins_100g']);
+      const carbs100g = getNutrientValue(nutriments, ['carbohydrates_100g']);
+      const fat100g = getNutrientValue(nutriments, ['fat_100g', 'fats_100g']);
 
-            if (shouldBePer100g) {
-                const cal100 = itemToEdit.calories_per_100g ?? itemToEdit.calories ?? 0;
-                const prot100 = itemToEdit.protein_per_100g ?? itemToEdit.protein_g ?? 0;
-                const carb100 = itemToEdit.carbs_per_100g ?? itemToEdit.carbs_g ?? 0;
-                const fat100 = itemToEdit.fat_per_100g ?? itemToEdit.fats_g ?? 0;
-
-                currentPer100Data = {
-                    calories: String(round(cal100, 0)),
-                    protein_g: String(round(prot100, 1)),
-                    carbs_g: String(round(carb100, 1)),
-                    fats_g: String(round(fat100, 1)),
-                };
-
-                currentFormData = {
-                    description: description,
-                    calories: String(round(cal100, 0)),
-                    protein_g: String(round(prot100, 1)),
-                    carbs_g: String(round(carb100, 1)),
-                    fats_g: String(round(fat100, 1)),
-                    weight_g: '100',
-                    image_url: itemToEdit.image_url || null,
-                };
-                setBaseMacros(null);
-
-            } else {
-                const calServing = itemToEdit.calories_per_serving ?? itemToEdit.calories ?? 0;
-                const protServing = itemToEdit.protein_per_serving ?? itemToEdit.protein_g ?? 0;
-                const carbServing = itemToEdit.carbs_per_serving ?? itemToEdit.carbs_g ?? 0;
-                const fatServing = itemToEdit.fat_per_serving ?? itemToEdit.fats_g ?? 0;
-                const weightServing = itemToEdit.serving_quantity ?? itemToEdit.weight_g ?? '';
-
-                currentFormData = {
-                    description: description,
-                    calories: String(round(calServing, 0)),
-                    protein_g: String(round(protServing, 1)),
-                    carbs_g: String(round(carbServing, 1)),
-                    fats_g: String(round(fatServing, 1)),
-                    weight_g: String(weightServing),
-                    image_url: itemToEdit.image_url || null,
-                };
-                currentPer100Data = initialManualFormState.per100Data;
-
-                const currentWeightNum = parseFloat(weightServing);
-                if (currentWeightNum > 0) {
-                    setBaseMacros({
-                        calories: calServing / currentWeightNum,
-                        protein_g: protServing / currentWeightNum,
-                        carbs_g: carbServing / currentWeightNum,
-                        fats_g: fatServing / currentWeightNum,
-                    });
-                } else {
-                    setBaseMacros(null);
-                }
-            }
-
-            setManualFormState({
-              formData: currentFormData,
-              per100Data: currentPer100Data,
-              per100Mode: shouldBePer100g,
-              isFavorite:
-                itemToEdit.isFavorite ||
-                favoriteMeals.some(
-                  (fav) => fav.name.toLowerCase() === description.toLowerCase()
-                ),
-            });
-            setOriginalData(currentFormData);
-            setIsPer100g(shouldBePer100g);
-
-        } else {
-           if (manualFormState.formData !== initialManualFormState.formData ||
-               manualFormState.per100Data !== initialManualFormState.per100Data ||
-               manualFormState.per100Mode !== initialManualFormState.per100Mode ||
-               manualFormState.isFavorite !== initialManualFormState.isFavorite) {
-              resetManualForm();
-           }
-        }
-    } catch (error) {
-        console.error("Error processing itemToEdit in useManualForm:", error);
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Mostrar el error como un toast
-        addToast(`Error procesando datos: ${error.message}`, 'error');
-        // --- FIN DE LA MODIFICACIÓN ---
-        resetManualForm();
-    }
-  }, [
-    itemToEdit,
-    favoriteMeals,
-    setIsPer100g,
-    resetManualForm,
-    manualFormState,
-    round, // Añadir round a las dependencias
-    addToast // Añadir addToast a las dependencias
-  ]);
-
-  // Efecto para recalcular macros al cambiar peso (modo EDICIÓN NO 100g)
-  useEffect(() => {
-    if (baseMacros && originalData && !isPer100g) {
-      const newWeight = parseFloat(manualFormState.formData.weight_g) || 0;
-      if (String(newWeight) !== String(originalData?.weight_g || '') || !isPer100g) {
-         if (!isPer100g) {
-             setManualFormState((prev) => ({
-                 ...prev,
-                 formData: {
-                     ...prev.formData,
-                     calories: Math.round(baseMacros.calories * newWeight),
-                     protein_g: round(baseMacros.protein_g * newWeight),
-                     carbs_g: round(baseMacros.carbs_g * newWeight),
-                     fats_g: round(baseMacros.fats_g * newWeight),
-                 },
-             }));
-         }
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Modificamos la condición: Mostramos el error solo si NO se encuentra NINGÚN dato útil (ni nombre ni macros)
+      if (calories100g === 0 && protein100g === 0 && carbs100g === 0 && fat100g === 0 && productName === 'Producto escaneado') {
+          addToast('No se encontró información nutricional detallada para este producto.', 'error', 5000, tempLoadingToastId);
+          // Aún así, vamos al formulario manual para que el usuario pueda introducir datos si lo desea
+          setActiveTab('manual');
+          setAddModeType('manual');
+          setManualFormState(initialManualFormState); // Usar la constante importada
+          setIsPer100g(false);
+          setOriginalData(null); // No hay datos originales
+          setBaseMacros(null);
+          return;
       }
-    }
-  }, [
-    manualFormState.formData.weight_g,
-    baseMacros,
-    originalData,
-    isPer100g,
-    round
-  ]);
+      // Si encontramos *algo* (nombre o algún macro), consideramos éxito
+      addToast('Producto encontrado.', 'success', 3000, tempLoadingToastId);
+      // --- FIN DE LA MODIFICACIÓN ---
 
-  // Efecto para recalcular macros al cambiar peso o datos "por 100g" (modo 100G activo)
-  useEffect(() => {
-    if (isPer100g) {
-      const computed = computeFromPer100(
-        manualFormState.per100Data.calories,
-        manualFormState.per100Data.protein_g,
-        manualFormState.per100Data.carbs_g,
-        manualFormState.per100Data.fats_g,
-        manualFormState.formData.weight_g
+      const scannedItemData = {
+          description: productName,
+          // Usar valores por ración como fallback si existen, si no, los de 100g
+          calories: getNutrientValue(nutriments, ['energy-kcal_serving', 'energy_serving']) || getNutrientValue(nutriments, ['energy-kj_serving'], 1 / 4.184) || calories100g,
+          protein_g: getNutrientValue(nutriments, ['proteins_serving']) || protein100g,
+          carbs_g: getNutrientValue(nutriments, ['carbohydrates_serving']) || carbs100g,
+          fats_g: getNutrientValue(nutriments, ['fat_serving', 'fats_serving']) || fat100g,
+          weight_g: parseFloat(product.serving_quantity) || 100,
+          image_url: productImageUrl,
+          // Añadir explícitamente los campos _per_100g para que useManualForm pueda detectarlos
+          calories_per_100g: calories100g,
+          protein_per_100g: protein100g,
+          carbs_per_100g: carbs100g,
+          fat_per_100g: fat100g,
+          origin: 'scan',
+      };
+
+       // Pasar los datos a useManualForm a través del estado del modal
+       setManualFormState({
+           itemToEdit: scannedItemData,
+           // El resto lo determinará useManualForm
+           per100Data: initialManualFormState.per100Data,
+           per100Mode: false, // Dejamos que useManualForm decida
+           isFavorite: false,
+       });
+
+      setBaseMacros(null);
+      setOriginalData(scannedItemData); // Guardar datos originales recibidos
+      setActiveTab('manual');
+      setAddModeType('manual');
+      // No forzamos setIsPer100g aquí
+
+    } catch (error) {
+       console.error("Error detallado en handleScanSuccess:", error);
+      addToast(
+        error.message || 'No se pudo encontrar el producto o hubo un error de red.',
+        'error',
+        5000,
+        tempLoadingToastId
       );
-      if (
-          String(Math.round(computed.calories)) !== String(Math.round(manualFormState.formData.calories || 0)) ||
-          String(computed.protein_g) !== String(manualFormState.formData.protein_g || '0.0') ||
-          String(computed.carbs_g) !== String(manualFormState.formData.carbs_g || '0.0') ||
-          String(computed.fats_g) !== String(manualFormState.formData.fats_g || '0.0')
-      ) {
-            setManualFormState((prev) => ({
-             ...prev,
-             formData: { ...prev.formData, ...computed },
-            }));
-       }
+       // Asegurar que volvemos a un estado consistente si falla
+       setActiveTab('manual');
+       setAddModeType('manual');
+       // --- INICIO DE LA MODIFICACIÓN ---
+       setManualFormState(initialManualFormState); // Usar la constante importada
+       // --- FIN DE LA MODIFICACIÓN ---
+       setIsPer100g(false);
+       setOriginalData(null);
+       setBaseMacros(null);
     }
-  }, [
-    manualFormState.formData.weight_g,
-    manualFormState.per100Data,
-    isPer100g,
-    computeFromPer100,
-    manualFormState.formData,
-    round // Añadir round a las dependencias
-  ]);
+  };
+
+  const handleImageUpload = async (file) => {
+    // ... (sin cambios en esta función)
+    if (!file) {
+      setManualFormState((prev) => ({
+        ...prev,
+        formData: { ...prev.formData, image_url: null },
+      }));
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const response = await nutritionService.uploadFoodImage(file);
+      setManualFormState((prev) => ({
+        ...prev,
+        formData: { ...prev.formData, image_url: response.imageUrl },
+      }));
+      addToast('Imagen subida con éxito.', 'success');
+    } catch (error) {
+      addToast(error.message || 'Error al subir la imagen.', 'error');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return {
-    manualFormState,
-    setManualFormState,
-    baseMacros,
-    setBaseMacros,
-    originalData,
-    setOriginalData,
-    resetManualForm,
-    computeFromPer100,
+    isUploading,
+    handleScanSuccess,
+    handleImageUpload,
   };
 };

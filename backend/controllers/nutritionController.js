@@ -190,11 +190,6 @@ const addFoodLog = async (req, res, next) => {
       fats_g,
       weight_g,
       image_url,
-      // Nuevos campos opcionales para datos por 100g
-      calories_per_100g,
-      protein_per_100g,
-      carbs_per_100g,
-      fat_per_100g, // Corregido: nombre de la columna en BD
     } = req.body;
 
     const foodData = {
@@ -208,11 +203,6 @@ const addFoodLog = async (req, res, next) => {
       fats_g: fats_g || null,
       weight_g: weight_g || null,
       image_url: image_url || null,
-      // Incluir los campos por 100g si existen
-      calories_per_100g: calories_per_100g || null,
-      protein_per_100g: protein_per_100g || null,
-      carbs_per_100g: carbs_per_100g || null,
-      fat_per_100g: fat_per_100g || null, // Corregido: nombre columna
     };
 
     const newLog = await NutritionLog.create(foodData);
@@ -250,31 +240,21 @@ const updateFoodLog = async (req, res, next) => {
       fats_g,
       weight_g,
       image_url,
-      // Campos por 100g (pueden venir o no)
-      calories_per_100g,
-      protein_per_100g,
-      carbs_per_100g,
-      fat_per_100g, // Corregido: nombre columna
+      meal_type,
+      log_date,
     } = req.body;
 
     const foodData = {
       description,
-      calories: calories === null ? null : (parseFloat(calories) || 0),
-      protein_g: protein_g === null ? null : (parseFloat(protein_g) || 0),
-      carbs_g: carbs_g === null ? null : (parseFloat(carbs_g) || 0),
-      fats_g: fats_g === null ? null : (parseFloat(fats_g) || 0),
-      weight_g: weight_g === null ? null : (parseFloat(weight_g) || null), // Mantener null si es 0 o inválido
+      calories: calories || null,
+      protein_g: protein_g || null,
+      carbs_g: carbs_g || null,
+      fats_g: fats_g || null,
+      weight_g: weight_g || null,
       image_url: image_url || null,
-      // Incluir campos por 100g si se proporcionan en el body
-      ...(calories_per_100g !== undefined && { calories_per_100g: parseFloat(calories_per_100g) || null }),
-      ...(protein_per_100g !== undefined && { protein_per_100g: parseFloat(protein_per_100g) || null }),
-      ...(carbs_per_100g !== undefined && { carbs_per_100g: parseFloat(carbs_per_100g) || null }),
-      ...(fat_per_100g !== undefined && { fat_per_100g: parseFloat(fat_per_100g) || null }), // Corregido: nombre columna
+      meal_type,
+      log_date,
     };
-
-    // Filtrar undefined para no intentar actualizar con ellos
-    Object.keys(foodData).forEach(key => foodData[key] === undefined && delete foodData[key]);
-
 
     await log.update(foodData);
     res.json(log);
@@ -282,7 +262,6 @@ const updateFoodLog = async (req, res, next) => {
     next(error);
   }
 };
-
 
 /**
  * Elimina un registro de comida.
@@ -319,10 +298,10 @@ const upsertWaterLog = async (req, res, next) => {
     const { userId } = req.user;
     const { log_date, quantity_ml } = req.body;
 
-    if (!log_date || quantity_ml === undefined || quantity_ml < 0) { // Añadida validación quantity_ml >= 0
+    if (!log_date || quantity_ml === undefined) {
       return res
         .status(400)
-        .json({ error: 'Fecha y cantidad (mayor o igual a 0) son requeridas.' });
+        .json({ error: 'Fecha y cantidad son requeridas.' });
     }
 
     let waterLog = await WaterLog.findOne({
@@ -351,93 +330,49 @@ const upsertWaterLog = async (req, res, next) => {
  * Busca un producto por su código de barras usando la API de Open Food Facts.
  */
 const searchByBarcode = async (req, res, next) => {
-  const { barcode } = req.params;
-  // --- LOG 1: Código de barras recibido ---
-  console.log(`[Barcode Search] Received barcode: ${barcode}`);
-
   try {
-    // Usamos v2 y pedimos campos específicos
-    const fields = [
-        'product_name', 'product_name_es', 'generic_name', 'brands', // Nombres
-        'nutriments', // Todos los nutrientes
-        'serving_quantity', 'serving_size', // Información de ración
-        'image_url', 'image_front_url', // Imágenes
-    ].join(',');
-    const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=${fields}`;
-
-    console.log(`[Barcode Search] Requesting URL: ${apiUrl}`); // Log de la URL
+    const { barcode } = req.params;
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Actualizado a la API v2 y solicitando campos específicos
+    const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,nutriments`;
 
     const response = await axios.get(apiUrl);
 
-    // --- LOG 2: Respuesta RAW de la API externa ---
-    console.log(`[Barcode Search] Raw data received from external API for ${barcode}:`, JSON.stringify(response.data, null, 2));
+    // En v2, si el producto no existe, la API devuelve 404 (manejado por catch)
+    // o un objeto 'product' vacío o sin 'product_name'.
+    // El chequeo 'status === 0' es de la v0 y ya no es válido.
 
-
-    // Chequeo si el producto existe en la respuesta v2
-    if (response.data.status === 0 || !response.data.product || Object.keys(response.data.product).length === 0) {
-        console.log(`[Barcode Search] Product not found in OFF for barcode: ${barcode}`);
-        return res.status(404).json({ error: 'Producto no encontrado en la base de datos externa.' });
+    if (!response.data || !response.data.product || !response.data.product.product_name) {
+      return res.status(404).json({ error: 'Producto no encontrado.' });
     }
 
     const product = response.data.product;
-    const nutriments = product.nutriments || {};
+    const nutriments = product.nutriments || {}; // Asegurar que nutriments sea un objeto
 
-    // Construcción de productData con fallbacks y prioridades
-    const productData = {
-        name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
-        // Datos por 100g (intentar varias claves)
-        calories_per_100g: nutriments['energy-kcal_100g'] ?? (nutriments['energy-kj_100g'] ? nutriments['energy-kj_100g'] / 4.184 : null) ?? null,
-        protein_per_100g: nutriments.proteins_100g ?? null,
-        carbs_per_100g: nutriments.carbohydrates_100g ?? null,
-        fat_per_100g: nutriments.fat_100g ?? nutriments.fats_100g ?? null, // Usar fat_100g o fats_100g
-        // Datos por ración (intentar varias claves)
-        calories_per_serving: nutriments['energy-kcal_serving'] ?? (nutriments['energy-kj_serving'] ? nutriments['energy-kj_serving'] / 4.184 : null) ?? null,
-        protein_per_serving: nutriments.proteins_serving ?? null,
-        carbs_per_serving: nutriments.carbohydrates_serving ?? null,
-        fat_per_serving: nutriments.fat_serving ?? nutriments.fats_serving ?? null, // Usar fat_serving o fats_serving
-        // Info de la ración
-        serving_quantity: parseFloat(product.serving_quantity) || null,
-        serving_size: product.serving_size || null, // Texto descriptivo
-        // Imagen
-        image_url: product.image_url || product.image_front_url || null,
-        // Mantener acceso a nutriments completos por si acaso
-        // nutriments: nutriments // Descomentar si el frontend necesita más datos
-        status: response.data.status, // Incluir status original
-        product: product // Incluir producto original por si acaso
+    const foodData = {
+      // Priorizar nombre en español, luego nombre genérico
+      name: product.product_name_es || product.product_name || 'Nombre no disponible',
+      calories: nutriments['energy-kcal_100g'] || 0,
+      protein_g: nutriments.proteins_100g || 0,
+      carbs_g: nutriments.carbohydrates_100g || 0,
+      fats_g: nutriments.fat_100g || 0,
+      weight_g: 100, // Por defecto asumimos 100g para los datos de OFF
     };
+    // --- FIN DE LA MODIFICACIÓN ---
 
-     // Redondeos opcionales (si prefieres redondear en backend)
-     // Object.keys(productData).forEach(key => {
-     //    if (key.startsWith('calories') && productData[key] !== null) productData[key] = Math.round(productData[key]);
-     //    else if (typeof productData[key] === 'number' && key !== 'status' && key !== 'serving_quantity') productData[key] = parseFloat(productData[key].toFixed(1));
-     // });
-
-
-    // --- LOG 3: Datos a enviar al frontend ---
-    console.log(`[Barcode Search] Data being sent to frontend for ${barcode}:`, JSON.stringify(productData, null, 2));
-
-    res.json(productData);
-
+    res.json(foodData);
   } catch (error) {
-    // --- LOG (Error general) ---
-    console.error(`[Barcode Search] Error processing barcode ${barcode}:`, error.message);
-    if (error.stack) {
-         console.error(error.stack);
+    if (error.response && error.response.status === 404) {
+      return res.status(404).json({
+        error: 'Producto no encontrado en la base de datos de Open Food Facts.',
+      });
     }
-    // Si el error es de Axios y tiene una respuesta
-    if (axios.isAxiosError(error) && error.response) {
-        console.error(`[Barcode Search] Axios response status: ${error.response.status}`);
-        console.error(`[Barcode Search] Axios response data:`, JSON.stringify(error.response.data, null, 2));
-        if (error.response.status === 404) {
-             return res.status(404).json({ error: 'Producto no encontrado en la base de datos externa (404).' });
-        }
-         return res.status(error.response.status || 500).json({ error: 'Error al contactar la base de datos externa.' });
-    }
-    // Otros errores (red, parsing, etc.)
-    next(error); // Dejar que el middleware de errores general lo maneje
+    // Log del error para depuración
+    console.error('Error en searchByBarcode:', error.message);
+    next(error);
   }
 };
-
 
 /**
  * Sube una imagen de comida y devuelve la URL relativa.
@@ -456,8 +391,11 @@ const uploadFoodImage = async (req, res, next) => {
 
     await fs.writeFile(filePath, req.file.buffer);
 
-    // Construir la URL relativa
+    // --- INICIO DE LA MODIFICACIÓN (URL Relativa) ---
+    // Construir la URL relativa que el frontend puede usar directamente
+    // Asumiendo que el frontend sabe que las imágenes están en /images/food/
     const imageUrl = `/images/food/${uniqueFilename}`;
+    // --- FIN DE LA MODIFICACIÓN ---
 
     res.status(201).json({ imageUrl });
   } catch (error) {
@@ -469,7 +407,6 @@ const uploadFoodImage = async (req, res, next) => {
     if (error.message.includes('Formato de imagen no válido')) {
       return res.status(400).json({ error: error.message });
     }
-    console.error("Error en uploadFoodImage:", error); // Log añadido
     next(error);
   }
 };
