@@ -13,8 +13,11 @@ import SettingsScreen from './pages/SettingsScreen';
 import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
 import OnboardingScreen from './pages/OnboardingScreen';
-import ProfileEditor from './pages/ProfileEditor';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Cambiamos ProfileEditor por PhysicalProfileEditor (representará la pantalla de edición física)
+import PhysicalProfileEditor from './pages/PhysicalProfileEditor'; // <-- Cambiamos el nombre del import
 import AccountEditor from './pages/AccountEditor';
+// --- FIN DE LA MODIFICACIÓN ---
 import PRToast from './components/PRToast';
 import ConfirmationModal from './components/ConfirmationModal';
 import WelcomeModal from './components/WelcomeModal';
@@ -25,14 +28,10 @@ import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import Profile from './pages/Profile';
-// --- INICIO DE LA MODIFICACIÓN ---
-import Sidebar from './components/Sidebar'; // Importamos el nuevo componente
-// --- FIN DE LA MODIFICACIÓN ---
+import Profile from './pages/Profile'; // Mantenemos Profile para la cuenta (username, email, pass)
+import Sidebar from './components/Sidebar';
 
-// Obtenemos la URL base del backend desde las variables de entorno
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-// Eliminamos '/api' del final si existe para obtener solo la base del backend
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 export default function App() {
@@ -79,7 +78,7 @@ export default function App() {
   }, [view]);
 
   const [authView, setAuthView] = useState('login');
-  
+
   const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
   const [showCodeVerificationModal, setShowCodeVerificationModal] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
@@ -90,16 +89,16 @@ export default function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
   const [timer, setTimer] = useState(0);
-  
+
   useEffect(() => {
     const handleUrlChange = () => {
       if (window.location.pathname === '/reset-password' && !isAuthenticated) {
         setAuthView('resetPassword');
       }
     };
-    
+
     handleUrlChange();
-    
+
     window.addEventListener('popstate', handleUrlChange);
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, [isAuthenticated]);
@@ -134,7 +133,7 @@ export default function App() {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
-  
+
     useEffect(() => {
         if (view === 'dashboard' && isAuthenticated) {
             const today = new Date().toISOString().split('T')[0];
@@ -200,19 +199,19 @@ export default function App() {
   }, []);
 
   const handleShowPolicy = () => {
-    setPreviousView(view); // Guardamos la vista actual
+    setPreviousView(view);
     setView('privacyPolicy');
   };
 
   const handleBackFromPolicy = () => {
-    setView(previousView || 'dashboard'); // Volvemos a la vista anterior o al dashboard
+    setView(previousView || 'dashboard');
     setPreviousView(null);
   };
 
   if (isLoading) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
-  
+
   if (!isAuthenticated) {
     switch (authView) {
         case 'register':
@@ -225,9 +224,9 @@ export default function App() {
                 setAuthView('login');
             }} />;
         default:
-            return <LoginScreen 
-                showRegister={() => setAuthView('register')} 
-                showForgotPassword={() => setAuthView('forgotPassword')} 
+            return <LoginScreen
+                showRegister={() => setAuthView('register')}
+                showForgotPassword={() => setAuthView('forgotPassword')}
             />;
     }
   }
@@ -235,7 +234,7 @@ export default function App() {
   if (userProfile && !userProfile.goal) {
     return <OnboardingScreen />;
   }
-  
+
   const pageTitles = {
     dashboard: 'Dashboard',
     nutrition: 'Nutrición',
@@ -264,11 +263,16 @@ export default function App() {
             onLogoutClick={handleLogoutClick}
           />
         );
-      case 'profileEditor': return <ProfileEditor onCancel={() => navigate('settings')} />;
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Cambiamos 'profileEditor' a 'physicalProfileEditor' y le pasamos el componente correcto
+      case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />;
+      // Mantenemos 'accountEditor' como estaba
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
+      // Mantenemos 'profile' para la vista de username/email/pass
+      case 'profile': return <Profile onCancel={() => navigate(previousView || 'dashboard')} />;
+      // --- FIN DE LA MODIFICACIÓN ---
       case 'adminPanel': return <AdminPanel onCancel={() => navigate('settings')} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
-      case 'profile': return <Profile onCancel={() => navigate(previousView || 'dashboard')} />;
       default: return <Dashboard setView={navigate} />;
     }
   };
@@ -285,8 +289,6 @@ export default function App() {
     <div className="relative flex w-full h-full overflow-hidden">
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* Reemplazamos el nav inline con el componente Sidebar */}
       <Sidebar
         view={view}
         navigate={navigate}
@@ -296,18 +298,16 @@ export default function App() {
         BACKEND_BASE_URL={BACKEND_BASE_URL}
         handleLogoutClick={handleLogoutClick}
       />
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
-        
-        {/* Header Común para Móvil */}
+
         {currentTitle && (
           <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
             <h1 className="text-3xl font-extrabold">{currentTitle}</h1>
             <button
               onClick={() => {
-                setPreviousView(view); // Guardar vista actual
-                navigate('profile');
+                setPreviousView(view);
+                navigate('profile'); // Este botón ahora lleva a la pantalla de cuenta/username
               }}
               className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
             >
@@ -329,12 +329,12 @@ export default function App() {
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 flex justify-around items-center bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]">
         {navItems.map(item => (
-          <button 
-            key={item.id} 
+          <button
+            key={item.id}
             onClick={() => {
-              setPreviousView(view); // Guardar vista actual
+              setPreviousView(view);
               navigate(item.id);
-            }} 
+            }}
             className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
             {item.icon}
             <span className="text-xs font-medium">{item.label}</span>

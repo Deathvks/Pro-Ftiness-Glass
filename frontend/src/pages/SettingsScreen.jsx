@@ -40,7 +40,7 @@ export default function SettingsScreen({
 }) {
   const { userProfile, resetCookieConsent } = useAppStore();
   const [currentColorPage, setCurrentColorPage] = useState(0);
-  
+
   const COLORS_PER_PAGE = 8;
   const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
   const startIndex = currentColorPage * COLORS_PER_PAGE;
@@ -95,15 +95,11 @@ export default function SettingsScreen({
   };
 
   return (
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Ajustamos padding
     <div className="px-4 pb-4 md:p-8 max-w-5xl mx-auto">
-      
-      {/* Header para Móvil (ELIMINADO) */}
 
       {/* Header para PC (modificado para ocultar en móvil) */}
       <div className="hidden md:flex items-center justify-between mb-6">
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
         <button
           onClick={() => setView('dashboard')}
           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition"
@@ -111,19 +107,15 @@ export default function SettingsScreen({
           <ChevronLeft size={18} />
           <span className="text-sm font-medium">Volver</span>
         </button>
-        
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+
         {/* Añadimos margen superior para PC */}
         <h1 className="text-xl md:text-2xl font-bold mt-10 md:mt-0">Ajustes</h1>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         <div className="w-[90px]" />
       </div>
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
       {/* Añadimos margen superior en móvil */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 md:mt-0">
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
         <section className="lg:col-span-2 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5">
           <div className="flex items-center gap-2 mb-4">
             <Palette size={18} className="text-accent" />
@@ -144,14 +136,14 @@ export default function SettingsScreen({
             <p className="text-xs text-text-muted mb-4">
               Cambia solo los elementos que usan el color de acento.
             </p>
-            
+
             {/* Grid de colores con paginación */}
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 mb-4">
               {currentColors.map(opt => (
                 <AccentSwatch key={opt.id} option={opt} />
               ))}
             </div>
-            
+
             {/* Controles de paginación */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2">
@@ -162,11 +154,11 @@ export default function SettingsScreen({
                 >
                   <ChevronLeft size={16} />
                 </button>
-                
+
                 <span className="text-sm text-text-secondary px-3">
                   {currentColorPage + 1} de {totalPages}
                 </span>
-                
+
                 <button
                   onClick={() => setCurrentColorPage(prev => Math.min(totalPages - 1, prev + 1))}
                   disabled={currentColorPage === totalPages - 1}
@@ -183,7 +175,10 @@ export default function SettingsScreen({
           <h2 className="text-lg font-semibold mb-1">Cuenta</h2>
 
           <button
-            onClick={() => setView('profileEditor')}
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Cambiamos 'profileEditor' a 'physicalProfileEditor'
+            onClick={() => setView('physicalProfileEditor')}
+            // --- FIN DE LA MODIFICACIÓN ---
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
           >
             <User size={18} className="text-accent" />
@@ -192,10 +187,6 @@ export default function SettingsScreen({
               <div className="text-xs text-text-secondary">Objetivos, actividad, etc.</div>
             </div>
           </button>
-
-          {/* --- INICIO DE LA MODIFICACIÓN --- */}
-          {/* Botón 'accountEditor' (Seguridad y cuenta) eliminado */}
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           <button
             onClick={resetCookieConsent}
@@ -208,8 +199,6 @@ export default function SettingsScreen({
             </div>
           </button>
 
-          {/* --- INICIO DE LA MODIFICACIÓN --- */}
-          {/* Panel de administración RESTAURADO */}
           {userProfile?.role === 'admin' && (
             <button
               onClick={() => setView('adminPanel')}
@@ -222,7 +211,6 @@ export default function SettingsScreen({
               </div>
             </button>
           )}
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           <div className="h-px bg-[--glass-border] my-1" />
 
