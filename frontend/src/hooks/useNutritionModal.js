@@ -248,45 +248,59 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     setShowScanner(false);
     const tempLoadingToastId = addToast('Buscando producto...', 'info', null);
     try {
-      const product = await nutritionService.searchByBarcode(barcode);
+      const productData = await nutritionService.searchByBarcode(barcode);
       addToast('Producto encontrado.', 'success', 3000, tempLoadingToastId);
 
       // --- INICIO DE LA MODIFICACIÓN ---
+      // Extraer datos del objeto anidado 'product' y 'nutriments'
+      const product = productData.product || {};
+      const nutriments = product.nutriments || {};
+      const productName = product.product_name || 'Producto escaneado';
+      const productImageUrl = product.image_url || null;
+
+      // Obtener valores por 100g (usando diferentes claves posibles de OpenFoodFacts)
+      const calories100g = nutriments['energy-kcal_100g'] || nutriments.energy_100g || 0;
+      const protein100g = nutriments.proteins_100g || 0;
+      const carbs100g = nutriments.carbohydrates_100g || 0;
+      const fat100g = nutriments.fat_100g || 0;
+
       // Calcular macros base por 1g
-      const baseCalPerG = (parseFloat(product.calories_per_100g) || 0) / 100;
-      const baseProtPerG = (parseFloat(product.protein_per_100g) || 0) / 100;
-      const baseCarbPerG = (parseFloat(product.carbs_per_100g) || 0) / 100;
-      const baseFatPerG = (parseFloat(product.fat_per_100g) || 0) / 100;
+      const baseCalPerG = calories100g / 100;
+      const baseProtPerG = protein100g / 100;
+      const baseCarbPerG = carbs100g / 100;
+      const baseFatPerG = fat100g / 100;
 
       // Valores iniciales basados en 100g
-      const initialWeightG = '100';
+      const initialWeightNum = 100;
       const initialFormData = {
-        description: product.name,
-        calories: String(Math.round(baseCalPerG * 100)),
-        protein_g: round(baseProtPerG * 100),
-        carbs_g: round(baseCarbPerG * 100),
-        fats_g: round(baseFatPerG * 100),
-        weight_g: initialWeightG,
-        image_url: product.image_url || null,
+        description: productName,
+        // Calcular directamente los valores para el peso inicial (100g)
+        calories: String(Math.round(baseCalPerG * initialWeightNum)),
+        protein_g: round(baseProtPerG * initialWeightNum),
+        carbs_g: round(baseCarbPerG * initialWeightNum),
+        fats_g: round(baseFatPerG * initialWeightNum),
+        weight_g: String(initialWeightNum), // Mantener como string para el input
+        image_url: productImageUrl,
+      };
+
+      // Guardar los valores por 100g directamente del producto
+      const per100Values = {
+        calories: String(calories100g),
+        protein_g: String(protein100g),
+        carbs_g: String(carbs100g),
+        fats_g: String(fat100g),
       };
 
       // Establecer el estado del formulario manual
       setManualFormState({
         formData: initialFormData,
-        // Almacenar los valores por 100g del producto escaneado
-        per100Data: {
-          calories: String(product.calories_per_100g || 0),
-          protein_g: String(product.protein_per_100g || 0),
-          carbs_g: String(product.carbs_per_100g || 0),
-          fats_g: String(product.fat_per_100g || 0),
-        },
-        per100Mode: true, // Mantener activado por defecto
+        per100Data: per100Values, // Usar los valores directos
+        per100Mode: false, // Legacy, irrelevante ahora
         isFavorite: false,
       });
 
-      // No necesitamos baseMacros aquí ya que usamos per100Data
-      setBaseMacros(null);
-      setOriginalData(initialFormData); // Guardar los datos originales
+      setBaseMacros(null); // Not needed in per100 mode
+      setOriginalData(initialFormData);
       setActiveTab('manual');
       setAddModeType('manual');
       setIsPer100g(true); // Activar el interruptor global
