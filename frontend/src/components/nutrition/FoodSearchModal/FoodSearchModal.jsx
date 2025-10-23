@@ -8,6 +8,7 @@ import Recent from './Recent';
 import FoodEntryForm from './FoodEntryForm';
 import BarcodeScanner from '../../BarcodeScanner';
 import { nutritionService } from '../../../services/nutritionService';
+import Spinner from '../../Spinner'; // Importar Spinner
 
 function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,10 +18,9 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('search'); // 'search', 'favorites', 'recent'
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [isPer100g, setIsPer100g] = useState(false); // Estado para controlar el interruptor
+  const [isPer100g, setIsPer100g] = useState(false);
 
   useEffect(() => {
-    // Reset state when modal opens
     if (isOpen) {
       resetModalState();
     }
@@ -34,7 +34,7 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
     setError(null);
     setActiveTab('search');
     setIsScannerOpen(false);
-    setIsPer100g(false); // Asegurarse de resetear al cerrar
+    setIsPer100g(false);
   };
 
   const handleSearch = async (term) => {
@@ -55,31 +55,23 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
     }
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Esta función ha sido reestructurada para manejar la nueva respuesta
-  // simplificada de la API del backend para escaneos.
   const handleSelectFood = (food) => {
     let preparedFood;
 
     // A. Si el item viene del ESCÁNER (backend API v2)
-    // La API ahora devuelve un objeto simple: { name, calories, protein_g, ... }
     if (food.origin === 'scan') {
       const description = food.name || 'Alimento Escaneado';
-      const weight_g = food.weight_g || 100; // El backend envía 100g
+      const weight_g = food.weight_g || 100;
 
       preparedFood = {
         ...food,
         description,
         name: description,
         image_url: food.image_url || null,
-
-        // Los datos del backend (food.calories, etc.) SON por 100g
         calories_per_100g: food.calories || 0,
         protein_per_100g: food.protein_g || 0,
         carbs_per_100g: food.carbs_g || 0,
         fat_per_100g: food.fats_g || 0,
-
-        // Usamos los datos de 100g como "ración" por defecto
         serving_size: food.serving_size || `${weight_g} g`,
         serving_weight_g: weight_g,
         calories_per_serving: food.calories || 0,
@@ -90,13 +82,11 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
     }
     // B. Si el item viene de BÚSQUEDA (FatSecret), FAVORITOS o RECIENTES
     else {
-      // Esta es la lógica de normalización anterior para otras fuentes
       const description =
-        food.name || // Favoritos, Manual
-        food.description || // Recientes
-        food.food_name || // Búsqueda (FatSecret)
+        food.name ||
+        food.description ||
+        food.food_name ||
         'Alimento';
-
       const image_url = food.image_url || null;
 
       preparedFood = {
@@ -104,88 +94,106 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
         description,
         name: description,
         image_url,
-
-        // Macros por 100g
         calories_per_100g:
           food.calories_per_100g ||
-          food.calories_per_serving || // Fallback
+          food.calories_per_serving ||
           food.calories ||
           0,
         protein_per_100g:
           food.protein_per_100g ||
-          food.protein_per_serving || // Fallback
+          food.protein_per_serving ||
           food.protein_g ||
           food.protein ||
           0,
         carbs_per_100g:
           food.carbs_per_100g ||
-          food.carbs_per_serving || // Fallback
+          food.carbs_per_serving ||
           food.carbs_g ||
           food.carbs ||
           0,
         fat_per_100g:
           food.fat_per_100g ||
-          food.fat_per_serving || // Fallback
+          food.fat_per_serving ||
           food.fats_g ||
           food.fat ||
           0,
-
-        // Macros por Ración
         serving_size: food.serving_size || '1 ración',
-        // Asumir 100g si no hay peso (importante para "Por 100g")
         serving_weight_g: food.serving_weight_g || 100,
-
         calories_per_serving:
           food.calories_per_serving ||
-          food.calories_per_100g || // Fallback
+          food.calories_per_100g ||
           food.calories ||
           0,
         protein_per_serving:
           food.protein_per_serving ||
-          food.protein_per_100g || // Fallback
+          food.protein_per_100g ||
           food.protein_g ||
           food.protein ||
           0,
         carbs_per_serving:
           food.carbs_per_serving ||
-          food.carbs_per_100g || // Fallback
+          food.carbs_per_100g ||
           food.carbs_g ||
           food.carbs ||
           0,
         fat_per_serving:
           food.fat_per_serving ||
-          food.fat_per_100g || // Fallback
+          food.fat_per_100g ||
           food.fats_g ||
           food.fat ||
           0,
       };
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     setSelectedItem(preparedFood);
     setIsScannerOpen(false); // Close scanner if open
   };
 
-  const handleScanSuccess = (foodData) => {
-    // Aseguramos que el item tenga el flag de origen 'scan'
-    // para que la nueva lógica en 'handleSelectFood' lo detecte.
-    const scannedFoodData = {
-      ...foodData,
-      origin: 'scan',
-    };
-    handleSelectFood(scannedFoodData);
-    setIsScannerOpen(false);
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Esta función ahora es 'async' y llama al servicio de nutrición
+  const handleScanSuccess = async (barcode) => {
+    setIsScannerOpen(false); // 1. Cerrar el escáner
+    setIsLoading(true); // 2. Mostrar estado de carga
+    setError(null);
+    setSelectedItem(null); // 3. Limpiar selección anterior
+
+    try {
+      // 4. LLAMAR A LA API con el código de barras
+      const foodData = await nutritionService.searchByBarcode(barcode);
+
+      // 5. Preparar los datos recibidos
+      const scannedFoodData = {
+        ...foodData,
+        origin: 'scan', // Añadir el flag 'scan'
+      };
+      
+      // 6. Cargar el formulario con los datos
+      handleSelectFood(scannedFoodData);
+
+    } catch (err) {
+      console.error('Error al buscar por código de barras:', err);
+      setError(
+        err.response?.data?.error ||
+          'Producto no encontrado o error de red.'
+      );
+      // Volver a la pestaña de búsqueda si falla
+      setSelectedItem(null);
+      setActiveTab('search');
+    } finally {
+      setIsLoading(false); // 7. Ocultar estado de carga
+    }
   };
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const handleAddFoodEntry = (entry) => {
     onAddFood(entry);
-    setSelectedItem(null); // Go back to search
-    setIsPer100g(false); // Desactivar "Por 100g" al añadir
+    setSelectedItem(null);
+    setIsPer100g(false);
   };
 
   const handleCancelEntry = () => {
     setSelectedItem(null);
-    setIsPer100g(false); // Desactivar "Por 100g" al cancelar
+    setIsPer100g(false);
   };
 
   const handleCloseModal = () => {
@@ -196,6 +204,7 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
   if (!isOpen) return null;
 
   const renderContent = () => {
+    // 1. Mostrar formulario si hay un item seleccionado
     if (selectedItem) {
       return (
         <FoodEntryForm
@@ -204,12 +213,13 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
           onCancel={handleCancelEntry}
           mealType={mealType}
           logDate={logDate}
-          isPer100g={isPer100g} // Pasar el estado
-          setIsPer100g={setIsPer100g} // Pasar el actualizador
+          isPer100g={isPer100g}
+          setIsPer100g={setIsPer100g}
         />
       );
     }
 
+    // 2. Mostrar escáner si está abierto
     if (isScannerOpen) {
       return (
         <BarcodeScanner
@@ -219,6 +229,19 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
       );
     }
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // 3. Mostrar Spinner si está cargando (después de escanear)
+    if (isLoading && !isScannerOpen && !selectedItem) {
+      return (
+        <div className="flex flex-col justify-center items-center h-[50vh]">
+          <Spinner />
+          <span className="mt-4 text-gray-300">Buscando producto...</span>
+        </div>
+      );
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // 4. Mostrar contenido principal (Búsqueda, Tabs)
     return (
       <>
         <div className="flex items-center mb-4">
@@ -226,7 +249,7 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             onSearch={handleSearch}
-            isLoading={isLoading}
+            isLoading={isLoading && activeTab === 'search'} // Solo mostrar spinner si la carga es de la búsqueda
           />
           <button
             onClick={() => setIsScannerOpen(true)}
@@ -256,7 +279,7 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
         </div>
 
         <div className="overflow-y-auto max-h-[60vh]">
-          {error && <p className="text-red-400 text-center">{error}</p>}
+          {error && <p className="text-red-400 text-center mb-4">{error}</p>}
 
           {activeTab === 'search' && (
             <SearchResults
@@ -265,16 +288,16 @@ function FoodSearchModal({ isOpen, onClose, onAddFood, mealType, logDate }) {
               isLoading={isLoading}
             />
           )}
-          {activeTab === 'favorites' && (
+          {activeToob === 'favorites' && (
             <Favorites
               onSelect={handleSelectFood}
-              logDate={logDate} // Pass logDate to fetch recents from that day if needed
+              logDate={logDate}
             />
           )}
           {activeTab === 'recent' && (
             <Recent
               onSelect={handleSelectFood}
-              logDate={logDate} // Pass logDate to fetch recents from that day
+              logDate={logDate}
             />
           )}
         </div>
