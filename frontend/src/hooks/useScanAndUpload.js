@@ -4,7 +4,6 @@ import { useToast } from './useToast';
 import * as nutritionService from '../services/nutritionService';
 import { round } from './useNutritionConstants';
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Helper para obtener valores numéricos de forma segura desde el objeto de nutrientes
 const getNutrientValue = (nutriments, keys, conversionFactor = 1) => {
     if (!nutriments) return 0;
@@ -18,7 +17,6 @@ const getNutrientValue = (nutriments, keys, conversionFactor = 1) => {
     }
     return 0; // Devuelve 0 si ninguna clave es válida
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 
 export const useScanAndUpload = ({
@@ -28,7 +26,7 @@ export const useScanAndUpload = ({
   setOriginalData,
   setActiveTab,
   setAddModeType,
-  setIsPer100g,
+  setIsPer100g, // Todavía recibimos esto para pasarlo al hook useManualForm a través del modal
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const { addToast } = useToast();
@@ -39,7 +37,6 @@ export const useScanAndUpload = ({
     try {
       const productData = await nutritionService.searchByBarcode(barcode);
 
-      // --- INICIO DE LA MODIFICACIÓN ---
       // Log para depuración
       console.log("Datos recibidos del escaneo:", productData);
 
@@ -53,57 +50,72 @@ export const useScanAndUpload = ({
       const calories100g = getNutrientValue(nutriments, ['energy-kcal_100g', 'energy_100g']) || getNutrientValue(nutriments, ['energy-kj_100g', 'energy_100g'], 1 / 4.184);
       const protein100g = getNutrientValue(nutriments, ['proteins_100g']);
       const carbs100g = getNutrientValue(nutriments, ['carbohydrates_100g']);
-      const fat100g = getNutrientValue(nutriments, ['fat_100g']);
+      const fat100g = getNutrientValue(nutriments, ['fat_100g', 'fats_100g']); // Añadida clave 'fats_100g' como fallback
 
       // Verificar si obtuvimos datos válidos
       if (calories100g === 0 && protein100g === 0 && carbs100g === 0 && fat100g === 0 && productName === 'Producto escaneado') {
           addToast('No se encontró información nutricional detallada para este producto.', 'error', 5000, tempLoadingToastId);
+          setActiveTab('manual'); // Ir a manual para que el usuario pueda introducir datos
+          setAddModeType('manual');
+          setManualFormState(initialManualFormState); // Resetear formulario manual por si acaso
+          setIsPer100g(false); // Asegurar que no esté activo el modo 100g
           return; // No continuar si no hay datos útiles
       }
       addToast('Producto encontrado.', 'success', 3000, tempLoadingToastId); // Reemplazar toast de carga
 
-      // Valores iniciales basados en 100g
-      const initialWeightNum = 100;
-      const initialFormData = {
-        description: productName,
-        calories: String(Math.round(calories100g)), // Usar directamente el valor por 100g
-        protein_g: round(protein100g),
-        carbs_g: round(carbs100g),
-        fats_g: round(fat100g),
-        weight_g: String(initialWeightNum),
-        image_url: productImageUrl,
+      // Preparar el objeto para pasarlo a useManualForm.
+      // Incluimos tanto los datos directos (que podrían ser por ración)
+      // como los datos _per_100g si los encontramos.
+      const scannedItemData = {
+          description: productName,
+          calories: getNutrientValue(nutriments, ['energy-kcal_serving', 'energy_serving']) || getNutrientValue(nutriments, ['energy-kj_serving'], 1 / 4.184) || calories100g, // Prioridad: por ración, luego 100g
+          protein_g: getNutrientValue(nutriments, ['proteins_serving']) || protein100g,
+          carbs_g: getNutrientValue(nutriments, ['carbohydrates_serving']) || carbs100g,
+          fats_g: getNutrientValue(nutriments, ['fat_serving', 'fats_serving']) || fat100g,
+          weight_g: parseFloat(product.serving_quantity) || 100, // Usar peso de ración si existe, sino 100g
+          image_url: productImageUrl,
+          // Añadir explícitamente los campos _per_100g para que useManualForm pueda detectarlos
+          calories_per_100g: calories100g,
+          protein_per_100g: protein100g,
+          carbs_per_100g: carbs100g,
+          fat_per_100g: fat100g, // Estandarizar a fat_per_100g
+          origin: 'scan', // Marcar origen
       };
 
-      // Guardar los valores por 100g directamente del producto
-      const per100Values = {
-        calories: String(round(calories100g, 0)),
-        protein_g: String(round(protein100g, 1)),
-        carbs_g: String(round(carbs100g, 1)),
-        fats_g: String(round(fat100g, 1)),
-      };
-      // --- FIN DE LA MODIFICACIÓN ---
 
-      // Establecer el estado del formulario manual
-      setManualFormState({
-        formData: initialFormData,
-        per100Data: per100Values,
-        per100Mode: true, // Se mantiene activo por defecto al escanear
-        isFavorite: false,
-      });
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Establecer el estado del formulario manual a través de setManualFormState
+      // Esto ahora desencadenará el useEffect dentro de useManualForm que decide si activar o no el modo 100g
+       setManualFormState({
+           // Pasamos los datos relevantes para que useManualForm los procese
+           itemToEdit: scannedItemData,
+           // El resto del estado lo manejará el useEffect de useManualForm
+           per100Data: initialManualFormState.per100Data,
+           per100Mode: false, // Dejamos que useManualForm decida
+           isFavorite: false,
+       });
 
-      setBaseMacros(null); // No usamos baseMacros al escanear
-      setOriginalData(initialFormData); // Guardar datos iniciales para referencia si se edita
+      setBaseMacros(null); // useManualForm gestionará esto
+      setOriginalData(scannedItemData); // Guardar datos originales recibidos
       setActiveTab('manual');
       setAddModeType('manual');
-      setIsPer100g(true); // Asegurar que el toggle esté activo
+      // ¡Ya NO forzamos setIsPer100g(true) aquí!
+      // --- FIN DE LA MODIFICACIÓN ---
+
 
     } catch (error) {
+       console.error("Error detallado en handleScanSuccess:", error); // Log más detallado
       addToast(
-        error.message || 'No se pudo encontrar el producto.',
+        error.message || 'No se pudo encontrar el producto o hubo un error de red.', // Mensaje más genérico
         'error',
         5000,
         tempLoadingToastId // Reemplazar toast de carga si existe
       );
+       // Asegurar que volvemos a un estado consistente si falla
+       setActiveTab('manual');
+       setAddModeType('manual');
+       setManualFormState(initialManualFormState);
+       setIsPer100g(false);
     }
   };
 
