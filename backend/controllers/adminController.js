@@ -6,10 +6,7 @@ const User = db.User;
 export const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Añadimos 'lastSeen' a los atributos seleccionados
       attributes: ['id', 'name', 'email', 'role', 'is_verified', 'username', 'profile_image_url', 'lastSeen'],
-      // --- FIN DE LA MODIFICACIÓN ---
       order: [['id', 'ASC']],
     });
     res.json(users);
@@ -22,11 +19,10 @@ export const getAllUsers = async (req, res, next) => {
 export const createUser = async (req, res, next) => {
   const { username, email, password, role, is_verified } = req.body;
   try {
-    // Validar que el username o email no existan ya
-    const existingUser = await User.findOne({ 
-      where: { 
+    const existingUser = await User.findOne({
+      where: {
         [db.Sequelize.Op.or]: [{ email }, { username }]
-      } 
+      }
     });
     if (existingUser) {
       if (existingUser.email === email) {
@@ -39,18 +35,13 @@ export const createUser = async (req, res, next) => {
 
     const newUser = await User.create({
       username,
-      name: username, // Rellenamos 'name' con 'username' por consistencia
+      name: username,
       email,
-      // --- INICIO DE LA MODIFICACIÓN (BUG DOBLE HASH) ---
-      // Pasamos la contraseña en texto plano al campo 'password_hash'.
-      // El hook 'beforeSave' del modelo se encargará de hashearla.
-      password_hash: password, 
-      // --- FIN DE LA MODIFICACIÓN ---
+      password_hash: password,
       role: role || 'user',
       is_verified: is_verified || false,
     });
 
-    // No enviamos la contraseña en la respuesta
     const userResponse = {
       id: newUser.id,
       username: newUser.username,
@@ -59,7 +50,7 @@ export const createUser = async (req, res, next) => {
       role: newUser.role,
       is_verified: newUser.is_verified,
       profile_image_url: newUser.profile_image_url,
-      lastSeen: newUser.lastSeen, // Incluimos lastSeen
+      lastSeen: newUser.lastSeen,
     };
 
     res.status(201).json(userResponse);
@@ -70,20 +61,25 @@ export const createUser = async (req, res, next) => {
 
 // Actualizar un usuario
 export const updateUser = async (req, res, next) => {
-  const { id } = req.params;
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const { userId } = req.params; // Cambiado de 'id' a 'userId'
+  // --- FIN DE LA MODIFICACIÓN ---
   const { username, email, role, is_verified, password } = req.body;
 
   try {
-    const user = await User.findByPk(id);
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const user = await User.findByPk(userId); // Cambiado de 'id' a 'userId'
+    // --- FIN DE LA MODIFICACIÓN ---
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Validar que el username o email no existan en OTRO usuario
     const existingUser = await User.findOne({
       where: {
         [db.Sequelize.Op.or]: [{ email }, { username }],
-        id: { [db.Sequelize.Op.ne]: id } // Excluimos al usuario actual
+        // --- INICIO DE LA MODIFICACIÓN ---
+        id: { [db.Sequelize.Op.ne]: userId } // Cambiado de 'id' a 'userId'
+        // --- FIN DE LA MODIFICACIÓN ---
       }
     });
     if (existingUser) {
@@ -95,31 +91,23 @@ export const updateUser = async (req, res, next) => {
       }
     }
 
-    // Construir objeto de actualización
     const updateData = {
       username,
       email,
       role,
       is_verified,
     };
-    
-    // --- INICIO DE LA MODIFICACIÓN (BUG DOBLE HASH) ---
-    // Si se proporciona una contraseña, se actualizará
-    // El hook 'beforeSave' en el modelo se encargará de hashearla
+
     if (password) {
-      // Pasamos la contraseña en texto plano al campo 'password_hash'.
       updateData.password_hash = password;
     }
-    // --- FIN DE LA MODIFICACIÓN ---
-    
-    // Rellenamos 'name' por consistencia si 'username' cambia
+
     if (username) {
       updateData.name = username;
     }
 
     await user.update(updateData);
 
-    // No enviamos la contraseña en la respuesta
     const userResponse = {
       id: user.id,
       username: user.username,
@@ -128,7 +116,7 @@ export const updateUser = async (req, res, next) => {
       role: user.role,
       is_verified: user.is_verified,
       profile_image_url: user.profile_image_url,
-      lastSeen: user.lastSeen, // Incluimos lastSeen
+      lastSeen: user.lastSeen,
     };
 
     res.json(userResponse);
@@ -139,10 +127,14 @@ export const updateUser = async (req, res, next) => {
 
 // Eliminar un usuario
 export const deleteUser = async (req, res, next) => {
-  const { id } = req.params;
+  // --- INICIO DE LA MODIFICACIÓN ---
+  const { userId } = req.params; // Cambiado de 'id' a 'userId'
+  // --- FIN DE LA MODIFICACIÓN ---
 
   try {
-    const user = await User.findByPk(id);
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const user = await User.findByPk(userId); // Cambiado de 'id' a 'userId'
+    // --- FIN DE LA MODIFICACIÓN ---
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
