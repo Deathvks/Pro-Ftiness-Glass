@@ -5,13 +5,24 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: '0.0.0.0', // CAMBIO: Escucha en todas las interfaces de red
+    port: 5173, // Puedes mantener el puerto por defecto o cambiarlo si es necesario
+
+    // --- Mantenemos el proxy ---
+    proxy: {
+      // Redirige peticiones de /api a tu backend
+      '/api': {
+        target: 'http://localhost:3001', // El proxy SÍ debe apuntar a localhost porque corre en la misma máquina que Vite
+        changeOrigin: true,
+      }
+    }
+    // --- Fin del proxy ---
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // --- INICIO DE LA CORRECCIÓN ---
-      // El plugin gestiona los iconos del manifest automáticamente.
-      // Aquí solo incluimos assets adicionales que queramos en el service worker, como el favicon.
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
         name: 'Pro Fitness Glass',
@@ -25,32 +36,26 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png', // Apuntamos al nuevo PNG
+            src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png', // Apuntamos al nuevo PNG
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png', // Apuntamos al nuevo PNG
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
           },
         ],
       },
-      // --- FIN DE LA CORRECCIÓN ---
     }),
   ],
-
-  // --- INICIO DE LA MODIFICACIÓN (Optimiz) ---
-  // Añadir esta sección para optimizar el build
   build: {
-    // Deshabilitar source maps para reducir el uso de memoria en el build
     sourcemap: false,
   },
-  // --- FIN DE LA MODIFICACIÓN ---
 });
