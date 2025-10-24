@@ -53,12 +53,10 @@ export default function App() {
     handleDeclineCookies,
   } = useAppStore();
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Ajustamos la lógica inicial de 'view'
   const [view, setView] = useState('dashboard'); // Default inicial seguro
   // Estado para saber si es la carga inicial post-autenticación
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const [previousView, setPreviousView] = useState(null);
   const mainContentRef = useRef(null);
@@ -140,6 +138,12 @@ export default function App() {
       const loadedUserProfile = useAppStore.getState().userProfile;
       const loadedActiveWorkout = useAppStore.getState().activeWorkout;
 
+      // Movemos la comprobación de cookies AQUÍ, antes de terminar la carga inicial
+      // para evitar el "parpadeo" del banner.
+      if (loadedUserProfile && loadedUserProfile.is_verified) {
+        await checkCookieConsent(loadedUserProfile.id);
+      }
+
       let targetView = 'dashboard'; // Por defecto, vamos al dashboard
 
       if (loadedActiveWorkout) {
@@ -167,7 +171,7 @@ export default function App() {
       setIsInitialLoad(false); // No hay carga inicial si no está autenticado
     }
 
-  }, [isAuthenticated, fetchInitialData]); // Dependencia clave: isAuthenticated
+  }, [isAuthenticated, fetchInitialData, checkCookieConsent]); // Añadir checkCookieConsent
   // --- FIN DE LA MODIFICACIÓN ---
 
 
@@ -202,16 +206,18 @@ export default function App() {
     document.body.classList.add(`accent-${accent}`);
   }, [accent]);
 
+  // --- INICIO DE LA MODIFICACIÓN ---
   useEffect(() => {
     if (isAuthenticated && userProfile) {
       if (!userProfile.is_verified) {
         setShowEmailVerificationModal(true);
         setVerificationEmail(userProfile.email);
-      } else if (!isInitialLoad) { // Solo comprobar cookie si no es la carga inicial (ya se hace ahí)
-        checkCookieConsent(userProfile.id);
       }
+      // La comprobación de cookies se movió al hook de carga inicial
+      // para evitar el "parpadeo" del banner.
     }
-  }, [isAuthenticated, userProfile, checkCookieConsent, isInitialLoad]); // Añadido isInitialLoad
+  }, [isAuthenticated, userProfile]); // Se eliminan checkCookieConsent e isInitialLoad
+  // --- FIN DE LA MODIFICACIÓN ---
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading && !isInitialLoad) { // Solo comprobar welcome si no es la carga inicial
@@ -251,12 +257,10 @@ export default function App() {
     setPreviousView(null);
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Mostramos 'Cargando...' mientras isInitialLoad es true Y isLoading es true
   if (isLoading && isInitialLoad) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
-  // --- FIN DE LA MODIFICACIÓN ---
 
 
   if (!isAuthenticated) {
@@ -321,12 +325,10 @@ export default function App() {
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
       case 'profile': return <Profile onCancel={() => navigate(previousView || 'settings')} />; // Volver a settings desde profile
       case 'adminPanel':
-        // --- INICIO DE LA MODIFICACIÓN ---
         // Asegurarse de que solo los admins puedan ver el panel
         return userProfile?.role === 'admin'
             ? <AdminPanel onCancel={() => navigate('settings')} />
             : <Dashboard setView={navigate} />; // Redirigir si no es admin
-        // --- FIN DE LA MODIFICACIÓN ---
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       default: return <Dashboard setView={navigate} />;
     }
@@ -387,10 +389,8 @@ export default function App() {
           <button
             key={item.id}
             onClick={() => {
-              // --- INICIO DE LA MODIFICACIÓN ---
               // No actualizamos previousView en la navegación móvil principal
               // setPreviousView(view);
-              // --- FIN DE LA MODIFICACIÓN ---
               navigate(item.id);
             }}
             className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
