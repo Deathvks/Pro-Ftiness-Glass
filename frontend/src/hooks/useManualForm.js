@@ -1,23 +1,24 @@
 /* frontend/src/hooks/useManualForm.js */
-// --- INICIO DE LA MODIFICACIÓN (ESLint Fix 1) ---
 import { useState, useEffect, useCallback } from 'react';
-// --- FIN DE LA MODIFICACIÓN ---
 import { initialManualFormState, round } from './useNutritionConstants'; // Importar constantes
 
 export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer100g }) => {
-  const [manualFormState, setManualFormState] = useState(initialManualFormState);
+  const [manualFormState, setManualFormState] = useState({
+    ...initialManualFormState,
+    originalDescription: null // Añadido para guardar la descripción original
+  });
   const [baseMacros, setBaseMacros] = useState(null); // Estado para macros base por gramo
   const [originalData, setOriginalData] = useState(null); // Datos originales al editar/escanear
 
-  // --- INICIO DE LA MODIFICACIÓN (ESLint Fix 2 - Mover definición) ---
-  // Función para resetear el estado del formulario
   const resetManualForm = useCallback(() => {
-    setManualFormState(initialManualFormState);
+    setManualFormState({
+        ...initialManualFormState,
+        originalDescription: null // Resetear también al limpiar
+    });
     setBaseMacros(null);
     setOriginalData(null);
     setIsPer100g(false); // Resetear modo por 100g también
   }, [setIsPer100g]);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // Efecto para inicializar/actualizar el formulario cuando 'itemToEdit' cambia
   useEffect(() => {
@@ -26,21 +27,20 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
       const weight = parseFloat(itemToEdit.weight_g);
       const hasPer100Data = itemToEdit.calories_per_100g != null; // Verificar si viene con datos /100g
 
-      // Determinar si activar el modo por 100g
       const shouldBePer100g = hasPer100Data && itemToEdit.origin !== 'manual';
       setIsPer100g(shouldBePer100g);
 
+      const originalDescription = itemToEdit.description || itemToEdit.name || '';
+
       let formData = {
-        description: itemToEdit.description || itemToEdit.name || '',
+        description: originalDescription, // Usar la descripción original aquí
         calories: round(itemToEdit.calories || 0, 0),
         protein_g: round(itemToEdit.protein_g || 0, 1),
         carbs_g: round(itemToEdit.carbs_g || 0, 1),
         fats_g: round(itemToEdit.fats_g || 0, 1),
         weight_g: round(itemToEdit.weight_g || (shouldBePer100g ? 100 : ''), 1), // Poner 100g por defecto si es /100g
         image_url: itemToEdit.image_url || null,
-        // --- INICIO DE LA MODIFICACIÓN (Micronutrientes) ---
         micronutrients: itemToEdit.micronutrients || null,
-        // --- FIN DE LA MODIFICACIÓN ---
       };
 
       let per100Data = initialManualFormState.per100Data;
@@ -49,9 +49,8 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
             calories: round(itemToEdit.calories_per_100g || 0, 0),
             protein_g: round(itemToEdit.protein_per_100g || 0, 1),
             carbs_g: round(itemToEdit.carbs_per_100g || 0, 1),
-            fats_g: round(itemToEdit.fat_per_100g || 0, 1), // Nota: puede ser 'fat' o 'fats'
+            fats_g: round(itemToEdit.fat_per_100g || 0, 1),
         };
-        // Si estamos en modo por 100g, recalcular macros iniciales según el peso
         if (shouldBePer100g) {
             const currentWeight = parseFloat(formData.weight_g) || 100;
             const factor = currentWeight / 100;
@@ -61,23 +60,21 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
                 protein_g: round(parseFloat(per100Data.protein_g) * factor, 1),
                 carbs_g: round(parseFloat(per100Data.carbs_g) * factor, 1),
                 fats_g: round(parseFloat(per100Data.fats_g) * factor, 1),
-                // --- INICIO DE LA MODIFICACIÓN (Micronutrientes) ---
-                micronutrients: itemToEdit.micronutrients || null, // Asegurar que se mantienen
-                // --- FIN DE LA MODIFICACIÓN ---
+                micronutrients: itemToEdit.micronutrients || null,
             }
         }
       }
 
-      const isFavorite = favoriteMeals?.some(fav => fav.name.toLowerCase() === (itemToEdit.description || itemToEdit.name || '').toLowerCase()) || false;
+      const isFavorite = favoriteMeals?.some(fav => fav.name.toLowerCase() === originalDescription.toLowerCase()) || false;
 
       setManualFormState({
         formData,
         per100Data,
-        per100Mode: shouldBePer100g, // Sincronizar estado local
+        per100Mode: shouldBePer100g,
         isFavorite,
+        originalDescription: originalDescription
       });
 
-      // Calcular baseMacros si hay peso inicial > 0
       if (weight > 0 && !hasPer100Data) { // Solo si no usamos /100g
         setBaseMacros({
           calories: (parseFloat(itemToEdit.calories) || 0) / weight,
@@ -90,12 +87,9 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
       }
 
     } else {
-      // Si no hay itemToEdit, resetear todo
       resetManualForm();
     }
-  // --- INICIO DE LA MODIFICACIÓN (ESLint Fix 2 - Añadir dependencia) ---
-  }, [itemToEdit, favoriteMeals, setIsPer100g, resetManualForm]); // Dependencia clave
-  // --- FIN DE LA MODIFICACIÓN ---
+  }, [itemToEdit, favoriteMeals, setIsPer100g, resetManualForm]);
 
   // Efecto para recalcular macros cuando cambia el peso Y NO estamos en modo por 100g
   useEffect(() => {
@@ -112,7 +106,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
               }
           }));
       }
-  }, [manualFormState.formData.weight_g, baseMacros, isPer100g]); // Añadida isPer100g
+  }, [manualFormState.formData.weight_g, baseMacros, isPer100g]);
 
   // Efecto para recalcular macros cuando cambia el peso Y SÍ estamos en modo por 100g
   useEffect(() => {
@@ -130,16 +124,12 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
         }
       }));
     }
-  }, [manualFormState.formData.weight_g, manualFormState.per100Data, isPer100g]); // Dependencias correctas
-
-  // --- INICIO DE LA MODIFICACIÓN (ESLint Fix 2 - Mover definición) ---
-  // (La definición de resetManualForm se movió al inicio del hook)
-  // --- FIN DE LA MODIFICACIÓN ---
+  }, [manualFormState.formData.weight_g, manualFormState.per100Data, isPer100g]);
 
   return {
     manualFormState,
     setManualFormState,
-    setBaseMacros, // Exponer si es necesario externamente
+    setBaseMacros,
     originalData,
     setOriginalData,
     resetManualForm,

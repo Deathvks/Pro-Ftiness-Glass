@@ -1,5 +1,5 @@
 /* frontend/src/components/nutrition/logModal/ManualEntryForm.jsx */
-import React, { useCallback, useRef, useMemo, useState, useEffect } from 'react'; // <--- Añadido useState, useEffect
+import React, { useCallback, useRef, useMemo } from 'react';
 import { Save, Plus, Star, Check, Camera, X } from 'lucide-react';
 import Spinner from '../../Spinner';
 import { useToast } from '../../../hooks/useToast';
@@ -121,16 +121,25 @@ const ManualEntryForm = ({
     const favoriteMeals = useAppStore(state => state.favoriteMeals);
     const { formData, per100Data, isFavorite } = formState;
 
-    const isAlreadyFavorite = useMemo(() => {
+    // --- INICIO DE LA MODIFICACIÓN: Estado para saber si el item *original* era favorito ---
+    // Usamos useMemo para calcular si el nombre original ya está en favoritos solo una vez
+    const isOriginallyFavorite = useMemo(() => {
+        // Si estamos editando un favorito, obviamente es favorito
         if (editingFavorite) return true;
+        // Si estamos editando un log o un item de la lista,
+        // comprobamos si el nombre *original* (antes de cualquier cambio en el form)
+        // ya existe en la lista de favoritos.
         if (isEditing || editingListItem) {
-            const currentName = formData.description?.trim().toLowerCase();
-            return currentName && favoriteMeals.some(fav => fav.name.toLowerCase() === currentName);
+            const originalName = (isEditing ? formState.originalDescription : editingListItem?.description)?.trim().toLowerCase();
+             // Añadimos console.log para depurar
+             // console.log("Checking original favorite status:", { originalName, favoriteNames: favoriteMeals.map(f => f.name.toLowerCase()) });
+            return originalName && favoriteMeals.some(fav => fav.name.toLowerCase() === originalName);
         }
+        // Si estamos añadiendo uno nuevo, no es originalmente favorito
         return false;
-    }, [isEditing, editingListItem, editingFavorite, formData.description, favoriteMeals]);
+    }, [isEditing, editingListItem, editingFavorite, formState.originalDescription, favoriteMeals]); // Dependencias: estados de edición y lista de favoritos
+    // --- FIN DE LA MODIFICACIÓN ---
 
-    const shouldShowFavoriteOption = !editingFavorite && !isAlreadyFavorite;
 
      const handleChange = (e) => {
         const { name, value } = e.target;
@@ -160,94 +169,89 @@ const ManualEntryForm = ({
         }
     };
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Mover la función round fuera del componente o usar useCallback si depende de props/state
     const round = useCallback((val, d = 1) => {
       const n = parseFloat(val);
       return isNaN(n)
         ? ''
         : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
-    }, []); // No dependencies needed
+    }, []);
 
-    // Calcular macros se hace aquí directamente
     const calculatedMacros = useMemo(() => {
       if (isPer100g) {
         const weight = parseFloat(formData.weight_g) || 0;
         const factor = weight / 100;
-        // Asegurarse de usar los valores correctos de per100Data
         return {
           calories: (parseFloat(per100Data.calories) || 0) * factor,
           protein_g: round((parseFloat(per100Data.protein_g) || 0) * factor),
           carbs_g: round((parseFloat(per100Data.carbs_g) || 0) * factor),
-          fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor), // Corregido: usar per100Data.fats_g
+          fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor),
         };
       } else {
-        // En modo manual normal, los valores calculados son los propios valores del formulario
         return {
           calories: parseFloat(formData.calories) || 0,
           protein_g: round(formData.protein_g),
           carbs_g: round(formData.carbs_g),
-          fats_g: round(formData.fats_g), // Corregido: usar formData.fats_g
+          fats_g: round(formData.fats_g),
         };
       }
-    }, [formData, per100Data, isPer100g, round]); // Dependencias correctas
-    // --- FIN DE LA MODIFICACIÓN ---
+    }, [formData, per100Data, isPer100g, round]);
 
     const validateAndGetData = useCallback(() => {
-        // Usar los macros calculados en lugar de formData directamente
         const finalData = {
-          description: formData.description,
+          description: formData.description?.trim() || '',
           calories: calculatedMacros.calories,
           protein_g: calculatedMacros.protein_g,
           carbs_g: calculatedMacros.carbs_g,
-          fats_g: calculatedMacros.fats_g, // Corregido: usar calculatedMacros.fats_g
-          weight_g: formData.weight_g, // El peso siempre viene de formData
+          fats_g: calculatedMacros.fats_g,
+          weight_g: formData.weight_g,
           image_url: formData.image_url,
         };
 
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Validación de campos obligatorios en modo por 100g
-        if (isPer100g) {
-             const weight = parseFloat(finalData.weight_g) || 0;
-             const cal100 = parseFloat(per100Data.calories); // Usamos per100Data aquí
+        const weight = parseFloat(finalData.weight_g) || 0;
+        const calories = parseFloat(finalData.calories) || 0;
 
-             // Gramos totales son obligatorios
-             if (weight <= 0) {
+        if (!finalData.description) {
+            addToast('La descripción es obligatoria.', 'error');
+            return null;
+        }
+
+        if (isPer100g) {
+             const cal100 = parseFloat(per100Data.calories);
+             if (isNaN(weight) || weight <= 0) {
                  addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
                  return null;
              }
-             // Calorías por 100g son obligatorias
-             if (isNaN(cal100) || cal100 < 0) { // Permitir 0 temporalmente si el usuario está editando
+             if (isNaN(cal100) || cal100 < 0) {
                  addToast('Las calorías por 100g son obligatorias.', 'error');
                  return null;
              }
-        }
-        // --- FIN DE LA MODIFICACIÓN ---
-
-        if (!finalData.description?.trim() || String(finalData.calories).trim() === '' || isNaN(parseFloat(finalData.calories))) {
-            addToast('La descripción y las calorías (calculadas) son obligatorias.', 'error');
-            return null;
+        } else {
+            if (isNaN(calories) || calories <= 0) {
+                 addToast('Las calorías deben ser mayores a 0.', 'error');
+                 return null;
+            }
+            if (finalData.weight_g !== null && finalData.weight_g !== undefined && finalData.weight_g !== '' && (isNaN(weight) || weight <= 0)) {
+                addToast('Los gramos totales, si se indican, deben ser mayores a 0.', 'error');
+                return null;
+            }
         }
 
         Object.keys(finalData).forEach(key => {
             if (key !== 'description' && key !== 'image_url') {
                  if (key === 'weight_g') {
-                    // Si weight_g está vacío o es 0, lo convertimos a null
-                    const weightVal = parseFloat(finalData[key]);
-                    finalData[key] = (!isNaN(weightVal) && weightVal > 0) ? weightVal : null;
+                    finalData[key] = (!isNaN(weight) && weight > 0) ? weight : null;
                  } else {
-                    // Para otros campos numéricos, 0 es válido y ya están calculados
-                    finalData[key] = parseFloat(finalData[key]) || 0;
+                    const numericValue = parseFloat(finalData[key]);
+                    finalData[key] = isNaN(numericValue) ? 0 : numericValue;
                  }
             }
         });
-        // Aseguramos que image_url sea null si está vacío
         if (!finalData.image_url) {
             finalData.image_url = null;
         }
 
         return finalData;
-    }, [formData, isPer100g, addToast, calculatedMacros, per100Data]); // Añadir per100Data
+    }, [formData, isPer100g, addToast, calculatedMacros, per100Data]);
 
     const handleAddToList = () => {
         const finalData = validateAndGetData();
@@ -257,23 +261,24 @@ const ManualEntryForm = ({
             name: finalData.description,
             isFavorite,
             image_url: finalData.image_url,
-            // Guardar los valores base por 100g si estamos en ese modo
             calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
             protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
             carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
-            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null, // Corregido: fat_per_100g
+            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
         });
     };
 
     const handleSaveEdited = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        onSaveEdit(finalData);
+        // Pasamos el estado actual de isFavorite al guardar
+        onSaveEdit({ ...finalData, isFavorite });
     };
 
     const handleUpdateListItem = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
+        // Pasamos el estado actual de isFavorite al guardar
         onSaveListItem({ ...editingListItem, ...finalData, name: finalData.description, isFavorite, image_url: finalData.image_url });
     };
 
@@ -283,13 +288,12 @@ const ManualEntryForm = ({
         const dataToSave = {
             ...finalData,
             name: finalData.description,
-            saveAsFavorite: isFavorite,
+            saveAsFavorite: isFavorite, // Usamos el estado actual de isFavorite
             image_url: formData.image_url,
-            // Guardar los valores base por 100g si estamos en ese modo
             calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
             protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
             carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
-            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null, // Corregido: fat_per_100g
+            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
         };
         onSaveSingle([dataToSave]);
     };
@@ -312,8 +316,6 @@ const ManualEntryForm = ({
                 isUploading={isUploading}
             />
 
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* El toggle se muestra siempre que NO estemos editando un favorito */}
             {!editingFavorite && (
                 <div className="flex items-center justify-between">
                     <label className="text-sm font-medium text-text-secondary">Valores por 100g</label>
@@ -324,7 +326,6 @@ const ManualEntryForm = ({
                     </label>
                 </div>
             )}
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             {isPer100g ? (
                 <>
@@ -367,7 +368,10 @@ const ManualEntryForm = ({
                 </>
             )}
 
-            {shouldShowFavoriteOption && (
+            {/* --- INICIO DE LA MODIFICACIÓN: Condición de visibilidad cambiada --- */}
+            {/* Mostrar siempre el botón si NO estamos editando DESDE la lista de favoritos */}
+            {!editingFavorite && (
+            // --- FIN DE LA MODIFICACIÓN ---
                 <button
                     type="button"
                     onClick={handleFavoriteChange}
@@ -379,9 +383,12 @@ const ManualEntryForm = ({
                 >
                     <Star
                         size={18}
-                        className={`transition-all ${isFavorite ? 'fill-accent' : ''}`}
+                        className={`transition-all ${isFavorite ? 'fill-accent' : ''}`} // El estado visual depende de `isFavorite` del `formState`
                     />
-                    Guardar esta comida en favoritos
+                    {/* --- INICIO DE LA MODIFICACIÓN: Texto dinámico --- */}
+                    {/* Cambia el texto según si el item original ya era favorito */}
+                    {isOriginallyFavorite ? 'Actualizar favorito' : 'Guardar en favoritos'}
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                 </button>
             )}
 

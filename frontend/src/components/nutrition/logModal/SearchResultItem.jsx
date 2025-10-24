@@ -1,13 +1,9 @@
 /* frontend/src/components/nutrition/logModal/SearchResultItem.jsx */
-// --- INICIO DE LA MODIFICACIÓN ---
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit, Microscope } from 'lucide-react';
-// Importar 'round' y usarlo con el alias 'formatNumber'
 import { round as formatNumber } from '../../../hooks/useNutritionConstants';
-// --- FIN DE LA MODIFICACIÓN ---
 
 const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
-    // --- INICIO DE LA MODIFICACIÓN ---
     const [showMicros, setShowMicros] = useState(false);
 
     const micronutrients = item.micronutrients;
@@ -30,14 +26,12 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
             if (micro.key === 'sodium_100g' && unit === 'g') unit = 'mg';
             
             return (value && parseFloat(value) > 0) 
-                // Usamos formatNumber (que es 'round')
                 ? `${micro.name}: ${formatNumber(value, 2)} ${unit}` 
                 : null;
         })
         .filter(Boolean) : [];
 
     const hasMicros = availableMicros.length > 0;
-    // --- FIN DE LA MODIFICACIÓN ---
 
     return (
         <div
@@ -50,18 +44,14 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
         >
 
             {/* Detalles de la comida */}
+            {/* --- INICIO DE LA MODIFICACIÓN (onClick eliminado) --- */}
             <div 
                 className="min-w-0 pr-2 flex-1"
-                onClick={(e) => {
-                    // Permitir que el clic aquí también añada el item
-                    if (e.target.closest('button')) return;
-                    onAdd(item);
-                }}
             >
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <p className="font-semibold truncate text-text-primary">{item.name || item.description}</p>
                 <p className="text-xs text-text-muted">
                     {Math.round(item.calories)} kcal
-                    {/* Usamos formatNumber (que es 'round') */}
                     {item.weight_g ? ` (${formatNumber(item.weight_g, 1)}g)` : ''}
                 </p>
             </div>
@@ -69,7 +59,6 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
             {/* Botones de acción */}
             <div className="flex items-center flex-shrink-0 ml-auto z-10">
 
-                {/* --- INICIO DE LA MODIFICACIÓN --- */}
                 {/* Botón para mostrar micros */}
                 {hasMicros && (
                     <button
@@ -84,7 +73,6 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                         <Microscope size={16} />
                     </button>
                 )}
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
 
                 {/* Botón de editar (si aplica) */}
                 {onEdit && (
@@ -127,7 +115,6 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                 </button>
             </div>
 
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
             {/* Contenedor para mostrar micronutrientes */}
             {hasMicros && showMicros && (
                 <div 
@@ -142,7 +129,6 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                     </div>
                 </div>
             )}
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
         </div>
     );
 }

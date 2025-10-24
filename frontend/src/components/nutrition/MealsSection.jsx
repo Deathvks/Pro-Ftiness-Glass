@@ -1,15 +1,16 @@
 /* frontend/src/components/nutrition/MealsSection.jsx */
-// --- INICIO DE LA MODIFICACIÓN ---
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Microscope } from 'lucide-react'; // Importar Microscope
-// --- FIN DE LA MODIFICACIÓN ---
+import { Plus, Edit, Trash2, Microscope } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import NutritionLogModal from '../NutritionLogModal';
 import ConfirmationModal from '../ConfirmationModal';
 import useAppStore from '../../store/useAppStore';
 import { useToast } from '../../hooks/useToast';
-import { deleteNutritionLog } from '../../services/nutritionService';
-import { formatNumber } from '../../utils/helpers';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importar servicios de nutrición y 'round'
+import { deleteNutritionLog, addNutritionLog, updateNutritionLog } from '../../services/nutritionService';
+import { round as formatNumber } from '../../hooks/useNutritionConstants';
+// --- FIN DE LA MODIFICACIÓN ---
 import Spinner from '../Spinner';
 
 // Icono para mostrar si la comida es favorita
@@ -18,9 +19,7 @@ const FavoriteIcon = () => (
 );
 
 const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
-    // --- INICIO DE LA MODIFICACIÓN ---
     const [showMicros, setShowMicros] = useState(false);
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // Buscar si el log tiene un favorito coincidente (por nombre)
     const isFavorite = favorites.some(fav => fav.name === log.description);
@@ -28,7 +27,6 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
     // Función para obtener la URL de la imagen
     const imageUrl = log.image_url; 
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     const micronutrients = log.micronutrients;
     
     // Lista simplificada de micronutrientes a mostrar
@@ -45,29 +43,22 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
     const availableMicros = micronutrients ? simpleMicrosList
         .map(micro => {
             const value = micronutrients[micro.key];
-            // Asumir 'g' si no hay unidad, excepto para sodio (mg) o vitaminas (UI/mg/mcg)
             let unit = micronutrients[micro.key.replace('_100g', '_unit')] || 'g';
-            if (micro.key === 'sodium_100g' && unit === 'g') unit = 'mg'; // Común que el sodio esté en mg
+            if (micro.key === 'sodium_100g' && unit === 'g') unit = 'mg';
             
             return (value && parseFloat(value) > 0) 
                 ? `${micro.name}: ${formatNumber(value, 2)} ${unit}` 
                 : null;
         })
-        .filter(Boolean) : []; // Filtrar nulos
+        .filter(Boolean) : [];
 
     const hasMicros = availableMicros.length > 0;
-    // --- FIN DE LA MODIFICACIÓN ---
 
 
     return (
-        // --- INICIO DE LA MODIFICACIÓN (Añadir 'flex-wrap' y 'w-full') ---
         <div className="flex justify-between items-center py-2 px-3 hover:bg-bg-secondary rounded-lg transition-colors group flex-wrap w-full">
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
             
-            {/* --- INICIO DE LA MODIFICACIÓN (Añadir 'flex-1') --- */}
             <div className="flex items-center space-x-3 min-w-0 flex-1">
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
-                {/* 1. Mostrar la imagen si existe */}
                 {imageUrl && (
                     <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-glass-border">
                         <img 
@@ -90,15 +81,11 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
                 </div>
             </div>
             
-            {/* --- INICIO DE LA MODIFICACIÓN (Añadir 'ml-auto') --- */}
             <div className="flex items-center space-x-2 ml-auto">
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <span className="text-text-secondary text-sm hidden sm:block">
                     {formatNumber(log.protein_g, 1)}P / {formatNumber(log.carbs_g, 1)}C / {formatNumber(log.fats_g, 1)}F
                 </span>
                 
-                {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                {/* Botón para mostrar micros */}
                 {hasMicros && (
                     <button
                         onClick={() => setShowMicros(s => !s)}
@@ -108,7 +95,6 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
                         <Microscope size={16} />
                     </button>
                 )}
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
 
                 <button
                     onClick={() => onEdit(log, mealType)}
@@ -126,8 +112,6 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
                 </button>
             </div>
 
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* Contenedor para mostrar micronutrientes */}
             {hasMicros && showMicros && (
                 <div className="w-full mt-2 p-2 bg-bg-primary rounded-md border border-glass-border">
                     <h5 className="text-xs font-bold text-text-primary mb-1">Micronutrientes (por 100g):</h5>
@@ -138,7 +122,6 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
                     </div>
                 </div>
             )}
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
         </div>
     );
 };
@@ -170,10 +153,8 @@ const MealsSection = ({ title, mealType, logs, todayLogs, fetchNutritionLogs, se
         if (!logToDelete) return;
         setIsDeleting(true);
         try {
-            // --- INICIO DE LA MODIFICACIÓN (Corregido: 'message' no existe en la respuesta de delete) ---
             await deleteNutritionLog(logToDelete.logId);
             addToast("Comida eliminada con éxito.", 'success');
-            // --- FIN DE LA MODIFICACIÓN ---
             await fetchNutritionLogs(selectedDate);
             setLogToDelete(null);
         } catch (error) {
@@ -183,22 +164,50 @@ const MealsSection = ({ title, mealType, logs, todayLogs, fetchNutritionLogs, se
         }
     };
     
+    // --- INICIO DE LA MODIFICACIÓN (Añadir lógica de guardado) ---
     const handleSaveLog = async (newLogs, isEdit = false) => {
         handleCloseModal();
-        if (newLogs.length === 0 && !isEdit) return; // Permitir que la edición (incluso sin cambios) recargue
+        if (newLogs.length === 0) return; // Salir si no hay nada que guardar
 
         try {
+            if (isEdit) {
+                // Lógica de EDICIÓN
+                const log = newLogs[0];
+                // 'log' ya tiene 'id' si es una edición (viene de logToEdit)
+                // 'log' tiene los datos actualizados del formulario
+                await updateNutritionLog(log.id, log);
+            } else {
+                // Lógica de ADICIÓN (para uno o varios items)
+                // Los hooks de favoritos ya se ejecutaron ANTES de llamar a esto.
+                // Ahora guardamos los logs de nutrición.
+                await Promise.all(
+                    newLogs.map(log => {
+                        // Asegurarnos de que los logs tienen fecha y tipo
+                        const logData = {
+                            ...log,
+                            log_date: selectedDate,
+                            meal_type: mealType,
+                        };
+                        return addNutritionLog(logData);
+                    })
+                );
+            }
+            
+            // Refrescar los datos de la UI
             await fetchNutritionLogs(selectedDate);
             
+            // Mostrar toast de éxito
             if (isEdit) {
-                addToast('Comida actualizada con éxito.', 'success');
+                 addToast('Comida actualizada con éxito.', 'success');
             } else {
-                 addToast(`Comida${newLogs.length > 1 ? 's' : ''} registrada(s) con éxito.`, 'success');
+                addToast(`Comida${newLogs.length > 1 ? 's' : ''} registrada(s) con éxito.`, 'success');
             }
+
         } catch (error) {
             addToast(error.message || 'Error al guardar el registro de nutrición.', 'error');
         }
     };
+    // --- FIN DE LA MODIFICACIÓN ---
     
     // Suma de macros para la sección
     const sectionSummary = logs.reduce((acc, log) => {

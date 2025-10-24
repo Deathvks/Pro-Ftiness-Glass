@@ -1,4 +1,5 @@
 /* frontend/src/hooks/useSaveActions.js */
+import { useMemo } from 'react'; // <--- CORRECCIÓN: Se añade useMemo
 import { useToast } from './useToast';
 import useAppStore from '../store/useAppStore';
 
@@ -21,11 +22,23 @@ export const useSaveActions = ({
     favoriteMeals,
     addFavoriteMeal,
     updateFavoriteMeal,
+    deleteFavoriteMeal,
   } = useAppStore((state) => ({
     favoriteMeals: state.favoriteMeals,
     addFavoriteMeal: state.addFavoriteMeal,
     updateFavoriteMeal: state.updateFavoriteMeal,
+    deleteFavoriteMeal: state.deleteFavoriteMeal,
   }));
+
+  // Memoizamos si el item *original* era favorito
+  const isOriginallyFavorite = useMemo(() => {
+    if (editingFavorite) return true;
+    if (originalData) {
+        const originalName = (originalData.description || originalData.name)?.trim().toLowerCase();
+        return originalName && favoriteMeals.some(fav => fav.name.toLowerCase() === originalName);
+    }
+    return false;
+  }, [originalData, editingFavorite, favoriteMeals]);
 
   const handleSaveList = async () => {
     if (itemsToAdd.length === 0)
@@ -43,9 +56,7 @@ export const useSaveActions = ({
               fats_g: fav.fats_g,
               weight_g: fav.weight_g,
               image_url: fav.image_url || null,
-              // --- INICIO DE LA MODIFICACIÓN ---
               micronutrients: fav.micronutrients || null,
-              // --- FIN DE LA MODIFICACIÓN ---
             })
           )
         );
@@ -64,7 +75,7 @@ export const useSaveActions = ({
     const item = itemData[0];
     if (item.saveAsFavorite) {
       try {
-        await addFavoriteMeal({
+        const favData = {
           name: item.description,
           calories: item.calories,
           protein_g: item.protein_g,
@@ -72,10 +83,13 @@ export const useSaveActions = ({
           fats_g: item.fats_g,
           weight_g: item.weight_g,
           image_url: item.image_url || null,
-          // --- INICIO DE LA MODIFICACIÓN ---
           micronutrients: item.micronutrients || null,
-          // --- FIN DE LA MODIFICACIÓN ---
-        });
+          calories_per_100g: item.calories_per_100g,
+          protein_per_100g: item.protein_per_100g,
+          carbs_per_100g: item.carbs_per_100g,
+          fat_per_100g: item.fat_per_100g,
+        };
+        await addFavoriteMeal(favData);
         addToast(`'${item.description}' guardado en favoritos.`, 'success');
       } catch (error) {
         addToast(error.message || 'Error al guardar en favoritos.', 'error');
@@ -87,13 +101,14 @@ export const useSaveActions = ({
   };
 
   const handleSaveEdit = async (formData) => {
+    let hasDataChanged = false;
+    let hasFavoriteStatusChanged = false;
+
+    // 1. Comprobar si los datos del formulario han cambiado respecto a los originales
     if (originalData && (isEditingLog || editingFavorite)) {
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Comparamos JSON stringify para micronutrientes
       const originalMicros = JSON.stringify(originalData.micronutrients || null);
       const newMicros = JSON.stringify(formData.micronutrients || null);
-
-      const hasChanged =
+      hasDataChanged =
         originalData.description !== formData.description ||
         (parseFloat(originalData.calories) || 0) !== formData.calories ||
         (parseFloat(originalData.protein_g) || 0) !== formData.protein_g ||
@@ -101,10 +116,14 @@ export const useSaveActions = ({
         (parseFloat(originalData.fats_g) || 0) !== formData.fats_g ||
         (parseFloat(originalData.weight_g) || null) !== formData.weight_g ||
         originalData.image_url !== formData.image_url ||
-        originalMicros !== newMicros; // Comparamos micros
-      // --- FIN DE LA MODIFICACIÓN ---
+        originalMicros !== newMicros;
+    }
 
-      if (!hasChanged && !manualFormState.isFavorite) {
+    // 2. Comprobar si el estado de favorito ha cambiado
+    hasFavoriteStatusChanged = manualFormState.isFavorite !== isOriginallyFavorite;
+
+    // 3. Salir si no ha cambiado nada
+    if (!hasDataChanged && !hasFavoriteStatusChanged) {
         addToast('No se detectaron cambios.', 'info');
         if (editingFavorite) {
           setEditingFavorite(null);
@@ -115,64 +134,90 @@ export const useSaveActions = ({
         }
         resetManualForm();
         return;
-      }
     }
 
-    if (editingFavorite) {
-      const dataToUpdate = {
-        ...editingFavorite,
-        ...formData,
-        name: formData.description,
-        image_url: formData.image_url,
-        // --- INICIO DE LA MODIFICACIÓN ---
-        micronutrients: formData.micronutrients,
-        // --- FIN DE LA MODIFICACIÓN ---
-      };
-      const result = await updateFavoriteMeal(editingFavorite.id, dataToUpdate);
-      if (result.success) {
-        addToast(result.message, 'success');
-        setEditingFavorite(null);
-        resetManualForm();
-        setActiveTab('favorites');
-      } else {
-        addToast(result.message, 'error');
-      }
-    } else if (isEditingLog) {
-      if (manualFormState.isFavorite) {
+    let favoriteOperationSuccess = true;
+
+    // 4. Gestionar el estado de favorito
+    if (hasFavoriteStatusChanged || (editingFavorite && hasDataChanged)) {
         const favData = {
-          name: formData.description,
-          calories: formData.calories,
-          protein_g: formData.protein_g,
-          carbs_g: formData.carbs_g,
-          fats_g: formData.fats_g,
-          weight_g: formData.weight_g,
-          image_url: formData.image_url || null,
-          // --- INICIO DE LA MODIFICACIÓN ---
-          micronutrients: formData.micronutrients || null,
-          // --- FIN DE LA MODIFICACIÓN ---
+            name: formData.description,
+            calories: formData.calories,
+            protein_g: formData.protein_g,
+            carbs_g: formData.carbs_g,
+            fats_g: formData.fats_g,
+            weight_g: formData.weight_g,
+            image_url: formData.image_url || null,
+            micronutrients: formData.micronutrients || null,
+            calories_per_100g: originalData?.calories_per_100g,
+            protein_per_100g: originalData?.protein_per_100g,
+            carbs_per_100g: originalData?.carbs_per_100g,
+            fat_per_100g: originalData?.fat_per_100g,
         };
-        const existingFavorite = favoriteMeals.find(
-          (fav) => fav.name.toLowerCase() === formData.description.toLowerCase()
+
+        const existingFavoriteByName = favoriteMeals.find(
+            (fav) => fav.name.toLowerCase() === formData.description.toLowerCase()
         );
+
         try {
-          if (existingFavorite) {
-            await updateFavoriteMeal(existingFavorite.id, favData);
-            addToast(
-              `'${formData.description}' (favorito) actualizado.`,
-              'success'
-            );
-          } else {
-            await addFavoriteMeal(favData);
-            addToast(`'${formData.description}' guardado en favoritos.`, 'success');
-          }
+            if (manualFormState.isFavorite) {
+                if (existingFavoriteByName) {
+                    const result = await updateFavoriteMeal(existingFavoriteByName.id, { ...existingFavoriteByName, ...favData });
+                    if (result.success) {
+                        addToast(`Favorito '${formData.description}' actualizado.`, 'success');
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } else {
+                    const result = await addFavoriteMeal(favData);
+                    if (result.success) {
+                        addToast(`'${formData.description}' guardado en favoritos.`, 'success');
+                    } else {
+                        throw new Error(result.message);
+                    }
+                }
+            } else if (!manualFormState.isFavorite && isOriginallyFavorite) {
+                const favoriteToDeleteId = editingFavorite?.id || favoriteMeals.find(fav => fav.name.toLowerCase() === (originalData?.description || originalData?.name)?.trim().toLowerCase())?.id;
+
+                if (favoriteToDeleteId) {
+                    const result = await deleteFavoriteMeal(favoriteToDeleteId);
+                    if (result.success) {
+                        addToast(`'${originalData?.description || originalData?.name}' eliminado de favoritos.`, 'info');
+                    } else {
+                        throw new Error(result.message);
+                    }
+                }
+            }
         } catch (error) {
-          addToast(error.message || 'Error al guardar en favoritos.', 'error');
+            addToast(error.message || 'Error al gestionar el favorito.', 'error');
+            favoriteOperationSuccess = false;
         }
-      }
-      onSave([{ ...logToEdit, ...formData }], true);
-      resetManualForm();
+    }
+
+
+    // 5. Lógica para editar favorito directamente
+    if (editingFavorite) {
+        if (favoriteOperationSuccess) {
+            setEditingFavorite(null);
+            resetManualForm();
+            setActiveTab('favorites');
+        }
+        return;
+    }
+
+
+    // 6. Lógica para actualizar el log de nutrición
+    if (isEditingLog && (hasDataChanged || (hasFavoriteStatusChanged && favoriteOperationSuccess))) {
+        onSave([{ ...logToEdit, ...formData }], true);
+    } else if (isEditingLog && hasFavoriteStatusChanged && !favoriteOperationSuccess) {
+         addToast("El log no se actualizó debido a un error al gestionar el favorito.", "warning");
+    }
+
+    if (!isEditingLog && favoriteOperationSuccess) {
+        resetManualForm();
     }
   };
+
 
   return {
     handleSaveList,
