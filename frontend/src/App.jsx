@@ -53,11 +53,8 @@ export default function App() {
     handleDeclineCookies,
   } = useAppStore();
 
-  // Ajustamos la lógica inicial de 'view'
   const [view, setView] = useState('dashboard'); // Default inicial seguro
-  // Estado para saber si es la carga inicial post-autenticación
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-
   const [previousView, setPreviousView] = useState(null);
   const mainContentRef = useRef(null);
 
@@ -128,7 +125,6 @@ export default function App() {
       setAccentState(newAccent);
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Hook para cargar datos iniciales y establecer la vista correcta
   useEffect(() => {
     const loadInitialDataAndSetView = async () => {
@@ -138,11 +134,12 @@ export default function App() {
       const loadedUserProfile = useAppStore.getState().userProfile;
       const loadedActiveWorkout = useAppStore.getState().activeWorkout;
 
-      // Movemos la comprobación de cookies AQUÍ, antes de terminar la carga inicial
-      // para evitar el "parpadeo" del banner.
-      if (loadedUserProfile && loadedUserProfile.is_verified) {
-        await checkCookieConsent(loadedUserProfile.id);
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Comprobar consentimiento AHORA que userProfile está cargado
+      if (loadedUserProfile?.id) {
+          checkCookieConsent(loadedUserProfile.id);
       }
+      // --- FIN DE LA MODIFICACIÓN ---
 
       let targetView = 'dashboard'; // Por defecto, vamos al dashboard
 
@@ -171,7 +168,7 @@ export default function App() {
       setIsInitialLoad(false); // No hay carga inicial si no está autenticado
     }
 
-  }, [isAuthenticated, fetchInitialData, checkCookieConsent]); // Añadir checkCookieConsent
+  }, [isAuthenticated, fetchInitialData, checkCookieConsent]); // <-- Añadido checkCookieConsent a las dependencias
   // --- FIN DE LA MODIFICACIÓN ---
 
 
@@ -207,23 +204,24 @@ export default function App() {
   }, [accent]);
 
   // --- INICIO DE LA MODIFICACIÓN ---
+  // Simplificamos este useEffect: solo maneja la verificación de email y el modal de bienvenida
   useEffect(() => {
-    if (isAuthenticated && userProfile) {
+    if (isAuthenticated && userProfile && !isLoading) { // Quitamos isInitialLoad de aquí
       if (!userProfile.is_verified) {
         setShowEmailVerificationModal(true);
         setVerificationEmail(userProfile.email);
       }
-      // La comprobación de cookies se movió al hook de carga inicial
-      // para evitar el "parpadeo" del banner.
+      // La comprobación de cookieConsent ahora se hace en el useEffect de carga inicial
+      // if (cookieConsent === null) { checkCookieConsent(userProfile.id); }
+
+      // Solo comprobar welcome si no es la carga inicial (para evitar mostrarlo junto al onboarding)
+      if (!isInitialLoad) {
+          checkWelcomeModal();
+      }
     }
-  }, [isAuthenticated, userProfile]); // Se eliminan checkCookieConsent e isInitialLoad
+  }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal, isInitialLoad]); // Mantenemos isInitialLoad para checkWelcomeModal
   // --- FIN DE LA MODIFICACIÓN ---
 
-  useEffect(() => {
-    if (isAuthenticated && userProfile && !isLoading && !isInitialLoad) { // Solo comprobar welcome si no es la carga inicial
-      checkWelcomeModal();
-    }
-  }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal, isInitialLoad]); // Añadido isInitialLoad
 
   const handleLogoutClick = () => {
     setShowLogoutConfirm(true);
@@ -244,7 +242,7 @@ export default function App() {
     if (options.forceTab) {
       localStorage.setItem('routinesForceTab', options.forceTab);
     }
-  }, [view, isInitialLoad]); // Añadido isInitialLoad
+  }, [view, isInitialLoad]);
 
 
   const handleShowPolicy = () => {
@@ -390,7 +388,6 @@ export default function App() {
             key={item.id}
             onClick={() => {
               // No actualizamos previousView en la navegación móvil principal
-              // setPreviousView(view);
               navigate(item.id);
             }}
             className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
@@ -406,7 +403,10 @@ export default function App() {
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
 
-      {cookieConsent === null && (
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Añadimos !isInitialLoad para evitar mostrar el banner durante la carga inicial */}
+      {cookieConsent === null && !isInitialLoad && (
+      // --- FIN DE LA MODIFICACIÓN ---
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
           onDecline={handleDeclineCookies}

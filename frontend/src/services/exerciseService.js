@@ -1,3 +1,4 @@
+/* frontend/src/services/exerciseService.js */
 import apiClient from './apiClient';
 
 /**
@@ -6,8 +7,6 @@ import apiClient from './apiClient';
  * @param {string} muscleGroup - El grupo muscular por el que filtrar.
  */
 export const searchExercises = (query, muscleGroup) => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Construye los parámetros de la URL de forma dinámica
     const params = new URLSearchParams();
     if (query) {
         params.append('search', query);
@@ -15,7 +14,9 @@ export const searchExercises = (query, muscleGroup) => {
     if (muscleGroup && muscleGroup !== 'Todos') {
         params.append('muscle_group', muscleGroup);
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    return apiClient(`/exercises?${params.toString()}`);
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Cambiamos el endpoint de '/exercises' a '/exercise-list/exercises'
+    return apiClient(`/exercise-list/exercises?${params.toString()}`);
+    // --- FIN DE LA CORRECCIÓN ---
 };

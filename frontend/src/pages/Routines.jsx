@@ -1,10 +1,8 @@
+/* frontend/src/pages/Routines.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Plus, Edit, Trash2, Play, CheckCircle, Link2,
   Search, CalendarClock, Dumbbell, BookCopy, Compass,
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // User eliminado
-  // --- FIN DE LA MODIFICACIÓN ---
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -18,15 +16,12 @@ import TemplateRoutines from './TemplateRoutines'; // Importamos el nuevo compon
 
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
-  // --- INICIO DE LA MODIFICACIÓN ---
   const { routines, workoutLog, fetchInitialData, startWorkout } = useAppStore(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
     startWorkout: state.startWorkout,
-    // userProfile eliminado
   }));
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -132,9 +127,10 @@ const Routines = ({ setView }) => {
       const copy = {
         name: `${routine.name} (Copia)`,
         description: routine.description,
-        exercises: (routine.RoutineExercises || []).map(
-          ({ id, routine_id, ...ex }) => ex
-        )
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Se eliminan 'id' y 'routine_id' de la desestructuración
+        exercises: (routine.RoutineExercises || []).map(({ ...ex }) => ex)
+        // --- FIN DE LA CORRECCIÓN ---
       };
       await saveRoutine(copy);
       addToast('Rutina duplicada.', 'success');
@@ -159,7 +155,7 @@ const Routines = ({ setView }) => {
       const db = lastUsedMap.get(b.id)?.getTime() || 0;
       return db - da;
     });
-    
+
     return list;
   }, [routines, query, lastUsedMap]);
 
@@ -178,35 +174,28 @@ const Routines = ({ setView }) => {
   const activeModeClasses = "bg-accent text-bg-secondary";
   const inactiveModeClasses = "bg-bg-secondary hover:bg-white/10 text-text-secondary";
 
-  return (
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Ajustamos padding
-    <div className="w-full max-w-6xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease-out]">
-      
-      {/* Header para Móvil (ELIMINADO) */}
+  // Botón Crear Rutina reutilizable
+  const CreateRoutineButton = ({ className = "" }) => (
+    <button
+      onClick={() => setEditingRoutine({ name: '', description: '', exercises: [] })}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 ${className}`}
+    >
+      <Plus size={18} />
+      Crear Rutina
+    </button>
+  );
 
-      {/* Header para PC (modificado) */}
+  return (
+    <div className="w-full max-w-6xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease-out]">
+
+      {/* Header para PC */}
       <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* Añadimos margen superior para PC */}
         <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0">Rutinas</h1>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
-        {activeTab === 'myRoutines' && (
-          <button
-            onClick={() => setEditingRoutine({ name: '', description: '', exercises: [] })}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105"
-          >
-            <Plus size={18} />
-            Crear Rutina
-          </button>
-        )}
+        {/* Usamos el componente reutilizable para el botón en Desktop */}
+        {activeTab === 'myRoutines' && <CreateRoutineButton />}
       </div>
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* Añadimos margen superior en móvil */}
       <div className="flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-glass-border w-fit mt-6 md:mt-0">
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
           <button onClick={() => setActiveTab('myRoutines')} className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses}`}>
             <BookCopy size={16} /> Mis Rutinas
           </button>
@@ -214,6 +203,11 @@ const Routines = ({ setView }) => {
             <Compass size={16} /> Explorar
           </button>
       </div>
+
+      {/* Botón Crear Rutina para Móvil (visible solo si la pestaña es 'myRoutines') */}
+      {activeTab === 'myRoutines' && (
+        <CreateRoutineButton className="flex md:hidden w-full mb-6" />
+      )}
 
       {activeTab === 'myRoutines' && (
         <>
@@ -240,7 +234,6 @@ const Routines = ({ setView }) => {
 
                 return (
                   <GlassCard key={routine.id} className="p-5 md:p-6">
-                    {/* --- INICIO DE LA CORRECCIÓN --- */}
                     <div className="flex items-center justify-between gap-4 mb-3">
                       {/* Fila superior para badges e info secundaria */}
                       <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary min-w-0">
@@ -272,7 +265,6 @@ const Routines = ({ setView }) => {
                         <p className="text-sm text-text-secondary mt-1 line-clamp-2">{routine.description}</p>
                       )}
                     </div>
-                    {/* --- FIN DE LA CORRECCIÓN --- */}
 
                     {exerciseGroups.length > 0 && (
                       <div className="mt-4">

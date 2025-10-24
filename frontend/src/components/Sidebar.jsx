@@ -12,7 +12,11 @@ const Sidebar = ({
   handleLogoutClick
 }) => {
   return (
-    <nav className="hidden md:flex flex-col gap-10 p-8 w-64 h-full border-r border-[--glass-border] bg-bg-primary">
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Se reemplaza bg-bg-primary por bg-[--glass-bg] y se añade backdrop-blur-glass
+    <nav className="hidden md:flex flex-col gap-10 p-8 w-64 h-full border-r border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass">
+    {/* --- FIN DE LA MODIFICACIÓN --- */}
+
       {/* Logo y título */}
       <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 text-accent transition-transform hover:scale-105">
         <Dumbbell className="h-7 w-7 flex-shrink-0" />
@@ -64,10 +68,8 @@ const Sidebar = ({
           )}
           <span className="truncate">{userProfile?.username || 'Perfil'}</span>
         </button>
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* Cambiamos las clases hover */}
+        {/* Cambiamos las clases hover (ya estaba en tu fichero) */}
         <button onClick={handleLogoutClick} className="flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-red/20 hover:text-red transition-colors duration-200">
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
           <LogOut size={24} />
           <span className="whitespace-nowrap">Cerrar Sesión</span>
         </button>

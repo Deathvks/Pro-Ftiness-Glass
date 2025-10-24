@@ -1,3 +1,5 @@
+/* frontend/src/index.css */
+
 /* 1) TAILWIND */
 @tailwind base;
 @tailwind components;
@@ -22,9 +24,13 @@
   --color-red: #ef4444;
   --color-neutral: #6b7280;
 
-  /* Glassmorphism */
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-bg: rgba(17, 24, 39, 0.45); /* ~bg-slate-900 con alpha */
+  /* --- INICIO DE LA MODIFICACIÓN --- */
+  /* Glassmorphism mejorado */
+  --glass-border: rgba(255, 255, 255, 0.08); /* Borde ligeramente más opaco */
+  --glass-bg: rgba(26, 35, 53, 0.55); /* Fondo ligeramente más oscuro y opaco */
+  --glass-highlight: rgba(255, 255, 255, 0.12); /* Borde superior más brillante */
+  --glass-shadow-inner: rgba(0, 0, 0, 0.2); /* Sombra interior */
+  /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
 /* 3) TEMAS */
@@ -35,9 +41,13 @@ body.dark-theme {
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
 
+  /* --- INICIO DE LA MODIFICACIÓN --- */
   /* El acento se define por la clase accent-* */
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-bg: rgba(17, 24, 39, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(26, 35, 53, 0.55);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-shadow-inner: rgba(0, 0, 0, 0.2);
+  /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
 body.light-theme {
@@ -47,9 +57,14 @@ body.light-theme {
   --text-secondary: #334155;
   --text-muted: #64748b;
 
+  /* --- INICIO DE LA MODIFICACIÓN --- */
   /* El acento se define por la clase accent-* */
-  --glass-border: rgba(0, 0, 0, 0.07);
-  --glass-bg: rgba(255, 255, 255, 0.65);
+  /* Ajustes para el tema claro */
+  --glass-border: rgba(0, 0, 0, 0.09);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-highlight: rgba(255, 255, 255, 0.4);
+  --glass-shadow-inner: rgba(0, 0, 0, 0.05);
+  /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
 /* 4) PALETAS DE ACENTO (solo cambian las vars del acento) */
@@ -228,6 +243,24 @@ body.accent-neutral {
   input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
     @apply outline-none; /* Esto quita el outline azul/predeterminado */
     /* Los estilos focus:ring-*, focus:border-* de Tailwind seguirán aplicándose */
+  }
+
+  /* Aplicar estilos glass mejorados a los componentes que usan bg-[--glass-bg] */
+  .bg-\[--glass-bg\] {
+    background-color: var(--glass-bg);
+    /* Se eliminan 'border: 1px solid;' y 'border-color: var(--glass-border);' 
+      para permitir que las clases de utilidad de Tailwind (ej. border-transparent, 
+      border-[--color-accent], border-[--glass-border]) controlen el color y 
+      estilo del borde.
+    */
+    
+    /* Borde superior más brillante (Efecto de reflejo) */
+    border-top-color: var(--glass-highlight);
+    
+    /* Sombra interior sutil para dar profundidad */
+    box-shadow: inset 0 1px 1px var(--glass-shadow-inner),
+                0 4px 6px -1px rgba(0, 0, 0, 0.1), /* Sombra exterior original */
+                0 2px 4px -2px rgba(0, 0, 0, 0.1);
   }
   /* --- FIN DE LA MODIFICACIÓN --- */
 

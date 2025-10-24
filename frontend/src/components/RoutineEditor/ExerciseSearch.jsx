@@ -1,3 +1,4 @@
+/* frontend/src/components/RoutineEditor/ExerciseSearch.jsx */
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { searchExercises } from '../../services/exerciseService';
 import Spinner from '../Spinner';
@@ -12,17 +13,33 @@ const ExerciseSearch = ({ exercise, exIndex, onFieldChange, onSelect, isOpen, on
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const searchRef = useRef(null);
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Añadimos una referencia para el botón del CustomSelect
+  const selectButtonRef = useRef(null);
+  // --- FIN DE LA MODIFICACIÓN ---
   const muscleGroupOptions = useMemo(() => muscleGroups.map(g => ({ value: g, label: g })), []);
 
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) onClose();
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Si el clic fue DENTRO del botón del CustomSelect, cerramos la lista de ejercicios.
+      if (selectButtonRef.current && selectButtonRef.current.contains(event.target)) {
+        onClose(); // Cerrar la lista de ejercicios
+        return; // No hacer nada más, el CustomSelect se abrirá solo
+      }
+      // Si el clic fue FUERA de todo el componente ExerciseSearch, cerramos.
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        onClose();
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
     };
+    // Usamos 'mousedown' para que se ejecute antes que el 'click' del CustomSelect
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose]); // Dependencias correctas
 
+  // ... (otros useEffects sin cambios) ...
   useEffect(() => {
     if (!isOpen) setResults([]);
   }, [isOpen]);
@@ -32,10 +49,11 @@ const ExerciseSearch = ({ exercise, exIndex, onFieldChange, onSelect, isOpen, on
 
     const searchTerm = exercise.name || '';
     const selectedGroup = exercise.filterGroup || 'Todos';
-    const shouldSearch = searchTerm.trim().length >= 2 || selectedGroup !== 'Todos';
+    const shouldSearch = isOpen && (searchTerm.trim().length >= 2 || selectedGroup !== 'Todos');
 
     if (!shouldSearch) {
       setResults([]);
+      setIsLoading(false);
       return;
     }
 
@@ -43,37 +61,43 @@ const ExerciseSearch = ({ exercise, exIndex, onFieldChange, onSelect, isOpen, on
       setIsLoading(true);
       try {
         const data = await searchExercises(searchTerm, selectedGroup);
-        setResults(data);
+        if (isOpen) setResults(data);
       } catch (error) {
         console.error(error);
+        if (isOpen) setResults([]);
       } finally {
-        setIsLoading(false);
+        if (isOpen) setIsLoading(false);
       }
     }, 300);
 
     return () => clearTimeout(handler);
-  }, [exercise.name, exercise.filterGroup, isOpen]);
+  }, [exercise.name, exercise.filterGroup, isOpen]); // Removido onOpen
 
   const handleNameChange = (e) => {
     const value = e.target.value;
     onFieldChange(exIndex, 'name', value);
-    const selectedGroup = exercise.filterGroup || 'Todos';
-    const shouldBeOpen = value.trim().length >= 2 || selectedGroup !== 'Todos';
-    if (shouldBeOpen) {
-      if (!isOpen) onOpen();
-    } else {
-      if (isOpen) onClose();
+    const shouldBeOpen = value.trim().length >= 2 || (exercise.filterGroup && exercise.filterGroup !== 'Todos');
+    if (shouldBeOpen && !isOpen) {
+      onOpen();
+    } else if (!shouldBeOpen && isOpen) {
+      onClose();
     }
   };
 
   const handleFilterChange = (group) => {
     onFieldChange(exIndex, 'filterGroup', group);
-    onOpen();
+    // Forzamos la apertura al cambiar el filtro si no está abierto ya
+    if (!isOpen) {
+      onOpen();
+    }
+    // Si ya estaba abierto, el useEffect de búsqueda se encargará
   };
+
 
   const shouldRenderDropdown = isOpen && (isLoading || results.length > 0 || ((exercise.name?.trim().length >= 2 || (exercise.filterGroup && exercise.filterGroup !== 'Todos'))));
 
   return (
+    // Asignamos la ref principal a este div
     <div className="relative w-full" ref={searchRef}>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -85,13 +109,17 @@ const ExerciseSearch = ({ exercise, exIndex, onFieldChange, onSelect, isOpen, on
           placeholder="Buscar o escribir ejercicio..."
           className="flex-grow w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
         />
-        <CustomSelect
-          value={exercise.filterGroup || 'Todos'}
-          onChange={handleFilterChange}
-          options={muscleGroupOptions}
-          placeholder="Filtrar"
-          className="flex-shrink-0 sm:w-40"
-        />
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* Usamos un div intermedio para asignar la ref al botón del CustomSelect */}
+        <div ref={selectButtonRef} className="flex-shrink-0 sm:w-40">
+           <CustomSelect
+              value={exercise.filterGroup || 'Todos'}
+              onChange={handleFilterChange}
+              options={muscleGroupOptions}
+              placeholder="Filtrar"
+           />
+        </div>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
       </div>
 
       {shouldRenderDropdown && (
@@ -106,14 +134,17 @@ const ExerciseSearch = ({ exercise, exIndex, onFieldChange, onSelect, isOpen, on
               key={exResult.id}
               type="button"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => onSelect(exIndex, exResult)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(exIndex, exResult);
+              }}
               className="block w-full text-left px-3 py-2 hover:bg-accent-transparent transition-colors rounded-md"
               role="option"
             >
               {exResult.name} <span className="text-xs text-text-muted">({exResult.muscle_group})</span>
             </button>
           ))}
-          {!isLoading && results.length === 0 && ((exercise.name && exercise.name.length >= 2) || exercise.filterGroup !== 'Todos') && (
+          {!isLoading && results.length === 0 && ((exercise.name && exercise.name.length >= 2) || (exercise.filterGroup && exercise.filterGroup !== 'Todos')) && (
             <p className="text-center text-text-muted p-4 text-sm">No se encontraron resultados.</p>
           )}
         </div>

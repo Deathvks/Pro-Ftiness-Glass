@@ -1,3 +1,4 @@
+/* frontend/src/store/authSlice.js */
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
 import { APP_VERSION } from '../config/version';
@@ -12,6 +13,10 @@ const clearAuthStorage = () => {
     localStorage.removeItem('templateRoutinesShowFilters');
 };
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// ELIMINADA la función getInitialCookieConsent ya que no se usa
+// --- FIN DE LA MODIFICACIÓN ---
+
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
 export const createAuthSlice = (set, get) => ({
     // --- ESTADO INICIAL ---
@@ -20,7 +25,8 @@ export const createAuthSlice = (set, get) => ({
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
-    cookieConsent: null, // null = no se ha decidido, true = aceptado, false = rechazado
+    // Inicializamos cookieConsent en null, checkCookieConsent lo establecerá al cargar perfil
+    cookieConsent: null,
 
     // --- ACCIONES ---
 
@@ -30,6 +36,11 @@ export const createAuthSlice = (set, get) => ({
         localStorage.setItem('fittrack_token', token);
         set({ token, isAuthenticated: true });
         await get().fetchInitialData(); // Llama a la acción del dataSlice
+        // Comprobar consentimiento *después* de cargar el perfil en fetchInitialData
+        const userId = get().userProfile?.id;
+        if (userId) {
+          get().checkCookieConsent(userId); // Carga el estado inicial
+        }
     },
 
     // Cierra sesión: limpia el token, el almacenamiento y resetea el estado completo.
@@ -73,6 +84,7 @@ export const createAuthSlice = (set, get) => ({
 
     // Comprueba el consentimiento de cookies para el usuario actual.
     checkCookieConsent: (userId) => {
+        // Esta función ahora simplemente lee y actualiza el estado.
         const consent = localStorage.getItem(`cookie_consent_${userId}`);
         if (consent === 'true') {
             set({ cookieConsent: true });
@@ -104,7 +116,6 @@ export const createAuthSlice = (set, get) => ({
         }
     },
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Resetea el consentimiento de cookies para que el banner vuelva a aparecer.
     resetCookieConsent: () => {
         const userId = get().userProfile?.id;
@@ -113,5 +124,4 @@ export const createAuthSlice = (set, get) => ({
             set({ cookieConsent: null });
         }
     },
-    // --- FIN DE LA MODIFICACIÓN ---
 });
