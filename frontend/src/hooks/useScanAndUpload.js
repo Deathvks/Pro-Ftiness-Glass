@@ -94,6 +94,9 @@ export const useScanAndUpload = ({
           carbs_per_100g: carbs100g,
           fat_per_100g: fat100g, // Corregido a fat_per_100g
           origin: 'scan',
+          // --- INICIO DE LA MODIFICACIÓN ---
+          micronutrients: nutriments, // Guardar todos los nutriments
+          // --- FIN DE LA MODIFICACIÓN ---
       };
 
       // Establecer el estado del formulario directamente
@@ -106,6 +109,9 @@ export const useScanAndUpload = ({
               fats_g: calculatedMacros.fats_g,
               weight_g: round(defaultWeight, 1), // Peso por defecto redondeado
               image_url: productImageUrl,
+              // --- INICIO DE LA MODIFICACIÓN ---
+              micronutrients: nutriments, // Guardar todos los nutriments
+              // --- FIN DE LA MODIFICACIÓN ---
           },
           per100Data: { // Cargar datos por 100g para el modo /100g
               calories: round(calories100g, 0),

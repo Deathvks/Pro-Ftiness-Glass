@@ -24,7 +24,7 @@ export const createFavoriteMeal = async (req, res, next) => {
   }
 
   // --- INICIO DE LA MODIFICACIÓN ---
-  const { name, calories, protein_g, carbs_g, fats_g, weight_g, image_url } = req.body;
+  const { name, calories, protein_g, carbs_g, fats_g, weight_g, image_url, micronutrients } = req.body;
   // --- FIN DE LA MODIFICACIÓN ---
   const { userId } = req.user;
 
@@ -37,8 +37,9 @@ export const createFavoriteMeal = async (req, res, next) => {
       carbs_g,
       fats_g,
       weight_g,
-      // --- INICIO DE LA MODIFICACIÓN ---
       image_url: image_url || null, // Guardar image_url
+      // --- INICIO DE LA MODIFICACIÓN ---
+      micronutrients: micronutrients || null, // Guardar micronutrientes
       // --- FIN DE LA MODIFICACIÓN ---
     });
     res.status(201).json(newMeal);
@@ -50,7 +51,6 @@ export const createFavoriteMeal = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // --- ACTUALIZAR UNA COMIDA FAVORITA EXISTENTE ---
 export const updateFavoriteMeal = async (req, res, next) => {
   const errors = validationResult(req);
@@ -61,7 +61,7 @@ export const updateFavoriteMeal = async (req, res, next) => {
   const { mealId } = req.params;
   const { userId } = req.user;
   // --- INICIO DE LA MODIFICACIÓN ---
-  const { name, calories, protein_g, carbs_g, fats_g, weight_g, image_url } = req.body;
+  const { name, calories, protein_g, carbs_g, fats_g, weight_g, image_url, micronutrients } = req.body;
   // --- FIN DE LA MODIFICACIÓN ---
 
   try {
@@ -90,8 +90,9 @@ export const updateFavoriteMeal = async (req, res, next) => {
     meal.carbs_g = carbs_g;
     meal.fats_g = fats_g;
     meal.weight_g = weight_g;
-    // --- INICIO DE LA MODIFICACIÓN ---
     meal.image_url = image_url; // Actualizar image_url
+    // --- INICIO DE LA MODIFICACIÓN ---
+    meal.micronutrients = micronutrients; // Actualizar micronutrientes
     // --- FIN DE LA MODIFICACIÓN ---
 
     await meal.save();

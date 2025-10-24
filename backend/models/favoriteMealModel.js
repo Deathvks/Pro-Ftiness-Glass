@@ -38,18 +38,23 @@ const FavoriteMeal = sequelize.define(
       type: DataTypes.DECIMAL(6, 2),
       allowNull: true,
     },
-    // --- INICIO DE LA MODIFICACIÓN ---
     weight_g: {
       type: DataTypes.DECIMAL(8, 2),
       allowNull: true,
       comment: 'Peso de la comida en gramos'
     },
-    // --- FIN DE LA MODIFICACIÓN ---
     image_url: { // <-- Nuevo campo para guardar la URL de la imagen
       type: DataTypes.STRING(255),
       allowNull: true,
       comment: 'URL de la imagen de la comida'
-    }
+    },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    micronutrients: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment: 'Micronutrientes (vitaminas, minerales) en formato JSON'
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
   },
   {
     tableName: 'favorite_meals',

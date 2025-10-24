@@ -94,6 +94,9 @@ const getRecentMeals = async (req, res, next) => {
         'fats_g',
         'weight_g',
         'image_url',
+        // --- INICIO DE LA MODIFICACIÓN ---
+        'micronutrients',
+        // --- FIN DE LA MODIFICACIÓN ---
       ],
     });
 
@@ -180,6 +183,7 @@ const addFoodLog = async (req, res, next) => {
   try {
     const { userId } = req.user;
 
+    // --- INICIO DE LA MODIFICACIÓN ---
     const {
       log_date,
       meal_type,
@@ -190,6 +194,7 @@ const addFoodLog = async (req, res, next) => {
       fats_g,
       weight_g,
       image_url,
+      micronutrients, // Nuevo campo
     } = req.body;
 
     const foodData = {
@@ -203,7 +208,9 @@ const addFoodLog = async (req, res, next) => {
       fats_g: fats_g || null,
       weight_g: weight_g || null,
       image_url: image_url || null,
+      micronutrients: micronutrients || null, // Nuevo campo
     };
+    // --- FIN DE LA MODIFICACIÓN ---
 
     const newLog = await NutritionLog.create(foodData);
     res.status(201).json(newLog);
@@ -232,6 +239,7 @@ const updateFoodLog = async (req, res, next) => {
         .json({ error: 'Registro de comida no encontrado.' });
     }
 
+    // --- INICIO DE LA MODIFICACIÓN ---
     const {
       description,
       calories,
@@ -242,6 +250,7 @@ const updateFoodLog = async (req, res, next) => {
       image_url,
       meal_type,
       log_date,
+      micronutrients, // Nuevo campo
     } = req.body;
 
     const foodData = {
@@ -254,7 +263,9 @@ const updateFoodLog = async (req, res, next) => {
       image_url: image_url || null,
       meal_type,
       log_date,
+      micronutrients: micronutrients || null, // Nuevo campo
     };
+    // --- FIN DE LA MODIFICACIÓN ---
 
     await log.update(foodData);
     res.json(log);

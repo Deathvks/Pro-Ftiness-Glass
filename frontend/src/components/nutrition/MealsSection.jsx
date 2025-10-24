@@ -1,5 +1,8 @@
+/* frontend/src/components/nutrition/MealsSection.jsx */
+// --- INICIO DE LA MODIFICACIÓN ---
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Microscope } from 'lucide-react'; // Importar Microscope
+// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../GlassCard';
 import NutritionLogModal from '../NutritionLogModal';
 import ConfirmationModal from '../ConfirmationModal';
@@ -15,16 +18,55 @@ const FavoriteIcon = () => (
 );
 
 const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const [showMicros, setShowMicros] = useState(false);
+    // --- FIN DE LA MODIFICACIÓN ---
+
     // Buscar si el log tiene un favorito coincidente (por nombre)
     const isFavorite = favorites.some(fav => fav.name === log.description);
     
     // Función para obtener la URL de la imagen
     const imageUrl = log.image_url; 
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    const micronutrients = log.micronutrients;
+    
+    // Lista simplificada de micronutrientes a mostrar
+    const simpleMicrosList = [
+        { key: 'vitamin-c_100g', name: 'Vit C' },
+        { key: 'vitamin-a_100g', name: 'Vit A' },
+        { key: 'vitamin-d_100g', name: 'Vit D' },
+        { key: 'iron_100g', name: 'Hierro' },
+        { key: 'calcium_100g', name: 'Calcio' },
+        { key: 'sodium_100g', name: 'Sodio' },
+        { key: 'fiber_100g', name: 'Fibra' },
+    ];
+
+    const availableMicros = micronutrients ? simpleMicrosList
+        .map(micro => {
+            const value = micronutrients[micro.key];
+            // Asumir 'g' si no hay unidad, excepto para sodio (mg) o vitaminas (UI/mg/mcg)
+            let unit = micronutrients[micro.key.replace('_100g', '_unit')] || 'g';
+            if (micro.key === 'sodium_100g' && unit === 'g') unit = 'mg'; // Común que el sodio esté en mg
+            
+            return (value && parseFloat(value) > 0) 
+                ? `${micro.name}: ${formatNumber(value, 2)} ${unit}` 
+                : null;
+        })
+        .filter(Boolean) : []; // Filtrar nulos
+
+    const hasMicros = availableMicros.length > 0;
+    // --- FIN DE LA MODIFICACIÓN ---
+
+
     return (
-        <div className="flex justify-between items-center py-2 px-3 hover:bg-bg-secondary rounded-lg transition-colors group">
-            <div className="flex items-center space-x-3 min-w-0">
-                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        // --- INICIO DE LA MODIFICACIÓN (Añadir 'flex-wrap' y 'w-full') ---
+        <div className="flex justify-between items-center py-2 px-3 hover:bg-bg-secondary rounded-lg transition-colors group flex-wrap w-full">
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
+            
+            {/* --- INICIO DE LA MODIFICACIÓN (Añadir 'flex-1') --- */}
+            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 {/* 1. Mostrar la imagen si existe */}
                 {imageUrl && (
                     <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-glass-border">
@@ -35,7 +77,6 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
                         />
                     </div>
                 )}
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 
                 <div className="flex flex-col min-w-0">
                     <span className="text-text-primary text-sm font-medium truncate">
@@ -49,10 +90,26 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
                 </div>
             </div>
             
-            <div className="flex items-center space-x-2">
+            {/* --- INICIO DE LA MODIFICACIÓN (Añadir 'ml-auto') --- */}
+            <div className="flex items-center space-x-2 ml-auto">
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <span className="text-text-secondary text-sm hidden sm:block">
                     {formatNumber(log.protein_g, 1)}P / {formatNumber(log.carbs_g, 1)}C / {formatNumber(log.fats_g, 1)}F
                 </span>
+                
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                {/* Botón para mostrar micros */}
+                {hasMicros && (
+                    <button
+                        onClick={() => setShowMicros(s => !s)}
+                        className={`p-1 ${showMicros ? 'text-accent' : 'text-text-muted'} hover:text-accent`}
+                        aria-label="Mostrar micronutrientes"
+                    >
+                        <Microscope size={16} />
+                    </button>
+                )}
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
+
                 <button
                     onClick={() => onEdit(log, mealType)}
                     className="p-1 text-text-muted hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity"
@@ -68,6 +125,20 @@ const MealLogItem = ({ log, onEdit, onDelete, mealType, favorites }) => {
                     <Trash2 size={16} />
                 </button>
             </div>
+
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* Contenedor para mostrar micronutrientes */}
+            {hasMicros && showMicros && (
+                <div className="w-full mt-2 p-2 bg-bg-primary rounded-md border border-glass-border">
+                    <h5 className="text-xs font-bold text-text-primary mb-1">Micronutrientes (por 100g):</h5>
+                    <div className="text-xs text-text-muted grid grid-cols-2 sm:grid-cols-3 gap-x-2">
+                        {availableMicros.map((microString, index) => (
+                            <span key={index}>{microString}</span>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
         </div>
     );
 };
@@ -99,8 +170,10 @@ const MealsSection = ({ title, mealType, logs, todayLogs, fetchNutritionLogs, se
         if (!logToDelete) return;
         setIsDeleting(true);
         try {
-            const { message } = await deleteNutritionLog(logToDelete.logId);
-            addToast(message, 'success');
+            // --- INICIO DE LA MODIFICACIÓN (Corregido: 'message' no existe en la respuesta de delete) ---
+            await deleteNutritionLog(logToDelete.logId);
+            addToast("Comida eliminada con éxito.", 'success');
+            // --- FIN DE LA MODIFICACIÓN ---
             await fetchNutritionLogs(selectedDate);
             setLogToDelete(null);
         } catch (error) {
@@ -112,20 +185,16 @@ const MealsSection = ({ title, mealType, logs, todayLogs, fetchNutritionLogs, se
     
     const handleSaveLog = async (newLogs, isEdit = false) => {
         handleCloseModal();
-        if (newLogs.length === 0) return;
+        if (newLogs.length === 0 && !isEdit) return; // Permitir que la edición (incluso sin cambios) recargue
 
         try {
+            await fetchNutritionLogs(selectedDate);
+            
             if (isEdit) {
-                // Si es edición, newLogs contiene un solo elemento que es el log editado
-                // La llamada a la API de edición ocurre dentro del hook
                 addToast('Comida actualizada con éxito.', 'success');
             } else {
-                // Si es adición, los logs se envían en NutritionLogModal
-                // Ya se guardaron al llamar a handleSaveSingle o handleSaveList en useNutritionModal
+                 addToast(`Comida${newLogs.length > 1 ? 's' : ''} registrada(s) con éxito.`, 'success');
             }
-            
-            await fetchNutritionLogs(selectedDate);
-            addToast(`Comida${newLogs.length > 1 ? 's' : ''} registrada(s) con éxito.`, 'success');
         } catch (error) {
             addToast(error.message || 'Error al guardar el registro de nutrición.', 'error');
         }
@@ -199,7 +268,7 @@ const MealsSection = ({ title, mealType, logs, todayLogs, fetchNutritionLogs, se
                 onClose={() => setLogToDelete(null)}
                 onConfirm={handleConfirmDelete}
                 title="Eliminar Comida"
-                message={`¿Estás seguro de que deseas eliminar este registro de comida (${logToDelete?.mealType})?`}
+                message={`¿Estás seguro de que deseas eliminar este registro de comida?`}
                 confirmText={isDeleting ? <Spinner size={16} /> : "Eliminar"}
                 isDanger={true}
                 isLoading={isDeleting}

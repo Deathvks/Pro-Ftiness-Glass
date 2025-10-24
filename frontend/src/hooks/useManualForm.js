@@ -1,11 +1,23 @@
 /* frontend/src/hooks/useManualForm.js */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+// --- INICIO DE LA MODIFICACIÓN (ESLint Fix 1) ---
+import { useState, useEffect, useCallback } from 'react';
+// --- FIN DE LA MODIFICACIÓN ---
 import { initialManualFormState, round } from './useNutritionConstants'; // Importar constantes
 
 export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer100g }) => {
   const [manualFormState, setManualFormState] = useState(initialManualFormState);
   const [baseMacros, setBaseMacros] = useState(null); // Estado para macros base por gramo
   const [originalData, setOriginalData] = useState(null); // Datos originales al editar/escanear
+
+  // --- INICIO DE LA MODIFICACIÓN (ESLint Fix 2 - Mover definición) ---
+  // Función para resetear el estado del formulario
+  const resetManualForm = useCallback(() => {
+    setManualFormState(initialManualFormState);
+    setBaseMacros(null);
+    setOriginalData(null);
+    setIsPer100g(false); // Resetear modo por 100g también
+  }, [setIsPer100g]);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   // Efecto para inicializar/actualizar el formulario cuando 'itemToEdit' cambia
   useEffect(() => {
@@ -26,6 +38,9 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
         fats_g: round(itemToEdit.fats_g || 0, 1),
         weight_g: round(itemToEdit.weight_g || (shouldBePer100g ? 100 : ''), 1), // Poner 100g por defecto si es /100g
         image_url: itemToEdit.image_url || null,
+        // --- INICIO DE LA MODIFICACIÓN (Micronutrientes) ---
+        micronutrients: itemToEdit.micronutrients || null,
+        // --- FIN DE LA MODIFICACIÓN ---
       };
 
       let per100Data = initialManualFormState.per100Data;
@@ -46,6 +61,9 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
                 protein_g: round(parseFloat(per100Data.protein_g) * factor, 1),
                 carbs_g: round(parseFloat(per100Data.carbs_g) * factor, 1),
                 fats_g: round(parseFloat(per100Data.fats_g) * factor, 1),
+                // --- INICIO DE LA MODIFICACIÓN (Micronutrientes) ---
+                micronutrients: itemToEdit.micronutrients || null, // Asegurar que se mantienen
+                // --- FIN DE LA MODIFICACIÓN ---
             }
         }
       }
@@ -75,7 +93,9 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
       // Si no hay itemToEdit, resetear todo
       resetManualForm();
     }
-  }, [itemToEdit, favoriteMeals, setIsPer100g]); // Dependencia clave
+  // --- INICIO DE LA MODIFICACIÓN (ESLint Fix 2 - Añadir dependencia) ---
+  }, [itemToEdit, favoriteMeals, setIsPer100g, resetManualForm]); // Dependencia clave
+  // --- FIN DE LA MODIFICACIÓN ---
 
   // Efecto para recalcular macros cuando cambia el peso Y NO estamos en modo por 100g
   useEffect(() => {
@@ -112,13 +132,9 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
     }
   }, [manualFormState.formData.weight_g, manualFormState.per100Data, isPer100g]); // Dependencias correctas
 
-  // Función para resetear el estado del formulario
-  const resetManualForm = useCallback(() => {
-    setManualFormState(initialManualFormState);
-    setBaseMacros(null);
-    setOriginalData(null);
-    setIsPer100g(false); // Resetear modo por 100g también
-  }, [setIsPer100g]);
+  // --- INICIO DE LA MODIFICACIÓN (ESLint Fix 2 - Mover definición) ---
+  // (La definición de resetManualForm se movió al inicio del hook)
+  // --- FIN DE LA MODIFICACIÓN ---
 
   return {
     manualFormState,

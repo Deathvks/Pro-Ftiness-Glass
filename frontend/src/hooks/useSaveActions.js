@@ -43,6 +43,9 @@ export const useSaveActions = ({
               fats_g: fav.fats_g,
               weight_g: fav.weight_g,
               image_url: fav.image_url || null,
+              // --- INICIO DE LA MODIFICACIÓN ---
+              micronutrients: fav.micronutrients || null,
+              // --- FIN DE LA MODIFICACIÓN ---
             })
           )
         );
@@ -69,6 +72,9 @@ export const useSaveActions = ({
           fats_g: item.fats_g,
           weight_g: item.weight_g,
           image_url: item.image_url || null,
+          // --- INICIO DE LA MODIFICACIÓN ---
+          micronutrients: item.micronutrients || null,
+          // --- FIN DE LA MODIFICACIÓN ---
         });
         addToast(`'${item.description}' guardado en favoritos.`, 'success');
       } catch (error) {
@@ -82,6 +88,11 @@ export const useSaveActions = ({
 
   const handleSaveEdit = async (formData) => {
     if (originalData && (isEditingLog || editingFavorite)) {
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Comparamos JSON stringify para micronutrientes
+      const originalMicros = JSON.stringify(originalData.micronutrients || null);
+      const newMicros = JSON.stringify(formData.micronutrients || null);
+
       const hasChanged =
         originalData.description !== formData.description ||
         (parseFloat(originalData.calories) || 0) !== formData.calories ||
@@ -89,7 +100,9 @@ export const useSaveActions = ({
         (parseFloat(originalData.carbs_g) || 0) !== formData.carbs_g ||
         (parseFloat(originalData.fats_g) || 0) !== formData.fats_g ||
         (parseFloat(originalData.weight_g) || null) !== formData.weight_g ||
-        originalData.image_url !== formData.image_url;
+        originalData.image_url !== formData.image_url ||
+        originalMicros !== newMicros; // Comparamos micros
+      // --- FIN DE LA MODIFICACIÓN ---
 
       if (!hasChanged && !manualFormState.isFavorite) {
         addToast('No se detectaron cambios.', 'info');
@@ -111,6 +124,9 @@ export const useSaveActions = ({
         ...formData,
         name: formData.description,
         image_url: formData.image_url,
+        // --- INICIO DE LA MODIFICACIÓN ---
+        micronutrients: formData.micronutrients,
+        // --- FIN DE LA MODIFICACIÓN ---
       };
       const result = await updateFavoriteMeal(editingFavorite.id, dataToUpdate);
       if (result.success) {
@@ -131,6 +147,9 @@ export const useSaveActions = ({
           fats_g: formData.fats_g,
           weight_g: formData.weight_g,
           image_url: formData.image_url || null,
+          // --- INICIO DE LA MODIFICACIÓN ---
+          micronutrients: formData.micronutrients || null,
+          // --- FIN DE LA MODIFICACIÓN ---
         };
         const existingFavorite = favoriteMeals.find(
           (fav) => fav.name.toLowerCase() === formData.description.toLowerCase()

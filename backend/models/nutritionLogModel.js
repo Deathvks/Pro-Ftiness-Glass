@@ -49,11 +49,16 @@ const NutritionLog = sequelize.define('NutritionLog', {
     allowNull: true,
     comment: 'Peso de la comida en gramos'
   },
-  // --- INICIO DE LA MODIFICACIÓN ---
   image_url: {
     type: DataTypes.STRING(255),
     allowNull: true,
     comment: 'URL de la imagen de la comida'
+  },
+  // --- INICIO DE LA MODIFICACIÓN ---
+  micronutrients: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Micronutrientes (vitaminas, minerales) en formato JSON'
   },
   // --- FIN DE LA MODIFICACIÓN ---
 }, {
