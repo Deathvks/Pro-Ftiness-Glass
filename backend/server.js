@@ -6,11 +6,10 @@ import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import jwt from 'jsonwebtoken'; // Para decodificar el token
+import jwt from 'jsonwebtoken';
 
-// Requerido en ESM para simular __dirname
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename); // Esperamos que sea /app/backend
+const __dirname = path.dirname(__filename);
 
 import authRoutes from './routes/auth.js';
 import bodyweightRoutes from './routes/bodyweight.js';
@@ -27,47 +26,70 @@ import workoutRoutes from './routes/workouts.js';
 import adminRoutes from './routes/admin.js';
 
 const app = express();
-
-// Confiar en el proxy (necesario para express-rate-limit en Zeabur)
 app.set('trust proxy', 1);
 
-app.use(cors({
-    origin: process.env.CORS_ORIGIN,
-}));
+// --- Configuración CORS Segura para Producción y Desarrollo ---
+const isProduction = process.env.NODE_ENV === 'production';
+
+const allowedOrigins = [
+    // Orígenes permitidos SIEMPRE
+    'capacitor://localhost',
+    'https://localhost', // Para Capacitor con scheme https
+    // URL del frontend de producción desde variable de entorno
+    process.env.FRONTEND_URL // <-- Usamos tu variable FRONTEND_URL de Zeabur
+].filter(Boolean); // Elimina valores nulos si FRONTEND_URL no está definida
+
+if (!isProduction) {
+    // Añadir orígenes SOLO para desarrollo
+    allowedOrigins.push(process.env.CORS_ORIGIN || 'http://localhost:5173'); // Vite dev local
+    allowedOrigins.push('http://localhost'); // Emulador/Dispositivo con scheme http
+}
+
+console.log("Orígenes CORS permitidos:", allowedOrigins); // Log para verificar
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Permitir peticiones sin origen (Postman, etc. - opcional en producción estricta)
+        // O si el origen está en la lista
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.error('CORS Error: Origen no permitido:', origin);
+            callback(new Error(`El origen ${origin} no está permitido por CORS`));
+        }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+// --- Fin Configuración CORS ---
+
 app.use(express.json());
 
-// --- INICIO DE LA REVERSIÓN ---
-// Volvemos a usar path.join(__dirname, 'public')
 const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath));
-console.log(`Sirviendo archivos estáticos desde: ${staticPath}`); // Log para verificar
-// --- FIN DE LA REVERSIÓN ---
+console.log(`Sirviendo archivos estáticos desde: ${staticPath}`);
 
-// Middleware para actualizar 'lastSeen' en cada petición
-app.use(async (req, res, next) => { // <-- Marcado como async
+// Middleware para actualizar 'lastSeen'
+app.use(async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-
   if (token) {
     try {
-      // Verificamos el token
       const payload = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Si es válido, actualizamos lastSeen en la DB
       if (payload && payload.userId) {
         await db.User.update(
           { lastSeen: new Date() },
           { where: { id: payload.userId } }
         );
       }
-    } catch (err) {
-      // Si el token es inválido (expirado, etc.), no hacemos nada
-    }
+    } catch (err) { /* Ignorar errores de token inválido */ }
   }
   next();
 });
 
-// Rutas de la API
+// Rutas API
 app.use('/api/auth', authRoutes);
 app.use('/api/bodyweight', bodyweightRoutes);
 app.use('/api/creatina', creatinaRoutes);
@@ -86,7 +108,6 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 
-// Usamos db.sequelize.sync() que viene de models/index.js
 db.sequelize.sync()
   .then(() => {
     app.listen(PORT, () => {
@@ -96,5 +117,3 @@ db.sequelize.sync()
   .catch(err => {
     console.error('Unable to connect to the database:', err);
   });
-
-// export default app; // Descomenta si usas start.js
