@@ -1,36 +1,79 @@
 /* backend/controllers/nutritionController.js */
 import db from '../models/index.js';
 import { Op } from 'sequelize';
-import axios from 'axios';
+import axios from 'axios'; // Necesario para descargar la imagen
 import path from 'path';
 import fs from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid';
-import multer from 'multer'; // Importación necesaria para 'instanceof multer.MulterError'
+import { v4 as uuidv4 } from 'uuid'; // Para nombres de archivo únicos
+import multer from 'multer';
+import sharp from 'sharp'; // Necesario para la conversión
 import { fileURLToPath } from 'url';
 
 // Simulación de __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename); // Esto será /app/backend/controllers
+const __dirname = path.dirname(__filename); // /app/backend/controllers
+
+// Directorio donde se guardarán las imágenes de comida (incluyendo las de códigos de barras)
+const FOOD_IMAGES_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 
 // Obtener modelos desde db
 const { NutritionLog, WaterLog, sequelize } = db;
 
 // Helper para asegurar que el directorio de subida existe
-// La ruta es correcta: /app/backend/public/images/food
-const UPLOAD_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
-
-const ensureUploadDirExists = async () => {
-  try {
-    await fs.access(UPLOAD_DIR);
-  } catch (error) {
-    // Si el directorio no existe, lo creamos recursivamente
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
-  }
+const ensureUploadDirExists = async (dirPath) => {
+    try {
+        await fs.access(dirPath);
+    } catch (error) {
+        await fs.mkdir(dirPath, { recursive: true });
+    }
 };
 
 /**
- * Obtiene todos los registros de nutrición y agua para una fecha específica.
+ * Descarga una imagen desde una URL, la convierte a WebP y la guarda localmente.
+ * @param {string} imageUrl URL de la imagen original.
+ * @param {string} outputDir Directorio donde guardar la imagen WebP.
+ * @returns {Promise<string|null>} La URL relativa de la imagen WebP guardada o null si falla.
  */
+const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
+    if (!imageUrl) return null;
+
+    try {
+        // Asegurar que el directorio existe
+        await ensureUploadDirExists(outputDir);
+
+        // Descargar la imagen
+        const response = await axios({
+            url: imageUrl,
+            responseType: 'arraybuffer' // Importante para obtener los datos binarios
+        });
+        const imageBuffer = Buffer.from(response.data);
+
+        // Generar nombre de archivo único para WebP
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const webpFilename = `barcode-${uniqueSuffix}.webp`;
+        const outputPath = path.join(outputDir, webpFilename);
+
+        // Convertir a WebP usando Sharp
+        await sharp(imageBuffer)
+            .resize(800, 800, { // Opcional: Redimensionar como las otras imágenes
+                fit: sharp.fit.inside,
+                withoutEnlargement: true
+            })
+            .webp({ quality: 75 })
+            .toFile(outputPath);
+
+        // Devolver la URL relativa
+        return `/images/food/${webpFilename}`;
+
+    } catch (error) {
+        console.error(`Error al descargar o convertir la imagen ${imageUrl}:`, error.message);
+        // Si falla la descarga o conversión, simplemente no tendremos imagen local.
+        return null; // Devolvemos null para que el frontend sepa que no hay imagen local
+    }
+};
+
+
+// --- getNutritionLogsByDate, getRecentMeals, getNutritionSummary (sin cambios) ---
 const getNutritionLogsByDate = async (req, res, next) => {
   try {
     const { date } = req.query;
@@ -69,22 +112,15 @@ const getNutritionLogsByDate = async (req, res, next) => {
     next(error);
   }
 };
-
-/**
- * Obtiene las comidas registradas recientemente por el usuario.
- * Devuelve una lista de las últimas 20 comidas únicas (por descripción).
- */
 const getRecentMeals = async (req, res, next) => {
   try {
     const { userId } = req.user;
-
-    // 1. Obtenemos los últimos 50 registros (para tener variedad)
     const recentLogs = await NutritionLog.findAll({
       where: {
         user_id: userId,
       },
       limit: 50,
-      order: [['id', 'DESC']], // Ordenamos por ID descendente (más recientes primero)
+      order: [['id', 'DESC']],
       attributes: [
         'id',
         'description',
@@ -94,16 +130,11 @@ const getRecentMeals = async (req, res, next) => {
         'fats_g',
         'weight_g',
         'image_url',
-        // --- INICIO DE LA MODIFICACIÓN ---
         'micronutrients',
-        // --- FIN DE LA MODIFICACIÓN ---
       ],
     });
-
-    // 2. Filtramos para obtener entradas únicas basadas en 'description' (ignorando may/min)
     const uniqueMeals = [];
     const descriptionsSeen = new Set();
-
     for (const log of recentLogs) {
       const lowerCaseDescription = log.description.toLowerCase();
       if (!descriptionsSeen.has(lowerCaseDescription)) {
@@ -111,21 +142,13 @@ const getRecentMeals = async (req, res, next) => {
         uniqueMeals.push(log);
       }
     }
-
-    // 3. Devolvemos las últimas 20 comidas únicas
     const result = uniqueMeals.slice(0, 20);
     res.json(result);
-
   } catch (error)
  {
     next(error);
   }
 };
-
-
-/**
- * Obtiene un resumen de datos de nutrición para un mes y año.
- */
 const getNutritionSummary = async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -175,6 +198,7 @@ const getNutritionSummary = async (req, res, next) => {
     next(error);
   }
 };
+// --- Fin de funciones sin cambios ---
 
 /**
  * Añade un nuevo registro de comida.
@@ -182,8 +206,6 @@ const getNutritionSummary = async (req, res, next) => {
 const addFoodLog = async (req, res, next) => {
   try {
     const { userId } = req.user;
-
-    // --- INICIO DE LA MODIFICACIÓN ---
     const {
       log_date,
       meal_type,
@@ -193,8 +215,8 @@ const addFoodLog = async (req, res, next) => {
       carbs_g,
       fats_g,
       weight_g,
-      image_url,
-      micronutrients, // Nuevo campo
+      image_url, // URL de la imagen (ya sea subida o de código de barras procesada)
+      micronutrients,
     } = req.body;
 
     const foodData = {
@@ -202,15 +224,14 @@ const addFoodLog = async (req, res, next) => {
       log_date,
       meal_type,
       description,
-      calories: calories || null,
+      calories: calories || 0, // Default a 0 si es null/undefined
       protein_g: protein_g || null,
       carbs_g: carbs_g || null,
       fats_g: fats_g || null,
       weight_g: weight_g || null,
-      image_url: image_url || null,
-      micronutrients: micronutrients || null, // Nuevo campo
+      image_url: image_url || null, // Guardamos la URL que nos llega
+      micronutrients: micronutrients || null,
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const newLog = await NutritionLog.create(foodData);
     res.status(201).json(newLog);
@@ -239,7 +260,6 @@ const updateFoodLog = async (req, res, next) => {
         .json({ error: 'Registro de comida no encontrado.' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     const {
       description,
       calories,
@@ -247,25 +267,40 @@ const updateFoodLog = async (req, res, next) => {
       carbs_g,
       fats_g,
       weight_g,
-      image_url,
+      image_url, // La nueva URL (puede ser null si se elimina la imagen)
       meal_type,
       log_date,
-      micronutrients, // Nuevo campo
+      micronutrients,
     } = req.body;
 
+    // --- INICIO MODIFICACIÓN: Borrar imagen antigua si se actualiza a una nueva o a null ---
+    const oldImageUrl = log.image_url;
+    const newImageUrl = image_url !== undefined ? image_url : oldImageUrl; // Si no viene image_url, mantenemos la antigua
+
+    // Si la URL antigua existe Y es diferente de la nueva (o la nueva es null)
+    if (oldImageUrl && oldImageUrl !== newImageUrl) {
+      const oldImagePath = path.join(__dirname, '..', 'public', oldImageUrl);
+      fs.unlink(oldImagePath).catch(err => {
+        // Ignorar error si el archivo no existe (ENOENT), loguear otros errores
+        if (err.code !== 'ENOENT') {
+          console.error(`Error al borrar imagen antigua ${oldImagePath}:`, err);
+        }
+      });
+    }
+    // --- FIN MODIFICACIÓN ---
+
     const foodData = {
-      description,
-      calories: calories || null,
-      protein_g: protein_g || null,
-      carbs_g: carbs_g || null,
-      fats_g: fats_g || null,
-      weight_g: weight_g || null,
-      image_url: image_url || null,
-      meal_type,
-      log_date,
-      micronutrients: micronutrients || null, // Nuevo campo
+      description: description !== undefined ? description : log.description,
+      calories: calories !== undefined ? calories : log.calories,
+      protein_g: protein_g !== undefined ? protein_g : log.protein_g,
+      carbs_g: carbs_g !== undefined ? carbs_g : log.carbs_g,
+      fats_g: fats_g !== undefined ? fats_g : log.fats_g,
+      weight_g: weight_g !== undefined ? weight_g : log.weight_g,
+      image_url: newImageUrl, // Usamos la URL nueva o la mantenida
+      meal_type: meal_type !== undefined ? meal_type : log.meal_type,
+      log_date: log_date !== undefined ? log_date : log.log_date,
+      micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients,
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     await log.update(foodData);
     res.json(log);
@@ -273,6 +308,7 @@ const updateFoodLog = async (req, res, next) => {
     next(error);
   }
 };
+
 
 /**
  * Elimina un registro de comida.
@@ -293,6 +329,17 @@ const deleteFoodLog = async (req, res, next) => {
         .status(404)
         .json({ error: 'Registro de comida no encontrado.' });
     }
+
+    // --- INICIO MODIFICACIÓN: Borrar imagen asociada si existe ---
+    if (log.image_url) {
+      const imagePath = path.join(__dirname, '..', 'public', log.image_url);
+      fs.unlink(imagePath).catch(err => {
+         if (err.code !== 'ENOENT') {
+            console.error(`Error al borrar imagen ${imagePath} al eliminar log:`, err);
+         }
+      });
+    }
+    // --- FIN MODIFICACIÓN ---
 
     await log.destroy();
     res.status(204).send();
@@ -315,128 +362,99 @@ const upsertWaterLog = async (req, res, next) => {
         .json({ error: 'Fecha y cantidad son requeridas.' });
     }
 
-    let waterLog = await WaterLog.findOne({
-      where: {
-        user_id: userId,
-        log_date,
-      },
+    // Usamos findOrCreate para simplificar la lógica
+    const [waterLog, created] = await WaterLog.findOrCreate({
+        where: { user_id: userId, log_date },
+        defaults: { quantity_ml }
     });
-    if (waterLog) {
-      waterLog.quantity_ml = quantity_ml;
-      await waterLog.save();
-    } else {
-      waterLog = await WaterLog.create({
-        user_id: userId,
-        log_date,
-        quantity_ml,
-      });
+
+    // Si no fue creado, significa que existía, así que lo actualizamos
+    if (!created) {
+        waterLog.quantity_ml = quantity_ml;
+        await waterLog.save();
     }
+
     res.json(waterLog);
   } catch (error) {
     next(error);
   }
 };
 
+
 /**
- * Busca un producto por su código de barras usando la API de Open Food Facts.
+ * Busca un producto por su código de barras usando la API de Open Food Facts,
+ * descarga su imagen, la convierte a WebP y la guarda localmente.
  */
 const searchByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
-    // --- INICIO DE LA MODIFICACIÓN (LOGS) ---
     console.log(`[BACKEND] Buscando código de barras: ${barcode}`);
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // Actualizado a la API v2 y solicitando campos específicos
     const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
 
     const response = await axios.get(apiUrl);
-
-    // --- INICIO DE LA MODIFICACIÓN (LOGS) ---
     console.log(`[BACKEND] Respuesta de OpenFoodFacts para ${barcode}:`, JSON.stringify(response.data, null, 2));
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // En v2, si el producto no existe, la API devuelve 404 (manejado por catch)
-    // o un objeto 'product' vacío o sin 'product_name'.
-    // El chequeo 'status === 0' es de la v0 y ya no es válido.
 
-    // --- INICIO DE LA MODIFICACIÓN (Manejo respuesta v2) ---
-    if (!response.data || response.data.status === 0 || !response.data.product) {
+    if (!response.data || response.data.status === 0 || !response.data.product || !response.data.product.product_name) {
        console.log(`[BACKEND] Producto no encontrado en OFF para ${barcode}`);
-       return res.status(404).json({ error: 'Producto no encontrado.' });
+       // Devolvemos 404 pero con un objeto 'product' vacío o con info mínima para consistencia
+       return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
     }
 
     const product = response.data.product;
-    const nutriments = product.nutriments || {}; // Asegurar que nutriments sea un objeto
+    const nutriments = product.nutriments || {};
 
-    // Añadimos más fuentes para el nombre y la imagen
+    // --- INICIO MODIFICACIÓN: Descargar y convertir imagen ---
+    const originalImageUrl = product.image_url || product.image_front_url || null;
+    let localImageUrl = null;
+    if (originalImageUrl) {
+        console.log(`[BACKEND] Descargando y convirtiendo imagen para ${barcode}: ${originalImageUrl}`);
+        localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
+        console.log(`[BACKEND] Imagen local generada para ${barcode}: ${localImageUrl}`);
+    } else {
+        console.log(`[BACKEND] Producto ${barcode} no tiene imagen en OFF.`);
+    }
+    // --- FIN MODIFICACIÓN ---
+
     const foodData = {
       product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
       nutriments: nutriments,
-      image_url: product.image_url || product.image_front_url || null,
+      image_url: localImageUrl, // <-- Usamos la URL local procesada (o null)
       serving_quantity: product.serving_quantity || null
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // --- INICIO DE LA MODIFICACIÓN (LOGS) ---
     console.log(`[BACKEND] Datos procesados enviados al frontend para ${barcode}:`, JSON.stringify(foodData, null, 2));
-    // --- FIN DE LA MODIFICACIÓN ---
-
-    // Devolvemos el objeto product completo para que el frontend pueda procesarlo
-    res.json({ product: foodData }); // Asegurarse de enviar un objeto con la clave 'product'
+    res.json({ product: foodData }); // Enviar objeto con clave 'product'
 
   } catch (error) {
-    // --- INICIO DE LA MODIFICACIÓN (LOGS) ---
     console.error(`[BACKEND] Error en searchByBarcode para ${req.params.barcode}:`, error.message);
     if (error.response) {
        console.error('[BACKEND] Detalles del error de respuesta:', error.response.status, error.response.data);
+       if (error.response.status === 404) {
+           return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
+       }
     }
-    // --- FIN DE LA MODIFICACIÓN ---
-
-    if (error.response && error.response.status === 404) {
-      return res.status(404).json({
-        error: 'Producto no encontrado en la base de datos de Open Food Facts.',
-      });
-    }
+    // Para otros errores, pasamos al manejador global
     next(error);
   }
 };
 
-/**
- * Sube una imagen de comida y devuelve la URL relativa.
- */
+// uploadFoodImage ahora no es necesario como controlador separado,
+// la lógica está en la ruta POST /food/image y en downloadAndConvertToWebP.
+// Mantenemos la exportación por si se usa en otro lado, pero debería estar vacía o eliminarse.
 const uploadFoodImage = async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se ha subido ningún archivo.' });
-    }
-
-    await ensureUploadDirExists();
-
-    const fileExtension = path.extname(req.file.originalname);
-    const uniqueFilename = `${uuidv4()}${fileExtension}`;
-    const filePath = path.join(UPLOAD_DIR, uniqueFilename);
-
-    await fs.writeFile(filePath, req.file.buffer);
-
-    // Construir la URL relativa que el frontend puede usar directamente
-    const imageUrl = `/images/food/${uniqueFilename}`;
-
-    res.status(201).json({ imageUrl });
-  } catch (error) {
-    if (error instanceof multer.MulterError) {
-      return res
-        .status(400)
-        .json({ error: `Error de Multer: ${error.message}` });
-    }
-    if (error.message.includes('Formato de imagen no válido')) {
-      return res.status(400).json({ error: error.message });
-    }
-    next(error);
-  }
+   // Esta función ya no se usa directamente en la ruta /food/image
+   // La URL se devuelve directamente en esa ruta tras procesar con Sharp.
+   console.warn("Llamada a uploadFoodImage - esta función está obsoleta y no debería usarse.");
+   if (req.imageUrl) {
+       res.status(201).json({ imageUrl: req.imageUrl });
+   } else {
+       res.status(400).json({ error: "No se procesó ninguna imagen." });
+   }
 };
 
-// Agrupar todas las funciones en un 'export default'
+
 export default {
   getNutritionLogsByDate,
   getRecentMeals,
@@ -446,5 +464,5 @@ export default {
   deleteFoodLog,
   upsertWaterLog,
   searchByBarcode,
-  uploadFoodImage,
+  uploadFoodImage, // Aunque obsoleta, la mantenemos por ahora
 };
