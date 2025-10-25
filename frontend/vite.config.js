@@ -24,8 +24,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       // --- INICIO DE LA MODIFICACIÓN ---
-      // Cambiado apple-touch-icon.png a .webp
-      includeAssets: ['favicon.ico', 'apple-touch-icon.webp'],
+      // Cambiado apple-touch-icon.png a .webp (YA ESTÁ HECHO)
+      includeAssets: ['favicon.ico', 'apple-touch-icon.webp'], // favicon.ico se mantiene por compatibilidad
       // --- FIN DE LA MODIFICACIÓN ---
       manifest: {
         name: 'Pro Fitness Glass',
@@ -40,7 +40,7 @@ export default defineConfig({
         icons: [
           {
             // --- INICIO DE LA MODIFICACIÓN ---
-            // Cambiado .png a .webp y type a image/webp
+            // Cambiado .png a .webp y type a image/webp (YA ESTÁ HECHO)
             src: 'pwa-192x192.webp',
             sizes: '192x192',
             type: 'image/webp',
@@ -48,7 +48,7 @@ export default defineConfig({
           },
           {
             // --- INICIO DE LA MODIFICACIÓN ---
-            // Cambiado .png a .webp y type a image/webp
+            // Cambiado .png a .webp y type a image/webp (YA ESTÁ HECHO)
             src: 'pwa-512x512.webp',
             sizes: '512x512',
             type: 'image/webp',
@@ -56,7 +56,7 @@ export default defineConfig({
           },
           {
             // --- INICIO DE LA MODIFICACIÓN ---
-            // Cambiado .png a .webp y type a image/webp
+            // Cambiado .png a .webp y type a image/webp (YA ESTÁ HECHO)
             src: 'pwa-512x512.webp',
             sizes: '512x512',
             type: 'image/webp',

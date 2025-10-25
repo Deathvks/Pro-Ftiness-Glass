@@ -1,36 +1,52 @@
 /* frontend/src/App.jsx */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-// --- INICIO DE LA MODIFICACIÓN (YA HECHA) ---
+// --- INICIO DE LA MODIFICACIÓN ---
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+// --- FIN DE LA MODIFICACIÓN ---
 import { Helmet } from 'react-helmet-async';
-// --- FIN DE LA MODIFICACIÓN (YA HECHA) ---
 import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils, User } from 'lucide-react';
 import useAppStore from './store/useAppStore';
 import { APP_VERSION } from './config/version';
 
-// ... (imports de componentes/páginas sin cambios)
-import Dashboard from './pages/Dashboard';
-import Progress from './pages/Progress';
-import Routines from './pages/Routines';
-import Workout from './pages/Workout';
-import Nutrition from './pages/Nutrition';
-import SettingsScreen from './pages/SettingsScreen';
-import LoginScreen from './pages/LoginScreen';
-import RegisterScreen from './pages/RegisterScreen';
-import OnboardingScreen from './pages/OnboardingScreen';
-import PhysicalProfileEditor from './pages/PhysicalProfileEditor';
-import AccountEditor from './pages/AccountEditor';
+// Componentes estáticos (siempre necesarios o pequeños)
+import GlassCard from './components/GlassCard'; // Asumiendo que es pequeño/reutilizado
+import Spinner from './components/Spinner'; // Necesario para Suspense fallback
 import PRToast from './components/PRToast';
 import ConfirmationModal from './components/ConfirmationModal';
 import WelcomeModal from './components/WelcomeModal';
-import AdminPanel from './pages/AdminPanel.jsx';
 import EmailVerificationModal from './components/EmailVerificationModal';
 import EmailVerification from './components/EmailVerification';
+import CookieConsentBanner from './components/CookieConsentBanner';
+import Sidebar from './components/Sidebar';
+
+// Vistas de Autenticación (se cargan condicionalmente, lazy puede ser overkill si son pequeñas)
+// Mantenemos imports normales por ahora, se pueden hacer lazy si son muy grandes
+import LoginScreen from './pages/LoginScreen';
+import RegisterScreen from './pages/RegisterScreen';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
-import CookieConsentBanner from './components/CookieConsentBanner';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import Profile from './pages/Profile';
-import Sidebar from './components/Sidebar';
+import OnboardingScreen from './pages/OnboardingScreen';
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Componentes de Página Principal (Carga diferida con React.lazy)
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Progress = lazy(() => import('./pages/Progress'));
+const Routines = lazy(() => import('./pages/Routines'));
+const Workout = lazy(() => import('./pages/Workout'));
+const Nutrition = lazy(() => import('./pages/Nutrition'));
+const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
+const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
+const AccountEditor = lazy(() => import('./pages/AccountEditor'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const Profile = lazy(() => import('./pages/Profile'));
+
+// Componente de fallback simple para Suspense
+const LoadingFallback = () => (
+  <div className="flex justify-center items-center h-full pt-20">
+    <Spinner size={40} />
+  </div>
+);
+// --- FIN DE LA MODIFICACIÓN ---
 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -285,7 +301,6 @@ export default function App() {
      return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
   }
 
-  // --- INICIO DE LA MODIFICACIÓN (YA HECHA) ---
   const pageTitles = {
     dashboard: 'Dashboard',
     nutrition: 'Nutrición',
@@ -317,18 +332,16 @@ export default function App() {
 
   const currentTitle = pageTitles[view] || 'Pro Fitness Glass';
   const currentDescription = pageDescriptions[view] || pageDescriptions.default;
-  // --- FIN DE LA MODIFICACIÓN (YA HECHA) ---
 
-  const renderView = () => {
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Mover renderView fuera del return principal para claridad
+  const RenderCurrentView = () => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigate} />;
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Eliminamos 'setView' de Nutrition ya que no se usa
       case 'progress': return <Progress darkMode={theme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout timer={timer} setView={navigate} />;
-      case 'nutrition': return <Nutrition />; // Eliminamos setView
-      // --- FIN DE LA MODIFICACIÓN ---
+      case 'nutrition': return <Nutrition />;
       case 'settings':
         return (
           <SettingsScreen
@@ -346,11 +359,12 @@ export default function App() {
       case 'adminPanel':
         return userProfile?.role === 'admin'
             ? <AdminPanel onCancel={() => navigate('settings')} />
-            : <Dashboard setView={navigate} />;
+            : <Dashboard setView={navigate} />; // Redirigir si no es admin
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       default: return <Dashboard setView={navigate} />;
     }
   };
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <Home size={24} /> },
@@ -362,7 +376,6 @@ export default function App() {
 
   return (
     <div className="relative flex w-full h-full overflow-hidden">
-      {/* --- INICIO DE LA MODIFICACIÓN (YA HECHA) --- */}
       <Helmet>
         <html lang="es" />
         <title>{currentTitle} - Pro Fitness Glass</title>
@@ -370,7 +383,6 @@ export default function App() {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Helmet>
-      {/* --- FIN DE LA MODIFICACIÓN (YA HECHA) --- */}
 
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
@@ -386,10 +398,8 @@ export default function App() {
 
       <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
 
-        {/* --- INICIO DE LA MODIFICACIÓN (YA HECHA) --- */}
         <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
           <span className="text-3xl font-extrabold text-text-primary">{currentTitle}</span>
-        {/* --- FIN DE LA MODIFICACIÓN (YA HECHA) --- */}
           <button
             onClick={() => {
               setPreviousView(view);
@@ -400,9 +410,7 @@ export default function App() {
             {userProfile?.profile_image_url ? (
               <img
                 src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
-                // --- INICIO DE LA MODIFICACIÓN ---
                 alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
-                // --- FIN DE LA MODIFICACIÓN ---
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
@@ -411,7 +419,13 @@ export default function App() {
           </button>
         </div>
 
-        {renderView()}
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* Envolver el renderizado de la vista con Suspense */}
+        <Suspense fallback={<LoadingFallback />}>
+          <RenderCurrentView />
+        </Suspense>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
+
       </main>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 flex justify-around items-center bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]">
@@ -434,9 +448,7 @@ export default function App() {
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
 
-      {/* --- INICIO DE LA MODIFICACIÓN (YA HECHA) --- */}
       {cookieConsent === null && !isInitialLoad && (
-      // --- FIN DE LA MODIFICACIÓN (YA HECHA) ---
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
           onDecline={handleDeclineCookies}
