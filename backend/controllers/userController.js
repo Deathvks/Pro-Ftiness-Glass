@@ -1,3 +1,4 @@
+/* backend/controllers/userController.js */
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import models from '../models/index.js';
@@ -83,16 +84,20 @@ export const updateMyProfile = async (req, res, next) => {
 };
 
 
+// --- INICIO DE MODIFICACIÓN (Lógica de updateMyAccount) ---
 export const updateMyAccount = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    if (req.file) {
-      await fs.unlink(req.file.path);
-    }
-    return res.status(400).json({ errors: errors.array() });
-  }
+  // La validación ya ocurrió en la ruta (handleValidationErrors)
+  // req.file ya fue procesado por Sharp y la ruta está en req.processedImagePath
+  // (req.processedImagePath fue asignado en la ruta)
 
   let oldImagePath = null;
+  const newImagePath = req.processedImagePath || null; // La ruta .webp desde el middleware
+  let imagePathToDeleteOnError = null;
+
+  // Si se subió una nueva imagen, guardamos su ruta para borrarla si algo falla
+  if (newImagePath) {
+      imagePathToDeleteOnError = path.join(__dirname, '..', 'public', newImagePath);
+  }
 
   try {
     const { userId } = req.user;
@@ -100,67 +105,57 @@ export const updateMyAccount = async (req, res, next) => {
 
     const user = await User.findByPk(userId);
     if (!user) {
-      if (req.file) {
-        await fs.unlink(req.file.path);
-      }
+      if (imagePathToDeleteOnError) await fs.unlink(imagePathToDeleteOnError).catch(e => {});
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN (oldImagePath con __dirname) ---
-    // 1. Guardar ruta imagen antigua usando __dirname
+    // 1. Guardar ruta imagen antigua
     if (user.profile_image_url) {
-        // user.profile_image_url es algo como "/images/profiles/imagen.jpg"
-        // Necesitamos unir la base de 'public' con esa ruta relativa.
-        // __dirname es /app/backend/controllers
-        // subimos un nivel a /app/backend, luego entramos a public
         oldImagePath = path.join(__dirname, '..', 'public', user.profile_image_url);
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const fieldsToUpdate = {};
 
-    // 2. Si se sube una nueva imagen
-    if (req.file) {
-        const publicUrl = `/images/profiles/${req.file.filename}`;
-        fieldsToUpdate.profile_image_url = publicUrl;
+    // 2. Si se sube una nueva imagen (.webp)
+    if (newImagePath) {
+        fieldsToUpdate.profile_image_url = newImagePath; // Guardamos la URL relativa .webp
 
-        // Comprobamos si la imagen antigua existe y si su nombre de archivo base es diferente al nuevo
-        if (oldImagePath && path.basename(oldImagePath) === req.file.filename) {
-            oldImagePath = null; // No borrar si es la misma imagen (poco probable con timestamp, pero por seguridad)
+        // Evitar borrar si la ruta es idéntica (poco probable)
+        if (oldImagePath && oldImagePath === imagePathToDeleteOnError) {
+            oldImagePath = null;
         }
     }
 
     // 3. Si se intenta cambiar contraseña
     if (newPassword) {
       if (!currentPassword) {
-        if (req.file) await fs.unlink(req.file.path);
+        if (imagePathToDeleteOnError) await fs.unlink(imagePathToDeleteOnError).catch(e => {});
         return res.status(400).json({ error: 'La contraseña actual es requerida para cambiarla.' });
       }
       const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
       if (!isMatch) {
-        if (req.file) await fs.unlink(req.file.path);
+        if (imagePathToDeleteOnError) await fs.unlink(imagePathToDeleteOnError).catch(e => {});
         return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
       }
       fieldsToUpdate.password_hash = newPassword; // El hook se encarga del hash
     }
 
     // 4. Actualizar otros campos
-    if (name && name !== user.name) fieldsToUpdate.name = name;
-    if (username && username !== user.username) fieldsToUpdate.username = username;
-    if (email && email !== user.email) fieldsToUpdate.email = email;
+    if (name !== undefined && name !== user.name) fieldsToUpdate.name = name;
+    if (username !== undefined && username !== user.username) fieldsToUpdate.username = username;
+    if (email !== undefined && email !== user.email) fieldsToUpdate.email = email;
 
     // 5. Guardar en BBDD
     if (Object.keys(fieldsToUpdate).length > 0) {
         await user.update(fieldsToUpdate);
     }
 
-    // 6. Borrar imagen antigua si existe y si subimos una nueva diferente
+    // 6. Borrar imagen antigua si existe y si subimos una nueva
     if (oldImagePath && fieldsToUpdate.profile_image_url) {
       try {
         await fs.unlink(oldImagePath);
-        console.log(`Imagen antigua borrada: ${oldImagePath}`); // Log para verificar
+        console.log(`Imagen antigua borrada: ${oldImagePath}`);
       } catch (unlinkError) {
-        // Si el archivo no existe (ENOENT), no es un error crítico
         if (unlinkError.code !== 'ENOENT') {
             console.warn(`No se pudo borrar la imagen antigua: ${oldImagePath}`, unlinkError);
         } else {
@@ -178,8 +173,9 @@ export const updateMyAccount = async (req, res, next) => {
 
   } catch (error) {
     // Manejo de errores
-    if (req.file) {
-        try { await fs.unlink(req.file.path); } catch (e) {}
+    if (imagePathToDeleteOnError) {
+        // Si falló (ej. constraint de BBDD), borrar la imagen .webp que acabamos de subir
+        await fs.unlink(imagePathToDeleteOnError).catch(e => console.error("Error borrando imagen tras fallo:", e));
     }
 
     if (error.name === 'SequelizeUniqueConstraintError') {
@@ -189,6 +185,7 @@ export const updateMyAccount = async (req, res, next) => {
     next(error);
   }
 };
+// --- FIN DE MODIFICACIÓN ---
 
 const userController = {
   getMyProfile,

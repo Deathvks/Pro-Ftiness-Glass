@@ -215,9 +215,18 @@ const addFoodLog = async (req, res, next) => {
       carbs_g,
       fats_g,
       weight_g,
-      image_url, // URL de la imagen (ya sea subida o de código de barras procesada)
+      image_url, // URL de código de barras o subida separada
       micronutrients,
     } = req.body;
+
+    // --- INICIO MODIFICACIÓN ---
+    // Priorizar la imagen recién subida y procesada (req.file)
+    // Si no hay, usar la image_url del body (de barcode/separada)
+    // Si no, null.
+    const finalImageUrl = (req.file && req.file.processedPath)
+        ? req.file.processedPath
+        : (image_url || null);
+    // --- FIN MODIFICACIÓN ---
 
     const foodData = {
       user_id: userId,
@@ -229,7 +238,7 @@ const addFoodLog = async (req, res, next) => {
       carbs_g: carbs_g || null,
       fats_g: fats_g || null,
       weight_g: weight_g || null,
-      image_url: image_url || null, // Guardamos la URL que nos llega
+      image_url: finalImageUrl, // Usamos la URL final
       micronutrients: micronutrients || null,
     };
 
@@ -267,17 +276,28 @@ const updateFoodLog = async (req, res, next) => {
       carbs_g,
       fats_g,
       weight_g,
-      image_url, // La nueva URL (puede ser null si se elimina la imagen)
+      image_url, // La URL del body (puede ser null o de barcode)
       meal_type,
       log_date,
       micronutrients,
     } = req.body;
 
-    // --- INICIO MODIFICACIÓN: Borrar imagen antigua si se actualiza a una nueva o a null ---
+    // --- INICIO MODIFICACIÓN: Determinar la nueva URL y borrar la antigua ---
     const oldImageUrl = log.image_url;
-    const newImageUrl = image_url !== undefined ? image_url : oldImageUrl; // Si no viene image_url, mantenemos la antigua
+    let newImageUrl;
 
-    // Si la URL antigua existe Y es diferente de la nueva (o la nueva es null)
+    if (req.file && req.file.processedPath) {
+        // 1. Si se subió un archivo nuevo, esa es la URL
+        newImageUrl = req.file.processedPath;
+    } else if (image_url !== undefined) {
+        // 2. Si se pasó 'image_url' en el body (incluso si es null para borrarla)
+        newImageUrl = image_url;
+    } else {
+        // 3. Si no vino ni archivo ni 'image_url' en el body, se mantiene la antigua
+        newImageUrl = oldImageUrl;
+    }
+
+    // Si la URL antigua existe Y es diferente de la nueva
     if (oldImageUrl && oldImageUrl !== newImageUrl) {
       const oldImagePath = path.join(__dirname, '..', 'public', oldImageUrl);
       fs.unlink(oldImagePath).catch(err => {
@@ -334,9 +354,9 @@ const deleteFoodLog = async (req, res, next) => {
     if (log.image_url) {
       const imagePath = path.join(__dirname, '..', 'public', log.image_url);
       fs.unlink(imagePath).catch(err => {
-         if (err.code !== 'ENOENT') {
-            console.error(`Error al borrar imagen ${imagePath} al eliminar log:`, err);
-         }
+           if (err.code !== 'ENOENT') {
+             console.error(`Error al borrar imagen ${imagePath} al eliminar log:`, err);
+           }
       });
     }
     // --- FIN MODIFICACIÓN ---
@@ -409,11 +429,11 @@ const searchByBarcode = async (req, res, next) => {
     const originalImageUrl = product.image_url || product.image_front_url || null;
     let localImageUrl = null;
     if (originalImageUrl) {
-        console.log(`[BACKEND] Descargando y convirtiendo imagen para ${barcode}: ${originalImageUrl}`);
-        localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
-        console.log(`[BACKEND] Imagen local generada para ${barcode}: ${localImageUrl}`);
+         console.log(`[BACKEND] Descargando y convirtiendo imagen para ${barcode}: ${originalImageUrl}`);
+         localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
+         console.log(`[BACKEND] Imagen local generada para ${barcode}: ${localImageUrl}`);
     } else {
-        console.log(`[BACKEND] Producto ${barcode} no tiene imagen en OFF.`);
+         console.log(`[BACKEND] Producto ${barcode} no tiene imagen en OFF.`);
     }
     // --- FIN MODIFICACIÓN ---
 

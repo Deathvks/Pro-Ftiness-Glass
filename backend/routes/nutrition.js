@@ -66,6 +66,7 @@ const processAndSaveFoodImage = async (req, res, next) => {
             .toFile(outputPath);
 
         // Guardar la URL relativa en req para el controlador
+        // El controlador (nutritionController) deberá buscar esta ruta
         req.file.processedPath = `/images/food/${webpFilename}`; // Ruta relativa desde 'public'
 
         next();
@@ -146,8 +147,9 @@ router.get('/recent', nutritionController.getRecentMeals);
 
 
 // Ruta para subir la imagen de una comida y obtener la URL
+// (Esta ruta se mantiene por si el cliente quiere subir la imagen por separado)
 router.post('/food/image',
-    upload.single('foodImage'),    // Multer primero
+    upload.single('foodImage'),     // Multer primero
     processAndSaveFoodImage,       // Sharp después
     (req, res, next) => {          // Controlador simple para devolver la URL
         if (!req.file || !req.file.processedPath) {
@@ -162,17 +164,29 @@ router.post('/food/image',
 
 
 // Añadir un nuevo registro de comida
-// --- INICIO MODIFICACIÓN: Añadir validación y handleValidationErrors ---
-router.post('/food', foodLogValidationRules, handleValidationErrors, nutritionController.addFoodLog);
+// --- INICIO MODIFICACIÓN: Añadir upload y processAndSaveFoodImage ---
+// Ahora esta ruta acepta multipart/form-data (con imagen) O application/json (sin imagen)
+router.post('/food',
+    upload.single('image'),       // 1. Multer (opcional, campo 'image')
+    processAndSaveFoodImage,      // 2. Sharp (si hay imagen)
+    foodLogValidationRules,       // 3. Validación
+    handleValidationErrors,       // 4. Manejo de errores
+    nutritionController.addFoodLog // 5. Controlador
+);
 // --- FIN MODIFICACIÓN ---
 
 // Actualizar un registro de comida
-// --- INICIO MODIFICACIÓN: Añadir validación y handleValidationErrors ---
-router.put('/food/:logId', [
-    param('logId').isInt().withMessage('ID de log inválido.'),
-    ...updateFoodLogValidationRules, // Usamos las reglas específicas de actualización
-    handleValidationErrors
-], nutritionController.updateFoodLog);
+// --- INICIO MODIFICACIÓN: Añadir upload y processAndSaveFoodImage ---
+router.put('/food/:logId',
+    upload.single('image'),       // 1. Multer (opcional, campo 'image')
+    processAndSaveFoodImage,      // 2. Sharp (si hay imagen)
+    [ // 3. Array de validación
+        param('logId').isInt().withMessage('ID de log inválido.'),
+        ...updateFoodLogValidationRules,
+    ],
+    handleValidationErrors,       // 4. Manejo de errores
+    nutritionController.updateFoodLog // 5. Controlador
+);
 // --- FIN MODIFICACIÓN ---
 
 // Eliminar un registro de comida
