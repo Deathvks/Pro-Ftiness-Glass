@@ -22,9 +22,9 @@ const initialState = {
     selectedDate: getTodayDateString(),
     nutritionSummary: { nutrition: [], water: [] },
     favoriteMeals: [],
-    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
     recentMeals: [], // Añadir estado para comidas recientes
-    // --- FIN DE LA MODIFICACIÓN ---
+    // --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
     templateRoutines: {},
     todaysCreatineLog: [],
     creatineStats: null,
@@ -54,10 +54,19 @@ export const createDataSlice = (set, get) => ({
             const profileData = await userService.getMyProfile();
             set({ userProfile: profileData, isAuthenticated: true });
 
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // 1. Comprobamos el consentimiento de cookies INMEDIATAMENTE después de tener el ID de usuario.
+            //    Usamos 'get()' para llamar a la función definida en 'authSlice'.
+            //    Esperamos (await) a que termine antes de continuar.
+            if (profileData?.id) {
+                await get().checkCookieConsent(profileData.id);
+            }
+            // --- FIN DE LA MODIFICACIÓN ---
+
             if (profileData.goal) {
                 const today = get().selectedDate;
 
-                // --- INICIO DE LA MODIFICACIÓN ---
+                // --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
                 // Añadimos 'nutritionService.getRecentMeals()' a la carga inicial
                 const [
                     routines,
@@ -92,12 +101,13 @@ export const createDataSlice = (set, get) => ({
                     todaysCreatineLog: todaysCreatine.data || [],
                     creatineStats: creatineStats.data || null,
                 });
-                // --- FIN DE LA MODIFICACIÓN ---
+                // --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
             }
         } catch (error) {
             console.error("Error de autenticación o carga de datos:", error);
             get().handleLogout(); // Llama a la acción del authSlice
         } finally {
+            // Esto ahora solo se ejecuta DESPUÉS de que el checkCookieConsent haya terminado.
             set({ isLoading: false });
         }
     },
@@ -202,9 +212,9 @@ export const createDataSlice = (set, get) => ({
 
     // Resetea el estado de los datos al cerrar sesión.
     clearDataState: () => {
-        // --- INICIO DE LA MODIFICACIÓN ---
+        // --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
         // Limpiar 'recentMeals' al cerrar sesión
         set({...initialState});
-        // --- FIN DE LA MODIFICACIÓN ---
+        // --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
     },
 });

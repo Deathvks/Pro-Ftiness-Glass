@@ -43,7 +43,13 @@ export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], on
           <X size={22} />
         </button>
 
-        <h2 className="text-2xl md:text-3xl font-extrabold text-center">Historial de {exerciseName}</h2>
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/* Añadimos 'break-words' para forzar el salto de línea en palabras largas */}
+        <h2 className="text-2xl md:text-3xl font-extrabold text-center px-8 break-words">
+          Historial de {exerciseName}
+        </h2>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
+
         <div className="h-px bg-[--glass-border] my-4" />
 
         <div className="rounded-3xl bg-bg-primary border border-[--glass-border] p-4 md:p-5 max-h-[60vh] overflow-y-auto">

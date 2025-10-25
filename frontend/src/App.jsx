@@ -1,7 +1,5 @@
 /* frontend/src/App.jsx */
-// --- INICIO DE LA MODIFICACIÓN ---
-import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
-// --- FIN DE LA MODIFICACIÓN ---
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils, User } from 'lucide-react';
 import useAppStore from './store/useAppStore';
@@ -26,7 +24,6 @@ import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import OnboardingScreen from './pages/OnboardingScreen';
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Componentes de Página Principal (Carga diferida con React.lazy)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Progress = lazy(() => import('./pages/Progress'));
@@ -46,7 +43,6 @@ const LoadingFallback = () => (
     <Spinner size={40} />
   </div>
 );
-// --- FIN DE LA MODIFICACIÓN ---
 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -67,7 +63,7 @@ export default function App() {
     closeWelcomeModal,
     fetchDataForDate,
     cookieConsent,
-    checkCookieConsent,
+    checkCookieConsent, // <-- Mantenemos la importación aunque no la usemos aquí
     handleAcceptCookies,
     handleDeclineCookies,
   } = useAppStore();
@@ -76,20 +72,6 @@ export default function App() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [previousView, setPreviousView] = useState(null);
   const mainContentRef = useRef(null);
-
-  useEffect(() => {
-    if (mainContentRef.current) {
-      mainContentRef.current.scrollTop = 0;
-    }
-  }, [view]);
-
-  // Guardar lastView solo si no es la carga inicial y no es privacyPolicy
-  useEffect(() => {
-    if (!isInitialLoad && view !== 'privacyPolicy') {
-      localStorage.setItem('lastView', view);
-    }
-  }, [view, isInitialLoad]);
-
 
   const [authView, setAuthView] = useState('login');
 
@@ -104,15 +86,59 @@ export default function App() {
   const { isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
   const [timer, setTimer] = useState(0);
 
+  // --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
+  // Hooks movidos a la parte superior, ANTES de los retornos condicionales.
+
+  // 1. Callbacks
+  const handleLogoutClick = useCallback(() => {
+    setShowLogoutConfirm(true);
+  }, []); // Dependencia vacía, es estable
+
+  const confirmLogout = useCallback(() => {
+    performLogout();
+    setShowLogoutConfirm(false);
+  }, [performLogout]); // Depende de performLogout
+
+  const navigate = useCallback((viewName, options = {}) => {
+    if (!isInitialLoad) {
+      setPreviousView(view);
+    }
+    setView(viewName);
+    if (options.forceTab) {
+      localStorage.setItem('routinesForceTab', options.forceTab);
+    }
+  }, [view, isInitialLoad]); // Dependencias existentes
+
+  const handleShowPolicy = useCallback(() => {
+    setPreviousView(view);
+    setView('privacyPolicy');
+  }, [view]); // Depende de 'view'
+
+  const handleBackFromPolicy = useCallback(() => {
+    setView(previousView || 'dashboard');
+    setPreviousView(null);
+  }, [previousView]); // Depende de 'previousView'
+  
+  // 2. Efectos
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [view]);
+
+  useEffect(() => {
+    if (!isInitialLoad && view !== 'privacyPolicy') {
+      localStorage.setItem('lastView', view);
+    }
+  }, [view, isInitialLoad]);
+
   useEffect(() => {
     const handleUrlChange = () => {
       if (window.location.pathname === '/reset-password' && !isAuthenticated) {
         setAuthView('resetPassword');
       }
     };
-
     handleUrlChange();
-
     window.addEventListener('popstate', handleUrlChange);
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, [isAuthenticated]);
@@ -144,56 +170,52 @@ export default function App() {
       setAccentState(newAccent);
   };
 
-  // Hook para cargar datos iniciales y establecer la vista correcta
   useEffect(() => {
     const loadInitialDataAndSetView = async () => {
-      await fetchInitialData(); // Espera a que los datos se carguen
-
-      // Esta parte se ejecuta DESPUÉS de que fetchInitialData haya terminado y userProfile esté disponible
+      await fetchInitialData(); 
       const loadedUserProfile = useAppStore.getState().userProfile;
       const loadedActiveWorkout = useAppStore.getState().activeWorkout;
 
-      // Comprobar consentimiento AHORA que userProfile está cargado
-      if (loadedUserProfile?.id) {
-          checkCookieConsent(loadedUserProfile.id);
-      }
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // La llamada a checkCookieConsent se ha MOVIDO
+      // DENTRO de fetchInitialData (en dataSlice.js).
+      // Ya no necesitamos hacerla aquí.
+      // --- FIN DE LA MODIFICACIÓN ---
 
-      let targetView = 'dashboard'; // Por defecto, vamos al dashboard
-
+      let targetView = 'dashboard'; 
       if (loadedActiveWorkout) {
-        targetView = 'workout'; // Si hay un workout activo, vamos ahí
+        targetView = 'workout'; 
       } else {
         const lastView = localStorage.getItem('lastView');
-        // Solo restauramos lastView si existe, no es adminPanel para no-admins,
-        // y el usuario no acaba de completar el onboarding (userProfile.goal existe)
         if (lastView && loadedUserProfile?.goal) {
           if (lastView === 'adminPanel' && loadedUserProfile?.role !== 'admin') {
-            targetView = 'dashboard'; // Forzar dashboard si intentaba ir a admin sin ser admin
+            targetView = 'dashboard'; 
           } else if (lastView !== 'login' && lastView !== 'register' && lastView !== 'forgotPassword' && lastView !== 'resetPassword') {
-            // Evitar restaurar vistas de autenticación
              targetView = lastView;
           }
         }
       }
       setView(targetView);
-      setIsInitialLoad(false); // Marcar la carga inicial como completada
+      setIsInitialLoad(false); 
     };
 
     if (isAuthenticated) {
       loadInitialDataAndSetView();
     } else {
-      setIsInitialLoad(false); // No hay carga inicial si no está autenticado
+      setIsInitialLoad(false); 
     }
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Eliminamos 'checkCookieConsent' de las dependencias
+  }, [isAuthenticated, fetchInitialData]);
+    // --- FIN DE LA MODIFICACIÓN ---
 
-  }, [isAuthenticated, fetchInitialData, checkCookieConsent]);
 
-
-    useEffect(() => {
-        if (view === 'dashboard' && isAuthenticated) {
-            const today = new Date().toISOString().split('T')[0];
-            fetchDataForDate(today);
-        }
-    }, [view, isAuthenticated, fetchDataForDate]);
+  useEffect(() => {
+      if (view === 'dashboard' && isAuthenticated) {
+          const today = new Date().toISOString().split('T')[0];
+          fetchDataForDate(today);
+      }
+  }, [view, isAuthenticated, fetchDataForDate]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -219,88 +241,21 @@ export default function App() {
     document.body.classList.add(`accent-${accent}`);
   }, [accent]);
 
-  // Simplificamos este useEffect: solo maneja la verificación de email y el modal de bienvenida
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
       if (!userProfile.is_verified) {
         setShowEmailVerificationModal(true);
         setVerificationEmail(userProfile.email);
       }
-      // Solo comprobar welcome si no es la carga inicial (para evitar mostrarlo junto al onboarding)
       if (!isInitialLoad) {
           checkWelcomeModal();
       }
     }
   }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal, isInitialLoad]);
 
-
-  const handleLogoutClick = () => {
-    setShowLogoutConfirm(true);
-  };
-
-  const confirmLogout = () => {
-    performLogout();
-    setShowLogoutConfirm(false);
-  };
-
-  const navigate = useCallback((viewName, options = {}) => {
-    // Si estamos navegando DESPUÉS de la carga inicial,
-    // guardamos la vista actual como previousView
-    if (!isInitialLoad) {
-      setPreviousView(view);
-    }
-    setView(viewName);
-    if (options.forceTab) {
-      localStorage.setItem('routinesForceTab', options.forceTab);
-    }
-  }, [view, isInitialLoad]);
-
-
-  const handleShowPolicy = () => {
-    setPreviousView(view);
-    setView('privacyPolicy');
-  };
-
-  const handleBackFromPolicy = () => {
-    setView(previousView || 'dashboard');
-    setPreviousView(null);
-  };
-
-  // Mostramos 'Cargando...' mientras isInitialLoad es true Y isLoading es true
-  if (isLoading && isInitialLoad) {
-    return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
-  }
-
-
-  if (!isAuthenticated) {
-    switch (authView) {
-        case 'register':
-            return <RegisterScreen showLogin={() => setAuthView('login')} />;
-        case 'forgotPassword':
-            return <ForgotPasswordScreen showLogin={() => setAuthView('login')} />;
-        case 'resetPassword':
-            return <ResetPasswordScreen showLogin={() => {
-                window.history.pushState({}, '', '/');
-                setAuthView('login');
-            }} />;
-        default:
-            return <LoginScreen
-                showRegister={() => setAuthView('register')}
-                showForgotPassword={() => setAuthView('forgotPassword')}
-            />;
-    }
-  }
-
-  // Si el perfil existe pero falta el 'goal', mostramos Onboarding
-  if (userProfile && !userProfile.goal) {
-    return <OnboardingScreen />;
-  }
-  // Si el perfil aún no se ha cargado (puede pasar brevemente después de login/register),
-  // mostramos cargando para evitar errores.
-  if (!userProfile) {
-     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
-  }
-
+  // 3. Lógica de renderizado y memoización
+  // Estas constantes DEBEN definirse aquí, ya que 'userProfile' 
+  // puede ser nulo antes de los retornos condicionales.
   const pageTitles = {
     dashboard: 'Dashboard',
     nutrition: 'Nutrición',
@@ -321,7 +276,8 @@ export default function App() {
       progress: 'Visualiza tu progreso en gráficos: peso, fuerza por ejercicio y nutrición.',
       routines: 'Crea, edita y explora rutinas de entrenamiento personalizadas.',
       settings: 'Configura la apariencia de la app, tu cuenta y preferencias.',
-      profile: `Edita tu perfil, ${userProfile?.username || 'usuario'}.`,
+      // Usamos 'userProfile?' para que sea seguro llamarlo aunque sea nulo
+      profile: `Edita tu perfil, ${userProfile?.username || 'usuario'}.`, 
       workout: 'Registra tu sesión de entrenamiento actual.',
       physicalProfileEditor: 'Actualiza tus datos físicos como edad, altura y objetivos.',
       accountEditor: 'Modifica tu nombre, email o contraseña.',
@@ -333,9 +289,8 @@ export default function App() {
   const currentTitle = pageTitles[view] || 'Pro Fitness Glass';
   const currentDescription = pageDescriptions[view] || pageDescriptions.default;
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Mover renderView fuera del return principal para claridad
-  const RenderCurrentView = () => {
+  // 4. Hook 'useMemo' para la vista actual (ahora antes de los 'return')
+  const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigate} />;
       case 'progress': return <Progress darkMode={theme !== 'light'} />;
@@ -357,15 +312,65 @@ export default function App() {
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
       case 'profile': return <Profile onCancel={() => navigate(previousView || 'settings')} />;
       case 'adminPanel':
+        // Usamos 'userProfile?' para seguridad
         return userProfile?.role === 'admin'
             ? <AdminPanel onCancel={() => navigate('settings')} />
-            : <Dashboard setView={navigate} />; // Redirigir si no es admin
+            : <Dashboard setView={navigate} />; 
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       default: return <Dashboard setView={navigate} />;
     }
-  };
-  // --- FIN DE LA MODIFICACIÓN ---
+  }, [
+    view,
+    navigate,
+    theme,
+    timer,
+    accent,
+    handleLogoutClick,
+    previousView, 
+    userProfile, // Añadido como dependencia explícita
+    handleBackFromPolicy 
+    // setAccent y setTheme son estables de 'useState', no necesitan estar aquí
+  ]);
 
+  // --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
+
+
+  // 5. Retornos condicionales (Guards)
+  // Estos 'return' ahora están DESPUÉS de todos los hooks.
+  if (isLoading && isInitialLoad) {
+    return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
+  }
+
+  if (!isAuthenticated) {
+    switch (authView) {
+        case 'register':
+            return <RegisterScreen showLogin={() => setAuthView('login')} />;
+        case 'forgotPassword':
+            return <ForgotPasswordScreen showLogin={() => setAuthView('login')} />;
+        case 'resetPassword':
+            return <ResetPasswordScreen showLogin={() => {
+                window.history.pushState({}, '', '/');
+                setAuthView('login');
+            }} />;
+        default:
+            return <LoginScreen
+                showRegister={() => setAuthView('register')}
+                showForgotPassword={() => setAuthView('forgotPassword')}
+            />;
+    }
+  }
+
+  // 'userProfile' ya se ha usado en 'pageDescriptions' y 'currentViewComponent'
+  // de forma segura (con ?.), así que esta comprobación es correcta.
+  if (userProfile && !userProfile.goal) {
+    return <OnboardingScreen />;
+  }
+ 
+  if (!userProfile) {
+     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
+  }
+  
+  // 6. Renderizado final
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <Home size={24} /> },
     { id: 'nutrition', label: 'Nutrición', icon: <Utensils size={24} /> },
@@ -419,12 +424,9 @@ export default function App() {
           </button>
         </div>
 
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* Envolver el renderizado de la vista con Suspense */}
         <Suspense fallback={<LoadingFallback />}>
-          <RenderCurrentView />
+          {currentViewComponent}
         </Suspense>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       </main>
 

@@ -13,9 +13,9 @@ const clearAuthStorage = () => {
     localStorage.removeItem('templateRoutinesShowFilters');
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
+// --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
 // ELIMINADA la función getInitialCookieConsent ya que no se usa
-// --- FIN DE LA MODIFICACIÓN ---
+// --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
 
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
 export const createAuthSlice = (set, get) => ({
@@ -36,11 +36,11 @@ export const createAuthSlice = (set, get) => ({
         localStorage.setItem('fittrack_token', token);
         set({ token, isAuthenticated: true });
         await get().fetchInitialData(); // Llama a la acción del dataSlice
-        // Comprobar consentimiento *después* de cargar el perfil en fetchInitialData
-        const userId = get().userProfile?.id;
-        if (userId) {
-          get().checkCookieConsent(userId); // Carga el estado inicial
-        }
+
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // ELIMINADA la llamada duplicada a checkCookieConsent.
+        // fetchInitialData (en dataSlice) ya se encarga de esto.
+        // --- FIN DE LA MODIFICACIÓN ---
     },
 
     // Cierra sesión: limpia el token, el almacenamiento y resetea el estado completo.
@@ -83,7 +83,9 @@ export const createAuthSlice = (set, get) => ({
     },
 
     // Comprueba el consentimiento de cookies para el usuario actual.
-    checkCookieConsent: (userId) => {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Convertida a 'async' para que dataSlice.js pueda 'await' su finalización.
+    checkCookieConsent: async (userId) => {
         // Esta función ahora simplemente lee y actualiza el estado.
         const consent = localStorage.getItem(`cookie_consent_${userId}`);
         if (consent === 'true') {
@@ -93,7 +95,10 @@ export const createAuthSlice = (set, get) => ({
         } else {
             set({ cookieConsent: null });
         }
+        // Devolvemos una promesa resuelta para que el 'await' en dataSlice.js funcione.
+        return Promise.resolve();
     },
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // Acepta las cookies y guarda la preferencia para el usuario actual.
     handleAcceptCookies: () => {
