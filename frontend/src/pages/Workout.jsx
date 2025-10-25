@@ -1,3 +1,4 @@
+/* frontend/src/pages/Workout.jsx */
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, Play, Pause, Square, FileText, Clock, Link2, CornerDownRight, X, Repeat } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
@@ -230,11 +231,13 @@ const Workout = ({ timer, setView }) => {
                 </button>
             </div>
         </div>
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
         {!hasWorkoutStarted && (
-          <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-center">
-            <p className="text-yellow-600 dark:text-yellow-400 font-medium">⏱️ Inicia el cronómetro para comenzar a registrar datos</p>
+          <div className="mt-4 p-3 bg-accent-transparent border border-accent-border rounded-md text-center">
+            <p className="text-accent font-medium">⏱️ Inicia el cronómetro para comenzar a registrar datos</p>
           </div>
         )}
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
       </GlassCard>
 
       {!isSimpleWorkout && (
@@ -292,7 +295,7 @@ const Workout = ({ timer, setView }) => {
                                       type="number"
                                       placeholder="0"
                                       value={set.reps}
-                                      onChange={hasWorkoutStarted ? (e) => updateActiveWorkoutSet(actualExIndex, setIndex, 'reps', e.target.value) : undefined}
+                                      onChange={hasWorkoutStarted ? (e) => updateActiveWorkoutSet(actualExIndex, setIndex, 'reps', e.T.value) : undefined}
                                       onClick={!hasWorkoutStarted ? handleDisabledInputClick : undefined}
                                       className={baseInputClasses}
                                       disabled={!hasWorkoutStarted}
