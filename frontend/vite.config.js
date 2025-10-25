@@ -23,7 +23,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Cambiado apple-touch-icon.png a .webp
+      includeAssets: ['favicon.ico', 'apple-touch-icon.webp'],
+      // --- FIN DE LA MODIFICACIÓN ---
       manifest: {
         name: 'Pro Fitness Glass',
         short_name: 'FitTrack-Pro',
@@ -36,20 +39,29 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Cambiado .png a .webp y type a image/webp
+            src: 'pwa-192x192.webp',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/webp',
+            // --- FIN DE LA MODIFICACIÓN ---
           },
           {
-            src: 'pwa-512x512.png',
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Cambiado .png a .webp y type a image/webp
+            src: 'pwa-512x512.webp',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/webp',
+            // --- FIN DE LA MODIFICACIÓN ---
           },
           {
-            src: 'pwa-512x512.png',
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Cambiado .png a .webp y type a image/webp
+            src: 'pwa-512x512.webp',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/webp',
             purpose: 'any maskable',
+            // --- FIN DE LA MODIFICACIÓN ---
           },
         ],
       },
