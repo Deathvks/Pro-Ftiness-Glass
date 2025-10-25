@@ -1,14 +1,13 @@
 /* frontend/src/pages/Profile.jsx */
 import React, { useState, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, Save, User, Camera } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import { updateUserAccount } from '../services/userService';
-// --- INICIO DE LA MODIFICACIÓN ---
-import ProfileImageModal from '../components/ProfileImageModal'; // Importar el modal
-// --- FIN DE LA MODIFICACIÓN ---
+import ProfileImageModal from '../components/ProfileImageModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -26,17 +25,13 @@ const Profile = ({ onCancel }) => {
     const [imagePreview, setImagePreview] = useState(userProfile.profile_image_url || null);
     const fileInputRef = useRef(null);
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Estado para controlar el modal de imagen ampliada
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-    // Función para abrir el modal
     const openImageModal = () => {
         if (imagePreview) {
             setIsImageModalOpen(true);
         }
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const [formData, setFormData] = useState({
         username: userProfile.username || '',
@@ -54,7 +49,6 @@ const Profile = ({ onCancel }) => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Validar tamaño y tipo antes de mostrar previsualización
             const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
             if (!allowedTypes.includes(file.type)) {
                 addToast('Formato de imagen no válido (solo JPG, PNG, WebP).', 'error');
@@ -91,7 +85,6 @@ const Profile = ({ onCancel }) => {
             }
         }
 
-        // Validación de la imagen (aunque ya se hizo en handleImageChange, por si acaso)
         if (profileImageFile && profileImageFile.size > 2 * 1024 * 1024) {
             newErrors.image = 'La imagen no debe pesar más de 2MB.';
         }
@@ -112,7 +105,6 @@ const Profile = ({ onCancel }) => {
         setIsLoading(true);
 
         const data = new FormData();
-        // Solo añadir si ha cambiado
         if (formData.username !== userProfile.username) {
             data.append('username', formData.username);
         }
@@ -129,14 +121,13 @@ const Profile = ({ onCancel }) => {
             data.append('profileImage', profileImageFile);
         }
 
-        // Si no hay cambios ni nueva imagen, no enviar nada
         if (!profileImageFile &&
             formData.username === userProfile.username &&
             formData.email === userProfile.email &&
             !formData.newPassword) {
             addToast("No se detectaron cambios.", "info");
             setIsLoading(false);
-            onCancel(); // O simplemente no hacer nada y quedarse
+            onCancel();
             return;
         }
 
@@ -146,10 +137,9 @@ const Profile = ({ onCancel }) => {
             addToast('Perfil actualizado.', 'success');
             await fetchInitialData();
             if (fileInputRef.current) {
-                fileInputRef.current.value = ""; // Limpiar input file
+                fileInputRef.current.value = "";
             }
-            setProfileImageFile(null); // Limpiar archivo en estado
-            // No llamar a onCancel aquí, fetchInitialData actualizará userProfile y la imagen
+            setProfileImageFile(null);
         } catch (error) {
              const errorMessage = error.message || 'No se pudo actualizar el perfil.';
              if (errorMessage.toLowerCase().includes('nombre de usuario')) {
@@ -157,7 +147,7 @@ const Profile = ({ onCancel }) => {
              } else if (errorMessage.toLowerCase().includes('email')) {
                  setErrors({ email: errorMessage });
              } else {
-                 setErrors({ api: errorMessage }); // Error genérico
+                 setErrors({ api: errorMessage });
              }
             addToast(errorMessage, 'error');
         } finally {
@@ -168,7 +158,12 @@ const Profile = ({ onCancel }) => {
     const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
 
     return (
-        <> {/* Fragmento para incluir el modal */}
+        <>
+            <Helmet>
+                <title>{`Editar Perfil: ${formData.username || 'Usuario'} - Pro Fitness Glass`}</title>
+                <meta name="description" content={`Edita tu foto de perfil, nombre de usuario (${formData.username || 'Usuario'}), email y contraseña en Pro Fitness Glass.`} />
+            </Helmet>
+
             <div className="w-full max-w-4xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-6 sm:mt-0">
                 <button onClick={onCancel} className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4">
                     <ChevronLeft size={20} />
@@ -189,14 +184,13 @@ const Profile = ({ onCancel }) => {
                                 accept="image/png, image/jpeg, image/webp"
                                 className="hidden"
                             />
-                             {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                             {/* Añadir onClick para abrir el modal */}
                             <div className="relative w-32 h-32 rounded-full cursor-pointer" onClick={openImageModal} title="Ver imagen ampliada">
-                            {/* --- FIN DE LA MODIFICACIÓN --- */}
                                 {imagePreview ? (
                                     <img
                                         src={imagePreview.startsWith('blob:') || imagePreview.startsWith('http') ? imagePreview : `${BACKEND_BASE_URL}${imagePreview}`}
-                                        alt="Perfil"
+                                        // --- INICIO DE LA MODIFICACIÓN ---
+                                        alt={`Foto de perfil de ${formData.username || 'usuario'}`}
+                                        // --- FIN DE LA MODIFICACIÓN ---
                                         className="w-32 h-32 rounded-full object-cover"
                                     />
                                 ) : (
@@ -207,7 +201,7 @@ const Profile = ({ onCancel }) => {
                                 <button
                                     type="button"
                                     onClick={(e) => {
-                                        e.stopPropagation(); // Evita abrir el modal al hacer clic en el botón de cámara
+                                        e.stopPropagation();
                                         fileInputRef.current.click();
                                     }}
                                     className="absolute bottom-0 right-0 p-2 bg-accent rounded-full text-bg-secondary hover:scale-110 transition"
@@ -216,14 +210,11 @@ const Profile = ({ onCancel }) => {
                                     <Camera size={20} />
                                 </button>
                             </div>
-                             {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                             {/* Mostrar error de imagen aquí */}
                              {errors.image && <p className="form-error-text -mt-3">{errors.image}</p>}
-                             {/* --- FIN DE LA MODIFICACIÓN --- */}
                         </div>
 
                         <div>
-                            <h3 className="text-lg font-bold mb-4">Datos Básicos</h3>
+                            <h2 className="text-lg font-bold mb-4">Datos Básicos</h2>
                             <div className="flex flex-col gap-4">
                                 <div>
                                     <label htmlFor="username" className="block text-sm font-medium text-text-secondary mb-2">Nombre de usuario</label>
@@ -239,7 +230,7 @@ const Profile = ({ onCancel }) => {
                         </div>
 
                         <div className="pt-6 border-t border-glass-border">
-                            <h3 className="text-lg font-bold mb-4">Cambiar Contraseña</h3>
+                            <h2 className="text-lg font-bold mb-4">Cambiar Contraseña</h2>
                             <p className="text-sm text-text-secondary mb-4 -mt-3">Deja los campos en blanco si no quieres cambiar tu contraseña.</p>
                             <div className="flex flex-col gap-4">
                                 <div>
@@ -268,8 +259,6 @@ const Profile = ({ onCancel }) => {
                 </GlassCard>
             </div>
 
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* Renderizar el modal si está abierto */}
             {isImageModalOpen && (
                 <ProfileImageModal
                     imageUrl={imagePreview?.startsWith('blob:') || imagePreview?.startsWith('http') ? imagePreview : `${BACKEND_BASE_URL}${imagePreview}`}
@@ -277,7 +266,6 @@ const Profile = ({ onCancel }) => {
                     onClose={() => setIsImageModalOpen(false)}
                 />
             )}
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
         </>
     );
 };

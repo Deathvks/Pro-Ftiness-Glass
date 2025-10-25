@@ -1,5 +1,8 @@
 /* frontend/src/App.jsx */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+// --- INICIO DE LA MODIFICACIÓN (YA HECHA) ---
+import { Helmet } from 'react-helmet-async';
+// --- FIN DE LA MODIFICACIÓN (YA HECHA) ---
 import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils, User } from 'lucide-react';
 import useAppStore from './store/useAppStore';
 import { APP_VERSION } from './config/version';
@@ -134,12 +137,10 @@ export default function App() {
       const loadedUserProfile = useAppStore.getState().userProfile;
       const loadedActiveWorkout = useAppStore.getState().activeWorkout;
 
-      // --- INICIO DE LA MODIFICACIÓN ---
       // Comprobar consentimiento AHORA que userProfile está cargado
       if (loadedUserProfile?.id) {
           checkCookieConsent(loadedUserProfile.id);
       }
-      // --- FIN DE LA MODIFICACIÓN ---
 
       let targetView = 'dashboard'; // Por defecto, vamos al dashboard
 
@@ -168,8 +169,7 @@ export default function App() {
       setIsInitialLoad(false); // No hay carga inicial si no está autenticado
     }
 
-  }, [isAuthenticated, fetchInitialData, checkCookieConsent]); // <-- Añadido checkCookieConsent a las dependencias
-  // --- FIN DE LA MODIFICACIÓN ---
+  }, [isAuthenticated, fetchInitialData, checkCookieConsent]);
 
 
     useEffect(() => {
@@ -203,24 +203,19 @@ export default function App() {
     document.body.classList.add(`accent-${accent}`);
   }, [accent]);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Simplificamos este useEffect: solo maneja la verificación de email y el modal de bienvenida
   useEffect(() => {
-    if (isAuthenticated && userProfile && !isLoading) { // Quitamos isInitialLoad de aquí
+    if (isAuthenticated && userProfile && !isLoading) {
       if (!userProfile.is_verified) {
         setShowEmailVerificationModal(true);
         setVerificationEmail(userProfile.email);
       }
-      // La comprobación de cookieConsent ahora se hace en el useEffect de carga inicial
-      // if (cookieConsent === null) { checkCookieConsent(userProfile.id); }
-
       // Solo comprobar welcome si no es la carga inicial (para evitar mostrarlo junto al onboarding)
       if (!isInitialLoad) {
           checkWelcomeModal();
       }
     }
-  }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal, isInitialLoad]); // Mantenemos isInitialLoad para checkWelcomeModal
-  // --- FIN DE LA MODIFICACIÓN ---
+  }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal, isInitialLoad]);
 
 
   const handleLogoutClick = () => {
@@ -290,24 +285,50 @@ export default function App() {
      return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
   }
 
-
+  // --- INICIO DE LA MODIFICACIÓN (YA HECHA) ---
   const pageTitles = {
     dashboard: 'Dashboard',
     nutrition: 'Nutrición',
     progress: 'Progreso',
     routines: 'Rutinas',
     settings: 'Ajustes',
-    profile: 'Perfil'
+    profile: 'Perfil',
+    workout: 'Entrenamiento Activo',
+    physicalProfileEditor: 'Editar Perfil Físico',
+    accountEditor: 'Editar Cuenta',
+    adminPanel: 'Panel de Admin',
+    privacyPolicy: 'Política de Privacidad',
   };
-  const currentTitle = pageTitles[view];
+
+  const pageDescriptions = {
+      dashboard: 'Tu resumen diario de actividad, nutrición y progreso.',
+      nutrition: 'Registra tus comidas, agua y suplementos. Sigue tus macros y calorías.',
+      progress: 'Visualiza tu progreso en gráficos: peso, fuerza por ejercicio y nutrición.',
+      routines: 'Crea, edita y explora rutinas de entrenamiento personalizadas.',
+      settings: 'Configura la apariencia de la app, tu cuenta y preferencias.',
+      profile: `Edita tu perfil, ${userProfile?.username || 'usuario'}.`,
+      workout: 'Registra tu sesión de entrenamiento actual.',
+      physicalProfileEditor: 'Actualiza tus datos físicos como edad, altura y objetivos.',
+      accountEditor: 'Modifica tu nombre, email o contraseña.',
+      adminPanel: 'Gestión de usuarios y configuraciones avanzadas.',
+      privacyPolicy: 'Información sobre cómo tratamos tus datos y el uso de cookies.',
+      default: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.',
+  };
+
+  const currentTitle = pageTitles[view] || 'Pro Fitness Glass';
+  const currentDescription = pageDescriptions[view] || pageDescriptions.default;
+  // --- FIN DE LA MODIFICACIÓN (YA HECHA) ---
 
   const renderView = () => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigate} />;
-      case 'progress': return <Progress darkMode={theme !== 'light'} setView={navigate} />;
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Eliminamos 'setView' de Nutrition ya que no se usa
+      case 'progress': return <Progress darkMode={theme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout timer={timer} setView={navigate} />;
-      case 'nutrition': return <Nutrition setView={navigate} />;
+      case 'nutrition': return <Nutrition />; // Eliminamos setView
+      // --- FIN DE LA MODIFICACIÓN ---
       case 'settings':
         return (
           <SettingsScreen
@@ -321,12 +342,11 @@ export default function App() {
         );
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />;
       case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
-      case 'profile': return <Profile onCancel={() => navigate(previousView || 'settings')} />; // Volver a settings desde profile
+      case 'profile': return <Profile onCancel={() => navigate(previousView || 'settings')} />;
       case 'adminPanel':
-        // Asegurarse de que solo los admins puedan ver el panel
         return userProfile?.role === 'admin'
             ? <AdminPanel onCancel={() => navigate('settings')} />
-            : <Dashboard setView={navigate} />; // Redirigir si no es admin
+            : <Dashboard setView={navigate} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       default: return <Dashboard setView={navigate} />;
     }
@@ -342,6 +362,16 @@ export default function App() {
 
   return (
     <div className="relative flex w-full h-full overflow-hidden">
+      {/* --- INICIO DE LA MODIFICACIÓN (YA HECHA) --- */}
+      <Helmet>
+        <html lang="es" />
+        <title>{currentTitle} - Pro Fitness Glass</title>
+        <meta name="description" content={currentDescription} />
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </Helmet>
+      {/* --- FIN DE LA MODIFICACIÓN (YA HECHA) --- */}
+
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
       <Sidebar
@@ -356,28 +386,30 @@ export default function App() {
 
       <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
 
-        {currentTitle && (
-          <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
-            <h1 className="text-3xl font-extrabold">{currentTitle}</h1>
-            <button
-              onClick={() => {
-                setPreviousView(view);
-                navigate('profile');
-              }}
-              className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
-            >
-              {userProfile?.profile_image_url ? (
-                <img
-                  src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
-                  alt="Perfil"
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <User size={24} className="text-text-secondary" />
-              )}
-            </button>
-          </div>
-        )}
+        {/* --- INICIO DE LA MODIFICACIÓN (YA HECHA) --- */}
+        <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
+          <span className="text-3xl font-extrabold text-text-primary">{currentTitle}</span>
+        {/* --- FIN DE LA MODIFICACIÓN (YA HECHA) --- */}
+          <button
+            onClick={() => {
+              setPreviousView(view);
+              navigate('profile');
+            }}
+            className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
+          >
+            {userProfile?.profile_image_url ? (
+              <img
+                src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
+                // --- INICIO DE LA MODIFICACIÓN ---
+                alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
+                // --- FIN DE LA MODIFICACIÓN ---
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <User size={24} className="text-text-secondary" />
+            )}
+          </button>
+        </div>
 
         {renderView()}
       </main>
@@ -387,7 +419,6 @@ export default function App() {
           <button
             key={item.id}
             onClick={() => {
-              // No actualizamos previousView en la navegación móvil principal
               navigate(item.id);
             }}
             className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
@@ -403,10 +434,9 @@ export default function App() {
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* Añadimos !isInitialLoad para evitar mostrar el banner durante la carga inicial */}
+      {/* --- INICIO DE LA MODIFICACIÓN (YA HECHA) --- */}
       {cookieConsent === null && !isInitialLoad && (
-      // --- FIN DE LA MODIFICACIÓN ---
+      // --- FIN DE LA MODIFICACIÓN (YA HECHA) ---
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
           onDecline={handleDeclineCookies}

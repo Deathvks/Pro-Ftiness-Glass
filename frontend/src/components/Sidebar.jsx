@@ -12,10 +12,7 @@ const Sidebar = ({
   handleLogoutClick
 }) => {
   return (
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Se reemplaza bg-bg-primary por bg-[--glass-bg] y se añade backdrop-blur-glass
     <nav className="hidden md:flex flex-col gap-10 p-8 w-64 h-full border-r border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass">
-    {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {/* Logo y título */}
       <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 text-accent transition-transform hover:scale-105">
@@ -33,8 +30,8 @@ const Sidebar = ({
               navigate(item.id);
             }}
             className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === item.id
-                ? 'bg-accent text-bg-secondary'
-                : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
+              ? 'bg-accent text-bg-secondary'
+              : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
               }`}>
             {item.icon}
             <span>{item.label}</span>
@@ -51,24 +48,25 @@ const Sidebar = ({
             navigate('profile');
           }}
           className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 overflow-hidden ${view === 'profile'
-              ? 'bg-accent text-bg-secondary'
-              : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
+            ? 'bg-accent text-bg-secondary'
+            : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
             }`}>
 
           {userProfile && userProfile.profile_image_url ? (
-              <img
-                  src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
-                  alt="Perfil"
-                  className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-              />
+            <img
+              src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
+              // --- INICIO DE LA MODIFICACIÓN ---
+              alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
+              // --- FIN DE LA MODIFICACIÓN ---
+              className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+            />
           ) : (
-              <div className="w-6 h-6 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden flex-shrink-0">
-                  <User size={16} className="text-text-secondary" />
-              </div>
+            <div className="w-6 h-6 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden flex-shrink-0">
+              <User size={16} className="text-text-secondary" />
+            </div>
           )}
           <span className="truncate">{userProfile?.username || 'Perfil'}</span>
         </button>
-        {/* Cambiamos las clases hover (ya estaba en tu fichero) */}
         <button onClick={handleLogoutClick} className="flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold text-text-secondary hover:bg-red/20 hover:text-red transition-colors duration-200">
           <LogOut size={24} />
           <span className="whitespace-nowrap">Cerrar Sesión</span>

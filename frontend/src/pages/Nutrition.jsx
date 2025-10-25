@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
+import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap } from 'lucide-react';
-// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -27,16 +26,17 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
     const isToday = today.toISOString().split('T')[0] === selectedDate;
 
     return (
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Añadimos margen superior en móvil
         <div className="flex items-center justify-between mb-8 mt-6 sm:mt-0">
             <button onClick={() => changeDay(-1)} className="p-2 rounded-full hover:bg-white/10 transition">
                 <ChevronLeft />
             </button>
             <div className="text-center">
-                <h2 className="text-xl font-bold">
+                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                {/* Cambiado de h2 a p por semántica (es un dato, no un título de sección) */}
+                <p className="text-xl font-bold">
                     {date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </h2>
+                </p>
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 {isToday && <span className="text-xs font-semibold text-accent">HOY</span>}
             </div>
             <button onClick={() => changeDay(1)} disabled={isToday} className="p-2 rounded-full hover:bg-white/10 transition disabled:opacity-50">
@@ -48,7 +48,7 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
 
 
 // Componente principal de la página de Nutrición
-const Nutrition = ({ setView }) => {
+const Nutrition = () => {
     const { addToast } = useToast();
     const {
         userProfile,
@@ -96,7 +96,7 @@ const Nutrition = ({ setView }) => {
         const multiplier = userProfile.goal === 'gain' ? 2.0 : userProfile.goal === 'lose' ? 1.8 : 1.6;
         return Math.round(latestWeight * multiplier);
     }, [latestWeight, userProfile]);
-    
+
     const waterTarget = useMemo(() => {
         if (!latestWeight) return 2500;
         return Math.round(latestWeight * 35);
@@ -120,39 +120,25 @@ const Nutrition = ({ setView }) => {
         setIsSubmitting(true);
         try {
             const isArray = Array.isArray(formDataOrArray);
-    
-            // Si modal.data.id existe, SIEMPRE es una edición.
-            if (modal.data?.id) {
-                // Si es una edición, los datos (formDataOrArray) deberían ser un objeto.
-                // Si por error viniera como un array, cogemos el primer elemento.
-                const formData = isArray ? formDataOrArray[0] : formDataOrArray;
 
+            if (modal.data?.id) {
+                const formData = isArray ? formDataOrArray[0] : formDataOrArray;
                 if (!formData) {
                     throw new Error("No se proporcionaron datos para la actualización.");
                 }
-
                 await nutritionService.updateFoodLog(modal.data.id, formData);
                 addToast('Comida actualizada.', 'success');
-            
-            } else { // Creando (puede ser uno o varios)
+            } else {
                 const foodsToAdd = isArray ? formDataOrArray : [formDataOrArray];
-                
                 const payloads = foodsToAdd.map(food => ({
                     ...food,
                     log_date: selectedDate,
                     meal_type: modal.data.mealType,
                 }));
-    
-                // Usamos Promise.all para enviar todas las peticiones en paralelo
                 await Promise.all(payloads.map(payload => nutritionService.addFoodLog(payload)));
-                
-                if (payloads.length > 1) {
-                    addToast(`${payloads.length} comidas añadidas.`, 'success');
-                } else {
-                    addToast('Comida añadida.', 'success');
-                }
+                addToast(payloads.length > 1 ? `${payloads.length} comidas añadidas.` : 'Comida añadida.', 'success');
             }
-            
+
             await fetchDataForDate(selectedDate);
             setModal({ type: null, data: null });
         } catch (error) {
@@ -161,7 +147,7 @@ const Nutrition = ({ setView }) => {
             setIsSubmitting(false);
         }
     };
-    
+
     const handleDeleteFood = async () => {
         if (!logToDelete) return;
         setIsSubmitting(true);
@@ -198,7 +184,7 @@ const Nutrition = ({ setView }) => {
         });
         return mealData;
     }, [nutritionLog]);
-    
+
     const mealTotals = useMemo(() => {
         const totals = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
         (nutritionLog || []).forEach(log => {
@@ -210,15 +196,14 @@ const Nutrition = ({ setView }) => {
     }, [nutritionLog]);
 
     return (
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Ajustamos padding
         <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-            
-            {/* Header para Móvil (ELIMINADO) */}
-            
-            {/* Header para PC (existente modificado) */}
+
+            <Helmet>
+                <title>Registro de Nutrición - Pro Fitness Glass</title>
+                <meta name="description" content="Registra tus comidas (desayuno, almuerzo, cena, snacks), agua y suplementos. Controla tus calorías y macronutrientes diarios." />
+            </Helmet>
+
             <h1 className="hidden md:block text-4xl font-extrabold mb-4 mt-10 md:mt-0">Nutrición</h1>
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
 
@@ -229,7 +214,10 @@ const Nutrition = ({ setView }) => {
                 {/* Sección de Resumen y Suplementos */}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
                     <GlassCard className="lg:col-span-3 p-6">
-                        <h3 className="text-xl font-bold mb-4">Resumen del Día</h3>
+                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                        {/* Promovido a h2 */}
+                        <h2 className="text-xl font-bold mb-4">Resumen del Día</h2>
+                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <StatCard icon={<Flame size={24} />} title="Calorías" value={totals.calories.toLocaleString('es-ES')} unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} />
                             <StatCard icon={<Beef size={24} />} title="Proteínas" value={totals.protein.toFixed(1)} unit={`/ ${proteinTarget} g`} />
@@ -237,12 +225,15 @@ const Nutrition = ({ setView }) => {
                             <StatCard icon={<Salad size={24} />} title="Grasas" value={totals.fats.toFixed(1)} unit="g" />
                         </div>
                     </GlassCard>
-                    
+
                     {/* Sección de Suplementos */}
                     <div className="lg:col-span-2 space-y-4">
                         {/* Agua */}
                         <GlassCard className="p-6 flex flex-col justify-between">
-                            <h3 className="text-xl font-bold">Agua</h3>
+                            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                            {/* Promovido a h2 */}
+                            <h2 className="text-xl font-bold">Agua</h2>
+                            {/* --- FIN DE LA MODIFICACIÓN --- */}
                             <div className="flex items-center justify-center gap-4 my-4">
                                 <Droplet size={32} className="text-blue-400" />
                                 <p className="text-4xl font-bold">{(waterLog?.quantity_ml || 0)}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
@@ -252,17 +243,22 @@ const Nutrition = ({ setView }) => {
                                 <span>Añadir / Editar Agua</span>
                             </button>
                         </GlassCard>
-                        
+
                         {/* Creatina */}
                         <GlassCard className="p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                {/* Promovido a h2 */}
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                {/* --- FIN DE LA MODIFICACIÓN --- */}
                                     <Zap size={24} className="text-accent" />
                                     Creatina
-                                </h3>
+                                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                </h2>
+                                {/* --- FIN DE LA MODIFICACIÓN --- */}
                             </div>
-                            <button 
-                                onClick={() => setShowCreatinaTracker(true)} 
+                            <button
+                                onClick={() => setShowCreatinaTracker(true)}
                                 className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors"
                             >
                                 <Zap size={20} />
@@ -277,14 +273,19 @@ const Nutrition = ({ setView }) => {
                     {Object.entries(meals).map(([mealType, logs]) => (
                         <GlassCard key={mealType} className="p-6">
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xl font-bold capitalize">
+                                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                {/* Promovido a h2 */}
+                                <h2 className="text-xl font-bold capitalize">
+                                {/* --- FIN DE LA MODIFICACIÓN --- */}
                                     { {breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks'}[mealType] }
                                     {mealTotals[mealType] > 0 && (
                                         <span className="text-base font-medium text-text-secondary ml-2">
                                             ({mealTotals[mealType].toLocaleString('es-ES')} kcal)
                                         </span>
                                     )}
-                                </h3>
+                                {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                </h2>
+                                {/* --- FIN DE LA MODIFICACIÓN --- */}
                                 <button onClick={() => setModal({ type: 'food', data: { mealType } })} className="p-2 -m-2 rounded-full text-accent hover:bg-accent-transparent transition">
                                     <Plus size={20} />
                                 </button>
@@ -301,17 +302,17 @@ const Nutrition = ({ setView }) => {
                                                 {log.calories} kcal • {log.protein_g || 0}g Prot • {log.carbs_g || 0}g Carbs • {log.fats_g || 0}g Grasas
                                             </p>
                                         </div>
-                                        
+
                                         <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col sm:flex-row gap-1 sm:gap-1">
-                                            <button 
-                                                onClick={() => setModal({ type: 'food', data: { ...log, mealType } })} 
+                                            <button
+                                                onClick={() => setModal({ type: 'food', data: { ...log, mealType } })}
                                                 className="p-2 rounded-full bg-bg-primary hover:bg-accent/20 hover:text-accent transition-all duration-200 shadow-sm border border-glass-border"
                                                 title="Editar comida"
                                             >
                                                 <Edit size={14} className="sm:w-4 sm:h-4"/>
                                             </button>
-                                            <button 
-                                                onClick={() => setLogToDelete(log)} 
+                                            <button
+                                                onClick={() => setLogToDelete(log)}
                                                 className="p-2 rounded-full bg-bg-primary hover:bg-red-500/20 hover:text-red-500 transition-all duration-200 shadow-sm border border-glass-border"
                                                 title="Eliminar comida"
                                             >
@@ -328,6 +329,8 @@ const Nutrition = ({ setView }) => {
                 </div>
             </>
             )}
+
+            {/* ... (Modales sin cambios) ... */}
 
             {modal.type === 'water' && (
                 <WaterLogModal
@@ -347,7 +350,7 @@ const Nutrition = ({ setView }) => {
                     logToEdit={modal.data.id ? modal.data : null}
                 />
             )}
-            
+
             {logToDelete && (
                 <ConfirmationModal
                     message={`¿Seguro que quieres eliminar "${logToDelete.description}"?`}
@@ -357,9 +360,9 @@ const Nutrition = ({ setView }) => {
                     confirmText="Eliminar"
                 />
             )}
-            
+
             {showCreatinaTracker && (
-                <CreatinaTracker 
+                <CreatinaTracker
                     onClose={() => setShowCreatinaTracker(false)}
                     selectedDate={selectedDate}
                 />

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
@@ -15,7 +16,7 @@ const Dashboard = ({ setView }) => {
     const { addToast } = useToast();
     const {
         routines, workoutLog, bodyWeightLog, userProfile, logBodyWeight,
-        updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
+        updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog, // <-- Mantenemos startWorkout y startSimpleWorkout aquí para usarlos directamente
         waterLog, todaysCreatineLog, fetchDataForDate
     } = useAppStore(state => ({
         routines: state.routines,
@@ -44,7 +45,7 @@ const Dashboard = ({ setView }) => {
         sortedWeightLog.find(log => isSameDay(log.log_date, new Date())),
         [sortedWeightLog]
     );
-    
+
     const latestWeight = sortedWeightLog.length > 0 ? parseFloat(sortedWeightLog[0].weight_kg) : (userProfile?.weight || null);
 
     const weightTrend = useMemo(() => {
@@ -71,12 +72,12 @@ const Dashboard = ({ setView }) => {
                 ? { icon: ArrowDown, color: 'text-green', bg: 'bg-green/10' }
                 : { icon: ArrowUp, color: 'text-red', bg: 'bg-red/10' };
         }
-        
+
         return isGaining
             ? { icon: ArrowUp, color: 'text-text-secondary', bg: 'bg-bg-secondary' }
             : { icon: ArrowDown, color: 'text-text-secondary', bg: 'bg-bg-secondary' };
     }, [sortedWeightLog, userProfile?.goal]);
-    
+
     const getTrendForLog = (currentLog, previousLog) => {
         if (!previousLog) return null;
 
@@ -101,7 +102,7 @@ const Dashboard = ({ setView }) => {
                 ? { icon: ArrowDown, color: 'text-green' }
                 : { icon: ArrowUp, color: 'text-red' };
         }
-        
+
         return isGaining
             ? { icon: ArrowUp, color: 'text-text-secondary' }
             : { icon: ArrowDown, color: 'text-text-secondary' };
@@ -110,10 +111,10 @@ const Dashboard = ({ setView }) => {
     const weeklyLogs = useMemo(() => {
         const today = new Date();
         const day = today.getDay();
-        const diff = today.getDate() - day + (day === 0 ? -6 : 1); 
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
         const startOfWeek = new Date(today.getFullYear(), today.getMonth(), diff);
         startOfWeek.setHours(0, 0, 0, 0);
-        
+
         return workoutLog.filter(log => new Date(log.workout_date) >= startOfWeek);
     }, [workoutLog]);
 
@@ -121,7 +122,7 @@ const Dashboard = ({ setView }) => {
     const weeklyTimeInSeconds = weeklyLogs.reduce((acc, log) => acc + log.duration_seconds, 0);
     const weeklyTimeDisplay = weeklyTimeInSeconds < 3600 ? `${Math.round(weeklyTimeInSeconds / 60)} min` : `${(weeklyTimeInSeconds / 3600).toFixed(1)} h`;
     const weeklyCalories = weeklyLogs.reduce((acc, log) => acc + (log.calories_burned || 0), 0);
-    
+
     const calorieTarget = useMemo(() => {
         if (!userProfile || !userProfile.goal || !latestWeight) return 2000;
         const { gender, age, height, activity_level, goal } = userProfile;
@@ -144,7 +145,7 @@ const Dashboard = ({ setView }) => {
         if (!latestWeight) return 2500;
         return Math.round(latestWeight * 35);
     }, [latestWeight]);
-    
+
     const nutritionTotals = useMemo(() => {
         return (nutritionLog || []).reduce((acc, log) => {
             acc.calories += log.calories || 0;
@@ -152,17 +153,11 @@ const Dashboard = ({ setView }) => {
             return acc;
         }, { calories: 0, protein: 0 });
     }, [nutritionLog]);
-    
-    const handleStartWorkout = (routine) => {
-        startWorkout(routine);
-        setView('workout');
-    };
 
-    const handleStartSimpleWorkout = (workoutName) => {
-        startSimpleWorkout(workoutName);
-        setView('workout');
-    };
-    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Eliminamos las funciones handleStartWorkout y handleStartSimpleWorkout
+    // --- FIN DE LA MODIFICACIÓN ---
+
     const handleSaveWater = async (quantity_ml) => {
         setModal({ type: 'submitting' });
         try {
@@ -175,23 +170,25 @@ const Dashboard = ({ setView }) => {
             setModal({ type: null });
         }
     };
-    
+
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-            
+
+            <Helmet>
+                <title>Dashboard - Pro Fitness Glass</title>
+                <meta name="description" content="Tu resumen diario de actividad física, nutrición, peso corporal y acceso rápido a tus rutinas y entrenamientos." />
+            </Helmet>
+
             {/* Header para PC (MANTENIDO) */}
             <h1 className="hidden md:block text-4xl font-extrabold mb-8 mt-10 md:mt-0">Dashboard</h1>
-            
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
-            {/* Añadimos mt-6 solo en móvil (y tabletas sm), para separar del header */}
+
             <div className="mt-6 sm:mt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <StatCard icon={<Dumbbell size={24} />} title="Sesiones Semanales" value={weeklySessions} unit="" />
                 <StatCard icon={<Target size={24} />} title="Objetivo Calorías" value={calorieTarget?.toLocaleString('es-ES') ?? 'N/A'} unit="kcal" />
                 <StatCard icon={<Clock size={24} />} title="Tiempo Semanal" value={weeklyTimeDisplay} unit="" />
                 <StatCard icon={<Flame size={24} />} title="Calorías Semanales" value={weeklyCalories.toLocaleString('es-ES')} unit="kcal" />
             </div>
-            
+
             <GlassCard className="p-6 mb-6">
                 <h2 className="text-xl font-bold mb-4">Resumen de Hoy</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -291,7 +288,7 @@ const Dashboard = ({ setView }) => {
                 />
             }
             {modal.type === 'water' &&
-                <WaterLogModal 
+                <WaterLogModal
                     initialQuantity={waterLog?.quantity_ml || 0}
                     onSave={handleSaveWater}
                     onClose={() => setModal({ type: null })}
@@ -299,7 +296,7 @@ const Dashboard = ({ setView }) => {
                 />
             }
              {modal.type === 'creatine' &&
-                <CreatinaTracker 
+                <CreatinaTracker
                     onClose={() => {
                         setModal({ type: null });
                         fetchDataForDate(new Date().toISOString().split('T')[0]);

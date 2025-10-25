@@ -1,5 +1,8 @@
 /* frontend/src/pages/Routines.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { Helmet } from 'react-helmet-async'; // Importamos Helmet
+// --- FIN DE LA MODIFICACIÓN ---
 import {
   Plus, Edit, Trash2, Play, CheckCircle, Link2,
   Search, CalendarClock, Dumbbell, BookCopy, Compass,
@@ -129,7 +132,7 @@ const Routines = ({ setView }) => {
         description: routine.description,
         // --- INICIO DE LA CORRECCIÓN ---
         // Se eliminan 'id' y 'routine_id' de la desestructuración
-        exercises: (routine.RoutineExercises || []).map(({ ...ex }) => ex)
+        exercises: (routine.RoutineExercises || []).map(({ ...ex }) => ex) //
         // --- FIN DE LA CORRECCIÓN ---
       };
       await saveRoutine(copy);
@@ -187,6 +190,14 @@ const Routines = ({ setView }) => {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease-out]">
+
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Añadimos Helmet para esta vista */}
+      <Helmet>
+          <title>{activeTab === 'myRoutines' ? 'Mis Rutinas' : 'Explorar Plantillas'} - Pro Fitness Glass</title>
+          <meta name="description" content={activeTab === 'myRoutines' ? 'Crea, edita y gestiona tus rutinas de entrenamiento personalizadas. Empieza tus sesiones con un clic.' : 'Descubre y copia rutinas de entrenamiento predefinidas para diferentes objetivos y niveles.'} />
+      </Helmet>
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {/* Header para PC */}
       <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">

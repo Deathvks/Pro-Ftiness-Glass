@@ -1,5 +1,8 @@
 /* frontend/src/pages/SettingsScreen.jsx */
 import React, { useState } from 'react';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { Helmet } from 'react-helmet-async'; // Importamos Helmet
+// --- FIN DE LA MODIFICACIÓN ---
 import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield, LogOut, Info, ChevronRight, Cookie, Mail } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -95,6 +98,15 @@ export default function SettingsScreen({
 
   return (
     <div className="px-4 pb-4 md:p-8 max-w-5xl mx-auto">
+
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Añadimos Helmet para esta vista */}
+      <Helmet>
+          <title>Ajustes - Pro Fitness Glass</title>
+          <meta name="description" content="Personaliza la apariencia de Pro Fitness Glass (tema, color de acento) y gestiona tu perfil físico, cuenta y privacidad." />
+      </Helmet>
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
+
       {/* Header para PC */}
       <div className="hidden md:flex items-center justify-between mb-6">
         <button

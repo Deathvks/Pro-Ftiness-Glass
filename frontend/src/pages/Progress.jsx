@@ -1,7 +1,7 @@
 /* frontend/src/pages/Progress.jsx */
 import React, { useState, useMemo } from 'react';
 // --- INICIO DE LA MODIFICACIÓN ---
-// 'User' importado ha sido eliminado
+import { Helmet } from 'react-helmet-async'; // Importamos Helmet
 // --- FIN DE LA MODIFICACIÓN ---
 import useAppStore from '../store/useAppStore';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
@@ -110,9 +110,16 @@ const Progress = ({ darkMode }) => {
         // --- INICIO DE LA MODIFICACIÓN ---
         // Ajustamos padding
         <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-            
+
+            {/* Añadimos Helmet para esta vista */}
+            <Helmet>
+                <title>Tu Progreso - Pro Fitness Glass</title>
+                <meta name="description" content="Visualiza tu progreso en gráficos: evolución del peso corporal, progresión de fuerza por ejercicio, resumen nutricional mensual y calendario de entrenamientos." />
+            </Helmet>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
+
             {/* Header para Móvil (ELIMINADO) */}
-            
+
             {/* Header para PC (modificado) */}
             <div className="hidden md:flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             {/* --- FIN DE LA MODIFICACIÓN --- */}
@@ -128,7 +135,7 @@ const Progress = ({ darkMode }) => {
                     <button onClick={() => setViewType('calendar')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'calendar' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Calendario</button>
                 </div>
             </div>
-            
+
             {/* --- INICIO DE LA MODIFICACIÓN --- */}
             {/* Añadimos margen superior al contenedor de pestañas en móvil */}
             <div className="md:hidden flex flex-wrap gap-2 mt-6 sm:mt-0 mb-6">

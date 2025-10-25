@@ -1,0 +1,12 @@
+# robots.txt para Pro Fitness Glass
+
+# Permite a todos los rastreadores (user-agents)
+User-agent: *
+
+# Permite el rastreo de todo el contenido.
+# Para una SPA, queremos que Google pueda ver todas las rutas virtuales.
+Allow: /
+
+# Indica la ubicación del sitemap (lo crearemos a continuación)
+# Reemplaza esto con tu dominio final si cambia.
+Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml
