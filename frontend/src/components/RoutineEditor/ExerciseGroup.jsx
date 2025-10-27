@@ -1,3 +1,4 @@
+/* frontend/src/components/RoutineEditor/ExerciseGroup.jsx */
 import React from 'react';
 import { X, Link2 } from 'lucide-react';
 import ExerciseCard from './ExerciseCard';
@@ -15,16 +16,13 @@ const ExerciseGroup = ({
   setActiveDropdownIndex,
   unlinkGroup,
   linkWithNext,
+  dragHandleProps,
 }) => {
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Ya no es necesario calcular si el grupo está activo para aplicar un z-index,
-  // porque la solución del Portal en CustomSelect lo resuelve de forma global.
   return (
     <div
-      className="relative" // Se elimina el z-index condicional.
+      className="relative"
       style={{ paddingBottom: !isLastGroup ? '1.5rem' : '0' }}
     >
-  {/* --- FIN DE LA CORRECCIÓN --- */}
       <div className={`p-3 rounded-2xl space-y-3 ${group.length > 1 ? 'border border-accent/50 bg-accent/10' : ''}`}>
         {group.length > 1 && (
           <div className="flex justify-between items-center px-1 pb-2">
@@ -50,9 +48,15 @@ const ExerciseGroup = ({
               errors={errors.exercises?.[exIndex]}
               onFieldChange={onFieldChange}
               onExerciseSelect={onExerciseSelect}
-              onRemove={removeExercise}
+              // --- INICIO MODIFICACIÓN ---
+              // Aquí estaba el error:
+              // Cambiamos 'onRemove={removeExercise}' por 'removeExercise={removeExercise}'
+              // para que coincida con la prop que espera ExerciseCard.jsx
+              removeExercise={removeExercise}
+              // --- FIN MODIFICACIÓN ---
               onOpen={() => setActiveDropdownIndex(exIndex)}
               onClose={() => setActiveDropdownIndex(null)}
+              dragHandleProps={group.length === 1 ? dragHandleProps : null}
             />
           );
         })}

@@ -47,6 +47,9 @@ const LoadingFallback = () => (
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+// --- INICIO DE LA MODIFICACIÓN ---
+const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
+// --- FIN DE LA MODIFICACIÓN ---
 
 export default function App() {
   const {
@@ -289,6 +292,19 @@ export default function App() {
   const currentTitle = pageTitles[view] || 'Pro Fitness Glass';
   const currentDescription = pageDescriptions[view] || pageDescriptions.default;
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Construir la URL canónica basada en la vista actual
+  const currentPath = useMemo(() => {
+    if (view === 'dashboard') return '/';
+    // pageTitles es estable (definido en línea 249)
+    if (pageTitles[view]) return `/${view}`;
+    return '/'; // Fallback seguro
+  }, [view, pageTitles]);
+
+  const canonicalUrl = `${CANONICAL_BASE_URL}${currentPath}`;
+  // --- FIN DE LA MODIFICACIÓN ---
+
+
   // 4. Hook 'useMemo' para la vista actual (ahora antes de los 'return')
   const currentViewComponent = useMemo(() => {
     switch (view) {
@@ -385,6 +401,9 @@ export default function App() {
         <html lang="es" />
         <title>{currentTitle} - Pro Fitness Glass</title>
         <meta name="description" content={currentDescription} />
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        <link rel="canonical" href={canonicalUrl} />
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Helmet>

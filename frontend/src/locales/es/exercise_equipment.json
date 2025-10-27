@@ -1,0 +1,22 @@
+{
+  "Barbell": "Barra",
+  "Dumbbell": "Mancuerna",
+  "Machine": "Máquina",
+  "Bodyweight": "Peso corporal",
+  "Kettlebell": "Pesa rusa (Kettlebell)",
+  "Cable": "Polea",
+  "Cables": "Poleas",
+  "None": "Ninguno",
+  "Other": "Otro",
+  "SZ-Bar": "Barra Z",
+  "E-Z Bar": "Barra Z",
+  "Exercise Ball": "Pelota de ejercicio",
+  "Bench": "Banco",
+  "Pull-up bar": "Barra de dominadas",
+  "Incline bench": "Banco inclinado",
+  "Gym mat": "Colchoneta",
+  "Swiss Ball": "Pelota suiza",
+  "Resistance band": "Banda de resistencia",
+  "Band": "Banda elástica",
+  "none (bodyweight exercise)": "Ninguno (ejercicio con peso corporal)"
+}

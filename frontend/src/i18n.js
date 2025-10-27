@@ -3,8 +3,14 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Importa aquí tus archivos de traducción
-import exercisesES from './locales/es/exercises.json'; // <-- Añadido
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importa los nuevos archivos de traducción modularizados
+import exerciseNamesES from './locales/es/exercise_names.json';
+import exerciseMusclesES from './locales/es/exercise_muscles.json';
+import exerciseEquipmentES from './locales/es/exercise_equipment.json';
+import exerciseUiES from './locales/es/exercise_ui.json';
+import exerciseDescriptionsES from './locales/es/exercises.json'; // Este ahora solo tiene descripciones
+// --- FIN DE LA MODIFICACIÓN ---
 
 i18n
   // Detecta el idioma del navegador
@@ -13,17 +19,24 @@ i18n
   .use(initReactI18next)
   // Inicializa i18next
   .init({
-    debug: import.meta.env.DEV, // Activa logs en desarrollo
+    debug: false, // Desactiva logs en consola
     fallbackLng: 'es', // Idioma por defecto si no se detecta o falta traducción
     interpolation: {
       escapeValue: false, // React ya se encarga de escapar
     },
     
-    // --- Añadido ---
+    // --- INICIO DE LA MODIFICACIÓN ---
     // Define los 'namespaces' (grupos de traducciones)
-    ns: ['translation', 'exercises'],
+    ns: [
+      'translation',
+      'exercise_names',
+      'exercise_muscles',
+      'exercise_equipment',
+      'exercise_ui',
+      'exercise_descriptions',
+    ],
     defaultNS: 'translation',
-    // --- Fin Añadido ---
+    // --- FIN DE LA MODIFICACIÓN ---
 
     resources: {
       es: {
@@ -36,10 +49,14 @@ i18n
             equipment: "Desconocido",
           }
         },
-        // --- Añadido ---
-        // Namespace específico para ejercicios
-        exercises: exercisesES
-        // --- Fin Añadido ---
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Mapea cada import a su namespace correspondiente
+        exercise_names: exerciseNamesES,
+        exercise_muscles: exerciseMusclesES,
+        exercise_equipment: exerciseEquipmentES,
+        exercise_ui: exerciseUiES,
+        exercise_descriptions: exerciseDescriptionsES,
+        // --- FIN DE LA MODIFICACIÓN ---
       },
       // Puedes añadir más idiomas aquí
       // en: {

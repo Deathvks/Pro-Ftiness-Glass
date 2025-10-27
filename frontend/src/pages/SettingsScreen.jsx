@@ -9,27 +9,27 @@ import { APP_VERSION } from '../config/version';
 
 const ACCENT_OPTIONS = [
   // ... (opciones de color sin cambios) ...
-  { id: 'green',  label: 'Verde',    hex: '#22c55e' },
-  { id: 'blue',   label: 'Azul',     hex: '#3b82f6' },
-  { id: 'violet', label: 'Violeta',  hex: '#8b5cf6' },
-  { id: 'amber',  label: 'Ámbar',    hex: '#f59e0b' },
-  { id: 'rose',   label: 'Rosa',     hex: '#f43f5e' },
-  { id: 'teal',   label: 'Turquesa', hex: '#14b8a6' },
-  { id: 'cyan',   label: 'Cian',     hex: '#06b6d4' },
-  { id: 'orange', label: 'Naranja',  hex: '#f97316' },
-  { id: 'lime',   label: 'Lima',     hex: '#84cc16' },
-  { id: 'fuchsia',label: 'Fucsia',   hex: '#d946ef' },
-  { id: 'emerald',label: 'Esmeralda',hex: '#10b981' },
-  { id: 'indigo', label: 'Índigo',   hex: '#6366f1' },
-  { id: 'purple', label: 'Púrpura',  hex: '#a855f7' },
-  { id: 'pink',   label: 'Rosa Claro', hex: '#ec4899' },
-  { id: 'red',    label: 'Rojo',     hex: '#ef4444' },
-  { id: 'yellow', label: 'Amarillo', hex: '#eab308' },
-  { id: 'sky',    label: 'Cielo',    hex: '#0ea5e9' },
-  { id: 'slate',  label: 'Pizarra',  hex: '#64748b' },
-  { id: 'zinc',   label: 'Zinc',     hex: '#71717a' },
-  { id: 'stone',  label: 'Piedra',   hex: '#78716c' },
-  { id: 'neutral', label: 'Neutral', hex: '#737373' }
+  { id: 'green',   label: 'Verde',     hex: '#22c55e' },
+  { id: 'blue',    label: 'Azul',      hex: '#3b82f6' },
+  { id: 'violet',  label: 'Violeta',   hex: '#8b5cf6' },
+  { id: 'amber',   label: 'Ámbar',     hex: '#f59e0b' },
+  { id: 'rose',    label: 'Rosa',      hex: '#f43f5e' },
+  { id: 'teal',    label: 'Turquesa',  hex: '#14b8a6' },
+  { id: 'cyan',    label: 'Cian',      hex: '#06b6d4' },
+  { id: 'orange',  label: 'Naranja',   hex: '#f97316' },
+  { id: 'lime',    label: 'Lima',      hex: '#84cc16' },
+  { id: 'fuchsia', label: 'Fucsia',    hex: '#d946ef' },
+  { id: 'emerald', label: 'Esmeralda', hex: '#10b981' },
+  { id: 'indigo',  label: 'Índigo',    hex: '#6366f1' },
+  { id: 'purple',  label: 'Púrpura',   hex: '#a855f7' },
+  { id: 'pink',    label: 'Rosa Claro',hex: '#ec4899' },
+  { id: 'red',     label: 'Rojo',      hex: '#ef4444' },
+  { id: 'yellow',  label: 'Amarillo',  hex: '#eab308' },
+  { id: 'sky',     label: 'Cielo',     hex: '#0ea5e9' },
+  { id: 'slate',   label: 'Pizarra',   hex: '#64748b' },
+  { id: 'zinc',    label: 'Zinc',      hex: '#71717a' },
+  { id: 'stone',   label: 'Piedra',    hex: '#78716c' },
+  { id: 'neutral', label: 'Neutral',   hex: '#737373' }
 ];
 
 export default function SettingsScreen({
@@ -102,8 +102,8 @@ export default function SettingsScreen({
       {/* --- INICIO DE LA MODIFICACIÓN --- */}
       {/* Añadimos Helmet para esta vista */}
       <Helmet>
-          <title>Ajustes - Pro Fitness Glass</title>
-          <meta name="description" content="Personaliza la apariencia de Pro Fitness Glass (tema, color de acento) y gestiona tu perfil físico, cuenta y privacidad." />
+         <title>Ajustes - Pro Fitness Glass</title>
+         <meta name="description" content="Personaliza la apariencia de Pro Fitness Glass (tema, color de acento) y gestiona tu perfil físico, cuenta y privacidad." />
       </Helmet>
       {/* --- FIN DE LA MODIFICACIÓN --- */}
 
@@ -182,6 +182,11 @@ export default function SettingsScreen({
               <div className="text-xs text-text-secondary">Objetivos, actividad, etc.</div>
             </div>
           </button>
+          
+          {/* --- INICIO DE LA MODIFICACIÓN (BOTÓN ELIMINADO) --- */}
+          {/* Se ha eliminado el botón "Editar cuenta" */}
+          {/* --- FIN DE LA MODIFICACIÓN --- */}
+
           <button
             onClick={resetCookieConsent}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
@@ -192,6 +197,18 @@ export default function SettingsScreen({
               <div className="text-xs text-text-secondary">Gestionar consentimiento</div>
             </div>
           </button>
+           <a
+             href="https://wger.de"
+             target="_blank"
+             rel="noopener noreferrer"
+             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
+           >
+             <Info size={18} className="text-accent" />
+             <div>
+               <div className="text-sm font-semibold">Créditos</div>
+               <div className="text-xs text-text-secondary">Datos de ejercicios por wger</div>
+             </div>
+           </a>
           <a
             href="mailto:profitnessglass@gmail.com"
             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
