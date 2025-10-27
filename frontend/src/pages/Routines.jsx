@@ -1,31 +1,33 @@
 /* frontend/src/pages/Routines.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-import { Helmet } from 'react-helmet-async'; // Importamos Helmet
-// --- FIN DE LA MODIFICACIÓN ---
+import { Helmet } from 'react-helmet-async';
 import {
   Plus, Edit, Trash2, Play, CheckCircle, Link2,
-  Search, CalendarClock, Dumbbell, BookCopy, Compass,
+  Search, CalendarClock, Dumbbell, BookCopy, Compass, ChevronLeft
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
-import RoutineEditor from './RoutineEditor';
+import RoutineEditor from './RoutineEditor'; // Importamos RoutineEditor
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
+// Importamos saveRoutine y deleteRoutine
 import { saveRoutine, deleteRoutine } from '../services/routineService';
 import { isSameDay } from '../utils/helpers';
 import TemplateRoutines from './TemplateRoutines'; // Importamos el nuevo componente
 
-const Routines = ({ setView }) => {
+// Quitamos setView de las props, ya no se usa para navegar al editor
+const Routines = () => {
   const { addToast } = useToast();
-  const { routines, workoutLog, fetchInitialData, startWorkout } = useAppStore(state => ({
+  const { routines, workoutLog, fetchInitialData, startWorkout, navigate } = useAppStore(state => ({ // Añadir navigate
     routines: state.routines,
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
     startWorkout: state.startWorkout,
+    navigate: state.navigate, // Obtener navigate del store
   }));
 
+  // Estado para manejar qué rutina se está editando (o null si ninguna)
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
@@ -34,7 +36,6 @@ const Routines = ({ setView }) => {
 
   // Inicializar activeTab desde localStorage o usar 'myRoutines' por defecto
   const [activeTab, setActiveTab] = useState(() => {
-    // Verificar si hay una pestaña forzada desde la navegación
     const forcedTab = localStorage.getItem('routinesForceTab');
     if (forcedTab) {
       localStorage.removeItem('routinesForceTab'); // Limpiar después de usar
@@ -74,31 +75,44 @@ const Routines = ({ setView }) => {
     if (!exercises || exercises.length === 0) return [];
     const groups = [];
     let currentGroup = [];
-    for (const ex of exercises) {
-      if (currentGroup.length === 0) {
-        currentGroup.push(ex);
-        continue;
-      }
-      if (ex.superset_group_id !== null && ex.superset_group_id === currentGroup[0].superset_group_id) {
-        currentGroup.push(ex);
-      } else {
-        groups.push(currentGroup);
-        currentGroup = [ex];
-      }
+    // Ordenar primero por exercise_order por si acaso
+    const sortedExercises = [...exercises].sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0));
+
+    for (const ex of sortedExercises) {
+        if (currentGroup.length === 0) {
+            currentGroup.push(ex);
+            continue;
+        }
+
+        // Si el actual tiene ID de superserie y coincide con el primero del grupo actual
+        if (ex.superset_group_id !== null && currentGroup[0].superset_group_id !== null && ex.superset_group_id === currentGroup[0].superset_group_id) {
+            currentGroup.push(ex);
+        } else {
+            // Si el actual no tiene ID, o tiene un ID diferente, o el grupo actual no era superserie
+            groups.push(currentGroup);
+            currentGroup = [ex];
+        }
     }
-    if (currentGroup.length > 0) groups.push(currentGroup);
+    if (currentGroup.length > 0) {
+      groups.push(currentGroup);
+    }
     return groups;
   };
 
-  const handleSave = async (routineToSave) => {
+  // --- INICIO MODIFICACIÓN ---
+  // handleSave ya no necesita el argumento 'savedRoutine'
+  const handleSave = async () => {
+  // --- FIN MODIFICACIÓN ---
     setIsLoading(true);
     try {
-      await saveRoutine(routineToSave);
-      addToast('Rutina guardada con éxito.', 'success');
-      setEditingRoutine(null);
-      await fetchInitialData();
+      // La rutina ya fue guardada y notificada por RoutineEditor
+      // Solo necesitamos cerrar el editor y refrescar
+      // addToast('Rutina guardada con éxito.', 'success'); // Toast duplicado, eliminado
+      setEditingRoutine(null); // Cerrar el editor
+      await fetchInitialData(); // Refrescar la lista de rutinas
     } catch (error) {
-      addToast(error.message || 'Ocurrió un error al guardar la rutina.', 'error');
+      // Este catch es por si fetchInitialData falla
+      addToast(error.message || 'Ocurrió un error al refrescar las rutinas.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +124,7 @@ const Routines = ({ setView }) => {
   };
 
   const confirmDelete = async () => {
-    setIsLoading(true);
+    setIsLoading(true); // Usamos isLoading general para la eliminación también
     try {
       await deleteRoutine(routineToDelete);
       addToast('Rutina eliminada.', 'success');
@@ -130,10 +144,12 @@ const Routines = ({ setView }) => {
       const copy = {
         name: `${routine.name} (Copia)`,
         description: routine.description,
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Se eliminan 'id' y 'routine_id' de la desestructuración
-        exercises: (routine.RoutineExercises || []).map(({ ...ex }) => ex) //
-        // --- FIN DE LA CORRECCIÓN ---
+        // Usar RoutineExercises si existe (viene del fetch), si no, exercises (estado local)
+        exercises: (routine.RoutineExercises || routine.exercises || []).map(({ ...ex }) => ({
+            ...ex,
+            // Asegurarse de que exercise_order está presente
+            exercise_order: ex.exercise_order !== undefined ? ex.exercise_order : 0
+        }))
       };
       await saveRoutine(copy);
       addToast('Rutina duplicada.', 'success');
@@ -162,13 +178,14 @@ const Routines = ({ setView }) => {
     return list;
   }, [routines, query, lastUsedMap]);
 
+  // Si estamos editando, renderiza RoutineEditor
   if (editingRoutine) {
     return (
       <RoutineEditor
+        key={editingRoutine.id || 'new'} // Añadir key para forzar re-montaje al cambiar
         routine={editingRoutine}
-        onSave={handleSave}
+        onSave={handleSave} // Pasamos la función handleSave
         onCancel={() => setEditingRoutine(null)}
-        isLoading={isLoading}
       />
     );
   }
@@ -180,6 +197,7 @@ const Routines = ({ setView }) => {
   // Botón Crear Rutina reutilizable
   const CreateRoutineButton = ({ className = "" }) => (
     <button
+      // Al hacer clic, establece editingRoutine con una rutina vacía
       onClick={() => setEditingRoutine({ name: '', description: '', exercises: [] })}
       className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 ${className}`}
     >
@@ -189,15 +207,12 @@ const Routines = ({ setView }) => {
   );
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease-out]">
+    <div className="w-full max-w-6xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease_out]">
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* Añadimos Helmet para esta vista */}
       <Helmet>
           <title>{activeTab === 'myRoutines' ? 'Mis Rutinas' : 'Explorar Plantillas'} - Pro Fitness Glass</title>
           <meta name="description" content={activeTab === 'myRoutines' ? 'Crea, edita y gestiona tus rutinas de entrenamiento personalizadas. Empieza tus sesiones con un clic.' : 'Descubre y copia rutinas de entrenamiento predefinidas para diferentes objetivos y niveles.'} />
       </Helmet>
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {/* Header para PC */}
       <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
@@ -239,9 +254,11 @@ const Routines = ({ setView }) => {
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map(routine => {
                 const isCompleted = completedToday.has(routine.id);
-                const exerciseGroups = groupExercises(routine.RoutineExercises);
+                // Asegurarse de usar RoutineExercises si existe (datos de API)
+                const exercisesToGroup = routine.RoutineExercises || routine.exercises || [];
+                const exerciseGroups = groupExercises(exercisesToGroup);
                 const lastUsed = lastUsedMap.get(routine.id);
-                const totalExercises = routine.RoutineExercises?.length || 0;
+                const totalExercises = exercisesToGroup.length;
 
                 return (
                   <GlassCard key={routine.id} className="p-5 md:p-6">
@@ -263,6 +280,7 @@ const Routines = ({ setView }) => {
                       </div>
                       {/* Fila superior para los iconos de acción */}
                       <div className="shrink-0 flex items-center gap-1">
+                        {/* --- onClick ahora llama a setEditingRoutine --- */}
                         <button onClick={() => setEditingRoutine(routine)} className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent" title="Editar"><Edit size={18} /></button>
                         <button onClick={() => duplicateRoutine(routine)} className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent" title="Duplicar"><Plus size={18} /></button>
                         <button onClick={() => handleDeleteClick(routine.id)} className="p-2 rounded-full text-text-muted hover:bg-red/20 hover:text-red" title="Eliminar"><Trash2 size={18} /></button>
@@ -296,7 +314,8 @@ const Routines = ({ setView }) => {
                               <ul className="flex flex-col gap-2">
                                 {group.map(ex => (
                                   <li
-                                    key={ex.id}
+                                    // Usar ID real si existe, si no tempId
+                                    key={ex.id || ex.tempId}
                                     className="flex items-center justify-between rounded-lg bg-bg-secondary/60 border border-[--glass-border] px-3 py-2 text-sm"
                                   >
                                     <span className="truncate">{ex.name}</span>
@@ -316,7 +335,8 @@ const Routines = ({ setView }) => {
                       <button
                         onClick={() => {
                           startWorkout(routine);
-                          setView('workout');
+                          // --- Usar la prop navigate de App.jsx ---
+                          navigate('workout'); // Usar navigate del store
                         }}
                         disabled={isCompleted}
                         className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition
@@ -351,14 +371,19 @@ const Routines = ({ setView }) => {
         </>
       )}
 
-      {activeTab === 'explore' && <TemplateRoutines setView={setView} />}
+      {/* --- Pasar navigate a TemplateRoutines --- */}
+      {activeTab === 'explore' && <TemplateRoutines setView={navigate} />}
+
 
       {showDeleteModal && (
         <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
           message="¿Estás seguro de que quieres borrar esta rutina?"
           onConfirm={confirmDelete}
-          onCancel={() => setShowDeleteModal(false)}
-          isLoading={isLoading}
+          isLoading={isLoading} // Usamos isLoading general
+          confirmText="Eliminar"
+          isDestructive={true}
         />
       )}
 

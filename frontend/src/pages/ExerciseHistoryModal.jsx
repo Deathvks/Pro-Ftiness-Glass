@@ -1,10 +1,18 @@
+/* frontend/src/pages/ExerciseHistoryModal.jsx */
 import React, { useMemo } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next'; // <-- Añadido
 
 export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], onClose }) {
+  // --- Añadido ---
+  const { t } = useTranslation('exercises'); // Para el nombre del ejercicio
+  const { t: tCommon } = useTranslation('translation'); // Para UI general
+  // --- Fin Añadido ---
+
   const historyByDay = useMemo(() => {
     const groups = {};
     for (const log of workoutLog || []) {
+      // Filtra usando el 'exerciseName' original (sin traducir)
       const details = (log.WorkoutLogDetails || []).filter(d => d.exercise_name === exerciseName);
       if (!details.length) continue;
 
@@ -38,15 +46,18 @@ export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], on
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"
-          aria-label="Cerrar"
+          // --- Modificado ---
+          aria-label={tCommon('Cerrar', { defaultValue: 'Cerrar' })}
+          // --- Fin Modificado ---
         >
           <X size={22} />
         </button>
 
         {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* Añadimos 'break-words' para forzar el salto de línea en palabras largas */}
+        {/* Añadimos 'break-words' y traducimos */}
         <h2 className="text-2xl md:text-3xl font-extrabold text-center px-8 break-words">
-          Historial de {exerciseName}
+          {tCommon('Historial de', { defaultValue: 'Historial de' })}{' '}
+          {t(exerciseName, { defaultValue: exerciseName })}
         </h2>
         {/* --- FIN DE LA MODIFICACIÓN --- */}
 
@@ -55,7 +66,9 @@ export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], on
         <div className="rounded-3xl bg-bg-primary border border-[--glass-border] p-4 md:p-5 max-h-[60vh] overflow-y-auto">
           {historyByDay.length === 0 ? (
             <div className="text-center text-text-muted py-12">
-              No hay series registradas para este ejercicio.
+              {/* --- Modificado --- */}
+              {tCommon('No hay series registradas para este ejercicio.', { defaultValue: 'No hay series registradas para este ejercicio.' })}
+              {/* --- Fin Modificado --- */}
             </div>
           ) : (
             historyByDay.map(({ dateKey, sets }, idx) => (
@@ -68,7 +81,9 @@ export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], on
                 </h3>
 
                 {sets.length === 0 ? (
-                  <div className="text-text-muted text-sm">No se registraron series.</div>
+                  // --- Modificado ---
+                  <div className="text-text-muted text-sm">{tCommon('No se registraron series.', { defaultValue: 'No se registraron series.' })}</div>
+                  // --- Fin Modificado ---
                 ) : (
                   <ul className="space-y-3">
                     {sets.map((set, i) => (
@@ -76,15 +91,17 @@ export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], on
                         key={`${dateKey}-${i}`}
                         className="flex items-center justify-between rounded-2xl px-4 py-2 text-sm bg-bg-secondary/60 border border-[--glass-border]"
                       >
+                        {/* --- Modificado --- */}
                         <span>
-                          Serie {set.set_number ?? i + 1}:{' '}
-                          <strong>{Number(set.reps ?? 0)} reps</strong> con{' '}
+                          {tCommon('Serie', { defaultValue: 'Serie' })} {set.set_number ?? i + 1}:{' '}
+                          <strong>{Number(set.reps ?? 0)} {tCommon('reps', { defaultValue: 'reps' })}</strong> {tCommon('con', 'con')}{' '}
                           <strong>{Number(set.weight_kg ?? 0).toFixed(2)} kg</strong>
                         </span>
+                        {/* --- Fin Modificado --- */}
 
                         {set.is_dropset && (
                           <span className="ml-3 shrink-0 bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full text-[10px]">
-                            DROPSET
+                            {tCommon('DROPSET', { defaultValue: 'DROPSET' })}
                           </span>
                         )}
                       </li>

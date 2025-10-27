@@ -1,8 +1,10 @@
+/* frontend/src/components/progress/RecordsView.jsx */
 import React, { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Trophy, Calendar, Weight, Award } from 'lucide-react'; // Importamos el nuevo icono
 import { getPersonalRecords, getPersonalRecordExerciseNames } from '../../services/personalRecordService';
 import CustomSelect from '../CustomSelect';
 import Spinner from '../Spinner';
+import { useTranslation } from 'react-i18next'; // <-- Añadido
 
 const RecordsView = () => {
     const [records, setRecords] = useState([]);
@@ -13,6 +15,11 @@ const RecordsView = () => {
     
     const [exerciseNames, setExerciseNames] = useState([]);
     const [selectedExercise, setSelectedExercise] = useState('all');
+
+    // --- Añadido ---
+    const { t } = useTranslation('exercises');
+    const { t: tCommon } = useTranslation('translation');
+    // --- Fin Añadido ---
 
     useEffect(() => {
         const fetchExerciseNames = async () => {
@@ -30,29 +37,37 @@ const RecordsView = () => {
         const fetchRecords = async () => {
             try {
                 setLoading(true);
+                // selectedExercise se mantiene *sin traducir* para la API
                 const response = await getPersonalRecords(currentPage, selectedExercise);
                 setRecords(response.records || []);
                 setTotalPages(response.totalPages || 1);
                 setError(null);
             } catch (err) {
                 console.error('Error fetching personal records:', err);
-                setError('Error al cargar los récords personales');
+                // --- Modificado ---
+                setError(tCommon('Error al cargar los récords personales', { defaultValue: 'Error al cargar los récords personales' }));
+                // --- Fin Modificado ---
             } finally {
                 setLoading(false);
             }
         };
         fetchRecords();
-    }, [currentPage, selectedExercise]);
+    // --- Modificado ---
+    }, [currentPage, selectedExercise, tCommon]); // Añadido tCommon
+    // --- Fin Modificado ---
 
     const handleFilterChange = (exercise) => {
-        setSelectedExercise(exercise);
+        setSelectedExercise(exercise); // El valor sigue siendo 'all' o el nombre sin traducir
         setCurrentPage(1);
     };
 
     const filterOptions = useMemo(() => {
-        const options = exerciseNames.map(name => ({ value: name, label: name }));
-        return [{ value: 'all', label: 'Todos los ejercicios' }, ...options];
-    }, [exerciseNames]);
+        // --- Modificado ---
+        // Traducimos las etiquetas (label) pero mantenemos el valor (value) original
+        const options = exerciseNames.map(name => ({ value: name, label: t(name, { defaultValue: name }) }));
+        return [{ value: 'all', label: tCommon('Todos los ejercicios', { defaultValue: 'Todos los ejercicios' }) }, ...options];
+        // --- Fin Modificado ---
+    }, [exerciseNames, t, tCommon]); // Añadidos t y tCommon
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('es-ES', {
@@ -85,7 +100,9 @@ const RecordsView = () => {
                     onClick={() => { setCurrentPage(1); setSelectedExercise('all'); }}
                     className="mt-4 px-4 py-2 bg-accent text-bg-secondary rounded hover:opacity-90 transition"
                 >
-                    Reintentar
+                    {/* --- Modificado --- */}
+                    {tCommon('Reintentar', { defaultValue: 'Reintentar' })}
+                    {/* --- Fin Modificado --- */}
                 </button>
             </div>
         );
@@ -96,15 +113,19 @@ const RecordsView = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h3 className="text-xl font-semibold text-text-primary flex items-center gap-2">
                     <Trophy className="w-6 h-6 text-yellow-500" />
-                    Récords Personales
+                    {/* --- Modificado --- */}
+                    {tCommon('Récords Personales', { defaultValue: 'Récords Personales' })}
+                    {/* --- Fin Modificado --- */}
                 </h3>
                 {exerciseNames.length > 0 && (
                     <div className="w-full sm:w-64">
                         <CustomSelect
-                            value={selectedExercise}
+                            value={selectedExercise} // El valor es 'all' o el nombre sin traducir
                             onChange={handleFilterChange}
-                            options={filterOptions}
-                            placeholder="Filtrar por ejercicio"
+                            options={filterOptions} // Las etiquetas están traducidas
+                            // --- Modificado ---
+                            placeholder={tCommon('Filtrar por ejercicio', { defaultValue: 'Filtrar por ejercicio' })}
+                            // --- Fin Modificado ---
                         />
                     </div>
                 )}
@@ -114,10 +135,12 @@ const RecordsView = () => {
                 <div className="text-center py-12">
                     <Trophy className="w-12 h-12 text-text-muted mx-auto mb-4" />
                     <p className="text-text-secondary">
+                        {/* --- Modificado --- */}
                         {selectedExercise === 'all' 
-                            ? 'No tienes récords personales registrados aún.' 
-                            : 'No se encontraron récords para este ejercicio.'
+                            ? tCommon('No tienes récords personales registrados aún.', { defaultValue: 'No tienes récords personales registrados aún.' }) 
+                            : tCommon('No se encontraron récords para este ejercicio.', { defaultValue: 'No se encontraron récords para este ejercicio.' })
                         }
+                        {/* --- Fin Modificado --- */}
                     </p>
                 </div>
             ) : (
@@ -135,7 +158,9 @@ const RecordsView = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-medium text-text-primary truncate text-sm sm:text-base">
-                                                {record.exercise_name}
+                                                {/* --- Modificado --- */}
+                                                {t(record.exercise_name, { defaultValue: record.exercise_name })}
+                                                {/* --- Fin Modificado --- */}
                                             </h4>
                                             <div className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
                                                 <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-text-secondary flex-shrink-0" />
@@ -165,7 +190,9 @@ const RecordsView = () => {
                             </button>
                             
                             <span className="text-xs sm:text-sm text-text-secondary px-2">
-                                Página {currentPage} de {totalPages}
+                                {/* --- Modificado --- */}
+                                {tCommon('Página', { defaultValue: 'Página' })} {currentPage} {tCommon('de', { defaultValue: 'de' })} {totalPages}
+                                {/* --- Fin Modificado --- */}
                             </span>
                             
                             <button
