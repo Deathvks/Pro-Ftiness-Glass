@@ -1,10 +1,7 @@
 /* frontend/src/hooks/useRoutineEditor.js */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getRoutineById, deleteRoutine, saveRoutine } from '../services/routineService';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importamos el servicio para obtener la lista completa de ejercicios
 import { getExerciseList } from '../services/exerciseService';
-// --- FIN DE LA MODIFICACIÓN ---
 import { useToast } from '../hooks/useToast';
 import { v4 as uuidv4 } from 'uuid';
 import i18n from '../i18n';
@@ -13,7 +10,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   const id = initialRoutine?.id;
   const { addToast } = useToast();
   
-  // --- STATE (Sin cambios) ---
+  // --- STATE ---
   const [routineName, setRoutineName] = useState(initialRoutine?.name || '');
   const [description, setDescription] = useState(initialRoutine?.description || '');
   const [exercises, setExercises] = useState([]);
@@ -25,36 +22,30 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   const [showExerciseSearch, setShowExerciseSearch] = useState(false);
   const [activeDropdownIndex, setActiveDropdownIndex] = useState(null);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Reescribimos este useEffect para que "hidrate" los ejercicios
+  const [replacingExerciseIndex, setReplacingExerciseIndex] = useState(null);
+
+  // --- useEffect (Hidratación de ejercicios) ---
   useEffect(() => {
     const loadRoutine = async () => {
-      // Si no hay ID (es una rutina nueva), terminamos
+      
+      // FIX: No resetear la lista si es una rutina nueva
       if (!id) {
-        setExercises([]);
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
       try {
-        // 1. Obtenemos la lista completa de ejercicios de la BD
         const allExercisesData = await getExerciseList();
-        
-        // 2. Obtenemos la rutina específica
         const routine = await getRoutineById(id);
-
         setRoutineName(routine.name);
         setDescription(routine.description);
 
-        // 3. "Hidratamos" los ejercicios de la rutina
         const formattedExercises = routine.exercises.map((ex, index) => {
-          // Buscamos el ejercicio completo en la lista
           const fullExercise = allExercisesData.find(e => e.id === ex.exercise_id);
-
-          // Si no se encuentra (ej: ejercicio manual borrado o antiguo),
-          // creamos un objeto parcial para que no se rompa
+          
           if (!fullExercise) {
+            // Ejercicio manual o no encontrado
             return {
               tempId: uuidv4(),
               id: ex.exercise_id,
@@ -65,19 +56,19 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
               rest_time: ex.rest_time,
               superset_group_id: ex.superset_group_id,
               exercise_order: ex.exercise_order,
-              is_manual: true, // Asumimos que es manual si no está en la BD
-              image_url_start: null // No tendrá imagen
+              is_manual: true,
+              image_url_start: null,
+              video_url: null,
             };
           }
 
-          // Si se encuentra, combinamos el objeto "completo" (con imagen)
-          // con los datos guardados de la rutina (series, reps)
+          // Ejercicio encontrado
           return {
-            ...fullExercise, // <-- Esto añade image_url_start, etc.
+            ...fullExercise,
             tempId: uuidv4(),
-            id: ex.exercise_id, // Mantenemos el ID original
-            name: ex.name, // Mantenemos el nombre guardado (por si se editó)
-            muscle_group: ex.muscle_group, // Mantenemos el músculo guardado
+            id: ex.exercise_id,
+            name: ex.name,
+            muscle_group: ex.muscle_group,
             sets: ex.sets,
             reps: ex.reps,
             rest_time: ex.rest_time,
@@ -87,7 +78,6 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
         });
         
         setExercises(formattedExercises);
-
       } catch (error) {
         addToast(error.message || 'Error al cargar la rutina', 'error');
         onCancel();
@@ -95,57 +85,39 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
         setIsLoading(false);
       }
     };
-
     loadRoutine();
-  }, [id, addToast, onCancel]); // Dependencias correctas
-  // --- FIN DE LA MODIFICACIÓN ---
-
+  }, [id, addToast, onCancel]);
 
   // --- VALIDACIÓN (Sin cambios) ---
   const validateRoutine = () => {
-    // ... (código existente)
     const getT = (key, defaultVal) => i18n.t(key, { defaultValue: defaultVal });
 
     if (!routineName.trim()) {
       setValidationError(getT('routine_editor:error_routine_name_required', 'El nombre de la rutina es obligatorio.'));
       return false;
     }
-
     if (exercises.length === 0) {
       setValidationError(getT('routine_editor:error_min_one_exercise', 'La rutina debe tener al menos un ejercicio.'));
       return false;
     }
-
     let exerciseError = false;
     exercises.forEach((ex, index) => {
-      if (!ex.name || ex.name.trim() === '') {
-        // ... (código existente)
-        exerciseError = true;
-      }
-      if (!ex.sets || isNaN(parseInt(ex.sets, 10)) || parseInt(ex.sets, 10) <= 0) {
-        // ... (código existente)
-        exerciseError = true;
-      }
-      if (!ex.reps || ex.reps.trim() === '') {
-        // ... (código existente)
-        exerciseError = true;
-      }
+      if (!ex.name || ex.name.trim() === '') exerciseError = true;
+      if (!ex.sets || isNaN(parseInt(ex.sets, 10)) || parseInt(ex.sets, 10) <= 0) exerciseError = true;
+      if (!ex.reps || ex.reps.trim() === '') exerciseError = true;
     });
 
     if (exerciseError) {
       setValidationError(getT('routine_editor:error_all_fields_required', 'Todos los ejercicios deben tener nombre, series y repeticiones válidos.'));
       return false;
     }
-
     setValidationError(null);
     return true;
   };
 
   // --- SAVE & DELETE (Sin cambios) ---
   const handleSave = async () => {
-    // ... (código existente)
     if (!validateRoutine()) return;
-
     setIsSaving(true);
     const routineData = {
       name: routineName,
@@ -161,11 +133,10 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
         exercise_order: index
       }))
     };
-
     try {
       const savedRoutine = await saveRoutine(id, routineData);
       addToast(id ? 'Rutina actualizada' : 'Rutina creada', 'success');
-      handleSaveProp(savedRoutine); // Llama al callback del padre
+      handleSaveProp(savedRoutine);
     } catch (error) {
       addToast(error.message || 'Error al guardar la rutina', 'error');
     } finally {
@@ -174,7 +145,6 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   };
 
   const handleDelete = async () => {
-    // ... (código existente)
     if (!id) {
       onCancel();
       return;
@@ -183,7 +153,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     try {
       await deleteRoutine(id);
       addToast('Rutina eliminada', 'success');
-      handleSaveProp(null, true); // Llama al callback (routine=null, isDeleted=true)
+      handleSaveProp(null, true);
     } catch (error) {
       addToast(error.message || 'Error al eliminar la rutina', 'error');
     } finally {
@@ -192,14 +162,15 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     }
   };
 
-  // --- EXERCISE ACTIONS (Sin cambios) ---
-  const addExercise = (name = 'Nuevo Ejercicio') => {
-    // ... (código existente)
-    // ESTA FUNCIÓN ES PARA EL BOTÓN "MANUAL" DE LA PÁGINA PRINCIPAL, NO DEL MODAL
+  // --- EXERCISE ACTIONS ---
+
+  // --- INICIO DE LA MODIFICACIÓN (FIX BUG Manual) ---
+  const addExercise = () => { // Quitamos el parámetro
+    
     const newExercise = {
       tempId: uuidv4(),
       id: null,
-      name: name,
+      name: '', // <-- Se establece a vacío para que el input de búsqueda esté libre
       sets: 3,
       reps: '10',
       rest_time: 60,
@@ -207,45 +178,63 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
       superset_group_id: null,
       exercise_order: exercises.length,
       image_url_start: null,
-      image_url_end: null
+      video_url: null,
     };
     setExercises(prev => [...prev, newExercise]);
   };
+  // --- FIN DE LA MODIFICACIÓN (FIX BUG Manual) ---
 
-  const removeExercise = (index) => {
-    // ... (código existente)
-    setExercises(prev => prev.filter((_, i) => i !== index));
+  const removeExercise = (tempIdToRemove) => {
+    setExercises(prev => prev.filter(ex => ex.tempId !== tempIdToRemove));
   };
 
   const updateExerciseField = (index, field, value) => {
-    // ... (código existente)
     setExercises(prev =>
       prev.map((ex, i) => (i === index ? { ...ex, [field]: value } : ex))
     );
   };
 
   const linkExerciseFromList = (index, selectedExercise) => {
-    // ... (código existente)
     setExercises(prev =>
       prev.map((ex, i) =>
         i === index
           ? {
-              ...ex, // Mantiene sets, reps, etc.
+              ...ex, // Mantiene sets, reps, superset_id, etc.
               id: selectedExercise.id,
               name: selectedExercise.name,
               muscle_group: selectedExercise.category || selectedExercise.muscle_group,
               image_url_start: selectedExercise.image_url_start,
-              image_url_end: selectedExercise.image_url_end
+              image_url_end: selectedExercise.image_url_end,
+              video_url: selectedExercise.video_url,
+              is_manual: selectedExercise.is_manual || false,
             }
           : ex
       )
     );
-    setActiveDropdownIndex(null); // Cierra el dropdown
+    setActiveDropdownIndex(null);
   };
+  
+  // 1. Función para REEMPLAZAR
+  const handleReplaceClick = (index) => {
+    setReplacingExerciseIndex(index);
+    setShowExerciseSearch(true); 
+  };
+  
+  // 2. Función para AÑADIR
+  const handleOpenSearchForAdd = () => {
+    setReplacingExerciseIndex(null); 
+    setShowExerciseSearch(true);
+  };
+
+  // 3. Función para CERRAR
+  const handleSearchModalClose = () => {
+    setShowExerciseSearch(false);
+    setReplacingExerciseIndex(null); 
+  };
+
 
   // --- SUPERSET ACTIONS (Sin cambios) ---
   const createSuperset = (index) => {
-    // ... (código existente)
     if (index >= exercises.length - 1) return;
     const supersetId = uuidv4();
     setExercises(prev =>
@@ -259,7 +248,6 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   };
 
   const unlinkGroup = (supersetId) => {
-    // ... (código existente)
     setExercises(prev =>
       prev.map(ex =>
         ex.superset_group_id === supersetId ? { ...ex, superset_group_id: null } : ex
@@ -269,7 +257,6 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
 
   // --- DRAG & DROP (Sin cambios) ---
   const onDragEnd = (result) => {
-    // ... (código existente)
     if (!result.destination) return;
     const { source, destination } = result;
 
@@ -287,32 +274,57 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
 
   // --- MODAL ACTIONS ---
   
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Modificamos esta función para que guarde el objeto "completo"
   const handleAddExercisesFromSearch = (stagedExercises) => {
-    setExercises(prev => {
-      const newExercises = stagedExercises.map((item, index) => ({
-        // 1. Esparcimos el objeto "completo" del ejercicio
-        ...item.exercise, // <-- ESTO AÑADE image_url_start, etc.
-        
-        // 2. Añadimos/Sobrescribimos los detalles de la rutina
-        tempId: uuidv4(),
-        id: item.exercise.id, // ID del ejercicio (o manual_id)
-        sets: item.sets,
-        reps: item.reps,
-        rest_time: item.rest_time,
-        superset_group_id: null,
-        exercise_order: prev.length + index
-      }));
-      return [...prev, ...newExercises];
-    });
-    setShowExerciseSearch(false);
+    
+    // CASO 1: Estamos en modo "Reemplazar"
+    if (replacingExerciseIndex !== null) {
+      if (stagedExercises.length === 0) {
+        handleSearchModalClose();
+        return;
+      }
+      const selectedExercise = stagedExercises[0].exercise;
+      linkExerciseFromList(replacingExerciseIndex, selectedExercise);
+      handleSearchModalClose();
+
+    } else {
+      // CASO 2: Estamos en modo "Añadir"
+      let newExercises = [];
+      try {
+        newExercises = stagedExercises.map((item, index) => {
+          if (!item || !item.exercise) {
+             return null;
+          }
+          return {
+            ...item.exercise, // Objeto completo (con imagen/video)
+            tempId: uuidv4(),
+            id: item.exercise.id,
+            sets: item.sets,
+            reps: item.reps,
+            rest_time: item.rest_time,
+            superset_group_id: null,
+            exercise_order: exercises.length + index // Usamos state 'exercises'
+          };
+        }).filter(Boolean);
+
+      } catch (e) {
+        addToast("Error al procesar los ejercicios.", 'error');
+        return;
+      }
+
+      if (newExercises.length > 0) {
+        setExercises(prev => {
+          const finalState = [...prev, ...newExercises];
+          return finalState;
+        });
+      }
+      
+      setShowExerciseSearch(false);
+    }
   };
-  // --- FIN DE LA MODIFICACIÓN ---
+
 
   // --- DERIVED STATE (GROUPING) (Sin cambios) ---
   const groupedExercises = useMemo(() => {
-    // ... (código existente)
     const groups = [];
     let i = 0;
     while (i < exercises.length) {
@@ -334,7 +346,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     return groups;
   }, [exercises]);
 
-  // --- RETURNED VALUES (Sin cambios) ---
+  // --- RETURNED VALUES ---
   return {
     id,
     routineName, setRoutineName,
@@ -359,6 +371,10 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     onDragEnd,
     handleAddExercisesFromSearch,
     
-    groupedExercises
+    groupedExercises,
+    
+    handleOpenSearchForAdd,
+    handleReplaceClick,
+    handleSearchModalClose,
   };
 };

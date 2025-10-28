@@ -17,6 +17,9 @@ const ExerciseGroup = ({
   unlinkGroup,
   linkWithNext,
   dragHandleProps,
+  // --- INICIO MODIFICACIÓN ---
+  onReplaceClick, // 1. Recibimos la nueva prop
+  // --- FIN MODIFICACIÓN ---
 }) => {
   return (
     <div
@@ -48,15 +51,13 @@ const ExerciseGroup = ({
               errors={errors.exercises?.[exIndex]}
               onFieldChange={onFieldChange}
               onExerciseSelect={onExerciseSelect}
-              // --- INICIO MODIFICACIÓN ---
-              // Aquí estaba el error:
-              // Cambiamos 'onRemove={removeExercise}' por 'removeExercise={removeExercise}'
-              // para que coincida con la prop que espera ExerciseCard.jsx
               removeExercise={removeExercise}
-              // --- FIN MODIFICACIÓN ---
               onOpen={() => setActiveDropdownIndex(exIndex)}
               onClose={() => setActiveDropdownIndex(null)}
               dragHandleProps={group.length === 1 ? dragHandleProps : null}
+              // --- INICIO MODIFICACIÓN ---
+              onReplaceClick={onReplaceClick} // 2. La pasamos al ExerciseCard
+              // --- FIN MODIFICACIÓN ---
             />
           );
         })}

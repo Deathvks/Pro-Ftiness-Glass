@@ -14,7 +14,9 @@ const ExerciseList = ({
   removeExercise,
   unlinkGroup,
   createSuperset,
+  onReplaceClick,
 }) => {
+
   return (
     <>
       <h2 className="text-2xl font-semibold mb-4">Ejercicios</h2>
@@ -25,12 +27,12 @@ const ExerciseList = ({
             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6 mb-6">
               {groupedExercises.map((group, groupIndex) => {
                 const isSuperset = group.length > 1;
-                // Encontrar el índice real del primer ejercicio del grupo en la lista 'exercises'
                 const firstExerciseIndex = exercises.findIndex(ex => ex.tempId === group[0].tempId);
                 const isLastGroup = groupIndex === groupedExercises.length - 1;
 
-                // Si no se encuentra el ejercicio (no debería pasar), no renderizar
-                if (firstExerciseIndex === -1) return null; 
+                if (firstExerciseIndex === -1) {
+                  return null; 
+                }
 
                 return (
                   <Draggable
@@ -61,15 +63,16 @@ const ExerciseList = ({
                             const exIdx = exercises.findIndex(ex => ex.tempId === exerciseTempId);
                             if (exIdx !== -1) onExerciseSelect(exIdx, selEx);
                           }}
+                          // FIX: Pasamos el tempId directamente, que es lo que el hook espera.
                           removeExercise={(exerciseTempId) => {
-                            const exIdx = exercises.findIndex(ex => ex.tempId === exerciseTempId);
-                            if (exIdx !== -1) removeExercise(exIdx);
+                            removeExercise(exerciseTempId);
                           }}
                           unlinkGroup={unlinkGroup}
                           linkWithNext={() => createSuperset(exercises.findIndex(ex => ex.tempId === group[group.length - 1].tempId))}
                           
                           setActiveDropdownIndex={setActiveDropdownIndex}
                           dragHandleProps={isSuperset ? null : providedDrag.dragHandleProps}
+                          onReplaceClick={onReplaceClick}
                         />
                       </div>
                     )}
