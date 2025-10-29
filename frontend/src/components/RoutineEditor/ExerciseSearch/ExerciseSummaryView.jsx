@@ -7,7 +7,7 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header (sin cambios) */}
       <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-glass-border">
         <button onClick={onBack} className="flex items-center gap-2 p-2 -m-2 rounded-lg hover:bg-white/10">
           <ChevronLeft size={24} />
@@ -23,34 +23,28 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
           <p className="text-center text-text-muted pt-10">{t('exercise_ui:cart_empty', 'Tu carrito está vacío.')}</p>
         ) : (
           stagedExercises.map((item) => {
-            // --- INICIO DE LA MODIFICACIÓN ---
-
-            // 1. Traducir el nombre (usando namespace 'exercise_names')
+            // Lógica de traducción (sin cambios)
             const translatedName = t(item.exercise.name, {
               ns: 'exercise_names',
               defaultValue: item.exercise.name,
             });
-
-            // 2. Traducir grupo muscular (usando 'exercise_muscles')
             const muscleGroup = item.exercise.category || item.exercise.muscle_group;
             const translatedMuscle = t(`exercise_muscles:${muscleGroup}`, {
               defaultValue: muscleGroup,
             });
             
-            // --- FIN DE LA MODIFICACIÓN ---
-
             return (
               <div key={item.exercise.id} className="bg-bg-secondary rounded-xl border border-glass-border p-4">
                 <div className="flex items-start gap-4">
                   <img
-                    src={item.exercise.image_url_start || '/logo.webp'}
+                    src={item.exercise.image_url_start || '/logo.webp'} // (Fallback sin cambios)
                     alt={`Imagen de ${translatedName}`}
                     className="w-12 h-12 rounded-md object-cover border border-glass-border"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{translatedName}</p> {/* Usar nombre traducido */}
+                    <p className="font-semibold truncate">{translatedName}</p> {/* (Sin cambios) */}
                     <p className="text-sm text-text-muted capitalize">
-                      {translatedMuscle} {/* Usar músculo traducido */}
+                      {translatedMuscle} {/* (Sin cambios) */}
                     </p>
                   </div>
                   <button
@@ -81,12 +75,14 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
                   </div>
                   <div>
                     <label className="text-xs text-text-muted">{t('exercise_ui:rest_s', 'Desc. (s)')}</label>
+                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
                     <input
                       type="number"
-                      value={item.rest_time}
-                      onChange={(e) => onUpdate(item.exercise.id, 'rest_time', Number(e.target.value))}
+                      value={item.rest_seconds} // <-- CAMBIADO DE rest_time
+                      onChange={(e) => onUpdate(item.exercise.id, 'rest_seconds', Number(e.target.value))} // <-- CAMBIADO DE rest_time
                       className="w-full text-center px-3 py-2 rounded-md bg-bg-primary border border-glass-border"
                     />
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                   </div>
                 </div>
               </div>
@@ -95,7 +91,7 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
         )}
       </div>
 
-      {/* Footer (Finalizar) */}
+      {/* Footer (Finalizar) (sin cambios) */}
       <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm">
         <button
           onClick={onFinalize}
@@ -103,7 +99,6 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
           className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-accent text-bg-secondary font-bold text-lg transition hover:scale-105 disabled:opacity-50"
         >
           <Check size={24} />
-          {/* Usamos la interpolación 'count' de i18next para manejar singulares/plurales */}
           {t('exercise_ui:add_n_exercises', { count: stagedExercises.length })}
         </button>
       </div>

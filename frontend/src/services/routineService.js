@@ -7,39 +7,60 @@ export const getRoutines = () => {
     return apiClient('/routines');
 };
 
-// --- INICIO MODIFICACIÓN ---
 /**
  * Obtiene una rutina específica por su ID.
- * @param {number} routineId - El ID de la rutina a obtener.
+ * @param {string} routineId - El ID de la rutina a obtener.
  */
 export const getRoutineById = (routineId) => {
     return apiClient(`/routines/${routineId}`);
 };
-// --- FIN MODIFICACIÓN ---
+
+// --- INICIO DE LA MODIFICACIÓN ---
 
 /**
- * Guarda una rutina. Si la rutina tiene un ID, la actualiza (PUT).
- * Si no tiene ID, la crea (POST).
- * @param {object} routineData - Los datos de la rutina a guardar.
+ * Crea una nueva rutina.
+ * (Asumimos que el backend devuelve la rutina recién creada con su ID)
+ * @param {object} routineData - Los datos de la rutina a crear.
  */
-export const saveRoutine = (routineData) => {
-    // --- INICIO MODIFICACIÓN ---
-    // Aseguramos que el id sea numérico si existe, si no, es undefined
-    const id = routineData.id ? Number(routineData.id) : undefined;
-    const data = { ...routineData };
-    delete data.id; // Quitamos el id del cuerpo de datos
-    // --- FIN MODIFICACIÓN ---
-
-    const method = id ? 'PUT' : 'POST';
-    const endpoint = id ? `/routines/${id}` : '/routines';
-
-    return apiClient(endpoint, { body: data, method });
+export const createRoutine = (routineData) => {
+    // Aseguramos que no se envíe un 'id' en el body de un POST
+    const { id, ...data } = routineData; 
+    
+    return apiClient('/routines', { 
+        body: data, 
+        method: 'POST' 
+    });
+    // apiClient devuelve la respuesta JSON del backend (la nueva rutina)
 };
 
 /**
+ * Actualiza una rutina existente por su ID.
+ * (Asumimos que el backend devuelve la rutina actualizada)
+ * @param {string} routineId - El ID de la rutina a actualizar.
+ * @param {object} routineData - Los nuevos datos para la rutina.
+ */
+export const updateRoutine = (routineId, routineData) => {
+    // Quitamos el 'id' del body para evitar conflictos, usamos el de la URL
+    const { id, ...data } = routineData;
+
+    return apiClient(`/routines/${routineId}`, { 
+        body: data, 
+        method: 'PUT' 
+    });
+    // apiClient devuelve la respuesta JSON del backend (la rutina actualizada)
+};
+
+
+/**
  * Elimina una rutina por su ID.
- * @param {number} routineId - El ID de la rutina a eliminar.
+ * @param {string} routineId - El ID de la rutina a eliminar.
  */
 export const deleteRoutine = (routineId) => {
     return apiClient(`/routines/${routineId}`, { method: 'DELETE' });
 };
+
+// La función 'saveRoutine' original ha sido reemplazada por 
+// 'createRoutine' y 'updateRoutine' para ser más explícitas 
+// y alinearse con 'dataSlice.js'.
+
+// --- FIN DE LA MODIFICACIÓN ---

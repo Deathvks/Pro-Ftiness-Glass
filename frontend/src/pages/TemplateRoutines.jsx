@@ -1,9 +1,12 @@
+/* frontend/src/pages/TemplateRoutines.jsx */
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Play, Copy, Search, Filter, X, Clock, Target, Dumbbell } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
-import { saveRoutine } from '../services/routineService';
+// --- INICIO DE LA MODIFICACIÓN ---
+// import { saveRoutine } from '../services/routineService'; // <-- Esta línea se elimina, causa el error
+// --- FIN DE LA MODIFICACIÓN ---
 import CustomSelect from '../components/CustomSelect'; // Importamos el componente reutilizable
 
 // Helper to identify multi-day routines
@@ -27,9 +30,15 @@ const isMultiDayRoutine = (routines) => {
 
 const TemplateRoutines = ({ setView }) => {
   const { addToast } = useToast();
-  const templateRoutines = useAppStore(state => state.templateRoutines);
-  const startWorkout = useAppStore(state => state.startWorkout);
-  const fetchInitialData = useAppStore(state => state.fetchInitialData);
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Añadimos 'createRoutine' a la desestructuración de useAppStore
+  // y eliminamos 'fetchInitialData' ya que no se necesitará
+  const { templateRoutines, startWorkout, createRoutine } = useAppStore(state => ({
+    templateRoutines: state.templateRoutines,
+    startWorkout: state.startWorkout,
+    createRoutine: state.createRoutine,
+  }));
+  // --- FIN DE LA MODIFICACIÓN ---
 
   // Estados para filtros y búsqueda con persistencia en localStorage
   const [searchQuery, setSearchQuery] = useState(() => {
@@ -62,8 +71,9 @@ const TemplateRoutines = ({ setView }) => {
     localStorage.setItem('templateRoutinesShowFilters', showFilters.toString());
   }, [showFilters]);
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Actualizamos 'handleCopyToMyRoutines' para usar 'createRoutine' del store
   const handleCopyToMyRoutines = async (template) => {
-    // Evitar no-used-vars de ESLint eliminando propiedades sin declararlas
     const exercises = template.TemplateRoutineExercises.map((ex) => {
       const newEx = { ...ex };
       delete newEx.id;
@@ -78,14 +88,23 @@ const TemplateRoutines = ({ setView }) => {
     };
 
     try {
-      await saveRoutine(newRoutine);
-      addToast('Rutina copiada a "Mis Rutinas" con éxito.', 'success');
-      await fetchInitialData();
+      // Usamos la acción del store en lugar del servicio
+      const result = await createRoutine(newRoutine);
+      
+      if (result.success) {
+        addToast('Rutina copiada a "Mis Rutinas" con éxito.', 'success');
+        // await fetchInitialData(); // <-- Ya no es necesario
+      } else {
+        throw new Error(result.message);
+      }
     } catch (error) {
       addToast(error.message || 'No se pudo copiar la rutina.', 'error');
     }
   };
+  // --- FIN DE LA MODIFICACIÓN ---
   
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Actualizamos 'handleCopyFullRoutine' para usar 'createRoutine' del store
   const handleCopyFullRoutine = async (category, routines) => {
     const dayRoutines = routines
       .filter(r => /^Día \d+:/.test(r.name))
@@ -114,15 +133,22 @@ const TemplateRoutines = ({ setView }) => {
           description: template.description,
           exercises: exercises,
         };
-        await saveRoutine(newRoutine);
+        
+        // Usamos la acción del store
+        const result = await createRoutine(newRoutine);
+        if (!result.success) {
+          // Si una falla, nos detenemos y mostramos el error
+          throw new Error(result.message || `No se pudo copiar '${template.name}'`);
+        }
       }
 
       addToast(`Rutina completa '${category}' copiada a "Mis Rutinas".`, 'success');
-      await fetchInitialData();
+      // await fetchInitialData(); // <-- Ya no es necesario
     } catch (error) {
       addToast(error.message || 'No se pudo copiar la rutina completa.', 'error');
     }
   };
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const handleStartWorkout = (template) => {
     startWorkout(template);
@@ -231,7 +257,7 @@ const TemplateRoutines = ({ setView }) => {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-[fade-in_0.5s_ease-out]">
+    <div className="flex flex-col gap-6 animate-[fade-in_0.5s_ease_out]">
       {/* Barra de búsqueda y filtros */}
       <div className="space-y-4">
         {/* Búsqueda */}

@@ -7,8 +7,11 @@ const ExerciseList = ({
   groupedExercises,
   exercises, // Pasamos 'exercises' completos para encontrar el índice
   onDragEnd,
-  activeDropdownIndex,
-  setActiveDropdownIndex,
+  // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+  // 1. Aceptamos las props con los nombres actualizados
+  activeDropdownTempId,
+  setActiveDropdownTempId,
+  // --- FIN DE LA MODIFICACIÓN ---
   onFieldChange,
   onExerciseSelect,
   removeExercise,
@@ -51,26 +54,30 @@ const ExerciseList = ({
                           groupIndex={groupIndex}
                           isLastGroup={isLastGroup}
                           editedExercises={exercises}
-                          activeDropdownIndex={activeDropdownIndex}
+                          // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+                          // 2. Pasamos las props con los nombres actualizados
+                          activeDropdownTempId={activeDropdownTempId}
+                          // --- FIN DE LA MODIFICACIÓN ---
                           errors={{}} // Pasar errores si los hubiera
                           
                           // Pasamos las funciones de manejo
+                          // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+                          // 3. Pasamos el tempId (string) directamente al hook.
+                          // Ya no convertimos a 'index' (number)
                           onFieldChange={(exerciseTempId, field, value) => {
-                            const exIdx = exercises.findIndex(ex => ex.tempId === exerciseTempId);
-                            if (exIdx !== -1) onFieldChange(exIdx, field, value);
+                            onFieldChange(exerciseTempId, field, value);
                           }}
                           onExerciseSelect={(exerciseTempId, selEx) => {
-                            const exIdx = exercises.findIndex(ex => ex.tempId === exerciseTempId);
-                            if (exIdx !== -1) onExerciseSelect(exIdx, selEx);
+                            onExerciseSelect(exerciseTempId, selEx);
                           }}
-                          // FIX: Pasamos el tempId directamente, que es lo que el hook espera.
                           removeExercise={(exerciseTempId) => {
                             removeExercise(exerciseTempId);
                           }}
                           unlinkGroup={unlinkGroup}
-                          linkWithNext={() => createSuperset(exercises.findIndex(ex => ex.tempId === group[group.length - 1].tempId))}
+                          linkWithNext={() => createSuperset(group[group.length - 1].tempId)}
                           
-                          setActiveDropdownIndex={setActiveDropdownIndex}
+                          setActiveDropdownIndex={setActiveDropdownTempId} // <- 2. (Continuación)
+                          // --- FIN DE LA MODIFICACIÓN ---
                           dragHandleProps={isSuperset ? null : providedDrag.dragHandleProps}
                           onReplaceClick={onReplaceClick}
                         />

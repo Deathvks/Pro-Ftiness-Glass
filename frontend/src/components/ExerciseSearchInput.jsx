@@ -1,6 +1,8 @@
 /* frontend/src/components/ExerciseSearchInput.jsx */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { Search, Plus } from 'lucide-react'; // Importamos Plus
+// --- FIN DE LA MODIFICACIÓN ---
 import { getExerciseList } from '../services/exerciseService';
 import Spinner from './Spinner';
 import { useToast } from '../hooks/useToast';
@@ -26,6 +28,10 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
   const { t: tName } = useTranslation('exercise_names');
   const { t: tMuscle } = useTranslation('exercise_muscles');
   const { t: tCommon } = useTranslation('translation');
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // 1. Añadimos el namespace 'exercise_ui' para el texto del nuevo botón
+  const { t: tUi } = useTranslation('exercise_ui');
+  // --- FIN DE LA MODIFICACIÓN ---
 
 
   // Sincroniza el estado interno si la query inicial (prop) cambia
@@ -91,6 +97,54 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
     // 3. Oculta el desplegable
     setIsSearching(false); 
   };
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // 2. Creamos la función para el botón "Añadir Manual"
+  const handleAddManualClick = () => {
+    const exerciseName = inputValue.trim();
+    if (exerciseName === '') return;
+
+    // Creamos un objeto "falso" de ejercicio que simula uno real
+    const fakeExercise = {
+      id: null, // Sin ID de la base de datos
+      name: exerciseName,
+      muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), // Grupo por defecto
+      image_url_start: null,
+      image_url_end: null,
+      video_url: null,
+      is_manual: true // Lo marcamos como manual
+    };
+    
+    // Usamos la misma función 'handleSelect' para
+    // enviar el objeto falso y limpiar el estado.
+    handleSelect(fakeExercise);
+  };
+
+  // 3. Creamos un componente reutilizable para el botón
+  const ManualAddButton = () => {
+    const query = inputValue.trim();
+    if (query.length === 0) return null; // No mostrar si el input está vacío
+
+    return (
+      <div className="border-t border-glass-border">
+        <button
+          // Usamos onMouseDown para ganar al onBlur del input
+          onMouseDown={(e) => {
+            e.preventDefault(); // Previene que el input pierda el foco
+            handleAddManualClick();
+          }}
+          className="flex items-center w-full gap-3 p-3 text-left text-accent font-semibold hover:bg-accent-transparent transition-colors"
+        >
+          <Plus size={20} />
+          {/* Usamos 'break-words' por si el nombre es muy largo */}
+          <span className="flex-1 min-w-0 break-words">
+            {tUi('add_as_manual', 'Añadir "{{query}}" como manual', { query })}
+          </span>
+        </button>
+      </div>
+    );
+  };
+  // --- FIN DE LA MODIFICACIÓN ---
 
   return (
     // (Quitamos 'relative' para arreglar el overlap)
@@ -159,14 +213,24 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
               </li>
             ))}
           </ul>
+          {/* --- INICIO DE LA MODIFICACIÓN --- */}
+          {/* 4. Añadimos el botón manual al final de la lista de resultados */}
+          <ManualAddButton />
+          {/* --- FIN DE LA MODIFICACIÓN --- */}
         </div>
       )}
 
       {/* Sin Resultados */}
       {/* Corregimos la comprobación de length asegurando que sea un string */}
       {!isLoading && isSearching && String(inputValue || '').length > 1 && filteredExercises.length === 0 && (
-        <div className="w-full p-4 bg-bg-secondary border border-glass-border rounded-xl mt-2 shadow-lg">
-          <p className="text-center text-text-muted">{tCommon('No se encontraron ejercicios.', { defaultValue: 'No se encontraron ejercicios.' })}</p>
+        <div className="w-full bg-bg-secondary border border-glass-border rounded-xl mt-2 shadow-lg">
+          <div className="p-4">
+            <p className="text-center text-text-muted">{tCommon('No se encontraron ejercicios.', { defaultValue: 'No se encontraron ejercicios.' })}</p>
+          </div>
+          {/* --- INICIO DE LA MODIFICACIÓN --- */}
+          {/* 5. Añadimos el botón manual también al cuadro de "Sin Resultados" */}
+          <ManualAddButton />
+          {/* --- FIN DE LA MODIFICACIÓN --- */}
         </div>
       )}
     </div>

@@ -25,7 +25,11 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
     showDeleteConfirm, setShowDeleteConfirm,
     validationError,
     // showExerciseSearch (ya no lo necesitamos aquí)
-    activeDropdownIndex, setActiveDropdownIndex,
+    
+    // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+    // 1. Usamos los nuevos nombres de estado del hook
+    activeDropdownTempId, setActiveDropdownTempId,
+    // --- FIN DE LA MODIFICACIÓN ---
     
     handleSave,
     handleDelete,
@@ -55,10 +59,19 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
   } = useRoutineEditor({ initialRoutine, onSave: handleSaveProp, onCancel });
 
 
-  if (isLoading && id) {
+  // --- INICIO DE LA MODIFICACIÓN (FIX) ---
+  // Cambiamos 'isLoading && id' por solo 'isLoading'.
+  // Necesitamos mostrar el spinner si está cargando CUALQUIER COSA
+  // (incluyendo la lista de ejercicios para una nueva rutina).
+  if (isLoading) {
+  // --- FIN DE LA MODIFICACIÓN (FIX) ---
+
+    // Logs eliminados
     return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
   }
 
+  // Logs eliminados
+  
   // Renderizamos los nuevos componentes y les pasamos las props desde el hook
   
   return (
@@ -74,12 +87,17 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
         setDescription={setDescription}
       />
 
+      {/* Logs eliminados */}
+
       <ExerciseList
         groupedExercises={groupedExercises}
         exercises={exercises}
         onDragEnd={onDragEnd}
-        activeDropdownIndex={activeDropdownIndex}
-        setActiveDropdownIndex={setActiveDropdownIndex}
+        // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+        // 2. Pasamos las props con los nombres actualizados
+        activeDropdownTempId={activeDropdownTempId}
+        setActiveDropdownTempId={setActiveDropdownTempId}
+        // --- FIN DE LA MODIFICACIÓN ---
         onFieldChange={updateExerciseField}
         onExerciseSelect={linkExerciseFromList}
         removeExercise={removeExercise}
@@ -98,7 +116,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
         // Guardar/Eliminar
         id={id}
         isSaving={isSaving}
-        isDeleting={isDeleting}
+        isDeleting={isDeleting} // Corregida errata (era 'g')
         onSave={handleSave}
         onDeleteClick={() => setShowDeleteConfirm(true)}
 

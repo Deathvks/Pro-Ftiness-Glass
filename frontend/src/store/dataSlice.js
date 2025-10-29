@@ -22,9 +22,7 @@ const initialState = {
     selectedDate: getTodayDateString(),
     nutritionSummary: { nutrition: [], water: [] },
     favoriteMeals: [],
-    // --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
-    recentMeals: [], // Añadir estado para comidas recientes
-    // --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
+    recentMeals: [],
     templateRoutines: {},
     todaysCreatineLog: [],
     creatineStats: null,
@@ -54,27 +52,20 @@ export const createDataSlice = (set, get) => ({
             const profileData = await userService.getMyProfile();
             set({ userProfile: profileData, isAuthenticated: true });
 
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // 1. Comprobamos el consentimiento de cookies INMEDIATAMENTE después de tener el ID de usuario.
-            //    Usamos 'get()' para llamar a la función definida en 'authSlice'.
-            //    Esperamos (await) a que termine antes de continuar.
             if (profileData?.id) {
                 await get().checkCookieConsent(profileData.id);
             }
-            // --- FIN DE LA MODIFICACIÓN ---
 
             if (profileData.goal) {
                 const today = get().selectedDate;
 
-                // --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
-                // Añadimos 'nutritionService.getRecentMeals()' a la carga inicial
                 const [
                     routines,
                     workouts,
                     bodyweight,
                     nutrition,
                     favoriteMeals,
-                    recentMeals, // Nueva variable
+                    recentMeals,
                     templateRoutines,
                     todaysCreatine,
                     creatineStats,
@@ -84,7 +75,7 @@ export const createDataSlice = (set, get) => ({
                     bodyWeightService.getHistory(),
                     nutritionService.getNutritionLogsByDate(today),
                     favoriteMealService.getFavoriteMeals(),
-                    nutritionService.getRecentMeals(), // Asumimos que esta función existe
+                    nutritionService.getRecentMeals(),
                     templateRoutineService.getTemplateRoutines(),
                     creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
                     creatinaService.getCreatinaStats(),
@@ -96,18 +87,16 @@ export const createDataSlice = (set, get) => ({
                     nutritionLog: nutrition.nutrition || [],
                     waterLog: nutrition.water || { quantity_ml: 0 },
                     favoriteMeals,
-                    recentMeals: recentMeals || [], // Guardar comidas recientes en el estado
+                    recentMeals: recentMeals || [],
                     templateRoutines,
                     todaysCreatineLog: todaysCreatine.data || [],
                     creatineStats: creatineStats.data || null,
                 });
-                // --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
             }
         } catch (error) {
             console.error("Error de autenticación o carga de datos:", error);
             get().handleLogout(); // Llama a la acción del authSlice
         } finally {
-            // Esto ahora solo se ejecuta DESPUÉS de que el checkCookieConsent haya terminado.
             set({ isLoading: false });
         }
     },
@@ -146,6 +135,94 @@ export const createDataSlice = (set, get) => ({
             console.error("Error al cargar el resumen de nutrición:", error);
         }
     },
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- Acciones C.R.U.D. para Rutinas ---
+
+    /**
+     * Crea una nueva rutina.
+     * @param {object} routineData - Los datos de la nueva rutina.
+     * @returns {object} - { success: boolean, routine: object|null, message: string }
+     */
+    createRoutine: async (routineData) => {
+        try {
+            // El servicio (backend) DEBE devolver la rutina recién creada, incluyendo su 'id'.
+            const newRoutine = await routineService.createRoutine(routineData);
+            
+            if (!newRoutine || !newRoutine.id) {
+                console.error('Error: createRoutine service did not return a valid routine with ID.', newRoutine);
+                throw new Error('La respuesta del servidor no incluyó la rutina creada.');
+            }
+
+            set(state => ({
+                routines: [...state.routines, newRoutine]
+            }));
+            
+            // Devolvemos la rutina completa para que el componente pueda usar su 'id'.
+            // Esto soluciona el error "reading 'id' of undefined".
+            return { success: true, routine: newRoutine, message: 'Rutina creada con éxito.' };
+        } catch (error) {
+            console.error('Error en createRoutine (dataSlice):', error);
+            return { success: false, routine: null, message: `Error al crear la rutina: ${error.message}` };
+        }
+    },
+
+    /**
+     * Actualiza una rutina existente.
+     * @param {string} routineId - El ID de la rutina a actualizar.
+     * @param {object} routineData - Los nuevos datos para la rutina.
+     * @returns {object} - { success: boolean, routine: object|null, message: string }
+     */
+    updateRoutine: async (routineId, routineData) => {
+        try {
+            // El servicio (backend) DEBE devolver la rutina actualizada.
+            const updatedRoutine = await routineService.updateRoutine(routineId, routineData);
+            
+            if (!updatedRoutine || !updatedRoutine.id) {
+                console.error('Error: updateRoutine service did not return a valid routine with ID.', updatedRoutine);
+                throw new Error('La respuesta del servidor no incluyó la rutina actualizada.');
+            }
+
+            set(state => ({
+                routines: state.routines.map(r =>
+                    r.id === routineId ? updatedRoutine : r
+                )
+            }));
+            
+            return { success: true, routine: updatedRoutine, message: 'Rutina actualizada.' };
+        } catch (error) {
+            console.error('Error en updateRoutine (dataSlice):', error);
+            return { success: false, routine: null, message: `Error al actualizar la rutina: ${error.message}` };
+        }
+    },
+
+    /**
+     * Elimina una rutina.
+     * @param {string} routineId - El ID de la rutina a eliminar.
+     * @returns {object} - { success: boolean, message: string }
+     */
+    deleteRoutine: async (routineId) => {
+        try {
+            await routineService.deleteRoutine(routineId);
+            
+            set(state => ({
+                routines: state.routines.filter(r => r.id !== routineId)
+            }));
+
+            // Si la rutina eliminada era la del entrenamiento activo, terminamos el entreno.
+            const { activeWorkout, endWorkout } = get();
+            if (activeWorkout && activeWorkout.routine_id === routineId) {
+                endWorkout(false); // Terminar sin guardar
+            }
+
+            return { success: true, message: 'Rutina eliminada.' };
+        } catch (error) {
+            console.error('Error en deleteRoutine (dataSlice):', error);
+            return { success: false, message: `Error al eliminar la rutina: ${error.message}` };
+        }
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
+
 
     // Añade una comida a la lista de favoritos.
     addFavoriteMeal: async (mealData) => {
@@ -212,9 +289,6 @@ export const createDataSlice = (set, get) => ({
 
     // Resetea el estado de los datos al cerrar sesión.
     clearDataState: () => {
-        // --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
-        // Limpiar 'recentMeals' al cerrar sesión
         set({...initialState});
-        // --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
     },
 });

@@ -9,7 +9,12 @@ const ExerciseDetailView = ({ exercise, onBack, onAdd, isStaged, t }) => {
   const [rest, setRest] = useState(60);
 
   const handleAddClick = () => {
-    onAdd(exercise, { sets, reps, rest_time: rest });
+    // --- INICIO DE LA MODIFICACIÓN (FIX) ---
+    // El nombre de la propiedad debe ser 'rest_seconds' para que 
+    // ExerciseSearch.jsx (handleStageExercise) lo reconozca.
+    // Antes era 'rest_time'.
+    onAdd(exercise, { sets, reps, rest_seconds: rest });
+    // --- FIN DE LA MODIFICACIÓN (FIX) ---
   };
 
   // --- INICIO DE LA MODIFICACIÓN ---

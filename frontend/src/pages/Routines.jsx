@@ -11,21 +11,40 @@ import RoutineEditor from './RoutineEditor'; // Importamos RoutineEditor
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
-// Importamos saveRoutine y deleteRoutine
-import { saveRoutine, deleteRoutine } from '../services/routineService';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { useTranslation } from 'react-i18next'; // Importamos el hook
+// --- FIN DE LA MODIFICACIÓN ---
 import { isSameDay } from '../utils/helpers';
 import TemplateRoutines from './TemplateRoutines'; // Importamos el nuevo componente
 
 // Quitamos setView de las props, ya no se usa para navegar al editor
 const Routines = () => {
   const { addToast } = useToast();
-  const { routines, workoutLog, fetchInitialData, startWorkout, navigate } = useAppStore(state => ({ // Añadir navigate
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Instanciamos el hook de traducción para el namespace 'exercise_names'
+  const { t } = useTranslation('exercise_names');
+  // --- FIN DE LA MODIFICACIÓN ---
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Obtenemos las nuevas acciones 'createRoutine' y 'deleteRoutine' del store
+  const {
+    routines,
+    workoutLog,
+    fetchInitialData,
+    startWorkout,
+    navigate,
+    deleteRoutine, // <-- Acción del store
+    createRoutine, // <-- Acción del store (para duplicar)
+  } = useAppStore(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
     startWorkout: state.startWorkout,
-    navigate: state.navigate, // Obtener navigate del store
+    navigate: state.navigate,
+    deleteRoutine: state.deleteRoutine, // <-- Nueva
+    createRoutine: state.createRoutine, // <-- Nueva
   }));
+  // --- FIN DE LA MODIFICACIÓN ---
 
   // Estado para manejar qué rutina se está editando (o null si ninguna)
   const [editingRoutine, setEditingRoutine] = useState(null);
@@ -54,7 +73,7 @@ const Routines = () => {
     const today = new Date();
     return new Set(
       workoutLog
-        .filter(log => isSameDay(log.workout_date, today) && log.routine_id != null)
+        .filter(log => log && isSameDay(log.workout_date, today) && log.routine_id != null) // Añadido 'log &&'
         .map(log => log.routine_id)
     );
   }, [workoutLog]);
@@ -62,7 +81,7 @@ const Routines = () => {
   const lastUsedMap = useMemo(() => {
     const map = new Map();
     (workoutLog || []).forEach(log => {
-      if (log.routine_id) {
+      if (log && log.routine_id) { // Añadido 'log &&'
         const d = new Date(log.workout_date);
         const prev = map.get(log.routine_id);
         if (!prev || d > prev) map.set(log.routine_id, d);
@@ -75,8 +94,10 @@ const Routines = () => {
     if (!exercises || exercises.length === 0) return [];
     const groups = [];
     let currentGroup = [];
-    // Ordenar primero por exercise_order por si acaso
-    const sortedExercises = [...exercises].sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0));
+    
+    const sortedExercises = [...exercises]
+        .filter(ex => ex) 
+        .sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0));
 
     for (const ex of sortedExercises) {
         if (currentGroup.length === 0) {
@@ -84,11 +105,9 @@ const Routines = () => {
             continue;
         }
 
-        // Si el actual tiene ID de superserie y coincide con el primero del grupo actual
         if (ex.superset_group_id !== null && currentGroup[0].superset_group_id !== null && ex.superset_group_id === currentGroup[0].superset_group_id) {
             currentGroup.push(ex);
         } else {
-            // Si el actual no tiene ID, o tiene un ID diferente, o el grupo actual no era superserie
             groups.push(currentGroup);
             currentGroup = [ex];
         }
@@ -99,15 +118,12 @@ const Routines = () => {
     return groups;
   };
 
-  // --- INICIO MODIFICACIÓN ---
-  // handleSave ya no necesita el argumento 'savedRoutine'
+  // handleSave se llama DESPUÉS de que RoutineEditor haya guardado.
+  // Su única función es cerrar el editor y refrescar la lista.
   const handleSave = async () => {
-  // --- FIN MODIFICACIÓN ---
     setIsLoading(true);
     try {
-      // La rutina ya fue guardada y notificada por RoutineEditor
-      // Solo necesitamos cerrar el editor y refrescar
-      // addToast('Rutina guardada con éxito.', 'success'); // Toast duplicado, eliminado
+      // RoutineEditor ya ha guardado y mostrado su propio toast.
       setEditingRoutine(null); // Cerrar el editor
       await fetchInitialData(); // Refrescar la lista de rutinas
     } catch (error) {
@@ -123,21 +139,35 @@ const Routines = () => {
     setShowDeleteModal(true);
   };
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Actualizamos confirmDelete para usar la acción del store
   const confirmDelete = async () => {
-    setIsLoading(true); // Usamos isLoading general para la eliminación también
+    setIsLoading(true);
     try {
-      await deleteRoutine(routineToDelete);
-      addToast('Rutina eliminada.', 'success');
-      setShowDeleteModal(false);
-      setRoutineToDelete(null);
-      await fetchInitialData();
+      // Llamamos a la acción del store, que devuelve { success, message }
+      const result = await deleteRoutine(routineToDelete);
+      
+      if (result.success) {
+        addToast(result.message, 'success');
+        setShowDeleteModal(false);
+        setRoutineToDelete(null);
+        // fetchInitialData() ya NO es necesario aquí,
+        // porque dataSlice.js ya actualiza el estado local de 'routines'.
+        // await fetchInitialData(); // <- Eliminado para mayor optimización
+      } else {
+        throw new Error(result.message);
+      }
+
     } catch (error) {
       addToast(error.message || 'Error al eliminar la rutina.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
+  // --- FIN DE LA MODIFICACIÓN ---
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Actualizamos duplicateRoutine para usar la acción 'createRoutine' del store
   const duplicateRoutine = async (routine) => {
     setIsLoading(true);
     try {
@@ -146,37 +176,52 @@ const Routines = () => {
         description: routine.description,
         // Usar RoutineExercises si existe (viene del fetch), si no, exercises (estado local)
         exercises: (routine.RoutineExercises || routine.exercises || []).map(({ ...ex }) => ({
-            ...ex,
-            // Asegurarse de que exercise_order está presente
-            exercise_order: ex.exercise_order !== undefined ? ex.exercise_order : 0
+          ...ex,
+          // Asegurarse de que exercise_order está presente
+          exercise_order: ex.exercise_order !== undefined ? ex.exercise_order : 0
         }))
       };
-      await saveRoutine(copy);
-      addToast('Rutina duplicada.', 'success');
-      await fetchInitialData();
+
+      // Llamamos a la acción del store
+      const result = await createRoutine(copy);
+
+      if (result.success) {
+        addToast('Rutina duplicada.', 'success');
+        // fetchInitialData() ya NO es necesario aquí,
+        // porque dataSlice.js ya actualiza el estado local de 'routines'.
+        // await fetchInitialData(); // <- Eliminado
+      } else {
+        throw new Error(result.message);
+      }
+
     } catch (error) {
       addToast(error.message || 'No se pudo duplicar la rutina.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
+  // --- FIN DE LA MODIFICACIÓN ---
+
 
   const filteredSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
+    
     let list = (routines || []).filter(r =>
-      !q ||
+      r && 
+      (!q ||
       r.name?.toLowerCase().includes(q) ||
-      r.description?.toLowerCase().includes(q)
+      r.description?.toLowerCase().includes(q))
     );
 
     list.sort((a, b) => {
-      const da = lastUsedMap.get(a.id)?.getTime() || 0;
-      const db = lastUsedMap.get(b.id)?.getTime() || 0;
+      const da = a ? lastUsedMap.get(a.id)?.getTime() || 0 : 0;
+      const db = b ? lastUsedMap.get(b.id)?.getTime() || 0 : 0;
       return db - da;
     });
 
     return list;
   }, [routines, query, lastUsedMap]);
+
 
   // Si estamos editando, renderiza RoutineEditor
   if (editingRoutine) {
@@ -198,7 +243,10 @@ const Routines = () => {
   const CreateRoutineButton = ({ className = "" }) => (
     <button
       // Al hacer clic, establece editingRoutine con una rutina vacía
-      onClick={() => setEditingRoutine({ name: '', description: '', exercises: [] })}
+      onClick={() => {
+        // Esto es correcto: pasamos un objeto sin 'id'
+        setEditingRoutine({ name: '', description: '', exercises: [] });
+      }}
       className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 ${className}`}
     >
       <Plus size={18} />
@@ -253,6 +301,9 @@ const Routines = () => {
           <div className="flex flex-col gap-4">
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map(routine => {
+                // Comprobación de seguridad: si 'routine' es nulo o undefined, no renderizar
+                if (!routine) return null;
+
                 const isCompleted = completedToday.has(routine.id);
                 // Asegurarse de usar RoutineExercises si existe (datos de API)
                 const exercisesToGroup = routine.RoutineExercises || routine.exercises || [];
@@ -318,7 +369,9 @@ const Routines = () => {
                                     key={ex.id || ex.tempId}
                                     className="flex items-center justify-between rounded-lg bg-bg-secondary/60 border border-[--glass-border] px-3 py-2 text-sm"
                                   >
-                                    <span className="truncate">{ex.name}</span>
+                                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                    <span className="truncate">{t(ex.name)}</span>
+                                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                                     <span className="text-text-secondary ml-3 whitespace-nowrap">
                                       {ex.sets}×{ex.reps}
                                     </span>

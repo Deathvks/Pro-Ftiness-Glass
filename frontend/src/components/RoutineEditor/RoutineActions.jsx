@@ -31,13 +31,15 @@ const RoutineActions = ({
   return (
     <>
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
         <button
           onClick={onShowSearch}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition border border-blue-500/30"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent text-white font-semibold hover:scale-105 transition animate-pulse-accent shadow-lg shadow-accent/30"
         >
           <Library size={20} />
           <span>Añadir desde Biblioteca</span>
         </button>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
         <button
           onClick={onAddManual}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 transition border border-accent/20"

@@ -8,12 +8,18 @@ const ExerciseGroup = ({
   groupIndex,
   isLastGroup,
   editedExercises,
-  activeDropdownIndex,
+  // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+  // 1. Recibimos las props con el nombre actualizado
+  activeDropdownTempId,
+  // --- FIN DE LA MODIFICACIÓN ---
   errors,
   onFieldChange,
   onExerciseSelect,
   removeExercise,
-  setActiveDropdownIndex,
+  // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+  // 1. Recibimos la prop con el nombre actualizado
+  setActiveDropdownTempId,
+  // --- FIN DE LA MODIFICACIÓN ---
   unlinkGroup,
   linkWithNext,
   dragHandleProps,
@@ -47,13 +53,20 @@ const ExerciseGroup = ({
               key={ex.tempId}
               exercise={ex}
               exIndex={exIndex}
-              isActive={activeDropdownIndex === exIndex}
+              // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+              // 2. Comparamos string (tempId) con string (tempId)
+              isActive={activeDropdownTempId === ex.tempId}
+              // --- FIN DE LA MODIFICACIÓN ---
               errors={errors.exercises?.[exIndex]}
               onFieldChange={onFieldChange}
               onExerciseSelect={onExerciseSelect}
               removeExercise={removeExercise}
-              onOpen={() => setActiveDropdownIndex(exIndex)}
-              onClose={() => setActiveDropdownIndex(null)}
+              // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
+              // 3. Pasamos el 'tempId' (string) al abrir
+              onOpen={() => setActiveDropdownTempId(ex.tempId)}
+              // 4. Llamamos a la función renombrada al cerrar
+              onClose={() => setActiveDropdownTempId(null)}
+              // --- FIN DE LA MODIFICACIÓN ---
               dragHandleProps={group.length === 1 ? dragHandleProps : null}
               // --- INICIO MODIFICACIÓN ---
               onReplaceClick={onReplaceClick} // 2. La pasamos al ExerciseCard

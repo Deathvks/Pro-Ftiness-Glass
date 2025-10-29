@@ -1,3 +1,4 @@
+/* backend/models/exerciseModel.js */
 import { DataTypes } from "sequelize";
 import sequelize from "../db.js";
 
@@ -41,15 +42,30 @@ const RoutineExercise = sequelize.define(
       type: DataTypes.STRING(50),
       allowNull: false,
     },
-    // --- INICIO DE LA MODIFICACIÓN ---
     superset_group_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING, // Cambiado a STRING para que coincida con el controller (que usa UUIDs)
       allowNull: true,
     },
     exercise_order: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
+    },
+    
+    // --- INICIO DE LA MODIFICACIÓN (FIX FINAL) ---
+    // Añadir los campos que faltaban
+    rest_seconds: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 60,
+    },
+    image_url_start: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    video_url: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     // --- FIN DE LA MODIFICACIÓN ---
   },
