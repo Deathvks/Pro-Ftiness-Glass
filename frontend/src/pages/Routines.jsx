@@ -11,21 +11,16 @@ import RoutineEditor from './RoutineEditor'; // Importamos RoutineEditor
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { useTranslation } from 'react-i18next'; // Importamos el hook
-// --- FIN DE LA MODIFICACIÓN ---
 import { isSameDay } from '../utils/helpers';
 import TemplateRoutines from './TemplateRoutines'; // Importamos el nuevo componente
 
 // Quitamos setView de las props, ya no se usa para navegar al editor
 const Routines = () => {
   const { addToast } = useToast();
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Instanciamos el hook de traducción para el namespace 'exercise_names'
   const { t } = useTranslation('exercise_names');
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Obtenemos las nuevas acciones 'createRoutine' y 'deleteRoutine' del store
   const {
     routines,
@@ -44,7 +39,6 @@ const Routines = () => {
     deleteRoutine: state.deleteRoutine, // <-- Nueva
     createRoutine: state.createRoutine, // <-- Nueva
   }));
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // Estado para manejar qué rutina se está editando (o null si ninguna)
   const [editingRoutine, setEditingRoutine] = useState(null);
@@ -139,7 +133,6 @@ const Routines = () => {
     setShowDeleteModal(true);
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Actualizamos confirmDelete para usar la acción del store
   const confirmDelete = async () => {
     setIsLoading(true);
@@ -151,9 +144,6 @@ const Routines = () => {
         addToast(result.message, 'success');
         setShowDeleteModal(false);
         setRoutineToDelete(null);
-        // fetchInitialData() ya NO es necesario aquí,
-        // porque dataSlice.js ya actualiza el estado local de 'routines'.
-        // await fetchInitialData(); // <- Eliminado para mayor optimización
       } else {
         throw new Error(result.message);
       }
@@ -164,9 +154,7 @@ const Routines = () => {
       setIsLoading(false);
     }
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Actualizamos duplicateRoutine para usar la acción 'createRoutine' del store
   const duplicateRoutine = async (routine) => {
     setIsLoading(true);
@@ -187,9 +175,6 @@ const Routines = () => {
 
       if (result.success) {
         addToast('Rutina duplicada.', 'success');
-        // fetchInitialData() ya NO es necesario aquí,
-        // porque dataSlice.js ya actualiza el estado local de 'routines'.
-        // await fetchInitialData(); // <- Eliminado
       } else {
         throw new Error(result.message);
       }
@@ -200,7 +185,6 @@ const Routines = () => {
       setIsLoading(false);
     }
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
 
   const filteredSorted = useMemo(() => {
@@ -255,7 +239,9 @@ const Routines = () => {
   );
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease_out]">
+    // --- INICIO DE LA MODIFICACIÓN (Width) ---
+    <div className="w-full max-w-5xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease_out]">
+    {/* --- FIN DE LA MODIFICACIÓN (Width) --- */}
 
       <Helmet>
           <title>{activeTab === 'myRoutines' ? 'Mis Rutinas' : 'Explorar Plantillas'} - Pro Fitness Glass</title>
@@ -298,7 +284,9 @@ const Routines = () => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
+          {/* --- INICIO DE LA MODIFICACIÓN (Grid Layout) --- */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* --- FIN DE LA MODIFICACIÓN (Grid Layout) --- */}
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map(routine => {
                 // Comprobación de seguridad: si 'routine' es nulo o undefined, no renderizar
@@ -351,10 +339,10 @@ const Routines = () => {
                         <h3 className="text-sm font-semibold text-text-secondary mb-2">Plan de ejercicios</h3>
                         <div className="flex flex-col gap-3">
                           {exerciseGroups.map((group, groupIndex) => (
-                            <div
-                              key={groupIndex}
-                              className="rounded-xl border border-[--glass-border] bg-[--glass-bg] p-3"
-                            >
+                            // --- INICIO DE LA MODIFICACIÓN (Remove BG) ---
+                            // Eliminamos el fondo, borde, padding y rounded
+                            <div key={groupIndex} className="">
+                            {/* --- FIN DE LA MODIFICACIÓN (Remove BG) --- */}
                               {group.length > 1 && (
                                 <div className="mb-2 inline-flex items-center gap-2 text-accent text-xs font-semibold">
                                   <Link2 size={14} />
@@ -367,12 +355,14 @@ const Routines = () => {
                                   <li
                                     // Usar ID real si existe, si no tempId
                                     key={ex.id || ex.tempId}
-                                    className="flex items-center justify-between rounded-lg bg-bg-secondary/60 border border-[--glass-border] px-3 py-2 text-sm"
+                                    className="flex items-center gap-2 text-sm"
                                   >
-                                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                                    <span className="truncate">{t(ex.name)}</span>
-                                    {/* --- FIN DE LA MODIFICACIÓN --- */}
-                                    <span className="text-text-secondary ml-3 whitespace-nowrap">
+                                    {/* --- INICIO DE LA MODIFICACIÓN (Color Nombre) --- */}
+                                    <span className="truncate font-semibold text-text-primary">{t(ex.name)}</span>
+                                    {/* --- FIN DE LA MODIFICACIÓN (Color Nombre) --- */}
+                                    
+                                    {/* Este se mantiene en 'accent' como en la imagen */}
+                                    <span className="text-accent whitespace-nowrap font-medium">
                                       {ex.sets}×{ex.reps}
                                     </span>
                                   </li>
@@ -415,10 +405,14 @@ const Routines = () => {
                 );
               })
             ) : (
-              <GlassCard className="text-center p-10">
-                <p className="text-text-muted">Aún no has creado ninguna rutina.</p>
-                <p className="text-text-muted">¡Haz clic en <span className="font-semibold">“Crear Rutina”</span> para empezar!</p>
-              </GlassCard>
+              // Este GlassCard se estirará si está solo.
+              // Lo envolvemos en un div que ocupe toda la fila del grid.
+              <div className="lg:col-span-3 md:col-span-2">
+                <GlassCard className="text-center p-10">
+                  <p className="text-text-muted">Aún no has creado ninguna rutina.</p>
+                  <p className="text-text-muted">¡Haz clic en <span className="font-semibold">“Crear Rutina”</span> para empezar!</p>
+                </GlassCard>
+              </div>
             )}
           </div>
         </>

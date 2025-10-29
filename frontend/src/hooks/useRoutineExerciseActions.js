@@ -146,7 +146,7 @@ export const useRoutineExerciseActions = ({
    */
   const handleAddExercisesFromSearch = (stagedExercises) => {
     
-    // CASO 1: Reemplazar ejercicio
+    // CASO 1: Reemplazar ejercicio (Esto sigue igual)
     if (replacingExerciseTempId !== null) {
       if (stagedExercises.length === 0) {
         handleSearchModalClose(); // No se seleccionó nada, solo cerrar
@@ -160,10 +160,15 @@ export const useRoutineExerciseActions = ({
       return;
     }
 
-    // CASO 2: Añadir ejercicios del carrito
-    let newExercises = [];
+    // --- INICIO DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
+
+    // CASO 2: Añadir/Actualizar ejercicios del carrito
+    // La lista 'stagedExercises' es la NUEVA lista completa de ejercicios.
+    // Necesitamos mapearla y REEMPLAZAR la lista anterior, no añadirla.
+    
+    let newExerciseList = [];
     try {
-      newExercises = stagedExercises.map((item, index) => {
+      newExerciseList = stagedExercises.map((item, index) => {
         if (!item || !item.exercise) {
             return null;
         }
@@ -173,13 +178,14 @@ export const useRoutineExerciseActions = ({
 
         return {
           ...item.exercise,
-          tempId: uuidv4(),
+          tempId: uuidv4(), // Asignamos nuevo tempId para React
           id: item.exercise.id,
           sets: item.sets,
           reps: item.reps,
           rest_seconds: rest,
-          superset_group_id: null,
-          exercise_order: exercises.length + index
+          superset_group_id: null, // Las superseries se rompen al importar (de momento)
+          // 1. FIX: El 'exercise_order' es el índice del carrito
+          exercise_order: index 
         };
       }).filter(Boolean); // Filtramos nulos si los hubiera
 
@@ -188,9 +194,11 @@ export const useRoutineExerciseActions = ({
       return;
     }
 
-    if (newExercises.length > 0) {
-      setExercises(prev => [...prev, ...newExercises]);
-    }
+    // 2. FIX: Reemplazamos el estado, no lo añadimos
+    // setExercises(prev => [...prev, ...newExercises]); // <- BUG ANTIGUO
+    setExercises(newExerciseList); // <- SOLUCIÓN
+
+    // --- FIN DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
     
     // Cerramos el modal de búsqueda después de añadir
     handleSearchModalClose();

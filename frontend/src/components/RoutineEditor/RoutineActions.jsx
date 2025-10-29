@@ -27,6 +27,9 @@ const RoutineActions = ({
   showExerciseSearch,
   onSearchClose,
   onAddFromSearch,
+  // --- INICIO DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
+  initialSelectedExercises, // 1. Recibimos la prop desde RoutineEditor
+  // --- FIN DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
 }) => {
   return (
     <>
@@ -90,6 +93,9 @@ const RoutineActions = ({
         <ExerciseSearch
           onClose={onSearchClose}
           onAddExercises={onAddFromSearch}
+          // --- INICIO DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
+          initialSelectedExercises={initialSelectedExercises} // 2. La pasamos al modal
+          // --- FIN DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
         />
       )}
     </>

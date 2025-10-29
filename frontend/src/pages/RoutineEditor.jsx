@@ -75,7 +75,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
   // Renderizamos los nuevos componentes y les pasamos las props desde el hook
   
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 sm:p-6 lg:p-10 pb-40 animate-[fade-in_0.5s_ease-out]">
+    <div className="w-full max-w-3xl mx-auto p-4 sm:p-6 lg:p-10 pb-40 animate-[fade-in_0.5s_ease_out]">
       
       <RoutineHeader
         id={id}
@@ -127,6 +127,9 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
         onDeleteCancel={() => setShowDeleteConfirm(false)}
         
         // Modal Búsqueda
+        // --- INICIO DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
+        initialSelectedExercises={exercises} // <-- ¡AQUÍ ESTÁ EL FIX! Pasamos los ejercicios actuales
+        // --- FIN DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
         showExerciseSearch={showExerciseSearch}
         onSearchClose={handleSearchModalClose}
         onAddFromSearch={handleAddExercisesFromSearch}

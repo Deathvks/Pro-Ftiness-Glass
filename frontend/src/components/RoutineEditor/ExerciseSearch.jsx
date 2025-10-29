@@ -13,11 +13,12 @@ import ExerciseSummaryView from './ExerciseSearch/ExerciseSummaryView';
 
 
 // --- Componente Principal (Contenedor) ---
-const ExerciseSearch = ({ onClose, onAddExercises }) => {
+const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = [] }) => {
+  
   // Obtenemos 'ready' del hook
   const { t, i18n, ready } = useTranslation(['exercise_descriptions', 'exercise_names', 'exercise_ui', 'exercise_muscles', 'exercise_equipment']);
 
-  // --- STATE (Sin cambios) ---
+  // --- STATE ---
   const [view, setView] = useState('list'); 
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [allExercises, setAllExercises] = useState([]);
@@ -28,8 +29,55 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
   const [filterMuscle, setFilterMuscle] = useState('all');
   const [filterEquipment, setFilterEquipment] = useState('all');
   const [stagedExercises, setStagedExercises] = useState([]);
+  const [cartInitialized, setCartInitialized] = useState(false); // Mantenemos la bandera
 
-  // --- DATA FETCHING (Sin cambios) ---
+
+  // useEffect de INICIALIZACIÓN (sin cambios, usa la bandera)
+  useEffect(() => {
+    if (
+      allExercises.length > 0 &&
+      initialSelectedExercises &&
+      initialSelectedExercises.length > 0 &&
+      !cartInitialized
+    ) {
+      
+      const initialStaged = initialSelectedExercises
+        .map(routineExercise => {
+          
+          const exerciseId = routineExercise.exercise_id || routineExercise.id;
+          let fullExercise = allExercises.find(ex => ex.id === exerciseId);
+
+          if (!fullExercise) {
+            const isManual = !routineExercise.exercise_id; 
+            fullExercise = {
+              id: exerciseId,
+              name: routineExercise.name,
+              category: routineExercise.category || 'other',
+              equipment: routineExercise.equipment || 'other',
+              is_manual: isManual,
+              image_url_start: routineExercise.image_url_start || null,
+              image_url_end: routineExercise.image_url_end || null,
+              description: routineExercise.description || t('exercise_ui:manual_exercise_desc', 'Ejercicio añadido manualmente.'),
+              muscle_group_image_url: routineExercise.muscle_group_image_url || '/muscle_groups/other.webp',
+            };
+          }
+
+          return {
+            exercise: fullExercise,
+            sets: routineExercise.sets || 3,
+            reps: routineExercise.reps || '8-12',
+            rest_seconds: routineExercise.rest_seconds || 60,
+          };
+        })
+        .filter(Boolean); 
+
+      setStagedExercises(initialStaged);
+      setCartInitialized(true); 
+    }
+  }, [allExercises, initialSelectedExercises, t, cartInitialized]);
+
+
+  // useEffect de CARGA DE DATOS (fix clave)
   useEffect(() => {
     const fetchExercises = async () => {
       try {
@@ -43,14 +91,20 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
       }
     };
     fetchExercises();
-  }, [addToast]);
+  // --- INICIO DE LA MODIFICACIÓN (FIX DEFINITIVO) ---
+  // El array de dependencias DEBE estar vacío.
+  // Esto asegura que el fetch SÓLO se ejecute una vez
+  // cuando el componente se monta, y NUNCA MÁS,
+  // aunque el ToastProvider cause un re-render.
+  }, []); 
+  // --- FIN DE LA MODIFICACIÓN (FIX DEFINITIVO) ---
+
 
   // --- LÓGICA DE FILTROS (Sin cambios) ---
   const { muscleOptions, equipmentOptions } = useMemo(() => {
     if (!ready) {
       return { muscleOptions: [], equipmentOptions: [] };
     }
-    // ... (código existente)
     const muscleSet = new Set();
     const equipmentSet = new Set();
     allExercises.forEach(ex => {
@@ -87,7 +141,6 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
     if (!ready) {
       return [];
     }
-    // ... (código existente)
     const query = searchQuery.toLowerCase();
     return allExercises.filter(ex => {
       const originalName = ex.name.toLowerCase();
@@ -104,21 +157,30 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
 
   const stagedIds = useMemo(() => new Set(stagedExercises.map(item => item.exercise.id)), [stagedExercises]);
 
-  // --- HANDLERS DEL CARRITO (Sin cambios) ---
+  // --- HANDLERS DEL CARRITO (fix clave) ---
   const handleStageExercise = (exercise, details = {}) => {
     if (stagedIds.has(exercise.id)) {
       return;
     }
-    // ... (código existente)
+    
     const newItem = {
       exercise: exercise,
       sets: details.sets || 3,
       reps: details.reps || '8-12',
       rest_seconds: details.rest_seconds || 60,
     };
+    
     setStagedExercises(prev => [...prev, newItem]);
-    const exerciseName = t(exercise.name, { ns: 'exercise_names', defaultValue: exercise.name });
-    addToast(t('exercise_ui:added_toast', { exerciseName }), 'success');
+    
+    // --- INICIO DE LA MODIFICACIÓN (FIX DEFINITIVO) ---
+    // ¡NO LLAMAR A addToast() AQUÍ!
+    // Esta llamada es la que causa que el componente se desmonte
+    // y pierda el estado que acabamos de poner.
+    
+    // const exerciseName = t(exercise.name, { ns: 'exercise_names', defaultValue: exercise.name });
+    // addToast(t('exercise_ui:added_toast', { exerciseName }), 'success');
+    
+    // --- FIN DE LA MODIFICACIÓN (FIX DEFINITIVO) ---
   };
 
   const handleRemoveStaged = (exerciseId) => {
@@ -133,12 +195,12 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
     );
   };
 
+  // handleFinalize SÍ puede (y debe) llamar a addToast
   const handleFinalize = () => {
     if (stagedExercises.length === 0) {
       addToast(t('exercise_ui:cart_empty_toast', 'El carrito está vacío.'), 'warning');
       return;
     }
-    // onAddExercises es la función handleAddExercisesFromSearch del hook
     onAddExercises(stagedExercises); 
     addToast(
       t('exercise_ui:added_to_routine_toast', {
@@ -166,11 +228,10 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
     setView('summary');
   };
 
-  // --- FUNCIÓN MANUAL ---
+  // --- FUNCIÓN MANUAL (Sin cambios) ---
   const handleAddManualExercise = () => {
     const exerciseName = searchQuery.trim();
 
-    // Validar que el nombre no esté vacío
     if (exerciseName === '') {
       addToast(t('exercise_ui:type_manual_name_toast', 'Escribe un nombre en el buscador para añadirlo manualmente.'), 'warning');
       return;
@@ -178,17 +239,17 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
 
     const manualExercise = {
       id: `manual_${uuidv4()}`,
-      name: exerciseName, // <-- ¡Cambiado! Usa el nombre de la búsqueda
+      name: exerciseName, 
       category: 'other', 
       equipment: 'other', 
       is_manual: true,
       image_url_start: null, 
       image_url_end: null,
-      // Añadimos propiedades por defecto para que la UI no falle
       description: t('exercise_ui:manual_exercise_desc', 'Ejercicio añadido manualmente.'),
-      muscle_group_image_url: '/muscle_groups/other.webp', // <-- ¡Importante! Añade el icono por defecto
+      muscle_group_image_url: '/muscle_groups/other.webp', 
     };
     
+    // Esta llamada es segura porque no usa addToast
     handleStageExercise(manualExercise, {
       sets: 3,
       reps: '10', 
@@ -196,14 +257,12 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
     });
     
     setView('summary');
-    
-    setSearchQuery(''); // Limpiamos la búsqueda después de añadir
+    setSearchQuery(''); 
   };
 
 
   // --- RENDERIZADO (Sin cambios) ---
   const renderContent = () => {
-    // Vista 'detail'
     if (view === 'detail' && selectedExercise) {
       return (
         <ExerciseDetailView
@@ -216,7 +275,6 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
       );
     }
 
-    // Vista 'summary'
     if (view === 'summary') {
       return (
         <ExerciseSummaryView
@@ -229,8 +287,7 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
         />
       );
     }
-
-    // Vista 'list' por defecto
+    
     return (
       <ExerciseListView
         onClose={onClose}
@@ -258,7 +315,7 @@ const ExerciseSearch = ({ onClose, onAddExercises }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-bg-primary flex justify-center items-center animate-[fade-in_0.2s_ease-out]">
+    <div className="fixed inset-0 z-50 bg-bg-primary flex justify-center items-center animate-[fade-in_0.2s_ease_out]">
       <div className="relative w-full h-full md:max-w-2xl md:max-h-[90vh] md:rounded-lg overflow-hidden bg-bg-primary md:border md:border-glass-border md:shadow-2xl">
         {renderContent()}
       </div>
