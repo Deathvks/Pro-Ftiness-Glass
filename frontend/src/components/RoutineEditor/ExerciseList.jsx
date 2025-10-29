@@ -27,7 +27,10 @@ const ExerciseList = ({
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="exercises">
           {(provided) => (
+            // --- INICIO DE LA MODIFICACIÓN (Revertir a Lista) ---
+            // Volvemos a usar `space-y-6` en lugar de un grid
             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6 mb-6">
+            {/* --- FIN DE LA MODIFICACIÓN (Revertir a Lista) --- */}
               {groupedExercises.map((group, groupIndex) => {
                 const isSuperset = group.length > 1;
                 const firstExerciseIndex = exercises.findIndex(ex => ex.tempId === group[0].tempId);
@@ -48,6 +51,9 @@ const ExerciseList = ({
                       <div
                         ref={providedDrag.innerRef}
                         {...providedDrag.draggableProps}
+                        // --- INICIO DE LA MODIFICACIÓN (Revertir a Lista) ---
+                        // Eliminamos el `h-full` que era para el grid
+                        // --- FIN DE LA MODIFICACIÓN (Revertir a Lista) ---
                       >
                         <ExerciseGroup
                           group={group}

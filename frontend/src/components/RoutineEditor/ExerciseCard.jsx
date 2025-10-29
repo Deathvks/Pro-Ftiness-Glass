@@ -41,20 +41,24 @@ const ExerciseCard = ({
   
   return (
     <GlassCard className="p-3 bg-bg-secondary/50 relative">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-start gap-3">
         
         {dragHandleProps && (
           <div
             {...dragHandleProps}
-            className="flex-shrink-0 text-text-muted cursor-grab"
+            className="flex-shrink-0 text-text-muted cursor-grab self-start sm:self-start mt-1 sm:mt-0 sm:pt-2"
             title="Arrastrar para reordenar"
           >
             <GripVertical size={18} />
           </div>
         )}
 
-        {/* Columna de Imagen/Video (sin cambios) */}
-        <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden bg-bg-primary border border-glass-border">
+        {/* --- INICIO DE LA MODIFICACIÓN (IMAGE BLOCK) --- */}
+        {/* Bloque de Imagen/Video */}
+        {/* En móvil: ocupa el ancho completo, h-40. 
+            En sm: ocupa 40% (sm:w-2/5) y altura h-40 (misma que en móvil). */}
+        <div className="flex-shrink-0 w-full h-40 sm:w-2/5 sm:h-40 rounded-md overflow-hidden bg-bg-primary border border-glass-border mb-3 sm:mb-0">
+        {/* --- FIN DE LA MODIFICACIÓN (IMAGE BLOCK) --- */}
           {mediaUrl ? (
             (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm')) ? (
               <video
@@ -63,13 +67,19 @@ const ExerciseCard = ({
                 loop
                 muted
                 playsInline
-                className="w-full h-full object-cover"
+                /* --- INICIO DE LA MODIFICACIÓN (Image fit) --- */
+                // Cambiamos 'object-cover' a 'object-contain'
+                className="w-full h-full object-contain"
+                /* --- FIN DE LA MODIFICACIÓN (Image fit) --- */
               />
             ) : (
               <img
                 src={mediaUrl}
                 alt={`Vista previa de ${translatedName}`}
-                className="w-full h-full object-cover"
+                /* --- INICIO DE LA MODIFICACIÓN (Image fit) --- */
+                // Cambiamos 'object-cover' a 'object-contain'
+                className="w-full h-full object-contain"
+                /* --- FIN DE LA MODIFICACIÓN (Image fit) --- */
                 loading="lazy"
               />
             )
@@ -82,11 +92,16 @@ const ExerciseCard = ({
         </div>
 
         {/* Columna de Información (Nombre, Músculo, Inputs) */}
-        <div className="flex-grow min-w-0">
+        {/* Hacemos que este contenedor use flex-col y centre sus items en móvil,
+             y que se estire (comportamiento normal) en 'sm' y más grande */}
+        {/* Añadimos 'sm:w-3/5' para que ocupe el 60% restante en desktop */}
+        <div className="flex-grow min-w-0 w-full sm:w-3/5 flex flex-col items-center sm:items-stretch">
+        
           {/* Input de Búsqueda (sin cambios) */}
           <ExerciseSearchInput
             initialQuery={translatedName}
             onExerciseSelect={handleExerciseSelected}
+            className="w-full" // Añadido para asegurar el stretch en desktop
           />
           
           {/* Grupo Muscular (Input) */}
@@ -97,11 +112,11 @@ const ExerciseCard = ({
             // --- INICIO DE LA MODIFICACIÓN ---
             onChange={(e) => onFieldChange(exercise.tempId, 'muscle_group', e.target.value)}
             // --- FIN DE LA MODIFICACIÓN ---
-            className="w-full text-sm text-text-secondary capitalize mt-1 truncate bg-transparent border-none p-0 focus:outline-none focus:ring-0"
+            className="w-full capitalize mt-1 truncate bg-transparent border-none p-0 focus:outline-none focus:ring-0 text-text-secondary text-center sm:text-left"
           />
 
           {/* Inputs (Series, Reps Y Descanso) */}
-          <div className="grid grid-cols-3 gap-2 mt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 w-full">
             
             {/* Series */}
             <div>
@@ -157,20 +172,20 @@ const ExerciseCard = ({
         </div>
 
         {/* Columna de Acciones (Reemplazar, Eliminar) (sin cambios) */}
-        <div className="flex-shrink-0 flex flex-col justify-center gap-2">
+        <div className="absolute top-3 right-3 sm:static flex sm:flex-col justify-end sm:justify-center gap-1 sm:gap-2">
           <button
             // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
             // 2. Pasamos el 'tempId' (string) en lugar del 'exIndex' (number)
             onClick={() => onReplaceClick(exercise.tempId)}
             // --- FIN DE LA MODIFICACIÓN ---
-            className="p-2 h-full rounded-md text-text-muted hover:bg-accent/20 hover:text-accent transition"
+            className="p-1 sm:p-2 rounded-md text-text-muted hover:bg-accent/20 hover:text-accent transition"
             title="Reemplazar ejercicio"
           >
             <Repeat size={18} />
           </button>
           <button
             onClick={() => removeExercise(exercise.tempId)}
-            className="p-2 h-full rounded-md text-text-muted hover:bg-red/20 hover:text-red transition"
+            className="p-1 sm:p-2 rounded-md text-text-muted hover:bg-red/20 hover:text-red transition"
             title="Eliminar ejercicio"
           >
             <Trash2 size={18} />

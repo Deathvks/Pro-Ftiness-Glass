@@ -15,8 +15,8 @@ import { useTranslation } from 'react-i18next'; // Importamos el hook
 import { isSameDay } from '../utils/helpers';
 import TemplateRoutines from './TemplateRoutines'; // Importamos el nuevo componente
 
-// Quitamos setView de las props, ya no se usa para navegar al editor
-const Routines = () => {
+// Aceptamos 'setView' como prop, que es la función 'navigate' de App.jsx
+const Routines = ({ setView }) => {
   const { addToast } = useToast();
   // Instanciamos el hook de traducción para el namespace 'exercise_names'
   const { t } = useTranslation('exercise_names');
@@ -27,7 +27,7 @@ const Routines = () => {
     workoutLog,
     fetchInitialData,
     startWorkout,
-    navigate,
+    // navigate, // <-- Eliminamos esto, ya que no existe en el store
     deleteRoutine, // <-- Acción del store
     createRoutine, // <-- Acción del store (para duplicar)
   } = useAppStore(state => ({
@@ -35,7 +35,7 @@ const Routines = () => {
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
     startWorkout: state.startWorkout,
-    navigate: state.navigate,
+    // navigate: state.navigate, // <-- Eliminamos esto
     deleteRoutine: state.deleteRoutine, // <-- Nueva
     createRoutine: state.createRoutine, // <-- Nueva
   }));
@@ -339,29 +339,25 @@ const Routines = () => {
                         <h3 className="text-sm font-semibold text-text-secondary mb-2">Plan de ejercicios</h3>
                         <div className="flex flex-col gap-3">
                           {exerciseGroups.map((group, groupIndex) => (
-                            // --- INICIO DE LA MODIFICACIÓN (Remove BG) ---
-                            // Eliminamos el fondo, borde, padding y rounded
-                            <div key={groupIndex} className="">
-                            {/* --- FIN DE LA MODIFICACIÓN (Remove BG) --- */}
+                            // --- INICIO DE LA MODIFICACIÓN (Estilo Indentado) ---
+                            // Contenedor del grupo (sin estilos de caja)
+                            <div key={groupIndex}>
+                              {/* 1. Mostramos la etiqueta "Superserie" si hay más de 1 ejercicio */ }
                               {group.length > 1 && (
-                                <div className="mb-2 inline-flex items-center gap-2 text-accent text-xs font-semibold">
+                                <div className="mb-1 inline-flex items-center gap-2 text-accent text-xs font-semibold">
                                   <Link2 size={14} />
                                   Superserie
                                 </div>
                               )}
 
-                              <ul className="flex flex-col gap-2">
+                              {/* 2. Aplicamos indentación (ml-4) a la <ul> SÓLO si es una superserie */ }
+                              <ul className={`flex flex-col gap-2 ${group.length > 1 ? 'ml-4' : ''}`}>
                                 {group.map(ex => (
                                   <li
-                                    // Usar ID real si existe, si no tempId
                                     key={ex.id || ex.tempId}
                                     className="flex items-center gap-2 text-sm"
                                   >
-                                    {/* --- INICIO DE LA MODIFICACIÓN (Color Nombre) --- */}
                                     <span className="truncate font-semibold text-text-primary">{t(ex.name)}</span>
-                                    {/* --- FIN DE LA MODIFICACIÓN (Color Nombre) --- */}
-                                    
-                                    {/* Este se mantiene en 'accent' como en la imagen */}
                                     <span className="text-accent whitespace-nowrap font-medium">
                                       {ex.sets}×{ex.reps}
                                     </span>
@@ -369,6 +365,7 @@ const Routines = () => {
                                 ))}
                               </ul>
                             </div>
+                            // --- FIN DE LA MODIFICACIÓN (Estilo Indentado) ---
                           ))}
                         </div>
                       </div>
@@ -379,7 +376,7 @@ const Routines = () => {
                         onClick={() => {
                           startWorkout(routine);
                           // --- Usar la prop navigate de App.jsx ---
-                          navigate('workout'); // Usar navigate del store
+                          setView('workout'); // Usar setView del store
                         }}
                         disabled={isCompleted}
                         className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition
@@ -419,7 +416,7 @@ const Routines = () => {
       )}
 
       {/* --- Pasar navigate a TemplateRoutines --- */}
-      {activeTab === 'explore' && <TemplateRoutines setView={navigate} />}
+      {activeTab === 'explore' && <TemplateRoutines setView={setView} />}
 
 
       {showDeleteModal && (

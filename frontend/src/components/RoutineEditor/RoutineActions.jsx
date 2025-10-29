@@ -29,7 +29,7 @@ const RoutineActions = ({
   onAddFromSearch,
   // --- INICIO DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
   initialSelectedExercises, // 1. Recibimos la prop desde RoutineEditor
-  // --- FIN DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
+  // --- FIN DE la MODIFICACIÓN (FIX BUG "CARRITO") ---
 }) => {
   return (
     <>
@@ -42,7 +42,7 @@ const RoutineActions = ({
           <Library size={20} />
           <span>Añadir desde Biblioteca</span>
         </button>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
+        {/* --- FIN DE la MODIFICACIÓN --- */}
         <button
           onClick={onAddManual}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 transition border border-accent/20"
@@ -52,15 +52,30 @@ const RoutineActions = ({
         </button>
       </div>
 
-      <div className="flex justify-between items-center mt-8">
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Contenedor de acciones:
+        - flex-row: Siempre en fila
+        - flex-nowrap: Evita que los botones salten de línea
+        - gap-2: Espacio reducido entre botones (antes gap-4)
+      */}
+      <div className="flex flex-row flex-nowrap justify-between items-center gap-2 mt-8">
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
         {id ? (
           <button
             onClick={onDeleteClick}
             disabled={isDeleting}
-            className="px-6 py-3 rounded-xl bg-red/10 text-red hover:bg-red/20 transition flex items-center gap-2 disabled:opacity-50"
+            /* Clases modificadas para móvil:
+              - sm:px-6: Padding horizontal normal en pantallas sm y mayores
+              - px-4 py-3: Padding reducido en pantallas pequeñas (móvil)
+            */
+            className="sm:px-6 px-4 py-3 rounded-xl bg-red/10 text-red hover:bg-red/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isDeleting ? <Spinner size={20} /> : <Trash2 size={20} />}
-            <span>Eliminar Rutina</span>
+            {/* - whitespace-nowrap: Evita que el texto se parta en dos líneas
+              - sm:text-base: Texto normal en sm y mayores
+              - text-sm: Texto pequeño en móvil
+            */}
+            <span className="whitespace-nowrap sm:text-base text-sm">Eliminar Rutina</span>
           </button>
         ) : (
           <div></div> // Placeholder para alinear
@@ -69,10 +84,17 @@ const RoutineActions = ({
         <button
           onClick={onSave}
           disabled={isSaving}
-          className="px-8 py-4 rounded-xl bg-accent text-white font-bold text-lg transition hover:scale-105 disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-accent/30"
+          /* Clases modificadas para móvil:
+            - sm:px-8 sm:py-4: Padding grande en sm y mayores
+            - px-5 py-3: Padding reducido en móvil
+            - sm:text-lg: Texto grande en sm y mayores
+            - text-base: Texto base en móvil
+          */
+          className="sm:px-8 sm:py-4 px-5 py-3 rounded-xl bg-accent text-white font-bold sm:text-lg text-base transition hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-accent/30"
         >
           {isSaving ? <Spinner size={24} /> : <Save size={24} />}
-          <span>{id ? 'Guardar Cambios' : 'Crear Rutina'}</span>
+          {/* whitespace-nowrap: Evita que el texto se parta en dos líneas */}
+          <span className="whitespace-nowrap">{id ? 'Guardar Cambios' : 'Crear Rutina'}</span>
         </button>
       </div>
 
@@ -95,7 +117,7 @@ const RoutineActions = ({
           onAddExercises={onAddFromSearch}
           // --- INICIO DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
           initialSelectedExercises={initialSelectedExercises} // 2. La pasamos al modal
-          // --- FIN DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
+          // --- FIN DE la MODIFICACIÓN (FIX BUG "CARRITO") ---
         />
       )}
     </>

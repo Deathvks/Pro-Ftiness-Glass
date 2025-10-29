@@ -33,7 +33,10 @@ const WorkoutLogDetail = sequelize.define(
     // --- LÍNEA AÑADIDA ---
     // Guarda el ID del grupo de la superserie para poder agruparlos en el historial.
     superset_group_id: {
-      type: DataTypes.INTEGER,
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Cambiado de INTEGER a STRING para aceptar UUIDs
+      type: DataTypes.STRING,
+      // --- FIN DE LA MODIFICACIÓN ---
       allowNull: true,
     },
     // --- INICIO DE LA MODIFICACIÓN ---
