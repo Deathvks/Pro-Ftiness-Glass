@@ -20,12 +20,12 @@ import { useToast } from '../hooks/useToast';
 import { calculateCalories } from '../utils/helpers';
 // --- INICIO DE LA MODIFICACIÓN ---
 // Importamos i18n
-import { useTranslation } from 'react-i18next'; 
+import { useTranslation } from 'react-i18next';
 // --- FIN DE LA MODIFICACIÓN ---
 
 
 // --- INICIO DE LA MODIFICACIÓN ---
-// El componente 'ExerciseMedia' (líneas 20-101) se ha ELIMINADO de aquí 
+// El componente 'ExerciseMedia' (líneas 20-101) se ha ELIMINADO de aquí
 // y movido a 'frontend/src/components/ExerciseMedia.jsx'
 // --- FIN DE LA MODIFICACIÓN ---
 
@@ -77,7 +77,7 @@ const Workout = ({ timer, setView }) => {
 
   const [showWorkoutSummaryModal, setShowWorkoutSummaryModal] = useState(false);
   const [completedWorkoutData, setCompletedWorkoutData] = useState(null);
-  
+
   // --- INICIO DE LA MODIFICACIÓN ---
   // Estado para controlar qué ejercicio mostrar en el modal
   const [selectedExercise, setSelectedExercise] = useState(null);
@@ -98,7 +98,7 @@ const Workout = ({ timer, setView }) => {
           currentGroup = [ex];
       } else {
            if (currentGroup.length === 0) {
-              currentGroup.push(ex);
+             currentGroup.push(ex);
            } else if (ex.superset_group_id && ex.superset_group_id === currentGroup[0].superset_group_id) {
                currentGroup.push(ex);
            } else {
@@ -192,12 +192,12 @@ const Workout = ({ timer, setView }) => {
             exerciseName: ex.name,
             superset_group_id: ex.superset_group_id,
             setsDone: ex.setsDone.filter(set => (set.reps !== '' && set.reps !== null && !isNaN(parseInt(set.reps))) || (set.weight_kg !== '' && set.weight_kg !== null && !isNaN(parseFloat(set.weight_kg))))
-                             .map(set => ({ 
-                                 set_number: set.set_number,
-                                 reps: parseInt(set.reps, 10) || 0,
-                                 weight_kg: parseFloat(set.weight_kg) || 0,
-                                 is_dropset: set.is_dropset || false
-                             }))
+                                    .map(set => ({
+                                        set_number: set.set_number,
+                                        reps: parseInt(set.reps, 10) || 0,
+                                        weight_kg: parseFloat(set.weight_kg) || 0,
+                                        is_dropset: set.is_dropset || false
+                                    }))
         }))
     };
 
@@ -274,18 +274,18 @@ const Workout = ({ timer, setView }) => {
                 {group.map((exercise, exIndex) => {
                     // BUGFIX: Usar 'exercise.id' (que es el routine_exercise_id)
                     const actualExIndex = activeWorkout.exercises.findIndex(ex => ex.id === exercise.id);
-                    
+
                     // Fallback
                     if (actualExIndex === -1) {
                       console.error("Error: No se encontró el ejercicio en activeWorkout", exercise);
                       return null;
                     }
-                    
+
                     return (
                     <div key={actualExIndex} className="p-4">
-                        
+
                         {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                        {/* Envolvemos la media y el título en un botón para abrir el modal */}
+                        {/* El botón ahora solo envuelve la media */}
                         <button
                           onClick={() => setSelectedExercise(exercise)}
                           className="w-full text-left transition-transform active:scale-[0.99] group"
@@ -296,34 +296,39 @@ const Workout = ({ timer, setView }) => {
                             // Pasamos las clases de tamaño que teníamos antes
                             className="w-full lg:max-w-lg mx-auto mb-4 group-hover:brightness-110 transition"
                           />
-                          <div className="flex items-center justify-between mb-4">
-                              <div>
-                                  {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                                  {/* Usamos t() para traducir el nombre del ejercicio (esto ya estaba) */}
-                                  <h3 className="text-lg font-semibold">{t(exercise.name, { ns: 'exercise_names' })}</h3>
-                                  {/* --- FIN DE LA MODIFICACIÓN --- */}
-                                  <span className="text-sm font-semibold text-accent">{exercise.sets} series × {exercise.reps} reps</span>
-                              </div>
-                          </div>
                         </button>
 
-                        {/* Botón de Reemplazar (superpuesto) */}
-                        <div className="flex justify-end -mt-[68px] mb-4 pr-1"> {/* Ajuste con margen negativo */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation(); // Evita que se abra el modal
-                                    setExerciseToReplace(actualExIndex);
-                                }}
-                                className={`p-2 rounded-md transition relative z-10 ${
-                                  hasWorkoutStarted
-                                    ? 'bg-bg-primary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
-                                    : 'bg-bg-primary border border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-                                }`}
-                                title={hasWorkoutStarted ? "Reemplazar ejercicio" : "Inicia el cronómetro para reemplazar ejercicios"}
-                                disabled={!hasWorkoutStarted}
-                            >
-                                <Repeat size={16} />
-                            </button>
+                        {/* Nuevo contenedor flex para el título y el botón de reemplazar */}
+                        <div className="flex items-start justify-between gap-4 mb-4">
+                          {/* Botón para el texto, también abre el modal */}
+                          <button
+                            onClick={() => setSelectedExercise(exercise)}
+                            className="flex-1 min-w-0 text-left group"
+                            title="Ver detalles del ejercicio"
+                          >
+                            {/* 'truncate' arregla el desbordamiento del texto */}
+                            <h3 className="text-lg font-semibold truncate group-hover:text-accent">
+                              {t(exercise.name, { ns: 'exercise_names' })}
+                            </h3>
+                            <span className="text-sm font-semibold text-accent">{exercise.sets} series × {exercise.reps} reps</span>
+                          </button>
+
+                          {/* Botón de Reemplazar (ahora dentro del flexbox, sin margen negativo) */}
+                          <button
+                              onClick={(e) => {
+                                  e.stopPropagation(); // Evita que el click se propague
+                                  setExerciseToReplace(actualExIndex);
+                              }}
+                              className={`p-2 rounded-md transition shrink-0 ${ // 'shrink-0' evita que se encoja
+                                hasWorkoutStarted
+                                  ? 'bg-bg-primary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
+                                  : 'bg-bg-primary border border-glass-border text-text-muted opacity-50 cursor-not-allowed'
+                              }`}
+                              title={hasWorkoutStarted ? "Reemplazar ejercicio" : "Inicia el cronómetro para reemplazar ejercicios"}
+                              disabled={!hasWorkoutStarted}
+                          >
+                              <Repeat size={16} />
+                          </button>
                         </div>
                         {/* --- FIN DE LA MODIFICACIÓN --- */}
 
@@ -334,7 +339,7 @@ const Workout = ({ timer, setView }) => {
                             <div className="text-center font-semibold text-text-secondary text-sm">Reps</div>
                             <div className="text-center font-semibold text-text-secondary text-sm">Dropset</div>
                             <div className="text-center font-semibold text-text-secondary text-sm">Descanso</div>
-                            
+
                             {exercise.setsDone.map((set, setIndex) => (
                                 <div key={setIndex} className="contents">
                                     <span className="text-center font-semibold text-text-secondary bg-bg-primary border border-glass-border rounded-md px-3 py-3">
@@ -462,7 +467,7 @@ const Workout = ({ timer, setView }) => {
                 setShowWorkoutSummaryModal(false);
                 setCompletedWorkoutData(null);
                 stopWorkout();
-                await fetchInitialData(); 
+                await fetchInitialData();
                 setView('dashboard');
             }}
         />

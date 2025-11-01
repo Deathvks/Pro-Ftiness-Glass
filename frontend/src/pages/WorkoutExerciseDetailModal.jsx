@@ -68,8 +68,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose, isLoading = false }) =>
           <X size={24} />
         </button>
 
-        {/* Título (sin cambios) */}
-        <h2 className="text-2xl font-bold mb-4 pr-8">
+        {/* Título (MODIFICADO) */}
+        <h2 className="text-2xl font-bold mb-4 pr-8 break-words">
           {t(nameKey, { ns: 'exercise_names', defaultValue: nameKey })}
         </h2>
 
@@ -129,3 +129,4 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose, isLoading = false }) =>
 };
 
 export default WorkoutExerciseDetailModal;
+

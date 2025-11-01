@@ -1,19 +1,29 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-import { Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode, Cookie, Github, Camera, IdCard, ZoomIn } from 'lucide-react'; // <-- Añadido 'ZoomIn'
-// --- FIN DE LA MODIFICACIÓN ---
+import {
+  Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode,
+  Cookie, Github, Camera, IdCard, ZoomIn,
+  // --- INICIO DE LA MODIFICACIÓN ---
+  Languages // <-- 'Translate' no existe. 'Languages' es el icono correcto.
+  // --- FIN DE LA MODIFICACIÓN ---
+} from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const nouveautes = [
     // --- INICIO DE LA MODIFICACIÓN (Nueva Novedad) ---
     {
+      // 2. Usamos el icono 'Languages'
+      icon: <Languages className="text-accent" />,
+      titre: "Biblioteca de Ejercicios Traducida",
+      description: "¡Toda la biblioteca de ejercicios está traducida! Ahora verás los nombres y descripciones en español en todas las secciones: entrenamientos, progreso y récords."
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
+    {
       icon: <ZoomIn className="text-accent" />,
       titre: "Ampliación de Imagen de Perfil",
       description: "Ahora puedes hacer clic en tu foto de perfil (tanto en la barra lateral como en la configuración) para verla ampliada en un elegante modal con desenfoque, al estilo de las redes sociales."
     },
-    // --- FIN DE LA MODIFICACIÓN ---
     {
       icon: <IdCard className="text-accent" />,
       titre: "Página de Perfil Renovada",
@@ -70,7 +80,7 @@ const WelcomeModal = ({ onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-[fade-in_0.3s_ease-out] bg-black/70 backdrop-blur-sm">
       <div
         className="relative w-full max-w-lg flex flex-col max-h-[90vh] text-center rounded-lg shadow-xl
-                   bg-bg-secondary border border-glass-border"
+                  bg-bg-secondary border border-glass-border"
       >
 
         {/* -- Cabecera (no se desplaza) -- */}

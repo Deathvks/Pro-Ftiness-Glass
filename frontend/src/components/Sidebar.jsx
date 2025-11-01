@@ -5,7 +5,9 @@ import { Dumbbell, User, LogOut } from 'lucide-react';
 const Sidebar = ({
   view,
   navigate,
-  setPreviousView,
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // setPreviousView, // ELIMINADO: La función 'navigate' ya gestiona esto
+  // --- FIN DE LA MODIFICACIÓN ---
   navItems,
   userProfile,
   BACKEND_BASE_URL,
@@ -26,8 +28,10 @@ const Sidebar = ({
           <button
             key={item.id}
             onClick={() => {
-              setPreviousView(view); // Guardar vista actual al navegar
-              navigate(item.id);
+              // --- INICIO DE LA MODIFICACIÓN ---
+              // setPreviousView(view); // ELIMINADO: Esta llamada era redundante y causaba el bug.
+              navigate(item.id); // 'navigate' se encarga de todo.
+              // --- FIN DE LA MODIFICACIÓN ---
             }}
             className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === item.id
               ? 'bg-accent text-bg-secondary'
@@ -44,8 +48,10 @@ const Sidebar = ({
         <div className="h-px bg-[--glass-border] my-2"></div>
         <button
           onClick={() => {
-            setPreviousView(view); // Guardar vista actual
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // setPreviousView(view); // ELIMINADO: 'navigate' se encarga de esto.
             navigate('profile');
+            // --- FIN DE LA MODIFICACIÓN ---
           }}
           className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 overflow-hidden ${view === 'profile'
             ? 'bg-accent text-bg-secondary'
@@ -55,9 +61,7 @@ const Sidebar = ({
           {userProfile && userProfile.profile_image_url ? (
             <img
               src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
-              // --- INICIO DE LA MODIFICACIÓN ---
               alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
-              // --- FIN DE LA MODIFICACIÓN ---
               className="w-6 h-6 rounded-full object-cover flex-shrink-0"
             />
           ) : (

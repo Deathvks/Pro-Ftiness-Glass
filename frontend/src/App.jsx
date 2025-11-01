@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Home, Dumbbell, BarChart2, Settings, LogOut, Zap, Utensils, User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import useAppStore from './store/useAppStore';
 import { APP_VERSION } from './config/version';
 
-// Componentes estáticos (siempre necesarios o pequeños)
-import GlassCard from './components/GlassCard'; // Asumiendo que es pequeño/reutilizado
-import Spinner from './components/Spinner'; // Necesario para Suspense fallback
+// ... (imports de componentes estáticos y lazy sin cambios) ...
+import GlassCard from './components/GlassCard';
+import Spinner from './components/Spinner';
 import PRToast from './components/PRToast';
 import ConfirmationModal from './components/ConfirmationModal';
 import WelcomeModal from './components/WelcomeModal';
@@ -16,15 +17,12 @@ import EmailVerification from './components/EmailVerification';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import Sidebar from './components/Sidebar';
 
-// Vistas de Autenticación (se cargan condicionalmente, lazy puede ser overkill si son pequeñas)
-// Mantenemos imports normales por ahora, se pueden hacer lazy si son muy grandes
 import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import OnboardingScreen from './pages/OnboardingScreen';
 
-// Componentes de Página Principal (Carga diferida con React.lazy)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Progress = lazy(() => import('./pages/Progress'));
 const Routines = lazy(() => import('./pages/Routines'));
@@ -37,7 +35,6 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Profile = lazy(() => import('./pages/Profile'));
 
-// Componente de fallback simple para Suspense
 const LoadingFallback = () => (
   <div className="flex justify-center items-center h-full pt-20">
     <Spinner size={40} />
@@ -47,12 +44,11 @@ const LoadingFallback = () => (
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
-// --- INICIO DE LA MODIFICACIÓN ---
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
-// --- FIN DE LA MODIFICACIÓN ---
 
 export default function App() {
   const {
+    // ... (imports de useAppStore sin cambios) ...
     isAuthenticated,
     userProfile,
     isLoading,
@@ -66,12 +62,12 @@ export default function App() {
     closeWelcomeModal,
     fetchDataForDate,
     cookieConsent,
-    checkCookieConsent, // <-- Mantenemos la importación aunque no la usemos aquí
+    checkCookieConsent,
     handleAcceptCookies,
     handleDeclineCookies,
   } = useAppStore();
 
-  const [view, setView] = useState('dashboard'); // Default inicial seguro
+  const [view, setView] = useState('dashboard');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [previousView, setPreviousView] = useState(null);
   const mainContentRef = useRef(null);
@@ -89,40 +85,73 @@ export default function App() {
   const { isWorkoutPaused, workoutAccumulatedTime } = useAppStore();
   const [timer, setTimer] = useState(0);
 
-  // --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
-  // Hooks movidos a la parte superior, ANTES de los retornos condicionales.
+  const { t } = useTranslation('translation');
 
-  // 1. Callbacks
+  // 1. Callbacks Estables
   const handleLogoutClick = useCallback(() => {
     setShowLogoutConfirm(true);
-  }, []); // Dependencia vacía, es estable
+  }, []);
 
   const confirmLogout = useCallback(() => {
     performLogout();
     setShowLogoutConfirm(false);
-  }, [performLogout]); // Depende de performLogout
+  }, [performLogout]);
 
+  // STABLE: navigate
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Refactorizada para ser segura con <StrictMode>
   const navigate = useCallback((viewName, options = {}) => {
-    if (!isInitialLoad) {
-      setPreviousView(view);
-    }
-    setView(viewName);
     if (options.forceTab) {
       localStorage.setItem('routinesForceTab', options.forceTab);
     }
-  }, [view, isInitialLoad]); // Dependencias existentes
+    
+    // Primero, leemos el estado 'view' actual y lo guardamos en 'previousView'
+    // Usamos el formato de callback para asegurar que leemos el valor más reciente.
+    setPreviousView(currentView => {
+      // Solo actualizamos 'previousView' si la vista realmente va a cambiar
+      if (currentView !== viewName) {
+        return currentView;
+      }
+      return currentView; // Mantenemos el 'previousView' si no hay cambio
+    });
+    
+    // Segundo, actualizamos la 'view' principal a la nueva vista.
+    // Esta función también es segura para StrictMode.
+    setView(currentView => {
+      if (currentView === viewName) {
+        return currentView; // Evita re-renderizado innecesario
+      }
+      return viewName; // Establece la nueva vista
+    });
 
-  const handleShowPolicy = useCallback(() => {
-    setPreviousView(view);
-    setView('privacyPolicy');
-  }, [view]); // Depende de 'view'
+  }, []); // <-- Array de dependencias VACÍO. La función es estable.
+  // --- FIN DE LA MODIFICACIÓN ---
 
+  // STABLE: handleBackFromPolicy
   const handleBackFromPolicy = useCallback(() => {
-    setView(previousView || 'dashboard');
-    setPreviousView(null);
-  }, [previousView]); // Depende de 'previousView'
+    setPreviousView(currentPreviousView => {
+      // Navega a la vista anterior O a 'dashboard' si no hay nada
+      setView(currentPreviousView || 'dashboard');
+      return null; // Limpia el estado de 'previousView'
+    });
+  }, []); // <-- Estable
+
+  // STABLE: handleShowPolicy
+  const handleShowPolicy = useCallback(() => {
+    navigate('privacyPolicy');
+  }, [navigate]); // <-- Estable (depende de 'navigate' que es estable)
+
+  // STABLE: handleCancelProfile
+  const handleCancelProfile = useCallback(() => {
+    setPreviousView(currentPreviousView => {
+      // El fallback de Perfil es 'settings'
+      setView(currentPreviousView || 'settings');
+      return null; // Limpia el estado de 'previousView'
+    });
+  }, []); // <-- Estable
   
   // 2. Efectos
+  
   useEffect(() => {
     if (mainContentRef.current) {
       mainContentRef.current.scrollTop = 0;
@@ -178,13 +207,7 @@ export default function App() {
       await fetchInitialData(); 
       const loadedUserProfile = useAppStore.getState().userProfile;
       const loadedActiveWorkout = useAppStore.getState().activeWorkout;
-
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // La llamada a checkCookieConsent se ha MOVIDO
-      // DENTRO de fetchInitialData (en dataSlice.js).
-      // Ya no necesitamos hacerla aquí.
-      // --- FIN DE LA MODIFICACIÓN ---
-
+      
       let targetView = 'dashboard'; 
       if (loadedActiveWorkout) {
         targetView = 'workout'; 
@@ -194,10 +217,11 @@ export default function App() {
           if (lastView === 'adminPanel' && loadedUserProfile?.role !== 'admin') {
             targetView = 'dashboard'; 
           } else if (lastView !== 'login' && lastView !== 'register' && lastView !== 'forgotPassword' && lastView !== 'resetPassword') {
-             targetView = lastView;
+            targetView = lastView;
           }
         }
       }
+      
       setView(targetView);
       setIsInitialLoad(false); 
     };
@@ -207,10 +231,7 @@ export default function App() {
     } else {
       setIsInitialLoad(false); 
     }
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Eliminamos 'checkCookieConsent' de las dependencias
   }, [isAuthenticated, fetchInitialData]);
-    // --- FIN DE LA MODIFICACIÓN ---
 
 
   useEffect(() => {
@@ -250,62 +271,64 @@ export default function App() {
         setShowEmailVerificationModal(true);
         setVerificationEmail(userProfile.email);
       }
-      if (!isInitialLoad) {
+      if (!isInitialLoad) { 
           checkWelcomeModal();
       }
     }
   }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal, isInitialLoad]);
 
-  // 3. Lógica de renderizado y memoización
-  // Estas constantes DEBEN definirse aquí, ya que 'userProfile' 
-  // puede ser nulo antes de los retornos condicionales.
-  const pageTitles = {
-    dashboard: 'Dashboard',
-    nutrition: 'Nutrición',
-    progress: 'Progreso',
-    routines: 'Rutinas',
-    settings: 'Ajustes',
-    profile: 'Perfil',
-    workout: 'Entrenamiento Activo',
-    physicalProfileEditor: 'Editar Perfil Físico',
-    accountEditor: 'Editar Cuenta',
-    adminPanel: 'Panel de Admin',
-    privacyPolicy: 'Política de Privacidad',
-  };
+  // 3. Lógica de renderizado y memoización (Sin cambios)
+  
+  const currentTitle = useMemo(() => {
+    const titleMap = {
+      dashboard: { key: 'Dashboard', default: 'Dashboard' },
+      nutrition: { key: 'Nutrición', default: 'Nutrición' },
+      progress: { key: 'Progreso', default: 'Progreso' },
+      routines: { key: 'Rutinas', default: 'Rutinas' },
+      settings: { key: 'Ajustes', default: 'Ajustes' },
+      workout: { key: 'Entrenamiento Activo', default: 'Entrenamiento Activo' },
+      profile: { key: 'Perfil', default: 'Perfil' },
+      physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
+      accountEditor: { key: 'Editar Cuenta', default: 'Editar Cuenta' },
+      adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
+      privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
+    };
+    const titleInfo = titleMap[view];
+    if (titleInfo) {
+      return t(titleInfo.key, { defaultValue: titleInfo.default });
+    }
+    const fallbackKey = view.charAt(0).toUpperCase() + view.slice(1);
+    return t(fallbackKey, { defaultValue: fallbackKey });
+  }, [view, t]);
 
-  const pageDescriptions = {
-      dashboard: 'Tu resumen diario de actividad, nutrición y progreso.',
-      nutrition: 'Registra tus comidas, agua y suplementos. Sigue tus macros y calorías.',
-      progress: 'Visualiza tu progreso en gráficos: peso, fuerza por ejercicio y nutrición.',
-      routines: 'Crea, edita y explora rutinas de entrenamiento personalizadas.',
-      settings: 'Configura la apariencia de la app, tu cuenta y preferencias.',
-      // Usamos 'userProfile?' para que sea seguro llamarlo aunque sea nulo
-      profile: `Edita tu perfil, ${userProfile?.username || 'usuario'}.`, 
-      workout: 'Registra tu sesión de entrenamiento actual.',
-      physicalProfileEditor: 'Actualiza tus datos físicos como edad, altura y objetivos.',
-      accountEditor: 'Modifica tu nombre, email o contraseña.',
-      adminPanel: 'Gestión de usuarios y configuraciones avanzadas.',
-      privacyPolicy: 'Información sobre cómo tratamos tus datos y el uso de cookies.',
-      default: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.',
-  };
-
-  const currentTitle = pageTitles[view] || 'Pro Fitness Glass';
-  const currentDescription = pageDescriptions[view] || pageDescriptions.default;
-
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Construir la URL canónica basada en la vista actual
+  const currentDescription = useMemo(() => {
+    const descKeys = {
+      dashboard: t('dashboard_desc', { defaultValue: 'Tu resumen diario de actividad, nutrición y progreso.' }),
+      nutrition: t('nutrition_desc', { defaultValue: 'Registra tus comidas, agua y suplementos. Sigue tus macros y calorías.' }),
+      progress: t('progress_desc', { defaultValue: 'Visualiza tu progreso en gráficos: peso, fuerza por ejercicio y nutrición.' }),
+      routines: t('routines_desc', { defaultValue: 'Crea, edita y explora rutinas de entrenamiento personalizadas.' }),
+      settings: t('settings_desc', { defaultValue: 'Configura la apariencia de la app, tu cuenta y preferencias.' }),
+      profile: t('profile_desc', { defaultValue: `Edita tu perfil, ${userProfile?.username || 'usuario'}.` }), 
+      workout: t('workout_desc', { defaultValue: 'Registra tu sesión de entrenamiento actual.' }),
+      physicalProfileEditor: t('physicalProfileEditor_desc', { defaultValue: 'Actualiza tus datos físicos como edad, altura y objetivos.' }),
+      accountEditor: t('accountEditor_desc', { defaultValue: 'Modifica tu nombre, email o contraseña.' }),
+      adminPanel: t('adminPanel_desc', { defaultValue: 'Gestión de usuarios y configuraciones avanzadas.' }),
+      privacyPolicy: t('privacyPolicy_desc', { defaultValue: 'Información sobre cómo tratamos tus datos y el uso de cookies.' }),
+      default: t('default_desc', { defaultValue: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.' }),
+    };
+    return descKeys[view] || descKeys.default;
+  }, [view, t, userProfile?.username]);
+  
   const currentPath = useMemo(() => {
     if (view === 'dashboard') return '/';
-    // pageTitles es estable (definido en línea 249)
-    if (pageTitles[view]) return `/${view}`;
-    return '/'; // Fallback seguro
-  }, [view, pageTitles]);
+    if (view) return `/${view}`;
+    return '/';
+  }, [view]);
 
   const canonicalUrl = `${CANONICAL_BASE_URL}${currentPath}`;
-  // --- FIN DE LA MODIFICACIÓN ---
 
 
-  // 4. Hook 'useMemo' para la vista actual (ahora antes de los 'return')
+  // 4. Hook 'useMemo' para la vista actual
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigate} />;
@@ -324,35 +347,32 @@ export default function App() {
             onLogoutClick={handleLogoutClick}
           />
         );
-      case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />;
-      case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />;
-      case 'profile': return <Profile onCancel={() => navigate(previousView || 'settings')} />;
+      case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />; // Inline OK (navigate es estable)
+      case 'accountEditor': return <AccountEditor onCancel={() => navigate('settings')} />; // Inline OK (navigate es estable)
+      
+      case 'profile': return <Profile onCancel={handleCancelProfile} />;
+
       case 'adminPanel':
-        // Usamos 'userProfile?' para seguridad
         return userProfile?.role === 'admin'
-            ? <AdminPanel onCancel={() => navigate('settings')} />
-            : <Dashboard setView={navigate} />; 
-      case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
+          ? <AdminPanel onCancel={() => navigate('settings')} /> // Inline OK (navigate es estable)
+          : <Dashboard setView={navigate} />; 
+      case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />; // Usamos la función estable
       default: return <Dashboard setView={navigate} />;
     }
   }, [
     view,
-    navigate,
+    navigate, // Estable
     theme,
     timer,
     accent,
-    handleLogoutClick,
-    previousView, 
-    userProfile, // Añadido como dependencia explícita
-    handleBackFromPolicy 
-    // setAccent y setTheme son estables de 'useState', no necesitan estar aquí
+    handleLogoutClick, // Estable
+    userProfile,
+    handleBackFromPolicy, // Estable
+    handleCancelProfile   // Estable
   ]);
 
-  // --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
 
-
-  // 5. Retornos condicionales (Guards)
-  // Estos 'return' ahora están DESPUÉS de todos los hooks.
+  // 5. Retornos condicionales (Guards) (Sin cambios)
   if (isLoading && isInitialLoad) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
@@ -376,34 +396,32 @@ export default function App() {
     }
   }
 
-  // 'userProfile' ya se ha usado en 'pageDescriptions' y 'currentViewComponent'
-  // de forma segura (con ?.), así que esta comprobación es correcta.
   if (userProfile && !userProfile.goal) {
     return <OnboardingScreen />;
   }
- 
+  
   if (!userProfile) {
-     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
+      return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
   }
   
-  // 6. Renderizado final
+  // 6. Traducimos las etiquetas de 'navItems' (Sin cambios)
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <Home size={24} /> },
-    { id: 'nutrition', label: 'Nutrición', icon: <Utensils size={24} /> },
-    { id: 'progress', label: 'Progreso', icon: <BarChart2 size={24} /> },
-    { id: 'routines', label: 'Rutinas', icon: <Dumbbell size={24} /> },
-    { id: 'settings', label: 'Ajustes', icon: <Settings size={24} /> },
+    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
+    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: <Utensils size={24} /> },
+    { id: 'progress', label: t('Progreso', { defaultValue: 'Progreso' }), icon: <BarChart2 size={24} /> },
+    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: <Dumbbell size={24} /> },
+    { id: 'settings', label: t('Ajustes', { defaultValue: 'Ajustes' }), icon: <Settings size={24} /> },
   ];
 
   return (
     <div className="relative flex w-full h-full overflow-hidden">
+      
+      {/* <Helmet> Único y centralizado (Sin cambios) */}
       <Helmet>
         <html lang="es" />
         <title>{currentTitle} - Pro Fitness Glass</title>
         <meta name="description" content={currentDescription} />
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
         <link rel="canonical" href={canonicalUrl} />
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Helmet>
@@ -412,9 +430,11 @@ export default function App() {
 
       <Sidebar
         view={view}
-        navigate={navigate}
-        setPreviousView={setPreviousView}
-        navItems={navItems}
+        navigate={navigate} // Pasamos la función 'navigate' 100% estable
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // setPreviousView={setPreviousView} // ELIMINADO: Esta prop ya no es necesaria y causaba el bug.
+        // --- FIN DE LA MODIFICACIÓN ---
+        navItems={navItems} 
         userProfile={userProfile}
         BACKEND_BASE_URL={BACKEND_BASE_URL}
         handleLogoutClick={handleLogoutClick}
@@ -426,7 +446,6 @@ export default function App() {
           <span className="text-3xl font-extrabold text-text-primary">{currentTitle}</span>
           <button
             onClick={() => {
-              setPreviousView(view);
               navigate('profile');
             }}
             className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
@@ -454,7 +473,7 @@ export default function App() {
           <button
             key={item.id}
             onClick={() => {
-              navigate(item.id);
+              navigate(item.id); // Llama a la 'navigate' estable
             }}
             className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
             {item.icon}
@@ -463,6 +482,7 @@ export default function App() {
         ))}
       </nav>
 
+      {/* ... (Resto de modales y botones flotantes) ... */}
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
       {showWelcomeModal && (
@@ -473,7 +493,7 @@ export default function App() {
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
           onDecline={handleDeclineCookies}
-          onShowPolicy={handleShowPolicy}
+          onShowPolicy={handleShowPolicy} // Estable
         />
       )}
 
@@ -488,7 +508,7 @@ export default function App() {
 
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
-          onClick={() => navigate('workout')}
+          onClick={() => navigate('workout')} // Estable
           className="fixed bottom-24 right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
@@ -519,7 +539,7 @@ export default function App() {
           email={verificationEmail}
           onSuccess={() => {
             setShowCodeVerificationModal(false);
-            fetchInitialData(); // Asegurarse de recargar datos tras verificar
+            fetchInitialData();
           }}
           onBack={() => {
             setShowCodeVerificationModal(false);
