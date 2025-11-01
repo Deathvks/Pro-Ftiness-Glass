@@ -31,28 +31,36 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []); // Dependencia vacía es correcta para este listener
+  }, []);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // NUEVO: Cierra el dropdown al hacer scroll
+  // FIX: Cierra el dropdown solo al hacer scroll externo (body/ventana) para no interferir con el scroll interno del menú.
   useEffect(() => {
-    const handleScroll = () => {
-      // Si está abierto, ciérralo.
-      setIsOpen(false);
+    const handleScroll = (event) => {
+      if (isOpen) {
+        // Si el evento se originó dentro del menú desplegable o el botón, lo ignoramos.
+        // Esto permite el scroll interno si el menú tiene overflow.
+        if (
+          (dropdownRef.current && dropdownRef.current.contains(event.target)) ||
+          (buttonRef.current && buttonRef.current.contains(event.target))
+        ) {
+          return;
+        }
+
+        // Si el scroll es externo (ej. scroll de la ventana/body), cerramos el menú
+        setIsOpen(false);
+      }
     };
 
     if (isOpen) {
-      // Añade el listener solo si el dropdown está abierto
-      // 'true' (fase de captura) es más fiable para coger todos los eventos de scroll
+      // Usamos la fase de captura (true) para ser más efectivos.
       document.addEventListener('scroll', handleScroll, true);
     }
 
-    // Limpieza: elimina el listener cuando el dropdown se cierra o el componente se desmonta
+    // Limpieza
     return () => {
       document.removeEventListener('scroll', handleScroll, true);
     };
-  }, [isOpen]); // La dependencia clave es 'isOpen'
-  // --- FIN DE LA MODIFICACIÓN ---
+  }, [isOpen]);
 
   const selectedOption = options.find(opt => opt.value === value);
 
@@ -76,8 +84,8 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
             setIsOpen(false);
           }}
           className={`block w-full text-left px-3 py-2 transition-colors duration-200 rounded-md text-sm ${
-            value === option.value 
-              ? 'bg-accent/10 text-accent font-medium' 
+            value === option.value
+              ? 'bg-accent/10 text-accent font-medium'
               : 'text-text-primary hover:bg-accent/10 hover:text-accent'
           }`}
         >
@@ -94,22 +102,19 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary text-left outline-none transition flex items-center justify-between gap-2 hover:border-accent/60"
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Añadimos 'disabled' para evitar clicks mientras se calcula la posición
-        disabled={isOpen && position.top === 0} 
-        // --- FIN DE LA MODIFICACIÓN ---
+        disabled={isOpen && position.top === 0}
       >
         <span className={selectedOption ? 'text-text-primary' : 'text-text-secondary'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <ChevronDown 
-          size={16} 
+        <ChevronDown
+          size={16}
           className={`transition-transform duration-200 text-text-secondary ${
             isOpen ? 'rotate-180' : ''
-          }`} 
+          }`}
         />
       </button>
-      
+
       {isOpen && <DropdownPortal />}
     </div>
   );
