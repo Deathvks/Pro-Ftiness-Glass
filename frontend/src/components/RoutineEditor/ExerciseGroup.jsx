@@ -77,7 +77,9 @@ const ExerciseGroup = ({
       </div>
 
       {!isLastGroup && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-3 z-10">
+        // --- INICIO DE LA MODIFICACIÓN (FIX Z-INDEX) ---
+        // Eliminado 'z-10' para evitar que se solape con el header/navbar
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-3">
           <button
             onClick={linkWithNext}
             className="p-2 rounded-full bg-bg-secondary border border-glass-border text-accent hover:bg-accent hover:text-bg-secondary hover:scale-110 transition"

@@ -1,7 +1,7 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseListView.jsx */
 import React from 'react';
 // --- INICIO DE LA MODIFICACIÓN ---
-import { X, Search, ShoppingCart, ListFilter, Plus, Repeat } from 'lucide-react'; // Importar Plus y Repeat
+import { X, Search, ShoppingCart, ListFilter, Plus } from 'lucide-react'; // Importar Plus
 // --- FIN DE LA MODIFICACIÓN ---
 import CustomSelect from '../../CustomSelect';
 import ExerciseListItem from './ExerciseListItem';
@@ -38,7 +38,6 @@ const ExerciseListView = ({
   stagedIds,
   // --- INICIO DE LA MODIFICACIÓN ---
   onAddManual, // <-- Recibir la nueva prop
-  isReplacing, // <-- 1. Recibimos la prop de modo
   // --- FIN DE LA MODIFICACIÓN ---
   
   // --- Props de traducción ---
@@ -46,35 +45,22 @@ const ExerciseListView = ({
 }) => {
   return (
     <div className="flex flex-col h-full">
-      {/* Header (Cerrar y Carrito) */}
+      {/* Header (Cerrar y Carrito) (SIN CAMBIOS) */}
       <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-glass-border">
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* 2. Título dinámico */}
-        <h2 className="text-xl font-bold">
-          {isReplacing
-            ? t('exercise_ui:replace_exercise_title', 'Reemplazar Ejercicio')
-            : t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
-        </h2>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
-
+        <h2 className="text-xl font-bold">{t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}</h2>
         <div className="flex items-center gap-2">
-          {/* --- INICIO DE LA MODIFICACIÓN --- */}
-          {/* 3. Ocultar carrito en modo reemplazo */}
-          {!isReplacing && (
-            <button
-              onClick={onViewSummary}
-              className="relative flex items-center gap-2 px-4 py-2 rounded-full bg-accent text-bg-secondary font-semibold"
-            >
-              <ShoppingCart size={18} />
-              <span>{t('exercise_ui:view_cart', 'Ver Carrito')}</span>
-              {stagedExercisesCount > 0 && (
-                <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red text-white text-xs font-bold flex items-center justify-center border-2 border-bg-primary">
-                  {stagedExercisesCount}
-                </span>
-              )}
-            </button>
-          )}
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
+          <button
+            onClick={onViewSummary}
+            className="relative flex items-center gap-2 px-4 py-2 rounded-full bg-accent text-bg-secondary font-semibold"
+          >
+            <ShoppingCart size={18} />
+            <span>{t('exercise_ui:view_cart', 'Ver Carrito')}</span>
+            {stagedExercisesCount > 0 && (
+              <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red text-white text-xs font-bold flex items-center justify-center border-2 border-bg-primary">
+                {stagedExercisesCount}
+              </span>
+            )}
+          </button>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10">
             <X size={24} />
           </button>
@@ -145,32 +131,24 @@ const ExerciseListView = ({
                 onAdd={onAddExercise}
                 onView={onViewDetail}
                 isStaged={stagedIds.has(exercise.id)}
-                isReplacing={isReplacing} // <-- 4. Pasar 'isReplacing' al item
                 t={t}
               />
             ))}
             
             {/* 2. Botón para añadir ejercicio manual (siempre visible si no está cargando) */}
             <button
-              onClick={onAddManual} // <-- Conectar la prop (ya estaba)
+              onClick={onAddManual} // <-- Conectar la prop
               className="w-full flex items-center gap-4 p-3 rounded-lg bg-bg-secondary hover:bg-accent-transparent border border-glass-border transition-colors group"
             >
               <div className="w-14 h-14 rounded-md bg-bg-primary border border-glass-border flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent-border transition-colors">
-                {/* 5. Icono dinámico */}
-                {isReplacing ? <Repeat size={24} /> : <Plus size={24} />}
+                <Plus size={24} />
               </div>
               <div className="flex-1 text-left">
                 <p className="font-semibold text-text-primary group-hover:text-accent transition-colors">
-                  {/* 6. Texto dinámico */}
-                  {isReplacing
-                    ? t('exercise_ui:replace_with_manual', 'Reemplazar por manual')
-                    : t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
+                  {t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
                 </p>
                 <p className="text-sm text-text-muted">
-                  {/* 7. Texto dinámico */}
-                  {isReplacing
-                    ? t('exercise_ui:replace_manual_desc', 'Reemplaza por un ejercicio personalizado.')
-                    : t('exercise_ui:add_manual_desc', 'Añade un ejercicio que no esté en la lista.')}
+                  {t('exercise_ui:add_manual_desc', 'Añade un ejercicio que no esté en la lista.')}
                 </p>
               </div>
             </button>
