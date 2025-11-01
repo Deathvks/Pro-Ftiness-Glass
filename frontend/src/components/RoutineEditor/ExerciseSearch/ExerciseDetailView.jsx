@@ -1,20 +1,38 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseDetailView.jsx */
 import React, { useState } from 'react';
-import { ChevronLeft, Plus, Check } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+import { ChevronLeft, Plus, Check, Repeat } from 'lucide-react'; // 1. Importar Repeat
+// --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
 
 // Componente para la vista de detalle
-const ExerciseDetailView = ({ exercise, onBack, onAdd, isStaged, t }) => {
+const ExerciseDetailView = ({
+  exercise,
+  onBack,
+  onAdd,
+  isStaged,
+  t,
+  // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+  isReplacing = false, // 2. Recibir la prop
+  // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+}) => {
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState('8-12');
   const [rest, setRest] = useState(60);
 
   const handleAddClick = () => {
-    // --- INICIO DE LA MODIFICACIÓN (FIX) ---
-    // El nombre de la propiedad debe ser 'rest_seconds' para que 
-    // ExerciseSearch.jsx (handleStageExercise) lo reconozca.
-    // Antes era 'rest_time'.
-    onAdd(exercise, { sets, reps, rest_seconds: rest });
-    // --- FIN DE LA MODIFICACIÓN (FIX) ---
+    // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+    if (isReplacing) {
+      // 3. MODO REEMPLAZO:
+      // La función 'onAdd' (que es 'onExerciseSelectForReplace')
+      // solo espera el objeto del ejercicio.
+      onAdd(exercise);
+    } else {
+      // 4. MODO AÑADIR (CARRITO):
+      // La función 'onAdd' (que es 'handleStageExercise')
+      // espera el ejercicio Y los detalles.
+      onAdd(exercise, { sets, reps, rest_seconds: rest });
+    }
+    // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
   };
 
   // --- INICIO DE LA MODIFICACIÓN ---
@@ -128,58 +146,80 @@ const ExerciseDetailView = ({ exercise, onBack, onAdd, isStaged, t }) => {
 
       {/* Footer (Formulario y Añadir) */}
       <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm">
-        {/* Inputs */}
-        <div className="flex gap-4 mb-4">
-          <div>
-            <label className="text-xs text-text-muted">{t('exercise_ui:sets', 'Series')}</label>
-            <input
-              type="number"
-              value={sets}
-              onChange={(e) => setSets(Number(e.target.value))}
-              className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-text-muted">{t('exercise_ui:reps', 'Reps')}</label>
-            <input
-              type="text"
-              value={reps}
-              onChange={(e) => setReps(e.target.value)}
-              className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-text-muted">{t('exercise_ui:rest_s', 'Desc. (s)')}</label>
-            <input
-              type="number"
-              value={rest}
-              onChange={(e) => setRest(Number(e.target.value))}
-              className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
-            />
-          </div>
-        </div>
         
-        <button
-          onClick={isStaged ? onBack : handleAddClick}
-          disabled={false}
-          className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition ${
-            isStaged
-              ? 'bg-green/20 text-green'
-              : 'bg-accent text-bg-secondary'
-          }`}
-_        >
-          {isStaged ? (
-            <>
-              <Check size={24} />
-              {t('exercise_ui:added_back_to_list', 'Añadido (Volver a la lista)')}
-            </>
-          ) : (
-            <>
-              <Plus size={24} />
-              {t('exercise_ui:add_to_cart', 'Añadir al carrito')}
-            </>
-          )}
-        </button>
+        {/* --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
+        {/* 5. Ocultar inputs en modo reemplazo */}
+        {!isReplacing && (
+          <div className="flex gap-4 mb-4">
+            <div>
+              <label className="text-xs text-text-muted">{t('exercise_ui:sets', 'Series')}</label>
+              <input
+                type="number"
+                value={sets}
+                onChange={(e) => setSets(Number(e.target.value))}
+                className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-text-muted">{t('exercise_ui:reps', 'Reps')}</label>
+              <input
+                type="text"
+                value={reps}
+                onChange={(e) => setReps(e.target.value)}
+                className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-text-muted">{t('exercise_ui:rest_s', 'Desc. (s)')}</label>
+              <input
+                type="number"
+                value={rest}
+                onChange={(e) => setRest(Number(e.target.value))}
+                className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
+              />
+            </div>
+          </div>
+        )}
+        {/* --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
+
+        
+        {/* --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
+        {/* 6. Lógica de botón dinámica */}
+        {isReplacing ? (
+          // 7. Botón MODO REEMPLAZO
+          <button
+            onClick={handleAddClick}
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition bg-accent text-bg-secondary"
+          >
+            <Repeat size={24} />
+            {t('exercise_ui:replace_exercise', 'Reemplazar Ejercicio')}
+          </button>
+        ) : (
+          // 8. Botón MODO AÑADIR (Original)
+          <button
+            onClick={isStaged ? onBack : handleAddClick}
+            disabled={false}
+            className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition ${
+              isStaged
+                ? 'bg-green/20 text-green'
+                : 'bg-accent text-bg-secondary'
+            }`}
+          >
+            {isStaged ? (
+              <>
+                <Check size={24} />
+                {t('exercise_ui:added_back_to_list', 'Añadido (Volver a la lista)')}
+              </>
+            ) : (
+              <>
+                <Plus size={24} />
+                {t('exercise_ui:add_to_cart', 'Añadir al carrito')}
+              </>
+            )}
+          </button>
+        )}
+        {/* --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
+        
       </div>
     </div>
   );

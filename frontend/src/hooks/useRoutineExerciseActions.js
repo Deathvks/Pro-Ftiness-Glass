@@ -70,8 +70,8 @@ export const useRoutineExerciseActions = ({
    * @param {Object} selectedExercise - El ejercicio de la BD seleccionado.
    */
   const linkExerciseFromList = (tempId, selectedExercise) => {
-    setExercises(prev =>
-      prev.map(ex =>
+    setExercises(prev => {
+      const newExercises = prev.map(ex =>
         ex.tempId === tempId
           ? {
               ...ex, // Mantiene sets, reps, rest_seconds
@@ -84,9 +84,11 @@ export const useRoutineExerciseActions = ({
               is_manual: selectedExercise.is_manual || false,
             }
           : ex
-      )
-    );
-    // Cierra el dropdown
+      );
+      return newExercises;
+    });
+    
+    // Cierra el dropdown (si se llamó desde el dropdown de la tarjeta)
     setActiveDropdownTempId(null);
   };
 

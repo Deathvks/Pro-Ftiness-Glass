@@ -37,7 +37,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     validationError, setValidationError,
     showExerciseSearch, setShowExerciseSearch,
     activeDropdownTempId, setActiveDropdownTempId,
-    replacingExerciseTempId, setReplacingExerciseTempId,
+    replacingExerciseTempId, setReplacingExerciseTempId, // <-- El estado clave
   } = useRoutineState(initialRoutine);
 
   // 2. Hook de Carga (useEffect)
@@ -55,7 +55,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   const {
     handleOpenSearchForAdd,
     handleReplaceClick,
-    handleSearchModalClose,
+    handleSearchModalClose, // <-- La función de cierre
   } = useRoutineModalActions({
     setShowExerciseSearch,
     setReplacingExerciseTempId,
@@ -81,7 +81,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     addExercise,
     removeExercise,
     updateExerciseField,
-    linkExerciseFromList,
+    linkExerciseFromList, // <-- La función que queremos llamar
     createSuperset,
     unlinkGroup,
     onDragEnd,
@@ -92,12 +92,58 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     setExercises,
     replacingExerciseTempId, // Usado en handleAddExercisesFromSearch
     addToast,
-    handleSearchModalClose,   // Usado en add/replace
+    handleSearchModalClose,  // Usado en add/replace
     setActiveDropdownTempId,  // Usado en linkExerciseFromList
   });
 
   // 6. Hook de Estado Derivado (Agrupación de ejercicios)
   const groupedExercises = useRoutineGrouping(exercises);
+
+  // --- INICIO DE LA MODIFICACIÓN (FIX STALE STATE) ---
+  // 7. Creamos las funciones "wrapper" AQUÍ
+  // Estas funciones se re-crearán CADA VEZ que el estado cambie,
+  // (incluyendo 'replacingExerciseTempId'), por lo que NUNCA estarán obsoletas.
+
+  /**
+   * Reemplaza el ejercicio (seleccionado de la biblioteca)
+   */
+  const handleSelectExerciseForReplace = (selectedExercise) => {
+    console.log('[useRoutineEditor] handleSelectExerciseForReplace CALLED');
+    console.log('==> Current replacingExerciseTempId:', replacingExerciseTempId);
+    
+    if (replacingExerciseTempId) {
+      linkExerciseFromList(replacingExerciseTempId, selectedExercise);
+    } else {
+      console.error('ERROR: Se intentó reemplazar, ¡pero replacingExerciseTempId era null!');
+    }
+    handleSearchModalClose(); // Cierra el modal
+  };
+
+  /**
+   * Reemplaza el ejercicio (con uno manual)
+   */
+  const handleAddCustomExerciseForReplace = (exerciseName) => {
+    console.log('[useRoutineEditor] handleAddCustomExerciseForReplace CALLED');
+    console.log('==> Current replacingExerciseTempId:', replacingExerciseTempId);
+
+    if (replacingExerciseTempId && exerciseName.trim() !== "") {
+      const manualExercise = {
+        id: null,
+        name: exerciseName.trim(),
+        muscle_group: 'other',
+        category: 'other',
+        equipment: 'other',
+        is_manual: true,
+        image_url_start: null,
+        video_url: null,
+      };
+      linkExerciseFromList(replacingExerciseTempId, manualExercise);
+    } else {
+        console.error('ERROR: Se intentó reemplazar (manual), ¡pero replacingExerciseTempId era null o el nombre estaba vacío!');
+    }
+    handleSearchModalClose(); // Cierra el modal
+  };
+  // --- FIN DE LA MODIFICACIÓN (FIX STALE STATE) ---
 
 
   // --- RETURNED VALUES ---
@@ -116,6 +162,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     showExerciseSearch, setShowExerciseSearch,
     activeDropdownTempId, 
     setActiveDropdownTempId,
+    replacingExerciseTempId, // <-- Devolvemos el estado (para el 'isReplacing' del modal)
     
     // Funciones de Guardado/Borrado (de useRoutineSaver)
     handleSave,
@@ -139,5 +186,11 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     handleOpenSearchForAdd,
     handleReplaceClick,
     handleSearchModalClose,
+
+    // --- INICIO DE LA MODIFICACIÓN (FIX STALE STATE) ---
+    // Devolvemos las nuevas funciones wrapper
+    handleSelectExerciseForReplace,
+    handleAddCustomExerciseForReplace,
+    // --- FIN DE LA MODIFICACIÓN (FIX STALE STATE) ---
   };
 };

@@ -13,7 +13,16 @@ import ExerciseSummaryView from './ExerciseSearch/ExerciseSummaryView';
 
 
 // --- Componente Principal (Contenedor) ---
-const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = [] }) => {
+const ExerciseSearch = ({
+  onClose,
+  onAddExercises,
+  initialSelectedExercises = [],
+  // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+  isReplacing = false, // Por defecto, estamos en modo "Añadir"
+  onExerciseSelectForReplace, // Función para reemplazar un ejercicio de la biblioteca
+  onAddCustomExercise, // Función para reemplazar con un ejercicio manual
+  // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+}) => {
   
   // Obtenemos 'ready' del hook
   const { t, i18n, ready } = useTranslation(['exercise_descriptions', 'exercise_names', 'exercise_ui', 'exercise_muscles', 'exercise_equipment']);
@@ -34,6 +43,12 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
 
   // useEffect de INICIALIZACIÓN (sin cambios, usa la bandera)
   useEffect(() => {
+    // No inicializar el carrito si estamos en modo reemplazo
+    if (isReplacing) {
+      setCartInitialized(true); // Marcamos como "inicializado" para que no se ejecute
+      return;
+    }
+
     if (
       allExercises.length > 0 &&
       initialSelectedExercises &&
@@ -74,10 +89,10 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
       setStagedExercises(initialStaged);
       setCartInitialized(true); 
     }
-  }, [allExercises, initialSelectedExercises, t, cartInitialized]);
+  }, [allExercises, initialSelectedExercises, t, cartInitialized, isReplacing]); // Añadido 'isReplacing'
 
 
-  // useEffect de CARGA DE DATOS (fix clave)
+  // useEffect de CARGA DE DATOS (sin cambios)
   useEffect(() => {
     const fetchExercises = async () => {
       try {
@@ -155,9 +170,13 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
     });
   }, [allExercises, searchQuery, filterMuscle, filterEquipment, t, ready]);
 
-  const stagedIds = useMemo(() => new Set(stagedExercises.map(item => item.exercise.id)), [stagedExercises]);
+  // Si estamos reemplazando, el "stagedId" es irrelevante, todos se pueden seleccionar
+  const stagedIds = useMemo(() =>
+    isReplacing ? new Set() : new Set(stagedExercises.map(item => item.exercise.id)),
+    [stagedExercises, isReplacing]
+  );
 
-  // --- HANDLERS DEL CARRITO (fix clave) ---
+  // --- HANDLERS DEL CARRITO (Sin cambios, solo se usan en modo "Añadir") ---
   const handleStageExercise = (exercise, details = {}) => {
     if (stagedIds.has(exercise.id)) {
       return;
@@ -171,16 +190,6 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
     };
     
     setStagedExercises(prev => [...prev, newItem]);
-    
-    // --- INICIO DE LA MODIFICACIÓN (FIX DEFINITIVO) ---
-    // ¡NO LLAMAR A addToast() AQUÍ!
-    // Esta llamada es la que causa que el componente se desmonte
-    // y pierda el estado que acabamos de poner.
-    
-    // const exerciseName = t(exercise.name, { ns: 'exercise_names', defaultValue: exercise.name });
-    // addToast(t('exercise_ui:added_toast', { exerciseName }), 'success');
-    
-    // --- FIN DE LA MODIFICACIÓN (FIX DEFINITIVO) ---
   };
 
   const handleRemoveStaged = (exerciseId) => {
@@ -213,7 +222,7 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
   };
 
 
-  // --- HANDLERS DE NAVEGACIÓN (Sin cambios) ---
+  // --- HANDLERS DE NAVEGACIÓN (Modificados) ---
   const handleViewDetail = (exercise) => {
     setSelectedExercise(exercise);
     setView('detail');
@@ -224,11 +233,15 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
     setView('list');
   };
 
+  // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+  // Si estamos en modo reemplazo, no vamos al resumen/carrito
   const handleViewSummary = () => {
+    if (isReplacing) return;
     setView('summary');
   };
+  // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
 
-  // --- FUNCIÓN MANUAL (Sin cambios) ---
+  // --- FUNCIÓN MANUAL (Modificada) ---
   const handleAddManualExercise = () => {
     const exerciseName = searchQuery.trim();
 
@@ -237,45 +250,63 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
       return;
     }
 
-    const manualExercise = {
-      id: `manual_${uuidv4()}`,
-      name: exerciseName, 
-      category: 'other', 
-      equipment: 'other', 
-      is_manual: true,
-      image_url_start: null, 
-      image_url_end: null,
-      description: t('exercise_ui:manual_exercise_desc', 'Ejercicio añadido manualmente.'),
-      muscle_group_image_url: '/muscle_groups/other.webp', 
-    };
-    
-    // Esta llamada es segura porque no usa addToast
-    handleStageExercise(manualExercise, {
-      sets: 3,
-      reps: '10', 
-      rest_seconds: 60,
-    });
-    
-    setView('summary');
-    setSearchQuery(''); 
+    // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+    if (isReplacing) {
+      // MODO REEMPLAZO: Llama a la función del hook que añade/reemplaza en la rutina principal
+      if (onAddCustomExercise) {
+        onAddCustomExercise(exerciseName);
+      }
+      // NOTA: 'onAddCustomExercise' (del hook) se encarga de cerrar el modal
+    } else {
+      // MODO AÑADIR (antiguo): Añade al carrito local
+      const manualExercise = {
+        id: `manual_${uuidv4()}`,
+        name: exerciseName, 
+        category: 'other', 
+        equipment: 'other', 
+        is_manual: true,
+        image_url_start: null, 
+        image_url_end: null,
+        description: t('exercise_ui:manual_exercise_desc', 'Ejercicio añadido manualmente.'),
+        muscle_group_image_url: '/muscle_groups/other.webp', 
+      };
+      
+      handleStageExercise(manualExercise, {
+        sets: 3,
+        reps: '10', 
+        rest_seconds: 60,
+      });
+      
+      setView('summary');
+      setSearchQuery(''); 
+    }
+    // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
   };
 
 
-  // --- RENDERIZADO (Sin cambios) ---
+  // --- RENDERIZADO (Modificado) ---
   const renderContent = () => {
     if (view === 'detail' && selectedExercise) {
       return (
         <ExerciseDetailView
           exercise={selectedExercise}
           onBack={handleBackToList}
-          onAdd={handleStageExercise}
-          isStaged={stagedIds.has(selectedExercise.id)}
+          // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+          // Si reemplazamos, llamamos a 'onExerciseSelectForReplace'
+          // Si no, llamamos a 'handleStageExercise' (añadir al carrito)
+          onAdd={isReplacing ? onExerciseSelectForReplace : handleStageExercise}
+          // Si reemplazamos, no está "staged". Si no, comprobamos el Set.
+          isStaged={isReplacing ? false : stagedIds.has(selectedExercise.id)}
+          // Pasamos el modo para que el botón cambie de "Añadir" a "Reemplazar"
+          isReplacing={isReplacing}
+          // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
           t={t}
         />
       );
     }
 
-    if (view === 'summary') {
+    // No mostrar el resumen si estamos reemplazando
+    if (view === 'summary' && !isReplacing) {
       return (
         <ExerciseSummaryView
           stagedExercises={stagedExercises}
@@ -288,11 +319,19 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
       );
     }
     
+    // Si la vista es 'summary' pero estamos reemplazando, volvemos a 'list'
+    if (view === 'summary' && isReplacing) {
+      setView('list');
+    }
+
     return (
       <ExerciseListView
         onClose={onClose}
-        onViewSummary={handleViewSummary}
-        stagedExercisesCount={stagedExercises.length}
+        onViewSummary={handleViewSummary} // (Ahora está guardado para no hacer nada si 'isReplacing')
+        // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+        // Si reemplazamos, el contador es 0 (oculta el botón del carrito)
+        stagedExercisesCount={isReplacing ? 0 : stagedExercises.length}
+        // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
         isLoading={isLoading || !ready}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -306,9 +345,16 @@ const ExerciseSearch = ({ onClose, onAddExercises, initialSelectedExercises = []
         equipmentOptions={equipmentOptions}
         filteredExercises={filteredExercises}
         onViewDetail={handleViewDetail}
-        onAddExercise={handleStageExercise}
+        // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+        // Si reemplazamos, llamamos a 'onExerciseSelectForReplace'
+        // Si no, llamamos a 'handleStageExercise' (añadir al carrito)
+        onAddExercise={isReplacing ? onExerciseSelectForReplace : handleStageExercise}
+        // stagedIds ya está controlado por 'isReplacing' (ver useMemo)
         stagedIds={stagedIds}
-        onAddManual={handleAddManualExercise} 
+        onAddManual={handleAddManualExercise} // (Ahora está guardado para hacer lo correcto)
+        // Pasamos el modo para que el botón cambie de "Añadir" a "Reemplazar"
+        isReplacing={isReplacing}
+        // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
         t={t}
       />
     );

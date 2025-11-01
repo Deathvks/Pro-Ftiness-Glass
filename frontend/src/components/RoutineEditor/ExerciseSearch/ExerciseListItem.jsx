@@ -1,9 +1,20 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseListItem.jsx */
 import React from 'react';
-import { Plus, Check } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+import { Plus, Check, Repeat } from 'lucide-react'; // 1. Importar Repeat
+// --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
 
 // Componente de la tarjeta de ejercicio en la lista
-const ExerciseListItem = ({ exercise, onAdd, onView, isStaged, t }) => {
+const ExerciseListItem = ({
+  exercise,
+  onAdd,
+  onView,
+  isStaged,
+  t,
+  // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+  isReplacing = false, // 2. Recibir la prop
+  // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+}) => {
   const handleAddClick = (e) => {
     e.stopPropagation();
     onAdd(exercise);
@@ -60,18 +71,33 @@ const ExerciseListItem = ({ exercise, onAdd, onView, isStaged, t }) => {
           {translatedDescription} {/* Usar descripción traducida */}
         </p>
       </div>
-      <button
-        onClick={handleAddClick}
-        disabled={isStaged}
-        className={`p-3 rounded-full transition ${
-          isStaged
-            ? 'bg-green/20 text-green'
-            : 'bg-accent/10 text-accent hover:bg-accent/20'
-        }`}
-        title={isStaged ? t('exercise_ui:added', 'Añadido') : t('exercise_ui:add_to_cart', 'Añadir al carrito')}
-      >
-        {isStaged ? <Check size={20} /> : <Plus size={20} />}
-      </button>
+
+      {/* --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
+      {isReplacing ? (
+        // 3. Botón en modo "Reemplazar"
+        <button
+          onClick={handleAddClick}
+          className="p-3 rounded-full transition bg-accent/10 text-accent hover:bg-accent/20"
+          title={t('exercise_ui:replace_with_this', 'Reemplazar con este')}
+        >
+          <Repeat size={20} />
+        </button>
+      ) : (
+        // 4. Botón en modo "Añadir" (comportamiento original)
+        <button
+          onClick={handleAddClick}
+          disabled={isStaged}
+          className={`p-3 rounded-full transition ${
+            isStaged
+              ? 'bg-green/20 text-green'
+              : 'bg-accent/10 text-accent hover:bg-accent/20'
+          }`}
+          title={isStaged ? t('exercise_ui:added', 'Añadido') : t('exercise_ui:add_to_cart', 'Añadir al carrito')}
+        >
+          {isStaged ? <Check size={20} /> : <Plus size={20} />}
+        </button>
+      )}
+      {/* --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
     </div>
   );
 };
