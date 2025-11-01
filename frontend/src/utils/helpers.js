@@ -54,3 +54,19 @@ export const calculate1RM = (weight, reps) => {
   return Math.round(estimated1RM * 100) / 100;
 };
 // --- FIN DE LA MODIFICACIÓN ---
+
+// --- INICIO DE LA MODIFICACIÓN (FIX BUG) ---
+/**
+ * Reordena un array moviendo un elemento de un índice a otro.
+ * @param {Array} list - El array original.
+ * @param {number} startIndex - El índice del elemento a mover.
+ * @param {number} endIndex - El índice donde se insertará el elemento.
+ * @returns {Array} Un nuevo array reordenado.
+ */
+export const reorder = (list, startIndex, endIndex) => {
+  const result = Array.from(list);
+  const [removed] = result.splice(startIndex, 1);
+  result.splice(endIndex, 0, removed);
+  return result;
+};
+// --- FIN DE LA MODIFICACIÓN (FIX BUG) ---

@@ -60,11 +60,12 @@ export const useRoutineLoader = ({
           
           if (!fullExercise) {
             // Caso 1: Ejercicio manual o no encontrado en la BD
+            // (Este caso ya era correcto, coge ex.muscle_group)
             return {
               tempId: uuidv4(), // ID temporal para el UI
               id: ex.exercise_list_id, 
               name: ex.name,
-              muscle_group: ex.muscle_group,
+              muscle_group: ex.muscle_group, // <-- Correcto
               sets: ex.sets,
               reps: ex.reps,
               rest_seconds: ex.rest_seconds ?? ex.rest_time ?? 60, 
@@ -82,7 +83,13 @@ export const useRoutineLoader = ({
             tempId: uuidv4(),
             id: fullExercise.id, // Aseguramos el ID correcto
             name: ex.name, 
-            muscle_group: fullExercise.category || fullExercise.muscle_group, 
+            
+            // --- INICIO DE LA MODIFICACIÓN (EL BUG ESTABA AQUÍ) ---
+            // Priorizamos el 'muscle_group' guardado en la rutina (ej: "Pechito")
+            // Si no existe, usamos el del template (ej: "chest")
+            muscle_group: ex.muscle_group || fullExercise.category || fullExercise.muscle_group, 
+            // --- FIN DE LA MODIFICACIÓN ---
+            
             sets: ex.sets, // Usamos los datos guardados en la rutina
             reps: ex.reps, // Usamos los datos guardados en la rutina
             // (FIX: Mantiene el valor 'rest_seconds' guardado en la rutina,

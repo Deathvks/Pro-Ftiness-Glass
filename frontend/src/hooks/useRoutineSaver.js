@@ -6,17 +6,7 @@ import i18n from '../i18n';
  * Hook para manejar la validación, guardado (crear/actualizar) y borrado de la rutina.
  *
  * @param {Object} params
- * @param {string} params.id - El ID de la rutina (si existe).
- * @param {string} params.routineName - Nombre de la rutina.
- * @param {string} params.description - Descripción de la rutina.
- * @param {Array} params.exercises - Lista de ejercicios.
- * @param {function} params.addToast - Función para mostrar notificaciones.
- * @param {function} params.handleSaveProp - Callback a ejecutar tras guardar/borrar.
- * @param {function} params.onCancel - Callback a ejecutar si se cancela (ej. borrado).
- * @param {function} params.setIsSaving - Setter para el estado de guardado.
- * @param {function} params.setIsDeleting - Setter para el estado de borrado.
- * @param {function} params.setValidationError - Setter para el error de validación.
- * @param {function} params.setShowDeleteConfirm - Setter para el modal de confirmación.
+ * (parámetros omitidos por brevedad)
  * @returns {Object} Funciones handleSave y handleDelete.
  */
 export const useRoutineSaver = ({
@@ -33,7 +23,6 @@ export const useRoutineSaver = ({
   setShowDeleteConfirm,
 }) => {
 
-  // Obtenemos las acciones C.R.U.D. del store (Zustand)
   const { createRoutine, updateRoutine, deleteRoutine } = useAppStore(state => ({
     createRoutine: state.createRoutine,
     updateRoutine: state.updateRoutine,
@@ -79,21 +68,43 @@ export const useRoutineSaver = ({
     if (!validateRoutine()) return;
     setIsSaving(true);
     
+    console.log('[useRoutineSaver] Iniciando guardado de rutina...');
+    
     // 1. Preparamos los datos de la rutina para la API
     const routineData = {
       name: routineName,
       description: description,
       exercises: exercises.map((ex, index) => {
         // Normalizamos el 'rest_seconds'
-        // Si es un número válido (incluido 0), se guarda.
-        // Si es NaN (ej: un string vacío ""), se guarda 60 por defecto.
         const rest = parseInt(ex.rest_seconds, 10);
         const restValue = !isNaN(rest) ? rest : 60;
+
+        // --- INICIO DE LA MODIFICACIÓN ---
+        console.log(`[useRoutineSaver] Procesando Ejercicio: ${ex.name}`);
+        console.log(`[useRoutineSaver] Valor muscle_group original: '${ex.muscle_group}' (Tipo: ${typeof ex.muscle_group})`);
+
+        // 1. Limpiamos el valor (quitamos espacios) si no es null/undefined
+        const trimmedMuscleGroup = ex.muscle_group ? String(ex.muscle_group).trim() : null;
+        
+        let muscleGroupValue;
+        // 2. Comprobamos si el valor es nulo, vacío, 'N/A', o el string traducido 'Otro'.
+        //    Si es así, lo normalizamos a la CLAVE 'Other'.
+        if (!trimmedMuscleGroup || trimmedMuscleGroup === 'N/A' || trimmedMuscleGroup === 'Otro') {
+          muscleGroupValue = 'Other'; // Usamos la CLAVE 'Other'
+          console.log(`[useRoutineSaver] Valor detectado como nulo, vacío, 'N/A' o 'Otro'. Asignando: 'Other'.`);
+        } else {
+          // El valor ya es un key válido (ej: 'Chest', 'Back', o 'Other' del dropdown)
+          muscleGroupValue = trimmedMuscleGroup;
+          console.log(`[useRoutineSaver] Usando valor existente (es un key): '${muscleGroupValue}'`);
+        }
+        // --- FIN DE LA MODIFICACIÓN ---
 
         return {
           exercise_list_id: ex.id,
           name: ex.name,
-          muscle_group: ex.muscle_group,
+          // --- INICIO DE LA MODIFICACIÓN ---
+          muscle_group: muscleGroupValue, // Usamos el valor normalizado (la CLAVE)
+          // --- FIN DE LA MODIFICACIÓN ---
           sets: parseInt(ex.sets, 10),
           reps: ex.reps,
           rest_seconds: restValue,
@@ -105,17 +116,22 @@ export const useRoutineSaver = ({
       })
     };
     
+    console.log('[useRoutineSaver] Datos a enviar a la API:', routineData);
+
     try {
       let result;
       // 2. Decidimos si CREAR o ACTUALIZAR
       if (id) {
+        console.log(`[useRoutineSaver] Actualizando rutina ID: ${id}`);
         result = await updateRoutine(id, routineData);
       } else {
+        console.log('[useRoutineSaver] Creando nueva rutina...');
         result = await createRoutine(routineData);
       }
       
       // 3. Manejamos la respuesta
       if (result.success) {
+        console.log('[useRoutineSaver] Guardado exitoso.');
         addToast(result.message, 'success');
         handleSaveProp(); // Ejecutamos el callback (ej: navegar atrás)
       } else {
@@ -123,6 +139,7 @@ export const useRoutineSaver = ({
       }
 
     } catch (error) {
+      console.error('[useRoutineSaver] Error al guardar:', error);
       addToast(error.message || 'Error al guardar la rutina', 'error');
     } finally {
       setIsSaving(false);
@@ -139,10 +156,12 @@ export const useRoutineSaver = ({
     }
     
     setIsDeleting(true);
+    console.log(`[useRoutineSaver] Eliminando rutina ID: ${id}`);
     try {
       const result = await deleteRoutine(id);
       
       if (result.success) {
+        console.log('[useRoutineSaver] Eliminación exitosa.');
         addToast(result.message, 'success');
         handleSaveProp(); // Ejecutamos el callback (ej: navegar atrás)
       } else {
@@ -150,6 +169,7 @@ export const useRoutineSaver = ({
       }
 
     } catch (error) {
+      console.error('[useRoutineSaver] Error al eliminar:', error);
       addToast(error.message || 'Error al eliminar la rutina', 'error');
     } finally {
       setIsDeleting(false);

@@ -10,14 +10,20 @@ const RestTimerModal = () => {
     startRestTimer,
     stopRestTimer,
     addRestTime,
-    resetRestTimer, // <-- 1. Importar la nueva acción
+    resetRestTimer,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    plannedRestTime, // 1. Importar el tiempo planeado
+    // --- FIN DE LA MODIFICACIÓN ---
   } = useAppStore(state => ({
     restTimerEndTime: state.restTimerEndTime,
     restTimerInitialDuration: state.restTimerInitialDuration,
     startRestTimer: state.startRestTimer,
     stopRestTimer: state.stopRestTimer,
     addRestTime: state.addRestTime,
-    resetRestTimer: state.resetRestTimer, // <-- 1. Importar la nueva acción
+    resetRestTimer: state.resetRestTimer,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    plannedRestTime: state.plannedRestTime, // 1. Importar el tiempo planeado
+    // --- FIN DE LA MODIFICACIÓN ---
   }));
 
   const [timeLeft, setTimeLeft] = useState(0);
@@ -35,10 +41,8 @@ const RestTimerModal = () => {
       const newTimeLeft = Math.max(0, remaining);
       setTimeLeft(newTimeLeft);
       
-      // Si llegó a 0, detener el timer automáticamente
       if (remaining <= 0 && restTimerEndTime) {
         // Opcional: puedes agregar una notificación aquí
-        // addToast('¡Tiempo de descanso terminado!', 'info');
       }
     };
 
@@ -85,13 +89,10 @@ const RestTimerModal = () => {
     }
   };
   
-  // --- INICIO DE LA MODIFICACIÓN ---
   const goBackToSelect = () => {
-    // 2. Usar la nueva acción que resetea el tiempo sin cerrar el modal
     resetRestTimer();
     setView('select');
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -103,6 +104,12 @@ const RestTimerModal = () => {
     ? ((restTimerInitialDuration - timeLeft) / restTimerInitialDuration) * 100
     : timeLeft === 0 ? 100 : 0;
   
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // 2. Definir el tiempo planeado (con un fallback) y formatearlo
+  const planned = plannedRestTime || 90;
+  const formattedPlanned = formatTime(planned);
+  // --- FIN DE LA MODIFICACIÓN ---
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
       <GlassCard 
@@ -133,10 +140,19 @@ const RestTimerModal = () => {
                 />
               </svg>
               <div className="absolute font-mono text-5xl font-bold text-text-secondary">
-                {/* 3. Se asegura de que al volver, se muestre 0:00 */}
                 {restTimerEndTime ? formatTime(timeLeft) : '0:00'}
               </div>
             </div>
+
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* 3. Añadir botón principal para el tiempo planeado */}
+            <button 
+              onClick={() => handleStartPreset(planned)}
+              className="w-full p-4 mb-4 bg-accent text-bg-secondary rounded-md border border-accent/50 hover:bg-accent/80 transition font-semibold text-lg"
+            >
+              Iniciar Planeado ({formattedPlanned})
+            </button>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             <div className="grid grid-cols-3 gap-4 mb-6">
               {[60, 120, 180].map(time => (

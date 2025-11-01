@@ -4,6 +4,8 @@ import { Trash2, GripVertical, Repeat, Image as ImageIcon } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import ExerciseSearchInput from '../ExerciseSearchInput';
 import { useTranslation } from 'react-i18next';
+// 1. Importamos el nuevo componente
+import EditableMuscleGroup from './EditableMuscleGroup';
 
 // Clases de input (sin cambios)
 const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-3 py-2 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition text-center";
@@ -13,9 +15,7 @@ const baseLabelClasses = "block text-xs font-medium text-text-muted mb-1 text-ce
 
 const ExerciseCard = ({
   exercise,
-  // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
   // 1. Eliminamos 'exIndex', ya no se usa en este componente.
-  // --- FIN DE LA MODIFICACIÓN ---
   errors,
   onFieldChange,
   onExerciseSelect,
@@ -25,11 +25,10 @@ const ExerciseCard = ({
 }) => {
 
   const { t: tName } = useTranslation('exercise_names');
-  const { t: tMuscle } = useTranslation('exercise_muscles');
+  // 2. Eliminamos 'tMuscle' y 'translatedMuscle' ya que no se usan más.
   const { t: tCommon } = useTranslation('translation');
 
   const translatedName = tName(exercise.name, { defaultValue: exercise.name });
-  const translatedMuscle = tMuscle(exercise.muscle_group, { defaultValue: exercise.muscle_group || '' });
 
   const handleExerciseSelected = (selectedExercise) => {
     onExerciseSelect(exercise.tempId, selectedExercise);
@@ -79,7 +78,7 @@ const ExerciseCard = ({
                 /* --- INICIO DE LA MODIFICACIÓN (Image fit) --- */
                 // Cambiamos 'object-cover' a 'object-contain'
                 className="w-full h-full object-contain"
-                /* --- FIN DE LA MODIFICACIÓN (Image fit) --- */
+                /* --- FIN DE la MODIFICACIÓN (Image fit) --- */
                 loading="lazy"
               />
             )
@@ -93,7 +92,7 @@ const ExerciseCard = ({
 
         {/* Columna de Información (Nombre, Músculo, Inputs) */}
         {/* Hacemos que este contenedor use flex-col y centre sus items en móvil,
-             y que se estire (comportamiento normal) en 'sm' y más grande */}
+            y que se estire (comportamiento normal) en 'sm' y más grande */}
         {/* Añadimos 'sm:w-3/5' para que ocupe el 60% restante en desktop */}
         <div className="flex-grow min-w-0 w-full sm:w-3/5 flex flex-col items-center sm:items-stretch">
         
@@ -104,16 +103,20 @@ const ExerciseCard = ({
             className="w-full" // Añadido para asegurar el stretch en desktop
           />
           
-          {/* Grupo Muscular (Input) */}
-          <input
-            type="text"
-            placeholder={tCommon('Grupo Muscular', { defaultValue: 'Grupo Muscular' })}
-            value={translatedMuscle}
-            // --- INICIO DE LA MODIFICACIÓN ---
-            onChange={(e) => onFieldChange(exercise.tempId, 'muscle_group', e.target.value)}
-            // --- FIN DE LA MODIFICACIÓN ---
-            className="w-full capitalize mt-1 truncate bg-transparent border-none p-0 focus:outline-none focus:ring-0 text-text-secondary text-center sm:text-left"
-          />
+          {/* --- INICIO DE LA MODIFICACIÓN --- */}
+          {/* Añadimos 'mt-2' para separación superior */}
+          <div className="mt-2">
+            {/* Cambiamos 'text-center' (de baseLabelClasses) a 'text-left' */}
+            <label className="block text-xs font-medium text-text-muted mb-1 text-left">
+              {tCommon('Grupo Muscular', { defaultValue: 'Grupo Muscular' })}
+            </label>
+            <EditableMuscleGroup
+              initialValue={exercise.muscle_group || ''}
+              onSave={(newValue) => onFieldChange(exercise.tempId, 'muscle_group', newValue)}
+              isManual={exercise.is_manual}
+            />
+          </div>
+          {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           {/* Inputs (Series, Reps Y Descanso) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 w-full">

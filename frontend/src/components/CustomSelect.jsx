@@ -1,3 +1,4 @@
+/* frontend/src/components/CustomSelect.jsx */
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
@@ -6,11 +7,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef(null);
-  
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Añadimos una referencia para el propio menú desplegable.
   const dropdownRef = useRef(null);
-  // --- FIN DE LA CORRECCIÓN ---
 
   useLayoutEffect(() => {
     if (isOpen && buttonRef.current) {
@@ -25,34 +22,50 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // --- INICIO DE LA CORRECCIÓN ---
-      // Ahora solo cerramos el menú si el clic es fuera TANTO del botón COMO del menú desplegable.
       if (
         buttonRef.current && !buttonRef.current.contains(event.target) &&
         dropdownRef.current && !dropdownRef.current.contains(event.target)
       ) {
         setIsOpen(false);
       }
-      // --- FIN DE LA CORRECCIÓN ---
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]); // Se añade isOpen para que el listener se actualice correctamente.
+  }, []); // Dependencia vacía es correcta para este listener
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // NUEVO: Cierra el dropdown al hacer scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      // Si está abierto, ciérralo.
+      setIsOpen(false);
+    };
+
+    if (isOpen) {
+      // Añade el listener solo si el dropdown está abierto
+      // 'true' (fase de captura) es más fiable para coger todos los eventos de scroll
+      document.addEventListener('scroll', handleScroll, true);
+    }
+
+    // Limpieza: elimina el listener cuando el dropdown se cierra o el componente se desmonta
+    return () => {
+      document.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen]); // La dependencia clave es 'isOpen'
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const selectedOption = options.find(opt => opt.value === value);
 
   const DropdownPortal = () => createPortal(
     <div
-      // --- INICIO DE LA CORRECCIÓN ---
-      ref={dropdownRef} // Asignamos la referencia al contenedor del menú.
-      // --- FIN DE LA CORRECCIÓN ---
+      ref={dropdownRef}
       style={{
         position: 'absolute',
         top: `${position.top + 8}px`,
         left: `${position.left}px`,
         width: `${position.width}px`,
       }}
-      className="bg-bg-secondary border border-glass-border rounded-xl shadow-lg max-h-48 overflow-y-auto z-[9999] p-2 animate-[fade-in-up_0.2s_ease-out]"
+      className="bg-bg-secondary border border-glass-border rounded-xl shadow-lg max-h-48 overflow-y-auto z-[9999] p-2 animate-[fade-in-up_0.2s_ease_out]"
     >
       {options.map(option => (
         <button
@@ -81,6 +94,10 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary text-left outline-none transition flex items-center justify-between gap-2 hover:border-accent/60"
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Añadimos 'disabled' para evitar clicks mientras se calcula la posición
+        disabled={isOpen && position.top === 0} 
+        // --- FIN DE LA MODIFICACIÓN ---
       >
         <span className={selectedOption ? 'text-text-primary' : 'text-text-secondary'}>
           {selectedOption ? selectedOption.label : placeholder}
