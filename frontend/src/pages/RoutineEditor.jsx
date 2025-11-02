@@ -34,6 +34,9 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
 
     handleSave,
     handleDelete,
+    // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
+    handleCancel, // <-- 1. Obtenemos el handleCancel envuelto del hook
+    // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
     addExercise,
     updateExerciseField,
     linkExerciseFromList, // <-- Esta es la función de reemplazo
@@ -92,7 +95,9 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
       
       <RoutineHeader
         id={id}
-        onCancel={onCancel}
+        // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
+        onCancel={handleCancel} // <-- 2. Usamos el handleCancel del hook
+        // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
         validationError={validationError}
         routineName={routineName}
         setRoutineName={setRoutineName}

@@ -7,17 +7,17 @@ import { getExerciseList } from '../services/exerciseService';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Hook para manejar la carga (hidratación) inicial de la rutina
- * cuando se proporciona un 'id'.
- *
- * @param {Object} params
- * @param {string} params.id - El ID de la rutina a cargar (si existe).
- * @param {function} params.addToast - Función para mostrar notificaciones.
- * @param {function} params.onCancel - Función a llamar si la carga falla.
- * @param {function} params.setIsLoading - Setter para el estado de carga.
- * @param {function} params.setRoutineName - Setter para el nombre de la rutina.
- * @param {function} params.setDescription - Setter para la descripción.
- * @param {function} params.setExercises - Setter para la lista de ejercicios.
+ * Hook para manejar la carga (hidratación) inicial de la rutina
+ * cuando se proporciona un 'id'.
+ *
+ * @param {Object} params
+ * @param {string} params.id - El ID de la rutina a cargar (si existe).
+ * @param {function} params.addToast - Función para mostrar notificaciones.
+ * @param {function} params.onCancel - Función a llamar si la carga falla.
+ * @param {function} params.setIsLoading - Setter para el estado de carga.
+ * @param {function} params.setRoutineName - Setter para el nombre de la rutina.
+ * @param {function} params.setDescription - Setter para la descripción.
+ * @param {function} params.setExercises - Setter para la lista de ejercicios.
  */
 export const useRoutineLoader = ({
   id,
@@ -27,6 +27,9 @@ export const useRoutineLoader = ({
   setRoutineName,
   setDescription,
   setExercises,
+  // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
+  exercises, // 1. Recibimos el array de ejercicios (posiblemente del borrador)
+  // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
 }) => {
   useEffect(() => {
     const loadRoutine = async () => {
@@ -36,6 +39,15 @@ export const useRoutineLoader = ({
         return;
       }
 
+      // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
+      // 2. Si ya hay ejercicios cargados (desde el borrador), no sobrescribir.
+      if (exercises && exercises.length > 0) {
+        setIsLoading(false); // Ya está cargado (el borrador)
+        return;
+      }
+      // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
+
+      // Si hay ID pero no hay ejercicios (borrador), cargar desde la BD
       setIsLoading(true);
       try {
         // 1. Obtenemos los datos maestros (lista de ejercicios y datos de la rutina)
@@ -117,6 +129,8 @@ export const useRoutineLoader = ({
     // Ejecutamos la carga
     loadRoutine();
     
-    // Dependencias del useEffect: se ejecuta si cambia alguna de estas props.
-  }, [id, addToast, onCancel, setIsLoading, setRoutineName, setDescription, setExercises]);
+    // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
+    // 3. Añadimos 'exercises' al array de dependencias.
+  }, [id, addToast, onCancel, setIsLoading, setRoutineName, setDescription, setExercises, exercises]);
+  // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
 };

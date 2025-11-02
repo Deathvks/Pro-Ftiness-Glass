@@ -1,9 +1,38 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseSummaryView.jsx */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ChevronLeft, Trash2, Check } from 'lucide-react';
 
 // Componente para la vista de Resumen/Carrito
 const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFinalize, t }) => {
+
+  // (Lógica de validación de la tarea anterior - ya es correcta)
+  const isCartValid = useMemo(() => {
+    if (stagedExercises.length === 0) {
+      return false; 
+    }
+    
+    return stagedExercises.every(item => {
+      const setsNum = parseInt(item.sets, 10);
+      const isSetsValid = !isNaN(setsNum) && setsNum > 0;
+      
+      const repsVal = String(item.reps).trim();
+      let isRepsValid = false;
+      if (repsVal !== '') { 
+        const repsNum = parseInt(repsVal, 10);
+        
+        if (String(repsNum) === repsVal) {
+          isRepsValid = repsNum > 0;
+        } else {
+          isRepsValid = true;
+        }
+      }
+      
+      const restNum = parseInt(item.rest_seconds, 10);
+      const isRestValid = !isNaN(restNum) && restNum >= 0; 
+      
+      return isSetsValid && isRepsValid && isRestValid;
+    });
+  }, [stagedExercises]);
 
   return (
     <div className="flex flex-col h-full">
@@ -37,14 +66,14 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
               <div key={item.exercise.id} className="bg-bg-secondary rounded-xl border border-glass-border p-4">
                 <div className="flex items-start gap-4">
                   <img
-                    src={item.exercise.image_url_start || '/logo.webp'} // (Fallback sin cambios)
+                    src={item.exercise.image_url_start || '/logo.webp'} 
                     alt={`Imagen de ${translatedName}`}
                     className="w-12 h-12 rounded-md object-cover border border-glass-border"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{translatedName}</p> {/* (Sin cambios) */}
+                    <p className="font-semibold truncate">{translatedName}</p>
                     <p className="text-sm text-text-muted capitalize">
-                      {translatedMuscle} {/* (Sin cambios) */}
+                      {translatedMuscle}
                     </p>
                   </div>
                   <button
@@ -59,15 +88,18 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
                     <label className="text-xs text-text-muted">{t('exercise_ui:sets', 'Series')}</label>
                     <input
                       type="number"
+                      // --- INICIO DE LA MODIFICACIÓN ---
+                      min="1" // No permite 0 o negativos
+                      // --- FIN DE LA MODIFICACIÓN ---
                       value={item.sets}
-                      onChange={(e) => onUpdate(item.exercise.id, 'sets', Number(e.target.value))}
+                      onChange={(e) => onUpdate(item.exercise.id, 'sets', e.target.value)}
                       className="w-full text-center px-3 py-2 rounded-md bg-bg-primary border border-glass-border"
                     />
                   </div>
                   <div>
                     <label className="text-xs text-text-muted">{t('exercise_ui:reps', 'Reps')}</label>
                     <input
-                      type="text"
+                      type="text" // Se mantiene 'text' para '8-12'
                       value={item.reps}
                       onChange={(e) => onUpdate(item.exercise.id, 'reps', e.target.value)}
                       className="w-full text-center px-3 py-2 rounded-md bg-bg-primary border border-glass-border"
@@ -75,14 +107,15 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
                   </div>
                   <div>
                     <label className="text-xs text-text-muted">{t('exercise_ui:rest_s', 'Desc. (s)')}</label>
-                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
                     <input
                       type="number"
-                      value={item.rest_seconds} // <-- CAMBIADO DE rest_time
-                      onChange={(e) => onUpdate(item.exercise.id, 'rest_seconds', Number(e.target.value))} // <-- CAMBIADO DE rest_time
+                      // --- INICIO DE LA MODIFICACIÓN ---
+                      min="0" // No permite negativos
+                      // --- FIN DE LA MODIFICACIÓN ---
+                      value={item.rest_seconds} 
+                      onChange={(e) => onUpdate(item.exercise.id, 'rest_seconds', e.target.value)}
                       className="w-full text-center px-3 py-2 rounded-md bg-bg-primary border border-glass-border"
                     />
-                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                   </div>
                 </div>
               </div>
@@ -91,11 +124,11 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
         )}
       </div>
 
-      {/* Footer (Finalizar) (sin cambios) */}
+      {/* Footer (Finalizar) */}
       <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm">
         <button
           onClick={onFinalize}
-          disabled={stagedExercises.length === 0}
+          disabled={stagedExercises.length === 0 || !isCartValid}
           className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-accent text-bg-secondary font-bold text-lg transition hover:scale-105 disabled:opacity-50"
         >
           <Check size={24} />

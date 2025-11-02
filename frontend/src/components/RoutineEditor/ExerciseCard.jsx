@@ -128,11 +128,12 @@ const ExerciseCard = ({
               </label>
               <input
                 type="number"
+                // --- INICIO DE LA MODIFICACIÓN (Validación UI) ---
+                min="1" // No permite 0 o negativos
+                // --- FIN DE LA MODIFICACIÓN (Validación UI) ---
                 placeholder="3"
                 value={exercise.sets || ''}
-                // --- INICIO DE LA MODIFICACIÓN ---
                 onChange={(e) => onFieldChange(exercise.tempId, 'sets', e.target.value)}
-                // --- FIN DE LA MODIFICACIÓN ---
                 className={baseInputClasses}
               />
               {errors?.sets && <p className="text-red text-xs mt-1">{errors.sets}</p>}
@@ -144,12 +145,10 @@ const ExerciseCard = ({
                 {tCommon('Reps', { defaultValue: 'Reps' })}
               </label>
               <input
-                type="text"
+                type="text" // (Se mantiene en texto para rangos como '8-12')
                 placeholder="8-12"
                 value={exercise.reps || ''}
-                // --- INICIO DE LA MODIFICACIÓN ---
                 onChange={(e) => onFieldChange(exercise.tempId, 'reps', e.target.value)}
-                // --- FIN DE LA MODIFICACIÓN ---
                 className={baseInputClasses}
               />
               {errors?.reps && <p className="text-red text-xs mt-1">{errors.reps}</p>}
@@ -162,11 +161,12 @@ const ExerciseCard = ({
               </label>
               <input
                 type="number"
+                // --- INICIO DE LA MODIFICACIÓN (Validación UI) ---
+                min="0" // No permite negativos
+                // --- FIN DE LA MODIFICACIÓN (Validación UI) ---
                 placeholder="60"
                 value={exercise.rest_seconds || ''}
-                // --- INICIO DE LA MODIFICACIÓN ---
                 onChange={(e) => onFieldChange(exercise.tempId, 'rest_seconds', e.target.value)}
-                // --- FIN DE LA MODIFICACIÓN ---
                 className={baseInputClasses}
               />
             </div>

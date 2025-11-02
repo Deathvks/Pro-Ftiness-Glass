@@ -10,17 +10,23 @@ import { useRoutineGrouping } from './useRoutineGrouping';
 // Importamos los hooks de utilidades
 import { useToast } from '../hooks/useToast';
 
+// Claves de borrador (deben coincidir)
+const DRAFT_KEY = 'routineEditorDraft'; // Borrador de la rutina
+// --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
+const CART_DRAFT_KEY = 'exerciseSearchCartDraft'; // Borrador del carrito
+// --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
+
 /**
- * Hook principal (orquestador) para el editor de rutinas.
- * Combina todos los sub-hooks (estado, carga, guardado, acciones)
- * para proporcionar la funcionalidad completa al componente.
- *
- * @param {Object} params
- * @param {Object} params.initialRoutine - La rutina inicial (si se edita).
- * @param {function} params.onSave - Callback a ejecutar tras guardar/borrar.
- * @param {function} params.onCancel - Callback a ejecutar al cancelar.
- * @returns {Object} Todo el estado y funciones necesarias para el editor.
- */
+* Hook principal (orquestador) para el editor de rutinas.
+* Combina todos los sub-hooks (estado, carga, guardado, acciones)
+* para proporcionar la funcionalidad completa al componente.
+*
+* @param {Object} params
+* @param {Object} params.initialRoutine - La rutina inicial (si se edita).
+* @param {function} params.onSave - Callback a ejecutar tras guardar/borrar.
+* @param {function} params.onCancel - Callback a ejecutar al cancelar.
+* @returns {Object} Todo el estado y funciones necesarias para el editor.
+*/
 export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCancel }) => {
   const id = initialRoutine?.id;
   const { addToast } = useToast();
@@ -29,7 +35,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   const {
     routineName, setRoutineName,
     description, setDescription,
-    exercises, setExercises,
+    exercises, setExercises, // <-- 'exercises' ahora puede venir del borrador
     isLoading, setIsLoading,
     isSaving, setIsSaving,
     isDeleting, setIsDeleting,
@@ -49,19 +55,31 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     setRoutineName,
     setDescription,
     setExercises,
+    // Le pasamos el array de ejercicios. Si tiene > 0 (del borrador),
+    // el loader sabrá que no debe fetchear la rutina.
+    exercises,
   });
 
   // 3. Hook de Acciones de Modal
   const {
     handleOpenSearchForAdd,
     handleReplaceClick,
-    handleSearchModalClose, // <-- La función de cierre
+    handleSearchModalClose: originalHandleSearchModalClose, // <-- Renombramos el original
   } = useRoutineModalActions({
     setShowExerciseSearch,
     setReplacingExerciseTempId,
   });
 
+  // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
+  // Envolvemos 'handleSearchModalClose' para limpiar también el borrador del carrito
+  const handleSearchModalClose = () => {
+    localStorage.removeItem(CART_DRAFT_KEY);
+    originalHandleSearchModalClose(); // Llamar a la función original
+  };
+  // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
+
   // 4. Hook de Guardado/Borrado (Zustand, Validación)
+  // (Este hook ya limpia el DRAFT_KEY de la rutina al guardar/borrar)
   const { handleSave, handleDelete } = useRoutineSaver({
     id,
     routineName,
@@ -99,58 +117,45 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   // 6. Hook de Estado Derivado (Agrupación de ejercicios)
   const groupedExercises = useRoutineGrouping(exercises);
 
-  // --- INICIO DE LA MODIFICACIÓN (FIX STALE STATE) ---
-  // 7. Creamos las funciones "wrapper" AQUÍ
-  // Estas funciones se re-crearán CADA VEZ que el estado cambie,
-  // (incluyendo 'replacingExerciseTempId'), por lo que NUNCA estarán obsoletas.
-
-  /**
-   * Reemplaza el ejercicio (seleccionado de la biblioteca)
-   */
+  // 7. Funciones "wrapper"
+  // (Wrappers para el fix de "stale state" de reemplazo)
   const handleSelectExerciseForReplace = (selectedExercise) => {
-    console.log('[useRoutineEditor] handleSelectExerciseForReplace CALLED');
-    console.log('==> Current replacingExerciseTempId:', replacingExerciseTempId);
-    
     if (replacingExerciseTempId) {
       linkExerciseFromList(replacingExerciseTempId, selectedExercise);
     } else {
       console.error('ERROR: Se intentó reemplazar, ¡pero replacingExerciseTempId era null!');
     }
-    handleSearchModalClose(); // Cierra el modal
+    handleSearchModalClose(); // Cierra el modal (y limpia el borrador del carrito)
   };
 
-  /**
-   * Reemplaza el ejercicio (con uno manual)
-   */
   const handleAddCustomExerciseForReplace = (exerciseName) => {
-    console.log('[useRoutineEditor] handleAddCustomExerciseForReplace CALLED');
-    console.log('==> Current replacingExerciseTempId:', replacingExerciseTempId);
-
     if (replacingExerciseTempId && exerciseName.trim() !== "") {
       const manualExercise = {
-        id: null,
-        name: exerciseName.trim(),
-        muscle_group: 'other',
-        category: 'other',
-        equipment: 'other',
-        is_manual: true,
-        image_url_start: null,
-        video_url: null,
+        id: null, name: exerciseName.trim(), muscle_group: 'other',
+        category: 'other', equipment: 'other', is_manual: true,
+        image_url_start: null, video_url: null,
       };
       linkExerciseFromList(replacingExerciseTempId, manualExercise);
     } else {
         console.error('ERROR: Se intentó reemplazar (manual), ¡pero replacingExerciseTempId era null o el nombre estaba vacío!');
     }
-    handleSearchModalClose(); // Cierra el modal
+    handleSearchModalClose(); // Cierra el modal (y limpia el borrador del carrito)
   };
-  // --- FIN DE LA MODIFICACIÓN (FIX STALE STATE) ---
+  
+  // Wrapper para 'onCancel' (de la tarea anterior)
+  const handleCancelWrapper = () => {
+    localStorage.removeItem(DRAFT_KEY); // Limpiar borrador de rutina
+    // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
+    localStorage.removeItem(CART_DRAFT_KEY); // Limpiar también el borrador del carrito
+    // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
+    onCancel(); // Llama a la función original (ej: setEditingRoutine(null))
+  };
 
 
   // --- RETURNED VALUES ---
-  // Devolvemos la misma "API" que el hook original
   return {
     id,
-    // Estados y Setters (de useRoutineState)
+    // Estados y Setters
     routineName, setRoutineName,
     description, setDescription,
     exercises,
@@ -162,13 +167,14 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     showExerciseSearch, setShowExerciseSearch,
     activeDropdownTempId, 
     setActiveDropdownTempId,
-    replacingExerciseTempId, // <-- Devolvemos el estado (para el 'isReplacing' del modal)
+    replacingExerciseTempId,
     
-    // Funciones de Guardado/Borrado (de useRoutineSaver)
+    // Funciones de Guardado/Borrado
     handleSave,
     handleDelete,
+    handleCancel: handleCancelWrapper, // Devolvemos el wrapper de cancelar
     
-    // Acciones de Ejercicios (de useRoutineExerciseActions)
+    // Acciones de Ejercicios
     addExercise,
     updateExerciseField,
     linkExerciseFromList,
@@ -179,18 +185,16 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     handleAddExercisesFromSearch,
     addCustomExercise, 
     
-    // Estado Derivado (de useRoutineGrouping)
+    // Estado Derivado
     groupedExercises,
     
-    // Acciones de Modal (de useRoutineModalActions)
+    // Acciones de Modal
     handleOpenSearchForAdd,
     handleReplaceClick,
-    handleSearchModalClose,
+    handleSearchModalClose, // Devolvemos el wrapper de cerrar modal
 
-    // --- INICIO DE LA MODIFICACIÓN (FIX STALE STATE) ---
-    // Devolvemos las nuevas funciones wrapper
+    // Wrappers de reemplazo
     handleSelectExerciseForReplace,
     handleAddCustomExerciseForReplace,
-    // --- FIN DE LA MODIFICACIÓN (FIX STALE STATE) ---
   };
 };

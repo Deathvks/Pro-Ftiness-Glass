@@ -40,8 +40,23 @@ const Routines = ({ setView }) => {
     createRoutine: state.createRoutine, // <-- Nueva
   }));
 
-  // Estado para manejar qué rutina se está editando (o null si ninguna)
-  const [editingRoutine, setEditingRoutine] = useState(null);
+  // --- INICIO DE LA MODIFICACIÓN (Persistencia de Estado) ---
+  // Cargar el estado de edición desde localStorage al iniciar
+  const [editingRoutine, setEditingRoutine] = useState(() => {
+    const savedEditingRoutine = localStorage.getItem('routinesEditingState');
+    if (savedEditingRoutine) {
+      try {
+        return JSON.parse(savedEditingRoutine);
+      } catch (e) {
+        console.error("Error al parsear rutina guardada:", e);
+        localStorage.removeItem('routinesEditingState'); // Limpiar estado corrupto
+        return null;
+      }
+    }
+    return null;
+  });
+  // --- FIN DE LA MODIFICACIÓN (Persistencia de Estado) ---
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,6 +76,19 @@ const Routines = ({ setView }) => {
   useEffect(() => {
     localStorage.setItem('routinesActiveTab', activeTab);
   }, [activeTab]);
+
+  // --- INICIO DE LA MODIFICACIÓN (Persistencia de Estado) ---
+  // Guardar el estado de edición en localStorage cuando cambie
+  useEffect(() => {
+    if (editingRoutine) {
+      // Si estamos editando, guardamos el estado de la rutina
+      localStorage.setItem('routinesEditingState', JSON.stringify(editingRoutine));
+    } else {
+      // Si no estamos editando (null), limpiamos el estado
+      localStorage.removeItem('routinesEditingState');
+    }
+  }, [editingRoutine]);
+  // --- FIN DE LA MODIFICACIÓN (Persistencia de Estado) ---
 
   const completedToday = useMemo(() => {
     if (!Array.isArray(workoutLog)) return new Set();
@@ -118,7 +146,7 @@ const Routines = ({ setView }) => {
     setIsLoading(true);
     try {
       // RoutineEditor ya ha guardado y mostrado su propio toast.
-      setEditingRoutine(null); // Cerrar el editor
+      setEditingRoutine(null); // Cerrar el editor (esto limpiará localStorage via useEffect)
       await fetchInitialData(); // Refrescar la lista de rutinas
     } catch (error) {
       // Este catch es por si fetchInitialData falla
@@ -214,7 +242,7 @@ const Routines = ({ setView }) => {
         key={editingRoutine.id || 'new'} // Añadir key para forzar re-montaje al cambiar
         routine={editingRoutine}
         onSave={handleSave} // Pasamos la función handleSave
-        onCancel={() => setEditingRoutine(null)}
+        onCancel={() => setEditingRoutine(null)} // Esto limpiará localStorage via useEffect
       />
     );
   }
