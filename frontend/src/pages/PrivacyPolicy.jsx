@@ -23,7 +23,9 @@ const PrivacyPolicy = ({ onBack }) => {
         <GlassCard className="p-6 md:p-8">
           <div className="space-y-8 text-text-secondary">
             <p className="text-lg">
-              En FitTrack-Pro, tu privacidad es fundamental. A continuación, te explicamos de forma clara y sencilla qué información guardamos y por qué.
+              {/* --- INICIO DE LA MODIFICACIÓN (CAMBIO DE NOMBRE) --- */}
+              En <strong>Pro Fitness Glass</strong>, tu privacidad es fundamental. A continuación, te explicamos de forma clara y sencilla qué información guardamos y por qué.
+              {/* --- FIN DE LA MODIFICACIÓN (CAMBIO DE NOMBRE) --- */}
             </p>
 
             <div className="space-y-3">
@@ -65,7 +67,7 @@ const PrivacyPolicy = ({ onBack }) => {
               </p>
             </div>
 
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* --- INICIO DE LA MODIFICACIÓN (AÑADIDO PARA PLAY STORE) --- */}
             <div className="space-y-3">
               <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
                 <Camera className="text-accent" />
@@ -82,6 +84,9 @@ const PrivacyPolicy = ({ onBack }) => {
                   <strong>Privacidad:</strong> Las fotos son privadas y están asociadas únicamente a tu cuenta. Se utilizan solo para que puedas consultarlas en tu historial personal. No se comparten con terceros ni se usan para ningún otro propósito.
                 </li>
               </ul>
+              <p>
+                Esto es necesario para la función de "Registro Nutricional" y es una de las declaraciones que debes hacer en la sección "Seguridad de los datos" de Google Play (declarando la recogida de "Fotos y vídeos").
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -90,7 +95,9 @@ const PrivacyPolicy = ({ onBack }) => {
                 Avisos Legales
               </h2>
               <p>
-                FitTrack-Pro es una herramienta de seguimiento y consulta diseñada para fines informativos y educativos.
+                {/* --- INICIO DE LA MODIFICACIÓN (CAMBIO DE NOMBRE) --- */}
+                <strong>Pro Fitness Glass</strong> es una herramienta de seguimiento y consulta diseñada para fines informativos y educativos.
+                {/* --- FIN DE LA MODIFICACIÓN (CAMBIO DE NOMBRE) --- */}
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
@@ -100,6 +107,9 @@ const PrivacyPolicy = ({ onBack }) => {
                   <strong>Uso Bajo Tu Responsabilidad:</strong> El uso de esta aplicación es bajo tu entera responsabilidad. El desarrollador no se hace responsable de ninguna lesión, problema de salud o resultado adverso derivado del uso de la información contenida en la aplicación.
                 </li>
               </ul>
+              <p>
+                Este descargo de responsabilidad es crucial para que Google apruebe una aplicación en la categoría de "Salud y fitness".
+              </p>
             </div>
             {/* --- FIN DE LA MODIFICACIÓN --- */}
 
