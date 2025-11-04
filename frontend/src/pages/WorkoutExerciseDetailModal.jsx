@@ -1,5 +1,5 @@
 /* frontend/src/pages/WorkoutExerciseDetailModal.jsx */
-import React, { useEffect, useState } from 'react'; // Importamos useState
+import React, { useEffect, useState } from 'react';
 import { X, Dumbbell, Repeat, Clock, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../components/GlassCard';
@@ -10,30 +10,30 @@ import useAppStore from '../store/useAppStore';
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Funciones del store
   const { getOrFetchAllExercises, updateActiveExerciseDetails } = useAppStore(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
     updateActiveExerciseDetails: state.updateActiveExerciseDetails,
   }));
 
-  // 1. Creamos un estado LOCAL para los detalles.
-  // Se inicializa con los detalles (posiblemente incompletos) del prop.
+  // Estado LOCAL para los detalles
   const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
   const [localIsLoading, setLocalIsLoading] = useState(false);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   if (!exercise) return null;
 
-  // 2. Usamos el 'name' (clave) del prop 'exercise', ya que es lo único 
-  //    fiable que tenemos al principio. 'localDetails.name' podría no estar.
   const nameKey = exercise.name;
 
 
-  // 3. Lógica de "Autocorrección"
+  // Lógica de "Autocorrección"
   useEffect(() => {
-    // Comprobamos si a NUESTRO ESTADO LOCAL le falta la descripción
-    if (!localDetails.description && nameKey) {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // La condición ahora comprueba si falta la descripción O si faltan las URLs de media.
+    const missingDescription = !localDetails.description;
+    const missingMedia = !localDetails.image_url && !localDetails.video_url;
+
+    if ((missingDescription || missingMedia) && nameKey) {
+    // --- FIN DE LA MODIFICACIÓN ---
       
       const fetchMissingDetails = async () => {
         setLocalIsLoading(true);
@@ -42,10 +42,9 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
           if (fullDetails) {
-            // 4. ¡AQUÍ ESTÁ LA MAGIA!
-            // Actualizamos el estado LOCAL. Esto fuerza un re-render INMEDIATO.
+            // Actualizamos el estado LOCAL (para re-renderizar AHORA)
             setLocalDetails(fullDetails); 
-            // Y actualizamos el estado GLOBAL (para la próxima vez)
+            // Actualizamos el estado GLOBAL (para la próxima vez)
             updateActiveExerciseDetails(nameKey, fullDetails);
           }
         } catch (error) {
@@ -57,16 +56,15 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
       fetchMissingDetails();
     }
-    // 5. Dependemos de 'nameKey' (del prop) y 'localDetails' (del state)
+    // Añadimos las nuevas variables a la lista de dependencias
   }, [nameKey, localDetails, getOrFetchAllExercises, updateActiveExerciseDetails]);
 
 
   /**
-   * 6. Lógica de descripción
-   * Ahora lee del estado 'localDetails'
+   * Lógica de descripción
+   * Lee del estado 'localDetails'
    */
   const getTranslatedDescription = () => {
-    // Leemos del estado local
     const descKey = localDetails.description; 
     
     const translated = t(descKey, { 
@@ -86,7 +84,6 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   };
 
   const description = getTranslatedDescription();
-  // Usamos el 'nameKey' original para el título, pero 'localDetails.name' para la traducción
   const titleKey = localDetails.name || nameKey;
 
   return (
