@@ -1,6 +1,6 @@
 /* frontend/src/pages/WorkoutExerciseDetailModal.jsx */
 import React, { useEffect, useState } from 'react';
-import { X, Dumbbell, Repeat, Clock, FileText } from 'lucide-react';
+import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon } from 'lucide-react'; // <-- Añadido ImageIcon
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../components/GlassCard';
 import ExerciseMedia from '../components/ExerciseMedia';
@@ -15,31 +15,20 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     updateActiveExerciseDetails: state.updateActiveExerciseDetails,
   }));
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-
-  // 1. ESTADO LOCAL: Mantenemos un estado local para los detalles.
-  // Se inicializa UNA VEZ con los props (posiblemente incompletos).
+  // --- (Sin cambios en el estado local y los hooks) ---
   const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
   const [localIsLoading, setLocalIsLoading] = useState(false);
+  const nameKey = exercise.name; 
 
-  const nameKey = exercise.name; // La clave del ejercicio
-
-  // 2. HOOK 1: EL SINCRONIZADOR
-  // Si el prop de ZUSTAND cambia, forzamos la actualización del estado local.
   useEffect(() => {
     setLocalDetails(exercise.exercise_details || {});
   }, [exercise.exercise_details]);
 
-
-  // 3. HOOK 2: EL AUTOCORRECTOR
-  // Se ejecuta UNA VEZ por ejercicio (cuando 'nameKey' cambia).
   useEffect(() => {
-    // Comprueba los datos que tenemos AHORA (en el estado local)
     const details = localDetails;
     const missingDescription = !details.description;
     const missingMedia = !details.image_url && !details.video_url;
 
-    // Si faltan datos Y tenemos una clave para buscar
     if ((missingDescription || missingMedia) && nameKey) {
       
       const fetchMissingDetails = async () => {
@@ -49,10 +38,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
           if (fullDetails) {
-            // 4. ¡LA DOBLE ACTUALIZACIÓN!
-            // Actualiza el estado LOCAL (para re-renderizar AHORA)
             setLocalDetails(fullDetails); 
-            // Actualiza el estado GLOBAL (para la próxima vez)
             updateActiveExerciseDetails(nameKey, fullDetails);
           }
         } catch (error) {
@@ -64,17 +50,10 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
       fetchMissingDetails();
     }
-  // 5. Depende SOLO de 'nameKey'. No depende de 'localDetails'
-  // para evitar bucles. Se ejecuta cuando el ejercicio cambia.
   }, [nameKey, getOrFetchAllExercises, updateActiveExerciseDetails]); 
+  // --- (Fin de la sección sin cambios) ---
 
-  // --- FIN DE LA MODIFICACIÓN ---
 
-
-  /**
-   * Lógica de descripción
-   * Lee del estado 'localDetails'
-   */
   const getTranslatedDescription = () => {
     const descKey = localDetails.description; 
     
@@ -111,8 +90,29 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           {t(titleKey, { ns: 'exercise_names', defaultValue: titleKey })}
         </h2>
 
-        {/* Media: Usa los 'localDetails' */}
-        <ExerciseMedia details={localDetails} className="w-full mx-auto mb-4" />
+        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        {/*
+          Si estamos cargando (localIsLoading), mostramos un Spinner.
+          Si no estamos cargando, Y ADEMÁS no tenemos media (incluso después de cargar),
+          mostramos el icono de fallback.
+          Solo si no estamos cargando Y TENEMOS media, renderizamos ExerciseMedia.
+        */}
+        {localIsLoading ? (
+          // 1. Estado de Carga
+          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
+            <Spinner />
+          </div>
+        ) : (localDetails.image_url || localDetails.video_url) ? (
+          // 2. Estado con Media
+          <ExerciseMedia details={localDetails} className="w-full mx-auto mb-4" />
+        ) : (
+          // 3. Estado sin Media (Fallback)
+          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
+            <ImageIcon size={48} />
+          </div>
+        )}
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
+
 
         {/* Datos del plan (sin cambios) */}
         <div className="space-y-3 mb-6">
@@ -139,7 +139,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </div>
         </div>
 
-        {/* Descripción: Usa el estado de carga local */}
+        {/* Descripción: Usa el estado de carga local (Sin cambios) */}
         {(localIsLoading || description) && (
           <div className="space-y-3">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
