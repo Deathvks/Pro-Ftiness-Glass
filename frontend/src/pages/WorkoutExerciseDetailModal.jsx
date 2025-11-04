@@ -1,72 +1,73 @@
 /* frontend/src/pages/WorkoutExerciseDetailModal.jsx */
-import React, { useEffect, useState } from 'react'; // <-- INICIO DE LA MODIFICACIÓN
+import React, { useEffect, useState } from 'react'; // Importamos useState
 import { X, Dumbbell, Repeat, Clock, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../components/GlassCard';
 import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner';
-import useAppStore from '../store/useAppStore'; // <-- INICIO DE LA MODIFICACIÓN
+import useAppStore from '../store/useAppStore';
 
-// 'isLoading' prop (cargando todo el entreno) ya no se usa aquí.
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
-  // 1. Cargamos los namespaces correctos
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
 
   // --- INICIO DE LA MODIFICACIÓN ---
-  // 2. Traemos las funciones de "autocorrección" del store
+  // Funciones del store
   const { getOrFetchAllExercises, updateActiveExerciseDetails } = useAppStore(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
     updateActiveExerciseDetails: state.updateActiveExerciseDetails,
   }));
 
-  // 3. Creamos un estado de carga LOCAL para este modal
+  // 1. Creamos un estado LOCAL para los detalles.
+  // Se inicializa con los detalles (posiblemente incompletos) del prop.
+  const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
   const [localIsLoading, setLocalIsLoading] = useState(false);
   // --- FIN DE LA MODIFICACIÓN ---
 
   if (!exercise) return null;
 
-  const details = exercise.exercise_details || {};
-  const nameKey = details.name || exercise.name;
+  // 2. Usamos el 'name' (clave) del prop 'exercise', ya que es lo único 
+  //    fiable que tenemos al principio. 'localDetails.name' podría no estar.
+  const nameKey = exercise.name;
 
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 4. Lógica de "Autocorrección" (copiada de la Biblioteca)
+  // 3. Lógica de "Autocorrección"
   useEffect(() => {
-    // Comprobamos si nos faltan los detalles clave (la descripción)
-    if (!details.description && nameKey) {
+    // Comprobamos si a NUESTRO ESTADO LOCAL le falta la descripción
+    if (!localDetails.description && nameKey) {
       
       const fetchMissingDetails = async () => {
-        setLocalIsLoading(true); // Mostrar spinner
+        setLocalIsLoading(true);
         try {
-          // 1. Obtenemos la lista maestra (de forma segura)
           const allExercises = await getOrFetchAllExercises();
-          
-          // 2. Buscamos los detalles completos por el 'name' (que es la clave)
           const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
           if (fullDetails) {
-            // 3. ACTUALIZAMOS el estado global del 'activeWorkout'
-            // Esto re-renderizará el modal con los datos nuevos.
+            // 4. ¡AQUÍ ESTÁ LA MAGIA!
+            // Actualizamos el estado LOCAL. Esto fuerza un re-render INMEDIATO.
+            setLocalDetails(fullDetails); 
+            // Y actualizamos el estado GLOBAL (para la próxima vez)
             updateActiveExerciseDetails(nameKey, fullDetails);
           }
         } catch (error) {
           console.error("Error al auto-corregir detalles del ejercicio:", error);
         } finally {
-          setLocalIsLoading(false); // Ocultar spinner
+          setLocalIsLoading(false);
         }
       };
 
       fetchMissingDetails();
     }
-  }, [nameKey, details.description, getOrFetchAllExercises, updateActiveExerciseDetails]);
-  // --- FIN DE LA MODIFICACIÓN ---
+    // 5. Dependemos de 'nameKey' (del prop) y 'localDetails' (del state)
+  }, [nameKey, localDetails, getOrFetchAllExercises, updateActiveExerciseDetails]);
 
 
   /**
-   * 5. Lógica de descripción (sin cambios, ahora funcionará)
+   * 6. Lógica de descripción
+   * Ahora lee del estado 'localDetails'
    */
   const getTranslatedDescription = () => {
-    const descKey = details.description; 
+    // Leemos del estado local
+    const descKey = localDetails.description; 
     
     const translated = t(descKey, { 
       ns: 'exercise_descriptions', 
@@ -81,11 +82,12 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       return descKey;
     }
 
-    // 2e. Corregido: Usamos la clave 'no_description_available' del JSON
     return t('no_description_available', { ns: 'exercise_ui' });
   };
 
   const description = getTranslatedDescription();
+  // Usamos el 'nameKey' original para el título, pero 'localDetails.name' para la traducción
+  const titleKey = localDetails.name || nameKey;
 
   return (
     <div
@@ -103,15 +105,15 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           <X size={24} />
         </button>
 
-        {/* Título (sin cambios) */}
+        {/* Título: Usa la clave de traducción de localDetails si existe, si no, la del prop */}
         <h2 className="text-2xl font-bold mb-4 pr-8 break-words">
-          {t(nameKey, { ns: 'exercise_names', defaultValue: nameKey })}
+          {t(titleKey, { ns: 'exercise_names', defaultValue: titleKey })}
         </h2>
 
-        {/* Media (sin cambios) */}
-        <ExerciseMedia details={details} className="w-full mx-auto mb-4" />
+        {/* Media: Usa los detalles locales */}
+        <ExerciseMedia details={localDetails} className="w-full mx-auto mb-4" />
 
-        {/* Datos del plan (sin cambios, ya estaban correctos) */}
+        {/* Datos del plan (sin cambios) */}
         <div className="space-y-3 mb-6">
           <h3 className="text-lg font-semibold text-text-secondary">
             {t('today_s_plan', { ns: 'exercise_ui' })}
@@ -136,21 +138,15 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </div>
         </div>
 
-        {/* Descripción (CORREGIDA) */}
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* 6. Usamos el estado de carga LOCAL */}
+        {/* Descripción: Usa el estado de carga local */}
         {(localIsLoading || description) && (
-        // --- FIN DE LA MODIFICACIÓN ---
           <div className="space-y-3">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
               <FileText size={20} className="text-accent" />
               {t('description', { ns: 'exercise_ui' })}
             </h3>
 
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* 7. Usamos el estado de carga LOCAL */}
             {localIsLoading ? (
-        // --- FIN DE LA MODIFICACIÓN ---
               <div className="flex justify-center items-center h-24">
                 <Spinner />
               </div>
