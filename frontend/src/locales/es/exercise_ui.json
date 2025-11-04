@@ -26,5 +26,9 @@
   "show_filters": "Mostrar Filtros",
   "no_exercises_found": "No se encontraron ejercicios.",
   "added_toast": "{{exerciseName}} añadido al carrito",
-  "cart_empty_toast": "El carrito está vacío."
+  "cart_empty_toast": "El carrito está vacío.",
+  "today_s_plan": "Plan de Hoy",
+  "n_sets": "{{count}} Series",
+  "n_reps": "{{count}} Repeticiones",
+  "n_rest": "{{count}} seg. Descanso"
 }
