@@ -77,13 +77,13 @@ export const createWorkoutSlice = (set, get) => ({
     ...getWorkoutStateFromStorage(),
     ...getRestTimerStateFromStorage(), 
 
-    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- INICIO DE LA MODIFICACIÓN (YA LA TIENES) ---
     // Inicia una sesión de entrenamiento a partir de una rutina.
     // 1. Convertida a 'async'
     startWorkout: async (routine) => {
         // 2. Usamos la función segura 'getOrFetchAllExercises' y la esperamos (await)
         const allExercises = await get().getOrFetchAllExercises();
-    // --- FIN DE LA MODIFICACIÓN ---
+    // --- FIN DE LA MODIFICACIÓN (YA LA TIENES) ---
 
         const sortedExercises = [...(routine.RoutineExercises || routine.TemplateRoutineExercises || [])]
             .sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0));
@@ -96,7 +96,7 @@ export const createWorkoutSlice = (set, get) => ({
             // 'fullDetails.name' ES la clave (caótica) que usaremos para el TÍTULO
             const exerciseKeyName = fullDetails ? fullDetails.name : (ex.exercise?.name || ex.name);
 
-            // --- INICIO DE LA MODIFICACIÓN ---
+            // --- INICIO DE LA MODIFICACIÓN (YA LA TIENES) ---
             // En lugar de crear un objeto 'newDetailsObject' limitado,
             // fusionamos 'fullDetails' (que tiene description_es) 
             // con las imágenes/videos específicos de la rutina ('ex').
@@ -107,7 +107,7 @@ export const createWorkoutSlice = (set, get) => ({
                 image_url: ex.image_url_start || fullDetails?.image_url, 
                 video_url: ex.video_url || fullDetails?.video_url,
             };
-            // --- FIN DE LA MODIFICACIÓN ---
+            // --- FIN DE LA MODIFICACIÓN (YA LA TIENES) ---
 
             return {
                 id: ex.id,
@@ -252,7 +252,7 @@ export const createWorkoutSlice = (set, get) => ({
         setWorkoutInStorage({ ...get(), ...newState });
     },
 
-    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- INICIO DE LA MODIFICACIÓN (YA LA TIENES) ---
     /**
      * Actualiza los 'exercise_details' de un ejercicio en el workout activo.
      * Esto es para que el modal pueda auto-corregir datos faltantes (ej. descripciones).
@@ -290,7 +290,7 @@ export const createWorkoutSlice = (set, get) => ({
         set(newState);
         setWorkoutInStorage({ ...get(), ...newState });
     },
-    // --- FIN DE LA MODIFICACIÓN ---
+    // --- FIN DE LA MODIFICACIÓN (YA LA TIENES) ---
 
     // Abre el modal y guarda el tiempo de descanso planificado
     openRestModal: (plannedTime) => set({ 

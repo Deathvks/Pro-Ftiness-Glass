@@ -1,81 +1,42 @@
 /* frontend/src/pages/WorkoutExerciseDetailModal.jsx */
-import React, { useEffect, useState } from 'react';
+// --- INICIO DE LA MODIFICACIÓN ---
+// 1. Eliminamos 'useEffect', 'useState' y 'Spinner'
+import React from 'react';
 import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../components/GlassCard';
 import ExerciseMedia from '../components/ExerciseMedia';
-import Spinner from '../components/Spinner';
-import useAppStore from '../store/useAppStore';
+// 2. Ya no importamos 'useAppStore' porque no vamos a "auto-corregir"
+// import useAppStore from '../store/useAppStore';
+// --- FIN DE LA MODIFICACIÓN ---
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
 
-  const { getOrFetchAllExercises, updateActiveExerciseDetails } = useAppStore(state => ({
-    getOrFetchAllExercises: state.getOrFetchAllExercises,
-    updateActiveExerciseDetails: state.updateActiveExerciseDetails,
-  }));
-
-  // --- (Lógica de carga: Sin cambios, esta parte es correcta) ---
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // 3. Eliminada TODA la lógica de 'useState', 'useEffect' y 'localIsLoading'.
+  // Simplemente leemos las props, que AHORA SÍ vienen completas.
   const details = exercise.exercise_details || {};
   const nameKey = exercise.name;
-
-  const isDataMissing = () => {
-    const missingDescription = !details.description;
-    const missingMedia = !details.image_url && !details.video_url;
-    return (missingDescription || missingMedia) && nameKey;
-  };
-
-  const [localIsLoading, setLocalIsLoading] = useState(isDataMissing());
-
-  useEffect(() => {
-    if (!localIsLoading) return;
-
-    const fetchMissingDetails = async () => {
-      try {
-        const allExercises = await getOrFetchAllExercises();
-        const fullDetails = allExercises.find(ex => ex.name === nameKey);
-
-        if (fullDetails) {
-          updateActiveExerciseDetails(nameKey, fullDetails);
-        }
-      } catch (error) {
-        console.error("Error al auto-corregir detalles:", error);
-      } finally {
-        setLocalIsLoading(false);
-      }
-    };
-
-    fetchMissingDetails();
-  }, [localIsLoading, nameKey, getOrFetchAllExercises, updateActiveExerciseDetails]);
-  // --- (Fin de la lógica de carga) ---
+  // --- FIN DE LA MODIFICACIÓN ---
 
 
-  // --- INICIO DE LA MODIFICACIÓN (Descripción) ---
-  /**
-   * Lógica de descripción
-   * Lee de 'details' (la prop)
-   * Devuelve NULL si no hay clave de descripción.
-   */
+  // --- (Lógica de Descripción: Sin cambios, pero ahora 'details.description' estará presente) ---
   const getTranslatedDescription = () => {
     const descKey = details.description; 
-    // 1. Si no hay 'descKey', devuelve null.
     if (!descKey) return null;
     
     const translated = t(descKey, { 
       ns: 'exercise_descriptions', 
-      // 2. Si no hay traducción, devuelve null.
       defaultValue: null 
     });
 
-    // 3. Devuelve la traducción, o la clave original como fallback,
-    // pero solo si la clave existía.
     return translated || descKey;
   };
 
-  // 'description' ahora puede ser 'null'
   const description = getTranslatedDescription();
   const titleKey = details.name || nameKey;
-  // --- FIN DE la MODIFICACIÓN (Descripción) ---
+  // --- (Fin de Lógica de Descripción) ---
 
   return (
     <div
@@ -98,21 +59,12 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         </h2>
 
         {/* --- INICIO DE LA MODIFICACIÓN (Media) --- */}
-        {/*
-          Lógica de renderizado independiente para la Media.
-          Comprueba primero si TENEMOS media. Si es así, la muestra.
-          Si no, comprueba si estamos cargando.
-        */}
+        {/* 4. Lógica de renderizado simplificada. Sin 'localIsLoading'. */}
         { (details.image_url || details.video_url) ? (
-          // 1. Si TENEMOS media, la mostramos (ignora 'localIsLoading')
+          // 1. Si TENEMOS media, la mostramos.
           <ExerciseMedia details={details} className="w-full mx-auto mb-4" />
-        ) : localIsLoading ? (
-          // 2. Si NO tenemos media y SÍ estamos cargando, Spinner.
-          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
-            <Spinner />
-          </div>
         ) : (
-          // 3. Si NO tenemos media y NO estamos cargando, Fallback.
+          // 2. Si NO tenemos media, Fallback.
           <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
             <ImageIcon size={48} />
           </div>
@@ -146,11 +98,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         </div>
 
         {/* --- INICIO DE LA MODIFICACIÓN (Descripción) --- */}
-        {/*
-          Lógica de renderizado independiente para la Descripción.
-          Comprueba si 'description' (que puede ser null) existe.
-          Si no, comprueba si estamos cargando.
-        */}
+        {/* 5. Lógica de renderizado simplificada. Sin 'localIsLoading'. */}
         <div className="space-y-3">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
             <FileText size={20} className="text-accent" />
@@ -163,13 +111,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
               className="prose prose-sm prose-invert max-w-none text-text-primary leading-relaxed"
               dangerouslySetInnerHTML={{ __html: description }}
             />
-          ) : localIsLoading ? (
-            // 2. Si NO tenemos descripción y SÍ estamos cargando, Spinner.
-            <div className="flex justify-center items-center h-24">
-              <Spinner />
-            </div>
           ) : (
-            // 3. Si NO tenemos descripción y NO estamos cargando, Fallback.
+            // 2. Si NO tenemos descripción, Fallback.
             <p className="text-text-muted">
               {t('no_description_available', { ns: 'exercise_ui' })}
             </p>
