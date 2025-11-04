@@ -10,37 +10,36 @@ import useAppStore from '../store/useAppStore';
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
 
-  // Funciones del store
   const { getOrFetchAllExercises, updateActiveExerciseDetails } = useAppStore(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
     updateActiveExerciseDetails: state.updateActiveExerciseDetails,
   }));
 
   // --- INICIO DE LA MODIFICACIÓN ---
-  // 1. Restauramos el estado LOCAL para los detalles.
+
+  // 1. ESTADO LOCAL: Mantenemos un estado local para los detalles.
+  // Se inicializa UNA VEZ con los props (posiblemente incompletos).
   const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
   const [localIsLoading, setLocalIsLoading] = useState(false);
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  if (!exercise) return null;
-  
   const nameKey = exercise.name; // La clave del ejercicio
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 2. EFECTO 1: Sincronización (Prop -> Estado Local)
-  //    Si el prop de Zustand cambia, actualizamos nuestro estado local.
+  // 2. HOOK 1: EL SINCRONIZADOR
+  // Si el prop de ZUSTAND cambia, forzamos la actualización del estado local.
   useEffect(() => {
     setLocalDetails(exercise.exercise_details || {});
   }, [exercise.exercise_details]);
-  // --- FIN DE LA MODIFICACIÓN ---
 
 
-  // 3. EFECTO 2: Autocorrección
+  // 3. HOOK 2: EL AUTOCORRECTOR
+  // Se ejecuta UNA VEZ por ejercicio (cuando 'nameKey' cambia).
   useEffect(() => {
-    // Comprobamos si a NUESTRO ESTADO LOCAL le faltan datos
-    const missingDescription = !localDetails.description;
-    const missingMedia = !localDetails.image_url && !localDetails.video_url;
+    // Comprueba los datos que tenemos AHORA (en el estado local)
+    const details = localDetails;
+    const missingDescription = !details.description;
+    const missingMedia = !details.image_url && !details.video_url;
 
+    // Si faltan datos Y tenemos una clave para buscar
     if ((missingDescription || missingMedia) && nameKey) {
       
       const fetchMissingDetails = async () => {
@@ -50,10 +49,10 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
           if (fullDetails) {
-            // 4. ¡AQUÍ ESTÁ LA MAGIA!
-            // Actualizamos el estado LOCAL (para re-renderizar AHORA)
+            // 4. ¡LA DOBLE ACTUALIZACIÓN!
+            // Actualiza el estado LOCAL (para re-renderizar AHORA)
             setLocalDetails(fullDetails); 
-            // Actualizamos el estado GLOBAL (para la próxima vez)
+            // Actualiza el estado GLOBAL (para la próxima vez)
             updateActiveExerciseDetails(nameKey, fullDetails);
           }
         } catch (error) {
@@ -65,13 +64,16 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
       fetchMissingDetails();
     }
-  // 5. Dependemos de 'localDetails' (nuestro estado) y 'nameKey'.
-  }, [localDetails, nameKey, getOrFetchAllExercises, updateActiveExerciseDetails]); 
+  // 5. Depende SOLO de 'nameKey'. No depende de 'localDetails'
+  // para evitar bucles. Se ejecuta cuando el ejercicio cambia.
+  }, [nameKey, getOrFetchAllExercises, updateActiveExerciseDetails]); 
+
+  // --- FIN DE LA MODIFICACIÓN ---
 
 
   /**
-   * 6. Lógica de descripción
-   * Ahora lee del estado 'localDetails'
+   * Lógica de descripción
+   * Lee del estado 'localDetails'
    */
   const getTranslatedDescription = () => {
     const descKey = localDetails.description; 
@@ -109,7 +111,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           {t(titleKey, { ns: 'exercise_names', defaultValue: titleKey })}
         </h2>
 
-        {/* 7. Media: Usa los 'localDetails' */}
+        {/* Media: Usa los 'localDetails' */}
         <ExerciseMedia details={localDetails} className="w-full mx-auto mb-4" />
 
         {/* Datos del plan (sin cambios) */}
@@ -137,7 +139,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </div>
         </div>
 
-        {/* 8. Descripción: Usa el estado de carga local */}
+        {/* Descripción: Usa el estado de carga local */}
         {(localIsLoading || description) && (
           <div className="space-y-3">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
