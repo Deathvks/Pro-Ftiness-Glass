@@ -252,6 +252,46 @@ export const createWorkoutSlice = (set, get) => ({
         setWorkoutInStorage({ ...get(), ...newState });
     },
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    /**
+     * Actualiza los 'exercise_details' de un ejercicio en el workout activo.
+     * Esto es para que el modal pueda auto-corregir datos faltantes (ej. descripciones).
+     * @param {string} exerciseKeyName - El 'name' (clave) del ejercicio a actualizar.
+     * @param {object} fullDetails - El objeto completo de detalles del ejercicio.
+     */
+    updateActiveExerciseDetails: (exerciseKeyName, fullDetails) => {
+        const session = get().activeWorkout;
+        if (!session) return;
+
+        // Creamos una nueva copia de los ejercicios
+        const newExercises = session.exercises.map(ex => {
+            // Buscamos el ejercicio por su 'name' (que es la clave única)
+            if (ex.name === exerciseKeyName) {
+                // Creamos un nuevo objeto de detalles, fusionando lo que ya teníamos
+                // con los detalles completos que acabamos de encontrar.
+                const updatedDetails = {
+                    ...ex.exercise_details, // Mantiene media específica (video_url, etc.)
+                    ...fullDetails,         // Añade lo que faltaba (description)
+                    name: exerciseKeyName   // Asegura que la clave 'name' no cambie
+                };
+                
+                // Devolvemos el ejercicio actualizado
+                return {
+                    ...ex,
+                    exercise_details: updatedDetails
+                };
+            }
+            // Devolvemos el resto de ejercicios sin cambios
+            return ex;
+        });
+
+        // Actualizamos el estado y el localStorage
+        const newState = { activeWorkout: { ...session, exercises: newExercises } };
+        set(newState);
+        setWorkoutInStorage({ ...get(), ...newState });
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
+
     // Abre el modal y guarda el tiempo de descanso planificado
     openRestModal: (plannedTime) => set({ 
     // ... (sin cambios) ...
