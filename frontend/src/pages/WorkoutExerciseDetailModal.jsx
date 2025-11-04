@@ -7,68 +7,67 @@ import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 
+// Eliminamos el 'isLoading' de los props, el modal gestiona su propia carga.
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Funciones del store
   const { getOrFetchAllExercises, updateActiveExerciseDetails } = useAppStore(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
     updateActiveExerciseDetails: state.updateActiveExerciseDetails,
   }));
 
-  // 1. Estado local inicializado desde el prop
-  const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
-  const [localIsLoading, setLocalIsLoading] = useState(false);
+  // 1. Estado de carga LOCAL. Se activa SOLO si tenemos que buscar datos.
+  const [isLoading, setIsLoading] = useState(false);
 
-  const nameKey = exercise.name;
-
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // EFECTO 1: Sincronización (Prop -> Estado Local)
-  // Si el prop 'exercise.exercise_details' cambia (porque Zustand se actualizó),
-  // forzamos que nuestro 'localDetails' se actualice a esa nueva versión.
-  useEffect(() => {
-    setLocalDetails(exercise.exercise_details || {});
-  }, [exercise.exercise_details]);
+  // 2. Leemos los detalles DIRECTAMENTE del prop. NO MÁS ESTADO LOCAL 'localDetails'.
+  const details = exercise.exercise_details || {};
+  const nameKey = exercise.name; // La clave del ejercicio
   // --- FIN DE LA MODIFICACIÓN ---
 
-  // EFECTO 2: Autocorrección (Se ejecuta si el estado local no es válido)
+
+  // 3. Lógica de "Autocorrección" (simplificada)
   useEffect(() => {
-    const missingDescription = !localDetails.description;
-    const missingMedia = !localDetails.image_url && !localDetails.video_url;
+    // Comprobamos los 'details' que vienen del prop
+    const missingDescription = !details.description;
+    const missingMedia = !details.image_url && !details.video_url;
 
     // Si faltan datos Y tenemos una clave para buscar
     if ((missingDescription || missingMedia) && nameKey) {
       
       const fetchMissingDetails = async () => {
-        setLocalIsLoading(true);
+        setIsLoading(true); // Mostrar spinner
         try {
           const allExercises = await getOrFetchAllExercises();
           const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
           if (fullDetails) {
-            // Actualiza LOCAL (para el re-renderizado inmediato)
-            setLocalDetails(fullDetails); 
-            // Actualiza GLOBAL (para la próxima vez que se abra)
+            // 4. SOLO actualizamos el estado GLOBAL.
+            // Esto forzará un re-renderizado con el 'exercise' prop actualizado.
             updateActiveExerciseDetails(nameKey, fullDetails);
           }
         } catch (error) {
           console.error("Error al auto-corregir detalles:", error);
         } finally {
-          setLocalIsLoading(false);
+          // 5. Ocultamos el spinner en el 'finally' para que se
+          // muestren los datos que acabamos de cargar.
+          setIsLoading(false);
         }
       };
 
       fetchMissingDetails();
     }
-  // Dependemos de 'localDetails' (nuestro estado actual) y 'nameKey' (el ID)
-  }, [localDetails, nameKey, getOrFetchAllExercises, updateActiveExerciseDetails]); 
+  // 6. El efecto depende de 'details' (del prop) y 'nameKey'.
+  }, [details, nameKey, getOrFetchAllExercises, updateActiveExerciseDetails]); 
 
 
   /**
-   * Lógica de descripción
-   * Ahora lee del estado 'localDetails'
+   * 7. Lógica de descripción
+   * Ahora lee de 'details' (del prop)
    */
   const getTranslatedDescription = () => {
-    const descKey = localDetails.description; 
+    const descKey = details.description; 
     
     const translated = t(descKey, { 
       ns: 'exercise_descriptions', 
@@ -78,16 +77,14 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     if (translated && translated !== descKey) {
       return translated;
     }
-
     if (descKey) {
       return descKey;
     }
-
     return t('no_description_available', { ns: 'exercise_ui' });
   };
 
   const description = getTranslatedDescription();
-  const titleKey = localDetails.name || nameKey;
+  const titleKey = details.name || nameKey;
 
   return (
     <div
@@ -109,8 +106,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           {t(titleKey, { ns: 'exercise_names', defaultValue: titleKey })}
         </h2>
 
-        {/* Media: Usa los detalles locales */}
-        <ExerciseMedia details={localDetails} className="w-full mx-auto mb-4" />
+        {/* 8. Media: Usa los 'details' del prop */}
+        <ExerciseMedia details={details} className="w-full mx-auto mb-4" />
 
         {/* Datos del plan (sin cambios) */}
         <div className="space-y-3 mb-6">
@@ -137,15 +134,15 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </div>
         </div>
 
-        {/* Descripción: Usa el estado de carga local */}
-        {(localIsLoading || description) && (
+        {/* 9. Descripción: Usa el estado de carga local */}
+        {(isLoading || description) && (
           <div className="space-y-3">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
               <FileText size={20} className="text-accent" />
               {t('description', { ns: 'exercise_ui' })}
             </h3>
 
-            {localIsLoading ? (
+            {isLoading ? (
               <div className="flex justify-center items-center h-24">
                 <Spinner />
               </div>
