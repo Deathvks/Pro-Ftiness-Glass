@@ -1,54 +1,102 @@
 /* frontend/src/pages/WorkoutExerciseDetailModal.jsx */
-// --- INICIO DE LA MODIFICACIÓN ---
-// 1. Eliminamos 'useEffect', 'useState', 'Spinner' y 'useAppStore'
-// ya que no vamos a auto-corregir ni a cargar nada.
-import React from 'react';
+// 1. Volvemos a importar useState, useEffect y Spinner
+import React, { useEffect, useState } from 'react';
 import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../components/GlassCard';
 import ExerciseMedia from '../components/ExerciseMedia';
-// import Spinner from '../components/Spinner'; // Ya no es necesario
-// import useAppStore from '../store/useAppStore'; // Ya no es necesario
-// --- FIN DE LA MODIFICACIÓN ---
+import Spinner from '../components/Spinner'; // Importado de nuevo
+import useAppStore from '../store/useAppStore'; // Importado de nuevo
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
 
+  // 2. Volvemos a usar el store, SÓLO para buscar datos
+  const { getOrFetchAllExercises } = useAppStore(state => ({
+    getOrFetchAllExercises: state.getOrFetchAllExercises,
+    // YA NO usamos 'updateActiveExerciseDetails' para evitar bucles
+  }));
+
   // --- INICIO DE LA MODIFICACIÓN ---
-  // 3. Eliminada TODA la lógica de 'useState', 'useEffect' y 'localIsLoading'.
-  // Simplemente leemos las props, que AHORA SÍ vienen completas
-  // gracias a la precarga de workoutSlice.js
-  const details = exercise.exercise_details || {};
+
+  // 3. ESTADO LOCAL: Mantenemos un estado local para los detalles.
+  // Se inicializa UNA VEZ con los props (posiblemente incompletos).
+  const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
+  
+  // 4. ESTADO DE CARGA: Derivado de los 'localDetails'.
   const nameKey = exercise.name;
+  const isDataMissing = (details) => {
+    const missingDescription = !details.description && !details.description_es;
+    const missingMedia = !details.image_url && !details.video_url;
+    return (missingDescription || missingMedia) && nameKey;
+  };
+  
+  // Se inicializa con el estado actual de los 'localDetails'
+  const [localIsLoading, setLocalIsLoading] = useState(isDataMissing(localDetails));
+
+  // 5. HOOK AUTOCORRECTOR: Se ejecuta si 'localIsLoading' es true.
+  useEffect(() => {
+    // Si no falta nada, no hagas nada.
+    if (!localIsLoading) return;
+
+    const fetchMissingDetails = async () => {
+      try {
+        const allExercises = await getOrFetchAllExercises();
+        const fullDetails = allExercises.find(ex => ex.name === nameKey);
+
+        if (fullDetails) {
+          // 6. FUSIONAMOS: Mantenemos la media de la rutina (ej. 'ex.image_url_start')
+          //    y la rellenamos con los datos de la DB (ej. 'fullDetails.description_es')
+          const mergedDetails = {
+            ...fullDetails, // Base (descripción, etc.)
+            ...localDetails, // Sobrescribe con datos de la rutina (media)
+            name: nameKey,
+            // Aseguramos la descripción usando el campo de la DB
+            description: fullDetails.description_es || fullDetails.description || localDetails.description,
+          };
+          
+          // 7. ACTUALIZAMOS EL ESTADO LOCAL.
+          // Esto dispara UN solo re-renderizado con los datos completos.
+          setLocalDetails(mergedDetails);
+        }
+      } catch (error) {
+        console.error("Error al auto-corregir detalles:", error);
+      } finally {
+        // 8. Pase lo que pase, dejamos de cargar.
+        setLocalIsLoading(false);
+      }
+    };
+
+    fetchMissingDetails();
+  
+  // 9. Depende de 'localIsLoading' y 'nameKey'.
+  }, [localIsLoading, nameKey, getOrFetchAllExercises]); 
+
   // --- FIN DE LA MODIFICACIÓN ---
 
 
-  // --- (Lógica de Descripción) ---
-  // Esta función ahora recibe 'details.description' con el texto
-  // normalizado que le dimos en workoutSlice.
+  /**
+   * Lógica de descripción
+   * Lee del estado 'localDetails'
+   */
   const getTranslatedDescription = () => {
-    // 'descKey' AHORA contiene el texto real (ej: "Túmbate en el banco...")
-    // o una clave de i18n, gracias a la normalización de workoutSlice.
-    const descKey = details.description; 
-    
-    // 1. Si no hay descripción, devuelve null.
+    // 10. Leemos del estado local, que ya está fusionado y normalizado
+    const descKey = localDetails.description || localDetails.description_es; 
     if (!descKey) return null;
     
-    // 2. Intenta traducir 'descKey'.
+    // Intenta traducir (si 'descKey' es una clave)
     const translated = t(descKey, { 
       ns: 'exercise_descriptions', 
-      defaultValue: null // Si no es una clave, devuelve null
+      defaultValue: null 
     });
 
-    // 3. Si 'translated' es null (porque descKey no era una clave),
-    //    devuelve el 'descKey' original (que era el texto completo).
-    //    Si 'translated' SÍ funcionó, devuelve la traducción.
+    // Devuelve la traducción, o el 'descKey' (que es el texto completo)
     return translated || descKey;
   };
 
   const description = getTranslatedDescription();
-  const titleKey = details.name || nameKey;
-  // --- (Fin de Lógica de Descripción) ---
+  // El título SÍ puede venir de 'exercise' (prop) porque 'name' siempre está
+  const titleKey = localDetails.name || exercise.name;
 
   return (
     <div
@@ -70,21 +118,22 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           {t(titleKey, { ns: 'exercise_names', defaultValue: titleKey })}
         </h2>
 
-        {/* --- INICIO DE LA MODIFICACIÓN (Media) --- */}
-        {/* 4. Lógica de renderizado simplificada. Sin 'localIsLoading'. */}
-        { (details.image_url || details.video_url) ? (
-          // 1. Si TENEMOS media, la mostramos.
-          <ExerciseMedia details={details} className="w-full mx-auto mb-4" />
+        {/* --- Renderizado condicional (Media) --- */}
+        {/* Lee de 'localDetails', pero comprueba 'localIsLoading' */}
+        { (localDetails.image_url || localDetails.video_url) ? (
+          <ExerciseMedia details={localDetails} className="w-full mx-auto mb-4" />
+        ) : localIsLoading ? (
+          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
+            <Spinner />
+          </div>
         ) : (
-          // 2. Si NO tenemos media, Fallback.
           <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
             <ImageIcon size={48} />
           </div>
         )}
-        {/* --- FIN DE LA MODIFICACIÓN (Media) --- */}
 
 
-        {/* Datos del plan (sin cambios) */}
+        {/* Datos del plan (sin cambios, lee de 'exercise' (prop)) */}
         <div className="space-y-3 mb-6">
           <h3 className="text-lg font-semibold text-text-secondary">
             {t('today_s_plan', { ns: 'exercise_ui' })}
@@ -109,8 +158,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </div>
         </div>
 
-        {/* --- INICIO DE LA MODIFICACIÓN (Descripción) --- */}
-        {/* 5. Lógica de renderizado simplificada. Sin 'localIsLoading'. */}
+        {/* --- Renderizado condicional (Descripción) --- */}
+        {/* Lee de 'description', pero comprueba 'localIsLoading' */}
         <div className="space-y-3">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
             <FileText size={20} className="text-accent" />
@@ -118,19 +167,20 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </h3>
 
           { description ? (
-            // 1. Si TENEMOS descripción (no es null), la mostramos.
             <div
               className="prose prose-sm prose-invert max-w-none text-text-primary leading-relaxed"
               dangerouslySetInnerHTML={{ __html: description }}
             />
+          ) : localIsLoading ? (
+            <div className="flex justify-center items-center h-24">
+              <Spinner />
+            </div>
           ) : (
-            // 2. Si NO tenemos descripción, Fallback.
             <p className="text-text-muted">
               {t('no_description_available', { ns: 'exercise_ui' })}
             </p>
           )}
         </div>
-        {/* --- FIN DE LA MODIFICACIÓN (Descripción) --- */}
 
       </GlassCard>
     </div>
