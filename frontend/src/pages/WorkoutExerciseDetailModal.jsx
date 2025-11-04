@@ -15,79 +15,67 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     updateActiveExerciseDetails: state.updateActiveExerciseDetails,
   }));
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-
-  // 1. Ya NO usamos un estado local 'localDetails'. Leemos las props directamente.
+  // --- (Lógica de carga: Sin cambios, esta parte es correcta) ---
   const details = exercise.exercise_details || {};
   const nameKey = exercise.name;
 
-  // 2. Determinamos el estado de carga INICIAL, ANTES del primer renderizado.
   const isDataMissing = () => {
     const missingDescription = !details.description;
     const missingMedia = !details.image_url && !details.video_url;
     return (missingDescription || missingMedia) && nameKey;
   };
 
-  // 3. Inicializamos 'localIsLoading' basándonos en si faltan datos AHORA MISMO.
   const [localIsLoading, setLocalIsLoading] = useState(isDataMissing());
 
-  // 4. Este 'useEffect' ahora es el "Autocorrector"
   useEffect(() => {
-    // Si 'localIsLoading' es 'false' (porque los datos estaban completos
-    // desde el inicio), no hacemos nada.
     if (!localIsLoading) return;
 
-    // Si 'localIsLoading' es 'true', lanzamos el fetch.
     const fetchMissingDetails = async () => {
       try {
         const allExercises = await getOrFetchAllExercises();
         const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
         if (fullDetails) {
-          // 5. YA NO actualizamos un estado local.
-          // Solo actualizamos el store GLOBAL.
           updateActiveExerciseDetails(nameKey, fullDetails);
-          // El 'prop' 'exercise' se actualizará desde Zustand,
-          // y este componente se re-renderizará con los nuevos datos.
         }
       } catch (error) {
         console.error("Error al auto-corregir detalles:", error);
       } finally {
-        // 6. Cuando el fetch termina (con o sin éxito),
-        // dejamos de cargar.
         setLocalIsLoading(false);
       }
     };
 
     fetchMissingDetails();
-
-  // 7. El 'useEffect' se ejecuta si 'localIsLoading' es true, o si cambia el ejercicio.
   }, [localIsLoading, nameKey, getOrFetchAllExercises, updateActiveExerciseDetails]);
+  // --- (Fin de la lógica de carga) ---
 
-  // --- FIN DE LA MODIFICACIÓN ---
 
-
+  // --- INICIO DE LA MODIFICACIÓN (Descripción) ---
   /**
    * Lógica de descripción
    * Lee de 'details' (la prop)
+   * Devuelve NULL si no hay clave de descripción.
    */
   const getTranslatedDescription = () => {
-    // Usamos 'details' (props) en lugar de 'localDetails' (estado)
     const descKey = details.description; 
+    // 1. Si no hay 'descKey', devuelve null.
+    if (!descKey) return null;
     
     const translated = t(descKey, { 
       ns: 'exercise_descriptions', 
+      // 2. Si no hay traducción, devuelve null.
       defaultValue: null 
     });
 
-    if (translated && translated !== descKey) return translated;
-    if (descKey) return descKey;
-    return t('no_description_available', { ns: 'exercise_ui' });
+    // 3. Devuelve la traducción, o la clave original como fallback,
+    // pero solo si la clave existía.
+    return translated || descKey;
   };
 
+  // 'description' ahora puede ser 'null'
   const description = getTranslatedDescription();
-  // Usamos 'details' (props) en lugar de 'localDetails' (estado)
   const titleKey = details.name || nameKey;
+  // --- FIN DE la MODIFICACIÓN (Descripción) ---
 
   return (
     <div
@@ -109,21 +97,28 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           {t(titleKey, { ns: 'exercise_names', defaultValue: titleKey })}
         </h2>
 
-        {/* Media: Lógica condicional (Igual que antes, pero lee de 'details') */}
-        {localIsLoading ? (
-          // 1. Estado de Carga (Se mostrará en el Render 1 si 'isDataMissing' era true)
+        {/* --- INICIO DE LA MODIFICACIÓN (Media) --- */}
+        {/*
+          Lógica de renderizado independiente para la Media.
+          Comprueba primero si TENEMOS media. Si es así, la muestra.
+          Si no, comprueba si estamos cargando.
+        */}
+        { (details.image_url || details.video_url) ? (
+          // 1. Si TENEMOS media, la mostramos (ignora 'localIsLoading')
+          <ExerciseMedia details={details} className="w-full mx-auto mb-4" />
+        ) : localIsLoading ? (
+          // 2. Si NO tenemos media y SÍ estamos cargando, Spinner.
           <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
             <Spinner />
           </div>
-        ) : (details.image_url || details.video_url) ? (
-          // 2. Estado con Media (Se mostrará en Render 1 si los datos estaban, o en Render 2 si no)
-          <ExerciseMedia details={details} className="w-full mx-auto mb-4" />
         ) : (
-          // 3. Estado sin Media (Fallback)
+          // 3. Si NO tenemos media y NO estamos cargando, Fallback.
           <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
             <ImageIcon size={48} />
           </div>
         )}
+        {/* --- FIN DE LA MODIFICACIÓN (Media) --- */}
+
 
         {/* Datos del plan (sin cambios) */}
         <div className="space-y-3 mb-6">
@@ -150,33 +145,38 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </div>
         </div>
 
-        {/* Descripción: Usa el estado de carga local (Sin cambios) */}
-        {(localIsLoading || description) && (
-          <div className="space-y-3">
-            <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
-              <FileText size={20} className="text-accent" />
-              {t('description', { ns: 'exercise_ui' })}
-            </h3>
+        {/* --- INICIO DE LA MODIFICACIÓN (Descripción) --- */}
+        {/*
+          Lógica de renderizado independiente para la Descripción.
+          Comprueba si 'description' (que puede ser null) existe.
+          Si no, comprueba si estamos cargando.
+        */}
+        <div className="space-y-3">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
+            <FileText size={20} className="text-accent" />
+            {t('description', { ns: 'exercise_ui' })}
+          </h3>
 
-            {/*
-              Esta lógica de carga para la descripción también funciona:
-              Si 'localIsLoading' es true, muestra Spinner.
-              Si es false, 'description' (leído de 'details') tendrá el valor correcto.
-            */}
-            {localIsLoading ? (
-              <div className="flex justify-center items-center h-24">
-                <Spinner />
-              </div>
-            ) : (
-              description && (
-                <div
-                  className="prose prose-sm prose-invert max-w-none text-text-primary leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: description }}
-                />
-              )
-            )}
-          </div>
-        )}
+          { description ? (
+            // 1. Si TENEMOS descripción (no es null), la mostramos.
+            <div
+              className="prose prose-sm prose-invert max-w-none text-text-primary leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+          ) : localIsLoading ? (
+            // 2. Si NO tenemos descripción y SÍ estamos cargando, Spinner.
+            <div className="flex justify-center items-center h-24">
+              <Spinner />
+            </div>
+          ) : (
+            // 3. Si NO tenemos descripción y NO estamos cargando, Fallback.
+            <p className="text-text-muted">
+              {t('no_description_available', { ns: 'exercise_ui' })}
+            </p>
+          )}
+        </div>
+        {/* --- FIN DE LA MODIFICACIÓN (Descripción) --- */}
+
       </GlassCard>
     </div>
   );
