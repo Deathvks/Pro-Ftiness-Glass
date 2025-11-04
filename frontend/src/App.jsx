@@ -423,6 +423,11 @@ export default function App() {
         <meta name="description" content={currentDescription} />
         <link rel="canonical" href={canonicalUrl} />
         <meta charSet="UTF-8" />
+        {/*
+          Asegúrate de que tu 'index.html' tenga 'viewport-fit=cover'
+          para que estas 'safe-area-inset' funcionen.
+          ej: <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Helmet>
 
@@ -468,14 +473,25 @@ export default function App() {
 
       </main>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 flex justify-around items-center bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]">
+      {/* --- INICIO DE LA MODIFICACIÓN (NAVBAR MÓVIL) --- */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-around bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]
+                   pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]">
+      {/*
+        1. Quitamos 'h-20' y 'items-center' del 'nav'.
+        2. Añadimos padding para las 'safe areas' (pl, pr, pb) usando 'env()'.
+           (Asegúrate de que 'index.html' tenga 'viewport-fit=cover' en el tag 'viewport')
+      */}
+      {/* --- FIN DE LA MODIFICACIÓN (NAVBAR MÓVIL) --- */}
         {navItems.map(item => (
           <button
             key={item.id}
             onClick={() => {
               navigate(item.id); // Llama a la 'navigate' estable
             }}
-            className={`flex flex-col items-center justify-center gap-1 h-full flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
+            // --- INICIO DE LA MODIFICACIÓN (BOTÓN NAVBAR) ---
+            className={`flex flex-col items-center justify-center gap-1 h-20 flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
+            {/* 3. Cambiamos 'h-full' por 'h-20' para que los botones mantengan su altura fija */}
+            {/* --- FIN DE LA MODIFICACIÓN (BOTÓN NAVBAR) --- */}
             {item.icon}
             <span className="text-xs font-medium">{item.label}</span>
           </button>
@@ -506,11 +522,23 @@ export default function App() {
         />
       )}
 
+      {/* --- INICIO DE LA MODIFICACIÓN (BOTÓN FLOTANTE) --- */}
+      {/* 4. Ajustamos el 'bottom' del botón flotante para que también respete la 'safe-area' */}
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => navigate('workout')} // Estable
-          className="fixed bottom-24 right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105
+                     bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10"
         >
+          {/*
+            Cambiamos 'bottom-24' (6rem) por una calc() que suma la altura de la navbar (h-20 -> 5rem),
+            un poco de espacio (1rem), y el padding de la safe area.
+            'bottom-24' (6rem) ya estaba bien, pero 'bottom-[calc(6rem+env(safe-area-inset-bottom))]' es más robusto.
+            (h-20 es 5rem, + 1rem de espacio = 6rem. Así que bottom-24 -> 6rem.
+            Nueva clase: bottom-[calc(6rem+env(safe-area-inset-bottom))]
+            He ajustado el espacio a h-20 (5rem) + 1rem (espacio) = 6rem.
+          */}
+      {/* --- FIN DE LA MODIFICACIÓN (BOTÓN FLOTANTE) --- */}
           <Zap size={20} />
           <span>Volver al Entreno</span>
         </button>
