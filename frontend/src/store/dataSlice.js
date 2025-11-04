@@ -143,29 +143,26 @@ export const createDataSlice = (set, get) => ({
 
   // --- INICIO DE LA MODIFICACIÓN ---
   /**
-   * Busca los detalles completos de un ejercicio por su nombre (clave).
-   * @param {string} name - El nombre/clave del ejercicio (ej: "Abduktoren-Maschine")
-   * @returns {object|null} - Los detalles completos del ejercicio o null si no se encuentra.
+   * Obtiene la lista maestra de ejercicios de forma segura.
+   * Si no está en el estado, la va a buscar a la API.
+   * Esto previene 'race conditions' si se llama antes de que fetchInitialData termine.
+   * @returns {Promise<Array>} - La lista de allExercises.
    */
-  fetchExerciseDetailsByName: async (name) => {
+  getOrFetchAllExercises: async () => {
+    // 1. Revisa si ya la tenemos en el estado.
+    const currentExercises = get().allExercises;
+    if (currentExercises && currentExercises.length > 0) {
+      return Promise.resolve(currentExercises);
+    }
+
+    // 2. Si no, la vamos a buscar (fallback).
     try {
-      // 1. Obtenemos la lista completa de ejercicios (cargada al inicio)
-      const allExercises = get().allExercises;
-
-      // 2. Buscamos el ejercicio por su 'name' (que es la clave única)
-      const exerciseDetails = allExercises.find(ex => ex.name === name);
-
-      if (exerciseDetails) {
-        // 3. Devolvemos los detalles (incluyen description_es, etc.)
-        return Promise.resolve(exerciseDetails);
-      } else {
-        // 4. Si no se encuentra (raro, pero posible), devolvemos null
-        console.warn(`[dataSlice] fetchExerciseDetailsByName: No se encontraron detalles para "${name}" en allExercises.`);
-        return Promise.resolve(null);
-      }
+      const exercises = await exerciseService.getExerciseList();
+      set({ allExercises: exercises || [] });
+      return exercises || [];
     } catch (error) {
-      console.error(`[dataSlice] Error en fetchExerciseDetailsByName:`, error);
-      return Promise.reject(error);
+      console.error("Error crítico en getOrFetchAllExercises:", error);
+      return []; // Devuelve array vacío para no crashear
     }
   },
   // --- FIN DE LA MODIFICACIÓN ---

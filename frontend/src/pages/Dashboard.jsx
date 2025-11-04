@@ -215,7 +215,11 @@ const Dashboard = ({ setView }) => {
                         <div className="flex flex-col gap-3">
                             {routines.length > 0 ? (
                                 routines.slice(0, 2).map(routine => (
-                                    <button key={routine.id} onClick={() => { startWorkout(routine); setView('workout'); }} className="flex justify-between items-center w-full p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors">
+                                    // --- INICIO DE LA MODIFICACIÓN ---
+                                    // 1. Convertimos el onClick en 'async'
+                                    // 2. Añadimos 'await' a 'startWorkout(routine)'
+                                    <button key={routine.id} onClick={async () => { await startWorkout(routine); setView('workout'); }} className="flex justify-between items-center w-full p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors">
+                                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                                         <span className="font-semibold">{routine.name}</span>
                                         <Play size={20} />
                                     </button>
@@ -233,6 +237,7 @@ const Dashboard = ({ setView }) => {
                     <GlassCard className="p-6 flex flex-col gap-4">
                         <h2 className="text-xl font-bold">Cardio Rápido</h2>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {/* Estas llamadas a 'startSimpleWorkout' no necesitan 'await' porque esa función sigue siendo síncrona */}
                             <button onClick={() => { startSimpleWorkout('Cardio: Cinta'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Footprints size={20} /><span className="font-semibold">Cinta</span></button>
                              <button onClick={() => { startSimpleWorkout('Cardio: Bici'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Bike size={20} /><span className="font-semibold">Bici</span></button>
                             <button onClick={() => { startSimpleWorkout('Cardio: Elíptica'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Activity size={20} /><span className="font-semibold">Elíptica</span></button>

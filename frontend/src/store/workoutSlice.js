@@ -77,9 +77,13 @@ export const createWorkoutSlice = (set, get) => ({
     ...getWorkoutStateFromStorage(),
     ...getRestTimerStateFromStorage(), 
 
+    // --- INICIO DE LA MODIFICACIÓN ---
     // Inicia una sesión de entrenamiento a partir de una rutina.
-    startWorkout: (routine) => {
-        const allExercises = get().allExercises || [];
+    // 1. Convertida a 'async'
+    startWorkout: async (routine) => {
+        // 2. Usamos la función segura 'getOrFetchAllExercises' y la esperamos (await)
+        const allExercises = await get().getOrFetchAllExercises();
+    // --- FIN DE LA MODIFICACIÓN ---
 
         const sortedExercises = [...(routine.RoutineExercises || routine.TemplateRoutineExercises || [])]
             .sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0));
