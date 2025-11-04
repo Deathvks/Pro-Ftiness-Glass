@@ -35,8 +35,8 @@ const Workout = ({ timer, setView }) => {
   // --- INICIO DE LA MODIFICACIÓN ---
   // Hook de traducción:
   // Le pedimos que cargue 'exercise_names' (para los títulos)
-  // Y TAMBIÉN 'exercises' (para las descripciones).
-  const { t } = useTranslation(['exercise_names', 'exercises']);
+  // Y TAMBIÉN 'exercise_descriptions' (para las descripciones).
+  const { t } = useTranslation(['exercise_names', 'exercise_descriptions']);
   // --- FIN DE LA MODIFICACIÓN ---
   const {
     activeWorkout,

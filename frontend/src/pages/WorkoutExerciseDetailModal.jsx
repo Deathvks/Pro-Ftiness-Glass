@@ -9,8 +9,8 @@ import Spinner from '../components/Spinner';
 // Mantenemos 'isLoading' como en tu versión base
 const WorkoutExerciseDetailModal = ({ exercise, onClose, isLoading = false }) => {
   // --- INICIO DE LA MODIFICACIÓN ---
-  // 1. Añadimos 'exercise_descriptions' (del modal de la biblioteca y de i18n.js)
-  const { t } = useTranslation(['exercise_names', 'exercises', 'exercise_descriptions']);
+  // 1. Corregido: Cargamos 'exercise_ui' (para UI) en lugar de 'exercises' (solo descripciones)
+  const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
   // --- FIN DE LA MODIFICACIÓN ---
 
   if (!exercise) return null;
@@ -20,12 +20,10 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose, isLoading = false }) =>
 
   // --- INICIO DE LA MODIFICACIÓN ---
   /**
-   * 2. Modificamos tu función para usar la lógica de la biblioteca (paso 20)
-   * con la CLAVE DE TRADUCCIÓN CORRECTA.
+   * 2. Lógica de descripción sin cambios (ya era correcta al usar 'exercise_descriptions')
    */
   const getTranslatedDescription = () => {
-    // 2a. La CLAVE de traducción es el texto en INGLÉS, que está en 'details.description'
-    //    (gracias al arreglo de workoutSlice y como se ve en ExerciseDetailView.jsx)
+    // 2a. La CLAVE de traducción es el texto en INGLÉS
     const descKey = details.description; 
     
     // 2b. Intentamos traducir usando la CLAVE y el NS correcto
@@ -40,13 +38,12 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose, isLoading = false }) =>
     }
 
     // 2d. Si no hay traducción, usamos la CLAVE (¡INGLÉS!)
-    //     (Si 'descKey' es nulo, esto también lo es)
     if (descKey) {
       return descKey;
     }
 
-    // 2e. Si no hay NADA, devolvemos 'No disponible' (como en tu versión)
-    return t('Descripción no disponible', { ns: 'exercises' });
+    // 2e. Corregido: Si no hay NADA, usamos la clave de 'exercise_ui'
+    return t('No description available.', { ns: 'exercise_ui', defaultValue: 'No hay descripción disponible.' });
   };
   // --- FIN DE LA MODIFICACIÓN ---
 
@@ -68,7 +65,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose, isLoading = false }) =>
           <X size={24} />
         </button>
 
-        {/* Título (MODIFICADO) */}
+        {/* Título (sin cambios, ya usaba 'exercise_names') */}
         <h2 className="text-2xl font-bold mb-4 pr-8 break-words">
           {t(nameKey, { ns: 'exercise_names', defaultValue: nameKey })}
         </h2>
@@ -76,37 +73,42 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose, isLoading = false }) =>
         {/* Media (sin cambios) */}
         <ExerciseMedia details={details} className="w-full mx-auto mb-4" />
 
-        {/* Datos del plan (sin cambios) */}
+        {/* Datos del plan (CORREGIDOS) */}
         <div className="space-y-3 mb-6">
           <h3 className="text-lg font-semibold text-text-secondary">
-            {t('Plan de Hoy', { ns: 'exercises' })}
+            {/* Corregido: Usamos la clave en inglés y el ns 'exercise_ui' */}
+            {t("Today's Plan", { ns: 'exercise_ui', defaultValue: 'Plan de Hoy' })}
           </h3>
           <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
             <Dumbbell size={20} className="text-accent" />
             <span className="font-medium">
-              {t('{{count}} Series', { count: exercise.sets, ns: 'exercises' })}
+              {/* Corregido: Usamos la clave en inglés y el ns 'exercise_ui' */}
+              {t('{{count}} Sets', { count: exercise.sets, ns: 'exercise_ui' })}
             </span>
           </div>
           <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
             <Repeat size={20} className="text-accent" />
             <span className="font-medium">
-              {t('{{count}} Repeticiones', { count: exercise.reps, ns: 'exercises' })}
+              {/* Corregido: Usamos la clave en inglés y el ns 'exercise_ui' */}
+              {t('{{count}} Reps', { count: exercise.reps, ns: 'exercise_ui' })}
             </span>
           </div>
           <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
             <Clock size={20} className="text-accent" />
             <span className="font-medium">
-              {t('{{count}} seg. Descanso', { count: exercise.rest_seconds || 90, ns: 'exercises' })}
+              {/* Corregido: Usamos la clave en inglés y el ns 'exercise_ui' */}
+              {t('{{count}}s Rest', { count: exercise.rest_seconds || 90, ns: 'exercise_ui' })}
             </span>
           </div>
         </div>
 
-        {/* Descripción (Usando tu lógica de renderizado del paso 21) */}
+        {/* Descripción (CORREGIDA) */}
         {(isLoading || description) && (
           <div className="space-y-3">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
               <FileText size={20} className="text-accent" />
-              {t('Descripción', { ns: 'exercises' })}
+              {/* Corregido: Usamos la clave en inglés y el ns 'exercise_ui' */}
+              {t('Description', { ns: 'exercise_ui' })}
             </h3>
 
             {isLoading ? (
@@ -129,4 +131,3 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose, isLoading = false }) =>
 };
 
 export default WorkoutExerciseDetailModal;
-
