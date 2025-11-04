@@ -1,13 +1,14 @@
 /* frontend/src/pages/WorkoutExerciseDetailModal.jsx */
 // --- INICIO DE LA MODIFICACIÓN ---
-// 1. Eliminamos 'useEffect', 'useState' y 'Spinner'
+// 1. Eliminamos 'useEffect', 'useState', 'Spinner' y 'useAppStore'
+// ya que no vamos a auto-corregir ni a cargar nada.
 import React from 'react';
 import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../components/GlassCard';
 import ExerciseMedia from '../components/ExerciseMedia';
-// 2. Ya no importamos 'useAppStore' porque no vamos a "auto-corregir"
-// import useAppStore from '../store/useAppStore';
+// import Spinner from '../components/Spinner'; // Ya no es necesario
+// import useAppStore from '../store/useAppStore'; // Ya no es necesario
 // --- FIN DE LA MODIFICACIÓN ---
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
@@ -15,22 +16,33 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
   // --- INICIO DE LA MODIFICACIÓN ---
   // 3. Eliminada TODA la lógica de 'useState', 'useEffect' y 'localIsLoading'.
-  // Simplemente leemos las props, que AHORA SÍ vienen completas.
+  // Simplemente leemos las props, que AHORA SÍ vienen completas
+  // gracias a la precarga de workoutSlice.js
   const details = exercise.exercise_details || {};
   const nameKey = exercise.name;
   // --- FIN DE LA MODIFICACIÓN ---
 
 
-  // --- (Lógica de Descripción: Sin cambios, pero ahora 'details.description' estará presente) ---
+  // --- (Lógica de Descripción) ---
+  // Esta función ahora recibe 'details.description' con el texto
+  // normalizado que le dimos en workoutSlice.
   const getTranslatedDescription = () => {
+    // 'descKey' AHORA contiene el texto real (ej: "Túmbate en el banco...")
+    // o una clave de i18n, gracias a la normalización de workoutSlice.
     const descKey = details.description; 
+    
+    // 1. Si no hay descripción, devuelve null.
     if (!descKey) return null;
     
+    // 2. Intenta traducir 'descKey'.
     const translated = t(descKey, { 
       ns: 'exercise_descriptions', 
-      defaultValue: null 
+      defaultValue: null // Si no es una clave, devuelve null
     });
 
+    // 3. Si 'translated' es null (porque descKey no era una clave),
+    //    devuelve el 'descKey' original (que era el texto completo).
+    //    Si 'translated' SÍ funcionó, devuelve la traducción.
     return translated || descKey;
   };
 

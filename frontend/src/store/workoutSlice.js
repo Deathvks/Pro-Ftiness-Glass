@@ -77,41 +77,34 @@ export const createWorkoutSlice = (set, get) => ({
     ...getWorkoutStateFromStorage(),
     ...getRestTimerStateFromStorage(), 
 
-    // --- INICIO DE LA MODIFICACIÓN (YA LA TIENES) ---
-    // Inicia una sesión de entrenamiento a partir de una rutina.
-    // 1. Convertida a 'async'
     startWorkout: async (routine) => {
-        // 2. Usamos la función segura 'getOrFetchAllExercises' y la esperamos (await)
         const allExercises = await get().getOrFetchAllExercises();
-    // --- FIN DE LA MODIFICACIÓN (YA LA TIENES) ---
 
         const sortedExercises = [...(routine.RoutineExercises || routine.TemplateRoutineExercises || [])]
             .sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0));
 
         const exercises = sortedExercises.map((ex) => {
-            // 'ex' es el ejercicio de la rutina (ej. RoutineExercises[0])
-            // 'fullDetails' es el ejercicio de la lista maestra (allExercises)
             const fullDetails = allExercises.find(detail => detail.id === ex.exercise_list_id);
-            
-            // 'fullDetails.name' ES la clave (caótica) que usaremos para el TÍTULO
             const exerciseKeyName = fullDetails ? fullDetails.name : (ex.exercise?.name || ex.name);
 
-            // --- INICIO DE LA MODIFICACIÓN (YA LA TIENES) ---
-            // En lugar de crear un objeto 'newDetailsObject' limitado,
-            // fusionamos 'fullDetails' (que tiene description_es) 
-            // con las imágenes/videos específicos de la rutina ('ex').
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Aquí normalizamos el objeto 'exerciseDetails'
             const exerciseDetails = {
-                ...(fullDetails || {}), // 1. Base (name, description, description_es, etc.)
+                ...(fullDetails || {}), // 1. Base (name, description_es, etc.)
                 name: exerciseKeyName,  // 2. Aseguramos el 'name' (clave del título)
-                // 3. Sobrescribimos con media específica de la rutina si existe
+                
+                // 3. ¡LA CORRECCIÓN! 
+                // Creamos un campo 'description' unificado que el modal SÍ espera.
+                description: fullDetails?.description_es || fullDetails?.description || null,
+
+                // 4. Sobrescribimos con media específica de la rutina si existe
                 image_url: ex.image_url_start || fullDetails?.image_url, 
                 video_url: ex.video_url || fullDetails?.video_url,
             };
-            // --- FIN DE LA MODIFICACIÓN (YA LA TIENES) ---
+            // --- FIN DE LA MODIFICACIÓN ---
 
             return {
                 id: ex.id,
-                // Forzamos que el 'name' principal del ejercicio también sea la CLAVE
                 name: exerciseKeyName,
                 sets: ex.sets,
                 reps: ex.reps,
@@ -119,7 +112,7 @@ export const createWorkoutSlice = (set, get) => ({
                 exercise_order: ex.exercise_order !== undefined ? ex.exercise_order : 0,
                 rest_seconds: ex.rest_seconds !== undefined ? ex.rest_seconds : 90, 
                 
-                // Asignamos el objeto COMPLETO Y FUSIONADO
+                // Asignamos el objeto COMPLETO Y NORMALIZADO
                 exercise_details: exerciseDetails,
 
                 setsDone: Array.from({ length: ex.sets }, (_, i) => ({
@@ -141,6 +134,7 @@ export const createWorkoutSlice = (set, get) => ({
         setWorkoutInStorage(newState);
     },
 
+    // ... (El resto del fichero 'startSimpleWorkout', 'togglePauseWorkout', etc. no cambia) ...
     // Inicia una sesión de entrenamiento simple (ej. Cardio).
     startSimpleWorkout: (workoutName) => {
     // ... (sin cambios) ...
@@ -252,45 +246,36 @@ export const createWorkoutSlice = (set, get) => ({
         setWorkoutInStorage({ ...get(), ...newState });
     },
 
-    // --- INICIO DE LA MODIFICACIÓN (YA LA TIENES) ---
-    /**
-     * Actualiza los 'exercise_details' de un ejercicio en el workout activo.
-     * Esto es para que el modal pueda auto-corregir datos faltantes (ej. descripciones).
-     * @param {string} exerciseKeyName - El 'name' (clave) del ejercicio a actualizar.
-     * @param {object} fullDetails - El objeto completo de detalles del ejercicio.
-     */
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // (Actualicé esta función también para que normalice el 'description'
+    // por si acaso el 'autocorrector' se activa en un futuro)
     updateActiveExerciseDetails: (exerciseKeyName, fullDetails) => {
         const session = get().activeWorkout;
         if (!session) return;
 
-        // Creamos una nueva copia de los ejercicios
         const newExercises = session.exercises.map(ex => {
-            // Buscamos el ejercicio por su 'name' (que es la clave única)
             if (ex.name === exerciseKeyName) {
-                // Creamos un nuevo objeto de detalles, fusionando lo que ya teníamos
-                // con los detalles completos que acabamos de encontrar.
                 const updatedDetails = {
-                    ...ex.exercise_details, // Mantiene media específica (video_url, etc.)
-                    ...fullDetails,         // Añade lo que faltaba (description)
-                    name: exerciseKeyName   // Asegura que la clave 'name' no cambie
+                    ...ex.exercise_details, // Mantiene media específica
+                    ...fullDetails,         // Añade lo que faltaba
+                    name: exerciseKeyName,  // Asegura la clave
+                    // NORMALIZACIÓN: Aseguramos que 'description' esté aquí también
+                    description: fullDetails?.description_es || fullDetails?.description || ex.exercise_details?.description || null,
                 };
                 
-                // Devolvemos el ejercicio actualizado
                 return {
                     ...ex,
                     exercise_details: updatedDetails
                 };
             }
-            // Devolvemos el resto de ejercicios sin cambios
             return ex;
         });
 
-        // Actualizamos el estado y el localStorage
         const newState = { activeWorkout: { ...session, exercises: newExercises } };
         set(newState);
         setWorkoutInStorage({ ...get(), ...newState });
     },
-    // --- FIN DE LA MODIFICACIÓN (YA LA TIENES) ---
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // Abre el modal y guarda el tiempo de descanso planificado
     openRestModal: (plannedTime) => set({ 
