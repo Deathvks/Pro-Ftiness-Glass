@@ -16,8 +16,10 @@ const __dirname = path.dirname(__filename); // /app/backend/controllers
 // Directorio donde se guardarán las imágenes de comida (incluyendo las de códigos de barras)
 const FOOD_IMAGES_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 
-// Obtener modelos desde db
-const { NutritionLog, WaterLog, sequelize } = db;
+// --- INICIO DE LA MODIFICACIÓN ---
+// Obtener modelos desde db (Añadido FavoriteMeal)
+const { NutritionLog, WaterLog, FavoriteMeal, sequelize } = db;
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Helper para asegurar que el directorio de subida existe
 const ensureUploadDirExists = async (dirPath) => {
@@ -217,6 +219,12 @@ const addFoodLog = async (req, res, next) => {
       weight_g,
       image_url, // URL de código de barras o subida separada
       micronutrients,
+      // --- INICIO MODIFICACIÓN: Recibimos los campos _per_100g ---
+      calories_per_100g,
+      protein_per_100g,
+      carbs_per_100g,
+      fat_per_100g
+      // --- FIN MODIFICACIÓN ---
     } = req.body;
 
     // --- INICIO MODIFICACIÓN ---
@@ -240,6 +248,15 @@ const addFoodLog = async (req, res, next) => {
       weight_g: weight_g || null,
       image_url: finalImageUrl, // Usamos la URL final
       micronutrients: micronutrients || null,
+      // --- INICIO MODIFICACIÓN: Guardamos los campos _per_100g ---
+      // (Asumiendo que NutritionLogModel tiene estos campos. 
+      // Si no, la migración 20250905200000-fix-nutrition-tables-production.js 
+      // debería haberlos añadido)
+      calories_per_100g: calories_per_100g || null,
+      protein_per_100g: protein_per_100g || null,
+      carbs_per_100g: carbs_per_100g || null,
+      fat_per_100g: fat_per_100g || null,
+      // --- FIN MODIFICACIÓN ---
     };
 
     const newLog = await NutritionLog.create(foodData);
@@ -280,6 +297,12 @@ const updateFoodLog = async (req, res, next) => {
       meal_type,
       log_date,
       micronutrients,
+      // --- INICIO MODIFICACIÓN: Recibimos los campos _per_100g ---
+      calories_per_100g,
+      protein_per_100g,
+      carbs_per_100g,
+      fat_per_100g
+      // --- FIN MODIFICACIÓN ---
     } = req.body;
 
     // --- INICIO MODIFICACIÓN: Determinar la nueva URL y borrar la antigua ---
@@ -320,6 +343,12 @@ const updateFoodLog = async (req, res, next) => {
       meal_type: meal_type !== undefined ? meal_type : log.meal_type,
       log_date: log_date !== undefined ? log_date : log.log_date,
       micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients,
+      // --- INICIO MODIFICACIÓN: Actualizamos los campos _per_100g ---
+      calories_per_100g: calories_per_100g !== undefined ? calories_per_100g : log.calories_per_100g,
+      protein_per_100g: protein_per_100g !== undefined ? protein_per_100g : log.protein_per_100g,
+      carbs_per_100g: carbs_per_100g !== undefined ? carbs_per_100g : log.carbs_per_100g,
+      fat_per_100g: fat_per_100g !== undefined ? fat_per_100g : log.fat_per_100g,
+      // --- FIN MODIFICACIÓN ---
     };
 
     await log.update(foodData);
@@ -354,9 +383,9 @@ const deleteFoodLog = async (req, res, next) => {
     if (log.image_url) {
       const imagePath = path.join(__dirname, '..', 'public', log.image_url);
       fs.unlink(imagePath).catch(err => {
-           if (err.code !== 'ENOENT') {
-             console.error(`Error al borrar imagen ${imagePath} al eliminar log:`, err);
-           }
+            if (err.code !== 'ENOENT') {
+              console.error(`Error al borrar imagen ${imagePath} al eliminar log:`, err);
+            }
       });
     }
     // --- FIN MODIFICACIÓN ---
@@ -417,9 +446,9 @@ const searchByBarcode = async (req, res, next) => {
 
 
     if (!response.data || response.data.status === 0 || !response.data.product || !response.data.product.product_name) {
-       console.log(`[BACKEND] Producto no encontrado en OFF para ${barcode}`);
-       // Devolvemos 404 pero con un objeto 'product' vacío o con info mínima para consistencia
-       return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
+        console.log(`[BACKEND] Producto no encontrado en OFF para ${barcode}`);
+        // Devolvemos 404 pero con un objeto 'product' vacío o con info mínima para consistencia
+        return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
     }
 
     const product = response.data.product;
@@ -464,15 +493,48 @@ const searchByBarcode = async (req, res, next) => {
 // la lógica está en la ruta POST /food/image y en downloadAndConvertToWebP.
 // Mantenemos la exportación por si se usa en otro lado, pero debería estar vacía o eliminarse.
 const uploadFoodImage = async (req, res, next) => {
-   // Esta función ya no se usa directamente en la ruta /food/image
-   // La URL se devuelve directamente en esa ruta tras procesar con Sharp.
-   console.warn("Llamada a uploadFoodImage - esta función está obsoleta y no debería usarse.");
-   if (req.imageUrl) {
-       res.status(201).json({ imageUrl: req.imageUrl });
-   } else {
-       res.status(400).json({ error: "No se procesó ninguna imagen." });
-   }
+    // Esta función ya no se usa directamente en la ruta /food/image
+    // La URL se devuelve directamente en esa ruta tras procesar con Sharp.
+    console.warn("Llamada a uploadFoodImage - esta función está obsoleta y no debería usarse.");
+    if (req.imageUrl) {
+        res.status(201).json({ imageUrl: req.imageUrl });
+    } else {
+        res.status(400).json({ error: "No se procesó ninguna imagen." });
+    }
 };
+
+// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Busca en las comidas favoritas (guardadas) del usuario.
+ */
+const searchFoods = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const { q } = req.query; // 'q' ya está validado por el router
+
+    // Busca en las comidas favoritas del usuario
+    const favoriteResults = await FavoriteMeal.findAll({
+      where: {
+        user_id: userId,
+        // Asumimos que el modelo FavoriteMeal tiene un campo 'name'
+        name: {
+          [Op.iLike]: `%${q}%` // Búsqueda 'like' (case-insensitive en Postgres)
+        }
+      },
+      limit: 20 // Limita los resultados
+    });
+    
+    // La tabla FavoriteMeal ya debería tener todos los campos que
+    // espera SearchResults.jsx (id, name, image_url, ..._per_100g)
+    // porque se guardan desde el FoodEntryForm.
+    res.json(favoriteResults);
+
+  } catch (error) {
+    console.error("Error en searchFoods:", error);
+    next(error);
+  }
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 
 export default {
@@ -485,4 +547,5 @@ export default {
   upsertWaterLog,
   searchByBarcode,
   uploadFoodImage, // Aunque obsoleta, la mantenemos por ahora
+  searchFoods, // <-- Añadido
 };

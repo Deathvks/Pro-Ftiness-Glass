@@ -79,8 +79,8 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
         <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
         <input
             name={name}
-            type={type}
-            inputMode={inputMode}
+            type={type} // El tipo ya es 'text' por defecto, lo cual es correcto para comas/puntos
+            inputMode={inputMode} // Se pasará 'decimal' para los campos numéricos
             value={value}
             onChange={onChange}
             required={required}
@@ -141,20 +141,38 @@ const ManualEntryForm = ({
     // --- FIN DE LA MODIFICACIÓN ---
 
 
-     const handleChange = (e) => {
+    const handleChange = (e) => {
         const { name, value } = e.target;
-        // Permite números, punto decimal y el campo de descripción
-        if (name === 'description' || /^\d*\.?\d*$/.test(value)) {
-            onFormStateChange({ ...formState, formData: { ...formData, [name]: value } });
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // 1. Normalizamos el valor: reemplazamos comas por puntos
+        const normalizedValue = value.replace(',', '.');
+        // --- FIN DE LA MODIFICACIÓN ---
+
+        // Permite números, punto decimal (ahora normalizado) y el campo de descripción
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // 2. Validamos el valor normalizado
+        if (name === 'description' || /^\d*\.?\d*$/.test(normalizedValue)) {
+            // 3. Guardamos el valor normalizado en el estado
+            onFormStateChange({ ...formState, formData: { ...formData, [name]: normalizedValue } });
         }
+        // --- FIN DE LA MODIFICACIÓN ---
     };
 
     const handlePer100Change = (e) => {
         const { name, value } = e.target;
-        // Permite solo números y punto decimal
-        if (/^\d*\.?\d*$/.test(value)) {
-            onFormStateChange({ ...formState, per100Data: { ...per100Data, [name]: value } });
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // 1. Normalizamos el valor: reemplazamos comas por puntos
+        const normalizedValue = value.replace(',', '.');
+        // --- FIN DE LA MODIFICACIÓN ---
+
+        // Permite solo números y punto decimal (ahora normalizado)
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // 2. Validamos el valor normalizado
+        if (/^\d*\.?\d*$/.test(normalizedValue)) {
+            // 3. Guardamos el valor normalizado en el estado
+            onFormStateChange({ ...formState, per100Data: { ...per100Data, [name]: normalizedValue } });
         }
+        // --- FIN DE LA MODIFICACIÓN ---
     };
 
     const handleFavoriteChange = () => {
@@ -170,13 +188,15 @@ const ManualEntryForm = ({
     };
 
     const round = useCallback((val, d = 1) => {
-      const n = parseFloat(val);
-      return isNaN(n)
-        ? ''
-        : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
+     // Ya no necesitamos reemplazar comas aquí, porque el estado ya está normalizado
+     const n = parseFloat(val);
+     return isNaN(n)
+       ? ''
+       : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
     }, []);
 
     const calculatedMacros = useMemo(() => {
+      // Todos los valores de formData y per100Data ya vienen con '.' como decimal
       if (isPer100g) {
         const weight = parseFloat(formData.weight_g) || 0;
         const factor = weight / 100;
@@ -197,17 +217,18 @@ const ManualEntryForm = ({
     }, [formData, per100Data, isPer100g, round]);
 
     const validateAndGetData = useCallback(() => {
+        // Todos los valores en formData y per100Data ya están normalizados (usan '.')
         const finalData = {
           description: formData.description?.trim() || '',
           calories: calculatedMacros.calories,
           protein_g: calculatedMacros.protein_g,
           carbs_g: calculatedMacros.carbs_g,
           fats_g: calculatedMacros.fats_g,
-          weight_g: formData.weight_g,
+          weight_g: formData.weight_g, // ya está normalizado
           image_url: formData.image_url,
         };
 
-        const weight = parseFloat(finalData.weight_g) || 0;
+        const weight = parseFloat(finalData.weight_g) || 0; // parseFloat maneja bien los '.'
         const calories = parseFloat(finalData.calories) || 0;
 
         if (!finalData.description) {
@@ -216,7 +237,7 @@ const ManualEntryForm = ({
         }
 
         if (isPer100g) {
-             const cal100 = parseFloat(per100Data.calories);
+             const cal100 = parseFloat(per100Data.calories); // ya está normalizado
              if (isNaN(weight) || weight <= 0) {
                  addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
                  return null;
@@ -239,10 +260,10 @@ const ManualEntryForm = ({
         Object.keys(finalData).forEach(key => {
             if (key !== 'description' && key !== 'image_url') {
                  if (key === 'weight_g') {
-                    finalData[key] = (!isNaN(weight) && weight > 0) ? weight : null;
+                     finalData[key] = (!isNaN(weight) && weight > 0) ? weight : null;
                  } else {
-                    const numericValue = parseFloat(finalData[key]);
-                    finalData[key] = isNaN(numericValue) ? 0 : numericValue;
+                     const numericValue = parseFloat(finalData[key]); // parseFloat funciona
+                     finalData[key] = isNaN(numericValue) ? 0 : numericValue;
                  }
             }
         });
@@ -349,15 +370,15 @@ const ManualEntryForm = ({
                     </div>
                     {/* Mostrar macros calculados */}
                     <CalculatedMacros
-                      calories={calculatedMacros.calories}
-                      protein={calculatedMacros.protein_g}
-                      carbs={calculatedMacros.carbs_g}
-                      fats={calculatedMacros.fats_g}
+                        calories={calculatedMacros.calories}
+                        protein={calculatedMacros.protein_g}
+                        carbs={calculatedMacros.carbs_g}
+                        fats={calculatedMacros.fats_g}
                     />
                 </>
             ) : (
                 <>
-                   {/* Inputs para valores totales */}
+                    {/* Inputs para valores totales */}
                     <InputField label="Calorías (kcal)" name="calories" value={formData.calories} onChange={handleChange} inputMode="decimal" required />
                     <div className="grid grid-cols-3 gap-4">
                         <InputField label="Proteínas (g)" name="protein_g" value={formData.protein_g} onChange={handleChange} inputMode="decimal" />

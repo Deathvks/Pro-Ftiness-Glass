@@ -195,7 +195,11 @@ const Workout = ({ timer, setView }) => {
                                     .map(set => ({
                                         set_number: set.set_number,
                                         reps: parseInt(set.reps, 10) || 0,
-                                        weight_kg: parseFloat(set.weight_kg) || 0,
+                                        // --- INICIO DE LA MODIFICACIÓN ---
+                                        // Aseguramos que el valor (que ahora puede ser '10.5' o '10,5') se parsee correctamente
+                                        // Aunque ya lo normalizamos en el onChange, esta es una capa extra de seguridad.
+                                        weight_kg: parseFloat(String(set.weight_kg).replace(',', '.')) || 0,
+                                        // --- FIN DE LA MODIFICACIÓN ---
                                         is_dropset: set.is_dropset || false
                                     }))
         }))
@@ -345,16 +349,24 @@ const Workout = ({ timer, setView }) => {
                                     <span className="text-center font-semibold text-text-secondary bg-bg-primary border border-glass-border rounded-md px-3 py-3">
                                         {set.is_dropset ? 'DS' : set.set_number}
                                     </span>
+                                    {/* --- INICIO DE LA MODIFICACIÓN --- */}
+                                    {/* Cambiado type="number" a type="text" con inputMode="decimal" */}
+                                    {/* Añadida normalización de comas a puntos en onChange */}
                                     <input
-                                      type="number"
+                                      type="text"
+                                      inputMode="decimal"
                                       placeholder="0"
                                       value={set.weight_kg}
-                                      onChange={hasWorkoutStarted ? (e) => updateActiveWorkoutSet(actualExIndex, setIndex, 'weight_kg', e.target.value) : undefined}
+                                      onChange={hasWorkoutStarted ? (e) => {
+                                        const value = e.target.value.replace(',', '.');
+                                        updateActiveWorkoutSet(actualExIndex, setIndex, 'weight_kg', value);
+                                      } : undefined}
                                       onClick={!hasWorkoutStarted ? handleDisabledInputClick : undefined}
                                       className={baseInputClasses}
                                       disabled={!hasWorkoutStarted}
                                       readOnly={!hasWorkoutStarted}
                                     />
+                                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                                     <input
                                       type="number"
                                       placeholder="0"

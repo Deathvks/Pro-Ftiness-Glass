@@ -1,3 +1,4 @@
+/* frontend/src/components/BodyWeightModal.jsx */
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import GlassCard from './GlassCard';
@@ -26,7 +27,11 @@ const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
   }, [existingLog]);
 
   const handleSaveClick = () => {
-    const newWeight = parseFloat(weight);
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Aseguramos que el valor se parsee correctamente, reemplazando comas por puntos.
+    const newWeight = parseFloat(String(weight).replace(',', '.'));
+    // --- FIN DE LA MODIFICACIÓN ---
+
     if (!isNaN(newWeight) && newWeight > 0) {
       onSave({ weight: newWeight });
       onClose();
@@ -64,20 +69,23 @@ const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
             <label htmlFor="weight-input" className="block text-sm font-medium text-text-secondary mb-2 text-center">
               Peso (kg)
             </label>
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
             <input
               id="weight-input"
-              type="number"
+              type="text"
+              inputMode="decimal"
               step="0.1"
               value={weight}
-              onChange={(e) => setWeight(e.target.value)}
+              onChange={(e) => setWeight(e.target.value.replace(',', '.'))}
               className="w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
               placeholder="Ej: 80.5"
               required
               autoFocus
             />
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
           </div>
           <button 
-            type="button" 
+            type="submit" // Cambiado a submit para que el 'Enter' funcione
             onClick={handleSaveClick} 
             className="w-full mt-2 py-3 rounded-md bg-accent text-bg-secondary font-semibold transition hover:scale-105"
           >

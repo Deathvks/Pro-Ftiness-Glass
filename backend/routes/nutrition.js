@@ -145,6 +145,16 @@ router.get('/summary', [
 // Obtener comidas registradas recientemente
 router.get('/recent', nutritionController.getRecentMeals);
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Nueva ruta para buscar alimentos (en favoritos y/o base de datos global)
+router.get('/search', [
+    query('q')
+        .notEmpty().withMessage('El término de búsqueda es obligatorio.')
+        .isString().withMessage('El término de búsqueda debe ser un texto.')
+        .trim()
+], handleValidationErrors, nutritionController.searchFoods);
+// --- FIN DE LA MODIFICACIÓN ---
+
 
 // Ruta para subir la imagen de una comida y obtener la URL
 // (Esta ruta se mantiene por si el cliente quiere subir la imagen por separado)
@@ -209,4 +219,4 @@ router.post('/water', [
 // Buscar producto por código de barras
 router.get('/barcode/:barcode', nutritionController.searchByBarcode);
 
-export default router; // Mantenemos la exportación por defecto
+export default router;

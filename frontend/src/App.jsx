@@ -474,13 +474,18 @@ export default function App() {
       </main>
 
       {/* --- INICIO DE LA MODIFICACIÓN (NAVBAR MÓVIL) --- */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-around bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]
-                   pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]">
-      {/*
-        1. Quitamos 'h-20' y 'items-center' del 'nav'.
-        2. Añadimos padding para las 'safe areas' (pl, pr, pb) usando 'env()'.
-           (Asegúrate de que 'index.html' tenga 'viewport-fit=cover' en el tag 'viewport')
-      */}
+      {/* 1. Cambiamos 'justify-around' por 'justify-evenly' para espaciado 100% equitativo */}
+      {/* 2. Reemplazamos 'pl/pr' simples por 'pl/pr-[max(...)]' para garantizar un padding MÍNIMO */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]
+                   pb-[env(safe-area-inset-bottom)] 
+                   pl-[max(env(safe-area-inset-left),_0.5rem)] 
+                   pr-[max(env(safe-area-inset-right),_0.5rem)]">
+        {/*
+          Quitamos pl-[env(safe-area-inset-left)] y pr-[env(safe-area-inset-right)]
+          y los reemplazamos por la función max() de CSS para asegurar un padding mínimo de 0.5rem (8px).
+          En un iPhone, usará el 'safe-area-inset-left' si es MAYOR que 0.5rem.
+          En un Android sin notch, usará 0.5rem como padding.
+        */}
       {/* --- FIN DE LA MODIFICACIÓN (NAVBAR MÓVIL) --- */}
         {navItems.map(item => (
           <button
@@ -489,8 +494,9 @@ export default function App() {
               navigate(item.id); // Llama a la 'navigate' estable
             }}
             // --- INICIO DE LA MODIFICACIÓN (BOTÓN NAVBAR) ---
+            // 3. Mantenemos 'flex-grow' para que los botones llenen el espacio.
+            //    Junto con 'justify-evenly', esto crea una barra equilibrada.
             className={`flex flex-col items-center justify-center gap-1 h-20 flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
-            {/* 3. Cambiamos 'h-full' por 'h-20' para que los botones mantengan su altura fija */}
             {/* --- FIN DE LA MODIFICACIÓN (BOTÓN NAVBAR) --- */}
             {item.icon}
             <span className="text-xs font-medium">{item.label}</span>
