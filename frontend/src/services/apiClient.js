@@ -1,3 +1,4 @@
+/* frontend/src/services/apiClient.js */
 import useAppStore from '../store/useAppStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -51,7 +52,10 @@ const apiClient = async (endpoint, options = {}) => {
         if (!response.ok) {
             // Si la respuesta es un error (ej: 4xx, 5xx), intentamos leer el cuerpo del error.
             if (response.status === 401 || response.status === 403) {
-                useAppStore.getState().handleLogout();
+                // --- INICIO DE LA MODIFICACIÓN ---
+                // Cambiamos handleLogout por handleSessionExpiry para NO borrar el workout
+                useAppStore.getState().handleSessionExpiry();
+                // --- FIN DE LA MODIFICACIÓN ---
             }
 
             let errorMessage = 'Ha ocurrido un error inesperado.';

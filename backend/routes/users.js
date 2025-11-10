@@ -95,6 +95,14 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
+// --- INICIO DE LA MODIFICACIÓN: Validación de contraseña para borrado ---
+const passwordValidationRules = [
+    body('password')
+        .notEmpty()
+        .withMessage('La contraseña es requerida para confirmar esta acción.'),
+];
+// --- FIN DE LA MODIFICACIÓN ---
+
 
 // Aplicar autenticación a todas las rutas de /users
 // Esto asegura que req.user.userId esté disponible ANTES de multer/sharp
@@ -171,5 +179,24 @@ router.put(
         userController.updateMyAccount(req, res, next);
     }
 );
+
+// --- INICIO DE LA MODIFICACIÓN: Rutas de borrado ---
+
+// DELETE /api/users/me/data (Limpiar datos del usuario)
+router.delete(
+    '/me/data',
+    passwordValidationRules,  // Validar que la contraseña exista
+    handleValidationErrors,   // Manejar error si no existe
+    userController.clearMyData // Controlador
+);
+
+// DELETE /api/users/me (Borrar cuenta de usuario)
+router.delete(
+    '/me',
+    passwordValidationRules,  // Validar que la contraseña exista
+    handleValidationErrors,   // Manejar error si no existe
+    userController.deleteMyAccount // Controlador
+);
+// --- FIN DE LA MODIFICACIÓN ---
 
 export default router;

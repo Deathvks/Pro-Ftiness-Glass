@@ -4,24 +4,87 @@ import bcrypt from 'bcryptjs';
 import models from '../models/index.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
 // --- INICIO DE LA MODIFICACIÓN ---
-import { fileURLToPath } from 'url'; // Necesario para __dirname en ESM
+// Importar todos los modelos necesarios para el borrado
+const {
+  User,
+  BodyWeightLog,
+  sequelize,
+  Routine,
+  WorkoutLog,
+  NutritionLog,
+  WaterLog,
+  FavoriteMeal,
+  PersonalRecord,
+  CreatinaLog,
+} = models;
 // --- FIN DE LA MODIFICACIÓN ---
 
-const { User, BodyWeightLog, sequelize } = models;
-
-// --- INICIO DE LA MODIFICACIÓN ---
 // Simulación de __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // Esto será /app/backend/controllers
-// --- FIN DE LA MODIFICACIÓN ---
 
+// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Helper para encontrar y eliminar todos los ficheros de un usuario (perfil, comidas).
+ * @param {number} userId - ID del usuario.
+ * @param {object} userInstance - Instancia del modelo User (opcional, para la foto de perfil).
+ */
+const deleteAllUserFiles = async (userId, userInstance) => {
+  const publicPath = path.join(__dirname, '..', 'public');
+  const pathsToDelete = new Set();
+
+  // 1. Imagen de perfil
+  if (userInstance && userInstance.profile_image_url) {
+    pathsToDelete.add(userInstance.profile_image_url);
+  }
+
+  // 2. Imágenes de NutritionLog
+  const nutritionLogs = await NutritionLog.findAll({
+    where: { user_id: userId },
+    attributes: ['image_url'],
+    raw: true,
+  });
+  nutritionLogs.forEach(
+    (log) => log.image_url && pathsToDelete.add(log.image_url)
+  );
+
+  // 3. Imágenes de FavoriteMeal
+  const favoriteMeals = await FavoriteMeal.findAll({
+    where: { user_id: userId },
+    attributes: ['image_url'],
+    raw: true,
+  });
+  favoriteMeals.forEach(
+    (meal) => meal.image_url && pathsToDelete.add(meal.image_url)
+  );
+
+  // 4. Borrar todos los ficheros en paralelo
+  const deletePromises = [];
+  for (const relativePath of pathsToDelete) {
+    if (relativePath) {
+      const fullPath = path.join(publicPath, relativePath);
+      deletePromises.push(
+        fs.unlink(fullPath).catch((err) => {
+          // Ignorar errores "No such file or directory"
+          if (err.code !== 'ENOENT') {
+            console.warn(`Fallo al borrar fichero ${fullPath}: ${err.message}`);
+          }
+        })
+      );
+    }
+  }
+  await Promise.all(deletePromises);
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Obtener el perfil del usuario autenticado
 export const getMyProfile = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.userId, {
-      attributes: { exclude: ['password_hash'] }
+      attributes: { exclude: ['password_hash'] },
     });
 
     if (!user) {
@@ -51,52 +114,51 @@ export const updateMyProfile = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    await user.update({
-      gender,
-      age,
-      height,
-      activity_level: activityLevel,
-      goal
-    }, { transaction: t });
+    await user.update(
+      {
+        gender,
+        age,
+        height,
+        activity_level: activityLevel,
+        goal,
+      },
+      { transaction: t }
+    );
 
     if (weight) {
       const weightValue = parseFloat(weight);
       if (weightValue > 0) {
-        await BodyWeightLog.create({
-          user_id: userId,
-          weight_kg: weightValue,
-          log_date: new Date()
-        }, { transaction: t });
+        await BodyWeightLog.create(
+          {
+            user_id: userId,
+            weight_kg: weightValue,
+            log_date: new Date(),
+          },
+          { transaction: t }
+        );
       }
     }
 
     await t.commit();
 
     const updatedUser = await User.findByPk(userId, {
-      attributes: { exclude: ['password_hash'] }
+      attributes: { exclude: ['password_hash'] },
     });
     res.json(updatedUser);
-
   } catch (error) {
     await t.rollback();
     next(error);
   }
 };
 
-
-// --- INICIO DE MODIFICACIÓN (Lógica de updateMyAccount) ---
+// Actualizar datos de la cuenta (username, email, pass, imagen)
 export const updateMyAccount = async (req, res, next) => {
-  // La validación ya ocurrió en la ruta (handleValidationErrors)
-  // req.file ya fue procesado por Sharp y la ruta está en req.processedImagePath
-  // (req.processedImagePath fue asignado en la ruta)
-
   let oldImagePath = null;
   const newImagePath = req.processedImagePath || null; // La ruta .webp desde el middleware
   let imagePathToDeleteOnError = null;
 
-  // Si se subió una nueva imagen, guardamos su ruta para borrarla si algo falla
   if (newImagePath) {
-      imagePathToDeleteOnError = path.join(__dirname, '..', 'public', newImagePath);
+    imagePathToDeleteOnError = path.join(__dirname, '..', 'public', newImagePath);
   }
 
   try {
@@ -105,92 +167,204 @@ export const updateMyAccount = async (req, res, next) => {
 
     const user = await User.findByPk(userId);
     if (!user) {
-      if (imagePathToDeleteOnError) await fs.unlink(imagePathToDeleteOnError).catch(e => {});
+      if (imagePathToDeleteOnError)
+        await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // 1. Guardar ruta imagen antigua
     if (user.profile_image_url) {
-        oldImagePath = path.join(__dirname, '..', 'public', user.profile_image_url);
+      oldImagePath = path.join(__dirname, '..', 'public', user.profile_image_url);
     }
 
     const fieldsToUpdate = {};
 
-    // 2. Si se sube una nueva imagen (.webp)
     if (newImagePath) {
-        fieldsToUpdate.profile_image_url = newImagePath; // Guardamos la URL relativa .webp
-
-        // Evitar borrar si la ruta es idéntica (poco probable)
-        if (oldImagePath && oldImagePath === imagePathToDeleteOnError) {
-            oldImagePath = null;
-        }
+      fieldsToUpdate.profile_image_url = newImagePath;
+      if (oldImagePath && oldImagePath === imagePathToDeleteOnError) {
+        oldImagePath = null;
+      }
     }
 
-    // 3. Si se intenta cambiar contraseña
     if (newPassword) {
       if (!currentPassword) {
-        if (imagePathToDeleteOnError) await fs.unlink(imagePathToDeleteOnError).catch(e => {});
-        return res.status(400).json({ error: 'La contraseña actual es requerida para cambiarla.' });
+        if (imagePathToDeleteOnError)
+          await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
+        return res
+          .status(400)
+          .json({ error: 'La contraseña actual es requerida para cambiarla.' });
       }
       const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
       if (!isMatch) {
-        if (imagePathToDeleteOnError) await fs.unlink(imagePathToDeleteOnError).catch(e => {});
-        return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+        if (imagePathToDeleteOnError)
+          await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
+        return res
+          .status(401)
+          .json({ error: 'La contraseña actual es incorrecta.' });
       }
       fieldsToUpdate.password_hash = newPassword; // El hook se encarga del hash
     }
 
-    // 4. Actualizar otros campos
     if (name !== undefined && name !== user.name) fieldsToUpdate.name = name;
-    if (username !== undefined && username !== user.username) fieldsToUpdate.username = username;
-    if (email !== undefined && email !== user.email) fieldsToUpdate.email = email;
+    if (username !== undefined && username !== user.username)
+      fieldsToUpdate.username = username;
+    if (email !== undefined && email !== user.email)
+      fieldsToUpdate.email = email;
 
-    // 5. Guardar en BBDD
     if (Object.keys(fieldsToUpdate).length > 0) {
-        await user.update(fieldsToUpdate);
+      await user.update(fieldsToUpdate);
     }
 
-    // 6. Borrar imagen antigua si existe y si subimos una nueva
     if (oldImagePath && fieldsToUpdate.profile_image_url) {
       try {
         await fs.unlink(oldImagePath);
-        console.log(`Imagen antigua borrada: ${oldImagePath}`);
       } catch (unlinkError) {
         if (unlinkError.code !== 'ENOENT') {
-            console.warn(`No se pudo borrar la imagen antigua: ${oldImagePath}`, unlinkError);
-        } else {
-             console.log(`La imagen antigua no existía, no se borró: ${oldImagePath}`);
+          console.warn(
+            `No se pudo borrar la imagen antigua: ${oldImagePath}`,
+            unlinkError
+          );
         }
       }
     }
 
-    // 7. Recargar datos frescos
     await user.reload();
 
-    // 8. Enviar respuesta actualizada
     const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
     res.json(userWithoutPassword);
-
   } catch (error) {
-    // Manejo de errores
     if (imagePathToDeleteOnError) {
-        // Si falló (ej. constraint de BBDD), borrar la imagen .webp que acabamos de subir
-        await fs.unlink(imagePathToDeleteOnError).catch(e => console.error("Error borrando imagen tras fallo:", e));
+      await fs
+        .unlink(imagePathToDeleteOnError)
+        .catch((e) => console.error('Error borrando imagen tras fallo:', e));
     }
 
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(409).json({ error: 'El email o nombre de usuario ya está en uso.' });
+      return res
+        .status(409)
+        .json({ error: 'El email o nombre de usuario ya está en uso.' });
     }
 
     next(error);
   }
 };
-// --- FIN DE MODIFICACIÓN ---
+
+// --- INICIO DE LA MODIFICACIÓN ---
+
+/**
+ * Borra todos los datos del usuario (logs, rutinas, etc.) pero conserva la cuenta.
+ */
+export const clearMyData = async (req, res, next) => {
+  const { userId } = req.user;
+  const { password } = req.body;
+
+  if (!password) {
+    return res
+      .status(400)
+      .json({ error: 'La contraseña es requerida para borrar los datos.' });
+  }
+
+  const t = await sequelize.transaction();
+  let user;
+  try {
+    user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+    }
+
+    // 1. Recolectar y borrar todos los ficheros
+    await deleteAllUserFiles(userId, user);
+
+    // 2. Borrar todos los datos asociados en la BBDD
+    await Routine.destroy({ where: { user_id: userId }, transaction: t });
+    await WorkoutLog.destroy({ where: { user_id: userId }, transaction: t });
+    await BodyWeightLog.destroy({ where: { user_id: userId }, transaction: t });
+    await NutritionLog.destroy({ where: { user_id: userId }, transaction: t });
+    await WaterLog.destroy({ where: { user_id: userId }, transaction: t });
+    await FavoriteMeal.destroy({ where: { user_id: userId }, transaction: t });
+    await PersonalRecord.destroy({ where: { user_id: userId }, transaction: t });
+    await CreatinaLog.destroy({ where: { user_id: userId }, transaction: t });
+
+    // 3. Resetear los campos del perfil del usuario
+    await user.update(
+      {
+        profile_image_url: null,
+        gender: null,
+        age: null,
+        height: null,
+        activity_level: null,
+        goal: null,
+      },
+      { transaction: t }
+    );
+
+    // 4. Commit
+    await t.commit();
+
+    res.status(200).json({
+      message:
+        'Todos tus datos de progreso han sido eliminados. Tu cuenta se mantiene.',
+    });
+  } catch (error) {
+    await t.rollback();
+    next(error);
+  }
+};
+
+/**
+ * Borra permanentemente la cuenta del usuario y todos sus datos.
+ */
+export const deleteMyAccount = async (req, res, next) => {
+  const { userId } = req.user;
+  const { password } = req.body;
+
+  if (!password) {
+    return res
+      .status(400)
+      .json({ error: 'La contraseña es requerida para borrar la cuenta.' });
+  }
+
+  let user;
+  try {
+    user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+    }
+
+    // 1. Recolectar y borrar todos los ficheros
+    // (Debe hacerse antes de que los logs de BBDD desaparezcan)
+    await deleteAllUserFiles(userId, user);
+
+    // 2. Borrar el usuario de la BBDD
+    // (onDelete: 'CASCADE' se encargará de borrar todos los registros asociados)
+    await user.destroy();
+
+    res.status(200).json({
+      message: 'Tu cuenta y todos tus datos han sido eliminados permanentemente.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 const userController = {
   getMyProfile,
   updateMyProfile,
-  updateMyAccount
+  updateMyAccount,
+  // --- INICIO DE LA MODIFICACIÓN ---
+  clearMyData,
+  deleteMyAccount,
+  // --- FIN DE LA MODIFICACIÓN ---
 };
 
 export default userController;

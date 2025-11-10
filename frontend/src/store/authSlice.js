@@ -5,7 +5,7 @@ import { APP_VERSION } from '../config/version';
 
 // Esta función se encarga de limpiar el almacenamiento local relacionado con la sesión.
 const clearAuthStorage = () => {
-    localStorage.removeItem('fittrack_token');
+    localStorage.removeItem('pro_fitness_token'); // Cambiado de 'fittrack_token'
     localStorage.removeItem('lastView');
     localStorage.removeItem('templateRoutinesSearchQuery');
     localStorage.removeItem('templateRoutinesSelectedCategory');
@@ -13,15 +13,13 @@ const clearAuthStorage = () => {
     localStorage.removeItem('templateRoutinesShowFilters');
 };
 
-// --- INICIO DE LA MODIFICACIÓN (EXISTENTE) ---
 // ELIMINADA la función getInitialCookieConsent ya que no se usa
-// --- FIN DE LA MODIFICACIÓN (EXISTENTE) ---
 
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
 export const createAuthSlice = (set, get) => ({
     // --- ESTADO INICIAL ---
-    isAuthenticated: !!localStorage.getItem('fittrack_token'),
-    token: localStorage.getItem('fittrack_token'),
+    isAuthenticated: !!localStorage.getItem('pro_fitness_token'), // Cambiado de 'fittrack_token'
+    token: localStorage.getItem('pro_fitness_token'), // Cambiado de 'fittrack_token'
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
@@ -33,20 +31,21 @@ export const createAuthSlice = (set, get) => ({
     // Inicia sesión: guarda el token, actualiza el estado y carga los datos iniciales.
     handleLogin: async (credentials) => {
         const { token } = await authService.loginUser(credentials);
-        localStorage.setItem('fittrack_token', token);
+        
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Limpiamos el token antiguo (si existía) al iniciar sesión exitosamente
+        localStorage.removeItem('fittrack_token'); 
+        // --- FIN DE LA MODIFICACIÓN ---
+
+        localStorage.setItem('pro_fitness_token', token); // Guardamos el nuevo token
         set({ token, isAuthenticated: true });
         await get().fetchInitialData(); // Llama a la acción del dataSlice
-
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // ELIMINADA la llamada duplicada a checkCookieConsent.
-        // fetchInitialData (en dataSlice) ya se encarga de esto.
-        // --- FIN DE LA MODIFICACIÓN ---
     },
 
-    // Cierra sesión: limpia el token, el almacenamiento y resetea el estado completo.
+    // Cierra sesión (LOGOUT MANUAL): limpia el token, el almacenamiento y resetea el estado completo.
     handleLogout: () => {
         clearAuthStorage();
-        get().clearWorkoutState(); // Llama a la acción del workoutSlice
+        get().clearWorkoutState(); // Llama a la acción del workoutSlice (BORRA LOCALSTORAGE DEL WORKOUT)
         get().clearDataState();   // Llama a la acción del dataSlice
         set({
             isAuthenticated: false,
@@ -54,6 +53,29 @@ export const createAuthSlice = (set, get) => ({
             userProfile: null,
             isLoading: false,
             cookieConsent: null, // Resetea el consentimiento al cerrar sesión
+        });
+    },
+
+    /**
+     * Maneja la EXPIRACIÓN DE SESIÓN (LOGOUT AUTOMÁTICO por 401/403).
+     * Limpia el estado de autenticación pero MANTIENE el workout activo
+     * en localStorage para que pueda ser reanudado.
+     */
+    handleSessionExpiry: () => {
+        clearAuthStorage(); // Limpia el token de localStorage
+        
+        // ¡NO LLAMAMOS A get().clearWorkoutState()!
+        // Esta es la diferencia clave: el workout en localStorage sobrevive.
+
+        get().clearDataState();   // Limpia el estado de datos en memoria (rutinas, logs, etc.)
+        
+        // Resetea el estado de autenticación en memoria
+        set({
+            isAuthenticated: false,
+            token: null,
+            userProfile: null,
+            isLoading: false,
+            // Mantenemos el cookieConsent, ya que el usuario es el mismo.
         });
     },
 
@@ -83,10 +105,7 @@ export const createAuthSlice = (set, get) => ({
     },
 
     // Comprueba el consentimiento de cookies para el usuario actual.
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Convertida a 'async' para que dataSlice.js pueda 'await' su finalización.
     checkCookieConsent: async (userId) => {
-        // Esta función ahora simplemente lee y actualiza el estado.
         const consent = localStorage.getItem(`cookie_consent_${userId}`);
         if (consent === 'true') {
             set({ cookieConsent: true });
@@ -95,10 +114,8 @@ export const createAuthSlice = (set, get) => ({
         } else {
             set({ cookieConsent: null });
         }
-        // Devolvemos una promesa resuelta para que el 'await' en dataSlice.js funcione.
         return Promise.resolve();
     },
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // Acepta las cookies y guarda la preferencia para el usuario actual.
     handleAcceptCookies: () => {
@@ -115,7 +132,6 @@ export const createAuthSlice = (set, get) => ({
         if (userId) {
             localStorage.setItem(`cookie_consent_${userId}`, 'false');
             set({ cookieConsent: false });
-            // Opcional: limpiar las cookies/storage si se rechazan
             localStorage.removeItem('theme');
             localStorage.removeItem('accent');
         }
