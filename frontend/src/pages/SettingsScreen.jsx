@@ -1,11 +1,16 @@
 /* frontend/src/pages/SettingsScreen.jsx */
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 // --- INICIO DE LA MODIFICACIÓN ---
-import { Helmet } from 'react-helmet-async'; // Importamos Helmet
-// --- FIN DE LA MODIFICACIÓN ---
-import { ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield, LogOut, Info, ChevronRight, Cookie, Mail } from 'lucide-react';
+import {
+  ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield,
+  LogOut, Info, ChevronRight, Cookie, Mail, BellRing
+} from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
+import { usePushNotifications } from '../hooks/usePushNotifications'; // Importamos el hook
+import Spinner from '../components/Spinner'; // Importamos Spinner
+// --- FIN DE LA MODIFICACIÓN ---
 
 const ACCENT_OPTIONS = [
   // ... (opciones de color sin cambios) ...
@@ -43,6 +48,18 @@ export default function SettingsScreen({
   const { userProfile, resetCookieConsent } = useAppStore();
   const [currentColorPage, setCurrentColorPage] = useState(0);
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Instanciamos el hook de notificaciones
+  const { 
+    isSubscribed, 
+    subscribe, 
+    unsubscribe, 
+    isLoading: isPushLoading, // Renombramos para evitar colisión
+    isSupported: isPushSupported, 
+    permission: pushPermission 
+  } = usePushNotifications();
+  // --- FIN DE LA MODIFICACIÓN ---
+
   const COLORS_PER_PAGE = 8;
   const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
   const startIndex = currentColorPage * COLORS_PER_PAGE;
@@ -50,6 +67,7 @@ export default function SettingsScreen({
   const currentColors = ACCENT_OPTIONS.slice(startIndex, endIndex);
 
   const ThemeButton = ({ value, icon, label }) => {
+    // ... (componente sin cambios) ...
     const Icon = icon;
     const active = theme === value;
     return (
@@ -68,6 +86,7 @@ export default function SettingsScreen({
   };
 
   const AccentSwatch = ({ option }) => {
+    // ... (componente sin cambios) ...
     const selected = accent === option.id;
     return (
       <button
@@ -99,15 +118,13 @@ export default function SettingsScreen({
   return (
     <div className="px-4 pb-4 md:p-8 max-w-5xl mx-auto">
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
-      {/* Añadimos Helmet para esta vista */}
+      {/* Helmet (sin cambios) */}
       <Helmet>
          <title>Ajustes - Pro Fitness Glass</title>
          <meta name="description" content="Personaliza la apariencia de Pro Fitness Glass (tema, color de acento) y gestiona tu perfil físico, cuenta y privacidad." />
       </Helmet>
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
-      {/* Header para PC */}
+      {/* Header para PC (sin cambios) */}
       <div className="hidden md:flex items-center justify-between mb-6">
         <button
           onClick={() => setView('dashboard')}
@@ -121,7 +138,7 @@ export default function SettingsScreen({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 md:mt-0">
-        {/* --- Sección Personalización --- */}
+        {/* --- Sección Personalización (sin cambios) --- */}
         <section className="lg:col-span-2 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5">
           <div className="flex items-center gap-2 mb-4">
             <Palette size={18} className="text-accent" />
@@ -183,8 +200,48 @@ export default function SettingsScreen({
             </div>
           </button>
           
-          {/* --- INICIO DE LA MODIFICACIÓN (BOTÓN ELIMINADO) --- */}
-          {/* Se ha eliminado el botón "Editar cuenta" */}
+          {/* Botón "Editar cuenta" (eliminado) */}
+
+          {/* --- INICIO DE LA MODIFICACIÓN (Push Notifications) --- */}
+          {/* Solo mostramos la opción si el navegador lo soporta */}
+          {isPushSupported && (
+            <div className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left">
+              <BellRing size={18} className="text-accent" />
+              <div className="flex-1">
+                <div className="text-sm font-semibold">Notificaciones Push</div>
+                {pushPermission === 'denied' ? (
+                  <div className="text-xs text-red">Bloqueadas en el navegador</div>
+                ) : (
+                  <div className="text-xs text-text-secondary">
+                    {isSubscribed ? 'Activadas' : 'Desactivadas'}
+                  </div>
+                )}
+              </div>
+
+              {/* Interruptor (Toggle) */}
+              {isPushLoading ? (
+                <Spinner size={20} />
+              ) : (
+                <button
+                  role="switch"
+                  aria-checked={isSubscribed}
+                  onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
+                  disabled={pushPermission === 'denied'}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
+                    ${isSubscribed ? 'bg-accent' : 'bg-bg-secondary'}
+                    ${pushPermission === 'denied' ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+                      ${isSubscribed ? 'translate-x-5' : 'translate-x-0'}
+                    `}
+                  />
+                </button>
+              )}
+            </div>
+          )}
           {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           <button
@@ -242,10 +299,8 @@ export default function SettingsScreen({
           </button>
         </aside>
 
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* --- Sección Información (ahora oculta en pantallas medianas y grandes) --- */}
+        {/* --- Sección Información (sin cambios) --- */}
         <aside className="md:hidden lg:col-span-1 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 flex flex-col gap-3">
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
           <h2 className="text-lg font-semibold mb-1">Información</h2>
           <div className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border]">
             <Info size={18} className="text-accent" />

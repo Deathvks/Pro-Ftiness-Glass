@@ -1,18 +1,22 @@
 /* frontend/src/components/MainAppLayout.jsx */
 import React, { Suspense } from 'react';
 import { User, Zap, Home, Dumbbell, BarChart2, Settings, Utensils } from 'lucide-react';
-import useAppStore from '../store/useAppStore';
-import { APP_VERSION } from '../config/version';
+// --- INICIO DE LA CORRECCIÓN DE RUTAS ---
+// Se cambian las rutas relativas a absolutas desde la raíz del proyecto (/)
+// para solucionar problemas de resolución en el entorno de compilación.
+import useAppStore from '/src/store/useAppStore.js';
+import { APP_VERSION } from '/src/config/version.js';
 
 // Componentes UI
-import Sidebar from './Sidebar';
-import Spinner from './Spinner';
-import PRToast from './PRToast';
-import ConfirmationModal from './ConfirmationModal';
-import WelcomeModal from './WelcomeModal';
-import EmailVerificationModal from './EmailVerificationModal';
-import EmailVerification from './EmailVerification';
-import CookieConsentBanner from './CookieConsentBanner';
+import Sidebar from '/src/components/Sidebar.jsx';
+import Spinner from '/src/components/Spinner.jsx';
+import PRToast from '/src/components/PRToast.jsx';
+import ConfirmationModal from '/src/components/ConfirmationModal.jsx';
+import WelcomeModal from '/src/components/WelcomeModal.jsx';
+import EmailVerificationModal from '/src/components/EmailVerificationModal.jsx';
+import EmailVerification from '/src/components/EmailVerification.jsx';
+import CookieConsentBanner from '/src/components/CookieConsentBanner.jsx';
+// --- FIN DE LA CORRECCIÓN DE RUTAS ---
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -99,7 +103,11 @@ export default function MainAppLayout({
       />
 
       {/* Contenido Principal */}
-      <main ref={mainContentRef} className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-0">
+      <main
+        ref={mainContentRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden md:pb-0 
+                   pb-[calc(5rem+env(safe-area-inset-bottom))]" // 5rem (h-20) + safe-area
+      >
 
         {/* Header (Móvil) */}
         <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
@@ -129,9 +137,9 @@ export default function MainAppLayout({
 
       {/* Navbar (Móvil) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]
-                   pb-[env(safe-area-inset-bottom)] 
-                   pl-[max(env(safe-area-inset-left),_0.5rem)] 
-                   pr-[max(env(safe-area-inset-right),_0.5rem)]">
+                      pb-[env(safe-area-inset-bottom)] 
+                      pl-[max(env(safe-area-inset-left),_0.5rem)] 
+                      pr-[max(env(safe-area-inset-right),_0.5rem)]">
         {navItems.map(item => (
           <button
             key={item.id}
@@ -173,7 +181,7 @@ export default function MainAppLayout({
         <button
           onClick={() => navigate('workout')}
           className="fixed right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105
-                     bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10"
+                     bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10" // 6rem = 5rem (nav) + 1rem (espacio)
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>

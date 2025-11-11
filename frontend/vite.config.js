@@ -65,6 +65,23 @@ export default defineConfig({
           },
         ],
       },
+      
+      // --- INICIO DE LA MODIFICACIÓN (Push Notifications) ---
+      // Cambiamos la estrategia a 'injectManifest' para usar
+      // nuestro propio Service Worker (sw.js) que maneja las notificaciones push.
+      strategies: 'injectManifest',
+      srcDir: 'src',      // El directorio donde se encuentra nuestro SW fuente
+      filename: 'sw.js',   // El nombre de nuestro fichero SW fuente
+      
+      // --- AÑADIDO: Opciones de Desarrollo ---
+      // Esto es crucial para que 'injectManifest' funcione
+      // correctamente durante 'npm run dev'.
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
+      
     }),
   ],
   build: {
