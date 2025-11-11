@@ -116,20 +116,7 @@ export const usePushNotifications = () => {
       // 3. Obtener la VAPID key del backend
       const { key: vapidPublicKey } = await notificationService.getVapidKey();
 
-      // --- INICIO DE LA MODIFICACIÓN (Añadir Logs) ---
-      console.log('--- DEBUG PUSH (Frontend) ---');
-      console.log('Clave VAPID recibida del backend:', vapidPublicKey);
-      if (!vapidPublicKey) {
-          console.error('¡ERROR FATAL: La clave VAPID del backend es nula o vacía!');
-      }
-      // --- FIN DE LA MODIFICACIÓN ---
-
       const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
-
-      // --- INICIO DE LA MODIFICACIÓN (Añadir Logs) ---
-      console.log('Clave VAPID convertida (applicationServerKey):', applicationServerKey);
-      console.log('Intentando suscribirse al PushManager...');
-      // --- FIN DE LA MODIFICACIÓN ---
 
       // 4. Suscribir el PushManager
       const registration = await getServiceWorkerRegistration();
@@ -146,15 +133,6 @@ export const usePushNotifications = () => {
       addToast('¡Notificaciones activadas!', 'success');
 
     } catch (err) {
-      // --- INICIO DE LA MODIFICACIÓN (Añadir Logs) ---
-      console.error('--- DEBUG PUSH (Frontend) ---');
-      console.error('Error detallado al suscribirse:', err);
-      console.error('Error Name:', err.name);
-      console.error('Error Message:', err.message);
-      if (err.name === 'AbortError') {
-          console.error('¡Error detectado: AbortError! Esto confirma un problema con la clave VAPID o el servicio push.');
-      }
-      // --- FIN DE LA MODIFICACIÓN ---
       addToast(`Error al activar notificaciones: ${err.message}`, 'error');
       setError('Error al activar notificaciones.');
     } finally {
