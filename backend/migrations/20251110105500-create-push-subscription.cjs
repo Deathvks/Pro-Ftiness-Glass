@@ -16,18 +16,18 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Users', // Asegúrate que coincida con el nombre de tu tabla de usuarios
+          // --- INICIO DE LA CORRECCIÓN ---
+          model: 'users', // Cambiado de 'Users' a 'users' (minúscula)
+          // --- FIN DE LA CORRECCIÓN ---
           key: 'id',
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE', 
       },
       endpoint: {
-        // --- INICIO DE LA MODIFICACIÓN ---
-        type: Sequelize.STRING(512), // Cambiado de TEXT a STRING(512) (VARCHAR)
-        // --- FIN DE LA MODIFICACIÓN ---
+        type: Sequelize.STRING(512), 
         allowNull: false,
-        unique: true, // Ahora esto funcionará
+        unique: true,
       },
       keys: {
         type: Sequelize.JSON, 
@@ -44,7 +44,6 @@ module.exports = {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
-
     // Creamos un índice en 'userId' para optimizar las búsquedas
     await queryInterface.addIndex('PushSubscriptions', ['userId']);
   },
