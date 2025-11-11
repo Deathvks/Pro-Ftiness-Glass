@@ -249,9 +249,9 @@ body.accent-neutral {
   .bg-\[--glass-bg\] {
     background-color: var(--glass-bg);
     /* Se eliminan 'border: 1px solid;' y 'border-color: var(--glass-border);' 
-      para permitir que las clases de utilidad de Tailwind (ej. border-transparent, 
-      border-[--color-accent], border-[--glass-border]) controlen el color y 
-      estilo del borde.
+       para permitir que las clases de utilidad de Tailwind (ej. border-transparent, 
+       border-[--color-accent], border-[--glass-border]) controlen el color y 
+       estilo del borde.
     */
     
     /* Borde superior más brillante (Efecto de reflejo) */
@@ -305,7 +305,8 @@ body.accent-neutral {
   body.light-theme input[type="checkbox"]:checked {
     background-color: var(--color-accent) !important;
     border-color: var(--color-accent) !important;
-    outline: none !important;
+    outline: none !impor
+tant;
   }
 
   body.light-theme input[type="checkbox"]:focus-visible {
@@ -382,10 +383,10 @@ body.accent-neutral {
   }
   @keyframes toast-in {
     from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0);    opacity: 1; }
+    to { transform: translateX(0);     opacity: 1; }
   }
   @keyframes toast-out {
-    from { transform: translateX(0);    opacity: 1; }
+    from { transform: translateX(0);     opacity: 1; }
     to { transform: translateX(100%); opacity: 0; }
   }
 }
