@@ -87,7 +87,11 @@ export default function MainAppLayout({
 
   // Renderizado del layout principal
   return (
-    <div className="relative flex w-full h-full overflow-hidden">
+    // CAMBIO: h-full -> h-screen
+    // Esto asegura que el layout ocupe la pantalla completa del viewport,
+    // independientemente de su contenedor padre en App.jsx.
+    // Soluciona el problema del navbar flotante en móviles.
+    <div className="relative flex w-full h-screen overflow-hidden">
       
       {/* Fondo decorativo */}
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
@@ -137,9 +141,9 @@ export default function MainAppLayout({
 
       {/* Navbar (Móvil) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]
-                      pb-[env(safe-area-inset-bottom)] 
-                      pl-[max(env(safe-area-inset-left),_0.5rem)] 
-                      pr-[max(env(safe-area-inset-right),_0.5rem)]">
+                       pb-[env(safe-area-inset-bottom)] 
+                       pl-[max(env(safe-area-inset-left),_0.5rem)] 
+                       pr-[max(env(safe-area-inset-right),_0.5rem)]">
         {navItems.map(item => (
           <button
             key={item.id}

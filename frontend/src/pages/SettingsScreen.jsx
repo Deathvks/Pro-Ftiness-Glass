@@ -137,7 +137,10 @@ export default function SettingsScreen({
         <div className="w-[90px]" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 md:mt-0">
+      {/* --- INICIO DE LA MODIFICACIÓN (Layout Grid) --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 md:mt-0 lg:items-start">
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
+      
         {/* --- Sección Personalización (sin cambios) --- */}
         <section className="lg:col-span-2 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5">
           <div className="flex items-center gap-2 mb-4">
