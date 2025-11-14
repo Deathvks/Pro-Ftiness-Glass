@@ -108,7 +108,6 @@ export const createWorkoutSlice = (set, get) => ({
       const exerciseKeyName =
         fullDetails?.name || ex.exercise?.name || ex.name;
 
-      // --- INICIO DE LA MODIFICACIÓN ---
       // (Esta modificación tuya anterior se mantiene)
       const exerciseDetails = {
         ...(fullDetails || {}), // 1. Base (name, description_es, etc.)
@@ -123,7 +122,6 @@ export const createWorkoutSlice = (set, get) => ({
         image_url: ex.image_url_start || fullDetails?.image_url,
         video_url: ex.video_url || fullDetails?.video_url,
       };
-      // --- FIN DE LA MODIFICACIÓN ---
 
       return {
         id: ex.id,
@@ -160,7 +158,6 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage(newState);
   },
 
-  // ... (El resto del fichero 'startSimpleWorkout', 'togglePauseWorkout', etc. no cambia) ...
   // Inicia una sesión de entrenamiento simple (ej. Cardio).
   startSimpleWorkout: (workoutName) => {
     // ... (sin cambios) ...
@@ -214,16 +211,8 @@ export const createWorkoutSlice = (set, get) => ({
     if (!session) return;
     const newExercises = JSON.parse(JSON.stringify(session.exercises));
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // ¡ESTE ERA EL ERROR!
-    // const parsedValue = value === '' ? '' : parseFloat(value);
-    // newExercises[exIndex].setsDone[setIndex][field] = isNaN(parsedValue) ? '' : parsedValue;
-
-    // LA SOLUCIÓN:
-    // Guardamos el 'value' (el string "12." o "12,5") directamente.
-    // La normalización ya se hizo en WorkoutSetGrid.jsx
+    // (Esta modificación tuya anterior se mantiene)
     newExercises[exIndex].setsDone[setIndex][field] = value;
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const newState = {
       activeWorkout: { ...session, exercises: newExercises },
@@ -271,16 +260,29 @@ export const createWorkoutSlice = (set, get) => ({
 
   // Reemplaza un ejercicio en la sesión activa.
   replaceExercise: (exIndex, newExercise) => {
-    // ... (sin cambios) ...
     const session = get().activeWorkout;
     if (!session) return;
     const newExercises = JSON.parse(JSON.stringify(session.exercises));
     const oldExercise = newExercises[exIndex];
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // 'newExercise' es el objeto completo de la BBDD.
+    // Debemos aplicar la misma normalización que en 'startWorkout'
+    // para que los componentes (ej. modal) lo muestren correctamente.
+    const normalizedDetails = {
+      ...newExercise,
+      // 1. Normalizamos la descripción (el modal espera 'description')
+      description: newExercise.description_es || newExercise.description || null,
+      // 2. La media (image_url, video_url) ya está correcta
+      //    gracias al spread (...newExercise).
+    };
+    // --- FIN DE LA MODIFICACIÓN ---
+
     newExercises[exIndex] = {
       ...oldExercise,
       name: newExercise.name,
-      exercise_details: newExercise,
+      // exercise_details: newExercise, // <-- LÍNEA ANTIGUA CON BUG
+      exercise_details: normalizedDetails, // <-- LÍNEA CORREGIDA
 
       setsDone: Array.from({ length: oldExercise.sets }, (_, i) => ({
         set_number: i + 1,
@@ -300,7 +302,6 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // (Esta modificación tuya anterior se mantiene)
   updateActiveExerciseDetails: (exerciseKeyName, fullDetails) => {
     const session = get().activeWorkout;
@@ -334,7 +335,6 @@ export const createWorkoutSlice = (set, get) => ({
     set(newState);
     setWorkoutInStorage({ ...get(), ...newState });
   },
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // Abre el modal y guarda el tiempo de descanso planificado
   openRestModal: (plannedTime) =>
@@ -400,10 +400,8 @@ export const createWorkoutSlice = (set, get) => ({
         // Comportamiento existente: mostrar Toast in-app
         get().showPRNotification(responseData.newPRs);
 
-        // --- INICIO DE LA MODIFICACIÓN ---
         // (Esta modificación tuya anterior se mantiene)
         get()._showLocalPRNotification(responseData.newPRs);
-        // --- FIN DE LA MODIFICACIÓN ---
       }
       return { success: true, message: 'Entrenamiento guardado.' };
     } catch (error) {
@@ -429,7 +427,6 @@ export const createWorkoutSlice = (set, get) => ({
     }
   },
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // (Esta modificación tuya anterior se mantiene)
   _showLocalPRNotification: async (newPRs) => {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
@@ -473,7 +470,6 @@ export const createWorkoutSlice = (set, get) => ({
       console.error('Error al mostrar notificación local de PR:', err);
     }
   },
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // Resetea el estado del workout.
   clearWorkoutState: () => {

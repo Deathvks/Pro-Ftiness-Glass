@@ -1,8 +1,6 @@
 /* frontend/src/components/ExerciseSearchInput.jsx */
 import React, { useState, useEffect, useMemo } from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-import { Search, Plus } from 'lucide-react'; // Importamos Plus
-// --- FIN DE LA MODIFICACIÓN ---
+import { Search, Plus } from 'lucide-react'; 
 import { getExerciseList } from '../services/exerciseService';
 import Spinner from './Spinner';
 import { useToast } from '../hooks/useToast';
@@ -28,10 +26,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
   const { t: tName } = useTranslation('exercise_names');
   const { t: tMuscle } = useTranslation('exercise_muscles');
   const { t: tCommon } = useTranslation('translation');
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 1. Añadimos el namespace 'exercise_ui' para el texto del nuevo botón
   const { t: tUi } = useTranslation('exercise_ui');
-  // --- FIN DE LA MODIFICACIÓN ---
 
 
   // Sincroniza el estado interno si la query inicial (prop) cambia
@@ -90,16 +85,35 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
   }, [allExercises, inputValue, isSearching, tName, tMuscle, initialQuery]);
 
   const handleSelect = (exercise) => {
-    // 1. Manda el ejercicio al padre
-    onExerciseSelect(exercise); 
-    // 2. Limpia el input para una nueva búsqueda (Tu petición)
+    
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // El objeto 'exercise' que viene de 'allExercises' es incompleto.
+    // (Ej: Tiene 'image_url_start' pero no 'image_url').
+    // Debemos "normalizarlo" antes de enviarlo a 'replaceExercise'.
+    
+    const normalizedExercise = {
+        ...exercise, // Trae (id, name, description_es, muscle_group, etc.)
+        
+        // ¡LA CORRECCIÓN!
+        // Asignamos la media a los campos que el resto de la app espera.
+        image_url: exercise.image_url_start || exercise.image_url || null, 
+        video_url: exercise.video_url || null, 
+        
+        // (Mantenemos los campos originales por si acaso, aunque no deberían usarse)
+        image_url_start: exercise.image_url_start || null,
+        image_url_end: exercise.image_url_end || null,
+    };
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // 1. Manda el ejercicio NORMALIZADO al padre
+    onExerciseSelect(normalizedExercise); // <-- Usamos el objeto corregido
+    
+    // 2. Limpia el input para una nueva búsqueda
     setInputValue('');
     // 3. Oculta el desplegable
     setIsSearching(false); 
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 2. Creamos la función para el botón "Añadir Manual"
   const handleAddManualClick = () => {
     const exerciseName = inputValue.trim();
     if (exerciseName === '') return;
@@ -109,9 +123,16 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
       id: null, // Sin ID de la base de datos
       name: exerciseName,
       muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), // Grupo por defecto
+      
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Aseguramos que los campos de media existan (como nulos)
+      // para que la normalización en 'handleSelect' funcione.
+      image_url: null, 
+      video_url: null,
       image_url_start: null,
       image_url_end: null,
-      video_url: null,
+      // --- FIN DE LA MODIFICACIÓN ---
+
       is_manual: true // Lo marcamos como manual
     };
     
@@ -120,7 +141,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
     handleSelect(fakeExercise);
   };
 
-  // 3. Creamos un componente reutilizable para el botón
+  // Componente reutilizable para el botón "Añadir Manual"
   const ManualAddButton = () => {
     const query = inputValue.trim();
     if (query.length === 0) return null; // No mostrar si el input está vacío
@@ -144,10 +165,8 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
       </div>
     );
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
   return (
-    // (Quitamos 'relative' para arreglar el overlap)
     <div className="w-full">
 
       {/* Barra de Búsqueda */}
@@ -158,14 +177,10 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
           onChange={(e) => setInputValue(e.target.value)} 
           onFocus={() => setIsSearching(true)} 
           onBlur={() => {
-            // Retrasamos el 'onBlur' para que 'onMouseDown' (selección)
-            // se pueda ejecutar primero.
             setTimeout(() => {
-              // Si 'isSearching' sigue siendo 'true' (porque no se hizo clic
-              // en un item), entonces revertimos el texto y cerramos.
               if (isSearching) {
                 setIsSearching(false);
-                setInputValue(String(initialQuery || '')); // Revertir al valor guardado (asegurando string)
+                setInputValue(String(initialQuery || '')); 
               }
             }, 150); // 150ms de margen
           }}
@@ -175,10 +190,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
         <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
       </div>
 
-      {/* Quitamos 'absolute' y 'z-10' para que fluya en el layout */}
-
       {/* Estado de Carga */}
-      {/* Corregimos la comprobación de length asegurando que sea un string */}
       {isLoading && isSearching && String(inputValue || '').length > 1 && (
         <div className="w-full p-4 flex justify-center bg-bg-secondary border border-glass-border rounded-xl mt-2 shadow-lg">
           <Spinner size={24} />
@@ -192,15 +204,14 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
             {filteredExercises.map(exercise => (
               <li key={exercise.id}>
                 <button
-                  // Usamos 'onMouseDown' para que se dispare ANTES que el 'onBlur'
-                  // e.preventDefault() NO es necesario gracias al setTimeout del onBlur.
                   onMouseDown={() => {
                     handleSelect(exercise);
                   }}
                   className="flex items-center w-full gap-3 p-3 text-left hover:bg-accent-transparent transition-colors"
                 >
                   <img
-                    src={exercise.image_url_start || '/logo.webp'}
+                    // Usamos image_url_start para la *vista previa*, está bien.
+                    src={exercise.image_url_start || '/logo.webp'} 
                     alt={exercise.name}
                     className="w-12 h-12 rounded-md object-cover bg-bg-primary border border-glass-border shrink-0"
                     loading="lazy"
@@ -213,24 +224,17 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
               </li>
             ))}
           </ul>
-          {/* --- INICIO DE LA MODIFICACIÓN --- */}
-          {/* 4. Añadimos el botón manual al final de la lista de resultados */}
           <ManualAddButton />
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
         </div>
       )}
 
       {/* Sin Resultados */}
-      {/* Corregimos la comprobación de length asegurando que sea un string */}
       {!isLoading && isSearching && String(inputValue || '').length > 1 && filteredExercises.length === 0 && (
         <div className="w-full bg-bg-secondary border border-glass-border rounded-xl mt-2 shadow-lg">
           <div className="p-4">
             <p className="text-center text-text-muted">{tCommon('No se encontraron ejercicios.', { defaultValue: 'No se encontraron ejercicios.' })}</p>
           </div>
-          {/* --- INICIO DE LA MODIFICACIÓN --- */}
-          {/* 5. Añadimos el botón manual también al cuadro de "Sin Resultados" */}
           <ManualAddButton />
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
         </div>
       )}
     </div>
