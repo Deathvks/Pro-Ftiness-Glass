@@ -54,11 +54,32 @@ const NutritionLog = sequelize.define('NutritionLog', {
     allowNull: true,
     comment: 'URL de la imagen de la comida'
   },
-  // --- INICIO DE LA MODIFICACIÓN ---
   micronutrients: {
     type: DataTypes.JSON,
     allowNull: true,
     comment: 'Micronutrientes (vitaminas, minerales) en formato JSON'
+  },
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Campos para guardar la información nutricional base (por 100g)
+  calories_per_100g: {
+    type: DataTypes.DECIMAL(6, 2),
+    allowNull: true,
+    comment: 'Calorías por cada 100g'
+  },
+  protein_per_100g: {
+    type: DataTypes.DECIMAL(6, 2),
+    allowNull: true,
+    comment: 'Proteínas por cada 100g'
+  },
+  carbs_per_100g: {
+    type: DataTypes.DECIMAL(6, 2),
+    allowNull: true,
+    comment: 'Carbohidratos por cada 100g'
+  },
+  fat_per_100g: {
+    type: DataTypes.DECIMAL(6, 2),
+    allowNull: true,
+    comment: 'Grasas por cada 100g'
   },
   // --- FIN DE LA MODIFICACIÓN ---
 }, {

@@ -1,14 +1,32 @@
 /* frontend/src/components/nutrition/logModal/SearchResultItem.jsx */
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit, Microscope } from 'lucide-react';
+import { Plus, Trash2, Edit, Microscope, Image as ImageIcon } from 'lucide-react';
 import { round as formatNumber } from '../../../hooks/useNutritionConstants';
 
 const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
     const [showMicros, setShowMicros] = useState(false);
+    const [imgError, setImgError] = useState(false);
 
     const micronutrients = item.micronutrients;
     
-    // Lista simplificada de micronutrientes a mostrar
+    // 1. Lógica para construir la URL correcta de la imagen
+    const getImageUrl = (url) => {
+        if (!url) return null;
+        // Si ya es una URL completa (ej: OpenFoodFacts), la usamos tal cual
+        if (url.startsWith('http')) return url;
+        
+        // Si es una ruta relativa local, le añadimos el dominio del backend
+        // Usamos VITE_API_BASE_URL pero quitamos '/api' si está presente para ir a la raíz
+        const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+        const rootUrl = apiBase.replace(/\/api\/?$/, ''); 
+        
+        // Aseguramos que haya un slash entre el dominio y la ruta
+        return `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
+
+    const displayImage = getImageUrl(item.image_url);
+
+    // 2. Lista simplificada de micronutrientes
     const simpleMicrosList = [
         { key: 'vitamin-c_100g', name: 'Vit C' },
         { key: 'vitamin-a_100g', name: 'Vit A' },
@@ -37,29 +55,40 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
         <div
             className="flex flex-wrap items-center justify-between p-3 rounded-lg bg-bg-primary hover:bg-bg-secondary transition-colors border border-glass-border cursor-pointer group"
             onClick={(e) => {
-                 // No añadir si se hizo clic en un botón
                  if (e.target.closest('button')) return;
                  onAdd(item);
             }}
         >
+            <div className="flex items-center flex-1 min-w-0 mr-3">
+                {/* --- SECCIÓN DE IMAGEN --- */}
+                <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-gray-700 overflow-hidden mr-3 border border-glass-border flex items-center justify-center relative">
+                    {displayImage && !imgError ? (
+                        <img 
+                            src={displayImage} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover"
+                            onError={() => setImgError(true)}
+                        />
+                    ) : (
+                        <div className="text-gray-500">
+                            <ImageIcon size={20} />
+                        </div>
+                    )}
+                </div>
 
-            {/* Detalles de la comida */}
-            {/* --- INICIO DE LA MODIFICACIÓN (onClick eliminado) --- */}
-            <div 
-                className="min-w-0 pr-2 flex-1"
-            >
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
-                <p className="font-semibold truncate text-text-primary">{item.name || item.description}</p>
-                <p className="text-xs text-text-muted">
-                    {Math.round(item.calories)} kcal
-                    {item.weight_g ? ` (${formatNumber(item.weight_g, 1)}g)` : ''}
-                </p>
+                {/* --- DETALLES TEXTO --- */}
+                <div className="min-w-0 flex-1">
+                    <p className="font-semibold truncate text-text-primary">{item.name || item.description}</p>
+                    <p className="text-xs text-text-muted flex items-center gap-1">
+                        <span>{Math.round(item.calories)} kcal</span>
+                        {item.weight_g && <span>• {formatNumber(item.weight_g, 1)}g</span>}
+                        {item.brand && <span className="truncate hidden sm:inline">• {item.brand}</span>}
+                    </p>
+                </div>
             </div>
 
-            {/* Botones de acción */}
-            <div className="flex items-center flex-shrink-0 ml-auto z-10">
-
-                {/* Botón para mostrar micros */}
+            {/* --- BOTONES DE ACCIÓN --- */}
+            <div className="flex items-center flex-shrink-0 z-10">
                 {hasMicros && (
                     <button
                         onClick={(e) => {
@@ -74,11 +103,10 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                     </button>
                 )}
 
-                {/* Botón de editar (si aplica) */}
                 {onEdit && (
                     <button
                         onClick={(e) => {
-                            e.stopPropagation(); // Evita activar onAdd
+                            e.stopPropagation();
                             onEdit(item);
                         }}
                         type="button"
@@ -89,11 +117,10 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                     </button>
                 )}
 
-                {/* Botón de eliminar (si aplica) */}
                 {onDelete && (
                     <button
                         onClick={(e) => {
-                            e.stopPropagation(); // Evita activar onAdd
+                            e.stopPropagation();
                             onDelete(item);
                         }}
                         type="button"
@@ -103,7 +130,7 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                         <Trash2 size={16} />
                     </button>
                 )}
-                {/* Botón de añadir (visual) */}
+                
                 <button
                     type="button"
                     className="p-2 rounded-full text-accent group-hover:bg-accent-transparent transition pointer-events-none"
@@ -115,11 +142,11 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                 </button>
             </div>
 
-            {/* Contenedor para mostrar micronutrientes */}
+            {/* --- MICRONUTRIENTES (Desplegable) --- */}
             {hasMicros && showMicros && (
                 <div 
                     className="w-full mt-2 p-2 bg-bg-secondary rounded-md border border-glass-border cursor-default"
-                    onClick={(e) => e.stopPropagation()} // Evitar que el clic aquí añada el item
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <h5 className="text-xs font-bold text-text-primary mb-1">Micronutrientes (por 100g):</h5>
                     <div className="text-xs text-text-muted grid grid-cols-2 sm:grid-cols-3 gap-x-2">

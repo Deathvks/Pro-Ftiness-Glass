@@ -16,10 +16,8 @@ const __dirname = path.dirname(__filename); // /app/backend/controllers
 // Directorio donde se guardarán las imágenes de comida (incluyendo las de códigos de barras)
 const FOOD_IMAGES_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Obtener modelos desde db (Añadido FavoriteMeal)
+// Obtener modelos desde db
 const { NutritionLog, WaterLog, FavoriteMeal, sequelize } = db;
-// --- FIN DE LA MODIFICACIÓN ---
 
 // Helper para asegurar que el directorio de subida existe
 const ensureUploadDirExists = async (dirPath) => {
@@ -219,22 +217,18 @@ const addFoodLog = async (req, res, next) => {
       weight_g,
       image_url, // URL de código de barras o subida separada
       micronutrients,
-      // --- INICIO MODIFICACIÓN: Recibimos los campos _per_100g ---
       calories_per_100g,
       protein_per_100g,
       carbs_per_100g,
       fat_per_100g
-      // --- FIN MODIFICACIÓN ---
     } = req.body;
 
-    // --- INICIO MODIFICACIÓN ---
     // Priorizar la imagen recién subida y procesada (req.file)
     // Si no hay, usar la image_url del body (de barcode/separada)
     // Si no, null.
     const finalImageUrl = (req.file && req.file.processedPath)
         ? req.file.processedPath
         : (image_url || null);
-    // --- FIN MODIFICACIÓN ---
 
     const foodData = {
       user_id: userId,
@@ -248,15 +242,10 @@ const addFoodLog = async (req, res, next) => {
       weight_g: weight_g || null,
       image_url: finalImageUrl, // Usamos la URL final
       micronutrients: micronutrients || null,
-      // --- INICIO MODIFICACIÓN: Guardamos los campos _per_100g ---
-      // (Asumiendo que NutritionLogModel tiene estos campos. 
-      // Si no, la migración 20250905200000-fix-nutrition-tables-production.js 
-      // debería haberlos añadido)
       calories_per_100g: calories_per_100g || null,
       protein_per_100g: protein_per_100g || null,
       carbs_per_100g: carbs_per_100g || null,
       fat_per_100g: fat_per_100g || null,
-      // --- FIN MODIFICACIÓN ---
     };
 
     const newLog = await NutritionLog.create(foodData);
@@ -297,15 +286,13 @@ const updateFoodLog = async (req, res, next) => {
       meal_type,
       log_date,
       micronutrients,
-      // --- INICIO MODIFICACIÓN: Recibimos los campos _per_100g ---
       calories_per_100g,
       protein_per_100g,
       carbs_per_100g,
       fat_per_100g
-      // --- FIN MODIFICACIÓN ---
     } = req.body;
 
-    // --- INICIO MODIFICACIÓN: Determinar la nueva URL y borrar la antigua ---
+    // Determinar la nueva URL y borrar la antigua
     const oldImageUrl = log.image_url;
     let newImageUrl;
 
@@ -330,7 +317,6 @@ const updateFoodLog = async (req, res, next) => {
         }
       });
     }
-    // --- FIN MODIFICACIÓN ---
 
     const foodData = {
       description: description !== undefined ? description : log.description,
@@ -343,12 +329,10 @@ const updateFoodLog = async (req, res, next) => {
       meal_type: meal_type !== undefined ? meal_type : log.meal_type,
       log_date: log_date !== undefined ? log_date : log.log_date,
       micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients,
-      // --- INICIO MODIFICACIÓN: Actualizamos los campos _per_100g ---
       calories_per_100g: calories_per_100g !== undefined ? calories_per_100g : log.calories_per_100g,
       protein_per_100g: protein_per_100g !== undefined ? protein_per_100g : log.protein_per_100g,
       carbs_per_100g: carbs_per_100g !== undefined ? carbs_per_100g : log.carbs_per_100g,
       fat_per_100g: fat_per_100g !== undefined ? fat_per_100g : log.fat_per_100g,
-      // --- FIN MODIFICACIÓN ---
     };
 
     await log.update(foodData);
@@ -379,7 +363,7 @@ const deleteFoodLog = async (req, res, next) => {
         .json({ error: 'Registro de comida no encontrado.' });
     }
 
-    // --- INICIO MODIFICACIÓN: Borrar imagen asociada si existe ---
+    // Borrar imagen asociada si existe
     if (log.image_url) {
       const imagePath = path.join(__dirname, '..', 'public', log.image_url);
       fs.unlink(imagePath).catch(err => {
@@ -388,7 +372,6 @@ const deleteFoodLog = async (req, res, next) => {
             }
       });
     }
-    // --- FIN MODIFICACIÓN ---
 
     await log.destroy();
     res.status(204).send();
@@ -454,7 +437,7 @@ const searchByBarcode = async (req, res, next) => {
     const product = response.data.product;
     const nutriments = product.nutriments || {};
 
-    // --- INICIO MODIFICACIÓN: Descargar y convertir imagen ---
+    // Descargar y convertir imagen
     const originalImageUrl = product.image_url || product.image_front_url || null;
     let localImageUrl = null;
     if (originalImageUrl) {
@@ -464,7 +447,6 @@ const searchByBarcode = async (req, res, next) => {
     } else {
          console.log(`[BACKEND] Producto ${barcode} no tiene imagen en OFF.`);
     }
-    // --- FIN MODIFICACIÓN ---
 
     const foodData = {
       product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
@@ -503,38 +485,84 @@ const uploadFoodImage = async (req, res, next) => {
     }
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 /**
- * Busca en las comidas favoritas (guardadas) del usuario.
+ * Busca en las comidas favoritas (guardadas) del usuario y en Open Food Facts.
  */
 const searchFoods = async (req, res, next) => {
   try {
     const { userId } = req.user;
     const { q } = req.query; // 'q' ya está validado por el router
 
-    // Busca en las comidas favoritas del usuario
-    const favoriteResults = await FavoriteMeal.findAll({
+    console.log(`[BACKEND] Buscando alimentos: "${q}"`);
+
+    // 1. Buscar en las comidas favoritas del usuario
+    const favoriteResultsPromise = FavoriteMeal.findAll({
       where: {
         user_id: userId,
-        // Asumimos que el modelo FavoriteMeal tiene un campo 'name'
         name: {
-          [Op.iLike]: `%${q}%` // Búsqueda 'like' (case-insensitive en Postgres)
+          [Op.like]: `%${q}%` // Búsqueda 'like' (case-insensitive en Postgres/MySQL)
         }
       },
-      limit: 20 // Limita los resultados
+      limit: 10 // Limitamos locales
     });
+
+    // 2. Buscar en Open Food Facts (API Global)
+    // Usamos la API de búsqueda de OFF
+    const offSearchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_es,nutriments,image_url,image_small_url`;
     
-    // La tabla FavoriteMeal ya debería tener todos los campos que
-    // espera SearchResults.jsx (id, name, image_url, ..._per_100g)
-    // porque se guardan desde el FoodEntryForm.
-    res.json(favoriteResults);
+    const offResultsPromise = axios.get(offSearchUrl)
+        .then(response => {
+             if (response.data && response.data.products) {
+                 return response.data.products.map(p => ({
+                     // Mapeamos al formato que el frontend pueda entender (híbrido entre FavoriteMeal y OFF)
+                     id: `off-${p.code}`, // ID temporal único
+                     name: p.product_name_es || p.product_name || 'Sin nombre',
+                     // OFF devuelve valores por 100g en nutriments
+                     calories: p.nutriments?.['energy-kcal_100g'] || 0,
+                     protein_g: p.nutriments?.proteins_100g || 0,
+                     carbs_g: p.nutriments?.carbohydrates_100g || 0,
+                     fats_g: p.nutriments?.fat_100g || 0,
+                     // Campos extra útiles
+                     calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
+                     protein_per_100g: p.nutriments?.proteins_100g || 0,
+                     carbs_per_100g: p.nutriments?.carbohydrates_100g || 0,
+                     fat_per_100g: p.nutriments?.fat_100g || 0,
+                     
+                     image_url: p.image_small_url || p.image_url || null,
+                     source: 'global', // Flag para saber que viene de fuera
+                     weight_g: 100, // Referencia base
+                 }));
+             }
+             return [];
+        })
+        .catch(err => {
+            console.error("Error buscando en Open Food Facts:", err.message);
+            return []; // Si falla OFF, devolvemos array vacío y no rompemos todo
+        });
+
+    // Ejecutamos ambas en paralelo
+    const [favoriteResults, offResults] = await Promise.all([favoriteResultsPromise, offResultsPromise]);
+
+    // Marcamos los favoritos como locales
+    const formattedFavorites = favoriteResults.map(f => ({
+        ...f.toJSON(), // Convertir instancia Sequelize a objeto plano
+        source: 'local',
+        // Asegurar campos _per_100g si no existen (asumiendo que lo guardado es la porción o base 100g según lógica de tu app)
+        // Si weight_g es 100, los valores son per_100g.
+        calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0, 
+        // ... puedes calcular el resto si lo necesitas
+    }));
+
+    // Combinamos resultados: Primero favoritos, luego globales
+    const combinedResults = [...formattedFavorites, ...offResults];
+    
+    res.json(combinedResults);
 
   } catch (error) {
-    console.error("Error en searchFoods:", error);
+    console.error("Error fatal en searchFoods:", error);
     next(error);
   }
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 
 export default {
@@ -547,5 +575,5 @@ export default {
   upsertWaterLog,
   searchByBarcode,
   uploadFoodImage, // Aunque obsoleta, la mantenemos por ahora
-  searchFoods, // <-- Añadido
+  searchFoods,
 };

@@ -1,79 +1,20 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React from 'react';
-import {
-  Award, UtensilsCrossed, Sparkles, BrainCircuit, X, Gauge, TrendingUp, QrCode,
-  Cookie, Github, Camera, IdCard, ZoomIn,
-  // --- INICIO DE LA MODIFICACIÓN ---
-  Languages // <-- 'Translate' no existe. 'Languages' es el icono correcto.
-  // --- FIN DE LA MODIFICACIÓN ---
-} from 'lucide-react';
+import { Award, X, Github, UtensilsCrossed, Camera } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const nouveautes = [
-    // --- INICIO DE LA MODIFICACIÓN (Nueva Novedad) ---
-    {
-      // 2. Usamos el icono 'Languages'
-      icon: <Languages className="text-accent" />,
-      titre: "Biblioteca de Ejercicios Traducida",
-      description: "¡Toda la biblioteca de ejercicios está traducida! Ahora verás los nombres y descripciones en español en todas las secciones: entrenamientos, progreso y récords."
-    },
-    // --- FIN DE LA MODIFICACIÓN ---
-    {
-      icon: <ZoomIn className="text-accent" />,
-      titre: "Ampliación de Imagen de Perfil",
-      description: "Ahora puedes hacer clic en tu foto de perfil (tanto en la barra lateral como en la configuración) para verla ampliada en un elegante modal con desenfoque, al estilo de las redes sociales."
-    },
-    {
-      icon: <IdCard className="text-accent" />,
-      titre: "Página de Perfil Renovada",
-      description: "Presentamos la nueva página de 'Mi Cuenta'. Ahora puedes subir tu propia foto de perfil y elegir un nombre de usuario (@username) único para personalizar tu experiencia."
-    },
-    {
-      icon: <QrCode className="text-accent" />,
-      titre: "Escaneo de Códigos de Barras",
-      description: "Añade alimentos rápidamente escaneando el código de barras del producto. La información nutricional se rellenará automáticamente gracias a la base de datos de Open Food Facts."
-    },
-    {
-      icon: <Cookie className="text-accent" />,
-      titre: "Gestión de Privacidad y Cookies",
-      description: "Hemos añadido un banner de consentimiento para cumplir con la normativa de privacidad. Tu elección sobre guardar preferencias de personalización se almacena por cuenta y dispositivo."
-    },
     {
       icon: <UtensilsCrossed className="text-accent" />,
-      titre: "Rediseño del Registro de Comidas",
-      description: "Añadir comidas es ahora más rápido e intuitivo. El nuevo modal te permite buscar, añadir múltiples alimentos a la vez, guardarlos como favoritos y hasta calcular macros por cada 100g."
-    },
-    {
-      icon: <Sparkles className="text-accent" />,
-      titre: "Editor de Comidas Integrado",
-      description: "Hemos fusionado el editor de comidas en el nuevo modal. Ahora puedes corregir cualquier registro de forma rápida y sencilla desde el mismo lugar."
+      titre: "Búsqueda de Comidas Mejorada",
+      description: "Nuevo sistema para buscar alimentos, gestionar favoritos y recientes, permitiendo añadir múltiples registros de forma rápida e intuitiva."
     },
     {
       icon: <Camera className="text-accent" />,
-      titre: "Fotos en tus Comidas",
-      description: "Añade un toque visual a tu diario. Ahora puedes subir una foto para cada registro de comida, ayudándote a recordar qué comiste."
-    },
-    {
-      icon: <TrendingUp className="text-accent" />,
-      titre: "Estimación de 1 RM en Progreso",
-      description: "La gráfica de 'Progresión de Fuerza' ahora muestra tu 1RM estimado (Una Repetición Máxima), calculado automáticamente a partir de tus mejores series y visible incluso en registros antiguos."
-    },
-    {
-      icon: <Gauge className="text-accent" />,
-      titre: "Cálculo de Macros Mejorado",
-      description: "El cálculo de calorías y macros ahora utiliza el último peso corporal registrado en lugar del peso del perfil, haciendo que los objetivos diarios sean mucho más precisos."
-    },
-    {
-      icon: <TrendingUp className="text-accent" />,
-      titre: "Flechas de Progreso",
-      description: "En la sección de Progreso, ahora verás flechas de tendencia junto a tus mediciones de peso, indicando si has subido, bajado o mantenido el peso respecto al registro anterior."
-    },
-    {
-      icon: <BrainCircuit className="text-accent" />,
-      titre: "Mejoras de Usabilidad y Diseño",
-      description: "Hemos pulido la interfaz, mejorado la responsividad en móviles y adaptado todos los componentes al modo claro para una experiencia más consistente."
-    },
+      titre: "Visualización de Imágenes",
+      description: "Ahora las fotos de tus alimentos se muestran directamente en el resumen diario (Desayuno, Almuerzo...) recuperándolas de tus favoritos o recientes."
+    }
   ];
 
   return (
@@ -83,7 +24,7 @@ const WelcomeModal = ({ onClose }) => {
                   bg-bg-secondary border border-glass-border"
       >
 
-        {/* -- Cabecera (no se desplaza) -- */}
+        {/* -- Cabecera -- */}
         <div className="flex-shrink-0 p-6 pb-4">
           <button
             onClick={onClose}
@@ -99,7 +40,7 @@ const WelcomeModal = ({ onClose }) => {
           </div>
         </div>
 
-        {/* -- Contenido (scrollable) -- */}
+        {/* -- Contenido -- */}
         <div className="flex-grow overflow-y-auto px-6 space-y-4 text-left">
           {nouveautes.map((item, index) => (
             <div key={index} className="flex items-start gap-4 p-3 rounded-lg bg-bg-primary">
@@ -112,9 +53,8 @@ const WelcomeModal = ({ onClose }) => {
           ))}
         </div>
 
-        {/* -- Pie de página (no se desplaza) -- */}
+        {/* -- Pie de página -- */}
         <div className="flex-shrink-0 p-6 pt-4">
-
           <a
             href="https://github.com/deathvks/fittrack-pro"
             target="_blank"

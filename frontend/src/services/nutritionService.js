@@ -27,12 +27,19 @@ export const getNutritionSummary = (month, year) => {
 };
 
 /**
+ * Busca alimentos por texto (local y remoto).
+ * @param {string} query - Término de búsqueda.
+ */
+export const searchFoods = (query) => {
+  // --- CORRECCIÓN: Cambiado 'query' por 'q' para coincidir con el backend ---
+  return apiClient(`/nutrition/search?q=${encodeURIComponent(query)}`);
+};
+
+/**
  * Añade un nuevo registro de comida.
- * @param {object} foodData - Datos de la comida (description, calories, macros, weight_g, image_url, *_per_100g). // <-- Modificado
+ * @param {object} foodData - Datos de la comida.
  */
 export const addFoodLog = (foodData) => {
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Aseguramos que los campos _per_100g se envíen si existen
   const bodyData = {
       description: foodData.description,
       calories: foodData.calories,
@@ -46,45 +53,39 @@ export const addFoodLog = (foodData) => {
       calories_per_100g: foodData.calories_per_100g,
       protein_per_100g: foodData.protein_per_100g,
       carbs_per_100g: foodData.carbs_per_100g,
-      fat_per_100g: foodData.fat_per_100g // Corregido: era fat_per_100g
+      fat_per_100g: foodData.fat_per_100g
   };
-  // --- FIN DE LA MODIFICACIÓN ---
+
   return apiClient('/nutrition/food', {
     method: 'POST',
-    body: bodyData, // Usamos bodyData modificado
+    body: bodyData,
   });
 };
 
 /**
  * Actualiza un registro de comida existente.
  * @param {number} logId - ID del registro a actualizar.
- * @param {object} foodData - Nuevos datos de la comida (incluyendo *_per_100g opcionalmente). // <-- Modificado
+ * @param {object} foodData - Nuevos datos de la comida.
  */
 export const updateFoodLog = (logId, foodData) => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Incluimos los campos _per_100g si están presentes en foodData
-    const bodyData = { ...foodData }; // Copiamos para no modificar el original
-    // Limpiamos campos que no deben ir en el PUT si no han cambiado o son de control
+    const bodyData = { ...foodData }; 
+    
     delete bodyData.id;
     delete bodyData.log_date;
     delete bodyData.meal_type;
     delete bodyData.tempId;
     delete bodyData.base;
     delete bodyData.origin;
-    delete bodyData.isFavorite; // Este campo no pertenece al log en sí
-    delete bodyData.name; // Usamos description
+    delete bodyData.isFavorite; 
+    delete bodyData.name; 
 
-    // Aseguramos que los campos *_per_100g se incluyan si existen en foodData
-    // (Ya deberían estar en la copia si venían)
-
-    // Si weight_g es null o 0, lo enviamos como null
     if (bodyData.weight_g === 0 || bodyData.weight_g === '') {
         bodyData.weight_g = null;
     }
-    // --- FIN DE LA MODIFICACIÓN ---
+
     return apiClient(`/nutrition/food/${logId}`, {
         method: 'PUT',
-        body: bodyData, // Usamos bodyData modificado
+        body: bodyData,
     });
 };
 
@@ -144,7 +145,7 @@ export const uploadFoodImage = (imageFile) => {
                 const errorData = await response.json();
                 errorMessage = errorData.error || errorData.message || errorMessage;
             } catch (e) {
-                // No hay cuerpo JSON, error genérico
+                // No hay cuerpo JSON
             }
             throw new Error(errorMessage);
         }

@@ -92,6 +92,13 @@ const foodLogValidationRules = [
     body('log_date').isISO8601().toDate().withMessage('Fecha inválida.'),
     // No validamos image_url aquí porque se maneja en la subida y se pasa al crear/actualizar
     body('micronutrients').optional({ nullable: true }).isObject().withMessage('Micronutrientes debe ser un objeto JSON.'),
+    
+    // --- INICIO: Validaciones para campos por 100g ---
+    body('calories_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las calorías por 100g deben ser un número positivo.'),
+    body('protein_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las proteínas por 100g deben ser un número positivo.'),
+    body('carbs_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Los carbohidratos por 100g deben ser un número positivo.'),
+    body('fat_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las grasas por 100g deben ser un número positivo.'),
+    // --- FIN ---
 ];
 
 const updateFoodLogValidationRules = [
@@ -103,6 +110,13 @@ const updateFoodLogValidationRules = [
     body('weight_g').optional({ nullable: true }).isFloat({ min: 0.1 }).withMessage('El peso debe ser un número positivo.'),
     // No validamos image_url aquí
     body('micronutrients').optional({ nullable: true }).isObject().withMessage('Micronutrientes debe ser un objeto JSON.'),
+    
+    // --- INICIO: Validaciones para campos por 100g ---
+    body('calories_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las calorías por 100g deben ser un número positivo.'),
+    body('protein_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las proteínas por 100g deben ser un número positivo.'),
+    body('carbs_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Los carbohidratos por 100g deben ser un número positivo.'),
+    body('fat_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las grasas por 100g deben ser un número positivo.'),
+    // --- FIN ---
 ];
 
 // Middleware para manejar errores de validación

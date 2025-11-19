@@ -7,7 +7,14 @@ import { useState, useCallback, useEffect, useRef } from 'react';
  */
 export const useAppNavigation = (isInitialLoad) => {
   // Estado para la vista actual (ej: 'dashboard', 'routines')
-  const [view, setView] = useState('dashboard');
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Inicializamos el estado leyendo de localStorage para persistir la vista al recargar.
+  // Si no hay nada guardado, usamos 'dashboard' por defecto.
+  const [view, setView] = useState(() => {
+    const savedView = localStorage.getItem('lastView');
+    return savedView || 'dashboard';
+  });
+  // --- FIN DE LA MODIFICACIÓN ---
   
   // Estado para guardar la vista anterior (ej: para el botón 'atrás' de Perfil o Política)
   const [previousView, setPreviousView] = useState(null);
@@ -78,6 +85,7 @@ export const useAppNavigation = (isInitialLoad) => {
 
   // Efecto: Guardar la última vista en localStorage
   useEffect(() => {
+    // Guardamos la vista actual salvo si es la política de privacidad (para no recargar ahí)
     if (!isInitialLoad && view !== 'privacyPolicy') {
       localStorage.setItem('lastView', view);
     }

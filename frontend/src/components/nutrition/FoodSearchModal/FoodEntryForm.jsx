@@ -1,11 +1,14 @@
 /* frontend/src/components/nutrition/FoodSearchModal/FoodEntryForm.jsx */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Switch } from '@headlessui/react';
 import { CameraIcon, StarIcon, CheckIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarIconOutline } from '@heroicons/react/24/outline';
-import { favoriteMealService } from '../../../services/favoriteMealService';
-import { nutritionService } from '../../../services/nutritionService';
-import { useToast } from '../../../contexts/ToastProvider';
+import { getFavoriteMeals } from '../../../services/favoriteMealService';
+import { uploadFoodImage } from '../../../services/nutritionService';
+// --- INICIO DE LA CORRECCIÓN ---
+// El hook useToast se encuentra en la carpeta hooks, no en contexts/ToastProvider
+import { useToast } from '../../../hooks/useToast';
+// --- FIN DE LA CORRECCIÓN ---
 
 // Componente para un campo de entrada de macros
 const MacroInput = ({ label, value, onChange, unit }) => (
@@ -44,8 +47,6 @@ function FoodEntryForm({
   isPer100g,
   setIsPer100g,
 }) {
-  // Inicializamos el estado directamente desde 'selectedItem'
-  // Usamos los datos "por ración" por defecto, el useEffect lo corregirá
   const [formData, setFormData] = useState({
     description: selectedItem.description || 'Alimento',
     weight_g: selectedItem.serving_weight_g || 100,
@@ -57,9 +58,10 @@ function FoodEntryForm({
   });
 
   const [isFavorite, setIsFavorite] = useState(false);
+  const [wasInitiallyFavorite, setWasInitiallyFavorite] = useState(false); // Nuevo estado para tracking
   const [favoriteId, setFavoriteId] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = React.useRef(null);
+  const fileInputRef = useRef(null);
   const { addToast } = useToast();
 
   const recalculateMacros = (newWeight, per100gMode) => {
@@ -69,7 +71,6 @@ function FoodEntryForm({
       ? 100
       : selectedItem.serving_weight_g || 100;
     
-    // Evitar división por cero si el peso base no está definido
     if (baseWeight === 0) return {};
 
     const factor = newWeight / baseWeight;
@@ -96,74 +97,61 @@ function FoodEntryForm({
     };
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Lógica de 'useEffect' simplificada para evitar el 'return' prematuro.
   useEffect(() => {
     if (!selectedItem) return;
 
-    // 1. Determinar si el toggle DEBE estar activado
-    // (si es un scan, forzamos a 'true', si no, respetamos su estado actual)
     const shouldBePer100g = selectedItem.origin === 'scan' ? true : isPer100g;
 
-    // 2. Si el estado 'isPer100g' del padre no coincide, lo actualizamos.
-    // Esto causará un re-render, pero la lógica de abajo
-    // usará 'shouldBePer100g' para cargar los datos correctos *ahora*.
     if (shouldBePer100g && !isPer100g) {
       setIsPer100g(true);
     }
     
-    // 3. Seleccionar los datos correctos basados en 'shouldBePer100g'
     let baseData;
     let baseWeight;
 
     if (shouldBePer100g) {
-      // Usar datos "por 100g"
       baseData = {
         calories: selectedItem.calories_per_100g || 0,
         protein_g: selectedItem.protein_per_100g || 0,
         carbs_g: selectedItem.carbs_per_100g || 0,
-        fats_g: selectedItem.fat_per_100g || 0, // Mapea selectedItem.fat_... a formData.fats_g
+        fats_g: selectedItem.fat_per_100g || 0,
       };
       baseWeight = 100;
     } else {
-      // Usar datos "por ración"
       baseData = {
         calories: selectedItem.calories_per_serving || 0,
         protein_g: selectedItem.protein_per_serving || 0,
         carbs_g: selectedItem.carbs_per_serving || 0,
-        fats_g: selectedItem.fat_per_serving || 0, // Mapea selectedItem.fat_... a formData.fats_g
+        fats_g: selectedItem.fat_per_serving || 0,
       };
       baseWeight = selectedItem.serving_weight_g || 100;
     }
 
-    // 4. Actualizar el formulario
-    // Esta llamada ahora SÍ se ejecuta en el primer render
     setFormData({
       description: selectedItem.description || 'Alimento',
       image_url: selectedItem.image_url || null,
       weight_g: baseWeight,
-      ...baseData, // Contiene { calories, protein_g, carbs_g, fats_g }
+      ...baseData,
     });
 
-    // 5. Comprobar si es favorito
     checkIfFavorite(selectedItem.description);
     
-  }, [selectedItem, isPer100g, setIsPer100g]); // Dependencias correctas
-  // --- FIN DE LA MODIFICACIÓN ---
+  }, [selectedItem, isPer100g, setIsPer100g]);
 
-  // Comprobar si el item es favorito
   const checkIfFavorite = async (description) => {
     try {
-      const favorites = await favoriteMealService.getFavorites();
+      const favorites = await getFavoriteMeals();
       const existingFavorite = favorites.find(
         (fav) =>
-          fav.description.toLowerCase() === description.toLowerCase()
+          fav.name?.toLowerCase() === description?.toLowerCase()
       );
       if (existingFavorite) {
         setIsFavorite(true);
+        setWasInitiallyFavorite(true); // Guardamos estado inicial
         setFavoriteId(existingFavorite.id);
       } else {
         setIsFavorite(false);
+        setWasInitiallyFavorite(false);
         setFavoriteId(null);
       }
     } catch (error) {
@@ -198,34 +186,10 @@ function FoodEntryForm({
     }));
   };
 
-  const handleToggleFavorite = async () => {
-    const mealData = {
-      description: formData.description,
-      // Usar los datos base de 100g del selectedItem si existen
-      calories: selectedItem.calories_per_100g || formData.calories || 0,
-      protein_g: selectedItem.protein_per_100g || formData.protein_g || 0,
-      carbs_g: selectedItem.carbs_per_100g || formData.carbs_g || 0,
-      fats_g: selectedItem.fat_per_100g || formData.fats_g || 0,
-      weight_g: 100, // Favoritos se guarda siempre por 100g
-      image_url: formData.image_url || null,
-    };
-
-    try {
-      if (isFavorite && favoriteId) {
-        await favoriteMealService.deleteFavorite(favoriteId);
-        setIsFavorite(false);
-        setFavoriteId(null);
-        addToast('Eliminado de favoritos', 'info');
-      } else {
-        const newFavorite = await favoriteMealService.addFavorite(mealData);
-        setIsFavorite(true);
-        setFavoriteId(newFavorite.id);
-        addToast('Guardado en favoritos', 'success');
-      }
-    } catch (error) {
-      console.error('Error al gestionar favoritos:', error);
-      addToast('Error al gestionar favoritos', 'error');
-    }
+  const handleToggleFavorite = () => {
+    // Solo modificamos el estado visual/local. 
+    // La acción de crear/borrar se delega al evento 'submit'
+    setIsFavorite(!isFavorite);
   };
 
   const handleImageUpload = async (e) => {
@@ -245,11 +209,9 @@ function FoodEntryForm({
     }
 
     setIsUploading(true);
-    const uploadFormData = new FormData();
-    uploadFormData.append('foodImage', file);
-
+    
     try {
-      const res = await nutritionService.uploadFoodImage(uploadFormData);
+      const res = await uploadFoodImage(file);
       setFormData((prev) => ({
         ...prev,
         image_url: res.imageUrl,
@@ -258,7 +220,7 @@ function FoodEntryForm({
     } catch (error) {
       console.error('Error al subir la imagen:', error);
       addToast(
-        error.response?.data?.error || 'Error al subir la imagen',
+        error.message || 'Error al subir la imagen',
         'error'
       );
     } finally {
@@ -281,6 +243,13 @@ function FoodEntryForm({
       fats_g: parseFloat(formData.fats_g) || 0,
       weight_g: parseFloat(formData.weight_g) || 0,
       image_url: formData.image_url || null,
+      calories_per_100g: selectedItem.calories_per_100g,
+      protein_per_100g: selectedItem.protein_per_100g,
+      carbs_per_100g: selectedItem.carbs_per_100g,
+      fat_per_100g: selectedItem.fat_per_100g,
+      // Pasamos los flags para que el padre gestione la sincronización de favoritos
+      isFavorite,
+      wasInitiallyFavorite
     });
   };
 
@@ -305,7 +274,7 @@ function FoodEntryForm({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="relative flex-shrink-0 w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-600 overflow-hidden"
+          className="relative flex-shrink-0 w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-600 overflow-hidden border border-gray-600"
           disabled={isUploading}
         >
           {isUploading ? (
@@ -315,9 +284,7 @@ function FoodEntryForm({
               src={
                 formData.image_url.startsWith('http')
                   ? formData.image_url
-                  : `${
-                      import.meta.env.VITE_API_URL
-                    }${formData.image_url.replace(/\\/g, '/')}`
+                  : `${import.meta.env.VITE_API_BASE_URL}${formData.image_url}`
               }
               alt={formData.description}
               className="w-full h-full object-cover"
@@ -367,12 +334,12 @@ function FoodEntryForm({
       </div>
 
       {/* Sección de Ración / Por 100g */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-t border-gray-700 pt-4">
         <span className="text-sm font-medium text-gray-300">
           {getServingSizeText()}
         </span>
         <div className="flex items-center">
-          <span className="text-sm text-gray-400 mr-2">Por 100g</span>
+          <span className="text-sm text-gray-400 mr-2">Base 100g</span>
           <Switch
             checked={isPer100g}
             onChange={setIsPer100g}
@@ -395,14 +362,14 @@ function FoodEntryForm({
           htmlFor="weight_g"
           className="block text-sm font-medium text-gray-400"
         >
-          Peso
+          Peso (g)
         </label>
         <div className="mt-1 flex rounded-md shadow-sm">
           <input
             type="number"
             name="weight_g"
             id="weight_g"
-            className="block w-full flex-1 rounded-none rounded-l-md border-gray-600 bg-gray-700 p-2 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            className="block w-full flex-1 rounded-md border-gray-600 bg-gray-700 p-2 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             placeholder="100"
             value={formData.weight_g}
             onChange={handleWeightChange}
@@ -410,9 +377,6 @@ function FoodEntryForm({
             step="0.1"
             min="0"
           />
-          <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-600 bg-gray-600 px-3 text-sm text-gray-300">
-            g
-          </span>
         </div>
       </div>
 

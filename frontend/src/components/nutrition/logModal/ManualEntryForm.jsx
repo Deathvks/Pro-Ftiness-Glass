@@ -389,29 +389,27 @@ const ManualEntryForm = ({
                 </>
             )}
 
-            {/* --- INICIO DE LA MODIFICACIÓN: Condición de visibilidad cambiada --- */}
-            {/* Mostrar siempre el botón si NO estamos editando DESDE la lista de favoritos */}
-            {!editingFavorite && (
-            // --- FIN DE LA MODIFICACIÓN ---
-                <button
-                    type="button"
-                    onClick={handleFavoriteChange}
-                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all border
-                        ${isFavorite
-                            ? 'bg-accent-transparent text-accent border-accent-border'
-                            : 'bg-bg-primary text-text-secondary border-glass-border'
-                        } mt-1`}
-                >
-                    <Star
-                        size={18}
-                        className={`transition-all ${isFavorite ? 'fill-accent' : ''}`} // El estado visual depende de `isFavorite` del `formState`
-                    />
-                    {/* --- INICIO DE LA MODIFICACIÓN: Texto dinámico --- */}
-                    {/* Cambia el texto según si el item original ya era favorito */}
-                    {isOriginallyFavorite ? 'Actualizar favorito' : 'Guardar en favoritos'}
-                    {/* --- FIN DE LA MODIFICACIÓN --- */}
-                </button>
-            )}
+            {/* --- INICIO DE LA MODIFICACIÓN: Se muestra siempre para permitir desmarcar/borrar favorito --- */}
+            <button
+                type="button"
+                onClick={handleFavoriteChange}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all border
+                    ${isFavorite
+                        ? 'bg-accent-transparent text-accent border-accent-border'
+                        : 'bg-bg-primary text-text-secondary border-glass-border'
+                    } mt-1`}
+            >
+                <Star
+                    size={18}
+                    className={`transition-all ${isFavorite ? 'fill-accent' : ''}`}
+                />
+                {/* Texto ajustado para ser claro: si ya era favorito y se desmarca, indica que se eliminará */}
+                {isFavorite
+                    ? (isOriginallyFavorite ? 'Actualizar favorito' : 'Guardar en favoritos')
+                    : (isOriginallyFavorite ? 'Eliminar de favoritos' : 'Guardar en favoritos')
+                }
+            </button>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             {isEditing || editingFavorite ? (
                 <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50 mt-2">
