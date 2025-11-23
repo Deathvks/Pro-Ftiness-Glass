@@ -25,6 +25,17 @@ const ResetPasswordScreen = ({ showLogin }) => {
         }
     }, [addToast]);
 
+    // --- INICIO DE LA MODIFICACIÓN: Redirección automática ---
+    useEffect(() => {
+        if (isSuccess) {
+            const timer = setTimeout(() => {
+                showLogin();
+            }, 3000); // 3 segundos para leer el mensaje antes de redirigir
+            return () => clearTimeout(timer);
+        }
+    }, [isSuccess, showLogin]);
+    // --- FIN DE LA MODIFICACIÓN ---
+
     const validateForm = () => {
         const newErrors = {};
         if (!password) {
@@ -56,9 +67,7 @@ const ResetPasswordScreen = ({ showLogin }) => {
 
         try {
             const response = await resetPassword({ token, password });
-            // --- INICIO DE LA MODIFICACIÓN ---
-            addToast(response.message, 'success'); // Notificación de éxito
-            // --- FIN DE LA MODIFICACIÓN ---
+            addToast(response.message, 'success');
             setIsSuccess(true);
         } catch (err) {
             addToast(err.message || 'Error al restablecer la contraseña.', 'error');
@@ -75,10 +84,10 @@ const ResetPasswordScreen = ({ showLogin }) => {
                         <CheckCircle size={40} className="mx-auto text-accent mb-4" />
                         <h2 className="text-xl font-bold">Contraseña Actualizada</h2>
                         <p className="text-text-secondary mt-2">
-                            Tu contraseña ha sido restablecida. Ahora puedes iniciar sesión con la nueva.
+                            Tu contraseña ha sido restablecida. Redirigiendo al inicio de sesión...
                         </p>
                         <button onClick={showLogin} className="mt-6 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105">
-                            Ir a Iniciar Sesión
+                            Ir a Iniciar Sesión ahora
                         </button>
                     </GlassCard>
                 </div>

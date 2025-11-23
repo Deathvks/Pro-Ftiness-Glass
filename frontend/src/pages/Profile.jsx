@@ -170,6 +170,16 @@ const Profile = ({ onCancel }) => {
 
     try {
       await updateUserAccount(data);
+      
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Si se cambió la contraseña, cerramos sesión para obligar al re-login
+      if (formData.newPassword) {
+        addToast('Contraseña actualizada. Por favor, inicia sesión de nuevo.', 'success');
+        handleLogout(); // Esto cambiará isAuthenticated a false y llevará a AuthScreens
+        return;
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
+
       addToast('Perfil actualizado.', 'success');
       await fetchInitialData();
       if (fileInputRef.current) {
