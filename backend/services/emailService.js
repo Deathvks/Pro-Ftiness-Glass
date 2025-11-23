@@ -1,3 +1,4 @@
+/* backend/services/emailService.js */
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
@@ -17,6 +18,8 @@ export const generateVerificationCode = () => {
 
 // Enviar código de verificación
 export const sendVerificationEmail = async (email, code) => {
+  const resetUrl = `${process.env.FRONTEND_URL}/forgot-password`;
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
@@ -30,6 +33,16 @@ export const sendVerificationEmail = async (email, code) => {
         </div>
         <p>Este código expira en 10 minutos.</p>
         <p>Si no solicitaste este código, puedes ignorar este email.</p>
+        
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        
+        <p style="font-size: 14px; color: #555;">
+          <strong>¿No has sido tú?</strong><br>
+          Si no has intentado iniciar sesión, es posible que alguien esté usando tu correo. 
+          <a href="${resetUrl}" style="color: #4F46E5; text-decoration: none; font-weight: bold;">
+            Haz clic aquí para restablecer tu contraseña
+          </a>.
+        </p>
       </div>
     `
   };
@@ -43,7 +56,6 @@ export const sendVerificationEmail = async (email, code) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Enviar email para resetear contraseña
 export const sendPasswordResetEmail = async (email, token) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
@@ -77,4 +89,48 @@ export const sendPasswordResetEmail = async (email, token) => {
     return { success: false, message: 'Error al enviar el email.' };
   }
 };
-// --- FIN DE LA MODIFICACIÓN ---
+
+// --- NUEVA FUNCIÓN: Alerta de inicio de sesión ---
+export const sendLoginAlertEmail = async (email, { ip, userAgent, token }) => {
+  // Usamos el token generado para ir directo al reset
+  const changePasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Alerta de seguridad: Nuevo inicio de sesión - Pro Fitness Glass',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4F46E5;">Nuevo inicio de sesión detectado</h2>
+        <p>Se ha iniciado sesión correctamente en tu cuenta con Autenticación en Dos Pasos.</p>
+        
+        <div style="background: #F9FAFB; padding: 15px; border-left: 4px solid #4F46E5; margin: 20px 0;">
+          <p style="margin: 5px 0;"><strong>Dispositivo/Navegador:</strong> ${userAgent}</p>
+          <p style="margin: 5px 0;"><strong>Dirección IP:</strong> ${ip}</p>
+          <p style="margin: 5px 0;"><strong>Fecha:</strong> ${new Date().toLocaleString()}</p>
+        </div>
+
+        <p>Si has sido tú, puedes ignorar este mensaje.</p>
+        
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        
+        <p style="color: #DC2626; font-weight: bold;">¿No has sido tú?</p>
+        <p>Alguien podría tener acceso a tu contraseña y a tus códigos de verificación.</p>
+        <p>
+          <a href="${changePasswordUrl}" style="background-color: #DC2626; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            Cambiar contraseña ahora
+          </a>
+        </p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true, message: 'Alerta de login enviada.' };
+  } catch (error) {
+    console.error('Error enviando alerta de login:', error);
+    // No retornamos false para no bloquear el login si el email falla, solo logueamos
+    return { success: false, message: 'Error al enviar alerta.' };
+  }
+};

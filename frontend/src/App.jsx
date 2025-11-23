@@ -1,5 +1,5 @@
 /* frontend/src/App.jsx */
-import React, { useState, lazy, Suspense, useMemo, useCallback } from 'react';
+import React, { useState, lazy, Suspense, useMemo, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Home, Dumbbell, BarChart2, Settings, Utensils } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -16,8 +16,13 @@ import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
 import Spinner from './components/Spinner';
 
+// --- Imports de Componentes Modales ---
+import TwoFactorPromoModal from './components/TwoFactorPromoModal';
+
 // --- Imports de Páginas (Lazy) ---
 import OnboardingScreen from './pages/OnboardingScreen';
+import ResetPasswordScreen from './pages/ResetPasswordScreen';
+
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Progress = lazy(() => import('./pages/Progress'));
 const Routines = lazy(() => import('./pages/Routines'));
@@ -28,21 +33,16 @@ const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor')
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Profile = lazy(() => import('./pages/Profile'));
+const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
 
 // --- Constantes ---
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 
-// --- Componente Fallback para Suspense ---
-const LoadingFallback = () => (
-  <div className="flex justify-center items-center h-full pt-20">
-    <Spinner size={40} />
-  </div>
-);
-
 export default function App() {
-  // --- 1. Estado Local Mínimo ---
+  // --- 1. Estado Local ---
   const [authView, setAuthView] = useState('login');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [show2FAPromo, setShow2FAPromo] = useState(false);
 
   // --- 2. Hooks Personalizados ---
   const { 
@@ -59,12 +59,10 @@ export default function App() {
   const timer = useWorkoutTimer();
   const { t } = useTranslation('translation');
 
-  // El hook de inicialización gestiona la carga inicial, modales de bienvenida/email, etc.
   const { 
     isInitialLoad, 
     ...verificationProps 
   } = useAppInitialization({ setView, setAuthView, view });
-  // (verificationProps contiene: showEmailVerificationModal, setShowEmailVerificationModal, etc.)
 
   // --- 3. Hook de Zustand (Datos Globales) ---
   const {
@@ -72,7 +70,7 @@ export default function App() {
     userProfile,
     isLoading,
     handleLogout: performLogout,
-    fetchInitialData, // Necesario para el modal de verificación
+    fetchInitialData,
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -81,7 +79,27 @@ export default function App() {
     fetchInitialData: state.fetchInitialData,
   }));
 
-  // --- 4. Callbacks (Manejadores de Eventos) ---
+  // --- 4. Efectos ---
+  
+  // Lógica para mostrar la promo de 2FA una sola vez
+  useEffect(() => {
+    if (isAuthenticated && userProfile && !isLoading) {
+      const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
+      // Si el usuario ya tiene 2FA (si el perfil lo indica) o ya vio el modal, no hacemos nada
+      // Usamos optional chaining por si la propiedad no existe aún en el perfil
+      const isAlreadyEnabled = userProfile?.twoFactorEnabled || userProfile?.isTwoFactorEnabled;
+      
+      if (!hasSeenPromo && !isAlreadyEnabled) {
+        // Pequeño delay para no abrumar al iniciar
+        const timer = setTimeout(() => {
+          setShow2FAPromo(true);
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isAuthenticated, userProfile, isLoading]);
+
+  // --- 5. Callbacks ---
   const handleLogoutClick = useCallback(() => {
     setShowLogoutConfirm(true);
   }, []);
@@ -91,9 +109,19 @@ export default function App() {
     setShowLogoutConfirm(false);
   }, [performLogout]);
 
-  // --- 5. Memos para Títulos, Descripciones y Vista Actual ---
+  const handleClose2FAPromo = () => {
+    setShow2FAPromo(false);
+    localStorage.setItem('has_seen_2fa_promo', 'true');
+  };
+
+  const handleConfigure2FA = () => {
+    handleClose2FAPromo();
+    // --- CAMBIO: Redirigir directamente a la pantalla de configuración de 2FA ---
+    navigate('twoFactorSetup'); 
+  };
+
+  // --- 6. Memos para Títulos, Descripciones y Vista Actual ---
   
-  // Memo para el título (usado en <Helmet> y Header Móvil)
   const currentTitle = useMemo(() => {
     const titleMap = {
       dashboard: { key: 'Dashboard', default: 'Dashboard' },
@@ -106,6 +134,7 @@ export default function App() {
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
       adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
+      twoFactorSetup: { key: 'Verificación en 2 pasos', default: 'Verificación en 2 pasos' },
     };
     const titleInfo = titleMap[view];
     if (titleInfo) {
@@ -115,7 +144,6 @@ export default function App() {
     return t(fallbackKey, { defaultValue: fallbackKey });
   }, [view, t]);
 
-  // Memo para la descripción (usado en <Helmet>)
   const currentDescription = useMemo(() => {
     const descKeys = {
       dashboard: t('dashboard_desc', { defaultValue: 'Tu resumen diario de actividad, nutrición y progreso.' }),
@@ -128,12 +156,12 @@ export default function App() {
       physicalProfileEditor: t('physicalProfileEditor_desc', { defaultValue: 'Actualiza tus datos físicos como edad, altura y objetivos.' }),
       adminPanel: t('adminPanel_desc', { defaultValue: 'Gestión de usuarios y configuraciones avanzadas.' }),
       privacyPolicy: t('privacyPolicy_desc', { defaultValue: 'Información sobre cómo tratamos tus datos y el uso de cookies.' }),
+      twoFactorSetup: t('twoFactorSetup_desc', { defaultValue: 'Configura la seguridad adicional de tu cuenta.' }),
       default: t('default_desc', { defaultValue: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.' }),
     };
     return descKeys[view] || descKeys.default;
   }, [view, t, userProfile?.username]);
   
-  // Memo para la URL Canónica (usado en <Helmet>)
   const currentPath = useMemo(() => {
     if (view === 'dashboard') return '/';
     if (view) return `/${view}`;
@@ -142,7 +170,6 @@ export default function App() {
 
   const canonicalUrl = `${CANONICAL_BASE_URL}${currentPath}`;
 
-  // Memo para el componente de la página actual
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigate} />;
@@ -168,46 +195,53 @@ export default function App() {
           ? <AdminPanel onCancel={() => navigate('settings')} />
           : <Dashboard setView={navigate} />; 
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
+      case 'twoFactorSetup': return <TwoFactorSetup setView={navigate} />;
       default: return <Dashboard setView={navigate} />;
     }
   }, [
     view,
-    navigate, // Estable
+    navigate,
     theme,
     timer,
     accent,
-    handleLogoutClick, // Estable
+    handleLogoutClick,
     userProfile,
-    handleBackFromPolicy, // Estable
-    handleCancelProfile   // Estable
+    handleBackFromPolicy,
+    handleCancelProfile
   ]);
 
 
-  // --- 6. Guard Clauses (Retornos Condicionales) ---
+  // --- 7. Guard Clauses ---
 
-  // 6.1. Pantalla de Carga Inicial
+  // Interceptar ruta de reset password
+  if (window.location.pathname === '/reset-password') {
+    return (
+      <ResetPasswordScreen 
+        showLogin={() => {
+          window.location.href = '/'; 
+        }} 
+      />
+    );
+  }
+
   if (isLoading && isInitialLoad) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
   }
 
-  // 6.2. Pantallas de Autenticación
   if (!isAuthenticated) {
     return <AuthScreens authView={authView} setAuthView={setAuthView} />;
   }
 
-  // 6.3. Pantalla de Onboarding
   if (userProfile && !userProfile.goal) {
     return <OnboardingScreen />;
   }
   
-  // 6.4. Fallback si el perfil aún no carga (post-auth)
   if (!userProfile) {
       return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
   }
   
-  // --- 7. Renderizado Principal (Layout Autenticado) ---
+  // --- 8. Renderizado Principal ---
 
-  // Definición de los items de navegación (requiere 't' de i18n)
   const navItems = [
     { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
     { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: <Utensils size={24} /> },
@@ -218,7 +252,6 @@ export default function App() {
 
   return (
     <>
-      {/* Helmet para SEO y metadatos */}
       <Helmet>
         <html lang="es" />
         <title>{currentTitle} - Pro Fitness Glass</title>
@@ -228,7 +261,6 @@ export default function App() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
       </Helmet>
 
-      {/* Layout principal de la App (Sidebar, Navbars, Modales) */}
       <MainAppLayout
         view={view}
         navigate={navigate}
@@ -244,6 +276,14 @@ export default function App() {
         fetchInitialData={fetchInitialData}
         {...verificationProps} 
       />
+
+      {/* Modal Promocional 2FA */}
+      {show2FAPromo && (
+        <TwoFactorPromoModal 
+          onClose={handleClose2FAPromo}
+          onConfigure={handleConfigure2FA}
+        />
+      )}
     </>
   );
 }

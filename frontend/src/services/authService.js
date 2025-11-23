@@ -1,16 +1,14 @@
+/* frontend/src/services/authService.js */
 import apiClient from './apiClient';
 
 export const loginUser = (credentials) => {
     return apiClient('/auth/login', { body: credentials, method: 'POST' });
 };
 
-// Esta función ya es genérica. 'userData' contendrá {username, email, password}
-// No necesita cambios.
 export const registerUser = (userData) => {
     return apiClient('/auth/register', { body: userData, method: 'POST' });
 };
 
-// Nueva función para verificar el código de email
 export const verifyEmail = (verificationData) => {
     return apiClient('/auth/verify-email', { body: verificationData, method: 'POST' });
 };
@@ -33,10 +31,6 @@ export const updateEmailForVerification = (newEmail) => {
   });
 };
 
-/**
- * Envía una solicitud para restablecer la contraseña de un usuario.
- * @param {string} email - El email del usuario.
- */
 export const forgotPassword = (email) => {
   return apiClient('/auth/forgot-password', {
     method: 'POST',
@@ -44,12 +38,6 @@ export const forgotPassword = (email) => {
   });
 };
 
-/**
- * Restablece la contraseña de un usuario usando un token.
- * @param {object} resetData - Datos con el token y la nueva contraseña.
- * @param {string} resetData.token - El token de restablecimiento.
- * @param {string} resetData.password - La nueva contraseña.
- */
 export const resetPassword = (resetData) => {
   return apiClient('/auth/reset-password', {
     method: 'POST',
@@ -57,15 +45,49 @@ export const resetPassword = (resetData) => {
   });
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
-/**
- * Inicia sesión o registra al usuario usando el token de Google.
- * @param {string} token - El credential (ID Token) devuelto por Google.
- */
 export const googleLogin = (token) => {
   return apiClient('/auth/google-login', {
     method: 'POST',
-    body: { token }, // Enviamos el token en el cuerpo
+    body: { token },
   });
 };
-// --- FIN DE LA MODIFICACIÓN ---
+
+// --- FUNCIONES 2FA (Login) ---
+
+export const verify2FALogin = (data) => {
+    return apiClient('/2fa/login/verify', { 
+        method: 'POST',
+        body: data 
+    });
+};
+
+export const resend2FACode = (data) => {
+    return apiClient('/2fa/login/resend', { 
+        method: 'POST',
+        body: data 
+    });
+};
+
+// --- FUNCIONES 2FA (Configuración) ---
+
+export const setup2FAApp = () => {
+    return apiClient('/2fa/setup/app', { method: 'POST' });
+};
+
+export const enable2FAApp = (data) => {
+    // data: { token, secret }
+    return apiClient('/2fa/enable/app', { method: 'POST', body: data });
+};
+
+export const setup2FAEmail = () => {
+    return apiClient('/2fa/setup/email', { method: 'POST' });
+};
+
+export const enable2FAEmail = (data) => {
+    // data: { code }
+    return apiClient('/2fa/enable/email', { method: 'POST', body: data });
+};
+
+export const disable2FA = () => {
+    return apiClient('/2fa/disable', { method: 'POST' });
+};

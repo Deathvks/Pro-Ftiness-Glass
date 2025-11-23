@@ -4,18 +4,14 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import crypto from 'crypto';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { OAuth2Client } from 'google-auth-library';
-// --- FIN DE LA MODIFICACIÓN ---
 import models from '../models/index.js'; // Asegúrate que models/index.js exporta User correctamente
 import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
 
 const { User } = models; // User debería estar disponible aquí
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Inicializar cliente de Google (asegúrate de tener GOOGLE_CLIENT_ID en tu .env)
+// Inicializar cliente de Google
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-// --- FIN DE LA MODIFICACIÓN ---
 
 // --- FUNCIONES DE AUTENTICACIÓN ---
 
@@ -33,9 +29,8 @@ export const loginUser = async (req, res, next) => {
       // Busca al usuario por email
       user = await User.findOne({ where: { email } });
     } catch (dbError) {
-      // Maneja errores específicos de la base de datos durante la búsqueda
-      console.error('Error de Sequelize al buscar usuario:', dbError); // Mantenemos este log crítico
-      return next(dbError); // Pasa al manejador global
+      console.error('Error de Sequelize al buscar usuario:', dbError);
+      return next(dbError);
     }
 
     // Si no se encuentra el usuario
@@ -52,40 +47,61 @@ export const loginUser = async (req, res, next) => {
     // Si el usuario existe y la contraseña es correcta, pero no está verificado
     if (!user.is_verified) {
       const verificationCode = generateVerificationCode();
-      // Intenta reenviar el código de verificación (sin esperar el resultado del email)
       sendVerificationEmail(email, verificationCode).catch(emailError => {
-        console.error(`Error enviando email de verificación a ${email} durante login:`, emailError); // Mantenemos este log crítico
+        console.error(`Error enviando email de verificación a ${email} durante login:`, emailError);
       });
 
-      // Actualiza el código y la expiración en la base de datos
       try {
         await user.update({
           verification_code: verificationCode,
           verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000), // 10 minutos
         });
       } catch (updateError) {
-        console.error(`Error actualizando código de verificación para ${email}:`, updateError); // Mantenemos este log crítico
+        console.error(`Error actualizando código de verificación para ${email}:`, updateError);
       }
 
-      // Devuelve estado 403 indicando que se requiere verificación
       return res.status(403).json({ error: 'Cuenta no verificada. Se ha enviado un nuevo código.', requiresVerification: true, email: email });
     }
 
-    // Si el usuario está verificado, genera el token JWT
+    // --- INICIO DE LA MODIFICACIÓN (2FA Check) ---
+    if (user.two_factor_enabled) {
+      // Si el método es email, generar y enviar código ahora
+      if (user.two_factor_method === 'email') {
+        const code = generateVerificationCode();
+        try {
+            await sendVerificationEmail(user.email, code);
+        } catch (emailError) {
+            console.error("Error enviando código 2FA por email:", emailError);
+        }
+        
+        await user.update({
+          verification_code: code,
+          verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
+        });
+      }
+
+      // Retornar respuesta intermedia indicando que se requiere 2FA
+      // NO enviamos el token de sesión todavía.
+      return res.json({
+        requires2FA: true,
+        userId: user.id,
+        method: user.two_factor_method
+      });
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // Si NO tiene 2FA, genera el token JWT normal
     const payload = { userId: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    // Devuelve el token
     res.json({ message: 'Inicio de sesión exitoso.', token });
 
   } catch (error) {
-    // Captura cualquier otro error inesperado
-    console.error('Error inesperado en loginUser:', error); // Mantenemos este log crítico
-    next(error); // Pasa al manejador de errores global
+    console.error('Error inesperado en loginUser:', error);
+    next(error);
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 export const googleLogin = async (req, res, next) => {
   const { token } = req.body;
 
@@ -105,24 +121,19 @@ export const googleLogin = async (req, res, next) => {
     let user = await User.findOne({ where: { email } });
 
     if (user) {
-      // --- OPCIÓN 2: Bloquear si ya existe sin Google ID ---
-      // Si el usuario existe pero NO tiene google_id, significa que se registró con contraseña.
       if (!user.google_id) {
         return res.status(409).json({ 
           error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' 
         });
       }
 
-      // Si tiene google_id, es un login válido. Actualizamos datos si es necesario.
       let updated = false;
       
-      // Si no estaba verificado, lo marcamos como verificado (Google valida el email)
       if (!user.is_verified) {
         user.is_verified = true;
         user.verification_code = null;
         updated = true;
       }
-      // Opcional: actualizar foto si no tiene
       if (!user.profile_image_url && picture) {
         user.profile_image_url = picture;
         updated = true;
@@ -130,14 +141,36 @@ export const googleLogin = async (req, res, next) => {
 
       if (updated) await user.save();
 
+      // --- INICIO DE LA MODIFICACIÓN (2FA Check para Google) ---
+      if (user.two_factor_enabled) {
+        if (user.two_factor_method === 'email') {
+            const code = generateVerificationCode();
+            try {
+                await sendVerificationEmail(user.email, code);
+            } catch (emailError) {
+                console.error("Error enviando código 2FA (Google Login):", emailError);
+            }
+            
+            await user.update({
+              verification_code: code,
+              verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
+            });
+        }
+
+        return res.json({
+            requires2FA: true,
+            userId: user.id,
+            method: user.two_factor_method
+        });
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
+
     } else {
-      // Si el usuario no existe, lo creamos
-      // Generar un username único basado en el email (limpiando caracteres especiales)
+      // Registro nuevo (por defecto sin 2FA)
       let baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '');
       let username = baseUsername;
       let counter = 1;
       
-      // Verificar si el username existe y añadir número si es necesario
       while (await User.findOne({ where: { username } })) {
         username = `${baseUsername}${counter}`;
         counter++;
@@ -147,10 +180,10 @@ export const googleLogin = async (req, res, next) => {
         name: name || baseUsername,
         username: username,
         email: email,
-        password_hash: null, // Sin contraseña
+        password_hash: null,
         google_id: googleId,
         profile_image_url: picture,
-        is_verified: true, // Verificado por defecto al venir de Google
+        is_verified: true,
         role: 'user'
       });
     }
@@ -177,9 +210,6 @@ export const googleLogin = async (req, res, next) => {
     res.status(401).json({ error: 'Fallo en la autenticación con Google.' });
   }
 };
-// --- FIN DE LA MODIFICACIÓN ---
-
-// --- RESTO DE FUNCIONES (sin cambios respecto a la versión anterior con logs) ---
 
 export const logoutUser = (req, res) => {
   res.json({ message: 'Cierre de sesión exitoso.' });
@@ -220,21 +250,12 @@ export const register = async (req, res, next) => {
       return res.status(500).json({ error: 'Error enviando código de verificación' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN (Eliminamos hasheo) ---
-    // const salt = await bcrypt.genSalt(10);
-    // const password_hash = await bcrypt.hash(password, salt);
-    // --- FIN DE LA MODIFICACIÓN ---
-
-
     if (userToProcess) {
       await userToProcess.update({
         name: username,
         username: username,
         email: email,
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Se pasa la contraseña en texto plano. El hook del modelo la hasheará.
         password_hash: password,
-        // --- FIN DE LA MODIFICACIÓN ---
         verification_code: verificationCode,
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
         is_verified: false
@@ -244,10 +265,7 @@ export const register = async (req, res, next) => {
         name: username,
         username: username,
         email,
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Se pasa la contraseña en texto plano. El hook del modelo la hasheará.
         password_hash: password,
-        // --- FIN DE LA MODIFICACIÓN ---
         verification_code: verificationCode,
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
         is_verified: false
@@ -268,11 +286,10 @@ export const register = async (req, res, next) => {
         return res.status(409).json({ error: 'El nombre de usuario ya está en uso.' });
       }
     }
-    console.error('Error en registro:', error); // Mantenemos log crítico
+    console.error('Error en registro:', error);
     next(error);
   }
 };
-
 
 export const verifyEmail = async (req, res, next) => {
   const errors = validationResult(req);
@@ -304,7 +321,6 @@ export const verifyEmail = async (req, res, next) => {
         }
       });
     }
-
 
     if (!user.verification_code) {
       return res.status(400).json({ error: 'Código no encontrado o expirado' });
@@ -344,7 +360,7 @@ export const verifyEmail = async (req, res, next) => {
     });
 
   } catch (error) {
-    console.error('Error verificando email:', error); // Mantenemos log crítico
+    console.error('Error verificando email:', error);
     next(error);
   }
 };
@@ -377,7 +393,7 @@ export const resendVerificationEmail = async (req, res, next) => {
 
     res.json({ message: 'Código de verificación reenviado.' });
   } catch (error) {
-    console.error('Error reenviando código:', error); // Mantenemos log crítico
+    console.error('Error reenviando código:', error);
     next(error);
   }
 };
@@ -467,14 +483,8 @@ export const resetPassword = async (req, res, next) => {
       return res.status(400).json({ error: 'La nueva contraseña no puede ser igual a la anterior.' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN (Eliminamos hasheo) ---
-    // Hash the new password before saving (Model hook should also handle this)
-    // const salt = await bcrypt.genSalt(10);
-    // user.password_hash = await bcrypt.hash(password, salt);
-    
     // Se pasa la contraseña en texto plano. El hook del modelo la hasheará.
     user.password_hash = password;
-    // --- FIN DE LA MODIFICACIÓN ---
     
     user.password_reset_token = null;
     user.password_reset_expires_at = null;
@@ -486,14 +496,11 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-
 const authController = {
   register,
   verifyEmail,
   loginUser,
-  // --- INICIO DE LA MODIFICACIÓN ---
   googleLogin,
-  // --- FIN DE LA MODIFICACIÓN ---
   logoutUser,
   resendVerificationEmail,
   updateEmailForVerification,

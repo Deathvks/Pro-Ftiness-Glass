@@ -1,6 +1,6 @@
 /* frontend/src/pages/LoginScreen.jsx */
 import React, { useState, useEffect, useRef } from 'react';
-import { Dumbbell, LogIn } from 'lucide-react';
+import { Dumbbell, LogIn, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -9,14 +9,24 @@ import { useToast } from '../hooks/useToast';
 import GoogleTermsModal from '../components/GoogleTermsModal';
 import PrivacyPolicy from './PrivacyPolicy';
 import { GoogleLogin } from '@react-oauth/google';
+import { resend2FACode } from '../services/authService';
 
 const LoginScreen = ({ showRegister, showForgotPassword }) => {
+    // Store hooks
     const handleLogin = useAppStore(state => state.handleLogin);
     const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
+    
+    // 2FA Store hooks
+    const twoFactorPending = useAppStore(state => state.twoFactorPending);
+    const handleVerify2FA = useAppStore(state => state.handleVerify2FA);
+    const cancelTwoFactor = useAppStore(state => state.cancelTwoFactor);
+
     const { addToast } = useToast();
     
+    // Local state
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [verificationCode, setVerificationCode] = useState('');
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
 
@@ -36,7 +46,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             setHasConsented(consent === 'accepted');
         };
         checkConsent();
-        // Escuchar cambios por si se acepta desde otro componente
         window.addEventListener('storage', checkConsent);
         return () => window.removeEventListener('storage', checkConsent);
     }, []);
@@ -73,6 +82,8 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         setIsLoading(true);
         try {
             await handleLogin({ email, password });
+            // Si requiere 2FA, handleLogin actualiza twoFactorPending y el componente se re-renderiza
+            setIsLoading(false); 
         } catch (err) {
             const errorMessage = err.message || 'Error al iniciar sesión.';
             addToast(errorMessage, 'error');
@@ -80,6 +91,51 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             setPassword('');
             setIsLoading(false);
         }
+    };
+
+    const handle2FASubmit = async (e) => {
+        e.preventDefault();
+        if (!verificationCode.trim()) {
+            setErrors({ code: 'Introduce el código.' });
+            return;
+        }
+        setIsLoading(true);
+        setErrors({});
+        
+        try {
+            // Mapeamos el código al campo correcto según el método
+            const payload = {
+                userId: twoFactorPending.userId,
+                method: twoFactorPending.method,
+                token: twoFactorPending.method === 'app' ? verificationCode : undefined,
+                code: twoFactorPending.method === 'email' ? verificationCode : undefined,
+            };
+
+            await handleVerify2FA(payload);
+            // Si tiene éxito, el store actualiza isAuthenticated a true y redirige
+        } catch (err) {
+            const msg = err.message || 'Código incorrecto.';
+            addToast(msg, 'error');
+            setErrors({ api: msg, code: msg });
+            setIsLoading(false);
+        }
+    };
+
+    const handleResendCode = async () => {
+        if (!twoFactorPending?.email) return;
+        try {
+            await resend2FACode({ email: twoFactorPending.email, userId: twoFactorPending.userId });
+            addToast('Código reenviado a tu correo.', 'success');
+        } catch (err) {
+            addToast('Error al reenviar el código.', 'error');
+        }
+    };
+
+    const handleCancel2FA = () => {
+        cancelTwoFactor();
+        setVerificationCode('');
+        setErrors({});
+        setIsLoading(false);
     };
 
     const onGoogleSuccess = async (credentialResponse) => {
@@ -94,6 +150,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             } else {
                 throw new Error("Configuración interna incompleta.");
             }
+            setIsLoading(false);
         } catch (err) {
             const msg = err.message || 'Error con Google.';
             addToast(msg, 'error');
@@ -109,6 +166,73 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     if (showPolicy) return <PrivacyPolicy onBack={() => setShowPolicy(false)} />;
 
+    // --- RENDERIZADO 2FA ---
+    if (twoFactorPending) {
+        const isEmailMethod = twoFactorPending.method === 'email';
+        
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
+                <div className="w-full max-w-sm text-center">
+                    <ShieldCheck size={48} className="mx-auto text-accent mb-4" />
+                    <h1 className="text-3xl font-bold mb-2">Verificación</h1>
+                    <p className="text-text-secondary mb-6">
+                        {isEmailMethod 
+                            ? `Introduce el código enviado a ${twoFactorPending.email}` 
+                            : 'Introduce el código de tu aplicación autenticadora'}
+                    </p>
+
+                    <GlassCard className="p-8">
+                        <form onSubmit={handle2FASubmit} className="flex flex-col gap-5">
+                            {errors.api && <p className="text-center text-red text-sm">{errors.api}</p>}
+                            
+                            <div>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="Código de 6 dígitos"
+                                    className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-center text-2xl tracking-widest text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
+                                    value={verificationCode}
+                                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    autoFocus
+                                />
+                                {errors.code && <p className="form-error-text text-center mt-2">{errors.code}</p>}
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading || verificationCode.length < 6}
+                                className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? <Spinner /> : <span>Verificar</span>}
+                            </button>
+                        </form>
+
+                        <div className="mt-6 flex flex-col gap-3">
+                            {isEmailMethod && (
+                                <button 
+                                    onClick={handleResendCode}
+                                    type="button"
+                                    className="text-sm text-accent hover:underline"
+                                >
+                                    ¿No recibiste el código? Reenviar
+                                </button>
+                            )}
+                            
+                            <button 
+                                onClick={handleCancel2FA}
+                                type="button"
+                                className="flex items-center justify-center gap-1 text-text-muted hover:text-text-primary transition-colors text-sm"
+                            >
+                                <ArrowLeft size={14} /> Volver al inicio de sesión
+                            </button>
+                        </div>
+                    </GlassCard>
+                </div>
+            </div>
+        );
+    }
+
+    // --- RENDERIZADO LOGIN NORMAL ---
     return (
         <>
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">

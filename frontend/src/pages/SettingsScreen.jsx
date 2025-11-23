@@ -1,17 +1,16 @@
 /* frontend/src/pages/SettingsScreen.jsx */
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-// --- INICIO DE LA MODIFICACIÓN ---
 import {
   ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield,
-  LogOut, Info, ChevronRight, Cookie, Mail, BellRing
+  LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Lock, Smartphone
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
-import { usePushNotifications } from '../hooks/usePushNotifications'; // Importamos el hook
-import Spinner from '../components/Spinner'; // Importamos Spinner
-// --- FIN DE LA MODIFICACIÓN ---
+import { usePushNotifications } from '../hooks/usePushNotifications';
+import Spinner from '../components/Spinner';
 
+// --- Constantes ---
 const ACCENT_OPTIONS = [
   { id: 'green',   label: 'Verde',     hex: '#22c55e' },
   { id: 'blue',    label: 'Azul',      hex: '#3b82f6' },
@@ -36,6 +35,35 @@ const ACCENT_OPTIONS = [
   { id: 'neutral', label: 'Neutral',   hex: '#737373' }
 ];
 
+// --- Sub-componentes para mantener el código limpio ---
+const SectionTitle = ({ icon: Icon, title }) => (
+  <div className="flex items-center gap-2 mb-4 text-text-primary">
+    <Icon size={18} className="text-accent" />
+    <h2 className="text-lg font-semibold">{title}</h2>
+  </div>
+);
+
+const SettingsCard = ({ children, className = '' }) => (
+  <div className={`rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 ${className}`}>
+    {children}
+  </div>
+);
+
+const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent transition-all hover:bg-bg-secondary/50 
+      ${danger ? 'text-red hover:bg-red/10' : 'text-text-primary hover:border-[--glass-border]'}`}
+  >
+    {Icon && <Icon size={20} className={danger ? 'text-red' : 'text-accent'} />}
+    <div className="flex-1 text-left">
+      <div className="text-sm font-semibold">{title}</div>
+      {subtitle && <div className={`text-xs ${danger ? 'text-red/70' : 'text-text-secondary'}`}>{subtitle}</div>}
+    </div>
+    {action}
+  </button>
+);
+
 export default function SettingsScreen({
   theme = 'system',
   setTheme,
@@ -44,7 +72,6 @@ export default function SettingsScreen({
   setView,
   onLogoutClick
 }) {
-  // CORRECCIÓN: Usar selector para obtener estado de Zustand
   const { userProfile, resetCookieConsent } = useAppStore(state => ({
     userProfile: state.userProfile,
     resetCookieConsent: state.resetCookieConsent
@@ -52,266 +79,243 @@ export default function SettingsScreen({
   
   const [currentColorPage, setCurrentColorPage] = useState(0);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Instanciamos el hook de notificaciones
+  // Hook de Notificaciones Push
   const { 
     isSubscribed, 
     subscribe, 
     unsubscribe, 
-    isLoading: isPushLoading, // Renombramos para evitar colisión
+    isLoading: isPushLoading, 
     isSupported: isPushSupported, 
     permission: pushPermission 
   } = usePushNotifications();
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  const COLORS_PER_PAGE = 8;
+  // Paginación de colores
+  const COLORS_PER_PAGE = 12; // Aumentado para mejor uso del espacio
   const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
-  const startIndex = currentColorPage * COLORS_PER_PAGE;
-  const endIndex = startIndex + COLORS_PER_PAGE;
-  const currentColors = ACCENT_OPTIONS.slice(startIndex, endIndex);
-
-  const ThemeButton = ({ value, icon, label }) => {
-    const Icon = icon;
-    const active = theme === value;
-    return (
-      <button
-        onClick={() => setTheme(value)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all
-          ${active
-            ? 'bg-accent text-bg-secondary border-transparent shadow-md'
-            : 'border-[--glass-border] text-text-secondary hover:bg-accent-transparent hover:text-accent'}`}
-        aria-pressed={active}
-      >
-        <Icon size={18} />
-        <span className="text-sm font-medium">{label}</span>
-      </button>
-    );
-  };
-
-  const AccentSwatch = ({ option }) => {
-    const selected = accent === option.id;
-    return (
-      <button
-        onClick={() => setAccent(option.id)}
-        className={`group relative flex flex-col items-center gap-2`}
-        aria-pressed={selected}
-        title={option.label}
-      >
-        <span
-          className="w-10 h-10 rounded-full border transition-transform group-hover:scale-105"
-          style={{
-            backgroundColor: option.hex,
-            borderColor: selected ? option.hex : 'rgba(255,255,255,0.15)',
-            boxShadow: selected ? `0 0 0 4px ${option.hex}33` : 'none'
-          }}
-        />
-        <span className={`text-xs ${selected ? 'text-text-primary' : 'text-text-secondary'}`}>
-          {option.label}
-        </span>
-        {selected && (
-          <span className="absolute -top-1 -right-1 bg-bg-secondary rounded-full p-1 shadow">
-            <Check size={14} />
-          </span>
-        )}
-      </button>
-    );
-  };
+  const currentColors = ACCENT_OPTIONS.slice(
+    currentColorPage * COLORS_PER_PAGE, 
+    (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
+  );
 
   return (
-    <div className="px-4 pb-4 md:p-8 max-w-5xl mx-auto">
-
-      {/* Helmet */}
+    <div className="px-4 pb-20 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
          <title>Ajustes - Pro Fitness Glass</title>
-         <meta name="description" content="Personaliza la apariencia de Pro Fitness Glass (tema, color de acento) y gestiona tu perfil físico, cuenta y privacidad." />
       </Helmet>
 
-      {/* Header para PC */}
-      <div className="hidden md:flex items-center justify-between mb-6">
+      {/* Header Mobile/Desktop */}
+      <div className="flex items-center justify-between mb-6 pt-4 md:pt-0">
         <button
           onClick={() => setView('dashboard')}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition"
+          className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition"
         >
-          <ChevronLeft size={18} />
-          <span className="text-sm font-medium">Volver</span>
+          <ChevronLeft size={18} /> <span className="text-sm font-medium">Volver</span>
         </button>
-        <h1 className="text-xl md:text-2xl font-bold mt-10 md:mt-0">Ajustes</h1>
-        <div className="w-[90px]" />
+        <h1 className="text-2xl font-bold flex-1 text-center md:text-left md:ml-4">Ajustes</h1>
       </div>
 
-      {/* --- INICIO DE LA MODIFICACIÓN (Layout Grid) --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 md:mt-0 lg:items-start">
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
-      
-        {/* --- Sección Personalización --- */}
-        <section className="lg:col-span-2 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Palette size={18} className="text-accent" />
-            <h2 className="text-lg font-semibold">Personalización</h2>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+        
+        {/* --- COLUMNA 1: APARIENCIA --- */}
+        <SettingsCard>
+          <SectionTitle icon={Palette} title="Apariencia" />
+          
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-text-secondary mb-3">Tema</h3>
-            <div className="flex flex-wrap gap-3">
-              <ThemeButton value="system" icon={MonitorCog} label="Sistema" />
-              <ThemeButton value="light"  icon={Sun}        label="Claro" />
-              <ThemeButton value="dark"   icon={Moon}       label="Oscuro" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-text-secondary mb-3">Color de la app</h3>
-            <p className="text-xs text-text-muted mb-4">
-              Cambia solo los elementos que usan el color de acento.
-            </p>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-4 mb-4">
-              {currentColors.map(opt => (
-                <AccentSwatch key={opt.id} option={opt} />
+            <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Tema</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {['system', 'light', 'dark'].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setTheme(mode)}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${
+                    theme === mode 
+                      ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20' 
+                      : 'border-[--glass-border] text-text-secondary hover:bg-bg-secondary'
+                  }`}
+                >
+                  {mode === 'system' && <MonitorCog size={20} />}
+                  {mode === 'light' && <Sun size={20} />}
+                  {mode === 'dark' && <Moon size={20} />}
+                  <span className="text-xs font-medium capitalize">{mode === 'system' ? 'Sistema' : mode === 'light' ? 'Claro' : 'Oscuro'}</span>
+                </button>
               ))}
             </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setCurrentColorPage(prev => Math.max(0, prev - 1))}
-                  disabled={currentColorPage === 0}
-                  className="p-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="text-sm text-text-secondary px-3">
-                  {currentColorPage + 1} de {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentColorPage(prev => Math.min(totalPages - 1, prev + 1))}
-                  disabled={currentColorPage === totalPages - 1}
-                  className="p-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
           </div>
-        </section>
 
-        {/* --- Sección Cuenta --- */}
-        <aside className="rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 flex flex-col gap-3">
-          <h2 className="text-lg font-semibold mb-1">Cuenta</h2>
-          <button
-            onClick={() => setView('physicalProfileEditor')}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
-          >
-            <User size={18} className="text-accent" />
-            <div>
-              <div className="text-sm font-semibold">Editar perfil físico</div>
-              <div className="text-xs text-text-secondary">Objetivos, actividad, etc.</div>
+          <div>
+            <div className="flex justify-between items-center mb-3">
+               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
+               {totalPages > 1 && (
+                 <div className="flex gap-1">
+                   <button 
+                     onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
+                     disabled={currentColorPage === 0}
+                     className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                   >
+                     <ChevronLeft size={14} />
+                   </button>
+                   <button 
+                     onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
+                     disabled={currentColorPage === totalPages - 1}
+                     className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                   >
+                     <ChevronRight size={14} />
+                   </button>
+                 </div>
+               )}
             </div>
-          </button>
-          
-          {/* --- INICIO DE LA MODIFICACIÓN (Push Notifications) --- */}
-          {isPushSupported && (
-            <div className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left">
-              <BellRing size={18} className="text-accent" />
-              <div className="flex-1">
-                <div className="text-sm font-semibold">Notificaciones Push</div>
-                {pushPermission === 'denied' ? (
-                  <div className="text-xs text-red">Bloqueadas en el navegador</div>
-                ) : (
-                  <div className="text-xs text-text-secondary">
-                    {isSubscribed ? 'Activadas' : 'Desactivadas'}
-                  </div>
-                )}
-              </div>
-
-              {/* Interruptor (Toggle) */}
-              {isPushLoading ? (
-                <Spinner size={20} />
-              ) : (
+            <div className="grid grid-cols-6 gap-3">
+              {currentColors.map(opt => (
                 <button
-                  role="switch"
-                  aria-checked={isSubscribed}
-                  onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
-                  disabled={pushPermission === 'denied'}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
-                    ${isSubscribed ? 'bg-accent' : 'bg-bg-secondary'}
-                    ${pushPermission === 'denied' ? 'opacity-50 cursor-not-allowed' : ''}
-                  `}
+                  key={opt.id}
+                  onClick={() => setAccent(opt.id)}
+                  title={opt.label}
+                  className="group relative flex justify-center items-center"
                 >
                   <span
-                    aria-hidden="true"
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
-                      ${isSubscribed ? 'translate-x-5' : 'translate-x-0'}
-                    `}
+                    className="w-8 h-8 rounded-full border transition-transform hover:scale-110"
+                    style={{
+                      backgroundColor: opt.hex,
+                      borderColor: accent === opt.id ? opt.hex : 'transparent',
+                      boxShadow: accent === opt.id ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${opt.hex}` : 'none'
+                    }}
                   />
+                  {accent === opt.id && (
+                    <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none shadow-sm">
+                      <Check size={14} strokeWidth={3} />
+                    </span>
+                  )}
                 </button>
-              )}
-            </div>
-          )}
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
-
-          <button
-            onClick={resetCookieConsent}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
-          >
-            <Cookie size={18} className="text-accent" />
-            <div>
-              <div className="text-sm font-semibold">Privacidad y Cookies</div>
-              <div className="text-xs text-text-secondary">Gestionar consentimiento</div>
-            </div>
-          </button>
-           <a
-             href="https://wger.de"
-             target="_blank"
-             rel="noopener noreferrer"
-             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
-           >
-             <Info size={18} className="text-accent" />
-             <div>
-               <div className="text-sm font-semibold">Créditos</div>
-               <div className="text-xs text-text-secondary">Datos de ejercicios por wger</div>
-             </div>
-           </a>
-          <a
-            href="mailto:profitnessglass@gmail.com"
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
-          >
-            <Mail size={18} className="text-accent" />
-            <div>
-              <div className="text-sm font-semibold">Soporte</div>
-              <div className="text-xs text-text-secondary">profitnessglass@gmail.com</div>
-            </div>
-          </a>
-          {userProfile?.role === 'admin' && (
-            <button
-              onClick={() => setView('adminPanel')}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left hover:bg-accent-transparent transition"
-            >
-              <Shield size={18} className="text-accent" />
-              <div>
-                <div className="text-sm font-semibold">Panel de administración</div>
-                <div className="text-xs text-text-secondary">Gestión avanzada</div>
-              </div>
-            </button>
-          )}
-          <div className="flex-grow"></div>
-          <div className="h-px bg-[--glass-border] my-1" />
-          <button
-            onClick={onLogoutClick}
-            className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-accent text-bg-secondary font-semibold hover:opacity-95 transition mt-auto"
-          >
-            <LogOut size={18} />
-            Cerrar sesión
-          </button>
-        </aside>
-
-        {/* --- Sección Información --- */}
-        <aside className="md:hidden lg:col-span-1 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 flex flex-col gap-3">
-          <h2 className="text-lg font-semibold mb-1">Información</h2>
-          <div className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border]">
-            <Info size={18} className="text-accent" />
-            <div>
-              <div className="text-sm font-semibold">Información de la aplicación</div>
-              <div className="text-xs text-text-secondary">Versión {APP_VERSION}</div>
+              ))}
             </div>
           </div>
-        </aside>
+        </SettingsCard>
+
+        {/* --- COLUMNA 2: CUENTA Y SEGURIDAD --- */}
+        <div className="flex flex-col gap-6">
+          <SettingsCard>
+            <SectionTitle icon={User} title="Perfil" />
+            <div className="flex flex-col gap-1">
+              <SettingsItem 
+                icon={User}
+                title="Datos Físicos"
+                subtitle="Editar peso, altura, objetivos..."
+                onClick={() => setView('physicalProfileEditor')}
+                action={<ChevronRight size={16} className="text-text-muted" />}
+              />
+            </div>
+          </SettingsCard>
+
+          <SettingsCard>
+            <SectionTitle icon={Shield} title="Seguridad y Privacidad" />
+            <div className="flex flex-col gap-1">
+              {/* Opción de 2FA */}
+              <SettingsItem 
+                icon={Smartphone}
+                title="Verificación en 2 pasos"
+                subtitle={userProfile?.two_factor_enabled 
+                  ? `Activado (${userProfile.two_factor_method === 'app' ? 'App' : 'Email'})` 
+                  : "Protege tu cuenta"
+                }
+                onClick={() => setView('twoFactorSetup')} // Redirige a la pantalla de configuración
+                action={
+                  <div className={`px-2 py-1 rounded text-xs font-bold ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-text-muted/20 text-text-muted'}`}>
+                    {userProfile?.two_factor_enabled ? 'ON' : 'OFF'}
+                  </div>
+                }
+              />
+
+              <SettingsItem 
+                icon={Cookie}
+                title="Cookies"
+                subtitle="Gestionar consentimiento"
+                onClick={resetCookieConsent}
+              />
+
+              {userProfile?.role === 'admin' && (
+                <SettingsItem 
+                  icon={Shield}
+                  title="Panel Admin"
+                  subtitle="Gestión avanzada"
+                  onClick={() => setView('adminPanel')}
+                  danger={false}
+                />
+              )}
+            </div>
+          </SettingsCard>
+        </div>
+
+        {/* --- COLUMNA 3: NOTIFICACIONES Y OTROS --- */}
+        <div className="flex flex-col gap-6">
+          {isPushSupported && (
+            <SettingsCard>
+              <SectionTitle icon={BellRing} title="Notificaciones" />
+              <div className="flex items-center justify-between p-3 rounded-xl hover:bg-bg-secondary/30 transition">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-accent/10 rounded-lg text-accent">
+                    <BellRing size={20} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">Push Notifications</div>
+                    <div className="text-xs text-text-secondary">
+                      {pushPermission === 'denied' ? 'Bloqueadas en navegador' : (isSubscribed ? 'Recibiendo alertas' : 'Pausadas')}
+                    </div>
+                  </div>
+                </div>
+                {isPushLoading ? <Spinner size={20} /> : (
+                   <button
+                   role="switch"
+                   aria-checked={isSubscribed}
+                   onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
+                   disabled={pushPermission === 'denied'}
+                   className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
+                     ${isSubscribed ? 'bg-accent' : 'bg-bg-secondary'}
+                     ${pushPermission === 'denied' ? 'opacity-50 cursor-not-allowed' : ''}
+                   `}
+                 >
+                   <span
+                     className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isSubscribed ? 'translate-x-5' : 'translate-x-0'}`}
+                   />
+                 </button>
+                )}
+              </div>
+            </SettingsCard>
+          )}
+
+          <SettingsCard>
+            <SectionTitle icon={Info} title="General" />
+            <div className="flex flex-col gap-1">
+              <a href="mailto:profitnessglass@gmail.com" className="no-underline">
+                <SettingsItem 
+                  icon={Mail}
+                  title="Soporte"
+                  subtitle="profitnessglass@gmail.com"
+                />
+              </a>
+              <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
+                <SettingsItem 
+                  icon={Info}
+                  title="Créditos"
+                  subtitle="Datos por wger"
+                />
+              </a>
+              
+              <div className="my-2 h-px bg-[--glass-border]" />
+              
+              <SettingsItem 
+                icon={LogOut}
+                title="Cerrar Sesión"
+                onClick={onLogoutClick}
+                danger
+              />
+              
+              <div className="mt-4 text-center text-xs text-text-muted font-mono">
+                v{APP_VERSION}
+              </div>
+            </div>
+          </SettingsCard>
+        </div>
+
       </div>
     </div>
   );

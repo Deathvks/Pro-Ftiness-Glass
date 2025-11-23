@@ -98,10 +98,32 @@ User.init({
     type: DataTypes.DATE,
     allowNull: true,
   },
-  // created_at es manejado por timestamps abajo
+  
+  // --- NUEVOS CAMPOS PARA 2FA ---
+  two_factor_enabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  two_factor_method: {
+    type: DataTypes.STRING, // 'email' o 'app'
+    allowNull: true
+  },
+  two_factor_secret: {
+    type: DataTypes.STRING, // Secreto TOTP base32
+    allowNull: true
+  },
+  two_factor_recovery_codes: {
+    type: DataTypes.TEXT, // JSON stringified con los códigos
+    allowNull: true
+  },
+  // --- NUEVO CAMPO ---
+  last_totp_slice: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 
-  // --- Columnas que NO existen en BBDD (y se mantienen fuera del modelo) ---
-  // weight, targetCalories, targetProtein, targetCarbs, targetFat
+  // created_at es manejado por timestamps abajo
 
 }, {
   sequelize,
@@ -132,13 +154,7 @@ User.associate = function(models) {
     User.hasMany(models.PersonalRecord, { foreignKey: 'user_id', as: 'PersonalRecords' });
     User.hasMany(models.TemplateRoutine, { foreignKey: 'user_id', as: 'TemplateRoutines' }); // Asumiendo FK user_id
     User.hasMany(models.CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
+    User.hasMany(models.PushSubscription, { foreignKey: 'userId', onDelete: 'CASCADE', as: 'PushSubscriptions' });
 };
-
-// Asegúrate de que las asociaciones se llamen en models/index.js
-// Object.keys(db).forEach(modelName => {
-//   if (db[modelName].associate) {
-//     db[modelName].associate(db);
-//   }
-// });
 
 export default User;

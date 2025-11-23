@@ -1,10 +1,15 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React from 'react';
-import { Award, X, Github, UtensilsCrossed, Camera, LogIn } from 'lucide-react';
+import { Award, X, Github, UtensilsCrossed, Camera, LogIn, ShieldCheck } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const nouveautes = [
+    {
+      icon: <ShieldCheck className="text-accent" />,
+      titre: "Verificación en 2 Pasos",
+      description: "Añade una capa extra de seguridad a tu cuenta configurando la verificación en dos pasos (2FA) desde los ajustes."
+    },
     {
       icon: <LogIn className="text-accent" />,
       titre: "Acceso con Google",

@@ -26,9 +26,9 @@ import workoutRoutes from './routes/workouts.js';
 import adminRoutes from './routes/admin.js';
 import notificationRoutes from './routes/notifications.js';
 // --- INICIO DE LA MODIFICACIÓN ---
-// Importamos el servicio de Cron (ahora corregido)
-import { startCronJobs } from './services/cronService.js';
+import twoFactorRoutes from './routes/twoFactor.js';
 // --- FIN DE LA MODIFICACIÓN ---
+import { startCronJobs } from './services/cronService.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -65,15 +65,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // --- Fin Configuración CORS ---
 
-// --- INICIO DE LA MODIFICACIÓN: Headers para Google Auth (COOP/COEP) ---
+// --- Headers para Google Auth (COOP/COEP) ---
 app.use((req, res, next) => {
-  // Estos encabezados son necesarios para que el Popup de Google funcione sin warnings
-  // y pueda comunicarse con la ventana padre (tu app) de forma segura.
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   next();
 });
-// --- FIN DE LA MODIFICACIÓN ---
 
 app.use(express.json());
 
@@ -88,11 +85,10 @@ app.use(async (req, res, next) => {
   if (token) {
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET);
-      // Corrección: El payload del token usa 'id', no 'userId'
-      if (payload && payload.id) {
+      if (payload && payload.userId) { // Nota: Verifica si tu payload usa 'userId' o 'id'. En authController usas 'userId'.
         await db.User.update(
           { lastSeen: new Date() },
-          { where: { id: payload.id } } // Usamos payload.id
+          { where: { id: payload.userId } }
         );
       }
     } catch (err) { /* Ignorar errores de token inválido */ }
@@ -114,7 +110,10 @@ app.use('/api/template-routines', templateRoutinesRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/notifications', notificationRoutes); // Añadimos la nueva ruta
+app.use('/api/notifications', notificationRoutes);
+// --- INICIO DE LA MODIFICACIÓN ---
+app.use('/api/2fa', twoFactorRoutes); // Nueva ruta para 2FA
+// --- FIN DE LA MODIFICACIÓN ---
 
 app.use(errorHandler);
 
@@ -126,10 +125,8 @@ db.sequelize.sync()
       console.log(`Server is running on port ${PORT}`);
     });
     
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Iniciar las tareas programadas (Cron Jobs)
     startCronJobs();
-    // --- FIN DE LA MODIFICACIÓN ---
   })
   .catch(err => {
     console.error('Unable to connect to the database:', err);
