@@ -71,10 +71,7 @@ export const usePushNotifications = () => {
         }
       } catch (err) {
         console.error('Error comprobando suscripción:', err);
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Damos un mensaje de error más específico que puede incluir el error del SW
         setError(`Error al comprobar notificaciones: ${err.message}`);
-        // --- FIN DE LA MODIFICACIÓN ---
       } finally {
         setIsLoading(false);
       }
@@ -85,7 +82,6 @@ export const usePushNotifications = () => {
 
   /**
    * Proceso de Suscripción
-   * (sin cambios)
    */
   const subscribe = useCallback(async () => {
     if (!isSupported) {
@@ -133,8 +129,21 @@ export const usePushNotifications = () => {
       addToast('¡Notificaciones activadas!', 'success');
 
     } catch (err) {
-      addToast(`Error al activar notificaciones: ${err.message}`, 'error');
-      setError('Error al activar notificaciones.');
+      // --- INICIO DE LA MODIFICACIÓN: Detección de error específico de Brave ---
+      const errorMessage = err.message || '';
+      
+      // El error típico de Brave cuando los servicios de Google están deshabilitados es:
+      // "Registration failed - push service error"
+      if (errorMessage.includes('push service error')) {
+        addToast('Error de navegador: Si usas Brave, activa "Servicios de Google para mensajería push" en Configuración > Privacidad.', 'error', 6000);
+        setError('Servicios Push bloqueados por el navegador (ej. Brave Shields).');
+      } else {
+        addToast(`Error al activar notificaciones: ${errorMessage}`, 'error');
+        setError('Error al activar notificaciones.');
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
+      console.error('Error completo de suscripción:', err);
+
     } finally {
       setIsLoading(false);
     }
@@ -153,29 +162,19 @@ export const usePushNotifications = () => {
     setError(null);
 
     try {
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Invertimos el orden para priorizar la desuscripción local.
-      // El usuario quiere dejar de recibir notificaciones en *este* dispositivo.
-
       // 1. Desuscribir el PushManager (local)
       const unsubscribed = await subscription.unsubscribe();
       if (!unsubscribed) {
         throw new Error('No se pudo cancelar la suscripción desde el navegador.');
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Se elimina la 'D' que causaba un error de sintaxis
-        // --- FIN DE LA CORRECCIÓN ---
       }
 
       // 2. Si la desuscripción local tiene éxito, informar al backend
       try {
         await notificationService.unsubscribeFromPush(subscription.endpoint);
       } catch (backendError) {
-        // Si el backend falla, lo registramos pero no bloqueamos al usuario,
-        // ya que localmente ya está desuscrito.
         console.error('Error al desuscribir del backend (la desuscripción local tuvo éxito):', backendError);
         addToast('Desactivado localmente, pero hubo un error al notificar al servidor.', 'warning');
       }
-      // --- FIN DE LA MODIFICACIÓN ---
 
       setSubscription(null);
       setIsSubscribed(false);

@@ -1,3 +1,4 @@
+/* backend/models/index.js */
 import sequelize from "../db.js";
 
 // 1. Importa todos los modelos
@@ -14,9 +15,10 @@ import NutritionLog from './nutritionLogModel.js';
 import WaterLog from './waterLogModel.js';
 import FavoriteMeal from './favoriteMealModel.js';
 import CreatinaLog from './creatinaLogModel.js';
-// --- INICIO DE LA MODIFICACIÓN ---
 import TemplateRoutine from './templateRoutineModel.js';
 import TemplateRoutineExercise from './templateRoutineExerciseModel.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import PushSubscription from './pushSubscriptionModel.js';
 // --- FIN DE LA MODIFICACIÓN ---
 
 
@@ -54,16 +56,19 @@ RoutineExercise.belongsTo(ExerciseList, { foreignKey: 'exercise_list_id' });
 User.hasMany(PersonalRecord, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'PersonalRecords' });
 PersonalRecord.belongsTo(User, { foreignKey: 'user_id' });
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Se añade la nueva relación: una rutina predefinida tiene muchos ejercicios predefinidos.
 TemplateRoutine.hasMany(TemplateRoutineExercise, { foreignKey: 'template_routine_id', as: 'TemplateRoutineExercises' });
 TemplateRoutineExercise.belongsTo(TemplateRoutine, { foreignKey: 'template_routine_id' });
+
+User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
+CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Asociación para PushSubscription (usa 'userId' camelCase en la BBDD según la migración)
+User.hasMany(PushSubscription, { foreignKey: 'userId', onDelete: 'CASCADE', as: 'PushSubscriptions' });
+PushSubscription.belongsTo(User, { foreignKey: 'userId' });
 // --- FIN DE LA MODIFICACIÓN ---
 
 // 3. Exporta un único objeto que contiene todos los modelos
-// Definir asociaciones
-User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
-CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 const models = {
     sequelize,
     User,
@@ -78,11 +83,12 @@ const models = {
     NutritionLog,
     WaterLog,
     FavoriteMeal,
-    // --- INICIO DE LA MODIFICACIÓN ---
     TemplateRoutine,
     TemplateRoutineExercise,
+    CreatinaLog,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    PushSubscription
     // --- FIN DE LA MODIFICACIÓN ---
-    CreatinaLog
 };
 
 export default models;
