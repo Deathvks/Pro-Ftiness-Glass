@@ -1,6 +1,9 @@
 /* frontend/src/pages/LoginScreen.jsx */
 import React, { useState, useRef, useEffect } from 'react';
 import { Dumbbell, LogIn } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN: Importamos el icono de Google de react-icons ---
+import { FcGoogle } from 'react-icons/fc';
+// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
@@ -11,20 +14,20 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const handleLogin = useAppStore(state => state.handleLogin);
     const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
     const { addToast } = useToast();
+    
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
 
-    // --- INICIO DE LA MODIFICACIÓN: Referencia y estado para el ancho ---
+    // --- Referencia y estado para el ancho ---
     const googleParentRef = useRef(null);
-    const [googleBtnWidth, setGoogleBtnWidth] = useState('300'); // Valor inicial seguro
+    const [googleBtnWidth, setGoogleBtnWidth] = useState('300'); 
 
     // Calculamos el ancho disponible cuando se monta el componente o cambia el tamaño
     useEffect(() => {
         const updateWidth = () => {
             if (googleParentRef.current) {
-                // Google limita el ancho máximo a 400px, así que lo respetamos
                 const width = googleParentRef.current.offsetWidth;
                 setGoogleBtnWidth(width > 400 ? '400' : width.toString());
             }
@@ -34,7 +37,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         window.addEventListener('resize', updateWidth);
         return () => window.removeEventListener('resize', updateWidth);
     }, []);
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const validateForm = () => {
         const newErrors = {};
@@ -141,15 +143,30 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         <div className="flex-grow border-t border-glass-border"></div>
                     </div>
 
-                    {/* --- INICIO DE LA MODIFICACIÓN: Contenedor Responsive --- */}
-                    <div className="flex justify-center w-full" ref={googleParentRef}>
-                        <div className="w-full flex justify-center">
+                    {/* --- INICIO DE LA MODIFICACIÓN: Botón Personalizado Overlay --- */}
+                    {/* Contenedor relativo que define el tamaño y posiciona los elementos */}
+                    <div 
+                        className="relative w-full h-11 flex justify-center items-center group" 
+                        ref={googleParentRef}
+                    >
+                        {/* 1. Botón Visual (Diseño Personalizado con bg-accent) */}
+                        {/* Se muestra al usuario pero no recibe clics (pointer-events-none) */}
+                        <div className="absolute inset-0 w-full h-full bg-accent text-bg-secondary rounded-md flex items-center justify-center gap-3 font-semibold shadow transition group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-accent/20 pointer-events-none z-0">
+                            {/* Fondo blanco circular pequeño para el logo de Google para mejor contraste */}
+                            <div className="bg-white rounded-full p-1 flex items-center justify-center">
+                                <FcGoogle size={18} />
+                            </div>
+                            <span>Continuar con Google</span>
+                        </div>
+
+                        {/* 2. Botón Funcional Invisible (GoogleLogin) */}
+                        {/* Se coloca encima (z-10) y captura el clic, pero es totalmente transparente */}
+                        <div className="absolute inset-0 w-full h-full opacity-0 z-10 overflow-hidden flex justify-center items-center">
                             <GoogleLogin
                                 onSuccess={onGoogleSuccess}
                                 onError={onGoogleError}
-                                theme="filled_blue"
                                 size="large"
-                                width={googleBtnWidth} // Ancho dinámico calculado
+                                width={googleBtnWidth} // Ajustamos ancho para cubrir la zona
                                 text="signin_with"
                                 shape="rectangular"
                                 locale="es"

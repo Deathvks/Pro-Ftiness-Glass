@@ -1,6 +1,9 @@
 /* frontend/src/pages/RegisterScreen.jsx */
 import React, { useState, useRef, useEffect } from 'react';
-import { Dumbbell } from 'lucide-react'; // --- AÑADIDO: Importamos el icono del logo ---
+import { Dumbbell } from 'lucide-react';
+// --- INICIO DE LA MODIFICACIÓN: Importamos el icono de Google de react-icons ---
+import { FcGoogle } from 'react-icons/fc';
+// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import { useToast } from '../hooks/useToast';
@@ -152,11 +155,9 @@ const RegisterScreen = ({ showLogin }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease_out]">
             <div className="w-full max-w-sm text-center">
-                {/* --- INICIO DE LA MODIFICACIÓN: Cabecera con Logo (Igual que Login) --- */}
                 <Dumbbell size={48} className="mx-auto text-accent mb-4" />
                 <h1 className="text-4xl font-extrabold">Pro Fitness Glass</h1>
                 <p className="text-text-secondary mb-8">Crea tu cuenta y empieza hoy mismo.</p>
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
 
                 <GlassCard className="p-8">
                     <form onSubmit={handleRegister} className="flex flex-col gap-5" noValidate>
@@ -212,12 +213,24 @@ const RegisterScreen = ({ showLogin }) => {
                         <div className="flex-grow border-t border-glass-border"></div>
                     </div>
 
-                    <div className="flex justify-center w-full" ref={googleParentRef}>
-                        <div className="w-full flex justify-center">
+                    {/* --- INICIO DE LA MODIFICACIÓN: Botón Personalizado Overlay --- */}
+                    <div 
+                        className="relative w-full h-11 flex justify-center items-center group" 
+                        ref={googleParentRef}
+                    >
+                        {/* 1. Botón Visual (Diseño Personalizado) */}
+                        <div className="absolute inset-0 w-full h-full bg-accent text-bg-secondary rounded-md flex items-center justify-center gap-3 font-semibold shadow transition group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-accent/20 pointer-events-none z-0">
+                            <div className="bg-white rounded-full p-1 flex items-center justify-center">
+                                <FcGoogle size={18} />
+                            </div>
+                            <span>Registrarse con Google</span>
+                        </div>
+
+                        {/* 2. Botón Funcional Invisible */}
+                        <div className="absolute inset-0 w-full h-full opacity-0 z-10 overflow-hidden flex justify-center items-center">
                             <GoogleLogin
                                 onSuccess={onGoogleSuccess}
                                 onError={onGoogleError}
-                                theme="filled_blue"
                                 size="large"
                                 width={googleBtnWidth}
                                 text="signup_with"
@@ -226,6 +239,7 @@ const RegisterScreen = ({ showLogin }) => {
                             />
                         </div>
                     </div>
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
 
                 </GlassCard>
 
