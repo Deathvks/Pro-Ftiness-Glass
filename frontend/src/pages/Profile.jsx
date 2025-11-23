@@ -1,20 +1,16 @@
 /* frontend/src/pages/Profile.jsx */
 import React, { useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { ChevronLeft, Save, User, Camera, AlertTriangle } from 'lucide-react';
-// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
-// --- INICIO DE LA MODIFICACIÓN ---
 import {
   updateUserAccount,
   deleteMyData,
   deleteMyAccount,
 } from '../services/userService';
-// --- FIN DE LA MODIFICACIÓN ---
 import ProfileImageModal from '../components/ProfileImageModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -27,7 +23,7 @@ const Profile = ({ onCancel }) => {
     (state) => ({
       userProfile: state.userProfile,
       fetchInitialData: state.fetchInitialData,
-      handleLogout: state.handleLogout, // Añadido
+      handleLogout: state.handleLogout,
     }),
   );
   const { addToast } = useToast();
@@ -55,11 +51,14 @@ const Profile = ({ onCancel }) => {
     newPassword: '',
   });
 
-  // --- INICIO DE LA MODIFICACIÓN: Estado del modal ---
   const [modalAction, setModalAction] = useState(null); // 'deleteData' | 'deleteAccount'
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [modalPassword, setModalPassword] = useState('');
   const [modalError, setModalError] = useState('');
+
+  // --- INICIO DE LA MODIFICACIÓN: Flag de contraseña ---
+  // Obtenemos si el usuario tiene contraseña configurada
+  const hasPassword = userProfile?.hasPassword;
   // --- FIN DE LA MODIFICACIÓN ---
 
   const handleChange = (e) => {
@@ -102,10 +101,12 @@ const Profile = ({ onCancel }) => {
       newErrors.email = 'El formato del email no es válido.';
 
     if (formData.newPassword) {
-      if (!formData.currentPassword) {
+      // --- INICIO DE LA MODIFICACIÓN: Validación condicional ---
+      if (hasPassword && !formData.currentPassword) {
         newErrors.currentPassword =
           'La contraseña actual es requerida para cambiarla.';
       }
+      // --- FIN DE LA MODIFICACIÓN ---
       if (formData.newPassword.length < 6) {
         newErrors.newPassword =
           'La nueva contraseña debe tener al menos 6 caracteres.';
@@ -143,7 +144,11 @@ const Profile = ({ onCancel }) => {
     }
 
     if (formData.newPassword) {
-      data.append('currentPassword', formData.currentPassword);
+      // --- INICIO DE LA MODIFICACIÓN: Enviar currentPassword solo si existe ---
+      if (hasPassword) {
+          data.append('currentPassword', formData.currentPassword);
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
       data.append('newPassword', formData.newPassword);
     }
 
@@ -186,7 +191,6 @@ const Profile = ({ onCancel }) => {
     }
   };
 
-  // --- INICIO DE LA MODIFICACIÓN: Handlers del Modal ---
   const handleModalClose = () => {
     setModalAction(null);
     setModalPassword('');
@@ -195,10 +199,12 @@ const Profile = ({ onCancel }) => {
   };
 
   const handleModalConfirm = async () => {
-    if (!modalPassword) {
+    // --- INICIO DE LA MODIFICACIÓN: Validación condicional ---
+    if (hasPassword && !modalPassword) {
       setModalError('La contraseña es requerida.');
       return;
     }
+    // --- FIN DE LA MODIFICACIÓN ---
     setIsModalLoading(true);
     setModalError('');
 
@@ -220,7 +226,6 @@ const Profile = ({ onCancel }) => {
       setIsModalLoading(false);
     }
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const baseInputClasses =
     'w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition';
@@ -349,38 +354,46 @@ const Profile = ({ onCancel }) => {
             </div>
 
             <div className="pt-6 border-t border-glass-border">
-              <h2 className="text-lg font-bold mb-4">Cambiar Contraseña</h2>
+              <h2 className="text-lg font-bold mb-4">
+                {hasPassword ? 'Cambiar Contraseña' : 'Establecer Contraseña'}
+              </h2>
               <p className="text-sm text-text-secondary mb-4 -mt-3">
-                Deja los campos en blanco si no quieres cambiar tu contraseña.
+                {hasPassword 
+                  ? 'Deja los campos en blanco si no quieres cambiar tu contraseña.' 
+                  : 'Añade una contraseña para poder iniciar sesión con tu email.'}
               </p>
               <div className="flex flex-col gap-4">
-                <div>
-                  <label
-                    htmlFor="currentPassword"
-                    className="block text-sm font-medium text-text-secondary mb-2"
-                  >
-                    Contraseña Actual
-                  </label>
-                  <input
-                    id="currentPassword"
-                    name="currentPassword"
-                    type="password"
-                    value={formData.currentPassword}
-                    onChange={handleChange}
-                    className={baseInputClasses}
-                  />
-                  {errors.currentPassword && (
-                    <p className="form-error-text mt-1">
-                      {errors.currentPassword}
-                    </p>
-                  )}
-                </div>
+                {/* --- INICIO DE LA MODIFICACIÓN: Input condicional --- */}
+                {hasPassword && (
+                  <div>
+                    <label
+                      htmlFor="currentPassword"
+                      className="block text-sm font-medium text-text-secondary mb-2"
+                    >
+                      Contraseña Actual
+                    </label>
+                    <input
+                      id="currentPassword"
+                      name="currentPassword"
+                      type="password"
+                      value={formData.currentPassword}
+                      onChange={handleChange}
+                      className={baseInputClasses}
+                    />
+                    {errors.currentPassword && (
+                      <p className="form-error-text mt-1">
+                        {errors.currentPassword}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <div>
                   <label
                     htmlFor="newPassword"
                     className="block text-sm font-medium text-text-secondary mb-2"
                   >
-                    Nueva Contraseña
+                    {hasPassword ? 'Nueva Contraseña' : 'Contraseña'}
                   </label>
                   <input
                     id="newPassword"
@@ -416,13 +429,11 @@ const Profile = ({ onCancel }) => {
           </form>
         </GlassCard>
 
-        {/* --- INICIO DE LA MODIFICACIÓN: Zona de Peligro --- */}
         <GlassCard className="p-6 mt-8 border border-red-500/50">
           <h3 className="text-xl font-bold text-red-500 mb-4 flex items-center gap-2">
             <AlertTriangle size={20} />
             Zona de Peligro
           </h3>
-          {/* --- INICIO DE LA MODIFICACIÓN --- */}
           <div className="flex flex-col gap-4">
             {/* Borrar Datos */}
             <div className="flex-1">
@@ -454,12 +465,9 @@ const Profile = ({ onCancel }) => {
               </button>
             </div>
           </div>
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
         </GlassCard>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
       </div>
 
-      {/* --- INICIO DE LA MODIFICACIÓN: Componente de Modal --- */}
       <DeleteConfirmationModal
         modalAction={modalAction}
         isModalLoading={isModalLoading}
@@ -470,8 +478,8 @@ const Profile = ({ onCancel }) => {
         handleModalClose={handleModalClose}
         handleModalConfirm={handleModalConfirm}
         baseInputClasses={baseInputClasses}
+        hasPassword={hasPassword} // --- INICIO DE LA MODIFICACIÓN: Pasar prop ---
       />
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {isImageModalOpen && (
         <ProfileImageModal
@@ -489,7 +497,6 @@ const Profile = ({ onCancel }) => {
   );
 };
 
-// --- INICIO DE LA MODIFICACIÓN: Componente de Modal (Definición) ---
 /**
  * Modal de confirmación que solicita contraseña para acciones destructivas.
  */
@@ -503,14 +510,22 @@ const DeleteConfirmationModal = ({
   handleModalClose,
   handleModalConfirm,
   baseInputClasses,
+  hasPassword, // --- INICIO DE LA MODIFICACIÓN: Recibir prop ---
 }) => {
   if (!modalAction) return null;
 
   const isDeleteAccount = modalAction === 'deleteAccount';
   const title = isDeleteAccount ? 'Borrar Cuenta' : 'Borrar Datos';
+  
+  // --- INICIO DE LA MODIFICACIÓN: Texto condicional ---
+  const passwordText = hasPassword 
+    ? ' Escribe tu contraseña actual para confirmar.' 
+    : '';
+  // --- FIN DE LA MODIFICACIÓN ---
+
   const message = isDeleteAccount
-    ? '¿Estás ABSOLUTAMENTE seguro? Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente. Escribe tu contraseña actual para confirmar.'
-    : '¿Estás seguro? Todos tus registros de entrenamientos, nutrición y progreso serán eliminados. Tu cuenta se conservará. Escribe tu contraseña actual para confirmar.';
+    ? `¿Estás ABSOLUTAMENTE seguro? Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente.${passwordText}`
+    : `¿Estás seguro? Todos tus registros de entrenamientos, nutrición y progreso serán eliminados. Tu cuenta se conservará.${passwordText}`;
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-[fade-in_0.2s_ease-out]">
@@ -524,26 +539,30 @@ const DeleteConfirmationModal = ({
         </h3>
         <p className="text-text-secondary mb-6">{message}</p>
 
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="block text-sm font-medium text-text-secondary mb-2"
-          >
-            Contraseña Actual
-          </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            value={modalPassword}
-            onChange={(e) => {
-              setModalPassword(e.target.value);
-              setModalError('');
-            }}
-            className={baseInputClasses}
-            autoFocus
-          />
-          {modalError && <p className="form-error-text mt-1">{modalError}</p>}
-        </div>
+        {/* --- INICIO DE LA MODIFICACIÓN: Input condicional --- */}
+        {hasPassword && (
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-text-secondary mb-2"
+            >
+              Contraseña Actual
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={modalPassword}
+              onChange={(e) => {
+                setModalPassword(e.target.value);
+                setModalError('');
+              }}
+              className={baseInputClasses}
+              autoFocus
+            />
+            {modalError && <p className="form-error-text mt-1">{modalError}</p>}
+          </div>
+        )}
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         <div className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
           <button
@@ -575,6 +594,5 @@ const DeleteConfirmationModal = ({
     </div>
   );
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 export default Profile;

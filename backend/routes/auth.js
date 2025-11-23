@@ -10,11 +10,11 @@ import authenticateToken from '../middleware/authenticateToken.js';
 const router = express.Router();
 
 const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	max: 20,
-	message: 'Demasiados intentos desde esta IP, por favor intente de nuevo después de 15 minutos',
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: 'Demasiados intentos desde esta IP, por favor intente de nuevo después de 15 minutos',
     standardHeaders: true,
-	legacyHeaders: false,
+    legacyHeaders: false,
 });
 
 // Ruta para registro con verificación
@@ -51,6 +51,12 @@ router.post('/login', authLimiter, [
     body('password', 'La contraseña es requerida').not().isEmpty()
     // --- FIN MODIFICACIÓN ---
 ], authController.loginUser);
+
+// --- INICIO DE LA MODIFICACIÓN: Nueva ruta Google Login ---
+router.post('/google-login', authLimiter, [
+    body('token', 'El token de Google es requerido').not().isEmpty()
+], authController.googleLogin);
+// --- FIN DE LA MODIFICACIÓN ---
 
 router.post('/logout', authController.logoutUser);
 

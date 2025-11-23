@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
+/* frontend/src/pages/LoginScreen.jsx */
+import React, { useState, useRef, useEffect } from 'react';
 import { Dumbbell, LogIn } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
+import { GoogleLogin } from '@react-oauth/google';
 
 const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const handleLogin = useAppStore(state => state.handleLogin);
+    const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
     const { addToast } = useToast();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+
+    // --- INICIO DE LA MODIFICACIÓN: Referencia y estado para el ancho ---
+    const googleParentRef = useRef(null);
+    const [googleBtnWidth, setGoogleBtnWidth] = useState('300'); // Valor inicial seguro
+
+    // Calculamos el ancho disponible cuando se monta el componente o cambia el tamaño
+    useEffect(() => {
+        const updateWidth = () => {
+            if (googleParentRef.current) {
+                // Google limita el ancho máximo a 400px, así que lo respetamos
+                const width = googleParentRef.current.offsetWidth;
+                setGoogleBtnWidth(width > 400 ? '400' : width.toString());
+            }
+        };
+
+        updateWidth();
+        window.addEventListener('resize', updateWidth);
+        return () => window.removeEventListener('resize', updateWidth);
+    }, []);
+    // --- FIN DE LA MODIFICACIÓN ---
 
     const validateForm = () => {
         const newErrors = {};
@@ -41,6 +64,32 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             setPassword('');
             setIsLoading(false);
         }
+    };
+
+    const onGoogleSuccess = async (credentialResponse) => {
+        if (!credentialResponse.credential) return;
+        
+        setIsLoading(true);
+        setErrors({});
+
+        try {
+            if (handleGoogleLogin) {
+                await handleGoogleLogin(credentialResponse.credential);
+            } else {
+                console.error("La acción handleGoogleLogin no está definida en el store todavía.");
+                throw new Error("Error de configuración interna.");
+            }
+        } catch (err) {
+            const errorMessage = err.message || 'Error al iniciar sesión con Google.';
+            addToast(errorMessage, 'error');
+            setErrors({ api: errorMessage });
+            setIsLoading(false);
+        }
+    };
+
+    const onGoogleError = () => {
+        addToast('Error al conectar con Google.', 'error');
+        setErrors({ api: 'No se pudo iniciar sesión con Google.' });
     };
 
     return (
@@ -84,9 +133,32 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                             {isLoading ? <Spinner /> : <><LogIn size={18} /> <span>Iniciar Sesión</span></>}
                         </button>
                     </form>
+
+                    {/* Separador y Botón de Google */}
+                    <div className="relative flex py-5 items-center">
+                        <div className="flex-grow border-t border-glass-border"></div>
+                        <span className="flex-shrink-0 mx-4 text-text-muted text-sm">O continúa con</span>
+                        <div className="flex-grow border-t border-glass-border"></div>
+                    </div>
+
+                    {/* --- INICIO DE LA MODIFICACIÓN: Contenedor Responsive --- */}
+                    <div className="flex justify-center w-full" ref={googleParentRef}>
+                        <div className="w-full flex justify-center">
+                            <GoogleLogin
+                                onSuccess={onGoogleSuccess}
+                                onError={onGoogleError}
+                                theme="filled_blue"
+                                size="large"
+                                width={googleBtnWidth} // Ancho dinámico calculado
+                                text="signin_with"
+                                shape="rectangular"
+                                locale="es"
+                            />
+                        </div>
+                    </div>
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                     
                     <div className="text-center mt-6 text-sm">
-                        {/* --- INICIO DE LA MODIFICACIÓN --- */}
                         <button onClick={showForgotPassword} className="text-accent hover:opacity-80 transition-opacity font-medium">
                             ¿Olvidaste tu contraseña?
                         </button>
@@ -94,7 +166,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         <button onClick={showRegister} className="text-accent hover:opacity-80 transition-opacity font-medium">
                             Regístrate
                         </button>
-                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                     </div>
                 </GlassCard>
             </div>

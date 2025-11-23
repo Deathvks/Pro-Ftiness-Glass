@@ -42,6 +42,26 @@ export const createAuthSlice = (set, get) => ({
         await get().fetchInitialData(); // Llama a la acción del dataSlice
     },
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Inicia sesión con Google: similar a handleLogin pero usando el token de Google
+    handleGoogleLogin: async (googleToken) => {
+        // Llamamos al servicio que comunica con el backend
+        const { token } = await authService.googleLogin(googleToken);
+
+        // Limpieza de tokens antiguos
+        localStorage.removeItem('fittrack_token');
+
+        // Guardado del nuevo token de la app
+        localStorage.setItem('pro_fitness_token', token);
+        
+        // Actualización del estado
+        set({ token, isAuthenticated: true });
+        
+        // Carga de datos iniciales del usuario
+        await get().fetchInitialData();
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
+
     // Cierra sesión (LOGOUT MANUAL): limpia el token, el almacenamiento y resetea el estado completo.
     handleLogout: () => {
         clearAuthStorage();

@@ -6,7 +6,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Importar todos los modelos necesarios para el borrado
 const {
   User,
@@ -20,13 +19,11 @@ const {
   PersonalRecord,
   CreatinaLog,
 } = models;
-// --- FIN DE LA MODIFICACIÓN ---
 
 // Simulación de __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename); // Esto será /app/backend/controllers
 
-// --- INICIO DE LA MODIFICACIÓN ---
 /**
  * Helper para encontrar y eliminar todos los ficheros de un usuario (perfil, comidas).
  * @param {number} userId - ID del usuario.
@@ -78,7 +75,6 @@ const deleteAllUserFiles = async (userId, userInstance) => {
   }
   await Promise.all(deletePromises);
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 // Obtener el perfil del usuario autenticado
 export const getMyProfile = async (req, res, next) => {
@@ -90,7 +86,17 @@ export const getMyProfile = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
-    res.json(user);
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Obtenemos el usuario completo (con hash) para comprobar si tiene contraseña
+    const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'] });
+    
+    const userData = user.toJSON();
+    // Añadimos un flag para que el frontend sepa si pedir contraseña o no
+    userData.hasPassword = !!userWithPass.password_hash;
+    
+    res.json(userData);
+    // --- FIN DE LA MODIFICACIÓN ---
   } catch (error) {
     next(error);
   }
@@ -98,7 +104,6 @@ export const getMyProfile = async (req, res, next) => {
 
 // Actualizar el perfil físico del usuario
 export const updateMyProfile = async (req, res, next) => {
-  // ... (sin cambios aquí)
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -141,10 +146,17 @@ export const updateMyProfile = async (req, res, next) => {
 
     await t.commit();
 
+    // --- INICIO DE LA MODIFICACIÓN ---
     const updatedUser = await User.findByPk(userId, {
       attributes: { exclude: ['password_hash'] },
     });
-    res.json(updatedUser);
+    // Mantenemos la coherencia devolviendo hasPassword
+    const userWithPass = await User.findByPk(userId, { attributes: ['password_hash'] });
+    const userData = updatedUser.toJSON();
+    userData.hasPassword = !!userWithPass.password_hash;
+    
+    res.json(userData);
+    // --- FIN DE LA MODIFICACIÓN ---
   } catch (error) {
     await t.rollback();
     next(error);
@@ -154,7 +166,7 @@ export const updateMyProfile = async (req, res, next) => {
 // Actualizar datos de la cuenta (username, email, pass, imagen)
 export const updateMyAccount = async (req, res, next) => {
   let oldImagePath = null;
-  const newImagePath = req.processedImagePath || null; // La ruta .webp desde el middleware
+  const newImagePath = req.processedImagePath || null; 
   let imagePathToDeleteOnError = null;
 
   if (newImagePath) {
@@ -186,21 +198,29 @@ export const updateMyAccount = async (req, res, next) => {
     }
 
     if (newPassword) {
-      if (!currentPassword) {
-        if (imagePathToDeleteOnError)
-          await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
-        return res
-          .status(400)
-          .json({ error: 'La contraseña actual es requerida para cambiarla.' });
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Solo requerimos currentPassword SI el usuario YA tiene una contraseña.
+      // Si es usuario de Google (password_hash es null), permitimos crearla sin la anterior.
+      if (user.password_hash) {
+        if (!currentPassword) {
+          if (imagePathToDeleteOnError)
+            await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
+          return res
+            .status(400)
+            .json({ error: 'La contraseña actual es requerida para cambiarla.' });
+        }
+        const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!isMatch) {
+          if (imagePathToDeleteOnError)
+            await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
+          return res
+            .status(401)
+            .json({ error: 'La contraseña actual es incorrecta.' });
+        }
       }
-      const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
-      if (!isMatch) {
-        if (imagePathToDeleteOnError)
-          await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
-        return res
-          .status(401)
-          .json({ error: 'La contraseña actual es incorrecta.' });
-      }
+      // Si no tiene password_hash, permitimos establecerla directamente.
+      // --- FIN DE LA MODIFICACIÓN ---
+      
       fieldsToUpdate.password_hash = newPassword; // El hook se encarga del hash
     }
 
@@ -229,8 +249,13 @@ export const updateMyAccount = async (req, res, next) => {
 
     await user.reload();
 
+    // --- INICIO DE LA MODIFICACIÓN ---
     const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
+    // Devolver el flag actualizado (ahora tendrá password si la acaba de poner)
+    userWithoutPassword.hasPassword = !!user.password_hash;
     res.json(userWithoutPassword);
+    // --- FIN DE LA MODIFICACIÓN ---
+
   } catch (error) {
     if (imagePathToDeleteOnError) {
       await fs
@@ -248,8 +273,6 @@ export const updateMyAccount = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
-
 /**
  * Borra todos los datos del usuario (logs, rutinas, etc.) pero conserva la cuenta.
  */
@@ -257,24 +280,32 @@ export const clearMyData = async (req, res, next) => {
   const { userId } = req.user;
   const { password } = req.body;
 
-  if (!password) {
-    return res
-      .status(400)
-      .json({ error: 'La contraseña es requerida para borrar los datos.' });
-  }
-
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Nota: La validación de "password requerido" se ha movido aquí desde las rutas
+  // para hacerla condicional.
   const t = await sequelize.transaction();
   let user;
   try {
     user = await User.findByPk(userId);
     if (!user) {
+      await t.rollback();
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+    // Si el usuario tiene contraseña, la verificamos.
+    if (user.password_hash) {
+        if (!password) {
+            await t.rollback();
+            return res.status(400).json({ error: 'La contraseña es requerida.' });
+        }
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            await t.rollback();
+            return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+        }
     }
+    // Si no tiene contraseña (Google), procedemos sin verificar.
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // 1. Recolectar y borrar todos los ficheros
     await deleteAllUserFiles(userId, user);
@@ -322,12 +353,6 @@ export const deleteMyAccount = async (req, res, next) => {
   const { userId } = req.user;
   const { password } = req.body;
 
-  if (!password) {
-    return res
-      .status(400)
-      .json({ error: 'La contraseña es requerida para borrar la cuenta.' });
-  }
-
   let user;
   try {
     user = await User.findByPk(userId);
@@ -335,10 +360,18 @@ export const deleteMyAccount = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Verificación condicional de contraseña
+    if (user.password_hash) {
+        if (!password) {
+            return res.status(400).json({ error: 'La contraseña es requerida.' });
+        }
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+        }
     }
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // 1. Recolectar y borrar todos los ficheros
     // (Debe hacerse antes de que los logs de BBDD desaparezcan)
@@ -355,16 +388,13 @@ export const deleteMyAccount = async (req, res, next) => {
     next(error);
   }
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 const userController = {
   getMyProfile,
   updateMyProfile,
   updateMyAccount,
-  // --- INICIO DE LA MODIFICACIÓN ---
   clearMyData,
   deleteMyAccount,
-  // --- FIN DE LA MODIFICACIÓN ---
 };
 
 export default userController;

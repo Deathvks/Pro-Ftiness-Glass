@@ -1,10 +1,15 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React from 'react';
-import { Award, X, Github, UtensilsCrossed, Camera } from 'lucide-react';
+import { Award, X, Github, UtensilsCrossed, Camera, LogIn } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const nouveautes = [
+    {
+      icon: <LogIn className="text-accent" />,
+      titre: "Acceso con Google",
+      description: "Ahora puedes registrarte e iniciar sesión de forma rápida y segura utilizando tu cuenta de Google."
+    },
     {
       icon: <UtensilsCrossed className="text-accent" />,
       titre: "Búsqueda de Comidas Mejorada",

@@ -4,10 +4,18 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import crypto from 'crypto';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { OAuth2Client } from 'google-auth-library';
+// --- FIN DE LA MODIFICACIÓN ---
 import models from '../models/index.js'; // Asegúrate que models/index.js exporta User correctamente
 import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
 
 const { User } = models; // User debería estar disponible aquí
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Inicializar cliente de Google (asegúrate de tener GOOGLE_CLIENT_ID en tu .env)
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- FUNCIONES DE AUTENTICACIÓN ---
 
@@ -76,6 +84,100 @@ export const loginUser = async (req, res, next) => {
     next(error); // Pasa al manejador de errores global
   }
 };
+
+// --- INICIO DE LA MODIFICACIÓN ---
+export const googleLogin = async (req, res, next) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Se requiere el token de Google.' });
+  }
+
+  try {
+    // Verificar el token con Google
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID, 
+    });
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId, picture } = payload;
+
+    let user = await User.findOne({ where: { email } });
+
+    if (user) {
+      // --- OPCIÓN 2: Bloquear si ya existe sin Google ID ---
+      // Si el usuario existe pero NO tiene google_id, significa que se registró con contraseña.
+      if (!user.google_id) {
+        return res.status(409).json({ 
+          error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' 
+        });
+      }
+
+      // Si tiene google_id, es un login válido. Actualizamos datos si es necesario.
+      let updated = false;
+      
+      // Si no estaba verificado, lo marcamos como verificado (Google valida el email)
+      if (!user.is_verified) {
+        user.is_verified = true;
+        user.verification_code = null;
+        updated = true;
+      }
+      // Opcional: actualizar foto si no tiene
+      if (!user.profile_image_url && picture) {
+        user.profile_image_url = picture;
+        updated = true;
+      }
+
+      if (updated) await user.save();
+
+    } else {
+      // Si el usuario no existe, lo creamos
+      // Generar un username único basado en el email (limpiando caracteres especiales)
+      let baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '');
+      let username = baseUsername;
+      let counter = 1;
+      
+      // Verificar si el username existe y añadir número si es necesario
+      while (await User.findOne({ where: { username } })) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      user = await User.create({
+        name: name || baseUsername,
+        username: username,
+        email: email,
+        password_hash: null, // Sin contraseña
+        google_id: googleId,
+        profile_image_url: picture,
+        is_verified: true, // Verificado por defecto al venir de Google
+        role: 'user'
+      });
+    }
+
+    // Generar token JWT de la aplicación
+    const appPayload = { userId: user.id, role: user.role };
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    res.json({ 
+      message: 'Inicio de sesión con Google exitoso.', 
+      token: appToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+        is_verified: user.is_verified
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en Google Login:', error);
+    res.status(401).json({ error: 'Fallo en la autenticación con Google.' });
+  }
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- RESTO DE FUNCIONES (sin cambios respecto a la versión anterior con logs) ---
 
@@ -389,6 +491,9 @@ const authController = {
   register,
   verifyEmail,
   loginUser,
+  // --- INICIO DE LA MODIFICACIÓN ---
+  googleLogin,
+  // --- FIN DE LA MODIFICACIÓN ---
   logoutUser,
   resendVerificationEmail,
   updateEmailForVerification,

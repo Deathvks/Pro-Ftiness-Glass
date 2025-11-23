@@ -33,7 +33,6 @@ export const updateEmailForVerification = (newEmail) => {
   });
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 /**
  * Envía una solicitud para restablecer la contraseña de un usuario.
  * @param {string} email - El email del usuario.
@@ -55,6 +54,18 @@ export const resetPassword = (resetData) => {
   return apiClient('/auth/reset-password', {
     method: 'POST',
     body: resetData,
+  });
+};
+
+// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Inicia sesión o registra al usuario usando el token de Google.
+ * @param {string} token - El credential (ID Token) devuelto por Google.
+ */
+export const googleLogin = (token) => {
+  return apiClient('/auth/google-login', {
+    method: 'POST',
+    body: { token }, // Enviamos el token en el cuerpo
   });
 };
 // --- FIN DE LA MODIFICACIÓN ---

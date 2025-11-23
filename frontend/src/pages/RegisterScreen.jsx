@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+/* frontend/src/pages/RegisterScreen.jsx */
+import React, { useState, useRef, useEffect } from 'react';
+import { Dumbbell } from 'lucide-react'; // --- AÑADIDO: Importamos el icono del logo ---
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import { useToast } from '../hooks/useToast';
-import { registerUser } from '../services/authService'; // Eliminado resendVerificationEmail (no se usa aquí)
+import { registerUser } from '../services/authService'; 
 import useAppStore from '../store/useAppStore';
 import EmailVerification from '../components/EmailVerification';
+import { GoogleLogin } from '@react-oauth/google';
 
 const RegisterScreen = ({ showLogin }) => {
-    // --- INICIO MODIFICACIÓN: Cambiar 'name' por 'username' ---
+    const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
+    
     const [username, setUsername] = useState('');
-    // --- FIN MODIFICACIÓN ---
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
@@ -19,19 +22,32 @@ const RegisterScreen = ({ showLogin }) => {
     const { addToast } = useToast();
     const fetchInitialData = useAppStore(state => state.fetchInitialData);
 
+    // Referencia y estado para el ancho del botón Google
+    const googleParentRef = useRef(null);
+    const [googleBtnWidth, setGoogleBtnWidth] = useState('300');
+
+    useEffect(() => {
+        const updateWidth = () => {
+            if (googleParentRef.current) {
+                const width = googleParentRef.current.offsetWidth;
+                setGoogleBtnWidth(width > 400 ? '400' : width.toString());
+            }
+        };
+
+        updateWidth();
+        window.addEventListener('resize', updateWidth);
+        return () => window.removeEventListener('resize', updateWidth);
+    }, []);
+
     const validateForm = () => {
         const newErrors = {};
-        // --- INICIO MODIFICACIÓN: Validar 'username' ---
         if (!username.trim()) {
             newErrors.username = 'El nombre de usuario es requerido.';
         } else if (username.length < 3 || username.length > 30) {
             newErrors.username = 'El nombre de usuario debe tener entre 3 y 30 caracteres.';
         } else if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
-             // --- INICIO MODIFICACIÓN: Aclarar error ---
              newErrors.username = 'Solo letras, números, _, . y - (sin espacios).';
-             // --- FIN MODIFICACIÓN ---
         }
-        // --- FIN MODIFICACIÓN ---
 
         if (!email.trim()) {
             newErrors.email = 'El email es requerido.';
@@ -58,16 +74,12 @@ const RegisterScreen = ({ showLogin }) => {
         setIsLoading(true);
 
         try {
-            // --- INICIO MODIFICACIÓN: Enviar 'username' ---
             const response = await registerUser({ username, email, password });
-            // --- FIN MODIFICACIÓN ---
             addToast(response.message, 'success');
             setRegisteredEmail(email);
             setShowVerification(true);
         } catch (err) {
             const errorMessage = err.message || 'Error en el registro.';
-            // --- INICIO MODIFICACIÓN: Manejar error específico de username ---
-            // Mapear errores del backend (si vienen en 'errors') a nuestro estado 'errors'
             if (err.errors && Array.isArray(err.errors)) {
                  const apiErrors = {};
                  err.errors.forEach(error => {
@@ -83,7 +95,6 @@ const RegisterScreen = ({ showLogin }) => {
             } else {
                  setErrors({ api: errorMessage });
             }
-            // --- FIN MODIFICACIÓN ---
             addToast(errorMessage, 'error');
             setPassword('');
         } finally {
@@ -91,8 +102,31 @@ const RegisterScreen = ({ showLogin }) => {
         }
     };
 
+    const onGoogleSuccess = async (credentialResponse) => {
+        if (!credentialResponse.credential) return;
+        
+        setIsLoading(true);
+        setErrors({});
+
+        try {
+            if (handleGoogleLogin) {
+                await handleGoogleLogin(credentialResponse.credential);
+            } else {
+                throw new Error("Error de configuración interna.");
+            }
+        } catch (err) {
+            const errorMessage = err.message || 'Error al registrarse con Google.';
+            addToast(errorMessage, 'error');
+            setErrors({ api: errorMessage });
+            setIsLoading(false);
+        }
+    };
+
+    const onGoogleError = () => {
+        addToast('Error al conectar con Google.', 'error');
+    };
+
     const handleVerificationSuccess = async () => {
-        // Después de la verificación exitosa, obtenemos los datos del usuario
         try {
             await fetchInitialData();
         } catch (error) {
@@ -105,7 +139,6 @@ const RegisterScreen = ({ showLogin }) => {
         setRegisteredEmail('');
     };
 
-    // Si estamos en modo verificación, mostramos el componente de verificación
     if (showVerification) {
         return (
             <EmailVerification 
@@ -119,14 +152,16 @@ const RegisterScreen = ({ showLogin }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease_out]">
             <div className="w-full max-w-sm text-center">
-                <h1 className="text-4xl font-extrabold">Crear Cuenta</h1>
-                <p className="text-text-secondary mb-8">Empieza a registrar tu progreso hoy mismo.</p>
+                {/* --- INICIO DE LA MODIFICACIÓN: Cabecera con Logo (Igual que Login) --- */}
+                <Dumbbell size={48} className="mx-auto text-accent mb-4" />
+                <h1 className="text-4xl font-extrabold">Pro Fitness Glass</h1>
+                <p className="text-text-secondary mb-8">Crea tu cuenta y empieza hoy mismo.</p>
+                {/* --- FIN DE LA MODIFICACIÓN --- */}
 
                 <GlassCard className="p-8">
                     <form onSubmit={handleRegister} className="flex flex-col gap-5" noValidate>
                         {errors.api && <p className="text-center text-red">{errors.api}</p>}
 
-                        {/* --- INICIO MODIFICACIÓN: Campo 'username' --- */}
                         <div>
                             <input
                                 type="text"
@@ -134,11 +169,10 @@ const RegisterScreen = ({ showLogin }) => {
                                 className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                maxLength={30} // Añadido para consistencia con validación
+                                maxLength={30}
                             />
                             {errors.username && <p className="form-error-text text-left">{errors.username}</p>}
                         </div>
-                        {/* --- FIN MODIFICACIÓN --- */}
 
                         <div>
                             <input
@@ -170,6 +204,29 @@ const RegisterScreen = ({ showLogin }) => {
                             {isLoading ? <Spinner /> : 'Registrarse'}
                         </button>
                     </form>
+
+                    {/* Sección de Google */}
+                    <div className="relative flex py-5 items-center">
+                        <div className="flex-grow border-t border-glass-border"></div>
+                        <span className="flex-shrink-0 mx-4 text-text-muted text-sm">O regístrate con</span>
+                        <div className="flex-grow border-t border-glass-border"></div>
+                    </div>
+
+                    <div className="flex justify-center w-full" ref={googleParentRef}>
+                        <div className="w-full flex justify-center">
+                            <GoogleLogin
+                                onSuccess={onGoogleSuccess}
+                                onError={onGoogleError}
+                                theme="filled_blue"
+                                size="large"
+                                width={googleBtnWidth}
+                                text="signup_with"
+                                shape="rectangular"
+                                locale="es"
+                            />
+                        </div>
+                    </div>
+
                 </GlassCard>
 
                 <button onClick={showLogin} className="mt-6 text-text-muted hover:text-text-primary transition">

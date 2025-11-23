@@ -65,6 +65,16 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // --- Fin Configuración CORS ---
 
+// --- INICIO DE LA MODIFICACIÓN: Headers para Google Auth (COOP/COEP) ---
+app.use((req, res, next) => {
+  // Estos encabezados son necesarios para que el Popup de Google funcione sin warnings
+  // y pueda comunicarse con la ventana padre (tu app) de forma segura.
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  next();
+});
+// --- FIN DE LA MODIFICACIÓN ---
+
 app.use(express.json());
 
 const staticPath = path.join(__dirname, 'public');

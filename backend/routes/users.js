@@ -95,13 +95,8 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
-// --- INICIO DE LA MODIFICACIÓN: Validación de contraseña para borrado ---
-const passwordValidationRules = [
-    body('password')
-        .notEmpty()
-        .withMessage('La contraseña es requerida para confirmar esta acción.'),
-];
-// --- FIN DE LA MODIFICACIÓN ---
+// --- SE ELIMINÓ passwordValidationRules ---
+// La validación ahora es condicional dentro del controlador (userController)
 
 
 // Aplicar autenticación a todas las rutas de /users
@@ -180,21 +175,19 @@ router.put(
     }
 );
 
-// --- INICIO DE LA MODIFICACIÓN: Rutas de borrado ---
+// --- INICIO DE LA MODIFICACIÓN: Rutas de borrado (Sin validación obligatoria) ---
 
 // DELETE /api/users/me/data (Limpiar datos del usuario)
 router.delete(
     '/me/data',
-    passwordValidationRules,  // Validar que la contraseña exista
-    handleValidationErrors,   // Manejar error si no existe
+    // Eliminada la validación de contraseña aquí
     userController.clearMyData // Controlador
 );
 
 // DELETE /api/users/me (Borrar cuenta de usuario)
 router.delete(
     '/me',
-    passwordValidationRules,  // Validar que la contraseña exista
-    handleValidationErrors,   // Manejar error si no existe
+    // Eliminada la validación de contraseña aquí
     userController.deleteMyAccount // Controlador
 );
 // --- FIN DE LA MODIFICACIÓN ---

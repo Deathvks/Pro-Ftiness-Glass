@@ -6,6 +6,8 @@ import sequelize from '../db.js';
 class User extends Model {
   // Método para verificar la contraseña
   validPassword(password) {
+    // Si el usuario no tiene contraseña (login solo con Google), retornamos false
+    if (!this.password_hash) return false;
     // Compara la contraseña proporcionada con el hash almacenado
     return bcrypt.compareSync(password, this.password_hash);
   }
@@ -30,8 +32,15 @@ User.init({
   },
   password_hash: { // Añadido por migración inicial
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true // CAMBIO: Permitir nulo para usuarios de Google
   },
+  // --- INICIO DE LA MODIFICACIÓN ---
+  google_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
+  },
+  // --- FIN DE LA MODIFICACIÓN ---
   role: { // Añadido por migración inicial (ENUM en BBDD)
     type: DataTypes.STRING, // Usamos STRING en modelo por flexibilidad
     defaultValue: 'user'
