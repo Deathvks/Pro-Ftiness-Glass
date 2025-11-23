@@ -13,7 +13,6 @@ import Spinner from '../components/Spinner'; // Importamos Spinner
 // --- FIN DE LA MODIFICACIÓN ---
 
 const ACCENT_OPTIONS = [
-  // ... (opciones de color sin cambios) ...
   { id: 'green',   label: 'Verde',     hex: '#22c55e' },
   { id: 'blue',    label: 'Azul',      hex: '#3b82f6' },
   { id: 'violet',  label: 'Violeta',   hex: '#8b5cf6' },
@@ -45,7 +44,12 @@ export default function SettingsScreen({
   setView,
   onLogoutClick
 }) {
-  const { userProfile, resetCookieConsent } = useAppStore();
+  // CORRECCIÓN: Usar selector para obtener estado de Zustand
+  const { userProfile, resetCookieConsent } = useAppStore(state => ({
+    userProfile: state.userProfile,
+    resetCookieConsent: state.resetCookieConsent
+  }));
+  
   const [currentColorPage, setCurrentColorPage] = useState(0);
 
   // --- INICIO DE LA MODIFICACIÓN ---
@@ -67,7 +71,6 @@ export default function SettingsScreen({
   const currentColors = ACCENT_OPTIONS.slice(startIndex, endIndex);
 
   const ThemeButton = ({ value, icon, label }) => {
-    // ... (componente sin cambios) ...
     const Icon = icon;
     const active = theme === value;
     return (
@@ -86,7 +89,6 @@ export default function SettingsScreen({
   };
 
   const AccentSwatch = ({ option }) => {
-    // ... (componente sin cambios) ...
     const selected = accent === option.id;
     return (
       <button
@@ -118,13 +120,13 @@ export default function SettingsScreen({
   return (
     <div className="px-4 pb-4 md:p-8 max-w-5xl mx-auto">
 
-      {/* Helmet (sin cambios) */}
+      {/* Helmet */}
       <Helmet>
          <title>Ajustes - Pro Fitness Glass</title>
          <meta name="description" content="Personaliza la apariencia de Pro Fitness Glass (tema, color de acento) y gestiona tu perfil físico, cuenta y privacidad." />
       </Helmet>
 
-      {/* Header para PC (sin cambios) */}
+      {/* Header para PC */}
       <div className="hidden md:flex items-center justify-between mb-6">
         <button
           onClick={() => setView('dashboard')}
@@ -141,7 +143,7 @@ export default function SettingsScreen({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 md:mt-0 lg:items-start">
       {/* --- FIN DE LA MODIFICACIÓN --- */}
       
-        {/* --- Sección Personalización (sin cambios) --- */}
+        {/* --- Sección Personalización --- */}
         <section className="lg:col-span-2 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5">
           <div className="flex items-center gap-2 mb-4">
             <Palette size={18} className="text-accent" />
@@ -203,10 +205,7 @@ export default function SettingsScreen({
             </div>
           </button>
           
-          {/* Botón "Editar cuenta" (eliminado) */}
-
           {/* --- INICIO DE LA MODIFICACIÓN (Push Notifications) --- */}
-          {/* Solo mostramos la opción si el navegador lo soporta */}
           {isPushSupported && (
             <div className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border] text-left">
               <BellRing size={18} className="text-accent" />
@@ -302,7 +301,7 @@ export default function SettingsScreen({
           </button>
         </aside>
 
-        {/* --- Sección Información (sin cambios) --- */}
+        {/* --- Sección Información --- */}
         <aside className="md:hidden lg:col-span-1 rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 flex flex-col gap-3">
           <h2 className="text-lg font-semibold mb-1">Información</h2>
           <div className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-[--glass-border]">

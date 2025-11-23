@@ -1,117 +1,137 @@
 /* frontend/src/pages/PrivacyPolicy.jsx */
 import React from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Se añade el icono 'Shield'
-import { ChevronLeft, Cookie, Palette, Moon, Sun, Camera, Shield } from 'lucide-react';
-// --- FIN DE LA MODIFICACIÓN ---
+import { ChevronLeft, Cookie, Palette, Moon, Sun, Camera, Shield, Bell, Globe, Trash2, Mail } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 
 const PrivacyPolicy = ({ onBack }) => {
   return (
-    // Se añade un z-index alto (z-[110]) para que esta vista se muestre
-    // siempre por encima del banner de cookies (que tiene z-[100]).
+    // z-[110] para estar por encima de todo, incluido el banner de cookies (z-[100])
     <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto">
       <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
         <button onClick={onBack} className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4">
           <ChevronLeft size={20} />
           Volver
         </button>
-        {/* --- INICIO DE LA MODIFICACIÓN --- */}
+        
         <h1 className="text-3xl md:text-4xl font-extrabold mb-8">Política de Privacidad y Avisos Legales</h1>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         <GlassCard className="p-6 md:p-8">
           <div className="space-y-8 text-text-secondary">
             <p className="text-lg">
-              {/* --- INICIO DE LA MODIFICACIÓN (CAMBIO DE NOMBRE) --- */}
-              En <strong>Pro Fitness Glass</strong>, tu privacidad es fundamental. A continuación, te explicamos de forma clara y sencilla qué información guardamos y por qué.
-              {/* --- FIN DE LA MODIFICACIÓN (CAMBIO DE NOMBRE) --- */}
+              En <strong>Pro Fitness Glass</strong>, la transparencia es nuestra prioridad. Aquí detallamos cómo funcionan nuestros servicios, qué datos procesamos y con qué finalidad.
             </p>
 
+            {/* --- SECCIÓN: Almacenamiento Local --- */}
             <div className="space-y-3">
               <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
                 <Cookie className="text-accent" />
-                Almacenamiento Local (Preferencias)
+                Almacenamiento Local y Preferencias
               </h2>
               <p>
-                Esta aplicación utiliza el <strong>Almacenamiento Local</strong> (<code>localStorage</code>) de tu navegador, una tecnología similar a las cookies, para guardar exclusivamente tus <strong>preferencias de personalización visual</strong>.
+                Usamos el <strong>Almacenamiento Local</strong> de tu dispositivo para mejorar tu experiencia. No usamos cookies de rastreo publicitario.
               </p>
-              <p>Los datos específicos que almacenamos son:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li>
-                  <strong>Tema de la aplicación:</strong> Si prefieres el modo claro <Sun size={16} className="inline-block mx-1" />, oscuro <Moon size={16} className="inline-block mx-1" />, o el tema del sistema.
-                </li>
-                <li>
-                  <strong>Color de acento:</strong> El color que eliges para los botones y elementos destacados <Palette size={16} className="inline-block mx-1" />.
-                </li>
+                <li><strong>Personalización:</strong> Guardamos tu elección de tema (Claro/Oscuro) y color de acento.</li>
+                <li><strong>Sesión:</strong> Almacenamos un "token" de seguridad cifrado para mantener tu sesión activa sin que tengas que ingresar tu contraseña cada vez.</li>
               </ul>
-              <p className="font-semibold text-text-primary pt-2">
-                No utilizamos cookies ni almacenamiento local para rastrearte, mostrar publicidad ni compartir tus datos con terceros.
-              </p>
             </div>
 
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary">¿Qué pasa si no aceptas (Cookies)?</h2>
-              <p>
-                Si decides no aceptar el uso del almacenamiento local, no guardaremos ninguna preferencia de personalización en tu dispositivo. La aplicación seguirá siendo <strong>100% funcional</strong>, pero volverá a la apariencia por defecto cada vez que inicies una nueva sesión.
-              </p>
-            </div>
-
+            {/* --- SECCIÓN: Google Auth --- */}
             <div className="space-y-3">
               <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-                <Camera className="text-accent" />
-                Permiso de la Cámara (Escáner)
+                <Globe className="text-accent" />
+                Autenticación con Google
               </h2>
               <p>
-                Al usar la función de escaneo de códigos de barras, la aplicación te pedirá permiso para acceder a tu cámara. Este permiso se gestiona directamente a través de tu navegador y es necesario únicamente para esa función. <strong>Las imágenes de la cámara se procesan en tu dispositivo y no se almacenan ni se envían a nuestros servidores.</strong>
-              </p>
-            </div>
-
-            {/* --- INICIO DE LA MODIFICACIÓN (AÑADIDO PARA PLAY STORE) --- */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-                <Camera className="text-accent" />
-                Fotos de Comidas
-              </h2>
-              <p>
-                La aplicación te permite subir fotos de tus comidas para llevar un registro visual en tu diario de nutrición.
+                Si decides iniciar sesión o registrarte utilizando tu cuenta de Google, utilizamos el servicio seguro de Google Identity.
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
-                  <strong>Almacenamiento:</strong> Estas imágenes se suben y almacenan de forma segura en nuestros servidores.
+                  <strong>Datos Recibidos:</strong> Solo recibimos tu nombre, dirección de correo electrónico y foto de perfil para crear tu usuario en nuestra plataforma.
                 </li>
                 <li>
-                  <strong>Privacidad:</strong> Las fotos son privadas y están asociadas únicamente a tu cuenta. Se utilizan solo para que puedas consultarlas en tu historial personal. No se comparten con terceros ni se usan para ningún otro propósito.
+                  <strong>Seguridad:</strong> Nunca tenemos acceso a tu contraseña de Google. La autenticación se realiza directamente en los servidores de Google.
                 </li>
               </ul>
+            </div>
+
+            {/* --- SECCIÓN: Notificaciones --- */}
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
+                <Bell className="text-accent" />
+                Notificaciones Push
+              </h2>
               <p>
-                Esto es necesario para la función de "Registro Nutricional" y es una de las declaraciones que debes hacer en la sección "Seguridad de los datos" de Google Play (declarando la recogida de "Fotos y vídeos").
+                Solicitamos permiso para enviarte notificaciones push con fines exclusivamente funcionales y motivacionales:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Recordatorios de entrenamiento programados.</li>
+                <li>Avisos de finalización del temporizador de descanso.</li>
+                <li>Logros y récords personales alcanzados.</li>
+              </ul>
+              <p>
+                Puedes revocar este permiso en cualquier momento desde los ajustes de tu dispositivo.
               </p>
             </div>
 
+            {/* --- SECCIÓN: Cámara y Fotos --- */}
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
+                <Camera className="text-accent" />
+                Cámara y Fotos de Comidas
+              </h2>
+              <p>
+                Necesitamos acceso a la cámara si deseas escanear códigos de barras de productos o subir fotos a tu diario de nutrición.
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Escáner:</strong> El procesamiento del código de barras se realiza en tu dispositivo.</li>
+                <li><strong>Fotos de Comidas:</strong> Las imágenes que subes se almacenan de forma privada y segura en nuestros servidores, asociadas únicamente a tu cuenta.</li>
+              </ul>
+            </div>
+
+            {/* --- SECCIÓN: Eliminación de Datos (MODIFICADO) --- */}
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
+                <Trash2 className="text-accent" />
+                Eliminación de Datos
+              </h2>
+              <p>
+                Tienes el control total sobre tu información. Puedes <strong>eliminar tu cuenta y todos tus datos asociados</strong> (historial, perfil, fotos) en cualquier momento directamente desde la sección <strong>Perfil</strong> de la aplicación. Esta acción es irreversible.
+              </p>
+            </div>
+
+            {/* --- SECCIÓN: Legal --- */}
             <div className="space-y-3">
               <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
                 <Shield className="text-accent" />
-                Avisos Legales
+                Descargo de Responsabilidad
               </h2>
               <p>
-                {/* --- INICIO DE LA MODIFICACIÓN (CAMBIO DE NOMBRE) --- */}
-                <strong>Pro Fitness Glass</strong> es una herramienta de seguimiento y consulta diseñada para fines informativos y educativos.
-                {/* --- FIN DE LA MODIFICACIÓN (CAMBIO DE NOMBRE) --- */}
+                <strong>Pro Fitness Glass</strong> es una herramienta informativa.
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
-                  <strong>Sin Asesoramiento Médico:</strong> La información y los datos proporcionados por la aplicación no constituyen asesoramiento médico, diagnóstico ni tratamiento. Consulta siempre a un profesional de la salud cualificado antes de tomar decisiones sobre tu dieta o rutina de ejercicios.
+                  <strong>Salud:</strong> No sustituye el consejo médico profesional. Consulta a un especialista antes de iniciar dietas o ejercicios intensos.
                 </li>
                 <li>
-                  <strong>Uso Bajo Tu Responsabilidad:</strong> El uso de esta aplicación es bajo tu entera responsabilidad. El desarrollador no se hace responsable de ninguna lesión, problema de salud o resultado adverso derivado del uso de la información contenida en la aplicación.
+                  <strong>Responsabilidad:</strong> El uso de la aplicación es bajo tu propia responsabilidad.
                 </li>
               </ul>
+            </div>
+
+            {/* --- SECCIÓN: Contacto (MODIFICADO) --- */}
+            <div className="space-y-3 mt-6 p-4 border border-glass-border rounded-lg bg-bg-secondary/50">
+              <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                <Mail className="text-accent" size={20} />
+                Contacto y Soporte
+              </h2>
               <p>
-                Este descargo de responsabilidad es crucial para que Google apruebe una aplicación en la categoría de "Salud y fitness".
+                Si tienes preguntas adicionales sobre nuestra política de privacidad o necesitas asistencia, no dudes en contactarnos en:
+              </p>
+              <p className="font-semibold text-accent mt-2">
+                profitnessglass@gmail.com
               </p>
             </div>
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           </div>
         </GlassCard>

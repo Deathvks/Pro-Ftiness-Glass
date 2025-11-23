@@ -29,6 +29,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     fetchInitialData,
     checkWelcomeModal,
     fetchDataForDate,
+    checkCookieConsent, // --- AÑADIDO: Acción para sincronizar cookies
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -36,7 +37,14 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     fetchInitialData: state.fetchInitialData,
     checkWelcomeModal: state.checkWelcomeModal,
     fetchDataForDate: state.fetchDataForDate,
+    checkCookieConsent: state.checkCookieConsent, // --- AÑADIDO
   }));
+
+  // Efecto 0: Sincronizar estado de cookies al montar el hook (inicio de la app)
+  // Esto asegura que el banner se muestre o no correctamente según localStorage
+  useEffect(() => {
+    checkCookieConsent();
+  }, [checkCookieConsent]);
 
   // Efecto 1: Carga de datos iniciales y redirección de vista
   useEffect(() => {

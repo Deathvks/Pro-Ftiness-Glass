@@ -5,7 +5,7 @@ import { APP_VERSION } from '../config/version';
 
 // Esta función se encarga de limpiar el almacenamiento local relacionado con la sesión.
 const clearAuthStorage = () => {
-    localStorage.removeItem('pro_fitness_token'); // Cambiado de 'fittrack_token'
+    localStorage.removeItem('pro_fitness_token');
     localStorage.removeItem('lastView');
     localStorage.removeItem('templateRoutinesSearchQuery');
     localStorage.removeItem('templateRoutinesSelectedCategory');
@@ -13,18 +13,19 @@ const clearAuthStorage = () => {
     localStorage.removeItem('templateRoutinesShowFilters');
 };
 
-// ELIMINADA la función getInitialCookieConsent ya que no se usa
-
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
 export const createAuthSlice = (set, get) => ({
     // --- ESTADO INICIAL ---
-    isAuthenticated: !!localStorage.getItem('pro_fitness_token'), // Cambiado de 'fittrack_token'
-    token: localStorage.getItem('pro_fitness_token'), // Cambiado de 'fittrack_token'
+    isAuthenticated: !!localStorage.getItem('pro_fitness_token'),
+    token: localStorage.getItem('pro_fitness_token'),
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
-    // Inicializamos cookieConsent en null, checkCookieConsent lo establecerá al cargar perfil
-    cookieConsent: null,
+    
+    // INICIO CORRECCIÓN COOKIES: 
+    // Inicializamos leyendo directamente para evitar "flash" del banner.
+    // Usamos la clave global 'cookie_consent' para coincidir con GoogleTermsModal.
+    cookieConsent: localStorage.getItem('cookie_consent') || null, 
 
     // --- ACCIONES ---
 
@@ -32,85 +33,65 @@ export const createAuthSlice = (set, get) => ({
     handleLogin: async (credentials) => {
         const { token } = await authService.loginUser(credentials);
         
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Limpiamos el token antiguo (si existía) al iniciar sesión exitosamente
+        // Limpiamos el token antiguo
         localStorage.removeItem('fittrack_token'); 
-        // --- FIN DE LA MODIFICACIÓN ---
 
-        localStorage.setItem('pro_fitness_token', token); // Guardamos el nuevo token
-        set({ token, isAuthenticated: true });
-        await get().fetchInitialData(); // Llama a la acción del dataSlice
-    },
-
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Inicia sesión con Google: similar a handleLogin pero usando el token de Google
-    handleGoogleLogin: async (googleToken) => {
-        // Llamamos al servicio que comunica con el backend
-        const { token } = await authService.googleLogin(googleToken);
-
-        // Limpieza de tokens antiguos
-        localStorage.removeItem('fittrack_token');
-
-        // Guardado del nuevo token de la app
         localStorage.setItem('pro_fitness_token', token);
-        
-        // Actualización del estado
         set({ token, isAuthenticated: true });
-        
-        // Carga de datos iniciales del usuario
         await get().fetchInitialData();
     },
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // Cierra sesión (LOGOUT MANUAL): limpia el token, el almacenamiento y resetea el estado completo.
+    // Inicia sesión con Google
+    handleGoogleLogin: async (googleToken) => {
+        const { token } = await authService.googleLogin(googleToken);
+
+        localStorage.removeItem('fittrack_token');
+        localStorage.setItem('pro_fitness_token', token);
+        
+        set({ token, isAuthenticated: true });
+        await get().fetchInitialData();
+    },
+
+    // Cierra sesión (LOGOUT MANUAL)
     handleLogout: () => {
         clearAuthStorage();
-        get().clearWorkoutState(); // Llama a la acción del workoutSlice (BORRA LOCALSTORAGE DEL WORKOUT)
-        get().clearDataState();   // Llama a la acción del dataSlice
+        get().clearWorkoutState();
+        get().clearDataState();
         set({
             isAuthenticated: false,
             token: null,
             userProfile: null,
             isLoading: false,
-            cookieConsent: null, // Resetea el consentimiento al cerrar sesión
+            // NO reseteamos cookieConsent aquí, la preferencia de cookies suele ser por dispositivo/navegador
         });
     },
 
-    /**
-     * Maneja la EXPIRACIÓN DE SESIÓN (LOGOUT AUTOMÁTICO por 401/403).
-     * Limpia el estado de autenticación pero MANTIENE el workout activo
-     * en localStorage para que pueda ser reanudado.
-     */
+    // Maneja la EXPIRACIÓN DE SESIÓN (LOGOUT AUTOMÁTICO)
     handleSessionExpiry: () => {
-        clearAuthStorage(); // Limpia el token de localStorage
+        clearAuthStorage();
+        // Mantenemos el workout activo en localStorage (no llamamos a clearWorkoutState)
+        get().clearDataState();
         
-        // ¡NO LLAMAMOS A get().clearWorkoutState()!
-        // Esta es la diferencia clave: el workout en localStorage sobrevive.
-
-        get().clearDataState();   // Limpia el estado de datos en memoria (rutinas, logs, etc.)
-        
-        // Resetea el estado de autenticación en memoria
         set({
             isAuthenticated: false,
             token: null,
             userProfile: null,
             isLoading: false,
-            // Mantenemos el cookieConsent, ya que el usuario es el mismo.
         });
     },
 
-    // Actualiza el perfil del usuario en el backend y refresca los datos.
+    // Actualiza el perfil del usuario
     updateUserProfile: async (formData) => {
         try {
             await userService.updateUserProfile(formData);
-            await get().fetchInitialData(); // Refresca todos los datos
+            await get().fetchInitialData();
             return { success: true, message: 'Perfil actualizado.' };
         } catch (error) {
             return { success: false, message: `Error: ${error.message}` };
         }
     },
 
-    // Comprueba si se debe mostrar el modal de bienvenida comparando versiones.
+    // Comprueba si se debe mostrar el modal de bienvenida
     checkWelcomeModal: () => {
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
         if (lastSeenVersion !== APP_VERSION) {
@@ -118,51 +99,36 @@ export const createAuthSlice = (set, get) => ({
         }
     },
 
-    // Cierra el modal de bienvenida y guarda la versión actual.
+    // Cierra el modal de bienvenida
     closeWelcomeModal: () => {
         localStorage.setItem('lastSeenVersion', APP_VERSION);
         set({ showWelcomeModal: false });
     },
 
-    // Comprueba el consentimiento de cookies para el usuario actual.
-    checkCookieConsent: async (userId) => {
-        const consent = localStorage.getItem(`cookie_consent_${userId}`);
-        if (consent === 'true') {
-            set({ cookieConsent: true });
-        } else if (consent === 'false') {
-            set({ cookieConsent: false });
-        } else {
-            set({ cookieConsent: null });
-        }
-        return Promise.resolve();
+    // --- GESTIÓN DE COOKIES (CORREGIDA) ---
+    // Usamos la clave global 'cookie_consent' y strings 'accepted'/'declined'
+    
+    // Esta función ahora es más simple, solo sincroniza el estado si es necesario
+    checkCookieConsent: () => {
+        const consent = localStorage.getItem('cookie_consent');
+        set({ cookieConsent: consent }); // consent será 'accepted', 'declined' o null
     },
 
-    // Acepta las cookies y guarda la preferencia para el usuario actual.
     handleAcceptCookies: () => {
-        const userId = get().userProfile?.id;
-        if (userId) {
-            localStorage.setItem(`cookie_consent_${userId}`, 'true');
-            set({ cookieConsent: true });
-        }
+        localStorage.setItem('cookie_consent', 'accepted');
+        set({ cookieConsent: 'accepted' });
     },
 
-    // Rechaza las cookies y guarda la preferencia para el usuario actual.
     handleDeclineCookies: () => {
-        const userId = get().userProfile?.id;
-        if (userId) {
-            localStorage.setItem(`cookie_consent_${userId}`, 'false');
-            set({ cookieConsent: false });
-            localStorage.removeItem('theme');
-            localStorage.removeItem('accent');
-        }
+        localStorage.setItem('cookie_consent', 'declined');
+        set({ cookieConsent: 'declined' });
+        // Limpiar preferencias locales si se rechaza
+        localStorage.removeItem('theme');
+        localStorage.removeItem('accent');
     },
 
-    // Resetea el consentimiento de cookies para que el banner vuelva a aparecer.
     resetCookieConsent: () => {
-        const userId = get().userProfile?.id;
-        if (userId) {
-            localStorage.removeItem(`cookie_consent_${userId}`);
-            set({ cookieConsent: null });
-        }
+        localStorage.removeItem('cookie_consent');
+        set({ cookieConsent: null });
     },
 });

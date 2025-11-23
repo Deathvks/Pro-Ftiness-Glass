@@ -1,22 +1,18 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense } from 'react';
-import { User, Zap, Home, Dumbbell, BarChart2, Settings, Utensils } from 'lucide-react';
-// --- INICIO DE LA CORRECCIÓN DE RUTAS ---
-// Se cambian las rutas relativas a absolutas desde la raíz del proyecto (/)
-// para solucionar problemas de resolución en el entorno de compilación.
-import useAppStore from '/src/store/useAppStore.js';
-import { APP_VERSION } from '/src/config/version.js';
+import React, { Suspense, useEffect } from 'react';
+import { User, Zap } from 'lucide-react';
+import useAppStore from '../store/useAppStore';
+import { APP_VERSION } from '../config/version';
 
 // Componentes UI
-import Sidebar from '/src/components/Sidebar.jsx';
-import Spinner from '/src/components/Spinner.jsx';
-import PRToast from '/src/components/PRToast.jsx';
-import ConfirmationModal from '/src/components/ConfirmationModal.jsx';
-import WelcomeModal from '/src/components/WelcomeModal.jsx';
-import EmailVerificationModal from '/src/components/EmailVerificationModal.jsx';
-import EmailVerification from '/src/components/EmailVerification.jsx';
-import CookieConsentBanner from '/src/components/CookieConsentBanner.jsx';
-// --- FIN DE LA CORRECCIÓN DE RUTAS ---
+import Sidebar from './Sidebar';
+import Spinner from './Spinner';
+import PRToast from './PRToast';
+import ConfirmationModal from './ConfirmationModal';
+import WelcomeModal from './WelcomeModal';
+import EmailVerificationModal from './EmailVerificationModal';
+import EmailVerification from './EmailVerification';
+import CookieConsentBanner from './CookieConsentBanner';
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -84,6 +80,25 @@ export default function MainAppLayout({
     activeWorkout: state.activeWorkout,
     workoutStartTime: state.workoutStartTime,
   }));
+
+  // --- Sincronización de Cookies ---
+  // Este efecto escucha cuando el modal de Google acepta las cookies 
+  // y actualiza el estado global para ocultar el banner automáticamente.
+  useEffect(() => {
+    const handleStorageChange = () => {
+      // Si localStorage dice 'accepted' pero el store aún no lo sabe...
+      if (localStorage.getItem('cookie_consent') === 'accepted' && cookieConsent !== 'accepted') {
+        handleAcceptCookies(); // Actualizamos el estado de Zustand
+      }
+    };
+
+    // Escuchamos el evento 'storage' (disparado manualmente en GoogleTermsModal)
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [cookieConsent, handleAcceptCookies]);
 
   // Renderizado del layout principal
   return (
@@ -159,7 +174,8 @@ export default function MainAppLayout({
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
 
-      {cookieConsent === null && ( // 'isInitialLoad' ya no es necesario aquí
+      {/* El banner solo se muestra si cookieConsent es null (ni aceptado ni rechazado) */}
+      {cookieConsent === null && (
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
           onDecline={handleDeclineCookies}
