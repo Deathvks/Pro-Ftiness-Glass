@@ -49,5 +49,5 @@ Thumbs.db
 # Archivos de entorno del Frontend
 frontend/.env.*
 
-# Ignorar carpeta public del backend
-/backend/public
+# Ignorar carpeta public (ruta relativa desde backend/)
+/public
