@@ -49,8 +49,5 @@ Thumbs.db
 # Archivos de entorno del Frontend
 frontend/.env.*
 
-# Archivos subidos por el usuario (localmente)
-/backend/public/images/profiles/*
-!/backend/public/images/profiles/.gitignore
-/backend/public/images/food/*
-!/backend/public/images/food/.gitignore
+# Ignorar carpeta public del backend
+/backend/public
