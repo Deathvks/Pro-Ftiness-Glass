@@ -17,8 +17,9 @@ import FavoriteMeal from './favoriteMealModel.js';
 import CreatinaLog from './creatinaLogModel.js';
 import TemplateRoutine from './templateRoutineModel.js';
 import TemplateRoutineExercise from './templateRoutineExerciseModel.js';
-// --- INICIO DE LA MODIFICACIÓN ---
 import PushSubscription from './pushSubscriptionModel.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import Notification from './notificationModel.js';
 // --- FIN DE LA MODIFICACIÓN ---
 
 
@@ -62,10 +63,14 @@ TemplateRoutineExercise.belongsTo(TemplateRoutine, { foreignKey: 'template_routi
 User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
 CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Asociación para PushSubscription (usa 'userId' camelCase en la BBDD según la migración)
 User.hasMany(PushSubscription, { foreignKey: 'userId', onDelete: 'CASCADE', as: 'PushSubscriptions' });
 PushSubscription.belongsTo(User, { foreignKey: 'userId' });
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Asociación para Notificaciones Internas (usa 'user_id' snake_case en la BBDD según la migración)
+User.hasMany(Notification, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Notifications' });
+Notification.belongsTo(User, { foreignKey: 'user_id' });
 // --- FIN DE LA MODIFICACIÓN ---
 
 // 3. Exporta un único objeto que contiene todos los modelos
@@ -86,8 +91,9 @@ const models = {
     TemplateRoutine,
     TemplateRoutineExercise,
     CreatinaLog,
+    PushSubscription,
     // --- INICIO DE LA MODIFICACIÓN ---
-    PushSubscription
+    Notification
     // --- FIN DE LA MODIFICACIÓN ---
 };
 

@@ -1,5 +1,5 @@
 /* frontend/src/pages/TwoFactorSetup.jsx */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ShieldCheck, Smartphone, Mail, ArrowLeft, Check, Copy,
   Unlock, Loader2, HelpCircle, X, AlertTriangle, ShieldAlert
@@ -28,6 +28,10 @@ const TwoFactorSetup = ({ setView }) => {
   // Data for App Setup
   const [qrData, setQrData] = useState(null); // { secret, qrCodeUrl }
   const [verifyCode, setVerifyCode] = useState('');
+  
+  // Input References for custom UI
+  const inputRef = useRef(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   
   // Handlers
   const handleBack = () => {
@@ -79,6 +83,8 @@ const TwoFactorSetup = ({ setView }) => {
         setView('settings');
     } catch (err) {
         addToast(err.message || 'Código incorrecto.', 'error');
+        setVerifyCode(''); // Limpiar código al fallar
+        inputRef.current?.focus();
     } finally {
         setIsLoading(false);
     }
@@ -108,6 +114,64 @@ const TwoFactorSetup = ({ setView }) => {
     navigator.clipboard.writeText(text);
     addToast('Copiado al portapapeles', 'success');
   };
+
+  // --- Renderizado del Input de Código (Slots) ---
+  const renderCodeInput = () => (
+    <div className="relative w-full max-w-[280px] mx-auto mb-6">
+        {/* Contenedor Visual de Slots */}
+        <div 
+            className="flex justify-between gap-2"
+            onClick={() => inputRef.current?.focus()}
+        >
+            {[...Array(6)].map((_, index) => {
+                const digit = verifyCode[index] || '';
+                // Mostrar cursor solo si el input tiene foco Y es el índice actual (o el último si está lleno pero no queremos eso, queremos el siguiente vacío)
+                const showCursor = isInputFocused && index === verifyCode.length;
+                
+                return (
+                    <div 
+                        key={index}
+                        className={`
+                            relative w-10 h-12 sm:w-11 sm:h-14 rounded-lg border-2 flex items-center justify-center text-xl sm:text-2xl font-bold transition-all bg-bg-secondary cursor-text
+                            ${(isInputFocused && (index === verifyCode.length))
+                                ? 'border-accent shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)]' // Slot activo
+                                : 'border-glass-border' // Slot inactivo
+                            }
+                            ${digit ? 'text-text-primary' : 'text-transparent'}
+                        `}
+                    >
+                        {digit}
+                        
+                        {/* Cursor Parpadeante Custom (Sin Canvas) */}
+                        {showCursor && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="w-0.5 h-6 bg-accent animate-pulse rounded-full" />
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+
+        {/* Input Real (Oculto pero funcional) */}
+        <input
+            ref={inputRef}
+            value={verifyCode}
+            onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setVerifyCode(val);
+            }}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer caret-transparent"
+            autoFocus
+        />
+    </div>
+  );
 
   // --- COMPONENTE INTERNO: MODAL DE INFORMACIÓN ---
   const InfoModal = () => {
@@ -256,7 +320,8 @@ const TwoFactorSetup = ({ setView }) => {
                     <ArrowLeft size={20} /> Volver
                 </button>
                 
-                <h1 className="text-2xl font-bold mb-2">Configurar Verificación en 2 Pasos</h1>
+                {/* --- HEADER CAMBIADO --- */}
+                <h1 className="text-2xl font-bold mb-2">Verificación en 2 Pasos</h1>
                 <p className="text-text-secondary mb-8">Añade una capa extra de seguridad a tu cuenta eligiendo un método de verificación.</p>
 
                 <div className="grid md:grid-cols-2 gap-4">
@@ -366,15 +431,9 @@ const TwoFactorSetup = ({ setView }) => {
                 <label className="block text-sm font-medium text-text-secondary mb-2 text-center">
                     Código de verificación
                 </label>
-                <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="000000"
-                    className="w-full bg-bg-secondary border border-glass-border rounded-lg px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono focus:border-accent focus:ring-1 focus:ring-accent outline-none transition mb-4"
-                    value={verifyCode}
-                    onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    autoFocus
-                />
+                
+                {/* Custom Input */}
+                {renderCodeInput()}
                 
                 <button
                     onClick={handleVerifyAndEnable}

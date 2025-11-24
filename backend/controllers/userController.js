@@ -5,6 +5,9 @@ import models from '../models/index.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { createNotification } from '../services/notificationService.js';
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Importar todos los modelos necesarios para el borrado
 const {
@@ -87,7 +90,6 @@ export const getMyProfile = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Obtenemos el usuario completo (con hash) para comprobar si tiene contraseña
     const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'] });
     
@@ -96,13 +98,12 @@ export const getMyProfile = async (req, res, next) => {
     userData.hasPassword = !!userWithPass.password_hash;
     
     res.json(userData);
-    // --- FIN DE LA MODIFICACIÓN ---
   } catch (error) {
     next(error);
   }
 };
 
-// Actualizar el perfil físico del usuario
+// Actualizar el perfil físico del usuario (y preferencias)
 export const updateMyProfile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -112,7 +113,7 @@ export const updateMyProfile = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
     const { userId } = req.user;
-    const { gender, age, height, activityLevel, goal, weight } = req.body;
+    const { gender, age, height, activityLevel, goal, weight, login_email_notifications } = req.body;
 
     const user = await User.findByPk(userId);
     if (!user) {
@@ -126,6 +127,9 @@ export const updateMyProfile = async (req, res, next) => {
         height,
         activity_level: activityLevel,
         goal,
+        // --- INICIO DE LA MODIFICACIÓN ---
+        login_email_notifications // Se actualiza si viene en el body, se ignora si es undefined
+        // --- FIN DE LA MODIFICACIÓN ---
       },
       { transaction: t }
     );
@@ -147,6 +151,24 @@ export const updateMyProfile = async (req, res, next) => {
     await t.commit();
 
     // --- INICIO DE LA MODIFICACIÓN ---
+    // Obtener IP y UserAgent
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+    }
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    // Notificación de actualización
+    if (weight || goal || activityLevel) {
+        createNotification(userId, {
+        type: 'info',
+        title: 'Perfil físico actualizado',
+        message: 'Has actualizado tus datos físicos y objetivos.',
+        data: { ip, userAgent, date: new Date() }
+        });
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
     const updatedUser = await User.findByPk(userId, {
       attributes: { exclude: ['password_hash'] },
     });
@@ -156,7 +178,6 @@ export const updateMyProfile = async (req, res, next) => {
     userData.hasPassword = !!userWithPass.password_hash;
     
     res.json(userData);
-    // --- FIN DE LA MODIFICACIÓN ---
   } catch (error) {
     await t.rollback();
     next(error);
@@ -189,18 +210,20 @@ export const updateMyAccount = async (req, res, next) => {
     }
 
     const fieldsToUpdate = {};
+    // --- INICIO DE LA MODIFICACIÓN (Tracking de cambios) ---
+    const changes = []; 
+    // --- FIN DE LA MODIFICACIÓN ---
 
     if (newImagePath) {
       fieldsToUpdate.profile_image_url = newImagePath;
+      changes.push('foto de perfil');
       if (oldImagePath && oldImagePath === imagePathToDeleteOnError) {
         oldImagePath = null;
       }
     }
 
     if (newPassword) {
-      // --- INICIO DE LA MODIFICACIÓN ---
       // Solo requerimos currentPassword SI el usuario YA tiene una contraseña.
-      // Si es usuario de Google (password_hash es null), permitimos crearla sin la anterior.
       if (user.password_hash) {
         if (!currentPassword) {
           if (imagePathToDeleteOnError)
@@ -218,20 +241,47 @@ export const updateMyAccount = async (req, res, next) => {
             .json({ error: 'La contraseña actual es incorrecta.' });
         }
       }
-      // Si no tiene password_hash, permitimos establecerla directamente.
-      // --- FIN DE LA MODIFICACIÓN ---
       
       fieldsToUpdate.password_hash = newPassword; // El hook se encarga del hash
+      changes.push('contraseña');
     }
 
-    if (name !== undefined && name !== user.name) fieldsToUpdate.name = name;
-    if (username !== undefined && username !== user.username)
-      fieldsToUpdate.username = username;
-    if (email !== undefined && email !== user.email)
-      fieldsToUpdate.email = email;
+    if (name !== undefined && name !== user.name) {
+        fieldsToUpdate.name = name;
+        changes.push('nombre');
+    }
+    if (username !== undefined && username !== user.username) {
+        fieldsToUpdate.username = username;
+        // --- CAMBIO SOLICITADO: Mostrar old -> new en la notificación ---
+        changes.push(`usuario (${user.username} -> ${username})`);
+    }
+    if (email !== undefined && email !== user.email) {
+        fieldsToUpdate.email = email;
+        changes.push('email');
+    }
 
     if (Object.keys(fieldsToUpdate).length > 0) {
       await user.update(fieldsToUpdate);
+
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Obtener IP y UserAgent
+      let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+      if (typeof ip === 'string' && ip.includes(',')) {
+          ip = ip.split(',')[0].trim();
+      }
+      const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+      // Notificación con resumen de cambios
+      if (changes.length > 0) {
+          const message = `Datos actualizados: ${changes.join(', ')}.`;
+          createNotification(userId, {
+              type: 'info',
+              title: 'Cuenta actualizada',
+              message: message,
+              data: { ip, userAgent, date: new Date() }
+          });
+      }
+      // --- FIN DE LA MODIFICACIÓN ---
     }
 
     if (oldImagePath && fieldsToUpdate.profile_image_url) {
@@ -249,12 +299,10 @@ export const updateMyAccount = async (req, res, next) => {
 
     await user.reload();
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
     // Devolver el flag actualizado (ahora tendrá password si la acaba de poner)
     userWithoutPassword.hasPassword = !!user.password_hash;
     res.json(userWithoutPassword);
-    // --- FIN DE LA MODIFICACIÓN ---
 
   } catch (error) {
     if (imagePathToDeleteOnError) {
@@ -280,9 +328,6 @@ export const clearMyData = async (req, res, next) => {
   const { userId } = req.user;
   const { password } = req.body;
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Nota: La validación de "password requerido" se ha movido aquí desde las rutas
-  // para hacerla condicional.
   const t = await sequelize.transaction();
   let user;
   try {
@@ -304,8 +349,6 @@ export const clearMyData = async (req, res, next) => {
             return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
         }
     }
-    // Si no tiene contraseña (Google), procedemos sin verificar.
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // 1. Recolectar y borrar todos los ficheros
     await deleteAllUserFiles(userId, user);
@@ -336,6 +379,23 @@ export const clearMyData = async (req, res, next) => {
     // 4. Commit
     await t.commit();
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Obtener IP y UserAgent
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+    }
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    // Notificación de borrado de datos
+    createNotification(userId, {
+        type: 'warning',
+        title: 'Datos eliminados',
+        message: 'Has eliminado todos tus datos de progreso y registros de la aplicación.',
+        data: { ip, userAgent, date: new Date() }
+    });
+    // --- FIN DE LA MODIFICACIÓN ---
+
     res.status(200).json({
       message:
         'Todos tus datos de progreso han sido eliminados. Tu cuenta se mantiene.',
@@ -360,7 +420,6 @@ export const deleteMyAccount = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Verificación condicional de contraseña
     if (user.password_hash) {
         if (!password) {
@@ -371,7 +430,6 @@ export const deleteMyAccount = async (req, res, next) => {
             return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
         }
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // 1. Recolectar y borrar todos los ficheros
     // (Debe hacerse antes de que los logs de BBDD desaparezcan)

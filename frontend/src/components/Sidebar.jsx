@@ -1,17 +1,15 @@
 /* frontend/src/components/Sidebar.jsx */
 import React from 'react';
-import { Dumbbell, User, LogOut } from 'lucide-react';
+import { Dumbbell, User, LogOut, Bell } from 'lucide-react'; 
 
 const Sidebar = ({
   view,
   navigate,
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // setPreviousView, // ELIMINADO: La función 'navigate' ya gestiona esto
-  // --- FIN DE LA MODIFICACIÓN ---
   navItems,
   userProfile,
   BACKEND_BASE_URL,
-  handleLogoutClick
+  handleLogoutClick,
+  unreadCount = 0 
 }) => {
   return (
     <nav className="hidden md:flex flex-col gap-10 p-8 w-64 h-full border-r border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass">
@@ -28,10 +26,7 @@ const Sidebar = ({
           <button
             key={item.id}
             onClick={() => {
-              // --- INICIO DE LA MODIFICACIÓN ---
-              // setPreviousView(view); // ELIMINADO: Esta llamada era redundante y causaba el bug.
-              navigate(item.id); // 'navigate' se encarga de todo.
-              // --- FIN DE LA MODIFICACIÓN ---
+              navigate(item.id);
             }}
             className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === item.id
               ? 'bg-accent text-bg-secondary'
@@ -43,15 +38,34 @@ const Sidebar = ({
         ))}
       </div>
 
-      {/* Navegación inferior (Perfil y Salir) */}
+      {/* Navegación inferior (Notificaciones, Perfil y Salir) */}
       <div className="mt-auto flex flex-col gap-2">
+        
+        {/* Botón de Notificaciones */}
+        <button
+          onClick={() => navigate('notifications')}
+          className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${view === 'notifications'
+            ? 'bg-accent text-bg-secondary'
+            : 'text-text-secondary hover:bg-accent-transparent hover:text-accent'
+            }`}
+        >
+          <div className="relative">
+            <Bell size={24} />
+            {unreadCount > 0 && (
+              // --- INICIO DE LA MODIFICACIÓN ---
+              // Badge con bg-accent (color del usuario) y borde del color del sidebar (glass-bg)
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
+              // --- FIN DE LA MODIFICACIÓN ---
+            )}
+          </div>
+          <span>Notificaciones</span>
+        </button>
+
         <div className="h-px bg-[--glass-border] my-2"></div>
+        
         <button
           onClick={() => {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // setPreviousView(view); // ELIMINADO: 'navigate' se encarga de esto.
             navigate('profile');
-            // --- FIN DE LA MODIFICACIÓN ---
           }}
           className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 overflow-hidden ${view === 'profile'
             ? 'bg-accent text-bg-secondary'

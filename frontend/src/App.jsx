@@ -1,7 +1,7 @@
 /* frontend/src/App.jsx */
 import React, { useState, lazy, Suspense, useMemo, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Home, Dumbbell, BarChart2, Settings, Utensils } from 'lucide-react';
+import { Home, Dumbbell, BarChart2, Settings, Utensils, Bell } from 'lucide-react'; // Añadido Bell
 import { useTranslation } from 'react-i18next';
 import useAppStore from './store/useAppStore';
 
@@ -34,6 +34,9 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Profile = lazy(() => import('./pages/Profile'));
 const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
+// --- INICIO DE LA MODIFICACIÓN ---
+const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Constantes ---
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
@@ -85,12 +88,9 @@ export default function App() {
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
-      // Si el usuario ya tiene 2FA (si el perfil lo indica) o ya vio el modal, no hacemos nada
-      // Usamos optional chaining por si la propiedad no existe aún en el perfil
       const isAlreadyEnabled = userProfile?.twoFactorEnabled || userProfile?.isTwoFactorEnabled;
       
       if (!hasSeenPromo && !isAlreadyEnabled) {
-        // Pequeño delay para no abrumar al iniciar
         const timer = setTimeout(() => {
           setShow2FAPromo(true);
         }, 2000);
@@ -116,7 +116,6 @@ export default function App() {
 
   const handleConfigure2FA = () => {
     handleClose2FAPromo();
-    // --- CAMBIO: Redirigir directamente a la pantalla de configuración de 2FA ---
     navigate('twoFactorSetup'); 
   };
 
@@ -134,7 +133,9 @@ export default function App() {
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
       adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
-      twoFactorSetup: { key: 'Verificación en 2 pasos', default: 'Verificación en 2 pasos' },
+      // --- CAMBIO AQUÍ: Título corto para el header ---
+      twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' }, 
+      notifications: { key: 'Notificaciones', default: 'Notificaciones' },
     };
     const titleInfo = titleMap[view];
     if (titleInfo) {
@@ -157,6 +158,9 @@ export default function App() {
       adminPanel: t('adminPanel_desc', { defaultValue: 'Gestión de usuarios y configuraciones avanzadas.' }),
       privacyPolicy: t('privacyPolicy_desc', { defaultValue: 'Información sobre cómo tratamos tus datos y el uso de cookies.' }),
       twoFactorSetup: t('twoFactorSetup_desc', { defaultValue: 'Configura la seguridad adicional de tu cuenta.' }),
+      // --- INICIO DE LA MODIFICACIÓN ---
+      notifications: t('notifications_desc', { defaultValue: 'Consulta tus alertas y recordatorios.' }),
+      // --- FIN DE LA MODIFICACIÓN ---
       default: t('default_desc', { defaultValue: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.' }),
     };
     return descKeys[view] || descKeys.default;
@@ -196,6 +200,10 @@ export default function App() {
           : <Dashboard setView={navigate} />; 
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigate} />;
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Pasamos 'navigate' como prop 'setView' a NotificationsScreen
+      case 'notifications': return <NotificationsScreen setView={navigate} />;
+      // --- FIN DE LA MODIFICACIÓN ---
       default: return <Dashboard setView={navigate} />;
     }
   }, [

@@ -3,12 +3,15 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield,
-  LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Lock, Smartphone
+  LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
+  ShieldAlert, MailWarning
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Spinner from '../components/Spinner';
+import * as userService from '../services/userService';
+import { useToast } from '../hooks/useToast';
 
 // --- Constantes ---
 const ACCENT_OPTIONS = [
@@ -72,12 +75,15 @@ export default function SettingsScreen({
   setView,
   onLogoutClick
 }) {
-  const { userProfile, resetCookieConsent } = useAppStore(state => ({
+  const { userProfile, resetCookieConsent, setUserProfile } = useAppStore(state => ({
     userProfile: state.userProfile,
-    resetCookieConsent: state.resetCookieConsent
+    resetCookieConsent: state.resetCookieConsent,
+    setUserProfile: state.setUserProfile
   }));
   
+  const { addToast } = useToast();
   const [currentColorPage, setCurrentColorPage] = useState(0);
+  const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
 
   // Hook de Notificaciones Push
   const { 
@@ -90,12 +96,40 @@ export default function SettingsScreen({
   } = usePushNotifications();
 
   // Paginación de colores
-  const COLORS_PER_PAGE = 12; // Aumentado para mejor uso del espacio
+  const COLORS_PER_PAGE = 12;
   const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
   const currentColors = ACCENT_OPTIONS.slice(
     currentColorPage * COLORS_PER_PAGE, 
     (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
   );
+
+  // Handler para el toggle de notificaciones de email
+  const handleToggleLoginEmail = async () => {
+    if (!userProfile?.two_factor_enabled) return; // Guard de seguridad
+
+    setIsUpdatingEmailPref(true);
+    const newValue = !userProfile.login_email_notifications;
+    
+    try {
+      // Optimistic update
+      setUserProfile({ ...userProfile, login_email_notifications: newValue });
+      
+      // Llamada al backend
+      await userService.updateUserProfile({ login_email_notifications: newValue });
+      
+      addToast(
+        newValue ? 'Alertas por email activadas' : 'Alertas por email desactivadas', 
+        'success'
+      );
+    } catch (error) {
+      // Revertir en caso de error
+      setUserProfile({ ...userProfile, login_email_notifications: !newValue });
+      addToast('Error al actualizar preferencias', 'error');
+      console.error(error);
+    } finally {
+      setIsUpdatingEmailPref(false);
+    }
+  };
 
   return (
     <div className="px-4 pb-20 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
@@ -217,10 +251,10 @@ export default function SettingsScreen({
                   ? `Activado (${userProfile.two_factor_method === 'app' ? 'App' : 'Email'})` 
                   : "Protege tu cuenta"
                 }
-                onClick={() => setView('twoFactorSetup')} // Redirige a la pantalla de configuración
+                onClick={() => setView('twoFactorSetup')} 
                 action={
                   <div className={`px-2 py-1 rounded text-xs font-bold ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-text-muted/20 text-text-muted'}`}>
-                    {userProfile?.two_factor_enabled ? 'ON' : 'OFF'}
+                    {userProfile?.two_factor_enabled ? 'ACTIVADO' : 'DESACTIVADO'}
                   </div>
                 }
               />
@@ -245,42 +279,85 @@ export default function SettingsScreen({
           </SettingsCard>
         </div>
 
-        {/* --- COLUMNA 3: NOTIFICACIONES Y OTROS --- */}
+        {/* --- COLUMNA 3: NOTIFICACIONES --- */}
         <div className="flex flex-col gap-6">
-          {isPushSupported && (
-            <SettingsCard>
-              <SectionTitle icon={BellRing} title="Notificaciones" />
-              <div className="flex items-center justify-between p-3 rounded-xl hover:bg-bg-secondary/30 transition">
+          
+          <SettingsCard>
+            <SectionTitle icon={BellRing} title="Notificaciones" />
+            
+            <div className="flex flex-col gap-4">
+              
+              {/* 1. Push Notifications */}
+              {isPushSupported && (
+                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-bg-secondary/30 transition">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-accent/10 rounded-lg text-accent">
+                      <BellRing size={20} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">Push Notifications</div>
+                      <div className="text-xs text-text-secondary">
+                        {pushPermission === 'denied' ? 'Bloqueadas en navegador' : (isSubscribed ? 'Recibiendo alertas' : 'Pausadas')}
+                      </div>
+                    </div>
+                  </div>
+                  {isPushLoading ? <Spinner size={20} /> : (
+                      <button
+                      role="switch"
+                      aria-checked={isSubscribed}
+                      onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
+                      disabled={pushPermission === 'denied'}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
+                        ${isSubscribed ? 'bg-accent' : 'bg-bg-secondary [.light-theme_&]:bg-zinc-300'} 
+                        ${pushPermission === 'denied' ? 'opacity-50 cursor-not-allowed' : ''}
+                      `}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isSubscribed ? 'translate-x-5' : 'translate-x-0'} `}
+                      />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* 2. Alertas de Seguridad por Email (Login Notifications) */}
+              <div className={`flex items-center justify-between p-3 rounded-xl transition
+                  ${!userProfile?.two_factor_enabled ? 'opacity-60 bg-bg-secondary/20' : 'hover:bg-bg-secondary/30'}
+                `}>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-accent/10 rounded-lg text-accent">
-                    <BellRing size={20} />
+                  <div className={`p-2 rounded-lg ${userProfile?.two_factor_enabled ? 'bg-orange-500/10 text-orange-500' : 'bg-text-muted/10 text-text-muted'}`}>
+                    {userProfile?.two_factor_enabled ? <ShieldAlert size={20} /> : <MailWarning size={20} />}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold">Push Notifications</div>
+                    <div className="text-sm font-semibold">Alertas de Inicio de Sesión</div>
                     <div className="text-xs text-text-secondary">
-                      {pushPermission === 'denied' ? 'Bloqueadas en navegador' : (isSubscribed ? 'Recibiendo alertas' : 'Pausadas')}
+                      {userProfile?.two_factor_enabled 
+                        ? 'Recibir email al iniciar sesión' 
+                        : 'Requiere verificación en 2 pasos'}
                     </div>
                   </div>
                 </div>
-                {isPushLoading ? <Spinner size={20} /> : (
-                   <button
-                   role="switch"
-                   aria-checked={isSubscribed}
-                   onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
-                   disabled={pushPermission === 'denied'}
-                   className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
-                     ${isSubscribed ? 'bg-accent' : 'bg-bg-secondary'}
-                     ${pushPermission === 'denied' ? 'opacity-50 cursor-not-allowed' : ''}
-                   `}
-                 >
-                   <span
-                     className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isSubscribed ? 'translate-x-5' : 'translate-x-0'}`}
-                   />
-                 </button>
-                )}
+                
+                <button
+                  role="switch"
+                  aria-checked={!!userProfile?.login_email_notifications}
+                  onClick={handleToggleLoginEmail}
+                  disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
+                    ${userProfile?.login_email_notifications ? 'bg-accent' : 'bg-bg-secondary [.light-theme_&]:bg-zinc-300'}
+                    ${(!userProfile?.two_factor_enabled || isUpdatingEmailPref) ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out 
+                      ${userProfile?.login_email_notifications ? 'translate-x-5' : 'translate-x-0'}
+                    `}
+                  />
+                </button>
               </div>
-            </SettingsCard>
-          )}
+
+            </div>
+          </SettingsCard>
 
           <SettingsCard>
             <SectionTitle icon={Info} title="General" />

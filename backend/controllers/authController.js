@@ -5,10 +5,13 @@ import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
-import models from '../models/index.js'; // Asegúrate que models/index.js exporta User correctamente
+import models from '../models/index.js'; 
 import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { createNotification } from '../services/notificationService.js';
+// --- FIN DE LA MODIFICACIÓN ---
 
-const { User } = models; // User debería estar disponible aquí
+const { User } = models;
 
 // Inicializar cliente de Google
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -26,25 +29,21 @@ export const loginUser = async (req, res, next) => {
   try {
     let user;
     try {
-      // Busca al usuario por email
       user = await User.findOne({ where: { email } });
     } catch (dbError) {
       console.error('Error de Sequelize al buscar usuario:', dbError);
       return next(dbError);
     }
 
-    // Si no se encuentra el usuario
     if (!user) {
       return res.status(404).json({ error: 'La cuenta no existe.' });
     }
 
-    // Compara la contraseña proporcionada con el hash almacenado
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({ error: 'Credenciales inválidas.' });
     }
 
-    // Si el usuario existe y la contraseña es correcta, pero no está verificado
     if (!user.is_verified) {
       const verificationCode = generateVerificationCode();
       sendVerificationEmail(email, verificationCode).catch(emailError => {
@@ -54,7 +53,7 @@ export const loginUser = async (req, res, next) => {
       try {
         await user.update({
           verification_code: verificationCode,
-          verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000), // 10 minutos
+          verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
         });
       } catch (updateError) {
         console.error(`Error actualizando código de verificación para ${email}:`, updateError);
@@ -63,9 +62,8 @@ export const loginUser = async (req, res, next) => {
       return res.status(403).json({ error: 'Cuenta no verificada. Se ha enviado un nuevo código.', requiresVerification: true, email: email });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN (2FA Check) ---
+    // 2FA Check
     if (user.two_factor_enabled) {
-      // Si el método es email, generar y enviar código ahora
       if (user.two_factor_method === 'email') {
         const code = generateVerificationCode();
         try {
@@ -80,19 +78,37 @@ export const loginUser = async (req, res, next) => {
         });
       }
 
-      // Retornar respuesta intermedia indicando que se requiere 2FA
-      // NO enviamos el token de sesión todavía.
       return res.json({
         requires2FA: true,
         userId: user.id,
         method: user.two_factor_method
       });
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // Si NO tiene 2FA, genera el token JWT normal
+    // Si NO tiene 2FA, genera el token y notifica
     const payload = { userId: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Obtener IP y UserAgent para la notificación
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+    }
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    // Notificación de inicio de sesión con datos extra
+    createNotification(user.id, {
+      type: 'warning', // Warning porque es un evento de seguridad
+      title: 'Nuevo inicio de sesión',
+      message: 'Se ha detectado un nuevo inicio de sesión en tu cuenta.',
+      data: {
+          ip,
+          userAgent,
+          date: new Date()
+      }
+    });
+    // --- FIN DE LA MODIFICACIÓN ---
 
     res.json({ message: 'Inicio de sesión exitoso.', token });
 
@@ -110,7 +126,6 @@ export const googleLogin = async (req, res, next) => {
   }
 
   try {
-    // Verificar el token con Google
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID, 
@@ -141,7 +156,7 @@ export const googleLogin = async (req, res, next) => {
 
       if (updated) await user.save();
 
-      // --- INICIO DE LA MODIFICACIÓN (2FA Check para Google) ---
+      // 2FA Check para Google
       if (user.two_factor_enabled) {
         if (user.two_factor_method === 'email') {
             const code = generateVerificationCode();
@@ -163,10 +178,9 @@ export const googleLogin = async (req, res, next) => {
             method: user.two_factor_method
         });
       }
-      // --- FIN DE LA MODIFICACIÓN ---
 
     } else {
-      // Registro nuevo (por defecto sin 2FA)
+      // Registro nuevo
       let baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '');
       let username = baseUsername;
       let counter = 1;
@@ -186,11 +200,40 @@ export const googleLogin = async (req, res, next) => {
         is_verified: true,
         role: 'user'
       });
+      
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Notificación de bienvenida para nuevo usuario Google
+      createNotification(user.id, {
+        type: 'success',
+        title: '¡Bienvenido!',
+        message: 'Gracias por registrarte en Pro Fitness Glass con Google.'
+      });
+      // --- FIN DE LA MODIFICACIÓN ---
     }
 
-    // Generar token JWT de la aplicación
     const appPayload = { userId: user.id, role: user.role };
     const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Obtener IP y UserAgent
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+    }
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    // Notificación de inicio de sesión con Google
+    createNotification(user.id, {
+      type: 'warning',
+      title: 'Inicio de sesión (Google)',
+      message: 'Se ha iniciado sesión con Google.',
+      data: {
+          ip,
+          userAgent,
+          date: new Date()
+      }
+    });
+    // --- FIN DE LA MODIFICACIÓN ---
 
     res.json({ 
       message: 'Inicio de sesión con Google exitoso.', 
@@ -347,6 +390,15 @@ export const verifyEmail = async (req, res, next) => {
     const payload = { userId: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Notificación de bienvenida/verificación
+    createNotification(user.id, {
+      type: 'success',
+      title: '¡Email verificado!',
+      message: 'Tu cuenta ha sido verificada correctamente. ¡Bienvenido!'
+    });
+    // --- FIN DE LA MODIFICACIÓN ---
+
     return res.status(200).json({
       message: 'Email verificado exitosamente',
       token,
@@ -483,12 +535,19 @@ export const resetPassword = async (req, res, next) => {
       return res.status(400).json({ error: 'La nueva contraseña no puede ser igual a la anterior.' });
     }
 
-    // Se pasa la contraseña en texto plano. El hook del modelo la hasheará.
     user.password_hash = password;
-    
     user.password_reset_token = null;
     user.password_reset_expires_at = null;
     await user.save();
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Notificación de cambio de contraseña
+    createNotification(user.id, {
+      type: 'alert', // Alert porque es un cambio crítico
+      title: 'Contraseña modificada',
+      message: 'Tu contraseña ha sido restablecida correctamente.'
+    });
+    // --- FIN DE LA MODIFICACIÓN ---
 
     res.json({ message: 'Contraseña actualizada correctamente.' });
   } catch (error) {

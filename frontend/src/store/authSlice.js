@@ -136,7 +136,7 @@ export const createAuthSlice = (set, get) => ({
         });
     },
 
-    // Actualiza el perfil del usuario
+    // Actualiza el perfil del usuario (llamada completa al backend + recarga)
     updateUserProfile: async (formData) => {
         try {
             await userService.updateUserProfile(formData);
@@ -146,6 +146,14 @@ export const createAuthSlice = (set, get) => ({
             return { success: false, message: `Error: ${error.message}` };
         }
     },
+
+    // --- INICIO DE LA MODIFICACIÓN (FIX) ---
+    // Acción para actualizar manualmente el estado del perfil localmente (sin llamada al backend)
+    // Útil para actualizaciones optimistas o cambios simples.
+    setUserProfile: (profile) => {
+        set({ userProfile: profile });
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // Comprueba si se debe mostrar el modal de bienvenida
     checkWelcomeModal: () => {

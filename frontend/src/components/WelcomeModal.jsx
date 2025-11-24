@@ -1,10 +1,15 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React from 'react';
-import { Award, X, Github, UtensilsCrossed, Camera, LogIn, ShieldCheck } from 'lucide-react';
+import { Award, X, Github, UtensilsCrossed, Camera, LogIn, ShieldCheck, Bell } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const nouveautes = [
+    {
+      icon: <Bell className="text-accent" />,
+      titre: "Notificaciones",
+      description: "Nuevo centro de mensajes para mantenerte informado sobre alertas de seguridad, actualizaciones y avisos importantes."
+    },
     {
       icon: <ShieldCheck className="text-accent" />,
       titre: "Verificación en 2 Pasos",

@@ -1,19 +1,18 @@
 /* backend/controllers/notificationController.js */
 
-// --- INICIO DE LA MODIFICACIÓN (Convertido a ESM) ---
 import { body, validationResult } from 'express-validator';
 import db from '../models/index.js'; 
-// Accedemos de forma segura por si db no se ha cargado bien
-const PushSubscription = db && db.PushSubscription; 
-// --- FIN DE LA MODIFICACIÓN ---
 
+// Accedemos de forma segura por si db no se ha cargado bien
+const { PushSubscription, Notification } = db;
+
+/* =========================================
+   SECCIÓN 1: PUSH NOTIFICATIONS (VAPID)
+   ========================================= */
 
 // 1. Controlador para enviar la VAPID Key pública al frontend
 const getVapidKey = (req, res) => {
   const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
-
-  console.log('--- DEBUG PUSH NOTIFICATIONS ---');
-  console.log('Sirviendo VAPID_PUBLIC_KEY...');
 
   if (!vapidPublicKey) {
     console.error('VAPID_PUBLIC_KEY no está definida en .env');
@@ -32,42 +31,33 @@ const subscribe = [
   body('keys.auth').isString().notEmpty().withMessage('Clave auth requerida.'),
 
   async (req, res) => {
-    // 0. Validaciones básicas
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // 1. Verificar que el modelo existe (Debug de importación)
     if (!PushSubscription) {
-        console.error('[Push] ERROR CRÍTICO: El modelo PushSubscription es undefined. Revisa models/index.js');
-        return res.status(500).json({ error: 'Error interno: El servidor no pudo cargar el modelo de suscripción.' });
+        return res.status(500).json({ error: 'Error interno: Modelo PushSubscription no cargado.' });
     }
 
     try {
-        // 2. Verificar usuario
-        // --- CORRECCIÓN: Usar req.user.userId en lugar de req.user.id ---
         if (!req.user || !req.user.userId) {
             return res.status(401).json({ error: 'Usuario no autenticado.' });
         }
 
-        const userId = req.user.userId; // Usar userId del token
+        const userId = req.user.userId;
         const { endpoint, keys } = req.body;
         
-        console.log(`[Push] Procesando suscripción para usuario ${userId}...`);
-
-        // 3. Lógica simplificada: Buscar primero, luego crear o actualizar
+        // Buscar primero, luego crear o actualizar
         let subscription = await PushSubscription.findOne({ 
             where: { endpoint: endpoint } 
         });
 
         if (subscription) {
-            console.log('[Push] La suscripción ya existe. Actualizando usuario y claves...');
             subscription.userId = userId;
             subscription.keys = keys;
             await subscription.save();
         } else {
-            console.log('[Push] Creando nueva suscripción...');
             await PushSubscription.create({
                 userId: userId,
                 endpoint: endpoint,
@@ -75,7 +65,6 @@ const subscribe = [
             });
         }
       
-        console.log('[Push] Guardado exitoso. Enviando respuesta OK.');
         return res.status(201).json({ message: 'Suscripción guardada correctamente.' });
 
     } catch (error) {
@@ -96,48 +85,159 @@ const unsubscribe = [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Verificar modelo
     if (!PushSubscription) {
         return res.status(500).json({ error: 'Error interno: Modelo PushSubscription no cargado.' });
     }
 
     try {
-        // --- CORRECCIÓN: Usar req.user.userId en lugar de req.user.id ---
         if (!req.user || !req.user.userId) {
              return res.status(401).json({ error: 'Usuario no autenticado.' });
         }
 
-        const userId = req.user.userId; // Usar userId del token
+        const userId = req.user.userId;
         const { endpoint } = req.body; 
 
-        console.log(`[Push] Intentando eliminar suscripción para user ${userId}...`);
-
-        // Borrado directo
-        const result = await PushSubscription.destroy({
+        await PushSubscription.destroy({
             where: {
                 endpoint: endpoint,
                 userId: userId, 
             }
         });
-
-        if (result === 0) {
-            console.warn(`[Push] No se encontró suscripción para borrar.`);
-        } else {
-            console.log(`[Push] Suscripción eliminada correctamente.`);
-        }
       
         return res.status(200).json({ message: 'Suscripción eliminada.' });
 
     } catch (error) {
         console.error('[Push] EXCEPCIÓN en unsubscribe:', error);
-        const msg = error.message || 'Error desconocido';
-        return res.status(500).json({ error: `Error al desuscribir: ${msg}` });
+        return res.status(500).json({ error: `Error al desuscribir: ${error.message}` });
     }
   }
 ];
 
+/* =========================================
+   SECCIÓN 2: NOTIFICACIONES INTERNAS (App)
+   ========================================= */
+
+// Obtener notificaciones del usuario (paginadas)
+const getNotifications = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const offset = (page - 1) * limit;
+    const unreadOnly = req.query.unread === 'true';
+
+    const whereClause = { user_id: userId };
+    if (unreadOnly) {
+      whereClause.is_read = false;
+    }
+
+    const { count, rows } = await Notification.findAndCountAll({
+      where: whereClause,
+      order: [['created_at', 'DESC']],
+      limit,
+      offset,
+    });
+
+    // Contar total de no leídas para el badge
+    const unreadCount = await Notification.count({
+      where: { user_id: userId, is_read: false }
+    });
+
+    res.json({
+      notifications: rows,
+      totalItems: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      unreadCount
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Marcar una notificación como leída
+const markAsRead = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const { id } = req.params;
+
+    const notification = await Notification.findOne({
+      where: { id, user_id: userId }
+    });
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notificación no encontrada.' });
+    }
+
+    notification.is_read = true;
+    await notification.save();
+
+    res.json(notification);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Marcar TODAS las notificaciones como leídas
+const markAllAsRead = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+
+    await Notification.update(
+      { is_read: true },
+      { where: { user_id: userId, is_read: false } }
+    );
+
+    res.json({ message: 'Todas las notificaciones marcadas como leídas.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Eliminar una notificación
+const deleteNotification = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const { id } = req.params;
+
+    const deleted = await Notification.destroy({
+      where: { id, user_id: userId }
+    });
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Notificación no encontrada.' });
+    }
+
+    res.json({ message: 'Notificación eliminada.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Eliminar TODAS las notificaciones
+const deleteAllNotifications = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+
+    await Notification.destroy({
+      where: { user_id: userId }
+    });
+
+    res.json({ message: 'Todas las notificaciones han sido eliminadas.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
+  // Push
   getVapidKey,
   subscribe,
   unsubscribe,
+  // Internas
+  getNotifications,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  deleteAllNotifications
 };

@@ -122,6 +122,12 @@ User.init({
     type: DataTypes.INTEGER,
     allowNull: true,
   },
+  // --- NUEVO CAMPO PREFERENCIA EMAIL 2FA ---
+  login_email_notifications: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false
+  },
 
   // created_at es manejado por timestamps abajo
 
@@ -155,6 +161,7 @@ User.associate = function(models) {
     User.hasMany(models.TemplateRoutine, { foreignKey: 'user_id', as: 'TemplateRoutines' }); // Asumiendo FK user_id
     User.hasMany(models.CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
     User.hasMany(models.PushSubscription, { foreignKey: 'userId', onDelete: 'CASCADE', as: 'PushSubscriptions' });
+    User.hasMany(models.Notification, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Notifications' });
 };
 
 export default User;

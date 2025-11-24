@@ -1,6 +1,6 @@
 /* frontend/src/components/MainAppLayout.jsx */
 import React, { Suspense, useEffect } from 'react';
-import { User, Zap } from 'lucide-react';
+import { User, Zap, Bell } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 
@@ -25,11 +25,6 @@ const LoadingFallback = () => (
   </div>
 );
 
-/**
- * Componente que renderiza el layout principal de la aplicación para un
- * usuario autenticado (Sidebar, Header móvil, Navbar móvil, Modales).
- * Recibe la vista actual y los manejadores de estado/eventos desde App.jsx.
- */
 export default function MainAppLayout({
   // Props de Navegación
   view,
@@ -69,6 +64,8 @@ export default function MainAppLayout({
     handleDeclineCookies,
     activeWorkout,
     workoutStartTime,
+    notifications, // Obtenemos el array de notificaciones
+    fetchNotifications // Para cargar el estado inicial
   } = useAppStore(state => ({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
@@ -79,20 +76,30 @@ export default function MainAppLayout({
     handleDeclineCookies: state.handleDeclineCookies,
     activeWorkout: state.activeWorkout,
     workoutStartTime: state.workoutStartTime,
+    notifications: state.notifications || [], // Aseguramos que sea un array
+    fetchNotifications: state.fetchNotifications
   }));
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Calculamos el contador de no leídas localmente para asegurar consistencia
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  // Cargar notificaciones al inicio para actualizar el badge
+  useEffect(() => {
+      if (userProfile) {
+          fetchNotifications();
+      }
+  }, [fetchNotifications, userProfile]);
+  // --- FIN DE LA MODIFICACIÓN ---
+
   // --- Sincronización de Cookies ---
-  // Este efecto escucha cuando el modal de Google acepta las cookies 
-  // y actualiza el estado global para ocultar el banner automáticamente.
   useEffect(() => {
     const handleStorageChange = () => {
-      // Si localStorage dice 'accepted' pero el store aún no lo sabe...
       if (localStorage.getItem('cookie_consent') === 'accepted' && cookieConsent !== 'accepted') {
-        handleAcceptCookies(); // Actualizamos el estado de Zustand
+        handleAcceptCookies(); 
       }
     };
 
-    // Escuchamos el evento 'storage' (disparado manualmente en GoogleTermsModal)
     window.addEventListener('storage', handleStorageChange);
     
     return () => {
@@ -115,6 +122,7 @@ export default function MainAppLayout({
         userProfile={userProfile}
         BACKEND_BASE_URL={BACKEND_BASE_URL}
         handleLogoutClick={handleLogoutClick}
+        unreadCount={unreadCount} // Pasamos el contador calculado
       />
 
       {/* Contenido Principal */}
@@ -127,20 +135,42 @@ export default function MainAppLayout({
         {/* Header (Móvil) */}
         <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
           <span className="text-3xl font-extrabold text-text-primary">{currentTitle}</span>
-          <button
-            onClick={() => navigate('profile')}
-            className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
-          >
-            {userProfile?.profile_image_url ? (
-              <img
-                src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
-                alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              <User size={24} className="text-text-secondary" />
-            )}
-          </button>
+          
+          {/* Botones de Header (Notif + Perfil) */}
+          <div className="flex items-center gap-3">
+            
+            {/* --- INICIO DE LA MODIFICACIÓN --- */}
+            {/* Botón de Notificaciones */}
+            <button
+              onClick={() => navigate('notifications')}
+              className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors"
+              aria-label="Notificaciones"
+            >
+              <Bell size={24} />
+              {unreadCount > 0 && (
+                // Badge con bg-accent (color del usuario) y borde del color del header para contraste
+                <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>
+              )}
+            </button>
+            {/* --- FIN DE LA MODIFICACIÓN --- */}
+
+            {/* Botón de Perfil */}
+            <button
+              onClick={() => navigate('profile')}
+              className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
+            >
+              {userProfile?.profile_image_url ? (
+                <img
+                  src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
+                  alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <User size={24} className="text-text-secondary" />
+              )}
+            </button>
+          </div>
+
         </div>
 
         {/* Renderizado de la Vista/Página Actual */}
@@ -197,7 +227,7 @@ export default function MainAppLayout({
         <button
           onClick={() => navigate('workout')}
           className="fixed right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105
-                     bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10" // 6rem = 5rem (nav) + 1rem (espacio)
+                      bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10" // 6rem = 5rem (nav) + 1rem (espacio)
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>

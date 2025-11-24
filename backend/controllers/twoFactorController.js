@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import db from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendLoginAlertEmail } from '../services/emailService.js';
+import { createNotification } from '../services/notificationService.js';
 
 const { User } = db;
 
@@ -63,6 +64,12 @@ export const verifyAndEnableApp = async (req, res, next) => {
       },
       { where: { id: userId } }
     );
+
+    createNotification(userId, {
+      type: 'success',
+      title: '2FA Activado',
+      message: 'Has activado la autenticación en dos pasos mediante App Authenticator.'
+    });
 
     res.json({ message: 'Autenticación en dos pasos (App) habilitada correctamente.' });
   } catch (error) {
@@ -125,6 +132,12 @@ export const verifyAndEnableEmail = async (req, res, next) => {
       two_factor_secret: null,
     });
 
+    createNotification(userId, {
+      type: 'success',
+      title: '2FA Activado',
+      message: 'Has activado la autenticación en dos pasos por Email.'
+    });
+
     res.json({ message: 'Autenticación en dos pasos (Email) habilitada correctamente.' });
   } catch (error) {
     next(error);
@@ -146,6 +159,13 @@ export const disable2FA = async (req, res, next) => {
       },
       { where: { id: userId } }
     );
+
+    createNotification(userId, {
+      type: 'warning',
+      title: '2FA Desactivado',
+      message: 'Has desactivado la autenticación en dos pasos. Tu cuenta es menos segura.'
+    });
+
     res.json({ message: 'Autenticación en dos pasos desactivada.' });
   } catch (error) {
     next(error);
@@ -214,13 +234,34 @@ export const verifyLogin2FA = async (req, res, next) => {
     // Aplicamos todas las actualizaciones
     await user.update(updates);
 
-    // --- ENVIAR ALERTA ---
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    // --- ENVIAR ALERTA (Lógica IP Mejorada) ---
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+    }
+
     const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
     
-    sendLoginAlertEmail(user.email, { ip, userAgent, token: resetToken }).catch(err => 
-        console.error('Fallo al enviar alerta de login 2FA:', err)
-    );
+    // Solo enviar email si el usuario tiene activada la preferencia
+    if (user.login_email_notifications) {
+        sendLoginAlertEmail(user.email, { ip, userAgent, token: resetToken }).catch(err => 
+            console.error('Fallo al enviar alerta de login 2FA:', err)
+        );
+    }
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Notificación interna de inicio de sesión con DATOS EXTRA
+    createNotification(user.id, {
+      type: 'warning',
+      title: 'Nuevo inicio de sesión (2FA)',
+      message: 'Se ha iniciado sesión correctamente utilizando la verificación en dos pasos.',
+      data: { // Guardamos IP y UserAgent para que el frontend los muestre
+          ip,
+          userAgent,
+          date: new Date()
+      }
+    });
+    // --- FIN DE LA MODIFICACIÓN ---
 
     const payload = { userId: user.id, role: user.role };
     const jwtToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });

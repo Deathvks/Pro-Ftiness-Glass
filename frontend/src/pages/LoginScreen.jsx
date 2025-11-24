@@ -1,6 +1,6 @@
 /* frontend/src/pages/LoginScreen.jsx */
 import React, { useState, useEffect, useRef } from 'react';
-import { Dumbbell, LogIn, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Dumbbell, LogIn, ShieldCheck, ArrowLeft, Smartphone, Mail } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -29,6 +29,10 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [verificationCode, setVerificationCode] = useState('');
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+
+    // Estados para visualización de input 2FA (Slots)
+    const [isInputFocused, setIsInputFocused] = useState(false);
+    const inputRef = useRef(null);
 
     // Estados para modales y consentimiento
     const [showGoogleModal, setShowGoogleModal] = useState(false);
@@ -62,6 +66,13 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         window.addEventListener('resize', updateWidth);
         return () => window.removeEventListener('resize', updateWidth);
     }, []);
+
+    // Enfocar el input de 2FA cuando aparezca la pantalla de verificación
+    useEffect(() => {
+        if (twoFactorPending && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [twoFactorPending]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -118,6 +129,8 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             addToast(msg, 'error');
             setErrors({ api: msg, code: msg });
             setIsLoading(false);
+            setVerificationCode(''); // Limpiar código al fallar
+            inputRef.current?.focus();
         }
     };
 
@@ -173,7 +186,11 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-sm text-center">
-                    <ShieldCheck size={48} className="mx-auto text-accent mb-4" />
+                    {/* Header Icon */}
+                    <div className="mx-auto text-accent mb-4 flex justify-center">
+                        {isEmailMethod ? <Mail size={48} /> : <Smartphone size={48} />}
+                    </div>
+                    
                     <h1 className="text-3xl font-bold mb-2">Verificación</h1>
                     <p className="text-text-secondary mb-6">
                         {isEmailMethod 
@@ -185,23 +202,61 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         <form onSubmit={handle2FASubmit} className="flex flex-col gap-5">
                             {errors.api && <p className="text-center text-red text-sm">{errors.api}</p>}
                             
-                            <div>
+                            {/* --- SLOT INPUT START --- */}
+                            <div className="relative w-full max-w-[280px] mx-auto">
+                                <div 
+                                    className="flex justify-between gap-2"
+                                    onClick={() => inputRef.current?.focus()}
+                                >
+                                    {[...Array(6)].map((_, index) => {
+                                        const digit = verificationCode[index] || '';
+                                        const showCursor = isInputFocused && index === verificationCode.length;
+                                        
+                                        return (
+                                            <div 
+                                                key={index}
+                                                className={`
+                                                    relative w-10 h-12 sm:w-11 sm:h-14 rounded-lg border-2 flex items-center justify-center text-xl sm:text-2xl font-bold transition-all bg-bg-secondary cursor-text
+                                                    ${(isInputFocused && (index === verificationCode.length))
+                                                        ? 'border-accent shadow-lg shadow-accent/20' 
+                                                        : 'border-glass-border'
+                                                    }
+                                                    ${digit ? 'text-text-primary' : 'text-transparent'}
+                                                `}
+                                            >
+                                                {digit}
+                                                {showCursor && (
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                        <div className="w-0.5 h-6 bg-accent animate-pulse rounded-full" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
                                 <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    placeholder="Código de 6 dígitos"
-                                    className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-center text-2xl tracking-widest text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
+                                    ref={inputRef}
                                     value={verificationCode}
                                     onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    onFocus={() => setIsInputFocused(true)}
+                                    onBlur={() => setIsInputFocused(false)}
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    maxLength={6}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer caret-transparent"
                                     autoFocus
                                 />
-                                {errors.code && <p className="form-error-text text-center mt-2">{errors.code}</p>}
                             </div>
+                            {/* --- SLOT INPUT END --- */}
+
+                            {errors.code && <p className="form-error-text text-center mt-2">{errors.code}</p>}
 
                             <button
                                 type="submit"
                                 disabled={isLoading || verificationCode.length < 6}
-                                className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
                             >
                                 {isLoading ? <Spinner /> : <span>Verificar</span>}
                             </button>

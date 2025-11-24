@@ -1,25 +1,26 @@
 /* backend/routes/notifications.js */
 
-// --- INICIO DE LA MODIFICACIÓN (Convertido a ESM) ---
 import express from 'express';
-import notificationController from '../controllers/notificationController.js'; // Usamos import y .js
-import authenticateToken from '../middleware/authenticateToken.js'; // Usamos import y .js
+// --- INICIO DE LA MODIFICACIÓN ---
+import { param } from 'express-validator'; // Importar validador para IDs
+// --- FIN DE LA MODIFICACIÓN ---
+import notificationController from '../controllers/notificationController.js';
+import authenticateToken from '../middleware/authenticateToken.js';
 
 const router = express.Router();
-// --- FIN DE LA MODIFICACIÓN ---
+
+/* =========================================
+   SECCIÓN 1: PUSH NOTIFICATIONS (VAPID)
+   ========================================= */
 
 /**
  * @route   GET /api/notifications/vapid-key
  * @desc    Obtiene la clave pública VAPID
- * @access  Public // <-- MODIFICADO
+ * @access  Public
  */
 router.get(
   '/vapid-key',
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // El 'authenticateToken' se elimina de esta ruta.
-  // La clave pública VAPID es segura para ser expuesta.
   notificationController.getVapidKey
-  // --- FIN DE LA MODIFICACIÓN ---
 );
 
 /**
@@ -44,6 +45,70 @@ router.post(
   notificationController.unsubscribe
 );
 
-// --- INICIO DE LA MODIFICACIÓN (Convertido a ESM) ---
-export default router; // Usamos export default
-// --- FIN DE LA MODIFICACIÓN ---
+/* =========================================
+   SECCIÓN 2: NOTIFICACIONES INTERNAS (App)
+   ========================================= */
+
+// Middleware de validación de ID
+const validateId = [
+  param('id').isInt().withMessage('ID de notificación inválido')
+];
+
+/**
+ * @route   GET /api/notifications
+ * @desc    Obtiene las notificaciones del usuario (paginadas)
+ * @access  Private
+ */
+router.get(
+  '/',
+  authenticateToken,
+  notificationController.getNotifications
+);
+
+/**
+ * @route   PUT /api/notifications/read-all
+ * @desc    Marca todas las notificaciones como leídas
+ * @access  Private
+ */
+router.put(
+  '/read-all',
+  authenticateToken,
+  notificationController.markAllAsRead
+);
+
+/**
+ * @route   PUT /api/notifications/:id/read
+ * @desc    Marca una notificación específica como leída
+ * @access  Private
+ */
+router.put(
+  '/:id/read',
+  authenticateToken,
+  validateId,
+  notificationController.markAsRead
+);
+
+/**
+ * @route   DELETE /api/notifications
+ * @desc    Elimina TODAS las notificaciones del usuario
+ * @access  Private
+ */
+router.delete(
+  '/',
+  authenticateToken,
+  notificationController.deleteAllNotifications
+);
+
+/**
+ * @route   DELETE /api/notifications/:id
+ * @desc    Elimina una notificación específica
+ * @access  Private
+ */
+router.delete(
+  '/:id',
+  authenticateToken,
+  validateId,
+  notificationController.deleteNotification
+);
+
+export default router;
