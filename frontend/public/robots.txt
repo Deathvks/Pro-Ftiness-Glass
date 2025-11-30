@@ -1,11 +1,9 @@
-/* frontend/public/robots.txt */
-# robots.txt para Pro Fitness Glass
+# frontend/public/robots.txt
 
-# Permite a todos los rastreadores (user-agents)
+# Permite a todos los rastreadores
 User-agent: *
 
-# Permite el rastreo de todo el contenido.
-# Para una SPA, queremos que Google pueda ver todas las rutas virtuales.
+# Permite el rastreo de todo el contenido
 Allow: /
 
 # Indica la ubicación del sitemap
