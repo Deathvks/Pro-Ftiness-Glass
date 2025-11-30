@@ -59,46 +59,34 @@ export default defineConfig({
   ],
   build: {
     sourcemap: false,
-    // --- INICIO DE LA MODIFICACIÓN (Optimización de Rendimiento) ---
     rollupOptions: {
       output: {
-        // Usamos una función para un control total sobre los chunks
+        // ESTRATEGIA SEGURA:
+        // Solo separamos lo que es verdaderamente pesado y opcional.
+        // React y el resto de utilidades van juntas en 'vendor' para evitar errores de inicialización.
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // 1. Núcleo de React (Crítico)
-            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router') || id.includes('/react-helmet') || id.includes('/i18next')) {
-              return 'react-vendor';
+            // 1. Material UI (Muy pesado, separar siempre)
+            if (id.includes('@mui') || id.includes('@emotion')) {
+              return 'mui-libs';
             }
-            // 2. Estado y Utilidades
-            if (id.includes('/zustand/') || id.includes('/date-fns/') || id.includes('/uuid/')) {
-              return 'state-utils';
+            // 2. Gráficos (Solo se usa en Dashboard)
+            if (id.includes('recharts')) {
+              return 'recharts';
             }
-            // 3. UI Libraries & MUI (Pesado)
-            // Agrupamos MUI y Emotion juntos
-            if (id.includes('/@mui/material/') || id.includes('/@emotion/') || id.includes('/@headlessui/') || id.includes('/@hello-pangea/')) {
-              return 'ui-libs';
-            }
-            // 4. Iconos (Suelen ser muchos archivos pequeños)
-            if (id.includes('/lucide-react/') || id.includes('/react-icons/') || id.includes('/@heroicons/') || id.includes('/@mui/icons-material/')) {
-              return 'icons';
-            }
-            // 5. Gráficos (Pesado, solo para Dashboard/Progress)
-            if (id.includes('/recharts/')) {
-              return 'charts';
-            }
-            // 6. Escáner
-            if (id.includes('/html5-qrcode/')) {
+            // 3. Escáner (Solo se usa en Nutrición)
+            if (id.includes('html5-qrcode')) {
               return 'scanner';
             }
 
-            // 7. CATCH-ALL: Todo lo demás va a un chunk genérico de proveedores
-            // Esto evita que librerías olvidadas inflen el archivo principal de la app
+            // 4. RESTO: Todo al vendor principal.
+            // Esto asegura que React, ReactDOM, Router, Zustand, etc. estén juntos
+            // y disponibles inmediatamente, solucionando el error de "createContext".
             return 'vendor';
           }
         }
       }
     },
     chunkSizeWarningLimit: 1000,
-    // --- FIN DE LA MODIFICACIÓN ---
   },
 });
