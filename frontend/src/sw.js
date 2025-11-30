@@ -1,94 +1,112 @@
 /* frontend/src/sw.js */
-
-// --- INICIO DE LA MODIFICACIÓN ---
-// RESTAURAMOS los imports necesarios de Workbox.
-// vite-plugin-pwa los procesará y empaquetará correctamente.
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate } from 'workbox-strategies';
+import { StaleWhileRevalidate, CacheFirst, NetworkFirst } from 'workbox-strategies';
+import { ExpirationPlugin } from 'workbox-expiration';
 import { clientsClaim } from 'workbox-core';
-// --- FIN DE LA MODIFICACIÓN ---
 
-
-// 1. Reclamar el control de la página inmediatamente
-// Esto asegura que el nuevo SW se active en cuanto se instale
+// 1. Control inmediato
 self.skipWaiting();
-clientsClaim(); // Ahora 'clientsClaim' está importado y definido
+clientsClaim();
 
-// 2. Pre-cache de los assets de la app
-// El array self.__WB_MANIFEST será inyectado por vite-plugin-pwa
-cleanupOutdatedCaches(); // 'cleanupOutdatedCaches' está importado
-precacheAndRoute(self.__WB_MANIFEST || []); // 'precacheAndRoute' está importado
+// 2. Limpieza y Pre-cache (Assets de compilación)
+cleanupOutdatedCaches();
+precacheAndRoute(self.__WB_MANIFEST || []);
 
-// 3. Estrategias de caché (Opcional, pero recomendado)
-// 'registerRoute' y 'StaleWhileRevalidate' están importados
+// --- 3. ESTRATEGIAS DE CACHÉ (RUNTIME) ---
+
+// A. Fuentes de Google (CacheFirst o StaleWhileRevalidate)
+// Las fuentes no suelen cambiar, así que StaleWhileRevalidate es seguro y rápido.
 registerRoute(
-  ({ url }) => url.origin === 'https://fonts.googleapis.com',
-  new StaleWhileRevalidate({ cacheName: 'google-fonts-stylesheets' })
+  ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
+  new StaleWhileRevalidate({
+    cacheName: 'google-fonts',
+    plugins: [
+      new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 }), // 1 año
+    ],
+  })
+);
+
+// B. Imágenes (CacheFirst) - CRÍTICO PARA LCP Y SEO
+// Guardamos imágenes del backend (/images/...) y avatares externos.
+// Si la imagen ya está en caché, la sirve directo. Si no, va a la red y la guarda.
+registerRoute(
+  ({ request, url }) => request.destination === 'image' || url.pathname.startsWith('/images/'),
+  new CacheFirst({
+    cacheName: 'images-cache',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 60, // Guardar hasta 60 imágenes
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 días
+      }),
+    ],
+  })
+);
+
+// C. API - Lecturas GET (StaleWhileRevalidate)
+// Permite que la app cargue datos "viejos" instantáneamente mientras busca los nuevos.
+// Esto hace que la app se sienta "nativa" y muy rápida.
+registerRoute(
+  ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
+  new StaleWhileRevalidate({
+    cacheName: 'api-cache',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 24 * 60 * 60, // 24 horas
+      }),
+    ],
+  })
 );
 
 // --- 4. LÓGICA DE PUSH NOTIFICATIONS ---
 
-/**
- * Evento 'push': Se dispara cuando el servidor envía una notificación push.
- */
 self.addEventListener('push', (event) => {
   console.log('[SW] Push Recibido.');
-  
+
   let data;
   try {
-    // Intentamos parsear la notificación como JSON
     data = event.data.json();
   } catch (e) {
-    // Si falla, la tratamos como texto plano
     data = { body: event.data.text() };
   }
 
   const title = data.title || 'Pro Fitness Glass';
   const options = {
     body: data.body || 'Tienes una nueva notificación.',
-    icon: data.icon || '/pwa-192x192.webp',   // Icono principal
-    badge: data.badge || '/pwa-192x192.webp', // Icono para la barra de estado (Android)
-    tag: data.tag || 'general-notification',  // Agrupa notificaciones
-    vibrate: [100, 50, 100], // Patrón de vibración
+    icon: data.icon || '/pwa-192x192.webp',
+    badge: data.badge || '/pwa-192x192.webp',
+    tag: data.tag || 'general-notification',
+    vibrate: [100, 50, 100],
     data: {
-      url: data.url || '/', // URL a la que navegar al hacer click
+      url: data.url || '/',
     },
   };
 
-  // Mantenemos el SW "vivo" hasta que se muestre la notificación
   event.waitUntil(
     self.registration.showNotification(title, options)
   );
 });
 
-/**
- * Evento 'notificationclick': Se dispara cuando el usuario hace click en la notificación.
- */
 self.addEventListener('notificationclick', (event) => {
   console.log('[SW] Click en Notificación.');
-  
-  // Cerrar la notificación
+
   event.notification.close();
 
-  // URL a abrir (la que definimos en `data.url` o la raíz)
   const urlToOpen = new URL(event.notification.data.url || '/', self.location.origin).href;
 
-  // Buscamos si hay una pestaña de la app abierta
   event.waitUntil(
     self.clients.matchAll({
       type: 'window',
       includeUncontrolled: true,
     }).then((clientList) => {
-      
-      // Si hay una pestaña abierta con esa URL, la enfocamos
+
       for (const client of clientList) {
         if (new URL(client.url, self.location.origin).href === urlToOpen && 'focus' in client) {
           return client.focus();
         }
       }
-      
-      // Si no hay ninguna pestaña abierta, abrimos una nueva
+
       if (self.clients.openWindow) {
         return self.clients.openWindow(urlToOpen);
       }

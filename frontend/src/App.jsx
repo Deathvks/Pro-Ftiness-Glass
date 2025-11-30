@@ -40,6 +40,7 @@ const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
 
 // --- Constantes ---
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
+const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`; // Asumimos que existe un logo.webp en public basado en el reporte
 
 export default function App() {
   // --- 1. Estado Local ---
@@ -48,23 +49,23 @@ export default function App() {
   const [show2FAPromo, setShow2FAPromo] = useState(false);
 
   // --- 2. Hooks Personalizados ---
-  const { 
-    view, 
-    setView, 
-    mainContentRef, 
-    navigate, 
-    handleBackFromPolicy, 
-    handleCancelProfile, 
-    handleShowPolicy 
+  const {
+    view,
+    setView,
+    mainContentRef,
+    navigate,
+    handleBackFromPolicy,
+    handleCancelProfile,
+    handleShowPolicy
   } = useAppNavigation();
-  
+
   const { theme, setTheme, accent, setAccent } = useAppTheme();
   const timer = useWorkoutTimer();
   const { t } = useTranslation('translation');
 
-  const { 
-    isInitialLoad, 
-    ...verificationProps 
+  const {
+    isInitialLoad,
+    ...verificationProps
   } = useAppInitialization({ setView, setAuthView, view });
 
   // --- 3. Hook de Zustand (Datos Globales) ---
@@ -83,13 +84,13 @@ export default function App() {
   }));
 
   // --- 4. Efectos ---
-  
+
   // Lógica para mostrar la promo de 2FA una sola vez
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
       const isAlreadyEnabled = userProfile?.twoFactorEnabled || userProfile?.isTwoFactorEnabled;
-      
+
       if (!hasSeenPromo && !isAlreadyEnabled) {
         const timer = setTimeout(() => {
           setShow2FAPromo(true);
@@ -116,11 +117,11 @@ export default function App() {
 
   const handleConfigure2FA = () => {
     handleClose2FAPromo();
-    navigate('twoFactorSetup'); 
+    navigate('twoFactorSetup');
   };
 
   // --- 6. Memos para Títulos, Descripciones y Vista Actual ---
-  
+
   const currentTitle = useMemo(() => {
     const titleMap = {
       dashboard: { key: 'Dashboard', default: 'Dashboard' },
@@ -134,7 +135,7 @@ export default function App() {
       adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
       // --- CAMBIO AQUÍ: Título corto para el header ---
-      twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' }, 
+      twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
     };
     const titleInfo = titleMap[view];
@@ -152,7 +153,7 @@ export default function App() {
       progress: t('progress_desc', { defaultValue: 'Visualiza tu progreso en gráficos: peso, fuerza por ejercicio y nutrición.' }),
       routines: t('routines_desc', { defaultValue: 'Crea, edita y explora rutinas de entrenamiento personalizadas.' }),
       settings: t('settings_desc', { defaultValue: 'Configura la apariencia de la app, tu cuenta y preferencias.' }),
-      profile: t('profile_desc', { defaultValue: `Edita tu perfil, ${userProfile?.username || 'usuario'}.` }), 
+      profile: t('profile_desc', { defaultValue: `Edita tu perfil, ${userProfile?.username || 'usuario'}.` }),
       workout: t('workout_desc', { defaultValue: 'Registra tu sesión de entrenamiento actual.' }),
       physicalProfileEditor: t('physicalProfileEditor_desc', { defaultValue: 'Actualiza tus datos físicos como edad, altura y objetivos.' }),
       adminPanel: t('adminPanel_desc', { defaultValue: 'Gestión de usuarios y configuraciones avanzadas.' }),
@@ -165,7 +166,7 @@ export default function App() {
     };
     return descKeys[view] || descKeys.default;
   }, [view, t, userProfile?.username]);
-  
+
   const currentPath = useMemo(() => {
     if (view === 'dashboard') return '/';
     if (view) return `/${view}`;
@@ -173,6 +174,7 @@ export default function App() {
   }, [view]);
 
   const canonicalUrl = `${CANONICAL_BASE_URL}${currentPath}`;
+  const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
 
   const currentViewComponent = useMemo(() => {
     switch (view) {
@@ -197,7 +199,7 @@ export default function App() {
       case 'adminPanel':
         return userProfile?.role === 'admin'
           ? <AdminPanel onCancel={() => navigate('settings')} />
-          : <Dashboard setView={navigate} />; 
+          : <Dashboard setView={navigate} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigate} />;
       // --- INICIO DE LA MODIFICACIÓN ---
@@ -224,10 +226,10 @@ export default function App() {
   // Interceptar ruta de reset password
   if (window.location.pathname === '/reset-password') {
     return (
-      <ResetPasswordScreen 
+      <ResetPasswordScreen
         showLogin={() => {
-          window.location.href = '/'; 
-        }} 
+          window.location.href = '/';
+        }}
       />
     );
   }
@@ -243,11 +245,11 @@ export default function App() {
   if (userProfile && !userProfile.goal) {
     return <OnboardingScreen />;
   }
-  
+
   if (!userProfile) {
-      return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
+    return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
   }
-  
+
   // --- 8. Renderizado Principal ---
 
   const navItems = [
@@ -262,11 +264,27 @@ export default function App() {
     <>
       <Helmet>
         <html lang="es" />
-        <title>{currentTitle} - Pro Fitness Glass</title>
+        <title>{fullPageTitle}</title>
         <meta name="description" content={currentDescription} />
         <link rel="canonical" href={canonicalUrl} />
         <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
+        <meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#121212'} />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={fullPageTitle} />
+        <meta property="og:description" content={currentDescription} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:site_name" content="Pro Fitness Glass" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content={canonicalUrl} />
+        <meta property="twitter:title" content={fullPageTitle} />
+        <meta property="twitter:description" content={currentDescription} />
+        <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
 
       <MainAppLayout
@@ -282,12 +300,12 @@ export default function App() {
         setShowLogoutConfirm={setShowLogoutConfirm}
         handleShowPolicy={handleShowPolicy}
         fetchInitialData={fetchInitialData}
-        {...verificationProps} 
+        {...verificationProps}
       />
 
       {/* Modal Promocional 2FA */}
       {show2FAPromo && (
-        <TwoFactorPromoModal 
+        <TwoFactorPromoModal
           onClose={handleClose2FAPromo}
           onConfigure={handleConfigure2FA}
         />

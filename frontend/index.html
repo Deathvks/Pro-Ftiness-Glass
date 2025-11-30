@@ -1,20 +1,57 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/webp" href="/logo.webp" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Pro Fitness Glass - Tu App de Fitness</title>
-    <meta name="description" content="Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass." />
-    <meta name="theme-color" content="#0c111b" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.webp">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/webp" href="/logo.webp" />
 
-    <meta name="google-site-verification" content="ARC8lM_i6d5sVoiyNVFvw28qpbyy-Xr7xI5eZBHmaSo" />
-    </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
+
+  <title>Pro Fitness Glass - Tu App de Fitness</title>
+  <meta name="description"
+    content="Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass." />
+  <meta name="theme-color" content="#0c111b" />
+
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.webp">
+
+  <meta name="google-site-verification" content="ARC8lM_i6d5sVoiyNVFvw28qpbyy-Xr7xI5eZBHmaSo" />
+
+  <link rel="preconnect" href="https://accounts.google.com" />
+  <link rel="preconnect" href="https://lh3.googleusercontent.com" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Pro Fitness Glass - Tu App de Fitness" />
+  <meta property="og:description" content="Entrena inteligente. Registra tus rutinas y nutrición fácilmente." />
+  <meta property="og:image" content="/logo.webp" />
+  <meta property="og:site_name" content="Pro Fitness Glass" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Pro Fitness Glass" />
+  <meta name="twitter:description" content="Tu compañero definitivo de entrenamiento y nutrición." />
+  <meta name="twitter:image" content="/logo.webp" />
+
+  <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Pro Fitness Glass",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "description": "Aplicación web progresiva para el seguimiento de rutinas de gimnasio, registro de peso corporal y control nutricional.",
+        "image": "https://pro-fitness-glass.zeabur.app/logo.webp"
+      }
+    </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

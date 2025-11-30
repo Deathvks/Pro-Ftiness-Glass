@@ -6,32 +6,24 @@ import { VitePWA } from 'vite-plugin-pwa';
 // https://vite.dev/config/
 export default defineConfig({
   server: {
-    host: '0.0.0.0', // CAMBIO: Escucha en todas las interfaces de red
-    port: 5173, // Puedes mantener el puerto por defecto o cambiarlo si es necesario
-
-    // --- Mantenemos el proxy ---
+    host: '0.0.0.0',
+    port: 5173,
     proxy: {
-      // Redirige peticiones de /api a tu backend
       '/api': {
-        target: 'http://localhost:3001', // El proxy SÍ debe apuntar a localhost porque corre en la misma máquina que Vite
+        target: 'http://localhost:3001',
         changeOrigin: true,
       }
     }
-    // --- Fin del proxy ---
   },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Cambiado apple-touch-icon.png a .webp (YA ESTÁ HECHO)
-      includeAssets: ['favicon.ico', 'apple-touch-icon.webp'], // favicon.ico se mantiene por compatibilidad
-      // --- FIN DE LA MODIFICACIÓN ---
+      includeAssets: ['favicon.ico', 'apple-touch-icon.webp'],
       manifest: {
         name: 'Pro Fitness Glass',
         short_name: 'FitTrack-Pro',
-        description:
-          'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
+        description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
         theme_color: '#0c111b',
         background_color: '#0c111b',
         display: 'standalone',
@@ -39,52 +31,58 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Cambiado .png a .webp y type a image/webp (YA ESTÁ HECHO)
             src: 'pwa-192x192.webp',
             sizes: '192x192',
             type: 'image/webp',
-            // --- FIN DE LA MODIFICACIÓN ---
           },
           {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Cambiado .png a .webp y type a image/webp (YA ESTÁ HECHO)
             src: 'pwa-512x512.webp',
             sizes: '512x512',
             type: 'image/webp',
-            // --- FIN DE LA MODIFICACIÓN ---
           },
           {
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Cambiado .png a .webp y type a image/webp (YA ESTÁ HECHO)
             src: 'pwa-512x512.webp',
             sizes: '512x512',
             type: 'image/webp',
             purpose: 'any maskable',
-            // --- FIN DE LA MODIFICACIÓN ---
           },
         ],
       },
-      
-      // --- INICIO DE LA MODIFICACIÓN (Push Notifications) ---
-      // Cambiamos la estrategia a 'injectManifest' para usar
-      // nuestro propio Service Worker (sw.js) que maneja las notificaciones push.
       strategies: 'injectManifest',
-      srcDir: 'src',      // El directorio donde se encuentra nuestro SW fuente
-      filename: 'sw.js',   // El nombre de nuestro fichero SW fuente
-      
-      // --- AÑADIDO: Opciones de Desarrollo ---
-      // Esto es crucial para que 'injectManifest' funcione
-      // correctamente durante 'npm run dev'.
+      srcDir: 'src',
+      filename: 'sw.js',
       devOptions: {
         enabled: true,
         type: 'module',
       }
-      // --- FIN DE LA MODIFICACIÓN ---
-      
     }),
   ],
   build: {
     sourcemap: false,
+    // --- INICIO DE LA MODIFICACIÓN (Optimización de Rendimiento) ---
+    rollupOptions: {
+      output: {
+        // Esta configuración divide el código en "chunks" (pedazos) lógicos.
+        // En lugar de un solo archivo JS de 600KB, crea varios más pequeños.
+        manualChunks: {
+          // 1. Núcleo de React (se carga siempre)
+          'react-vendor': ['react', 'react-dom', 'react-router-dom', 'react-helmet-async', 'react-i18next', 'i18next'],
+          // 2. Utilidades y Estado (ligeros pero usados en toda la app)
+          'state-utils': ['zustand', 'date-fns', 'uuid'],
+          // 3. UI Libraries (pueden ser pesadas)
+          'ui-components': ['@headlessui/react', '@hello-pangea/dnd'],
+          // 4. Iconos (suelen ocupar mucho espacio si no se separan)
+          'icons': ['lucide-react', 'react-icons', '@heroicons/react', '@mui/icons-material'],
+          // 5. Gráficos (Recharts es muy pesada, la separamos para que solo cargue en Dashboard/Progress)
+          'charts': ['recharts'],
+          // 6. Escáner (solo necesario para Nutrition)
+          'scanner': ['html5-qrcode'],
+        }
+      }
+    },
+    // Aumentamos el límite de aviso de tamaño de chunk para que no moleste en la consola,
+    // ya que hemos controlado manualmente la división.
+    chunkSizeWarningLimit: 1000,
+    // --- FIN DE LA MODIFICACIÓN ---
   },
 });
