@@ -62,26 +62,42 @@ export default defineConfig({
     // --- INICIO DE LA MODIFICACIÓN (Optimización de Rendimiento) ---
     rollupOptions: {
       output: {
-        // Esta configuración divide el código en "chunks" (pedazos) lógicos.
-        // En lugar de un solo archivo JS de 600KB, crea varios más pequeños.
-        manualChunks: {
-          // 1. Núcleo de React (se carga siempre)
-          'react-vendor': ['react', 'react-dom', 'react-router-dom', 'react-helmet-async', 'react-i18next', 'i18next'],
-          // 2. Utilidades y Estado (ligeros pero usados en toda la app)
-          'state-utils': ['zustand', 'date-fns', 'uuid'],
-          // 3. UI Libraries (pueden ser pesadas)
-          'ui-components': ['@headlessui/react', '@hello-pangea/dnd'],
-          // 4. Iconos (suelen ocupar mucho espacio si no se separan)
-          'icons': ['lucide-react', 'react-icons', '@heroicons/react', '@mui/icons-material'],
-          // 5. Gráficos (Recharts es muy pesada, la separamos para que solo cargue en Dashboard/Progress)
-          'charts': ['recharts'],
-          // 6. Escáner (solo necesario para Nutrition)
-          'scanner': ['html5-qrcode'],
+        // Usamos una función para un control total sobre los chunks
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // 1. Núcleo de React (Crítico)
+            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router') || id.includes('/react-helmet') || id.includes('/i18next')) {
+              return 'react-vendor';
+            }
+            // 2. Estado y Utilidades
+            if (id.includes('/zustand/') || id.includes('/date-fns/') || id.includes('/uuid/')) {
+              return 'state-utils';
+            }
+            // 3. UI Libraries & MUI (Pesado)
+            // Agrupamos MUI y Emotion juntos
+            if (id.includes('/@mui/material/') || id.includes('/@emotion/') || id.includes('/@headlessui/') || id.includes('/@hello-pangea/')) {
+              return 'ui-libs';
+            }
+            // 4. Iconos (Suelen ser muchos archivos pequeños)
+            if (id.includes('/lucide-react/') || id.includes('/react-icons/') || id.includes('/@heroicons/') || id.includes('/@mui/icons-material/')) {
+              return 'icons';
+            }
+            // 5. Gráficos (Pesado, solo para Dashboard/Progress)
+            if (id.includes('/recharts/')) {
+              return 'charts';
+            }
+            // 6. Escáner
+            if (id.includes('/html5-qrcode/')) {
+              return 'scanner';
+            }
+
+            // 7. CATCH-ALL: Todo lo demás va a un chunk genérico de proveedores
+            // Esto evita que librerías olvidadas inflen el archivo principal de la app
+            return 'vendor';
+          }
         }
       }
     },
-    // Aumentamos el límite de aviso de tamaño de chunk para que no moleste en la consola,
-    // ya que hemos controlado manualmente la división.
     chunkSizeWarningLimit: 1000,
     // --- FIN DE LA MODIFICACIÓN ---
   },
