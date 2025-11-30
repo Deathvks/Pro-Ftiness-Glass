@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
-  ShieldAlert, MailWarning
+  ShieldAlert, MailWarning, Instagram, Share2 // Añadidos Instagram y Share2
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -15,27 +15,27 @@ import { useToast } from '../hooks/useToast';
 
 // --- Constantes ---
 const ACCENT_OPTIONS = [
-  { id: 'green',   label: 'Verde',     hex: '#22c55e' },
-  { id: 'blue',    label: 'Azul',      hex: '#3b82f6' },
-  { id: 'violet',  label: 'Violeta',   hex: '#8b5cf6' },
-  { id: 'amber',   label: 'Ámbar',     hex: '#f59e0b' },
-  { id: 'rose',    label: 'Rosa',      hex: '#f43f5e' },
-  { id: 'teal',    label: 'Turquesa',  hex: '#14b8a6' },
-  { id: 'cyan',    label: 'Cian',      hex: '#06b6d4' },
-  { id: 'orange',  label: 'Naranja',   hex: '#f97316' },
-  { id: 'lime',    label: 'Lima',      hex: '#84cc16' },
-  { id: 'fuchsia', label: 'Fucsia',    hex: '#d946ef' },
+  { id: 'green', label: 'Verde', hex: '#22c55e' },
+  { id: 'blue', label: 'Azul', hex: '#3b82f6' },
+  { id: 'violet', label: 'Violeta', hex: '#8b5cf6' },
+  { id: 'amber', label: 'Ámbar', hex: '#f59e0b' },
+  { id: 'rose', label: 'Rosa', hex: '#f43f5e' },
+  { id: 'teal', label: 'Turquesa', hex: '#14b8a6' },
+  { id: 'cyan', label: 'Cian', hex: '#06b6d4' },
+  { id: 'orange', label: 'Naranja', hex: '#f97316' },
+  { id: 'lime', label: 'Lima', hex: '#84cc16' },
+  { id: 'fuchsia', label: 'Fucsia', hex: '#d946ef' },
   { id: 'emerald', label: 'Esmeralda', hex: '#10b981' },
-  { id: 'indigo',  label: 'Índigo',    hex: '#6366f1' },
-  { id: 'purple',  label: 'Púrpura',   hex: '#a855f7' },
-  { id: 'pink',    label: 'Rosa Claro',hex: '#ec4899' },
-  { id: 'red',     label: 'Rojo',      hex: '#ef4444' },
-  { id: 'yellow',  label: 'Amarillo',  hex: '#eab308' },
-  { id: 'sky',     label: 'Cielo',     hex: '#0ea5e9' },
-  { id: 'slate',   label: 'Pizarra',   hex: '#64748b' },
-  { id: 'zinc',    label: 'Zinc',      hex: '#71717a' },
-  { id: 'stone',   label: 'Piedra',    hex: '#78716c' },
-  { id: 'neutral', label: 'Neutral',   hex: '#737373' }
+  { id: 'indigo', label: 'Índigo', hex: '#6366f1' },
+  { id: 'purple', label: 'Púrpura', hex: '#a855f7' },
+  { id: 'pink', label: 'Rosa Claro', hex: '#ec4899' },
+  { id: 'red', label: 'Rojo', hex: '#ef4444' },
+  { id: 'yellow', label: 'Amarillo', hex: '#eab308' },
+  { id: 'sky', label: 'Cielo', hex: '#0ea5e9' },
+  { id: 'slate', label: 'Pizarra', hex: '#64748b' },
+  { id: 'zinc', label: 'Zinc', hex: '#71717a' },
+  { id: 'stone', label: 'Piedra', hex: '#78716c' },
+  { id: 'neutral', label: 'Neutral', hex: '#737373' }
 ];
 
 // --- Sub-componentes para mantener el código limpio ---
@@ -80,26 +80,26 @@ export default function SettingsScreen({
     resetCookieConsent: state.resetCookieConsent,
     setUserProfile: state.setUserProfile
   }));
-  
+
   const { addToast } = useToast();
   const [currentColorPage, setCurrentColorPage] = useState(0);
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
 
   // Hook de Notificaciones Push
-  const { 
-    isSubscribed, 
-    subscribe, 
-    unsubscribe, 
-    isLoading: isPushLoading, 
-    isSupported: isPushSupported, 
-    permission: pushPermission 
+  const {
+    isSubscribed,
+    subscribe,
+    unsubscribe,
+    isLoading: isPushLoading,
+    isSupported: isPushSupported,
+    permission: pushPermission
   } = usePushNotifications();
 
   // Paginación de colores
   const COLORS_PER_PAGE = 12;
   const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
   const currentColors = ACCENT_OPTIONS.slice(
-    currentColorPage * COLORS_PER_PAGE, 
+    currentColorPage * COLORS_PER_PAGE,
     (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
   );
 
@@ -109,16 +109,16 @@ export default function SettingsScreen({
 
     setIsUpdatingEmailPref(true);
     const newValue = !userProfile.login_email_notifications;
-    
+
     try {
       // Optimistic update
       setUserProfile({ ...userProfile, login_email_notifications: newValue });
-      
+
       // Llamada al backend
       await userService.updateUserProfile({ login_email_notifications: newValue });
-      
+
       addToast(
-        newValue ? 'Alertas por email activadas' : 'Alertas por email desactivadas', 
+        newValue ? 'Alertas por email activadas' : 'Alertas por email desactivadas',
         'success'
       );
     } catch (error) {
@@ -134,7 +134,7 @@ export default function SettingsScreen({
   return (
     <div className="px-4 pb-20 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
-         <title>Ajustes - Pro Fitness Glass</title>
+        <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
       {/* Header Mobile/Desktop */}
@@ -149,11 +149,11 @@ export default function SettingsScreen({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
-        
+
         {/* --- COLUMNA 1: APARIENCIA --- */}
         <SettingsCard>
           <SectionTitle icon={Palette} title="Apariencia" />
-          
+
           <div className="mb-6">
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Tema</h3>
             <div className="grid grid-cols-3 gap-2">
@@ -161,11 +161,10 @@ export default function SettingsScreen({
                 <button
                   key={mode}
                   onClick={() => setTheme(mode)}
-                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${
-                    theme === mode 
-                      ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20' 
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${theme === mode
+                      ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20'
                       : 'border-[--glass-border] text-text-secondary hover:bg-bg-secondary'
-                  }`}
+                    }`}
                 >
                   {mode === 'system' && <MonitorCog size={20} />}
                   {mode === 'light' && <Sun size={20} />}
@@ -178,25 +177,25 @@ export default function SettingsScreen({
 
           <div>
             <div className="flex justify-between items-center mb-3">
-               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
-               {totalPages > 1 && (
-                 <div className="flex gap-1">
-                   <button 
-                     onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
-                     disabled={currentColorPage === 0}
-                     className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
-                   >
-                     <ChevronLeft size={14} />
-                   </button>
-                   <button 
-                     onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
-                     disabled={currentColorPage === totalPages - 1}
-                     className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
-                   >
-                     <ChevronRight size={14} />
-                   </button>
-                 </div>
-               )}
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
+              {totalPages > 1 && (
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
+                    disabled={currentColorPage === 0}
+                    className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <button
+                    onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={currentColorPage === totalPages - 1}
+                    className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-6 gap-3">
               {currentColors.map(opt => (
@@ -230,7 +229,7 @@ export default function SettingsScreen({
           <SettingsCard>
             <SectionTitle icon={User} title="Perfil" />
             <div className="flex flex-col gap-1">
-              <SettingsItem 
+              <SettingsItem
                 icon={User}
                 title="Datos Físicos"
                 subtitle="Editar peso, altura, objetivos..."
@@ -244,14 +243,14 @@ export default function SettingsScreen({
             <SectionTitle icon={Shield} title="Seguridad y Privacidad" />
             <div className="flex flex-col gap-1">
               {/* Opción de 2FA */}
-              <SettingsItem 
+              <SettingsItem
                 icon={Smartphone}
                 title="Verificación en 2 pasos"
-                subtitle={userProfile?.two_factor_enabled 
-                  ? `Activado (${userProfile.two_factor_method === 'app' ? 'App' : 'Email'})` 
+                subtitle={userProfile?.two_factor_enabled
+                  ? `Activado (${userProfile.two_factor_method === 'app' ? 'App' : 'Email'})`
                   : "Protege tu cuenta"
                 }
-                onClick={() => setView('twoFactorSetup')} 
+                onClick={() => setView('twoFactorSetup')}
                 action={
                   <div className={`px-2 py-1 rounded text-xs font-bold ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-text-muted/20 text-text-muted'}`}>
                     {userProfile?.two_factor_enabled ? 'ACTIVADO' : 'DESACTIVADO'}
@@ -259,7 +258,7 @@ export default function SettingsScreen({
                 }
               />
 
-              <SettingsItem 
+              <SettingsItem
                 icon={Cookie}
                 title="Cookies"
                 subtitle="Gestionar consentimiento"
@@ -267,7 +266,7 @@ export default function SettingsScreen({
               />
 
               {userProfile?.role === 'admin' && (
-                <SettingsItem 
+                <SettingsItem
                   icon={Shield}
                   title="Panel Admin"
                   subtitle="Gestión avanzada"
@@ -279,14 +278,14 @@ export default function SettingsScreen({
           </SettingsCard>
         </div>
 
-        {/* --- COLUMNA 3: NOTIFICACIONES --- */}
+        {/* --- COLUMNA 3: NOTIFICACIONES Y GENERAL --- */}
         <div className="flex flex-col gap-6">
-          
+
           <SettingsCard>
             <SectionTitle icon={BellRing} title="Notificaciones" />
-            
+
             <div className="flex flex-col gap-4">
-              
+
               {/* 1. Push Notifications */}
               {isPushSupported && (
                 <div className="flex items-center justify-between p-3 rounded-xl hover:bg-bg-secondary/30 transition">
@@ -302,7 +301,7 @@ export default function SettingsScreen({
                     </div>
                   </div>
                   {isPushLoading ? <Spinner size={20} /> : (
-                      <button
+                    <button
                       role="switch"
                       aria-checked={isSubscribed}
                       onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
@@ -331,13 +330,13 @@ export default function SettingsScreen({
                   <div>
                     <div className="text-sm font-semibold">Alertas de Inicio de Sesión</div>
                     <div className="text-xs text-text-secondary">
-                      {userProfile?.two_factor_enabled 
-                        ? 'Recibir email al iniciar sesión' 
+                      {userProfile?.two_factor_enabled
+                        ? 'Recibir email al iniciar sesión'
                         : 'Requiere verificación en 2 pasos'}
                     </div>
                   </div>
                 </div>
-                
+
                 <button
                   role="switch"
                   aria-checked={!!userProfile?.login_email_notifications}
@@ -359,33 +358,48 @@ export default function SettingsScreen({
             </div>
           </SettingsCard>
 
+          {/* --- NUEVA SECCIÓN: REDES SOCIALES --- */}
+          <SettingsCard>
+            <SectionTitle icon={Share2} title="Síguenos" />
+            <div className="flex flex-col gap-1">
+              <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
+                <SettingsItem
+                  icon={Instagram}
+                  title="Instagram"
+                  subtitle="@pro_fitness_glass"
+                  action={<ChevronRight size={16} className="text-text-muted" />}
+                />
+              </a>
+            </div>
+          </SettingsCard>
+
           <SettingsCard>
             <SectionTitle icon={Info} title="General" />
             <div className="flex flex-col gap-1">
               <a href="mailto:profitnessglass@gmail.com" className="no-underline">
-                <SettingsItem 
+                <SettingsItem
                   icon={Mail}
                   title="Soporte"
                   subtitle="profitnessglass@gmail.com"
                 />
               </a>
               <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
-                <SettingsItem 
+                <SettingsItem
                   icon={Info}
                   title="Créditos"
                   subtitle="Datos por wger"
                 />
               </a>
-              
+
               <div className="my-2 h-px bg-[--glass-border]" />
-              
-              <SettingsItem 
+
+              <SettingsItem
                 icon={LogOut}
                 title="Cerrar Sesión"
                 onClick={onLogoutClick}
                 danger
               />
-              
+
               <div className="mt-4 text-center text-xs text-text-muted font-mono">
                 v{APP_VERSION}
               </div>
