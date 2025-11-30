@@ -40,7 +40,7 @@ const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
 
 // --- Constantes ---
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
-const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`; // Asumimos que existe un logo.webp en public basado en el reporte
+const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
 
 export default function App() {
   // --- 1. Estado Local ---
@@ -134,7 +134,6 @@ export default function App() {
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
       adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
-      // --- CAMBIO AQUÍ: Título corto para el header ---
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
     };
@@ -159,9 +158,7 @@ export default function App() {
       adminPanel: t('adminPanel_desc', { defaultValue: 'Gestión de usuarios y configuraciones avanzadas.' }),
       privacyPolicy: t('privacyPolicy_desc', { defaultValue: 'Información sobre cómo tratamos tus datos y el uso de cookies.' }),
       twoFactorSetup: t('twoFactorSetup_desc', { defaultValue: 'Configura la seguridad adicional de tu cuenta.' }),
-      // --- INICIO DE LA MODIFICACIÓN ---
       notifications: t('notifications_desc', { defaultValue: 'Consulta tus alertas y recordatorios.' }),
-      // --- FIN DE LA MODIFICACIÓN ---
       default: t('default_desc', { defaultValue: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.' }),
     };
     return descKeys[view] || descKeys.default;
@@ -202,10 +199,7 @@ export default function App() {
           : <Dashboard setView={navigate} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigate} />;
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Pasamos 'navigate' como prop 'setView' a NotificationsScreen
       case 'notifications': return <NotificationsScreen setView={navigate} />;
-      // --- FIN DE LA MODIFICACIÓN ---
       default: return <Dashboard setView={navigate} />;
     }
   }, [
@@ -270,6 +264,10 @@ export default function App() {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
         <meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#121212'} />
+
+        {/* --- INICIO DE LA MODIFICACIÓN: Keywords --- */}
+        <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />

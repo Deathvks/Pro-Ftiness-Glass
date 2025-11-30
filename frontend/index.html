@@ -10,9 +10,20 @@
   <title>Pro Fitness Glass - Tu App de Fitness</title>
   <meta name="description"
     content="Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass." />
+  <meta name="keywords"
+    content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
   <meta name="theme-color" content="#0c111b" />
 
-  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      img-src 'self' data: https://lh3.googleusercontent.com https://pro-fitness-glass-api.zeabur.app;
+      font-src 'self' data: https://fonts.gstatic.com;
+      connect-src 'self' https://pro-fitness-glass-api.zeabur.app https://accounts.google.com;
+      frame-src 'self' https://accounts.google.com;
+    " />
+
   <link rel="apple-touch-icon" href="/apple-touch-icon.webp">
 
   <meta name="google-site-verification" content="ARC8lM_i6d5sVoiyNVFvw28qpbyy-Xr7xI5eZBHmaSo" />
