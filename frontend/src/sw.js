@@ -1,7 +1,12 @@
 /* frontend/src/sw.js */
+// --- INICIO DE LA MODIFICACIÓN ---
+// Desactivamos los logs de desarrollo de Workbox para limpiar la consola
+self.__WB_DISABLE_DEV_LOGS = true;
+// --- FIN DE LA MODIFICACIÓN ---
+
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate, CacheFirst, NetworkFirst } from 'workbox-strategies';
+import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { clientsClaim } from 'workbox-core';
 
@@ -15,8 +20,7 @@ precacheAndRoute(self.__WB_MANIFEST || []);
 
 // --- 3. ESTRATEGIAS DE CACHÉ (RUNTIME) ---
 
-// A. Fuentes de Google (CacheFirst o StaleWhileRevalidate)
-// Las fuentes no suelen cambiar, así que StaleWhileRevalidate es seguro y rápido.
+// A. Fuentes de Google
 registerRoute(
   ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
   new StaleWhileRevalidate({
@@ -27,16 +31,14 @@ registerRoute(
   })
 );
 
-// B. Imágenes (CacheFirst) - CRÍTICO PARA LCP Y SEO
-// Guardamos imágenes del backend (/images/...) y avatares externos.
-// Si la imagen ya está en caché, la sirve directo. Si no, va a la red y la guarda.
+// B. Imágenes (CacheFirst)
 registerRoute(
   ({ request, url }) => request.destination === 'image' || url.pathname.startsWith('/images/'),
   new CacheFirst({
     cacheName: 'images-cache',
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 60, // Guardar hasta 60 imágenes
+        maxEntries: 60,
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 días
       }),
     ],
@@ -44,8 +46,6 @@ registerRoute(
 );
 
 // C. API - Lecturas GET (StaleWhileRevalidate)
-// Permite que la app cargue datos "viejos" instantáneamente mientras busca los nuevos.
-// Esto hace que la app se sienta "nativa" y muy rápida.
 registerRoute(
   ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
   new StaleWhileRevalidate({
@@ -62,7 +62,7 @@ registerRoute(
 // --- 4. LÓGICA DE PUSH NOTIFICATIONS ---
 
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push Recibido.');
+  // console.log('[SW] Push Recibido.'); // Comentado para reducir ruido
 
   let data;
   try {
@@ -89,7 +89,7 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Click en Notificación.');
+  // console.log('[SW] Click en Notificación.'); // Comentado para reducir ruido
 
   event.notification.close();
 
