@@ -15,24 +15,25 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     // Store hooks
     const handleLogin = useAppStore(state => state.handleLogin);
     const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
-    
+
     // 2FA Store hooks
     const twoFactorPending = useAppStore(state => state.twoFactorPending);
     const handleVerify2FA = useAppStore(state => state.handleVerify2FA);
     const cancelTwoFactor = useAppStore(state => state.cancelTwoFactor);
 
     const { addToast } = useToast();
-    
+
     // Local state
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
+
+    // Nuevo estado para los 6 inputs individuales
+    const [otp, setOtp] = useState(new Array(6).fill(""));
+    const inputRefs = useRef([]);
+
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-
-    // Estados para visualización de input 2FA (Slots)
-    const [isInputFocused, setIsInputFocused] = useState(false);
-    const inputRef = useRef(null);
 
     // Estados para modales y consentimiento
     const [showGoogleModal, setShowGoogleModal] = useState(false);
@@ -67,12 +68,20 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         return () => window.removeEventListener('resize', updateWidth);
     }, []);
 
-    // Enfocar el input de 2FA cuando aparezca la pantalla de verificación
+    // Enfocar el primer input de 2FA cuando aparezca la pantalla
     useEffect(() => {
-        if (twoFactorPending && inputRef.current) {
-            inputRef.current.focus();
+        if (twoFactorPending && inputRefs.current[0]) {
+            inputRefs.current[0].focus();
         }
     }, [twoFactorPending]);
+
+    // Sincronizar limpieza: Si se limpia el código (ej: error), limpiar los inputs visuales
+    useEffect(() => {
+        if (verificationCode === '') {
+            setOtp(new Array(6).fill(""));
+            if (inputRefs.current[0]) inputRefs.current[0].focus();
+        }
+    }, [verificationCode]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -93,8 +102,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         setIsLoading(true);
         try {
             await handleLogin({ email, password });
-            // Si requiere 2FA, handleLogin actualiza twoFactorPending y el componente se re-renderiza
-            setIsLoading(false); 
+            setIsLoading(false);
         } catch (err) {
             const errorMessage = err.message || 'Error al iniciar sesión.';
             addToast(errorMessage, 'error');
@@ -104,17 +112,66 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         }
     };
 
+    // Manejadores para los inputs de OTP
+    const handleOtpChange = (element, index) => {
+        if (isNaN(element.value)) return false;
+
+        const newOtp = [...otp];
+        // Tomamos solo el último caracter ingresado para evitar problemas
+        newOtp[index] = element.value.substring(element.value.length - 1);
+
+        setOtp(newOtp);
+        setVerificationCode(newOtp.join(""));
+
+        // Enfocar siguiente input si se escribió algo
+        if (element.value && index < 5) {
+            inputRefs.current[index + 1].focus();
+        }
+    };
+
+    const handleOtpKeyDown = (e, index) => {
+        if (e.key === "Backspace") {
+            // Si la casilla actual está vacía y pulsamos backspace, ir a la anterior
+            if (!otp[index] && index > 0) {
+                inputRefs.current[index - 1].focus();
+            }
+        }
+    };
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const data = e.clipboardData.getData("text");
+        if (!data) return;
+
+        // Limpiar y tomar solo números, máximo 6
+        const numbers = data.replace(/\D/g, '').slice(0, 6).split("");
+        if (numbers.length === 0) return;
+
+        const newOtp = [...otp];
+        numbers.forEach((num, i) => {
+            if (i < 6) newOtp[i] = num;
+        });
+
+        setOtp(newOtp);
+        setVerificationCode(newOtp.join(""));
+
+        // Enfocar el input siguiente al último pegado
+        const nextIndex = Math.min(numbers.length, 5);
+        if (inputRefs.current[nextIndex]) {
+            inputRefs.current[nextIndex].focus();
+        }
+    };
+
     const handle2FASubmit = async (e) => {
         e.preventDefault();
-        if (!verificationCode.trim()) {
-            setErrors({ code: 'Introduce el código.' });
+        if (!verificationCode.trim() || verificationCode.length < 6) {
+            setErrors({ code: 'Introduce el código completo.' });
             return;
         }
         setIsLoading(true);
         setErrors({});
-        
+
         try {
-            // Mapeamos el código al campo correcto según el método
             const payload = {
                 userId: twoFactorPending.userId,
                 method: twoFactorPending.method,
@@ -123,14 +180,12 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             };
 
             await handleVerify2FA(payload);
-            // Si tiene éxito, el store actualiza isAuthenticated a true y redirige
         } catch (err) {
             const msg = err.message || 'Código incorrecto.';
             addToast(msg, 'error');
             setErrors({ api: msg, code: msg });
             setIsLoading(false);
-            setVerificationCode(''); // Limpiar código al fallar
-            inputRef.current?.focus();
+            setVerificationCode(''); // Esto disparará el useEffect para limpiar otp
         }
     };
 
@@ -154,7 +209,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const onGoogleSuccess = async (credentialResponse) => {
         setShowGoogleModal(false);
         if (!credentialResponse.credential) return;
-        
+
         setIsLoading(true);
         setErrors({});
         try {
@@ -182,7 +237,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     // --- RENDERIZADO 2FA ---
     if (twoFactorPending) {
         const isEmailMethod = twoFactorPending.method === 'email';
-        
+
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-sm text-center">
@@ -190,66 +245,46 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                     <div className="mx-auto text-accent mb-4 flex justify-center">
                         {isEmailMethod ? <Mail size={48} /> : <Smartphone size={48} />}
                     </div>
-                    
+
                     <h1 className="text-3xl font-bold mb-2">Verificación</h1>
                     <p className="text-text-secondary mb-6">
-                        {isEmailMethod 
-                            ? `Introduce el código enviado a ${twoFactorPending.email}` 
+                        {isEmailMethod
+                            ? `Introduce el código enviado a ${twoFactorPending.email}`
                             : 'Introduce el código de tu aplicación autenticadora'}
                     </p>
 
                     <GlassCard className="p-8">
                         <form onSubmit={handle2FASubmit} className="flex flex-col gap-5">
                             {errors.api && <p className="text-center text-red text-sm">{errors.api}</p>}
-                            
-                            {/* --- SLOT INPUT START --- */}
-                            <div className="relative w-full max-w-[280px] mx-auto">
-                                <div 
-                                    className="flex justify-between gap-2"
-                                    onClick={() => inputRef.current?.focus()}
-                                >
-                                    {[...Array(6)].map((_, index) => {
-                                        const digit = verificationCode[index] || '';
-                                        const showCursor = isInputFocused && index === verificationCode.length;
-                                        
-                                        return (
-                                            <div 
-                                                key={index}
-                                                className={`
-                                                    relative w-10 h-12 sm:w-11 sm:h-14 rounded-lg border-2 flex items-center justify-center text-xl sm:text-2xl font-bold transition-all bg-bg-secondary cursor-text
-                                                    ${(isInputFocused && (index === verificationCode.length))
-                                                        ? 'border-accent shadow-lg shadow-accent/20' 
-                                                        : 'border-glass-border'
-                                                    }
-                                                    ${digit ? 'text-text-primary' : 'text-transparent'}
-                                                `}
-                                            >
-                                                {digit}
-                                                {showCursor && (
-                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                        <div className="w-0.5 h-6 bg-accent animate-pulse rounded-full" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
 
-                                <input
-                                    ref={inputRef}
-                                    value={verificationCode}
-                                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                    onFocus={() => setIsInputFocused(true)}
-                                    onBlur={() => setIsInputFocused(false)}
-                                    type="text"
-                                    inputMode="numeric"
-                                    autoComplete="one-time-code"
-                                    maxLength={6}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer caret-transparent"
-                                    autoFocus
-                                />
+                            {/* --- SLOT INPUTS INDIVIDUALES --- */}
+                            <div className="flex justify-between gap-2">
+                                {otp.map((digit, index) => (
+                                    <input
+                                        key={index}
+                                        ref={(el) => (inputRefs.current[index] = el)}
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={1}
+                                        value={digit}
+                                        onChange={(e) => handleOtpChange(e.target, index)}
+                                        onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                                        onPaste={handlePaste}
+                                        onFocus={(e) => e.target.select()} // Seleccionar todo al enfocar
+                                        className={`
+                                            w-10 h-12 sm:w-11 sm:h-14 rounded-lg border-2 
+                                            text-xl sm:text-2xl font-bold text-center 
+                                            outline-none transition-all 
+                                            bg-bg-secondary text-text-primary caret-accent
+                                            ${digit
+                                                ? 'border-accent shadow-lg shadow-accent/20'
+                                                : 'border-glass-border focus:border-accent focus:shadow-lg focus:shadow-accent/20'
+                                            }
+                                        `}
+                                    />
+                                ))}
                             </div>
-                            {/* --- SLOT INPUT END --- */}
+                            {/* --- FIN SLOT INPUTS --- */}
 
                             {errors.code && <p className="form-error-text text-center mt-2">{errors.code}</p>}
 
@@ -264,7 +299,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
                         <div className="mt-6 flex flex-col gap-3">
                             {isEmailMethod && (
-                                <button 
+                                <button
                                     onClick={handleResendCode}
                                     type="button"
                                     className="text-sm text-accent hover:underline"
@@ -272,8 +307,8 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                     ¿No recibiste el código? Reenviar
                                 </button>
                             )}
-                            
-                            <button 
+
+                            <button
                                 onClick={handleCancel2FA}
                                 type="button"
                                 className="flex items-center justify-center gap-1 text-text-muted hover:text-text-primary transition-colors text-sm"
@@ -335,8 +370,8 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         </div>
 
                         {/* Botón Híbrido de Google */}
-                        <div 
-                            className="relative w-full h-11 flex justify-center items-center group" 
+                        <div
+                            className="relative w-full h-11 flex justify-center items-center group"
                             ref={googleParentRef}
                         >
                             {/* Capa Visual (Siempre visible) */}
@@ -362,7 +397,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                 </div>
                             ) : (
                                 /* No hay cookies: Botón transparente para abrir Modal */
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => setShowGoogleModal(true)}
                                     disabled={isLoading}
@@ -372,7 +407,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                 </button>
                             )}
                         </div>
-                        
+
                         <div className="text-center mt-6 text-sm">
                             <button onClick={showForgotPassword} className="text-accent hover:opacity-80 transition-opacity font-medium">
                                 ¿Olvidaste tu contraseña?
@@ -386,7 +421,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 </div>
             </div>
 
-            <GoogleTermsModal 
+            <GoogleTermsModal
                 isOpen={showGoogleModal}
                 onClose={() => setShowGoogleModal(false)}
                 onSuccess={onGoogleSuccess}
