@@ -15,6 +15,9 @@ import { useAppInitialization } from './hooks/useAppInitialization';
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
 import Spinner from './components/Spinner';
+// --- INICIO DE LA MODIFICACIÓN ---
+import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Imports de Componentes Modales ---
 import TwoFactorPromoModal from './components/TwoFactorPromoModal';
@@ -34,9 +37,7 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Profile = lazy(() => import('./pages/Profile'));
 const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
-// --- INICIO DE LA MODIFICACIÓN ---
 const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
-// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Constantes ---
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
@@ -228,9 +229,12 @@ export default function App() {
     );
   }
 
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Reemplazamos el texto "Cargando..." con el nuevo Skeleton
   if (isLoading && isInitialLoad) {
-    return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando...</div>;
+    return <InitialLoadingSkeleton />;
   }
+  // --- FIN DE LA MODIFICACIÓN ---
 
   if (!isAuthenticated) {
     return <AuthScreens authView={authView} setAuthView={setAuthView} />;
@@ -241,6 +245,7 @@ export default function App() {
   }
 
   if (!userProfile) {
+    // Aquí también podríamos usar un skeleton si quisiéramos, pero por ahora mantenemos este fallback
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
   }
 
@@ -265,9 +270,7 @@ export default function App() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
         <meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#121212'} />
 
-        {/* --- INICIO DE LA MODIFICACIÓN: Keywords --- */}
         <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />

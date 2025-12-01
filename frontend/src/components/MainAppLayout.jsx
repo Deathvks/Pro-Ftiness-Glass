@@ -80,7 +80,6 @@ export default function MainAppLayout({
     fetchNotifications: state.fetchNotifications
   }));
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Calculamos el contador de no leídas localmente para asegurar consistencia
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -90,7 +89,6 @@ export default function MainAppLayout({
       fetchNotifications();
     }
   }, [fetchNotifications, userProfile]);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // --- Sincronización de Cookies ---
   useEffect(() => {
@@ -153,41 +151,57 @@ export default function MainAppLayout({
 
         {/* Header (Móvil) */}
         <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
-          <span className="text-3xl font-extrabold text-text-primary">{currentTitle}</span>
+
+          {/* Animación Título Header */}
+          <span
+            key={currentTitle}
+            className="text-3xl font-extrabold text-text-primary animate-fade-in-up"
+          >
+            {currentTitle}
+          </span>
 
           {/* Botones de Header (Notif + Perfil) */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
 
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
             {/* Botón de Notificaciones */}
             <button
               onClick={() => navigate('notifications')}
-              className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
               aria-label="Notificaciones"
             >
               <Bell size={24} />
               {unreadCount > 0 && (
-                // Badge con bg-accent (color del usuario) y borde del color del header para contraste
                 <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>
               )}
             </button>
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
-            {/* Botón de Perfil */}
-            <button
-              onClick={() => navigate('profile')}
-              className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
+            {/* Botón de Perfil con Animación Wrapper tipo iOS */}
+            <div
+              className={`
+                    flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
+                    ${view === 'profile'
+                  ? 'w-0 opacity-0 ml-0 translate-x-4'
+                  : 'w-10 opacity-100 ml-3 translate-x-0'
+                }
+                `}
             >
-              {profileImgSrc ? (
-                <img
-                  src={profileImgSrc}
-                  alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <User size={24} className="text-text-secondary" />
-              )}
-            </button>
+              <button
+                onClick={() => navigate('profile')}
+                className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 active:scale-95 transition-transform duration-200 outline-none focus:outline-none"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                {profileImgSrc ? (
+                  <img
+                    src={profileImgSrc}
+                    alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <User size={24} className="text-text-secondary" />
+                )}
+              </button>
+            </div>
           </div>
 
         </div>
@@ -204,15 +218,36 @@ export default function MainAppLayout({
                       pb-[env(safe-area-inset-bottom)] 
                       pl-[max(env(safe-area-inset-left),_0.5rem)] 
                       pr-[max(env(safe-area-inset-right),_0.5rem)]">
-        {navItems.map(item => (
-          <button
-            key={item.id}
-            onClick={() => navigate(item.id)}
-            className={`flex flex-col items-center justify-center gap-1 h-20 flex-grow transition-colors duration-200 ${view === item.id ? 'text-accent' : 'text-text-secondary'}`}>
-            {item.icon}
-            <span className="text-xs font-medium">{item.label}</span>
-          </button>
-        ))}
+        {navItems.map((item, index) => {
+          const isActive = view === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => navigate(item.id)}
+              className={`
+                group flex flex-col items-center justify-center gap-1 h-20 flex-grow 
+                transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
+                outline-none focus:outline-none ring-0
+                ${isActive ? 'text-accent' : 'text-text-secondary'}
+              `}
+              style={{
+                animationDelay: `${index * 100}ms`,
+                animationFillMode: 'both',
+                WebkitTapHighlightColor: 'transparent' // Elimina el recuadro azul/gris en móviles
+              }}
+            >
+              {/* Icono con animación de escala y elevación al estar activo */}
+              <div className={`transition-transform duration-300 ${isActive ? '-translate-y-1 scale-110' : 'group-hover:scale-105'}`}>
+                {item.icon}
+              </div>
+
+              {/* Etiqueta con transición de opacidad/peso */}
+              <span className={`text-xs transition-all duration-300 ${isActive ? 'font-bold opacity-100' : 'font-medium opacity-80'}`}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </nav>
 
       {/* --- Modales y Notificaciones --- */}
@@ -223,7 +258,6 @@ export default function MainAppLayout({
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
 
-      {/* El banner solo se muestra si cookieConsent es null (ni aceptado ni rechazado) */}
       {cookieConsent === null && (
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
@@ -246,7 +280,7 @@ export default function MainAppLayout({
         <button
           onClick={() => navigate('workout')}
           className="fixed right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105
-                      bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10" // 6rem = 5rem (nav) + 1rem (espacio)
+                      bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>
