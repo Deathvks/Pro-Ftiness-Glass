@@ -241,8 +241,8 @@ export default function MainAppLayout({
                 {item.icon}
               </div>
 
-              {/* Etiqueta con transición de opacidad/peso */}
-              <span className={`text-xs transition-all duration-300 ${isActive ? 'font-bold opacity-100' : 'font-medium opacity-80'}`}>
+              {/* Etiqueta con transición de opacidad SOLAMENTE (para evitar lag de color) */}
+              <span className={`text-xs transition-opacity duration-300 ease-out ${isActive ? 'font-bold opacity-100' : 'font-medium opacity-80'}`}>
                 {item.label}
               </span>
             </button>
