@@ -7,7 +7,6 @@ import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import WaterLogModal from '../components/WaterLogModal';
-// Asegúrate de que este componente existe y no tiene errores de importación
 import NutritionLogModal from '../components/NutritionLogModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CreatinaTracker from '../components/CreatinaTracker';
@@ -45,16 +44,23 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
     );
 };
 
-// Función auxiliar para obtener la URL de la imagen
-const getImageUrl = (url) => {
+// Función auxiliar para obtener la URL de la imagen con cache busting
+const getImageUrl = (url, updatedAt) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
     if (url.startsWith('blob:')) return url;
-    
+
     const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-    const rootUrl = apiBase.replace(/\/api\/?$/, ''); 
-    
-    return `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    const rootUrl = apiBase.replace(/\/api\/?$/, '');
+    const fullUrl = `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+
+    if (updatedAt) {
+        // Usamos el timestamp para cache busting si está disponible
+        const separator = fullUrl.includes('?') ? '&' : '?';
+        return `${fullUrl}${separator}v=${updatedAt}`;
+    }
+
+    return fullUrl;
 };
 
 // Componente principal de la página de Nutrición
@@ -68,7 +74,10 @@ const Nutrition = () => {
         fetchDataForDate,
         isLoading,
         bodyWeightLog,
-        favoriteMeals // Traemos favoritos para buscar imágenes de respaldo
+        favoriteMeals,
+        // --- INICIO DE LA MODIFICACIÓN ---
+        recentMeals // Traemos también los recientes para usarlos en el mapa de imágenes
+        // --- FIN DE LA MODIFICACIÓN ---
     } = useAppStore(state => ({
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
@@ -77,13 +86,60 @@ const Nutrition = () => {
         fetchDataForDate: state.fetchDataForDate,
         isLoading: state.isLoading,
         bodyWeightLog: state.bodyWeightLog,
-        favoriteMeals: state.favoriteMeals || []
+        favoriteMeals: state.favoriteMeals || [],
+        // --- INICIO DE LA MODIFICACIÓN ---
+        recentMeals: state.recentMeals || []
+        // --- FIN DE LA MODIFICACIÓN ---
     }));
 
     const [modal, setModal] = useState({ type: null, data: null });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
+
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Mapa inteligente de imágenes: Unifica imágenes por nombre.
+    // Estrategia: "La última actualización gana". 
+    // Comparamos los timestamps de Logs, Favoritos y Recientes.
+    const imageMap = useMemo(() => {
+        const map = {};
+
+        // Función auxiliar para procesar cualquier lista (logs, favoritos, recientes)
+        const mergeItems = (items) => {
+            if (!items) return;
+            items.forEach(item => {
+                // Algunos usan 'description', otros 'name'. Normalizamos.
+                const name = item.description || item.name;
+                if (!name) return;
+
+                const key = name.toLowerCase().trim();
+                const img = item.image_url || item.image || item.img;
+
+                if (img) {
+                    // Usamos la fecha real de actualización. Si no existe, 0.
+                    const ts = item.updated_at ? new Date(item.updated_at).getTime() : 0;
+
+                    // Si ya tenemos una imagen para este nombre, solo la reemplazamos
+                    // si la nueva es MÁS RECIENTE (timestamp mayor).
+                    if (!map[key] || ts >= map[key].timestamp) {
+                        map[key] = {
+                            url: img,
+                            timestamp: ts
+                        };
+                    }
+                }
+            });
+        };
+
+        // Procesamos todas las listas. El orden no importa porque usamos timestamps,
+        // pero incluimos Recientes que antes faltaban.
+        mergeItems(favoriteMeals);
+        mergeItems(recentMeals);
+        mergeItems(nutritionLog);
+
+        return map;
+    }, [nutritionLog, favoriteMeals, recentMeals]);
+    // --- FIN DE LA MODIFICACIÓN ---
 
     const latestWeight = useMemo(() => {
         if (!bodyWeightLog || bodyWeightLog.length === 0) return userProfile?.weight || null;
@@ -168,8 +224,7 @@ const Nutrition = () => {
             addToast('Comida eliminada.', 'success');
             await fetchDataForDate(selectedDate);
             setLogToDelete(null);
-        } catch (error)
-            {
+        } catch (error) {
             addToast(error.message || 'Error al eliminar la comida.', 'error');
         } finally {
             setIsSubmitting(false);
@@ -220,133 +275,135 @@ const Nutrition = () => {
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
 
             {isLoading && !isSubmitting ? (
-                    <div className="flex justify-center items-center py-10"><Spinner size={40}/></div>
+                <div className="flex justify-center items-center py-10"><Spinner size={40} /></div>
             ) : (
-            <>
-                {/* Sección de Resumen y Suplementos */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-                    <GlassCard className="lg:col-span-3 p-6">
-                        <h2 className="text-xl font-bold mb-4">Resumen del Día</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <StatCard icon={<Flame size={24} />} title="Calorías" value={totals.calories.toLocaleString('es-ES')} unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} />
-                            <StatCard icon={<Beef size={24} />} title="Proteínas" value={totals.protein.toFixed(1)} unit={`/ ${proteinTarget} g`} />
-                            <StatCard icon={<Wheat size={24} />} title="Carbs" value={totals.carbs.toFixed(1)} unit="g" />
-                            <StatCard icon={<Salad size={24} />} title="Grasas" value={totals.fats.toFixed(1)} unit="g" />
-                        </div>
-                    </GlassCard>
-
-                    {/* Sección de Suplementos */}
-                    <div className="lg:col-span-2 space-y-4">
-                        {/* Agua */}
-                        <GlassCard className="p-6 flex flex-col justify-between">
-                            <h2 className="text-xl font-bold">Agua</h2>
-                            <div className="flex items-center justify-center gap-4 my-4">
-                                <Droplet size={32} className="text-blue-400" />
-                                <p className="text-4xl font-bold">{(waterLog?.quantity_ml || 0)}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
+                <>
+                    {/* Sección de Resumen y Suplementos */}
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+                        <GlassCard className="lg:col-span-3 p-6">
+                            <h2 className="text-xl font-bold mb-4">Resumen del Día</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <StatCard icon={<Flame size={24} />} title="Calorías" value={totals.calories.toLocaleString('es-ES')} unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} />
+                                <StatCard icon={<Beef size={24} />} title="Proteínas" value={totals.protein.toFixed(1)} unit={`/ ${proteinTarget} g`} />
+                                <StatCard icon={<Wheat size={24} />} title="Carbs" value={totals.carbs.toFixed(1)} unit="g" />
+                                <StatCard icon={<Salad size={24} />} title="Grasas" value={totals.fats.toFixed(1)} unit="g" />
                             </div>
+                        </GlassCard>
+
+                        {/* Sección de Suplementos */}
+                        <div className="lg:col-span-2 space-y-4">
+                            {/* Agua */}
+                            <GlassCard className="p-6 flex flex-col justify-between">
+                                <h2 className="text-xl font-bold">Agua</h2>
+                                <div className="flex items-center justify-center gap-4 my-4">
+                                    <Droplet size={32} className="text-blue-400" />
+                                    <p className="text-4xl font-bold">{(waterLog?.quantity_ml || 0)}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
+                                </div>
                                 <button onClick={() => setModal({ type: 'water', data: null })} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
-                                <Plus size={20} />
-                                <span>Añadir / Editar Agua</span>
-                            </button>
-                        </GlassCard>
-
-                        {/* Creatina */}
-                        <GlassCard className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold flex items-center gap-2">
-                                    <Zap size={24} className="text-accent" />
-                                    Creatina
-                                </h2>
-                            </div>
-                            <button
-                                onClick={() => setShowCreatinaTracker(true)}
-                                className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors"
-                            >
-                                <Zap size={20} />
-                                <span>Gestionar Creatina</span>
-                            </button>
-                        </GlassCard>
-                    </div>
-                </div>
-
-                {/* Sección de Comidas */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {Object.entries(meals).map(([mealType, logs]) => (
-                        <GlassCard key={mealType} className="p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bold capitalize">
-                                    { {breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks'}[mealType] }
-                                    {mealTotals[mealType] > 0 && (
-                                        <span className="text-base font-medium text-text-secondary ml-2">
-                                            ({mealTotals[mealType].toLocaleString('es-ES')} kcal)
-                                        </span>
-                                    )}
-                                </h2>
-                                <button onClick={() => setModal({ type: 'food', data: { mealType } })} className="p-2 -m-2 rounded-full text-accent hover:bg-accent-transparent transition">
                                     <Plus size={20} />
+                                    <span>Añadir / Editar Agua</span>
                                 </button>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                {logs.length > 0 ? logs.map(log => {
-                                    // Lógica para obtener la imagen (prioridad: log -> favoritos)
-                                    const favoriteItem = favoriteMeals.find(fav => 
-                                        fav.name?.toLowerCase().trim() === log.description?.toLowerCase().trim()
-                                    );
-                                    
-                                    const rawImageUrl = log.image_url || log.image || log.img || favoriteItem?.image_url || favoriteItem?.image || favoriteItem?.img;
-                                    const displayImage = getImageUrl(rawImageUrl);
+                            </GlassCard>
 
-                                    return (
-                                        <div key={log.id} className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative flex items-center gap-3">
-                                            
-                                            {/* Imagen del alimento */}
-                                            {displayImage && (
-                                                <div className="w-12 h-12 flex-shrink-0 rounded-md bg-bg-primary overflow-hidden border border-glass-border">
-                                                    <img 
-                                                        src={displayImage} 
-                                                        alt={log.description} 
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => e.target.style.display = 'none'} // Ocultar si falla
-                                                    />
+                            {/* Creatina */}
+                            <GlassCard className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold flex items-center gap-2">
+                                        <Zap size={24} className="text-accent" />
+                                        Creatina
+                                    </h2>
+                                </div>
+                                <button
+                                    onClick={() => setShowCreatinaTracker(true)}
+                                    className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors"
+                                >
+                                    <Zap size={20} />
+                                    <span>Gestionar Creatina</span>
+                                </button>
+                            </GlassCard>
+                        </div>
+                    </div>
+
+                    {/* Sección de Comidas */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {Object.entries(meals).map(([mealType, logs]) => (
+                            <GlassCard key={mealType} className="p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-xl font-bold capitalize">
+                                        {{ breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealType]}
+                                        {mealTotals[mealType] > 0 && (
+                                            <span className="text-base font-medium text-text-secondary ml-2">
+                                                ({mealTotals[mealType].toLocaleString('es-ES')} kcal)
+                                            </span>
+                                        )}
+                                    </h2>
+                                    <button onClick={() => setModal({ type: 'food', data: { mealType } })} className="p-2 -m-2 rounded-full text-accent hover:bg-accent-transparent transition">
+                                        <Plus size={20} />
+                                    </button>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    {logs.length > 0 ? logs.map(log => {
+                                        // --- INICIO DE LA MODIFICACIÓN ---
+                                        // Buscamos la imagen en el mapa unificado (ya sea de log, favorito o reciente)
+                                        const normalizedName = log.description?.toLowerCase().trim();
+                                        const bestImage = imageMap[normalizedName];
+
+                                        // Usamos el timestamp de la MEJOR imagen encontrada para cache busting
+                                        // Esto asegura que si una cambia (y es más nueva), todas cambian visualmente.
+                                        const displayImage = getImageUrl(bestImage?.url, bestImage?.timestamp);
+                                        // --- FIN DE LA MODIFICACIÓN ---
+
+                                        return (
+                                            <div key={log.id} className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative flex items-center gap-3">
+
+                                                {/* Imagen del alimento */}
+                                                {displayImage && (
+                                                    <div className="w-12 h-12 flex-shrink-0 rounded-md bg-bg-primary overflow-hidden border border-glass-border">
+                                                        <img
+                                                            src={displayImage}
+                                                            alt={log.description}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => e.target.style.display = 'none'} // Ocultar si falla
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                <div className="flex-grow pr-20 sm:pr-16 min-w-0">
+                                                    <p className="font-semibold truncate">
+                                                        {log.description}
+                                                        {log.weight_g && ` (${log.weight_g}g)`}
+                                                    </p>
+                                                    <p className="text-sm text-text-secondary truncate">
+                                                        {log.calories} kcal • {log.protein_g || 0}g Prot • {log.carbs_g || 0}g Carbs • {log.fats_g || 0}g Grasas
+                                                    </p>
                                                 </div>
-                                            )}
 
-                                            <div className="flex-grow pr-20 sm:pr-16 min-w-0">
-                                                <p className="font-semibold truncate">
-                                                    {log.description}
-                                                    {log.weight_g && ` (${log.weight_g}g)`}
-                                                </p>
-                                                <p className="text-sm text-text-secondary truncate">
-                                                    {log.calories} kcal • {log.protein_g || 0}g Prot • {log.carbs_g || 0}g Carbs • {log.fats_g || 0}g Grasas
-                                                </p>
+                                                <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col sm:flex-row gap-1 sm:gap-1">
+                                                    <button
+                                                        onClick={() => setModal({ type: 'food', data: { ...log, mealType } })}
+                                                        className="p-2 rounded-full bg-bg-primary hover:bg-accent/20 hover:text-accent transition-all duration-200 shadow-sm border border-glass-border"
+                                                        title="Editar comida"
+                                                    >
+                                                        <Edit size={14} className="sm:w-4 sm:h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setLogToDelete(log)}
+                                                        className="p-2 rounded-full bg-bg-primary hover:bg-red-500/20 hover:text-red-500 transition-all duration-200 shadow-sm border border-glass-border"
+                                                        title="Eliminar comida"
+                                                    >
+                                                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                                                    </button>
+                                                </div>
                                             </div>
-
-                                            <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col sm:flex-row gap-1 sm:gap-1">
-                                                <button
-                                                    onClick={() => setModal({ type: 'food', data: { ...log, mealType } })}
-                                                    className="p-2 rounded-full bg-bg-primary hover:bg-accent/20 hover:text-accent transition-all duration-200 shadow-sm border border-glass-border"
-                                                    title="Editar comida"
-                                                >
-                                                    <Edit size={14} className="sm:w-4 sm:h-4"/>
-                                                </button>
-                                                <button
-                                                    onClick={() => setLogToDelete(log)}
-                                                    className="p-2 rounded-full bg-bg-primary hover:bg-red-500/20 hover:text-red-500 transition-all duration-200 shadow-sm border border-glass-border"
-                                                    title="Eliminar comida"
-                                                >
-                                                    <Trash2 size={14} className="sm:w-4 sm:h-4"/>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                }) : (
-                                    <p className="text-sm text-text-muted text-center py-4">No hay registros para esta comida.</p>
-                                )}
-                            </div>
-                        </GlassCard>
-                    ))}
-                </div>
-            </>
+                                        );
+                                    }) : (
+                                        <p className="text-sm text-text-muted text-center py-4">No hay registros para esta comida.</p>
+                                    )}
+                                </div>
+                            </GlassCard>
+                        ))}
+                    </div>
+                </>
             )}
 
             {/* Modales */}

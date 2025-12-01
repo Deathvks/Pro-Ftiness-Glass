@@ -1,12 +1,15 @@
 /* frontend/src/sw.js */
 // --- INICIO DE LA MODIFICACIÓN ---
-// Desactivamos los logs de desarrollo de Workbox para limpiar la consola
+// Desactivamos logs
 self.__WB_DISABLE_DEV_LOGS = true;
 // --- FIN DE LA MODIFICACIÓN ---
 
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies';
+// --- INICIO DE LA MODIFICACIÓN ---
+// Importamos NetworkOnly para forzar la carga desde internet
+import { StaleWhileRevalidate, NetworkFirst, NetworkOnly } from 'workbox-strategies';
+// --- FIN DE LA MODIFICACIÓN ---
 import { ExpirationPlugin } from 'workbox-expiration';
 import { clientsClaim } from 'workbox-core';
 
@@ -14,41 +17,46 @@ import { clientsClaim } from 'workbox-core';
 self.skipWaiting();
 clientsClaim();
 
-// 2. Limpieza y Pre-cache (Assets de compilación)
+// 2. Limpieza y Pre-cache
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
 // --- 3. ESTRATEGIAS DE CACHÉ (RUNTIME) ---
 
-// A. Fuentes de Google
+// A. Fuentes de Google (Mantenemos caché aquí, no suelen cambiar)
 registerRoute(
   ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
   new StaleWhileRevalidate({
     cacheName: 'google-fonts',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 }), // 1 año
+      new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 }),
     ],
   })
 );
 
-// B. Imágenes (CacheFirst)
+// B. Imágenes y Uploads (NetworkOnly)
+// --- INICIO DE LA MODIFICACIÓN ---
+// CAMBIO IMPORTANTE: Usamos NetworkOnly. 
+// Esto desactiva el caché del Service Worker para tus imágenes.
+// Siempre se pedirán al servidor. Si cambias la foto, se verá al instante.
 registerRoute(
-  ({ request, url }) => request.destination === 'image' || url.pathname.startsWith('/images/'),
-  new CacheFirst({
-    cacheName: 'images-cache',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 60,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 días
-      }),
-    ],
+  ({ request, url }) =>
+    request.destination === 'image' ||
+    url.pathname.startsWith('/images/') ||
+    url.pathname.startsWith('/uploads/'),
+  new NetworkOnly({
+    plugins: [], // No necesitamos plugins de expiración porque no guardamos nada.
   })
 );
+// --- FIN DE LA MODIFICACIÓN ---
 
-// C. API - Lecturas GET (StaleWhileRevalidate)
+// C. API (NetworkFirst)
+// --- INICIO DE LA MODIFICACIÓN ---
+// Usamos NetworkFirst para la API. Intenta internet primero.
+// Solo si falla (offline), usa lo guardado.
 registerRoute(
-  ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
-  new StaleWhileRevalidate({
+  ({ url, request }) => url.pathname.startsWith('/api/'),
+  new NetworkFirst({
     cacheName: 'api-cache',
     plugins: [
       new ExpirationPlugin({
@@ -56,14 +64,14 @@ registerRoute(
         maxAgeSeconds: 24 * 60 * 60, // 24 horas
       }),
     ],
+    networkTimeoutSeconds: 5, // Esperamos 5s a la red antes de tirar de caché
   })
 );
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- 4. LÓGICA DE PUSH NOTIFICATIONS ---
 
 self.addEventListener('push', (event) => {
-  // console.log('[SW] Push Recibido.'); // Comentado para reducir ruido
-
   let data;
   try {
     data = event.data.json();
@@ -89,10 +97,7 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
-  // console.log('[SW] Click en Notificación.'); // Comentado para reducir ruido
-
   event.notification.close();
-
   const urlToOpen = new URL(event.notification.data.url || '/', self.location.origin).href;
 
   event.waitUntil(
@@ -100,13 +105,11 @@ self.addEventListener('notificationclick', (event) => {
       type: 'window',
       includeUncontrolled: true,
     }).then((clientList) => {
-
       for (const client of clientList) {
         if (new URL(client.url, self.location.origin).href === urlToOpen && 'focus' in client) {
           return client.focus();
         }
       }
-
       if (self.clients.openWindow) {
         return self.clients.openWindow(urlToOpen);
       }

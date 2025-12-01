@@ -32,16 +32,16 @@ export default function MainAppLayout({
   mainContentRef,
   currentTitle,
   currentViewComponent,
-  
+
   // Props de Items de Navegación
   navItems,
-  
+
   // Props de Logout
   handleLogoutClick,
   showLogoutConfirm,
   confirmLogout,
   setShowLogoutConfirm,
-  
+
   // Props de Modales
   handleShowPolicy,
   showEmailVerificationModal,
@@ -86,9 +86,9 @@ export default function MainAppLayout({
 
   // Cargar notificaciones al inicio para actualizar el badge
   useEffect(() => {
-      if (userProfile) {
-          fetchNotifications();
-      }
+    if (userProfile) {
+      fetchNotifications();
+    }
   }, [fetchNotifications, userProfile]);
   // --- FIN DE LA MODIFICACIÓN ---
 
@@ -96,21 +96,40 @@ export default function MainAppLayout({
   useEffect(() => {
     const handleStorageChange = () => {
       if (localStorage.getItem('cookie_consent') === 'accepted' && cookieConsent !== 'accepted') {
-        handleAcceptCookies(); 
+        handleAcceptCookies();
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [cookieConsent, handleAcceptCookies]);
 
+  // --- Helper para URL de imagen de perfil con cache busting ---
+  const getProfileImgSrc = () => {
+    if (!userProfile?.profile_image_url) return null;
+
+    const rawUrl = userProfile.profile_image_url.startsWith('http')
+      ? userProfile.profile_image_url
+      : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`;
+
+    // Si tenemos updated_at, lo usamos como versión para forzar la recarga si cambió
+    if (userProfile.updated_at) {
+      const separator = rawUrl.includes('?') ? '&' : '?';
+      return `${rawUrl}${separator}v=${new Date(userProfile.updated_at).getTime()}`;
+    }
+
+    return rawUrl;
+  };
+
+  const profileImgSrc = getProfileImgSrc();
+
   // Renderizado del layout principal
   return (
     <div className="relative flex w-full h-full overflow-hidden">
-      
+
       {/* Fondo decorativo */}
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
@@ -118,7 +137,7 @@ export default function MainAppLayout({
       <Sidebar
         view={view}
         navigate={navigate}
-        navItems={navItems} 
+        navItems={navItems}
         userProfile={userProfile}
         BACKEND_BASE_URL={BACKEND_BASE_URL}
         handleLogoutClick={handleLogoutClick}
@@ -135,10 +154,10 @@ export default function MainAppLayout({
         {/* Header (Móvil) */}
         <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
           <span className="text-3xl font-extrabold text-text-primary">{currentTitle}</span>
-          
+
           {/* Botones de Header (Notif + Perfil) */}
           <div className="flex items-center gap-3">
-            
+
             {/* --- INICIO DE LA MODIFICACIÓN --- */}
             {/* Botón de Notificaciones */}
             <button
@@ -159,9 +178,9 @@ export default function MainAppLayout({
               onClick={() => navigate('profile')}
               className={`w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${view === 'profile' ? 'invisible' : ''}`}
             >
-              {userProfile?.profile_image_url ? (
+              {profileImgSrc ? (
                 <img
-                  src={userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`}
+                  src={profileImgSrc}
                   alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
                   className="w-full h-full rounded-full object-cover"
                 />
