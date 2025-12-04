@@ -2,7 +2,6 @@
 import * as workoutService from '../services/workoutService';
 
 // --- FUNCIONES DE ALMACENAMIENTO LOCAL ---
-// (Funciones de localStorage sin cambios)
 const getWorkoutStateFromStorage = () => {
   try {
     const activeWorkout = JSON.parse(localStorage.getItem('activeWorkout'));
@@ -20,21 +19,27 @@ const getWorkoutStateFromStorage = () => {
     return {};
   }
 };
+
 const getRestTimerStateFromStorage = () => {
   try {
     const isResting = JSON.parse(localStorage.getItem('isResting'));
-    const restTimerEndTime = JSON.parse(
-      localStorage.getItem('restTimerEndTime')
-    );
-    if (isResting && restTimerEndTime && Date.now() < restTimerEndTime) {
+    // --- INICIO MODIFICACIÓN ---
+    const isRestTimerPaused = JSON.parse(localStorage.getItem('isRestTimerPaused')) || false;
+    const restTimerRemaining = JSON.parse(localStorage.getItem('restTimerRemaining'));
+
+    // Si está pausado, no comprobamos si el tiempo ha expirado contra Date.now()
+    if (isResting) {
       return {
         isResting,
-        restTimerEndTime,
-        restTimerInitialDuration: JSON.parse(
-          localStorage.getItem('restTimerInitialDuration')
-        ),
+        restTimerEndTime: JSON.parse(localStorage.getItem('restTimerEndTime')),
+        restTimerInitialDuration: JSON.parse(localStorage.getItem('restTimerInitialDuration')),
+        restTimerMode: localStorage.getItem('restTimerMode') || 'modal',
+        isRestTimerPaused,
+        restTimerRemaining,
       };
     }
+    // --- FIN MODIFICACIÓN ---
+
     clearRestTimerInStorage();
     return {};
   } catch {
@@ -42,6 +47,7 @@ const getRestTimerStateFromStorage = () => {
     return {};
   }
 };
+
 const setWorkoutInStorage = (state) => {
   localStorage.setItem('activeWorkout', JSON.stringify(state.activeWorkout));
   localStorage.setItem(
@@ -54,12 +60,14 @@ const setWorkoutInStorage = (state) => {
     JSON.stringify(state.workoutAccumulatedTime)
   );
 };
+
 const clearWorkoutInStorage = () => {
   localStorage.removeItem('activeWorkout');
   localStorage.removeItem('workoutStartTime');
   localStorage.removeItem('isWorkoutPaused');
   localStorage.removeItem('workoutAccumulatedTime');
 };
+
 const setRestTimerInStorage = (state) => {
   localStorage.setItem('isResting', JSON.stringify(state.isResting));
   localStorage.setItem(
@@ -70,11 +78,22 @@ const setRestTimerInStorage = (state) => {
     'restTimerInitialDuration',
     JSON.stringify(state.restTimerInitialDuration)
   );
+  localStorage.setItem('restTimerMode', state.restTimerMode);
+  // --- INICIO MODIFICACIÓN ---
+  localStorage.setItem('isRestTimerPaused', JSON.stringify(state.isRestTimerPaused));
+  localStorage.setItem('restTimerRemaining', JSON.stringify(state.restTimerRemaining));
+  // --- FIN MODIFICACIÓN ---
 };
+
 const clearRestTimerInStorage = () => {
   localStorage.removeItem('isResting');
   localStorage.removeItem('restTimerEndTime');
   localStorage.removeItem('restTimerInitialDuration');
+  localStorage.removeItem('restTimerMode');
+  // --- INICIO MODIFICACIÓN ---
+  localStorage.removeItem('isRestTimerPaused');
+  localStorage.removeItem('restTimerRemaining');
+  // --- FIN MODIFICACIÓN ---
 };
 
 // --- SLICE DE ZUSTAND ---
@@ -87,6 +106,11 @@ const initialState = {
   restTimerEndTime: null,
   restTimerInitialDuration: null,
   plannedRestTime: null,
+  restTimerMode: 'modal',
+  // --- INICIO MODIFICACIÓN ---
+  isRestTimerPaused: false,
+  restTimerRemaining: null, // Tiempo restante en ms cuando está pausado
+  // --- FIN MODIFICACIÓN ---
 };
 
 export const createWorkoutSlice = (set, get) => ({
@@ -108,17 +132,11 @@ export const createWorkoutSlice = (set, get) => ({
       const exerciseKeyName =
         fullDetails?.name || ex.exercise?.name || ex.name;
 
-      // (Esta modificación tuya anterior se mantiene)
       const exerciseDetails = {
-        ...(fullDetails || {}), // 1. Base (name, description_es, etc.)
-        name: exerciseKeyName, // 2. Aseguramos el 'name' (clave del título)
-
-        // 3. ¡LA CORRECCIÓN!
-        // Creamos un campo 'description' unificado que el modal SÍ espera.
+        ...(fullDetails || {}),
+        name: exerciseKeyName,
         description:
           fullDetails?.description_es || fullDetails?.description || null,
-
-        // 4. Sobrescribimos con media específica de la rutina si existe
         image_url: ex.image_url_start || fullDetails?.image_url,
         video_url: ex.video_url || fullDetails?.video_url,
       };
@@ -131,10 +149,7 @@ export const createWorkoutSlice = (set, get) => ({
         superset_group_id: ex.superset_group_id || null,
         exercise_order: ex.exercise_order !== undefined ? ex.exercise_order : 0,
         rest_seconds: ex.rest_seconds !== undefined ? ex.rest_seconds : 90,
-
-        // Asignamos el objeto COMPLETO Y NORMALIZADO
         exercise_details: exerciseDetails,
-
         setsDone: Array.from({ length: ex.sets }, (_, i) => ({
           set_number: i + 1,
           reps: '',
@@ -158,9 +173,7 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage(newState);
   },
 
-  // Inicia una sesión de entrenamiento simple (ej. Cardio).
   startSimpleWorkout: (workoutName) => {
-    // ... (sin cambios) ...
     const newState = {
       activeWorkout: {
         routineId: null,
@@ -175,19 +188,14 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage(newState);
   },
 
-  // Pausa o reanuda el cronómetro del entrenamiento.
   togglePauseWorkout: () => {
-    // ... (sin cambios) ...
     const { isWorkoutPaused, workoutStartTime, workoutAccumulatedTime } = get();
     let newState;
     if (!workoutStartTime) {
-      // Primera vez que se inicia
       newState = { isWorkoutPaused: false, workoutStartTime: Date.now() };
     } else if (isWorkoutPaused) {
-      // Reanudar
       newState = { isWorkoutPaused: false, workoutStartTime: Date.now() };
     } else {
-      // Pausar
       const elapsed = Date.now() - workoutStartTime;
       newState = {
         isWorkoutPaused: true,
@@ -198,20 +206,15 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  // Detiene y limpia completely el entrenamiento activo.
   stopWorkout: () => {
-    // ... (sin cambios) ...
     get().clearWorkoutState();
   },
 
-  // Actualiza los datos de una serie específica.
   updateActiveWorkoutSet: (exIndex, setIndex, field, value) => {
-    // ... (sin cambios) ...
     const session = get().activeWorkout;
     if (!session) return;
     const newExercises = JSON.parse(JSON.stringify(session.exercises));
 
-    // (Esta modificación tuya anterior se mantiene)
     newExercises[exIndex].setsDone[setIndex][field] = value;
 
     const newState = {
@@ -221,9 +224,7 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  // Añade un dropset después de una serie.
   addDropset: (exIndex, setIndex) => {
-    // ... (sin cambios) ...
     const session = get().activeWorkout;
     if (!session) return;
     const newExercises = JSON.parse(JSON.stringify(session.exercises));
@@ -242,9 +243,7 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  // Elimina un dropset.
   removeDropset: (exIndex, setIndex) => {
-    // ... (sin cambios) ...
     const session = get().activeWorkout;
     if (!session) return;
     const newExercises = JSON.parse(JSON.stringify(session.exercises));
@@ -258,39 +257,27 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  // Reemplaza un ejercicio en la sesión activa.
   replaceExercise: (exIndex, newExercise) => {
     const session = get().activeWorkout;
     if (!session) return;
     const newExercises = JSON.parse(JSON.stringify(session.exercises));
     const oldExercise = newExercises[exIndex];
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // 'newExercise' es el objeto completo de la BBDD.
-    // Debemos aplicar la misma normalización que en 'startWorkout'
-    // para que los componentes (ej. modal) lo muestren correctamente.
     const normalizedDetails = {
       ...newExercise,
-      // 1. Normalizamos la descripción (el modal espera 'description')
       description: newExercise.description_es || newExercise.description || null,
-      // 2. La media (image_url, video_url) ya está correcta
-      //    gracias al spread (...newExercise).
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     newExercises[exIndex] = {
       ...oldExercise,
       name: newExercise.name,
-      // exercise_details: newExercise, // <-- LÍNEA ANTIGUA CON BUG
-      exercise_details: normalizedDetails, // <-- LÍNEA CORREGIDA
-
+      exercise_details: normalizedDetails,
       setsDone: Array.from({ length: oldExercise.sets }, (_, i) => ({
         set_number: i + 1,
         reps: '',
         weight_kg: '',
         is_dropset: false,
       })),
-
       id: null,
       exercise_list_id: newExercise.id,
       muscle_group: newExercise.muscle_group,
@@ -302,7 +289,6 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  // (Esta modificación tuya anterior se mantiene)
   updateActiveExerciseDetails: (exerciseKeyName, fullDetails) => {
     const session = get().activeWorkout;
     if (!session) return;
@@ -310,10 +296,9 @@ export const createWorkoutSlice = (set, get) => ({
     const newExercises = session.exercises.map((ex) => {
       if (ex.name === exerciseKeyName) {
         const updatedDetails = {
-          ...ex.exercise_details, // Mantiene media específica
-          ...fullDetails, // Añade lo que faltaba
-          name: exerciseKeyName, // Asegura la clave
-          // NORMALIZACIÓN: Aseguramos que 'description' esté aquí también
+          ...ex.exercise_details,
+          ...fullDetails,
+          name: exerciseKeyName,
           description:
             fullDetails?.description_es ||
             fullDetails?.description ||
@@ -336,35 +321,100 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  // Abre el modal y guarda el tiempo de descanso planificado
   openRestModal: (plannedTime) =>
     set({
-      // ... (sin cambios) ...
       isResting: true,
-      plannedRestTime: plannedTime || 90, // 90s por defecto si no se pasa
+      plannedRestTime: plannedTime || 90,
+      restTimerMode: 'modal',
+      isRestTimerPaused: false, // Resetear pausa al abrir
     }),
 
-  // Inicia el temporizador de descanso.
   startRestTimer: (durationInSeconds) => {
-    // ... (sin cambios) ...
     const newState = {
       isResting: true,
       restTimerEndTime: Date.now() + durationInSeconds * 1000,
       restTimerInitialDuration: durationInSeconds,
+      restTimerMode: 'modal',
+      isRestTimerPaused: false, // Inicia siempre sin pausa
+      restTimerRemaining: null,
     };
     set(newState);
     setRestTimerInStorage(newState);
   },
 
-  // Añade o resta tiempo al temporizador de descanso actual.
+  setRestTimerMode: (mode) => {
+    const newState = { restTimerMode: mode };
+    set(newState);
+    setRestTimerInStorage({ ...get(), ...newState });
+  },
+
+  // --- INICIO MODIFICACIÓN: Pausar/Reanudar Descanso ---
+  togglePauseRestTimer: () => {
+    const { isRestTimerPaused, restTimerEndTime, restTimerRemaining } = get();
+    let newState;
+
+    if (isRestTimerPaused) {
+      // REANUDAR: Calculamos nueva fecha fin basada en lo que quedaba
+      // restTimerRemaining está en ms
+      const newEndTime = Date.now() + restTimerRemaining;
+      newState = {
+        isRestTimerPaused: false,
+        restTimerEndTime: newEndTime,
+        restTimerRemaining: null,
+      };
+    } else {
+      // PAUSAR: Guardamos cuánto falta
+      // Si el tiempo ya pasó (negativo), guardamos 0 o el negativo?
+      // Mejor guardamos la diferencia real para que si estaba en 0 se mantenga en 0.
+      const now = Date.now();
+      const remaining = restTimerEndTime ? restTimerEndTime - now : 0;
+
+      newState = {
+        isRestTimerPaused: true,
+        restTimerRemaining: remaining,
+        // Opcional: poner restTimerEndTime a null o dejarlo (se ignorará por el flag de pausa)
+        // Lo dejamos para referencia si se necesitara, pero el flag manda.
+      };
+    }
+
+    set(newState);
+    setRestTimerInStorage({ ...get(), ...newState });
+  },
+  // --- FIN MODIFICACIÓN ---
+
   addRestTime: (secondsToAdd) => {
-    // ... (sin cambios) ...
     set((state) => {
+      // Si estamos pausados, sumamos al tiempo restante almacenado
+      if (state.isRestTimerPaused) {
+        const currentRemaining = state.restTimerRemaining || 0;
+        // Si ya había terminado (negativo o 0), empezamos desde 0 + segundos
+        // Si estaba a la mitad, sumamos
+        const newRemaining = (currentRemaining <= 0 ? 0 : currentRemaining) + (secondsToAdd * 1000);
+
+        const newInitial = (state.restTimerInitialDuration || 0) + secondsToAdd;
+        const newState = {
+          restTimerRemaining: newRemaining,
+          restTimerInitialDuration: Math.max(1, newInitial),
+        };
+        setRestTimerInStorage({ ...state, ...newState });
+        return newState;
+      }
+
+      // Lógica normal (sin pausa)
       if (!state.restTimerEndTime) return {};
-      const newEndTime = state.restTimerEndTime + secondsToAdd * 1000;
+      const now = Date.now();
+      let newEndTime;
+
+      if (state.restTimerEndTime < now) {
+        newEndTime = now + (secondsToAdd * 1000);
+      } else {
+        newEndTime = state.restTimerEndTime + (secondsToAdd * 1000);
+      }
+
       const newInitial = (state.restTimerInitialDuration || 0) + secondsToAdd;
+
       const newState = {
-        restTimerEndTime: Math.max(Date.now(), newEndTime),
+        restTimerEndTime: newEndTime,
         restTimerInitialDuration: Math.max(1, newInitial),
       };
       setRestTimerInStorage({ ...state, ...newState });
@@ -372,35 +422,29 @@ export const createWorkoutSlice = (set, get) => ({
     });
   },
 
-  // Resetea el tiempo de descanso pero mantiene el modal abierto.
   resetRestTimer: () => {
-    // ... (sin cambios) ...
     clearRestTimerInStorage();
-    set({ restTimerEndTime: null, restTimerInitialDuration: null });
+    set({ restTimerEndTime: null, restTimerInitialDuration: null, isRestTimerPaused: false, restTimerRemaining: null });
   },
 
-  // Detiene y cierra el temporizador de descanso.
   stopRestTimer: () => {
-    // ... (sin cambios) ...
     clearRestTimerInStorage();
     set({
       isResting: false,
       restTimerEndTime: null,
       restTimerInitialDuration: null,
       plannedRestTime: null,
+      restTimerMode: 'modal',
+      isRestTimerPaused: false,
+      restTimerRemaining: null,
     });
   },
 
-  // Guarda el entrenamiento en el backend.
   logWorkout: async (workoutData) => {
-    // ... (sin cambios) ...
     try {
       const responseData = await workoutService.logWorkout(workoutData);
       if (responseData.newPRs && responseData.newPRs.length > 0) {
-        // Comportamiento existente: mostrar Toast in-app
         get().showPRNotification(responseData.newPRs);
-
-        // (Esta modificación tuya anterior se mantiene)
         get()._showLocalPRNotification(responseData.newPRs);
       }
       return { success: true, message: 'Entrenamiento guardado.' };
@@ -412,9 +456,7 @@ export const createWorkoutSlice = (set, get) => ({
     }
   },
 
-  // Elimina un log de entrenamiento.
   deleteWorkoutLog: async (workoutId) => {
-    // ... (sin cambios) ...
     try {
       await workoutService.deleteWorkout(workoutId);
       await get().fetchInitialData();
@@ -427,7 +469,6 @@ export const createWorkoutSlice = (set, get) => ({
     }
   },
 
-  // (Esta modificación tuya anterior se mantiene)
   _showLocalPRNotification: async (newPRs) => {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
       console.log('Notificaciones no soportadas por el navegador.');
@@ -436,7 +477,6 @@ export const createWorkoutSlice = (set, get) => ({
 
     try {
       const permission = Notification.permission;
-      // Solo actuar si el permiso ya está concedido. No lo pedimos aquí.
       if (permission !== 'granted') {
         return;
       }
@@ -447,7 +487,6 @@ export const createWorkoutSlice = (set, get) => ({
         return;
       }
 
-      // Crear el mensaje
       const title = '¡Nuevo Récord Personal!';
       const body =
         newPRs.length === 1
@@ -456,24 +495,21 @@ export const createWorkoutSlice = (set, get) => ({
 
       const options = {
         body: body,
-        icon: '/pwa-192x192.webp', // Icono por defecto
-        badge: '/pwa-192x192.webp', // Icono para Android
-        tag: 'pr-notification', // Agrupa notificaciones de PRs
+        icon: '/pwa-192x192.webp',
+        badge: '/pwa-192x192.webp',
+        tag: 'pr-notification',
         data: {
-          url: '/progress', // URL que abrirá el SW al hacer click
+          url: '/progress',
         },
       };
 
-      // Mostrar la notificación
       await registration.showNotification(title, options);
     } catch (err) {
       console.error('Error al mostrar notificación local de PR:', err);
     }
   },
 
-  // Resetea el estado del workout.
   clearWorkoutState: () => {
-    // ... (sin cambios) ...
     clearWorkoutInStorage();
     clearRestTimerInStorage();
     set({ ...initialState, plannedRestTime: null });

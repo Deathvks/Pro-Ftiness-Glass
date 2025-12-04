@@ -1,5 +1,5 @@
 /* frontend/src/pages/Workout.jsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -7,7 +7,6 @@ import { calculateCalories } from '../utils/helpers';
 
 // --- Imports de Modales ---
 import ConfirmationModal from '../components/ConfirmationModal';
-import RestTimerModal from '../components/RestTimerModal';
 import CalorieInputModal from '../components/CalorieInputModal';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import ExerciseReplaceModal from './ExerciseReplaceModal';
@@ -42,8 +41,7 @@ const Workout = ({ timer, setView }) => {
     isWorkoutPaused,
     togglePauseWorkout,
     workoutStartTime,
-    isResting,
-    openRestModal,
+    openRestModal, // isResting eliminado (se usa en App.jsx)
     userProfile,
     fetchInitialData,
   } = useAppStore((state) => ({
@@ -56,7 +54,6 @@ const Workout = ({ timer, setView }) => {
     isWorkoutPaused: state.isWorkoutPaused,
     togglePauseWorkout: state.togglePauseWorkout,
     workoutStartTime: state.workoutStartTime,
-    isResting: state.isResting,
     openRestModal: state.openRestModal,
     userProfile: state.userProfile,
     fetchInitialData: state.fetchInitialData,
@@ -72,6 +69,31 @@ const Workout = ({ timer, setView }) => {
   const [showWorkoutSummaryModal, setShowWorkoutSummaryModal] = useState(false);
   const [completedWorkoutData, setCompletedWorkoutData] = useState(null);
   const [selectedExercise, setSelectedExercise] = useState(null);
+
+  // Efecto de limpieza: Si el usuario sale de la página (desmonta el componente)
+  // y el entrenamiento NO se ha iniciado (workoutStartTime es null), lo cancelamos.
+  useEffect(() => {
+    // Capturamos el momento exacto en que se monta ESTA instancia del componente
+    const mountTime = Date.now();
+
+    return () => {
+      // Calculamos cuánto tiempo ha estado vivo el componente
+      const timeAlive = Date.now() - mountTime;
+
+      // --- PROTECCIÓN STRICT MODE ---
+      // Si el componente ha vivido menos de 500ms, asumimos que es un desmontaje
+      // técnico de React Strict Mode (en desarrollo) o un error inmediato,
+      // y NO ejecutamos la limpieza para evitar borrar el workout recién creado.
+      if (timeAlive < 500) return;
+
+      const state = useAppStore.getState();
+      const { activeWorkout, workoutStartTime, stopWorkout } = state;
+
+      if (activeWorkout && !workoutStartTime) {
+        stopWorkout();
+      }
+    };
+  }, []);
 
   // --- 3. Memos y Variables Derivadas ---
 
@@ -119,15 +141,10 @@ const Workout = ({ timer, setView }) => {
   }, [activeWorkout, isSimpleWorkout]);
 
   // Clases base para los inputs (pasadas como prop)
-  const baseInputClasses = `w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition ${
-    !hasWorkoutStarted ? 'opacity-50 cursor-not-allowed' : ''
-  }`;
+  const baseInputClasses = `w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition ${!hasWorkoutStarted ? 'opacity-50 cursor-not-allowed' : ''
+    }`;
 
   // --- 4. Funciones Helper (Normalización y Parseo) ---
-
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Se elimina la función normalizeDecimalInput de este componente
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const safeParseFloat = (value) => {
     return parseFloat(String(value).replace(',', '.')) || 0;
@@ -208,21 +225,21 @@ const Workout = ({ timer, setView }) => {
       details: isSimpleWorkout
         ? []
         : activeWorkout.exercises.map((ex) => ({
-            exerciseName: ex.name,
-            superset_group_id: ex.superset_group_id,
-            setsDone: ex.setsDone
-              .filter(
-                (set) =>
-                  (set.reps !== '' && set.reps !== null) ||
-                  (set.weight_kg !== '' && set.weight_kg !== null)
-              )
-              .map((set) => ({
-                set_number: set.set_number,
-                reps: safeParseReps(set.reps),
-                weight_kg: safeParseFloat(set.weight_kg),
-                is_dropset: set.is_dropset || false,
-              })),
-          })),
+          exerciseName: ex.name,
+          superset_group_id: ex.superset_group_id,
+          setsDone: ex.setsDone
+            .filter(
+              (set) =>
+                (set.reps !== '' && set.reps !== null) ||
+                (set.weight_kg !== '' && set.weight_kg !== null)
+            )
+            .map((set) => ({
+              set_number: set.set_number,
+              reps: safeParseReps(set.reps),
+              weight_kg: safeParseFloat(set.weight_kg),
+              is_dropset: set.is_dropset || false,
+            })),
+        })),
     };
 
     setCompletedWorkoutData(workoutData);
@@ -291,9 +308,6 @@ const Workout = ({ timer, setView }) => {
           onOpenRestModal={openRestModal}
           onDisabledInputClick={handleDisabledInputClick}
           onDisabledButtonClick={handleDisabledButtonClick}
-          // --- INICIO DE LA MODIFICACIÓN ---
-          // normalizeDecimalInput={normalizeDecimalInput} // <-- Prop eliminada
-          // --- FIN DE LA MODIFICACIÓN ---
         />
       )}
 
@@ -305,8 +319,6 @@ const Workout = ({ timer, setView }) => {
       />
 
       {/* --- Sección de Modales --- */}
-
-      {isResting && <RestTimerModal />}
 
       {showCalorieModal && (
         <CalorieInputModal

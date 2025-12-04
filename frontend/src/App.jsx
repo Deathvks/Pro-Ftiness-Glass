@@ -15,12 +15,14 @@ import { useAppInitialization } from './hooks/useAppInitialization';
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
 import Spinner from './components/Spinner';
-// --- INICIO DE LA MODIFICACIÓN ---
 import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
-// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Imports de Componentes Modales ---
 import TwoFactorPromoModal from './components/TwoFactorPromoModal';
+// --- INICIO DE LA MODIFICACIÓN ---
+import RestTimerModal from './components/RestTimerModal';
+import DynamicIslandTimer from './components/DynamicIslandTimer';
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Imports de Páginas (Lazy) ---
 import OnboardingScreen from './pages/OnboardingScreen';
@@ -76,12 +78,20 @@ export default function App() {
     isLoading,
     handleLogout: performLogout,
     fetchInitialData,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    isResting,
+    restTimerMode,
+    // --- FIN DE LA MODIFICACIÓN ---
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
     isLoading: state.isLoading,
     handleLogout: state.handleLogout,
     fetchInitialData: state.fetchInitialData,
+    // --- INICIO DE LA MODIFICACIÓN ---
+    isResting: state.isResting,
+    restTimerMode: state.restTimerMode,
+    // --- FIN DE LA MODIFICACIÓN ---
   }));
 
   // --- 4. Efectos ---
@@ -130,7 +140,7 @@ export default function App() {
       progress: { key: 'Progreso', default: 'Progreso' },
       routines: { key: 'Rutinas', default: 'Rutinas' },
       settings: { key: 'Ajustes', default: 'Ajustes' },
-      workout: { key: 'Entrenamiento Activo', default: 'Entrenamiento Activo' },
+      workout: { key: 'Entreno', default: 'Entreno' },
       profile: { key: 'Perfil', default: 'Perfil' },
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
       adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
@@ -229,12 +239,10 @@ export default function App() {
     );
   }
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Reemplazamos el texto "Cargando..." con el nuevo Skeleton
   if (isLoading && isInitialLoad) {
     return <InitialLoadingSkeleton />;
   }
-  // --- FIN DE LA MODIFICACIÓN ---
 
   if (!isAuthenticated) {
     return <AuthScreens authView={authView} setAuthView={setAuthView} />;
@@ -245,7 +253,6 @@ export default function App() {
   }
 
   if (!userProfile) {
-    // Aquí también podríamos usar un skeleton si quisiéramos, pero por ahora mantenemos este fallback
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
   }
 
@@ -303,6 +310,17 @@ export default function App() {
         fetchInitialData={fetchInitialData}
         {...verificationProps}
       />
+
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      {/* Temporizador Global (Modal o Isla Dinámica) */}
+      {isResting && (
+        restTimerMode === 'minimized' ? (
+          <DynamicIslandTimer />
+        ) : (
+          <RestTimerModal />
+        )
+      )}
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {/* Modal Promocional 2FA */}
       {show2FAPromo && (
