@@ -7,6 +7,13 @@ import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 import exerciseTranslations from '../locales/es/exercise_names.json';
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Traducciones manuales para ejercicios que falten en el JSON
+const EXTRA_TRANSLATIONS = {
+  "Incline Dumbbell Press": "Press Inclinado con Mancuernas",
+};
+// --- FIN DE LA MODIFICACIÓN ---
+
 // --- RUTINAS PREDEFINIDAS ---
 const DEFAULT_ROUTINES = {
   "Rutinas Básicas": [
@@ -125,7 +132,10 @@ const TemplateRoutines = ({ setView }) => {
   // Obtener nombre traducido
   const getDisplayName = (originalName) => {
     if (!originalName) return "";
-    return exerciseTranslations[originalName] || originalName;
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Busca primero en el JSON, luego en el objeto manual, y si no, devuelve el original
+    return exerciseTranslations[originalName] || EXTRA_TRANSLATIONS[originalName] || originalName;
+    // --- FIN DE LA MODIFICACIÓN ---
   };
 
   const prepareExercisesForCopy = (templateExercises) => {
