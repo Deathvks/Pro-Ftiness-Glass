@@ -4,9 +4,9 @@ import useAppStore from '../store/useAppStore';
 import Spinner from '../components/Spinner';
 import { format, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { 
-  Bell, CheckCheck, Trash2, X, Info, AlertTriangle, CheckCircle, AlertCircle, 
-  Filter, ChevronDown, Loader2, Smartphone, Globe, Clock, Shield 
+import {
+  Bell, CheckCheck, Trash2, X, Info, AlertTriangle, CheckCircle, AlertCircle,
+  Filter, ChevronDown, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft
 } from 'lucide-react';
 
 // --- Imports de Modales Separados ---
@@ -23,8 +23,8 @@ const LoginDetailsModal = ({ notification, onClose }) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
       <div className="relative w-full max-w-md bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl animate-[scale-in_0.2s_ease-out]">
-        
-        <button 
+
+        <button
           onClick={onClose}
           className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition p-1 hover:bg-gray-500/10 rounded-full"
         >
@@ -82,7 +82,7 @@ const LoginDetailsModal = ({ notification, onClose }) => {
           </div>
         </div>
 
-        <button 
+        <button
           onClick={onClose}
           className="mt-6 w-full py-3 bg-accent text-bg-secondary font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-accent/20"
         >
@@ -109,7 +109,7 @@ const NotificationsScreen = ({ setView }) => {
 
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
+
   // Estados para modales
   const [selectedNotification, setSelectedNotification] = useState(null); // Detalles
   const [deleteAction, setDeleteAction] = useState(null); // Confirmación borrado { type: 'all' | 'single', id?: number }
@@ -121,17 +121,17 @@ const NotificationsScreen = ({ setView }) => {
 
   const handleNotificationClick = (notification) => {
     if (!notification.is_read) markNotificationAsRead(notification.id);
-    
+
     // Si tiene datos de login, abrir modal
     if (notification.data && (notification.data.ip || notification.data.userAgent)) {
-        setSelectedNotification(notification);
-        return;
+      setSelectedNotification(notification);
+      return;
     }
 
     // Navegación normal
     if (notification.data?.url && setView) {
-      const target = notification.data.url.startsWith('/') 
-        ? notification.data.url.slice(1) 
+      const target = notification.data.url.startsWith('/')
+        ? notification.data.url.slice(1)
         : notification.data.url;
       setView(target);
     }
@@ -220,15 +220,15 @@ const NotificationsScreen = ({ setView }) => {
 
   return (
     <div className="pb-24 pt-6 px-4 max-w-2xl mx-auto min-h-full relative">
-      
+
       {/* Modales */}
       {selectedNotification && (
-          <LoginDetailsModal 
-            notification={selectedNotification} 
-            onClose={() => setSelectedNotification(null)} 
-          />
+        <LoginDetailsModal
+          notification={selectedNotification}
+          onClose={() => setSelectedNotification(null)}
+        />
       )}
-      
+
       <DeleteNotificationModal
         isOpen={deleteAction?.type === 'single'}
         onClose={() => setDeleteAction(null)}
@@ -241,37 +241,46 @@ const NotificationsScreen = ({ setView }) => {
         onConfirm={confirmDelete}
       />
 
+      {/* Botón Volver */}
+      <button
+        onClick={() => setView('dashboard')}
+        className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4"
+      >
+        <ChevronLeft size={20} />
+        Volver
+      </button>
+
       {/* Header */}
       <div className="flex justify-between items-end md:items-center mb-6">
-        
+
         <h2 className="hidden md:flex text-2xl font-bold text-text-primary items-center gap-3">
           <Bell className="text-accent" /> Notificaciones
         </h2>
 
         <div className="md:hidden flex flex-col gap-0.5">
-           <span className="text-lg font-bold text-text-primary">
-             {unreadCount > 0 ? 'Tienes novedades' : 'Todo al día'}
-           </span>
-           <span className="text-xs text-text-muted">
-             {unreadCount > 0 
-               ? `${unreadCount} notificaciones sin leer` 
-               : 'No hay alertas pendientes'}
-           </span>
+          <span className="text-lg font-bold text-text-primary">
+            {unreadCount > 0 ? 'Tienes novedades' : 'Todo al día'}
+          </span>
+          <span className="text-xs text-text-muted">
+            {unreadCount > 0
+              ? `${unreadCount} notificaciones sin leer`
+              : 'No hay alertas pendientes'}
+          </span>
         </div>
-        
+
         {hasNotifications && (
           <div className="flex items-center p-1 bg-bg-secondary border border-glass-border rounded-full shadow-sm mb-1 md:mb-0">
-            <button 
-              onClick={markAllNotificationsAsRead} 
-              className="p-2 text-accent hover:bg-accent/10 rounded-full transition-colors" 
+            <button
+              onClick={markAllNotificationsAsRead}
+              className="p-2 text-accent hover:bg-accent/10 rounded-full transition-colors"
               title="Marcar todas como leídas"
             >
               <CheckCheck size={18} />
             </button>
             <div className="w-px h-5 bg-glass-border mx-1"></div>
-            <button 
-              onClick={requestDeleteAll} 
-              className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors" 
+            <button
+              onClick={requestDeleteAll}
+              className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
               title="Borrar todas"
             >
               <Trash2 size={18} />
@@ -328,14 +337,14 @@ const NotificationsScreen = ({ setView }) => {
                       onClick={() => handleNotificationClick(n)}
                       className={`
                         relative group flex items-start gap-4 p-4 rounded-xl transition-all duration-200 cursor-pointer
-                        ${n.is_read 
-                          ? 'bg-bg-secondary border border-glass-border hover:border-text-muted/30' 
+                        ${n.is_read
+                          ? 'bg-bg-secondary border border-glass-border hover:border-text-muted/30'
                           : 'bg-bg-secondary border-2 border-accent shadow-lg shadow-accent/5'
                         }
                       `}
                     >
                       <div className="flex-shrink-0 mt-0.5">{getIcon(n.type)}</div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-semibold mb-1 ${n.is_read ? 'text-text-secondary' : 'text-text-primary'}`}>
                           {n.title}
@@ -343,11 +352,11 @@ const NotificationsScreen = ({ setView }) => {
                         <p className={`text-sm leading-relaxed ${n.is_read ? 'text-text-muted' : 'text-text-secondary'}`}>
                           {n.message}
                         </p>
-                        
+
                         {n.data && (n.data.ip || n.data.userAgent) && (
-                             <p className="text-xs text-accent mt-2 font-medium flex items-center gap-1">
-                                Ver detalles <ChevronDown size={12} className="-rotate-90" />
-                             </p>
+                          <p className="text-xs text-accent mt-2 font-medium flex items-center gap-1">
+                            Ver detalles <ChevronDown size={12} className="-rotate-90" />
+                          </p>
                         )}
                       </div>
 

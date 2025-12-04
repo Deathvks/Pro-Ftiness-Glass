@@ -163,18 +163,28 @@ export default function MainAppLayout({
           {/* Botones de Header (Notif + Perfil) */}
           <div className="flex items-center">
 
-            {/* Botón de Notificaciones */}
-            <button
-              onClick={() => navigate('notifications')}
-              className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-              aria-label="Notificaciones"
+            {/* Botón de Notificaciones con Animación Wrapper tipo iOS */}
+            <div
+              className={`
+                    flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
+                    ${view === 'notifications'
+                  ? 'w-0 opacity-0 mr-0 translate-x-4'
+                  : 'w-10 opacity-100 mr-0 translate-x-0'
+                }
+                `}
             >
-              <Bell size={24} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>
-              )}
-            </button>
+              <button
+                onClick={() => navigate('notifications')}
+                className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-label="Notificaciones"
+              >
+                <Bell size={24} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>
+                )}
+              </button>
+            </div>
 
             {/* Botón de Perfil con Animación Wrapper tipo iOS */}
             <div
