@@ -2,7 +2,7 @@
 import React from 'react';
 import { Repeat } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
-import WorkoutSetGrid from './WorkoutSetGrid'; // Este será el siguiente fichero
+import WorkoutSetGrid from './WorkoutSetGrid';
 
 /**
  * Muestra la tarjeta para un único ejercicio dentro del entrenamiento.
@@ -34,9 +34,10 @@ const WorkoutExerciseCard = ({
         className="w-full text-left transition-transform active:scale-[0.99] group"
         title="Ver detalles del ejercicio"
       >
+        {/* MODIFICACIÓN: Cambiado 'rounded-lg' a 'rounded-xl' para asegurar bordes redondos */}
         <ExerciseMedia
           details={exercise.exercise_details}
-          className="w-full lg:max-w-lg mx-auto mb-4 group-hover:brightness-110 transition"
+          className="w-full lg:max-w-lg mx-auto mb-4 group-hover:brightness-110 transition rounded-xl overflow-hidden relative shadow-sm"
         />
       </button>
 
@@ -62,11 +63,10 @@ const WorkoutExerciseCard = ({
             e.stopPropagation(); // Evita que el click se propague
             onSetExerciseToReplace(actualExIndex);
           }}
-          className={`p-2 rounded-md transition shrink-0 ${
-            hasWorkoutStarted
+          className={`p-2 rounded-md transition shrink-0 ${hasWorkoutStarted
               ? 'bg-bg-primary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
               : 'bg-bg-primary border border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-          }`}
+            }`}
           title={
             hasWorkoutStarted
               ? 'Reemplazar ejercicio'

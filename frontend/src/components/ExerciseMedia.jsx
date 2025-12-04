@@ -24,7 +24,8 @@ const ExerciseMedia = ({ details, className = '' }) => {
   // Fallback si no hay media
   if (mediaError || !details || (!imageUrl && !videoUrl)) {
     return (
-      <div className={`aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted ${className}`}>
+      // Añadido 'rounded-xl overflow-hidden' para bordes redondeados
+      <div className={`aspect-video bg-bg-secondary rounded-xl overflow-hidden flex items-center justify-center text-text-muted ${className}`}>
         <ImageIcon size={48} />
       </div>
     );
@@ -34,7 +35,8 @@ const ExerciseMedia = ({ details, className = '' }) => {
     return (
       <video
         key={videoUrl}
-        className={`aspect-video object-contain rounded-lg bg-black border border-glass-border ${className}`}
+        // Añadido 'rounded-xl overflow-hidden' para bordes redondeados
+        className={`aspect-video object-contain rounded-xl overflow-hidden bg-black ${className}`}
         src={videoUrl}
         autoPlay
         loop
@@ -48,9 +50,8 @@ const ExerciseMedia = ({ details, className = '' }) => {
   }
 
   if (imageUrl) {
-    // --- INICIO DE LA MODIFICACIÓN: Se ha ELIMINADO la lógica de inversión de color ---
-    const imageClasses = `aspect-video object-contain rounded-lg border border-glass-border ${className}`;
-    // --- FIN DE LA MODIFICACIÓN ---
+    // Añadido 'rounded-xl overflow-hidden' para bordes redondeados
+    const imageClasses = `aspect-video object-contain rounded-xl overflow-hidden ${className}`;
 
     return (
       <img
@@ -65,7 +66,8 @@ const ExerciseMedia = ({ details, className = '' }) => {
 
   // Fallback final
   return (
-    <div className={`aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted ${className}`}>
+    // Añadido 'rounded-xl overflow-hidden' para bordes redondeados
+    <div className={`aspect-video bg-bg-secondary rounded-xl overflow-hidden flex items-center justify-center text-text-muted ${className}`}>
       <ImageIcon size={48} />
     </div>
   );

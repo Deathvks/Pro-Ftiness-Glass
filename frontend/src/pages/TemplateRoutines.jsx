@@ -1,266 +1,286 @@
 /* frontend/src/pages/TemplateRoutines.jsx */
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Play, Copy, Search, Filter, X, Clock, Target, Dumbbell } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
-// --- INICIO DE LA MODIFICACIÓN ---
-// import { saveRoutine } from '../services/routineService'; // <-- Esta línea se elimina, causa el error
-// --- FIN DE LA MODIFICACIÓN ---
-import CustomSelect from '../components/CustomSelect'; // Importamos el componente reutilizable
+import CustomSelect from '../components/CustomSelect';
+import exerciseTranslations from '../locales/es/exercise_names.json';
 
-// Helper to identify multi-day routines
+// --- RUTINAS PREDEFINIDAS ---
+const DEFAULT_ROUTINES = {
+  "Rutinas Básicas": [
+    {
+      id: "def_fullbody",
+      name: "Full Body (Mancuernas)",
+      description: "Rutina de cuerpo completo utilizando principalmente mancuernas, basada en tu biblioteca.",
+      TemplateRoutineExercises: [
+        { id: "d1", name: "Dumbbell Front Squat", sets: 3, reps: "10-12" },
+        { id: "d2", name: "Dumbbell Bench Press", sets: 3, reps: "10-12" },
+        { id: "d3", name: "Dumbbell Romanian Deadlift", sets: 3, reps: "10-12" },
+        { id: "d4", name: "Shoulder Press (Dumbbell)", sets: 3, reps: "10-12" },
+        { id: "d5", name: "Dumbbell Bent Over Row", sets: 3, reps: "10-12" }
+      ]
+    },
+    {
+      id: "def_torso",
+      name: "Torso (Upper Body)",
+      description: "Entrenamiento enfocado en pecho, espalda, hombros y brazos.",
+      TemplateRoutineExercises: [
+        { id: "d6", name: "Dumbbell Bench Press", sets: 4, reps: "8-12" },
+        { id: "d7", name: "Chin-ups", sets: 3, reps: "Al fallo" },
+        { id: "d8", name: "Shoulder Press (Dumbbell)", sets: 3, reps: "10-12" },
+        { id: "d9", name: "Seitheben KH", sets: 3, reps: "12-15" },
+        { id: "d10", name: "Triceps Pushdown", sets: 3, reps: "12-15" },
+        { id: "d11", name: "Bizeps KH-Curls", sets: 3, reps: "12-15" }
+      ]
+    },
+    {
+      id: "def_pierna",
+      name: "Pierna (Lower Body)",
+      description: "Entrenamiento completo de tren inferior.",
+      TemplateRoutineExercises: [
+        { id: "d12", name: "Dumbbell Front Squat", sets: 4, reps: "8-10" },
+        { id: "d13", name: "Dumbbell Rear Lunge", sets: 3, reps: "10-12" },
+        { id: "d14", name: "Dumbbell Romanian Deadlift", sets: 3, reps: "10-12" },
+        { id: "d15", name: "Dumbbell Hip Thrust", sets: 3, reps: "12-15" },
+        { id: "d16", name: "Seated Dumbbell Calf Raise", sets: 4, reps: "15-20" }
+      ]
+    }
+  ]
+};
+
+// Normalizador de texto
+const normalizeText = (text) => {
+  return text
+    ? text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
+    : "";
+};
+
+// Buscador inteligente de ejercicios
+const findMatchingExercise = (templateName, libraryExercises) => {
+  if (!libraryExercises || !templateName || libraryExercises.length === 0) return null;
+  const normalizedTemplate = normalizeText(templateName);
+
+  // 1. Coincidencia Exacta
+  let match = libraryExercises.find(e => normalizeText(e.name) === normalizedTemplate);
+
+  // 2. Coincidencia Parcial
+  if (!match) {
+    match = libraryExercises.find(e => {
+      const libName = normalizeText(e.name);
+      return libName.includes(normalizedTemplate) || normalizedTemplate.includes(libName);
+    });
+  }
+
+  return match;
+};
+
+// Helper para obtener URL de medios
+const getMediaUrl = (exercise) => {
+  if (!exercise) return null;
+  return exercise.gifUrl || exercise.gif_url || exercise.imageUrl || exercise.image_url ||
+    exercise.image_url_start || exercise.image_url_end ||
+    exercise.videoUrl || exercise.video_url || null;
+};
+
 const isMultiDayRoutine = (routines) => {
   if (!routines || routines.length < 2) return false;
   const dayRoutines = routines.filter(r => /^Día \d+:/.test(r.name));
   if (dayRoutines.length < 2) return false;
-
-  // Check for consecutive days starting from 1
   const days = dayRoutines.map(r => parseInt(r.name.match(/^Día (\d+):/)[1], 10)).sort((a, b) => a - b);
-  
-  if (days[0] !== 1) return false; // Must start with Day 1
-
+  if (days[0] !== 1) return false;
   for (let i = 0; i < days.length - 1; i++) {
-    if (days[i+1] !== days[i] + 1) {
-      return false; // Not consecutive
-    }
+    if (days[i + 1] !== days[i] + 1) return false;
   }
   return true;
 };
 
 const TemplateRoutines = ({ setView }) => {
   const { addToast } = useToast();
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Añadimos 'createRoutine' a la desestructuración de useAppStore
-  // y eliminamos 'fetchInitialData' ya que no se necesitará
-  const { templateRoutines, startWorkout, createRoutine } = useAppStore(state => ({
+  const { templateRoutines: fetchedRoutines, startWorkout, createRoutine, exercises } = useAppStore(state => ({
     templateRoutines: state.templateRoutines,
     startWorkout: state.startWorkout,
     createRoutine: state.createRoutine,
+    exercises: state.allExercises || [],
   }));
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  // Estados para filtros y búsqueda con persistencia en localStorage
-  const [searchQuery, setSearchQuery] = useState(() => {
-    return localStorage.getItem('templateRoutinesSearchQuery') || '';
-  });
-  const [selectedCategory, setSelectedCategory] = useState(() => {
-    return localStorage.getItem('templateRoutinesSelectedCategory') || 'all';
-  });
-  const [selectedDifficulty, setSelectedDifficulty] = useState(() => {
-    return localStorage.getItem('templateRoutinesSelectedDifficulty') || 'all';
-  });
-  const [showFilters, setShowFilters] = useState(() => {
-    return localStorage.getItem('templateRoutinesShowFilters') === 'true';
-  });
-
-  // Efectos para guardar en localStorage cuando cambien los filtros
-  useEffect(() => {
-    localStorage.setItem('templateRoutinesSearchQuery', searchQuery);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    localStorage.setItem('templateRoutinesSelectedCategory', selectedCategory);
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    localStorage.setItem('templateRoutinesSelectedDifficulty', selectedDifficulty);
-  }, [selectedDifficulty]);
-
-  useEffect(() => {
-    localStorage.setItem('templateRoutinesShowFilters', showFilters.toString());
-  }, [showFilters]);
-
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Actualizamos 'handleCopyToMyRoutines' para usar 'createRoutine' del store
-  const handleCopyToMyRoutines = async (template) => {
-    const exercises = template.TemplateRoutineExercises.map((ex) => {
-      const newEx = { ...ex };
-      delete newEx.id;
-      delete newEx.template_routine_id;
-      return newEx;
-    });
-
-    const newRoutine = {
-      name: `${template.name} (Copia)`,
-      description: template.description,
-      exercises: exercises,
-    };
-
-    try {
-      // Usamos la acción del store en lugar del servicio
-      const result = await createRoutine(newRoutine);
-      
-      if (result.success) {
-        addToast('Rutina copiada a "Mis Rutinas" con éxito.', 'success');
-        // await fetchInitialData(); // <-- Ya no es necesario
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (error) {
-      addToast(error.message || 'No se pudo copiar la rutina.', 'error');
+  const templateRoutines = useMemo(() => {
+    if (!fetchedRoutines || Object.keys(fetchedRoutines).length === 0) {
+      return DEFAULT_ROUTINES;
     }
+    return { ...DEFAULT_ROUTINES, ...fetchedRoutines };
+  }, [fetchedRoutines]);
+
+  const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem('templateRoutinesSearchQuery') || '');
+  const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem('templateRoutinesSelectedCategory') || 'all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem('templateRoutinesSelectedDifficulty') || 'all');
+  const [showFilters, setShowFilters] = useState(() => localStorage.getItem('templateRoutinesShowFilters') === 'true');
+
+  useEffect(() => { localStorage.setItem('templateRoutinesSearchQuery', searchQuery); }, [searchQuery]);
+  useEffect(() => { localStorage.setItem('templateRoutinesSelectedCategory', selectedCategory); }, [selectedCategory]);
+  useEffect(() => { localStorage.setItem('templateRoutinesSelectedDifficulty', selectedDifficulty); }, [selectedDifficulty]);
+  useEffect(() => { localStorage.setItem('templateRoutinesShowFilters', showFilters.toString()); }, [showFilters]);
+
+  // Obtener nombre traducido
+  const getDisplayName = (originalName) => {
+    if (!originalName) return "";
+    return exerciseTranslations[originalName] || originalName;
   };
-  // --- FIN DE LA MODIFICACIÓN ---
-  
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Actualizamos 'handleCopyFullRoutine' para usar 'createRoutine' del store
-  const handleCopyFullRoutine = async (category, routines) => {
-    const dayRoutines = routines
-      .filter(r => /^Día \d+:/.test(r.name))
-      .sort((a, b) => {
-        const dayA = parseInt(a.name.match(/^Día (\d+):/)[1], 10);
-        const dayB = parseInt(b.name.match(/^Día (\d+):/)[1], 10);
-        return dayA - dayB;
-      });
 
-    if (dayRoutines.length === 0) {
-      addToast('No se encontraron días de rutina para copiar.', 'warning');
-      return;
-    }
+  const prepareExercisesForCopy = (templateExercises) => {
+    return templateExercises.map((ex) => {
+      const newEx = { ...ex };
 
-    try {
-      for (const template of dayRoutines) {
-        const exercises = template.TemplateRoutineExercises.map((ex) => {
-          const newEx = { ...ex };
-          delete newEx.id;
-          delete newEx.template_routine_id;
-          return newEx;
-        });
+      // Limpiar IDs ficticios
+      if (typeof newEx.id === 'string' && (newEx.id.startsWith('def_') || newEx.id.startsWith('d'))) {
+        delete newEx.id;
+      } else {
+        delete newEx.id;
+        delete newEx.template_routine_id;
+      }
 
-        const newRoutine = {
-          name: `${template.name} (Copia)`,
-          description: template.description,
-          exercises: exercises,
-        };
-        
-        // Usamos la acción del store
-        const result = await createRoutine(newRoutine);
-        if (!result.success) {
-          // Si una falla, nos detenemos y mostramos el error
-          throw new Error(result.message || `No se pudo copiar '${template.name}'`);
+      // Buscar coincidencia en la biblioteca
+      const realExercise = findMatchingExercise(ex.name, exercises);
+
+      if (realExercise) {
+        newEx.exercise_id = realExercise.id;
+        newEx.name = realExercise.name; // Nombre oficial (inglés) para la DB
+
+        // --- FIX: COPIAR PROPIEDADES DE IMAGEN EXPLICITAMENTE ---
+        // Esto asegura que la vista de Workout tenga la URL sin tener que buscarla de nuevo
+        const mediaUrl = getMediaUrl(realExercise);
+        if (mediaUrl) {
+          newEx.image_url = mediaUrl;
+          newEx.gifUrl = mediaUrl; // Por si acaso usa esta prop
+        }
+
+        // Copiar descripción si la tiene el ejercicio real y el template no
+        if (!newEx.notes && realExercise.description) {
+          // Opcional: Podrías poner la descripción en notas si quisieras
+          // newEx.notes = realExercise.description; 
         }
       }
 
-      addToast(`Rutina completa '${category}' copiada a "Mis Rutinas".`, 'success');
-      // await fetchInitialData(); // <-- Ya no es necesario
+      return newEx;
+    });
+  };
+
+  const handleCopyToMyRoutines = async (template) => {
+    try {
+      const result = await createRoutine({
+        name: `${template.name} (Copia)`,
+        description: template.description,
+        exercises: prepareExercisesForCopy(template.TemplateRoutineExercises),
+      });
+      if (result.success) addToast('Rutina copiada con éxito.', 'success');
+      else throw new Error(result.message);
     } catch (error) {
-      addToast(error.message || 'No se pudo copiar la rutina completa.', 'error');
+      addToast(error.message || 'Error al copiar rutina.', 'error');
     }
   };
-  // --- FIN DE LA MODIFICACIÓN ---
+
+  const handleCopyFullRoutine = async (category, routines) => {
+    const dayRoutines = routines.filter(r => /^Día \d+:/.test(r.name)).sort((a, b) => {
+      return parseInt(a.name.match(/^Día (\d+):/)[1]) - parseInt(b.name.match(/^Día (\d+):/)[1]);
+    });
+
+    if (!dayRoutines.length) return addToast('No hay días para copiar.', 'warning');
+
+    try {
+      for (const template of dayRoutines) {
+        const result = await createRoutine({
+          name: `${template.name} (Copia)`,
+          description: template.description,
+          exercises: prepareExercisesForCopy(template.TemplateRoutineExercises),
+        });
+        if (!result.success) throw new Error(result.message);
+      }
+      addToast(`Rutina completa '${category}' copiada.`, 'success');
+    } catch (error) {
+      addToast('Error al copiar la rutina completa.', 'error');
+    }
+  };
 
   const handleStartWorkout = (template) => {
-    startWorkout(template);
+    // Preparamos los ejercicios con sus imágenes y IDs reales
+    const exercisesWithIds = prepareExercisesForCopy(template.TemplateRoutineExercises);
+
+    // Creamos el objeto de rutina enriquecido
+    const enrichedTemplate = {
+      ...template,
+      TemplateRoutineExercises: exercisesWithIds
+    };
+
+    startWorkout(enrichedTemplate);
     setView('workout');
   };
 
-  // Función para estimar duración de rutina
-  const estimateRoutineDuration = (exercises) => {
-    if (!exercises || exercises.length === 0) return 0;
-    // Estimación: 3 minutos por ejercicio + 1 minuto de descanso
-    return exercises.length * 4;
-  };
-
-  // Función para determinar dificultad basada en ejercicios
-  const getRoutineDifficulty = (exercises) => {
-    if (!exercises || exercises.length === 0) return 'Principiante';
-    if (exercises.length <= 4) return 'Principiante';
-    if (exercises.length <= 7) return 'Intermedio';
+  const estimateRoutineDuration = (exs) => (exs?.length || 0) * 4;
+  const getRoutineDifficulty = (exs) => {
+    const len = exs?.length || 0;
+    if (len <= 4) return 'Principiante';
+    if (len <= 7) return 'Intermedio';
     return 'Avanzado';
   };
 
-  // Obtener todas las categorías disponibles
-  const categories = Object.keys(templateRoutines);
-
-  // Opciones para los dropdowns
-  const categoryOptions = [
-    { value: 'all', label: 'Todas las categorías' },
-    ...categories.map(category => ({ value: category, label: category }))
-  ];
-
-  const difficultyOptions = [
-    { value: 'all', label: 'Todas las dificultades' },
-    { value: 'Principiante', label: 'Principiante' },
-    { value: 'Intermedio', label: 'Intermedio' },
-    { value: 'Avanzado', label: 'Avanzado' }
-  ];
-
-  // Filtrar y buscar rutinas
   const filteredRoutines = useMemo(() => {
-    let allRoutines = [];
-    
-    // Aplanar todas las rutinas con su categoría
-    categories.forEach(category => {
-      templateRoutines[category].forEach(routine => {
-        allRoutines.push({
-          ...routine,
-          category,
-          difficulty: getRoutineDifficulty(routine.TemplateRoutineExercises),
-          duration: estimateRoutineDuration(routine.TemplateRoutineExercises)
+    const categories = Object.keys(templateRoutines);
+    let all = [];
+    categories.forEach(cat => {
+      templateRoutines[cat].forEach(r => {
+        all.push({
+          ...r,
+          category: cat,
+          difficulty: getRoutineDifficulty(r.TemplateRoutineExercises),
+          duration: estimateRoutineDuration(r.TemplateRoutineExercises)
         });
       });
     });
 
-    // Aplicar filtros
-    let filtered = allRoutines;
-
-    // Filtro por búsqueda
+    let filtered = all;
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(routine => 
-        routine.name.toLowerCase().includes(query) ||
-        routine.description.toLowerCase().includes(query) ||
-        routine.category.toLowerCase().includes(query)
+      const q = normalizeText(searchQuery);
+      filtered = filtered.filter(r =>
+        normalizeText(r.name).includes(q) ||
+        normalizeText(r.description).includes(q) ||
+        normalizeText(r.category).includes(q)
       );
     }
+    if (selectedCategory !== 'all') filtered = filtered.filter(r => r.category === selectedCategory);
+    if (selectedDifficulty !== 'all') filtered = filtered.filter(r => r.difficulty === selectedDifficulty);
 
-    // Filtro por categoría
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(routine => routine.category === selectedCategory);
-    }
-
-    // Filtro por dificultad
-    if (selectedDifficulty !== 'all') {
-      filtered = filtered.filter(routine => routine.difficulty === selectedDifficulty);
-    }
-
-    // Agrupar por categoría para mostrar
     const grouped = {};
-    filtered.forEach(routine => {
-      if (!grouped[routine.category]) {
-        grouped[routine.category] = [];
-      }
-      grouped[routine.category].push(routine);
+    filtered.forEach(r => {
+      if (!grouped[r.category]) grouped[r.category] = [];
+      grouped[r.category].push(r);
     });
-
     return grouped;
-  }, [templateRoutines, searchQuery, selectedCategory, selectedDifficulty, categories]);
+  }, [templateRoutines, searchQuery, selectedCategory, selectedDifficulty]);
 
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
     setSelectedDifficulty('all');
-    // También limpiar del localStorage
     localStorage.removeItem('templateRoutinesSearchQuery');
     localStorage.removeItem('templateRoutinesSelectedCategory');
     localStorage.removeItem('templateRoutinesSelectedDifficulty');
   };
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Principiante': return 'text-white bg-green border-green';
-      case 'Intermedio': return 'text-black bg-amber-400 border-amber-400';
-      case 'Avanzado': return 'text-white bg-red border-red';
-      default: return 'text-text-secondary bg-bg-secondary/50 border-glass-border';
-    }
+  const getDifficultyColor = (diff) => {
+    if (diff === 'Principiante') return 'text-white bg-green border-green';
+    if (diff === 'Intermedio') return 'text-black bg-amber-400 border-amber-400';
+    if (diff === 'Avanzado') return 'text-white bg-red border-red';
+    return 'text-text-secondary bg-bg-secondary/50 border-glass-border';
   };
+
+  const categories = Object.keys(templateRoutines);
+  const categoryOptions = [{ value: 'all', label: 'Todas' }, ...categories.map(c => ({ value: c, label: c }))];
+  const difficultyOptions = [{ value: 'all', label: 'Todas' }, { value: 'Principiante', label: 'Principiante' }, { value: 'Intermedio', label: 'Intermedio' }, { value: 'Avanzado', label: 'Avanzado' }];
 
   return (
     <div className="flex flex-col gap-6 animate-[fade-in_0.5s_ease_out]">
-      {/* Barra de búsqueda y filtros */}
       <div className="space-y-4">
-        {/* Búsqueda */}
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
           <input
@@ -271,178 +291,100 @@ const TemplateRoutines = ({ setView }) => {
           />
         </div>
 
-        {/* Botón de filtros y filtros activos */}
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
-              showFilters 
-                ? 'bg-accent text-bg-secondary' 
-                : 'bg-bg-secondary text-text-secondary hover:bg-white/10 border border-glass-border'
-            }`}
-          >
-            <Filter size={16} />
-            Filtros
+          <button onClick={() => setShowFilters(!showFilters)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${showFilters ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary text-text-secondary border border-glass-border'}`}>
+            <Filter size={16} /> Filtros
           </button>
-
-          {/* Mostrar filtros activos */}
           {(selectedCategory !== 'all' || selectedDifficulty !== 'all' || searchQuery) && (
             <div className="flex items-center gap-2">
-              {selectedCategory !== 'all' && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent/10 text-accent text-xs">
-                  {selectedCategory}
-                  <button 
-                    onClick={() => setSelectedCategory('all')}
-                    className="hover:bg-accent/20 rounded transition"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-              {selectedDifficulty !== 'all' && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent/10 text-accent text-xs">
-                  {selectedDifficulty}
-                  <button 
-                    onClick={() => setSelectedDifficulty('all')}
-                    className="hover:bg-accent/20 rounded transition"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )}
-              <button
-                onClick={clearFilters}
-                className="text-xs text-text-secondary hover:text-accent transition font-medium"
-              >
-                Limpiar todo
-              </button>
+              <button onClick={clearFilters} className="text-xs text-text-secondary hover:text-accent transition font-medium">Limpiar todo</button>
             </div>
           )}
         </div>
 
-        {/* Panel de filtros con dropdowns personalizados */}
         {showFilters && (
           <GlassCard className="p-4 relative z-50 overflow-visible">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Filtro por categoría */}
               <div className="relative z-50">
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Categoría
-                </label>
-                <CustomSelect
-                  value={selectedCategory}
-                  onChange={setSelectedCategory}
-                  options={categoryOptions}
-                  placeholder="Seleccionar categoría"
-                />
+                <label className="block text-sm font-medium text-text-secondary mb-2">Categoría</label>
+                <CustomSelect value={selectedCategory} onChange={setSelectedCategory} options={categoryOptions} placeholder="Categoría" />
               </div>
-
-              {/* Filtro por dificultad */}
               <div className="relative z-50">
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Dificultad
-                </label>
-                <CustomSelect
-                  value={selectedDifficulty}
-                  onChange={setSelectedDifficulty}
-                  options={difficultyOptions}
-                  placeholder="Seleccionar dificultad"
-                />
+                <label className="block text-sm font-medium text-text-secondary mb-2">Dificultad</label>
+                <CustomSelect value={selectedDifficulty} onChange={setSelectedDifficulty} options={difficultyOptions} placeholder="Dificultad" />
               </div>
             </div>
           </GlassCard>
         )}
       </div>
 
-      {/* Rutinas filtradas */}
       {Object.keys(filteredRoutines).length > 0 ? (
         <div className="space-y-12">
           {Object.keys(filteredRoutines).map(category => {
             const routinesForCategory = filteredRoutines[category];
             const isMultiDay = isMultiDayRoutine(routinesForCategory);
-
             return (
               <div key={category}>
                 <div className="flex flex-wrap items-center gap-4 mb-6">
                   <h2 className="text-xl md:text-2xl font-bold text-text-primary">{category}</h2>
-                  <span className="text-sm text-text-secondary bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-glass-border font-medium">
-                    {routinesForCategory.length} rutina{routinesForCategory.length !== 1 ? 's' : ''}
-                  </span>
+                  <span className="text-sm text-text-secondary bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-glass-border font-medium">{routinesForCategory.length} rutina{routinesForCategory.length !== 1 ? 's' : ''}</span>
                   {isMultiDay && (
-                    <button
-                      onClick={() => handleCopyFullRoutine(category, routinesForCategory)}
-                      className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 text-accent font-semibold hover:bg-accent/20 transition text-sm border border-glass-border"
-                    >
-                      <Copy size={14} />
-                      Copiar Rutina Completa
+                    <button onClick={() => handleCopyFullRoutine(category, routinesForCategory)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 text-accent font-semibold hover:bg-accent/20 transition text-sm border border-glass-border">
+                      <Copy size={14} /> Copiar Todo
                     </button>
                   )}
                 </div>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 md:gap-8">
                   {routinesForCategory.map(routine => (
                     <GlassCard key={routine.id} className="p-6 md:p-7 flex flex-col min-h-[400px] hover:border-accent/30 transition-colors">
                       <div className="flex-grow space-y-4">
-                        {/* Header con título y badges */}
                         <div className="space-y-3">
                           <h3 className="text-lg md:text-xl font-bold text-accent">{routine.name}</h3>
-                          
-                          {/* Badges informativos */}
                           <div className="flex flex-wrap gap-2">
-                            <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium border ${
-                              getDifficultyColor(routine.difficulty)
-                            }`}>
-                              <Target size={14} />
-                              {routine.difficulty}
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-text-secondary bg-bg-secondary/50 border border-glass-border">
-                              <Clock size={14} />
-                              ~{routine.duration} min
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-text-secondary bg-bg-secondary/50 border border-glass-border">
-                              <Dumbbell size={14} />
-                              {routine.TemplateRoutineExercises.length} ejercicios
-                            </span>
+                            <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium border ${getDifficultyColor(routine.difficulty)}`}><Target size={14} /> {routine.difficulty}</span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-text-secondary bg-bg-secondary/50 border border-glass-border"><Clock size={14} /> ~{routine.duration} min</span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-text-secondary bg-bg-secondary/50 border border-glass-border"><Dumbbell size={14} /> {routine.TemplateRoutineExercises.length} ejer.</span>
                           </div>
                         </div>
-
-                        {/* Descripción */}
                         <p className="text-sm md:text-base text-text-secondary leading-relaxed">{routine.description}</p>
-                        
-                        {/* Lista completa de ejercicios */}
                         <div className="space-y-3">
                           <h4 className="text-sm font-semibold text-text-secondary">Ejercicios:</h4>
                           <div className="overflow-x-auto md:overflow-x-visible">
                             <ul className="space-y-2 min-w-full">
-                              {routine.TemplateRoutineExercises.map(ex => (
-                                <li key={ex.id} className="bg-bg-secondary/50 p-3 rounded-lg text-sm min-w-max md:min-w-0">
-                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-3">
-                                    <span className="font-medium whitespace-nowrap md:whitespace-normal">{ex.name}</span>
-                                    <span className="font-bold text-accent flex-shrink-0 text-left">{ex.sets}×{ex.reps}</span>
-                                  </div>
-                                </li>
-                              ))}
+                              {routine.TemplateRoutineExercises.map(ex => {
+                                const realExercise = findMatchingExercise(ex.name, exercises);
+                                const mediaUrl = getMediaUrl(realExercise);
+                                const dbName = realExercise ? realExercise.name : ex.name;
+                                const displayName = getDisplayName(dbName);
+
+                                return (
+                                  <li key={ex.id} className="bg-bg-secondary/50 p-3 rounded-lg text-sm min-w-max md:min-w-0">
+                                    <div className="flex items-center gap-3">
+                                      {mediaUrl ? (
+                                        <div className="w-10 h-10 rounded overflow-hidden bg-bg-primary shrink-0 border border-glass-border">
+                                          <img src={mediaUrl} alt={displayName} className="w-full h-full object-cover" loading="lazy" />
+                                        </div>
+                                      ) : (
+                                        <div className="w-10 h-10 rounded bg-bg-primary flex items-center justify-center text-text-muted shrink-0 border border-glass-border">
+                                          <Dumbbell size={16} />
+                                        </div>
+                                      )}
+                                      <div className="flex-grow flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-3">
+                                        <span className="font-medium whitespace-nowrap md:whitespace-normal">{displayName}</span>
+                                        <span className="font-bold text-accent flex-shrink-0 text-left">{ex.sets}×{ex.reps}</span>
+                                      </div>
+                                    </div>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Botones de acción centrados */}
                       <div className="flex items-center justify-center gap-3 mt-6 pt-4 border-t border-glass-border">
-                        <button 
-                          onClick={() => handleCopyToMyRoutines(routine)} 
-                          className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 text-accent font-semibold hover:bg-accent/20 transition text-sm"
-                        >
-                          <Copy size={16} />
-                          Copiar
-                        </button>
-                        <button 
-                          onClick={() => handleStartWorkout(routine)} 
-                          className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent text-bg-secondary font-semibold hover:scale-105 transition text-sm"
-                        >
-                          <Play size={16} />
-                          Empezar
-                        </button>
+                        <button onClick={() => handleCopyToMyRoutines(routine)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 text-accent font-semibold hover:bg-accent/20 transition text-sm"><Copy size={16} /> Copiar</button>
+                        <button onClick={() => handleStartWorkout(routine)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent text-bg-secondary font-semibold hover:scale-105 transition text-sm"><Play size={16} /> Empezar</button>
                       </div>
                     </GlassCard>
                   ))}
@@ -453,13 +395,8 @@ const TemplateRoutines = ({ setView }) => {
         </div>
       ) : (
         <GlassCard className="text-center p-8 md:p-10">
-          <p className="text-text-muted mb-2">No se encontraron rutinas que coincidan con los filtros.</p>
-          <button
-            onClick={clearFilters}
-            className="text-accent hover:underline text-sm font-medium"
-          >
-            Limpiar filtros
-          </button>
+          <p className="text-text-muted mb-2">No se encontraron rutinas.</p>
+          <button onClick={clearFilters} className="text-accent hover:underline text-sm font-medium">Limpiar filtros</button>
         </GlassCard>
       )}
     </div>
