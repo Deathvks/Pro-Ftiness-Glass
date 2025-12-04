@@ -204,8 +204,11 @@ const WelcomeModal = ({ onClose }) => {
               <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
 
-            <div className="text-center text-text-muted text-[10px] opacity-50 font-mono">
-              {appVersion}
+            {/* MODIFICACIÓN: Resaltado de la versión SIN BORDE */}
+            <div className="text-center mt-3">
+              <span className="inline-block px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-bold font-mono tracking-wider">
+                {appVersion}
+              </span>
             </div>
           </div>
         </div>
