@@ -121,19 +121,19 @@ const processAndSaveExercises = async (
             exerciseName = exerciseFromList.name; // Usar el nombre de la lista maestra
             muscleGroup = exerciseFromList.muscle_group; // Usar el grupo de la lista maestra
           } else {
-             console.warn(`Ejercicio con ID ${exerciseListId} no encontrado en ExerciseList. Usando nombre/grupo de la rutina.`);
-             // Mantener exerciseListId original por si acaso, aunque no exista
+            console.warn(`Ejercicio con ID ${exerciseListId} no encontrado en ExerciseList. Usando nombre/grupo de la rutina.`);
+            // Mantener exerciseListId original por si acaso, aunque no exista
           }
-        } catch(findError) {
+        } catch (findError) {
           console.error(`Error buscando ExerciseList ID ${exerciseListId}:`, findError);
           // Mantener nombre/grupo originales si falla la búsqueda
         }
       } else {
-         // Si no es manual y no tiene un ID válido, tratarlo como manual (sin ID)
-         console.warn(`Ejercicio "${exerciseName}" sin ID válido y no marcado como manual. Tratando como manual.`);
-         exerciseListId = null;
-         if (!muscleGroup) muscleGroup = "Varios";
-       }
+        // Si no es manual y no tiene un ID válido, tratarlo como manual (sin ID)
+        console.warn(`Ejercicio "${exerciseName}" sin ID válido y no marcado como manual. Tratando como manual.`);
+        exerciseListId = null;
+        if (!muscleGroup) muscleGroup = "Varios";
+      }
 
 
       // 5. Devolver el objeto para 'RoutineExercise'
@@ -266,7 +266,7 @@ export const updateRoutine = async (req, res, next) => {
     exercises.forEach((newEx) => {
       // Intentar encontrar el ejercicio antiguo por ID si existe, o por nombre/orden si es nuevo/manual
       const oldEx = oldExercises.find((old) => old.id && old.id === newEx.id) ||
-                    oldExercises.find((old) => old.exercise_order === newEx.exercise_order && old.name === newEx.name); // Fallback por si acaso
+        oldExercises.find((old) => old.exercise_order === newEx.exercise_order && old.name === newEx.name); // Fallback por si acaso
 
       if (oldEx && oldEx.name !== newEx.name && !newEx.exercise_list_id) { // Solo si es manual y se renombró
         renamedExercises.push({ oldName: oldEx.name, newName: newEx.name });
@@ -322,8 +322,8 @@ export const updateRoutine = async (req, res, next) => {
     const result = await sequelize.models.Routine.findByPk(id, { // <--- MODIFICADO
       include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }], // <--- MODIFICADO
       order: [
-          ['RoutineExercises', 'exercise_order', 'ASC'], // <-- Ordenar por exercise_order
-          ['RoutineExercises', 'id', 'ASC']
+        ['RoutineExercises', 'exercise_order', 'ASC'], // <-- Ordenar por exercise_order
+        ['RoutineExercises', 'id', 'ASC']
       ],
     });
     res.json(result);
