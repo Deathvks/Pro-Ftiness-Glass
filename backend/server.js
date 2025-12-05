@@ -25,8 +25,9 @@ import userRoutes from './routes/users.js';
 import workoutRoutes from './routes/workouts.js';
 import adminRoutes from './routes/admin.js';
 import notificationRoutes from './routes/notifications.js';
-// --- INICIO DE LA MODIFICACIÓN ---
 import twoFactorRoutes from './routes/twoFactor.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import templateDietRoutes from './routes/templateDiets.js';
 // --- FIN DE LA MODIFICACIÓN ---
 import { startCronJobs } from './services/cronService.js';
 
@@ -85,7 +86,7 @@ app.use(async (req, res, next) => {
   if (token) {
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET);
-      if (payload && payload.userId) { // Nota: Verifica si tu payload usa 'userId' o 'id'. En authController usas 'userId'.
+      if (payload && payload.userId) {
         await db.User.update(
           { lastSeen: new Date() },
           { where: { id: payload.userId } }
@@ -111,8 +112,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/2fa', twoFactorRoutes);
 // --- INICIO DE LA MODIFICACIÓN ---
-app.use('/api/2fa', twoFactorRoutes); // Nueva ruta para 2FA
+app.use('/api/template-diets', templateDietRoutes);
 // --- FIN DE LA MODIFICACIÓN ---
 
 app.use(errorHandler);
@@ -124,7 +126,7 @@ db.sequelize.sync()
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
-    
+
     // Iniciar las tareas programadas (Cron Jobs)
     startCronJobs();
   })

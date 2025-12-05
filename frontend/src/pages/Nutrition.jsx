@@ -1,7 +1,7 @@
 /* frontend/src/pages/Nutrition.jsx */
 import React, { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, BookOpen, X, Scale } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -55,7 +55,6 @@ const getImageUrl = (url, updatedAt) => {
     const fullUrl = `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 
     if (updatedAt) {
-        // Usamos el timestamp para cache busting si está disponible
         const separator = fullUrl.includes('?') ? '&' : '?';
         return `${fullUrl}${separator}v=${updatedAt}`;
     }
@@ -64,7 +63,7 @@ const getImageUrl = (url, updatedAt) => {
 };
 
 // Componente principal de la página de Nutrición
-const Nutrition = () => {
+const Nutrition = ({ setView }) => {
     const { addToast } = useToast();
     const {
         userProfile,
@@ -75,9 +74,7 @@ const Nutrition = () => {
         isLoading,
         bodyWeightLog,
         favoriteMeals,
-        // --- INICIO DE LA MODIFICACIÓN ---
-        recentMeals // Traemos también los recientes para usarlos en el mapa de imágenes
-        // --- FIN DE LA MODIFICACIÓN ---
+        recentMeals
     } = useAppStore(state => ({
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
@@ -87,59 +84,38 @@ const Nutrition = () => {
         isLoading: state.isLoading,
         bodyWeightLog: state.bodyWeightLog,
         favoriteMeals: state.favoriteMeals || [],
-        // --- INICIO DE LA MODIFICACIÓN ---
         recentMeals: state.recentMeals || []
-        // --- FIN DE LA MODIFICACIÓN ---
     }));
 
     const [modal, setModal] = useState({ type: null, data: null });
+    const [viewLog, setViewLog] = useState(null); // Estado para el modal de detalles
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Mapa inteligente de imágenes: Unifica imágenes por nombre.
-    // Estrategia: "La última actualización gana". 
-    // Comparamos los timestamps de Logs, Favoritos y Recientes.
+    // Mapa inteligente de imágenes
     const imageMap = useMemo(() => {
         const map = {};
-
-        // Función auxiliar para procesar cualquier lista (logs, favoritos, recientes)
         const mergeItems = (items) => {
             if (!items) return;
             items.forEach(item => {
-                // Algunos usan 'description', otros 'name'. Normalizamos.
                 const name = item.description || item.name;
                 if (!name) return;
-
                 const key = name.toLowerCase().trim();
                 const img = item.image_url || item.image || item.img;
-
                 if (img) {
-                    // Usamos la fecha real de actualización. Si no existe, 0.
                     const ts = item.updated_at ? new Date(item.updated_at).getTime() : 0;
-
-                    // Si ya tenemos una imagen para este nombre, solo la reemplazamos
-                    // si la nueva es MÁS RECIENTE (timestamp mayor).
                     if (!map[key] || ts >= map[key].timestamp) {
-                        map[key] = {
-                            url: img,
-                            timestamp: ts
-                        };
+                        map[key] = { url: img, timestamp: ts };
                     }
                 }
             });
         };
-
-        // Procesamos todas las listas. El orden no importa porque usamos timestamps,
-        // pero incluimos Recientes que antes faltaban.
         mergeItems(favoriteMeals);
         mergeItems(recentMeals);
         mergeItems(nutritionLog);
-
         return map;
     }, [nutritionLog, favoriteMeals, recentMeals]);
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const latestWeight = useMemo(() => {
         if (!bodyWeightLog || bodyWeightLog.length === 0) return userProfile?.weight || null;
@@ -262,6 +238,14 @@ const Nutrition = () => {
         return totals;
     }, [nutritionLog]);
 
+    // Función auxiliar para obtener la imagen de un log específico para el modal
+    const getLogImage = (log) => {
+        if (!log) return null;
+        const normalizedName = log.description?.toLowerCase().trim();
+        const bestImage = imageMap[normalizedName];
+        return getImageUrl(bestImage?.url, bestImage?.timestamp);
+    };
+
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
 
@@ -270,7 +254,17 @@ const Nutrition = () => {
                 <meta name="description" content="Registra tus comidas (desayuno, almuerzo, cena, snacks), agua y suplementos. Controla tus calorías y macronutrientes diarios." />
             </Helmet>
 
-            <h1 className="hidden md:block text-4xl font-extrabold mb-4 mt-10 md:mt-0">Nutrición</h1>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-4 mt-10 md:mt-0 gap-4">
+                <h1 className="hidden md:block text-4xl font-extrabold">Nutrición</h1>
+                <button
+                    onClick={() => setView('templateDiets')}
+                    // CAMBIO: Botón sólido con color de usuario (bg-accent)
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-white font-bold shadow-lg shadow-accent/20 hover:brightness-110 transition-all w-full md:w-auto justify-center"
+                >
+                    <BookOpen size={20} />
+                    <span>Dietas Recomendadas</span>
+                </button>
+            </div>
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
 
@@ -278,7 +272,7 @@ const Nutrition = () => {
                 <div className="flex justify-center items-center py-10"><Spinner size={40} /></div>
             ) : (
                 <>
-                    {/* Sección de Resumen y Suplementos */}
+                    {/* Resumen y Suplementos */}
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
                         <GlassCard className="lg:col-span-3 p-6">
                             <h2 className="text-xl font-bold mb-4">Resumen del Día</h2>
@@ -290,7 +284,6 @@ const Nutrition = () => {
                             </div>
                         </GlassCard>
 
-                        {/* Sección de Suplementos */}
                         <div className="lg:col-span-2 space-y-4">
                             {/* Agua */}
                             <GlassCard className="p-6 flex flex-col justify-between">
@@ -343,27 +336,22 @@ const Nutrition = () => {
                                 </div>
                                 <div className="flex flex-col gap-3">
                                     {logs.length > 0 ? logs.map(log => {
-                                        // --- INICIO DE LA MODIFICACIÓN ---
-                                        // Buscamos la imagen en el mapa unificado (ya sea de log, favorito o reciente)
-                                        const normalizedName = log.description?.toLowerCase().trim();
-                                        const bestImage = imageMap[normalizedName];
-
-                                        // Usamos el timestamp de la MEJOR imagen encontrada para cache busting
-                                        // Esto asegura que si una cambia (y es más nueva), todas cambian visualmente.
-                                        const displayImage = getImageUrl(bestImage?.url, bestImage?.timestamp);
-                                        // --- FIN DE LA MODIFICACIÓN ---
+                                        const displayImage = getLogImage(log);
 
                                         return (
-                                            <div key={log.id} className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative flex items-center gap-3">
-
-                                                {/* Imagen del alimento */}
+                                            <div
+                                                key={log.id}
+                                                onClick={() => setViewLog(log)} // CLIC PARA VER DETALLES
+                                                className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-all active:scale-[0.99]"
+                                            >
+                                                {/* Imagen miniatura */}
                                                 {displayImage && (
                                                     <div className="w-12 h-12 flex-shrink-0 rounded-md bg-bg-primary overflow-hidden border border-glass-border">
                                                         <img
                                                             src={displayImage}
                                                             alt={log.description}
                                                             className="w-full h-full object-cover"
-                                                            onError={(e) => e.target.style.display = 'none'} // Ocultar si falla
+                                                            onError={(e) => e.target.style.display = 'none'}
                                                         />
                                                     </div>
                                                 )}
@@ -374,20 +362,20 @@ const Nutrition = () => {
                                                         {log.weight_g && ` (${log.weight_g}g)`}
                                                     </p>
                                                     <p className="text-sm text-text-secondary truncate">
-                                                        {log.calories} kcal • {log.protein_g || 0}g Prot • {log.carbs_g || 0}g Carbs • {log.fats_g || 0}g Grasas
+                                                        {log.calories} kcal • {log.protein_g || 0}g P • {log.carbs_g || 0}g C • {log.fats_g || 0}g G
                                                     </p>
                                                 </div>
 
                                                 <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col sm:flex-row gap-1 sm:gap-1">
                                                     <button
-                                                        onClick={() => setModal({ type: 'food', data: { ...log, mealType } })}
+                                                        onClick={(e) => { e.stopPropagation(); setModal({ type: 'food', data: { ...log, mealType } }); }}
                                                         className="p-2 rounded-full bg-bg-primary hover:bg-accent/20 hover:text-accent transition-all duration-200 shadow-sm border border-glass-border"
                                                         title="Editar comida"
                                                     >
                                                         <Edit size={14} className="sm:w-4 sm:h-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => setLogToDelete(log)}
+                                                        onClick={(e) => { e.stopPropagation(); setLogToDelete(log); }}
                                                         className="p-2 rounded-full bg-bg-primary hover:bg-red-500/20 hover:text-red-500 transition-all duration-200 shadow-sm border border-glass-border"
                                                         title="Eliminar comida"
                                                     >
@@ -397,7 +385,7 @@ const Nutrition = () => {
                                             </div>
                                         );
                                     }) : (
-                                        <p className="text-sm text-text-muted text-center py-4">No hay registros para esta comida.</p>
+                                        <p className="text-sm text-text-muted text-center py-4">No hay registros.</p>
                                     )}
                                 </div>
                             </GlassCard>
@@ -406,8 +394,92 @@ const Nutrition = () => {
                 </>
             )}
 
-            {/* Modales */}
+            {/* Modal de Detalle de Comida (Solo Lectura) */}
+            {viewLog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                    <div className="absolute inset-0" onClick={() => setViewLog(null)} />
+                    <GlassCard className="w-full max-w-md p-0 overflow-hidden relative z-10 animate-scale-in flex flex-col max-h-[90vh]">
 
+                        {/* Cabecera con Imagen (si existe) o Color sólido */}
+                        {/* CAMBIO: Altura h-64 y object-contain para ver la imagen completa */}
+                        <div className="relative h-64 bg-black/50 flex items-center justify-center">
+                            {getLogImage(viewLog) ? (
+                                <img
+                                    src={getLogImage(viewLog)}
+                                    alt={viewLog.description}
+                                    className="w-full h-full object-contain"
+                                />
+                            ) : (
+                                <Salad size={64} className="text-text-muted opacity-20" />
+                            )}
+                            <button
+                                onClick={() => setViewLog(null)}
+                                className="absolute top-4 right-4 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors backdrop-blur-md"
+                            >
+                                <X size={20} />
+                            </button>
+                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                                <h3 className="text-2xl font-bold text-white leading-tight break-words shadow-sm">
+                                    {viewLog.description}
+                                </h3>
+                            </div>
+                        </div>
+
+                        {/* Contenido */}
+                        <div className="p-6 overflow-y-auto">
+                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-glass-border">
+                                <div className="flex flex-col">
+                                    <span className="text-sm text-text-secondary">Calorías Totales</span>
+                                    <span className="text-4xl font-black text-accent">{viewLog.calories} <span className="text-lg font-medium text-text-muted">kcal</span></span>
+                                </div>
+                                {viewLog.weight_g && (
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-sm text-text-secondary flex items-center gap-1"><Scale size={14} /> Peso</span>
+                                        <span className="text-xl font-bold">{viewLog.weight_g} g</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <h4 className="font-semibold text-text-primary mb-4">Macronutrientes</h4>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
+                                    <div className="p-2 rounded-full bg-blue-500/10 mb-2">
+                                        <Beef size={20} className="text-blue-400" />
+                                    </div>
+                                    <span className="text-2xl font-bold">{viewLog.protein_g || 0}g</span>
+                                    <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Proteína</span>
+                                </div>
+                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
+                                    <div className="p-2 rounded-full bg-yellow-500/10 mb-2">
+                                        <Wheat size={20} className="text-yellow-400" />
+                                    </div>
+                                    <span className="text-2xl font-bold">{viewLog.carbs_g || 0}g</span>
+                                    <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Carbos</span>
+                                </div>
+                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
+                                    <div className="p-2 rounded-full bg-green-500/10 mb-2">
+                                        <Salad size={20} className="text-green-400" />
+                                    </div>
+                                    <span className="text-2xl font-bold">{viewLog.fats_g || 0}g</span>
+                                    <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Grasas</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Botón Cerrar inferior en móvil */}
+                        <div className="p-4 border-t border-glass-border bg-bg-secondary/30">
+                            <button
+                                onClick={() => setViewLog(null)}
+                                className="w-full py-3 rounded-xl bg-bg-secondary hover:bg-white/5 border border-glass-border font-semibold transition-colors"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </GlassCard>
+                </div>
+            )}
+
+            {/* Otros Modales */}
             {modal.type === 'water' && (
                 <WaterLogModal
                     initialQuantity={waterLog?.quantity_ml || 0}

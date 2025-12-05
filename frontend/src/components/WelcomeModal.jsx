@@ -1,26 +1,36 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React, { useState, useEffect } from 'react';
-import { Timer, Play, Pause, Plus, ChevronRight, X, Sparkles, Zap, Dumbbell, Smartphone } from 'lucide-react';
+import { Timer, Pause, Plus, ChevronRight, X, Sparkles, Zap, Smartphone, Play, Utensils } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const appVersion = `v${APP_VERSION}`;
 
-  // Corregido: Usamos onClose directamente para cerrar el modal
   const handleGetStarted = () => {
     if (onClose) {
       onClose();
     }
   };
 
-  // --- Estado para la animación de demostración de Isla Dinámica ---
+  // --- Estados para animaciones ---
   const [isDemoExpanded, setIsDemoExpanded] = useState(false);
+  const [nutriStep, setNutriStep] = useState(0); // 0: Vacío, 1: Llenando, 2: Completo
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    // Ciclo Isla
+    const intervalIsland = setInterval(() => {
       setIsDemoExpanded((prev) => !prev);
     }, 3500);
-    return () => clearInterval(interval);
+
+    // Ciclo Nutrición
+    const intervalNutri = setInterval(() => {
+      setNutriStep((prev) => (prev + 1) % 3);
+    }, 2500);
+
+    return () => {
+      clearInterval(intervalIsland);
+      clearInterval(intervalNutri);
+    };
   }, []);
 
   return (
@@ -33,11 +43,11 @@ const WelcomeModal = ({ onClose }) => {
         <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-accent/10 rounded-full blur-[80px] pointer-events-none"></div>
         <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[80px] pointer-events-none"></div>
 
-        {/* Scroll interno por si la pantalla es muy pequeña */}
+        {/* Scroll interno */}
         <div className="overflow-y-auto custom-scrollbar p-6 flex flex-col h-full">
 
           {/* --- Cabecera --- */}
-          <div className="text-center mb-8 flex flex-col items-center">
+          <div className="text-center mb-6 flex flex-col items-center">
             <h1 className="text-3xl font-bold mb-3 bg-gradient-to-r from-text-primary to-accent bg-clip-text text-transparent">
               Bienvenido
             </h1>
@@ -45,33 +55,27 @@ const WelcomeModal = ({ onClose }) => {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-accent/20 to-blue-500/20 border border-accent/30 shadow-lg shadow-accent/10 backdrop-blur-md animate-[bounce-in_0.6s_ease-out]">
               <Sparkles size={14} className="text-accent animate-pulse" />
               <span className="text-xs font-bold text-text-primary tracking-wide">
-                ¡Pro Fitness Glass se ha actualizado!
+                ¡Nueva Actualización!
               </span>
             </div>
           </div>
 
-          <div className="space-y-10 mb-8">
+          <div className="space-y-8 mb-8">
 
             {/* --- DEMO 1: ISLA DINÁMICA --- */}
             <div className="flex flex-col items-center justify-center">
-              <h2 className="text-sm font-semibold mb-4 text-center text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                <Timer size={14} /> Nueva Isla Dinámica
+              <h2 className="text-sm font-semibold mb-3 text-center text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                <Timer size={14} /> Control de Descanso
               </h2>
 
-              {/* Contenedor simulador de pantalla */}
               <div className="relative w-full max-w-[280px] h-[180px] bg-bg-secondary/50 border border-glass-border rounded-[2.5rem] p-4 overflow-hidden flex flex-col items-center shadow-inner ring-1 ring-white/5">
-
-                {/* Texto de ayuda animado */}
-                <p className="absolute bottom-4 text-xs text-accent/80 font-medium animate-pulse tracking-wider text-center w-full">
-                  {isDemoExpanded ? "Suelta para interactuar" : "Mantén pulsado para expandir"}
-                </p>
 
                 {/* LA ISLA ANIMADA */}
                 <div className={`
                         relative bg-black text-white shadow-2xl transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden select-none mt-2 border border-gray-800 z-20
                         ${isDemoExpanded
-                    ? 'w-[220px] h-[120px] rounded-[2rem]' // Estado Expandido
-                    : 'w-[180px] h-[36px] rounded-[2rem]' // Estado Píldora
+                    ? 'w-[200px] h-[100px] rounded-[2rem]'
+                    : 'w-[180px] h-[36px] rounded-[2rem]'
                   }
                       `}>
 
@@ -108,74 +112,104 @@ const WelcomeModal = ({ onClose }) => {
                       <span className="text-gray-400 text-[10px]">En descanso</span>
                       <span className="font-mono text-xl font-bold">01:30</span>
                     </div>
-                    <div className="flex gap-1 justify-between mb-2 opacity-60">
-                      <div className="bg-gray-800/50 rounded py-1 px-1.5 text-[8px] font-bold flex gap-0.5 items-center whitespace-nowrap"><Plus size={6} /> 15s</div>
-                      <div className="bg-gray-800/50 rounded py-1 px-1.5 text-[8px] font-bold flex gap-0.5 items-center whitespace-nowrap"><Plus size={6} /> 30s</div>
-                      <div className="bg-gray-800/50 rounded py-1 px-1.5 text-[8px] font-bold flex gap-0.5 items-center whitespace-nowrap"><Plus size={6} /> 1m</div>
-                    </div>
                     <div className="flex items-center justify-between mt-auto scale-90 origin-bottom">
                       <div className="p-1.5 rounded-full bg-red-500/20 text-red-400"><X size={14} /></div>
                       <div className="p-2 rounded-full bg-accent text-bg-secondary"><Pause size={16} fill="currentColor" /></div>
-                      <div className="p-1.5 rounded-full bg-gray-800 text-gray-300"><Timer size={14} /></div>
+                      <div className="p-1.5 rounded-full bg-gray-800 text-gray-300"><Plus size={14} /></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Efecto de "dedo" pulsando */}
+                {/* Texto de ayuda */}
+                <p className="absolute bottom-4 text-[10px] text-accent/80 font-medium animate-pulse tracking-wider text-center w-full">
+                  {isDemoExpanded ? "Suelta para interactuar" : "Mantén pulsado para expandir"}
+                </p>
+
+                {/* Efecto de "dedo" */}
                 {!isDemoExpanded && (
-                  <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-8 h-8 bg-accent/30 rounded-full animate-ping opacity-70 z-10"></div>
+                  <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-8 h-8 bg-accent/30 rounded-full animate-ping opacity-70 z-10"></div>
                 )}
               </div>
             </div>
 
-            {/* --- DEMO 2: RUTINAS VISUALES (NUEVA) --- */}
+            {/* --- DEMO 2: RUTINAS VISUALES --- */}
             <div className="flex flex-col items-center justify-center">
-              <h2 className="text-sm font-semibold mb-4 text-center text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                <Smartphone size={14} /> Nuevas Rutinas Visuales
+              <h2 className="text-sm font-semibold mb-3 text-center text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                <Smartphone size={14} /> Rutinas Visuales
               </h2>
 
-              {/* Contenedor simulador de lista */}
-              <div className="relative w-full max-w-[280px] h-[220px] bg-bg-primary border border-glass-border rounded-3xl overflow-hidden shadow-inner flex flex-col">
-
-                {/* Header falso */}
-                <div className="h-10 border-b border-white/5 flex items-center px-4 bg-bg-secondary/30 backdrop-blur-sm z-10">
-                  <div className="w-20 h-2 bg-white/20 rounded-full"></div>
+              <div className="relative w-full max-w-[280px] h-[160px] bg-bg-primary border border-glass-border rounded-3xl overflow-hidden shadow-inner flex flex-col">
+                <div className="h-8 border-b border-white/5 flex items-center px-4 bg-bg-secondary/30 backdrop-blur-sm z-10">
+                  <div className="w-16 h-1.5 bg-white/20 rounded-full"></div>
                 </div>
-
-                {/* Lista con Scroll Automático Infinito */}
                 <div className="flex-1 relative overflow-hidden bg-bg-secondary/20">
-                  {/* Gradientes para suavizar el scroll */}
                   <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-bg-primary to-transparent z-10"></div>
-                  <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent z-10"></div>
-
-                  <div className="animate-marquee-vertical flex flex-col gap-3 p-3">
-                    {/* Tarjetas simuladas (Duplicadas para efecto infinito) */}
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent z-10"></div>
+                  <div className="animate-marquee-vertical flex flex-col gap-2 p-3">
                     {[1, 2, 3, 4, 1, 2, 3, 4].map((i, idx) => (
-                      <div key={idx} className="bg-glass border border-glass-border p-2.5 rounded-xl flex gap-3 items-center transform scale-95 opacity-80">
-                        {/* Miniatura de Vídeo/Foto */}
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 relative overflow-hidden
-                          ${i === 1 ? 'bg-amber-500/20' : i === 2 ? 'bg-blue-500/20' : i === 3 ? 'bg-emerald-500/20' : 'bg-purple-500/20'}
-                        `}>
-                          <div className="absolute inset-0 bg-black/20"></div>
-                          <Play size={16} fill="currentColor" className="text-white relative z-10 opacity-90" />
+                      <div key={idx} className="bg-glass border border-glass-border p-2 rounded-xl flex gap-2 items-center transform scale-95 opacity-80">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 relative overflow-hidden ${i % 2 === 0 ? 'bg-blue-500/20' : 'bg-purple-500/20'}`}>
+                          <Play size={12} fill="currentColor" className="text-white opacity-90" />
                         </div>
-
-                        {/* Info de texto */}
-                        <div className="flex-1 space-y-1.5">
-                          <div className="h-2 w-24 bg-white/20 rounded-full"></div>
-                          <div className="flex gap-2">
-                            <div className="h-1.5 w-8 bg-white/10 rounded-full"></div>
-                            <div className="h-1.5 w-12 bg-accent/20 rounded-full"></div>
-                          </div>
+                        <div className="flex-1 space-y-1">
+                          <div className="h-1.5 w-20 bg-white/20 rounded-full"></div>
+                          <div className="h-1 w-8 bg-accent/20 rounded-full"></div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Indicador de "Novedad" flotante */}
-                <div className="absolute bottom-3 right-3 bg-accent text-bg-secondary text-[10px] font-bold px-2 py-1 rounded-md shadow-lg z-20 animate-bounce">
-                  ¡Fotos y Vídeos!
+            {/* --- DEMO 3: NUTRICIÓN --- */}
+            <div className="flex flex-col items-center justify-center">
+              <h2 className="text-sm font-semibold mb-3 text-center text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                <Utensils size={14} /> Dietas Inteligentes
+              </h2>
+
+              <div className="relative w-full max-w-[280px] h-[140px] bg-bg-primary border border-glass-border rounded-3xl overflow-hidden shadow-inner flex flex-col p-4 justify-center">
+                <div className={`
+                    bg-bg-secondary/50 border border-glass-border rounded-xl p-3 flex gap-3 transition-all duration-700 ease-out transform
+                    ${nutriStep === 0 ? 'translate-y-10 opacity-0' : 'translate-y-0 opacity-100'}
+                `}>
+                  <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center shrink-0">
+                    <Utensils size={16} className="text-orange-400" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="w-20 h-2 bg-white/20 rounded-full"></div>
+                      <span className="text-[10px] text-accent font-bold">500 kcal</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {/* PROTEÍNAS - Decorado */}
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-1 rounded-full bg-blue-400/20"></div>
+                        <div className="flex-1 h-1 bg-glass-border rounded-full overflow-hidden">
+                          <div className={`h-full bg-blue-400 transition-all duration-1000 ease-out ${nutriStep === 2 ? 'w-[70%]' : 'w-0'}`}></div>
+                        </div>
+                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-400/20 text-blue-400 w-8 text-center transition-opacity duration-500 ${nutriStep === 2 ? 'opacity-100' : 'opacity-0'}`}>32g</span>
+                      </div>
+
+                      {/* CARBOS - Decorado */}
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-1 rounded-full bg-yellow-400/20"></div>
+                        <div className="flex-1 h-1 bg-glass-border rounded-full overflow-hidden">
+                          <div className={`h-full bg-yellow-400 transition-all duration-1000 delay-100 ease-out ${nutriStep === 2 ? 'w-[50%]' : 'w-0'}`}></div>
+                        </div>
+                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded bg-yellow-400/20 text-yellow-400 w-8 text-center transition-opacity duration-500 ${nutriStep === 2 ? 'opacity-100' : 'opacity-0'}`}>45g</span>
+                      </div>
+
+                      {/* GRASAS - Decorado */}
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-1 rounded-full bg-green-400/20"></div>
+                        <div className="flex-1 h-1 bg-glass-border rounded-full overflow-hidden">
+                          <div className={`h-full bg-green-400 transition-all duration-1000 delay-200 ease-out ${nutriStep === 2 ? 'w-[30%]' : 'w-0'}`}></div>
+                        </div>
+                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded bg-green-400/20 text-green-400 w-8 text-center transition-opacity duration-500 ${nutriStep === 2 ? 'opacity-100' : 'opacity-0'}`}>15g</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -183,29 +217,16 @@ const WelcomeModal = ({ onClose }) => {
           </div>
 
           {/* --- Footer --- */}
-          <div className="mt-auto">
-            <div className="flex items-start gap-3 bg-bg-secondary/40 border border-glass-border p-3 rounded-xl mb-6 backdrop-blur-md">
-              <div className="p-1.5 bg-accent/10 rounded-full shrink-0 mt-0.5">
-                <Zap size={16} className="text-accent" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-text-primary text-sm mb-0.5">Más visual e intuitivo</h3>
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  Ahora tus rutinas incluyen previsualizaciones de ejercicios y una experiencia de usuario totalmente renovada.
-                </p>
-              </div>
-            </div>
-
+          <div className="mt-auto pt-2">
             <button
               onClick={handleGetStarted}
-              className="group w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-bg-primary font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent/20 flex items-center justify-center gap-2 mb-2"
+              className="group w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-bg-primary font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent/20 flex items-center justify-center gap-2 mb-4"
             >
               <span>Empezar a entrenar</span>
               <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
 
-            {/* MODIFICACIÓN: Resaltado de la versión SIN BORDE */}
-            <div className="text-center mt-3">
+            <div className="text-center">
               <span className="inline-block px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-bold font-mono tracking-wider">
                 {appVersion}
               </span>
@@ -214,7 +235,7 @@ const WelcomeModal = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Estilos inline para la animación de marquee vertical si no está en tailwind.config */}
+      {/* Estilos inline para la animación de marquee */}
       <style jsx>{`
         @keyframes marquee-vertical {
           0% { transform: translateY(0); }

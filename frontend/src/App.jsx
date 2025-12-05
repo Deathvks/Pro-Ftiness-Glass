@@ -33,6 +33,9 @@ const Progress = lazy(() => import('./pages/Progress'));
 const Routines = lazy(() => import('./pages/Routines'));
 const Workout = lazy(() => import('./pages/Workout'));
 const Nutrition = lazy(() => import('./pages/Nutrition'));
+// --- INICIO DE LA MODIFICACIÓN ---
+const TemplateDiets = lazy(() => import('./pages/TemplateDiets'));
+// --- FIN DE LA MODIFICACIÓN ---
 const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
 const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
@@ -147,6 +150,9 @@ export default function App() {
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
+      // --- INICIO DE LA MODIFICACIÓN ---
+      templateDiets: { key: 'Dietas Plantilla', default: 'Dietas Plantilla' },
+      // --- FIN DE LA MODIFICACIÓN ---
     };
     const titleInfo = titleMap[view];
     if (titleInfo) {
@@ -170,6 +176,9 @@ export default function App() {
       privacyPolicy: t('privacyPolicy_desc', { defaultValue: 'Información sobre cómo tratamos tus datos y el uso de cookies.' }),
       twoFactorSetup: t('twoFactorSetup_desc', { defaultValue: 'Configura la seguridad adicional de tu cuenta.' }),
       notifications: t('notifications_desc', { defaultValue: 'Consulta tus alertas y recordatorios.' }),
+      // --- INICIO DE LA MODIFICACIÓN ---
+      templateDiets: t('templateDiets_desc', { defaultValue: 'Explora dietas predefinidas adaptadas a tus objetivos.' }),
+      // --- FIN DE LA MODIFICACIÓN ---
       default: t('default_desc', { defaultValue: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.' }),
     };
     return descKeys[view] || descKeys.default;
@@ -190,7 +199,11 @@ export default function App() {
       case 'progress': return <Progress darkMode={theme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout timer={timer} setView={navigate} />;
-      case 'nutrition': return <Nutrition />;
+      // --- INICIO DE LA MODIFICACIÓN ---
+      case 'nutrition': return <Nutrition setView={navigate} />;
+      // AÑADIDO: Pasamos setView para poder volver atrás
+      case 'templateDiets': return <TemplateDiets setView={navigate} />;
+      // --- FIN DE LA MODIFICACIÓN ---
       case 'settings':
         return (
           <SettingsScreen
