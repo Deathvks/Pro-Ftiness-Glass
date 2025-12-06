@@ -1,22 +1,21 @@
 /* frontend/src/components/Workout/WorkoutExerciseCard.jsx */
-import React from 'react';
-import { Repeat } from 'lucide-react';
+import React, { useState } from 'react';
+import { Repeat, Flame, History } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
+import useAppStore from '../../store/useAppStore';
 
 /**
  * Muestra la tarjeta para un único ejercicio dentro del entrenamiento.
- * Incluye la cabecera (media, título) y la cuadrícula de series (WorkoutSetGrid).
+ * Incluye la cabecera (media, título, historial) y la cuadrícula de series.
  */
 const WorkoutExerciseCard = ({
-  t, // i18n function 't'
+  t,
   exercise,
   actualExIndex,
   hasWorkoutStarted,
   onSetSelectedExercise,
   onSetExerciseToReplace,
-
-  // Props para pasar a WorkoutSetGrid
   baseInputClasses,
   onUpdateSet,
   onAddDropset,
@@ -26,59 +25,161 @@ const WorkoutExerciseCard = ({
   onDisabledButtonClick,
   normalizeDecimalInput,
 }) => {
+  const { addWarmupSets } = useAppStore(state => ({ addWarmupSets: state.addWarmupSets }));
+
+  const [showWarmupInput, setShowWarmupInput] = useState(false);
+  const [workingWeight, setWorkingWeight] = useState('');
+
+  const handleWarmupSubmit = (e) => {
+    e.preventDefault();
+    if (!workingWeight) return;
+    addWarmupSets(actualExIndex, workingWeight);
+    setShowWarmupInput(false);
+    setWorkingWeight('');
+  };
+
+  // Helper para formatear el historial
+  const formatLastPerformance = (perf) => {
+    if (!perf || !perf.sets || perf.sets.length === 0) return 'Sin datos';
+    // Filtramos series vacías o de calentamiento si quisieras
+    const validSets = perf.sets.filter(s => s.weight_kg > 0 && s.reps > 0);
+    if (validSets.length === 0) return 'Sin series efectivas';
+
+    // Mostramos formato "100x8, 100x8..."
+    return validSets.map(s => `${s.weight_kg}x${s.reps}`).join(', ');
+  };
+
   return (
-    <div className="p-4">
-      {/* Botón que envuelve la media para abrir el modal */}
+    <div className="p-4 relative">
+      {/* Media del Ejercicio */}
       <button
         onClick={() => onSetSelectedExercise(exercise)}
         className="w-full text-left transition-transform active:scale-[0.99] group"
         title="Ver detalles del ejercicio"
       >
-        {/* MODIFICACIÓN: Eliminada la clase 'group-hover:brightness-110' */}
         <ExerciseMedia
           details={exercise.exercise_details}
           className="w-full lg:max-w-lg mx-auto mb-4 transition rounded-xl overflow-hidden relative shadow-sm"
         />
       </button>
 
-      {/* Contenedor flex para el título y el botón de reemplazar */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        {/* Botón que envuelve el título/texto para abrir el modal */}
+      {/* Cabecera: Título, Info y Acciones */}
+      <div className="flex items-start justify-between gap-3 mb-4">
+
+        {/* Info del Ejercicio + Historial */}
         <button
           onClick={() => onSetSelectedExercise(exercise)}
-          className="flex-1 min-w-0 text-left group"
+          className="flex-1 min-w-0 text-left group flex flex-col"
           title="Ver detalles del ejercicio"
         >
           <h3 className="text-lg font-semibold truncate group-hover:text-accent">
             {t(exercise.name, { ns: 'exercise_names' })}
           </h3>
-          <span className="text-sm font-semibold text-accent">
-            {exercise.sets} series × {exercise.reps} reps
-          </span>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-accent">
+              {exercise.sets} series × {exercise.reps} reps
+            </span>
+
+            {/* Visualización del Historial "En Vivo" */}
+            {exercise.last_performance && (
+              <div className="flex items-center gap-1.5 text-xs text-text-muted/80 animate-fade-in">
+                <History size={12} className="text-accent/70 shrink-0" />
+                <span className="truncate">
+                  <span className="font-medium text-text-secondary">
+                    {new Date(exercise.last_performance.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}:
+                  </span>{' '}
+                  {formatLastPerformance(exercise.last_performance)}
+                </span>
+              </div>
+            )}
+          </div>
         </button>
 
-        {/* Botón de Reemplazar */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation(); // Evita que el click se propague
-            onSetExerciseToReplace(actualExIndex);
-          }}
-          className={`p-2 rounded-md transition shrink-0 ${hasWorkoutStarted
-            ? 'bg-bg-primary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
-            : 'bg-bg-primary border border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-            }`}
-          title={
-            hasWorkoutStarted
-              ? 'Reemplazar ejercicio'
-              : 'Inicia el cronómetro para reemplazar ejercicios'
-          }
-          disabled={!hasWorkoutStarted}
-        >
-          <Repeat size={16} />
-        </button>
+        {/* Botones de Acción */}
+        <div className="flex gap-2 items-start">
+          {/* Generador de Calentamiento */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (hasWorkoutStarted) setShowWarmupInput(true);
+            }}
+            className={`p-2 rounded-xl transition-all shrink-0 ${hasWorkoutStarted
+              ? 'bg-accent/10 text-accent hover:bg-accent/20 shadow-lg shadow-accent/10 hover:shadow-accent/20'
+              : 'bg-bg-primary text-text-muted opacity-50 cursor-not-allowed'
+              }`}
+            title={hasWorkoutStarted ? "Generar series de calentamiento" : "Inicia el entrenamiento primero"}
+            disabled={!hasWorkoutStarted}
+          >
+            <Flame size={18} />
+          </button>
+
+          {/* Reemplazar Ejercicio */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSetExerciseToReplace(actualExIndex);
+            }}
+            className={`p-2 rounded-xl transition shrink-0 ${hasWorkoutStarted
+              ? 'bg-bg-primary text-text-secondary hover:text-accent hover:shadow-md hover:shadow-accent/10'
+              : 'bg-bg-primary text-text-muted opacity-50 cursor-not-allowed'
+              }`}
+            title={hasWorkoutStarted ? 'Reemplazar ejercicio' : 'Inicia el cronómetro para reemplazar ejercicios'}
+            disabled={!hasWorkoutStarted}
+          >
+            <Repeat size={18} />
+          </button>
+        </div>
       </div>
 
-      {/* Delegamos la cuadrícula de series a su propio componente */}
+      {/* Modal Inline: Input de Calentamiento */}
+      {showWarmupInput && (
+        <div
+          className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm rounded-xl animate-fade-in"
+          onClick={() => setShowWarmupInput(false)}
+        >
+          <div className="bg-bg-secondary border border-glass-border rounded-xl p-5 w-full max-w-xs shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
+            <h4 className="text-lg font-bold mb-1 flex items-center gap-2 text-text-primary">
+              <Flame size={20} className="text-accent" />
+              Calentamiento
+            </h4>
+            <p className="text-sm text-text-muted mb-4">
+              Genera series (50%, 70%, 90%) según peso objetivo.
+            </p>
+
+            <form onSubmit={handleWarmupSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-text-secondary uppercase">Peso de Trabajo (kg)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  autoFocus
+                  value={workingWeight}
+                  onChange={(e) => setWorkingWeight(e.target.value)}
+                  className="w-full bg-bg-primary border border-glass-border rounded-lg px-4 py-3 text-xl font-bold text-center text-text-primary focus:ring-2 focus:ring-accent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+                  placeholder="0"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowWarmupInput(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-glass-border text-text-secondary font-medium hover:bg-white/5 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-lg bg-accent text-bg-secondary font-bold hover:bg-accent/80 transition-colors shadow-lg shadow-accent/20"
+                >
+                  Generar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <WorkoutSetGrid
         setsDone={exercise.setsDone}
         restSeconds={exercise.rest_seconds}

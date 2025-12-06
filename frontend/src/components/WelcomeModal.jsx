@@ -1,6 +1,9 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React, { useState, useEffect } from 'react';
-import { Timer, Pause, Plus, ChevronRight, X, Sparkles, Zap, Smartphone, Play, Utensils } from 'lucide-react';
+import {
+  Timer, Pause, Plus, ChevronRight, X, Sparkles, Zap, Smartphone, Play, Utensils,
+  Calculator, Flame, History, Lock, CheckCircle
+} from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
@@ -15,6 +18,7 @@ const WelcomeModal = ({ onClose }) => {
   // --- Estados para animaciones ---
   const [isDemoExpanded, setIsDemoExpanded] = useState(false);
   const [nutriStep, setNutriStep] = useState(0); // 0: Vacío, 1: Llenando, 2: Completo
+  const [featureStep, setFeatureStep] = useState(false); // Alternar estados para las nuevas demos
 
   useEffect(() => {
     // Ciclo Isla
@@ -27,9 +31,15 @@ const WelcomeModal = ({ onClose }) => {
       setNutriStep((prev) => (prev + 1) % 3);
     }, 2500);
 
+    // Ciclo Nuevas Features (Sincronizado)
+    const intervalFeatures = setInterval(() => {
+      setFeatureStep((prev) => !prev);
+    }, 3000);
+
     return () => {
       clearInterval(intervalIsland);
       clearInterval(intervalNutri);
+      clearInterval(intervalFeatures);
     };
   }, []);
 
@@ -69,7 +79,6 @@ const WelcomeModal = ({ onClose }) => {
               </h2>
 
               <div className="relative w-full max-w-[280px] h-[180px] bg-bg-secondary/50 border border-glass-border rounded-[2.5rem] p-4 overflow-hidden flex flex-col items-center shadow-inner ring-1 ring-white/5">
-
                 {/* LA ISLA ANIMADA */}
                 <div className={`
                         relative bg-black text-white shadow-2xl transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] overflow-hidden select-none mt-2 border border-gray-800 z-20
@@ -78,8 +87,7 @@ const WelcomeModal = ({ onClose }) => {
                     : 'w-[180px] h-[36px] rounded-[2rem]'
                   }
                       `}>
-
-                  {/* CONTENIDO: MODO PÍLDORA */}
+                  {/* MODO PÍLDORA */}
                   <div className={`
                     absolute inset-0 flex items-center justify-between px-3 transition-opacity
                     ${!isDemoExpanded
@@ -100,7 +108,7 @@ const WelcomeModal = ({ onClose }) => {
                     </div>
                   </div>
 
-                  {/* CONTENIDO: MODO EXPANDIDO */}
+                  {/* MODO EXPANDIDO */}
                   <div className={`
                     absolute inset-0 p-4 flex flex-col h-full justify-between transition-opacity
                     ${isDemoExpanded
@@ -120,12 +128,10 @@ const WelcomeModal = ({ onClose }) => {
                   </div>
                 </div>
 
-                {/* Texto de ayuda */}
                 <p className="absolute bottom-4 text-[10px] text-accent/80 font-medium animate-pulse tracking-wider text-center w-full">
                   {isDemoExpanded ? "Suelta para interactuar" : "Mantén pulsado para expandir"}
                 </p>
 
-                {/* Efecto de "dedo" */}
                 {!isDemoExpanded && (
                   <div className="absolute top-[18%] left-1/2 -translate-x-1/2 w-8 h-8 bg-accent/30 rounded-full animate-ping opacity-70 z-10"></div>
                 )}
@@ -137,7 +143,6 @@ const WelcomeModal = ({ onClose }) => {
               <h2 className="text-sm font-semibold mb-3 text-center text-text-secondary uppercase tracking-widest flex items-center gap-2">
                 <Smartphone size={14} /> Rutinas Visuales
               </h2>
-
               <div className="relative w-full max-w-[280px] h-[160px] bg-bg-primary border border-glass-border rounded-3xl overflow-hidden shadow-inner flex flex-col">
                 <div className="h-8 border-b border-white/5 flex items-center px-4 bg-bg-secondary/30 backdrop-blur-sm z-10">
                   <div className="w-16 h-1.5 bg-white/20 rounded-full"></div>
@@ -167,7 +172,6 @@ const WelcomeModal = ({ onClose }) => {
               <h2 className="text-sm font-semibold mb-3 text-center text-text-secondary uppercase tracking-widest flex items-center gap-2">
                 <Utensils size={14} /> Dietas Inteligentes
               </h2>
-
               <div className="relative w-full max-w-[280px] h-[140px] bg-bg-primary border border-glass-border rounded-3xl overflow-hidden shadow-inner flex flex-col p-4 justify-center">
                 <div className={`
                     bg-bg-secondary/50 border border-glass-border rounded-xl p-3 flex gap-3 transition-all duration-700 ease-out transform
@@ -182,34 +186,102 @@ const WelcomeModal = ({ onClose }) => {
                       <span className="text-[10px] text-accent font-bold">500 kcal</span>
                     </div>
                     <div className="space-y-1.5">
-                      {/* PROTEÍNAS - Decorado */}
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-1 rounded-full bg-blue-400/20"></div>
                         <div className="flex-1 h-1 bg-glass-border rounded-full overflow-hidden">
                           <div className={`h-full bg-blue-400 transition-all duration-1000 ease-out ${nutriStep === 2 ? 'w-[70%]' : 'w-0'}`}></div>
                         </div>
-                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-400/20 text-blue-400 w-8 text-center transition-opacity duration-500 ${nutriStep === 2 ? 'opacity-100' : 'opacity-0'}`}>32g</span>
+                        <span className={`text-[8px] font-bold text-blue-400 w-6 text-right transition-opacity ${nutriStep === 2 ? 'opacity-100' : 'opacity-0'}`}>32g</span>
                       </div>
-
-                      {/* CARBOS - Decorado */}
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-1 rounded-full bg-yellow-400/20"></div>
                         <div className="flex-1 h-1 bg-glass-border rounded-full overflow-hidden">
                           <div className={`h-full bg-yellow-400 transition-all duration-1000 delay-100 ease-out ${nutriStep === 2 ? 'w-[50%]' : 'w-0'}`}></div>
                         </div>
-                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded bg-yellow-400/20 text-yellow-400 w-8 text-center transition-opacity duration-500 ${nutriStep === 2 ? 'opacity-100' : 'opacity-0'}`}>45g</span>
-                      </div>
-
-                      {/* GRASAS - Decorado */}
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-1 rounded-full bg-green-400/20"></div>
-                        <div className="flex-1 h-1 bg-glass-border rounded-full overflow-hidden">
-                          <div className={`h-full bg-green-400 transition-all duration-1000 delay-200 ease-out ${nutriStep === 2 ? 'w-[30%]' : 'w-0'}`}></div>
-                        </div>
-                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded bg-green-400/20 text-green-400 w-8 text-center transition-opacity duration-500 ${nutriStep === 2 ? 'opacity-100' : 'opacity-0'}`}>15g</span>
+                        <span className={`text-[8px] font-bold text-yellow-400 w-6 text-right transition-opacity ${nutriStep === 2 ? 'opacity-100' : 'opacity-0'}`}>45g</span>
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* --- NUEVO: CALCULADORA Y CALENTAMIENTO --- */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Calculadora de Platos */}
+              <div className="flex flex-col items-center">
+                <h2 className="text-xs font-semibold mb-2 text-center text-text-secondary uppercase tracking-wider flex items-center gap-1">
+                  <Calculator size={12} /> Discos
+                </h2>
+                <div className="w-full h-[100px] bg-bg-secondary/30 border border-glass-border rounded-2xl flex items-center justify-center relative overflow-hidden">
+                  <div className="w-[90%] h-1.5 bg-gray-500 rounded-full relative">
+                    {/* Discos Animados */}
+                    <div className={`absolute top-1/2 -translate-y-1/2 right-2 w-2 h-10 bg-blue-500 rounded-sm transition-all duration-500 ${featureStep ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}`}></div>
+                    <div className={`absolute top-1/2 -translate-y-1/2 right-5 w-2 h-8 bg-green-500 rounded-sm transition-all duration-500 delay-100 ${featureStep ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}`}></div>
+
+                    <div className={`absolute top-1/2 -translate-y-1/2 left-2 w-2 h-10 bg-blue-500 rounded-sm transition-all duration-500 ${featureStep ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}></div>
+                    <div className={`absolute top-1/2 -translate-y-1/2 left-5 w-2 h-8 bg-green-500 rounded-sm transition-all duration-500 delay-100 ${featureStep ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}></div>
+                  </div>
+                  <div className="absolute bottom-2 text-[10px] font-mono font-bold text-text-primary">
+                    {featureStep ? "60 kg" : "20 kg"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Calentamiento Inteligente */}
+              <div className="flex flex-col items-center">
+                <h2 className="text-xs font-semibold mb-2 text-center text-text-secondary uppercase tracking-wider flex items-center gap-1">
+                  <Flame size={12} /> Calentamiento
+                </h2>
+                <div className="w-full h-[100px] bg-bg-secondary/30 border border-glass-border rounded-2xl p-3 flex flex-col justify-center relative overflow-hidden">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1 rounded bg-accent/20 text-accent"><Flame size={12} /></div>
+                    <div className="h-1.5 w-12 bg-white/20 rounded-full"></div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className={`flex justify-between text-[9px] transition-all duration-300 ${featureStep ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                      <span className="text-text-secondary">50%</span>
+                      <span className="font-bold text-text-primary">10kg x 12</span>
+                    </div>
+                    <div className={`flex justify-between text-[9px] transition-all duration-300 delay-100 ${featureStep ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                      <span className="text-text-secondary">70%</span>
+                      <span className="font-bold text-text-primary">14kg x 8</span>
+                    </div>
+                    <div className={`flex justify-between text-[9px] transition-all duration-300 delay-200 ${featureStep ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                      <span className="text-text-secondary">90%</span>
+                      <span className="font-bold text-text-primary">18kg x 4</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* --- NUEVO: HISTORIAL Y RESTRICCIONES --- */}
+            <div className="flex flex-col items-center justify-center">
+              <h2 className="text-sm font-semibold mb-3 text-center text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                <Lock size={14} /> Gestión Inteligente
+              </h2>
+              <div className="w-full max-w-[280px] bg-bg-primary border border-glass-border rounded-xl p-3 flex items-center gap-3 relative overflow-hidden">
+                {/* Fondo animado para bloqueo */}
+                <div className={`absolute inset-0 bg-bg-secondary/80 backdrop-blur-[1px] z-10 flex items-center justify-center transition-opacity duration-500 ${featureStep ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-bold">
+                    <CheckCircle size={12} /> Completada
+                  </div>
+                </div>
+
+                <div className="w-10 h-10 rounded-lg bg-glass-border flex items-center justify-center shrink-0">
+                  <Zap size={18} className="text-text-secondary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="h-2 w-24 bg-white/10 rounded-full mb-2"></div>
+                  {/* Historial en vivo Demo */}
+                  <div className="flex items-center gap-1 text-[10px] text-accent">
+                    <History size={10} />
+                    <span className="truncate">Últ: 100kg x 8 reps</span>
+                  </div>
+                </div>
+                <div className={`p-2 rounded-full transition-colors ${featureStep ? 'bg-transparent text-text-muted' : 'bg-accent text-bg-secondary'}`}>
+                  {featureStep ? <Lock size={14} /> : <Play size={14} fill="currentColor" />}
                 </div>
               </div>
             </div>

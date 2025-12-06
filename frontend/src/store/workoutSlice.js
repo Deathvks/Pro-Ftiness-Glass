@@ -1,6 +1,26 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
 
+// --- HELPER: Buscar último rendimiento ---
+const findLastPerformance = (workoutLog, exerciseName) => {
+  if (!workoutLog || !Array.isArray(workoutLog) || !exerciseName) return null;
+
+  // Filtramos los logs que contienen el ejercicio
+  const relevantLogs = workoutLog.filter(log =>
+    log.details?.some(d => d.exerciseName === exerciseName)
+  );
+
+  if (relevantLogs.length === 0) return null;
+
+  // Ordenamos por fecha descendente (el más reciente primero)
+  relevantLogs.sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date));
+
+  const lastLog = relevantLogs[0];
+  const detail = lastLog.details.find(d => d.exerciseName === exerciseName);
+
+  return detail ? { date: lastLog.workout_date, sets: detail.setsDone } : null;
+};
+
 // --- FUNCIONES DE ALMACENAMIENTO LOCAL ---
 const getWorkoutStateFromStorage = () => {
   try {
@@ -102,6 +122,7 @@ const initialState = {
   restTimerMode: 'modal',
   isRestTimerPaused: false,
   restTimerRemaining: null,
+  completedRoutineIdsToday: [], // <--- NUEVO
 };
 
 export const createWorkoutSlice = (set, get) => ({
@@ -109,9 +130,42 @@ export const createWorkoutSlice = (set, get) => ({
   ...getWorkoutStateFromStorage(),
   ...getRestTimerStateFromStorage(),
 
+  // --- NUEVA ACCIÓN: Obtener rutinas completadas hoy ---
+  fetchTodaysCompletedRoutines: async () => {
+    try {
+      const now = new Date();
+      // Definir rango del día actual (local)
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+
+      // Llamar al servicio con el rango
+      const workouts = await workoutService.getWorkouts({
+        startDate: start.toISOString(),
+        endDate: end.toISOString()
+      });
+
+      if (Array.isArray(workouts)) {
+        // Extraer IDs de rutinas completadas
+        const completedIds = workouts
+          .map(w => w.routine_id || w.routineId)
+          .filter(id => id != null);
+
+        // Guardar sin duplicados
+        set({ completedRoutineIdsToday: [...new Set(completedIds)] });
+      }
+    } catch (error) {
+      console.error("Error obteniendo rutinas completadas hoy:", error);
+    }
+  },
+
   startWorkout: async (routine) => {
-    // 1. Obtener toda la biblioteca de ejercicios para enriquecer datos
-    const allExercises = await get().getOrFetchAllExercises();
+    // 1. Obtener toda la biblioteca de ejercicios y el historial
+    const state = get();
+    const allExercises = await state.getOrFetchAllExercises();
+    const workoutLog = state.workoutLog || [];
 
     const sortedExercises = [
       ...(routine.RoutineExercises || routine.TemplateRoutineExercises || []),
@@ -119,24 +173,19 @@ export const createWorkoutSlice = (set, get) => ({
 
     const exercises = sortedExercises.map((ex) => {
       // 2. Intentar encontrar el ejercicio en la biblioteca
-      // Buscamos por exercise_list_id (rutinas normales) o exercise_id (templates inyectados)
       const targetId = ex.exercise_list_id || ex.exercise_id;
       let fullDetails = allExercises.find((detail) => detail.id === targetId);
 
-      // Si no hay match por ID, intentar "fuzzy match" por nombre (backup para templates viejos)
+      // Backup: Match por nombre
       if (!fullDetails && ex.name) {
         const normName = ex.name.toLowerCase().trim();
         fullDetails = allExercises.find(d => d.name.toLowerCase().trim() === normName);
       }
 
-      // Nombre final a mostrar
+      // Nombre final
       const exerciseKeyName = fullDetails?.name || ex.exercise?.name || ex.name;
 
-      // 3. Resolución Robusta de Imágenes/Vídeos
-      // Prioridad: 
-      // A. Propiedad directa en el objeto 'ex' (si viene de TemplateRoutines con inyección manual)
-      // B. Propiedades del objeto de biblioteca (fullDetails)
-      // C. Propiedades legacy
+      // 3. Resolución de Media
       const mediaUrl =
         ex.image_url ||
         ex.gifUrl ||
@@ -148,18 +197,18 @@ export const createWorkoutSlice = (set, get) => ({
         fullDetails?.image_url_start ||
         null;
 
-      const videoUrl =
-        ex.video_url ||
-        fullDetails?.video_url ||
-        null;
+      const videoUrl = ex.video_url || fullDetails?.video_url || null;
 
       const exerciseDetails = {
         ...(fullDetails || {}),
         name: exerciseKeyName,
         description: fullDetails?.description_es || fullDetails?.description || null,
-        image_url: mediaUrl, // Ahora usamos la variable resuelta
+        image_url: mediaUrl,
         video_url: videoUrl,
       };
+
+      // 4. Buscar Último Rendimiento
+      const lastPerformance = findLastPerformance(workoutLog, exerciseKeyName);
 
       return {
         id: ex.id,
@@ -176,9 +225,9 @@ export const createWorkoutSlice = (set, get) => ({
           weight_kg: '',
           is_dropset: false,
         })),
-        // Guardamos referencias IDs para lógica futura
         exercise_list_id: fullDetails?.id || null,
         muscle_group: fullDetails?.muscle_group || null,
+        last_performance: lastPerformance, // <--- NUEVO
       };
     });
 
@@ -280,16 +329,59 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  replaceExercise: (exIndex, newExercise) => {
+  // --- Generador de Calentamiento ---
+  addWarmupSets: (exIndex, workingWeight) => {
     const session = get().activeWorkout;
     if (!session) return;
     const newExercises = JSON.parse(JSON.stringify(session.exercises));
+    const targetExercise = newExercises[exIndex];
+
+    const weight = parseFloat(workingWeight);
+    if (!weight || weight <= 0) return;
+
+    const roundTo2_5 = (w) => Math.round(w / 2.5) * 2.5;
+
+    const warmupSets = [
+      { p: 0.5, reps: 12 },
+      { p: 0.7, reps: 8 },
+      { p: 0.9, reps: 4 },
+    ].map((stage) => ({
+      reps: stage.reps,
+      weight_kg: roundTo2_5(weight * stage.p),
+      is_dropset: false,
+      is_warmup: true,
+    }));
+
+    targetExercise.setsDone = [...warmupSets, ...targetExercise.setsDone];
+
+    targetExercise.setsDone.forEach((set, index) => {
+      set.set_number = index + 1;
+    });
+
+    targetExercise.sets = targetExercise.setsDone.length;
+
+    const newState = {
+      activeWorkout: { ...session, exercises: newExercises },
+    };
+    set(newState);
+    setWorkoutInStorage({ ...get(), ...newState });
+  },
+
+  replaceExercise: (exIndex, newExercise) => {
+    const state = get();
+    const session = state.activeWorkout;
+    if (!session) return;
+    const newExercises = JSON.parse(JSON.stringify(session.exercises));
     const oldExercise = newExercises[exIndex];
+    const workoutLog = state.workoutLog || [];
 
     const normalizedDetails = {
       ...newExercise,
       description: newExercise.description_es || newExercise.description || null,
     };
+
+    // Buscar rendimiento para el nuevo ejercicio
+    const lastPerformance = findLastPerformance(workoutLog, newExercise.name);
 
     newExercises[exIndex] = {
       ...oldExercise,
@@ -304,6 +396,7 @@ export const createWorkoutSlice = (set, get) => ({
       id: null,
       exercise_list_id: newExercise.id,
       muscle_group: newExercise.muscle_group,
+      last_performance: lastPerformance, // <--- NUEVO
     };
     const newState = {
       activeWorkout: { ...session, exercises: newExercises },
@@ -452,6 +545,15 @@ export const createWorkoutSlice = (set, get) => ({
   logWorkout: async (workoutData) => {
     try {
       const responseData = await workoutService.logWorkout(workoutData);
+
+      // --- ACTUALIZACIÓN DE RUTINAS COMPLETADAS HOY ---
+      if (workoutData.routineId) {
+        const current = get().completedRoutineIdsToday;
+        if (!current.includes(workoutData.routineId)) {
+          set({ completedRoutineIdsToday: [...current, workoutData.routineId] });
+        }
+      }
+
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         get().showPRNotification(responseData.newPRs);
         get()._showLocalPRNotification(responseData.newPRs);
@@ -469,6 +571,11 @@ export const createWorkoutSlice = (set, get) => ({
     try {
       await workoutService.deleteWorkout(workoutId);
       await get().fetchInitialData();
+      // Nota: Si borramos un workout, idealmente deberíamos refrescar completedRoutineIdsToday
+      // o quitarlo del array, pero por simplicidad dejaremos que fetchInitialData maneje la recarga global si es necesario
+      // o el usuario recargue. Para ser consistentes podríamos llamar a fetchTodaysCompletedRoutines aquí.
+      await get().fetchTodaysCompletedRoutines();
+
       return { success: true, message: 'Entrenamiento eliminado.' };
     } catch (error) {
       return {

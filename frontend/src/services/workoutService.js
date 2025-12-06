@@ -1,7 +1,9 @@
+/* frontend/src/services/workoutService.js */
 import apiClient from './apiClient';
 
-export const getWorkouts = () => {
-    return apiClient('/workouts');
+export const getWorkouts = (params) => {
+    const query = params ? `?${new URLSearchParams(params)}` : '';
+    return apiClient(`/workouts${query}`);
 };
 
 export const logWorkout = (workoutData) => {

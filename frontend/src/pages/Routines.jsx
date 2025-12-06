@@ -22,7 +22,6 @@ import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useTranslation } from 'react-i18next';
-import { isSameDay } from '../utils/helpers';
 import TemplateRoutines from './TemplateRoutines';
 
 const Routines = ({ setView }) => {
@@ -37,6 +36,8 @@ const Routines = ({ setView }) => {
     deleteRoutine,
     createRoutine,
     activeWorkout,
+    completedRoutineIdsToday,
+    fetchTodaysCompletedRoutines,
   } = useAppStore((state) => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
@@ -45,6 +46,8 @@ const Routines = ({ setView }) => {
     deleteRoutine: state.deleteRoutine,
     createRoutine: state.createRoutine,
     activeWorkout: state.activeWorkout,
+    completedRoutineIdsToday: state.completedRoutineIdsToday,
+    fetchTodaysCompletedRoutines: state.fetchTodaysCompletedRoutines,
   }));
 
   const [editingRoutine, setEditingRoutine] = useState(() => {
@@ -75,6 +78,13 @@ const Routines = ({ setView }) => {
     return localStorage.getItem('routinesActiveTab') || 'myRoutines';
   });
 
+  // --- EFECTOS ---
+
+  // Cargar rutinas completadas hoy al montar el componente
+  useEffect(() => {
+    fetchTodaysCompletedRoutines();
+  }, [fetchTodaysCompletedRoutines]);
+
   useEffect(() => {
     localStorage.setItem('routinesActiveTab', activeTab);
   }, [activeTab]);
@@ -90,18 +100,7 @@ const Routines = ({ setView }) => {
     }
   }, [editingRoutine]);
 
-  const completedToday = useMemo(() => {
-    if (!Array.isArray(workoutLog)) return new Set();
-    const today = new Date();
-    return new Set(
-      workoutLog
-        .filter(
-          (log) =>
-            log && isSameDay(log.workout_date, today) && log.routine_id != null
-        )
-        .map((log) => log.routine_id)
-    );
-  }, [workoutLog]);
+  // --- MEMOS ---
 
   const lastUsedMap = useMemo(() => {
     const map = new Map();
@@ -226,7 +225,7 @@ const Routines = ({ setView }) => {
     }
   };
 
-  // --- NUEVA LÓGICA DE INICIO ROBUSTO ---
+  // --- LÓGICA DE INICIO ROBUSTO ---
   const handleStartWorkout = async (routine) => {
     // Si ya hay uno activo de esta rutina, navegar directamente
     if (activeWorkout && activeWorkout.routineId === routine.id) {
@@ -236,8 +235,15 @@ const Routines = ({ setView }) => {
 
     setIsLoading(true);
     try {
-      // 1. Iniciar la acción asíncrona
-      await startWorkout(routine);
+      // 1. Iniciar la acción asíncrona y capturar resultado
+      const result = await startWorkout(routine);
+
+      // Si falló (ej: ya completado hoy), mostrar error y salir
+      if (result && result.success === false) {
+        addToast(result.message, 'error');
+        setIsLoading(false);
+        return;
+      }
 
       // 2. Función de verificación con reintentos (Polling corto)
       // Esto asegura que el store se ha actualizado antes de cambiar la vista
@@ -396,7 +402,8 @@ const Routines = ({ setView }) => {
               filteredSorted.map((routine) => {
                 if (!routine) return null;
 
-                const isCompleted = completedToday.has(routine.id);
+                // Verificamos si el ID está en la lista de completadas hoy
+                const isCompleted = completedRoutineIdsToday.includes(routine.id);
                 const isActive =
                   activeWorkout && activeWorkout.routineId === routine.id;
 

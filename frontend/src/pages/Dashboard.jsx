@@ -1,3 +1,4 @@
+/* frontend/src/pages/Dashboard.jsx */
 import React, { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle, ArrowUp, ArrowDown, Minus } from 'lucide-react';
@@ -16,8 +17,11 @@ const Dashboard = ({ setView }) => {
     const { addToast } = useToast();
     const {
         routines, workoutLog, bodyWeightLog, userProfile, logBodyWeight,
-        updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog, // <-- Mantenemos startWorkout y startSimpleWorkout aquí para usarlos directamente
-        waterLog, todaysCreatineLog, fetchDataForDate
+        updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
+        waterLog, todaysCreatineLog, fetchDataForDate,
+        // --- NUEVO: Obtenemos el estado de rutinas completadas y workout activo ---
+        completedRoutineIdsToday,
+        activeWorkout
     } = useAppStore(state => ({
         routines: state.routines,
         workoutLog: state.workoutLog,
@@ -30,7 +34,10 @@ const Dashboard = ({ setView }) => {
         nutritionLog: state.nutritionLog,
         waterLog: state.waterLog,
         todaysCreatineLog: state.todaysCreatineLog,
-        fetchDataForDate: state.fetchDataForDate
+        fetchDataForDate: state.fetchDataForDate,
+        // --- NUEVO ---
+        completedRoutineIdsToday: state.completedRoutineIdsToday,
+        activeWorkout: state.activeWorkout,
     }));
 
     const [showWeightModal, setShowWeightModal] = useState(false);
@@ -154,10 +161,6 @@ const Dashboard = ({ setView }) => {
         }, { calories: 0, protein: 0 });
     }, [nutritionLog]);
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Eliminamos las funciones handleStartWorkout y handleStartSimpleWorkout
-    // --- FIN DE LA MODIFICACIÓN ---
-
     const handleSaveWater = async (quantity_ml) => {
         setModal({ type: 'submitting' });
         try {
@@ -192,9 +195,9 @@ const Dashboard = ({ setView }) => {
             <GlassCard className="p-6 mb-6">
                 <h2 className="text-xl font-bold mb-4">Resumen de Hoy</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <button onClick={() => setView('nutrition')} className="hover:scale-105 transition-transform"><CircularProgress value={nutritionTotals.calories} maxValue={calorieTarget} label="Calorías" icon={Flame} colorClass="text-amber-400"/></button>
-                    <button onClick={() => setView('nutrition')} className="hover:scale-105 transition-transform"><CircularProgress value={parseFloat(nutritionTotals.protein.toFixed(1))} maxValue={proteinTarget} label="Proteína" icon={Beef} colorClass="text-rose-400"/></button>
-                    <button onClick={() => setModal({ type: 'water' })} className="hover:scale-105 transition-transform"><CircularProgress value={waterLog?.quantity_ml || 0} maxValue={waterTarget} label="Agua" icon={Droplet} colorClass="text-sky-400"/></button>
+                    <button onClick={() => setView('nutrition')} className="hover:scale-105 transition-transform"><CircularProgress value={nutritionTotals.calories} maxValue={calorieTarget} label="Calorías" icon={Flame} colorClass="text-amber-400" /></button>
+                    <button onClick={() => setView('nutrition')} className="hover:scale-105 transition-transform"><CircularProgress value={parseFloat(nutritionTotals.protein.toFixed(1))} maxValue={proteinTarget} label="Proteína" icon={Beef} colorClass="text-rose-400" /></button>
+                    <button onClick={() => setModal({ type: 'water' })} className="hover:scale-105 transition-transform"><CircularProgress value={waterLog?.quantity_ml || 0} maxValue={waterTarget} label="Agua" icon={Droplet} colorClass="text-sky-400" /></button>
                     <button onClick={() => setModal({ type: 'creatine' })} className="hover:scale-105 transition-transform">
                         <CircularProgress
                             value={todaysCreatineLog.length}
@@ -214,16 +217,51 @@ const Dashboard = ({ setView }) => {
                         <h2 className="text-xl font-bold">Iniciar un Entrenamiento</h2>
                         <div className="flex flex-col gap-3">
                             {routines.length > 0 ? (
-                                routines.slice(0, 2).map(routine => (
-                                    // --- INICIO DE LA MODIFICACIÓN ---
-                                    // 1. Convertimos el onClick en 'async'
-                                    // 2. Añadimos 'await' a 'startWorkout(routine)'
-                                    <button key={routine.id} onClick={async () => { await startWorkout(routine); setView('workout'); }} className="flex justify-between items-center w-full p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors">
-                                    {/* --- FIN DE LA MODIFICACIÓN --- */}
-                                        <span className="font-semibold">{routine.name}</span>
-                                        <Play size={20} />
-                                    </button>
-                                ))
+                                routines.slice(0, 2).map(routine => {
+                                    // Comprobamos estado de la rutina
+                                    const isCompleted = completedRoutineIdsToday.includes(routine.id);
+                                    const isActive = activeWorkout && activeWorkout.routineId === routine.id;
+
+                                    return (
+                                        <button
+                                            key={routine.id}
+                                            onClick={async () => {
+                                                // Si está activa, vamos directo al workout
+                                                if (isActive) {
+                                                    setView('workout');
+                                                    return;
+                                                }
+                                                // Si no está completada, iniciamos
+                                                if (!isCompleted) {
+                                                    await startWorkout(routine);
+                                                    setView('workout');
+                                                }
+                                            }}
+                                            // Deshabilitado solo si está completado Y NO está activo
+                                            disabled={isCompleted && !isActive}
+                                            className={`flex justify-between items-center w-full p-4 rounded-md border border-glass-border transition-colors ${isActive
+                                                    ? 'bg-accent/10 border-accent/30 text-accent'
+                                                    : isCompleted
+                                                        ? 'bg-bg-secondary/50 text-text-muted cursor-not-allowed'
+                                                        : 'hover:bg-white/10'
+                                                }`}
+                                        >
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-semibold">{routine.name}</span>
+                                                {isActive && <span className="text-xs font-bold">En curso</span>}
+                                                {isCompleted && !isActive && <span className="text-xs">Completada hoy</span>}
+                                            </div>
+
+                                            {isActive ? (
+                                                <Clock size={20} />
+                                            ) : isCompleted ? (
+                                                <CheckCircle size={20} />
+                                            ) : (
+                                                <Play size={20} />
+                                            )}
+                                        </button>
+                                    );
+                                })
                             ) : (
                                 <p className="text-text-muted text-center py-4">No tienes rutinas. ¡Crea una para empezar!</p>
                             )}
@@ -237,11 +275,10 @@ const Dashboard = ({ setView }) => {
                     <GlassCard className="p-6 flex flex-col gap-4">
                         <h2 className="text-xl font-bold">Cardio Rápido</h2>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            {/* Estas llamadas a 'startSimpleWorkout' no necesitan 'await' porque esa función sigue siendo síncrona */}
                             <button onClick={() => { startSimpleWorkout('Cardio: Cinta'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Footprints size={20} /><span className="font-semibold">Cinta</span></button>
-                             <button onClick={() => { startSimpleWorkout('Cardio: Bici'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Bike size={20} /><span className="font-semibold">Bici</span></button>
+                            <button onClick={() => { startSimpleWorkout('Cardio: Bici'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Bike size={20} /><span className="font-semibold">Bici</span></button>
                             <button onClick={() => { startSimpleWorkout('Cardio: Elíptica'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Activity size={20} /><span className="font-semibold">Elíptica</span></button>
-                             <button onClick={() => { startSimpleWorkout('Cardio: Comba'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Repeat size={20} /><span className="font-semibold">Comba</span></button>
+                            <button onClick={() => { startSimpleWorkout('Cardio: Comba'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Repeat size={20} /><span className="font-semibold">Comba</span></button>
                         </div>
                     </GlassCard>
                 </div>
@@ -300,7 +337,7 @@ const Dashboard = ({ setView }) => {
                     isLoading={modal.type === 'submitting'}
                 />
             }
-             {modal.type === 'creatine' &&
+            {modal.type === 'creatine' &&
                 <CreatinaTracker
                     onClose={() => {
                         setModal({ type: null });
