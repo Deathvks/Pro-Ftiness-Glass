@@ -19,10 +19,8 @@ import TemplateRoutine from './templateRoutineModel.js';
 import TemplateRoutineExercise from './templateRoutineExerciseModel.js';
 import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
-// --- INICIO DE LA MODIFICACIÓN ---
-import TemplateDiet from './templateDietModel.js';
-import TemplateDietMeal from './templateDietMealModel.js';
-// --- FIN DE LA MODIFICACIÓN ---
+// --- ELIMINADO: import TemplateDiet from './templateDietModel.js'; ---
+// --- ELIMINADO: import TemplateDietMeal from './templateDietMealModel.js'; ---
 
 
 // 2. Configuración de las asociaciones (relaciones) con sus alias
@@ -62,10 +60,7 @@ PersonalRecord.belongsTo(User, { foreignKey: 'user_id' });
 TemplateRoutine.hasMany(TemplateRoutineExercise, { foreignKey: 'template_routine_id', as: 'TemplateRoutineExercises' });
 TemplateRoutineExercise.belongsTo(TemplateRoutine, { foreignKey: 'template_routine_id' });
 
-// --- INICIO DE LA MODIFICACIÓN (Asociaciones de Dieta) ---
-TemplateDiet.hasMany(TemplateDietMeal, { foreignKey: 'template_diet_id', as: 'TemplateDietMeals', onDelete: 'CASCADE' });
-TemplateDietMeal.belongsTo(TemplateDiet, { foreignKey: 'template_diet_id' });
-// --- FIN DE LA MODIFICACIÓN ---
+// --- ELIMINADO: Asociaciones de TemplateDiet y TemplateDietMeal ---
 
 User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
 CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -96,10 +91,8 @@ const models = {
     FavoriteMeal,
     TemplateRoutine,
     TemplateRoutineExercise,
-    // --- INICIO DE LA MODIFICACIÓN ---
-    TemplateDiet,
-    TemplateDietMeal,
-    // --- FIN DE LA MODIFICACIÓN ---
+    // --- ELIMINADO: TemplateDiet, ---
+    // --- ELIMINADO: TemplateDietMeal, ---
     CreatinaLog,
     PushSubscription,
     Notification

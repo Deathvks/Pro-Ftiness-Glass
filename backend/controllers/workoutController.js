@@ -1,18 +1,20 @@
 /* backend/controllers/workoutController.js */
 import { validationResult } from 'express-validator';
+import { Op } from 'sequelize'; // Importamos Op para los operadores de consulta
 import models from '../models/index.js';
+
 // --- INICIO DE LA MODIFICACIÓN ---
 // Importamos la función para calcular el 1RM desde el frontend (ajusta la ruta si es necesario)
 // Asumimos que existe una forma de compartir/importar esta función en el backend.
 // Si no es así, duplicaremos la función aquí.
 const calculate1RM = (weight, reps) => {
-    const weightNum = parseFloat(weight);
-    const repsNum = parseInt(reps, 10);
-    if (isNaN(weightNum) || isNaN(repsNum) || weightNum <= 0 || repsNum <= 0) {
-        return 0;
-    }
-    const estimated1RM = weightNum * (1 + repsNum / 30);
-    return Math.round(estimated1RM * 100) / 100;
+  const weightNum = parseFloat(weight);
+  const repsNum = parseInt(reps, 10);
+  if (isNaN(weightNum) || isNaN(repsNum) || weightNum <= 0 || repsNum <= 0) {
+    return 0;
+  }
+  const estimated1RM = weightNum * (1 + repsNum / 30);
+  return Math.round(estimated1RM * 100) / 100;
 };
 // --- FIN DE LA MODIFICACIÓN ---
 
@@ -20,8 +22,39 @@ const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, sequelize }
 
 export const getWorkoutHistory = async (req, res, next) => {
   try {
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Recibimos los parámetros de fecha del query string
+    const { date, startDate, endDate } = req.query;
+
+    // Construimos la condición base (siempre filtrar por usuario)
+    const whereCondition = { user_id: req.user.userId };
+
+    if (date) {
+      // Si nos llega una fecha específica (YYYY-MM-DD), filtramos por ese día completo.
+      // Parseamos los componentes manualmente para crear la fecha en hora local del servidor,
+      // coincidiendo con la lógica de 'logWorkoutSession' que usa new Date(y, m, d).
+      const [year, month, day] = date.split('-').map(Number);
+
+      const startOfDay = new Date(year, month - 1, day);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(year, month - 1, day);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      whereCondition.workout_date = {
+        [Op.between]: [startOfDay, endOfDay]
+      };
+    } else if (startDate && endDate) {
+      // Soporte retrocompatible para rangos
+      whereCondition.workout_date = {
+        [Op.between]: [new Date(startDate), new Date(endDate)]
+      };
+    }
+    // Si no hay parámetros de fecha, devolverá todo el historial (comportamiento por defecto antiguo),
+    // pero ahora el frontend siempre envía 'date'.
+
     const history = await WorkoutLog.findAll({
-      where: { user_id: req.user.userId },
+      where: whereCondition, // Aplicamos el filtro dinámico
       include: [{
         model: WorkoutLogDetail,
         as: 'WorkoutLogDetails',
@@ -34,8 +67,9 @@ export const getWorkoutHistory = async (req, res, next) => {
       }],
       order: [['workout_date', 'DESC']],
     });
-    
-    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // --- INICIO DE LA MODIFICACIÓN (LÓGICA 1RM EXISTENTE) ---
     // Convertir a JSON plano para poder modificarlo antes de enviarlo
     const plainHistory = history.map(log => log.get({ plain: true }));
 
@@ -45,7 +79,7 @@ export const getWorkoutHistory = async (req, res, next) => {
         log.WorkoutLogDetails.forEach(detail => {
           // Si estimated_1rm no existe o es 0/null, lo calculamos al vuelo
           if (!detail.estimated_1rm) {
-            
+
             let bestSetWeight = 0;
             let bestSetFor1RM = null;
 
@@ -58,7 +92,7 @@ export const getWorkoutHistory = async (req, res, next) => {
                   if (weight > bestSetWeight) {
                     bestSetWeight = weight;
                     bestSetFor1RM = set;
-                  } 
+                  }
                   // Esta lógica es la misma que en logWorkoutSession
                   else if (weight === bestSetWeight && reps > (parseInt(bestSetFor1RM?.reps, 10) || 0)) {
                     bestSetFor1RM = set;
@@ -137,9 +171,9 @@ export const logWorkoutSession = async (req, res, next) => {
             // esta serie también podría ser candidata para el 1RM (aunque Epley da el mismo resultado).
             // Lo guardamos por si acaso quisiéramos usar otra fórmula en el futuro.
             else if (weight === bestSetWeight && reps > (parseInt(bestSetFor1RM?.reps, 10) || 0)) {
-               bestSetFor1RM = set;
+              bestSetFor1RM = set;
             }
-             // --- FIN DE LA MODIFICACIÓN ---
+            // --- FIN DE LA MODIFICACIÓN ---
           }
         });
       }
@@ -148,7 +182,7 @@ export const logWorkoutSession = async (req, res, next) => {
       // Calculamos el 1RM estimado si encontramos una mejor serie válida
       let estimated1RM = null;
       if (bestSetFor1RM) {
-          estimated1RM = calculate1RM(bestSetFor1RM.weight_kg, bestSetFor1RM.reps);
+        estimated1RM = calculate1RM(bestSetFor1RM.weight_kg, bestSetFor1RM.reps);
       }
       // --- FIN DE LA MODIFICACIÓN ---
 
@@ -175,7 +209,7 @@ export const logWorkoutSession = async (req, res, next) => {
             is_dropset: set.is_dropset || false,
           }));
         if (setsToCreate.length > 0) {
-            await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
+          await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
         }
       }
 

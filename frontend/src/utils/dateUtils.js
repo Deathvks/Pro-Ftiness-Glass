@@ -1,37 +1,39 @@
+/* frontend/src/utils/dateUtils.js */
+
 // Formatear fecha para mostrar
 export const formatDate = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().split('T')[0];
 };
 
 // Formatear fecha para mostrar al usuario
 export const formatDateForDisplay = (date) => {
-    if (!date) return '';
-    const d = new Date(date + 'T00:00:00');
-    return d.toLocaleDateString('es-ES', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+  if (!date) return '';
+  const d = new Date(date + 'T00:00:00');
+  return d.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 };
 
 // Obtener fecha de hoy en formato YYYY-MM-DD
 export const getTodayDate = () => {
-    return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split('T')[0];
 };
 
 // Verificar si una fecha es hoy
 export const isToday = (date) => {
-    return formatDate(date) === getTodayDate();
+  return formatDate(date) === getTodayDate();
 };
 
 // Obtener fecha de hace X días
 export const getDaysAgo = (days) => {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
-    return formatDate(date);
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return formatDate(date);
 };
 
 // Parsear fecha desde string
@@ -54,20 +56,21 @@ export const daysBetween = (date1, date2) => {
 
 // Formatear fecha a formato corto DD/MM/YYYY
 export const formatDateToShort = (dateString) => {
-    if (!dateString) return '';
-    const d = new Date(dateString + 'T00:00:00');
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+  if (!dateString) return '';
+  const d = new Date(dateString + 'T00:00:00');
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 // --- INICIO DE LA MODIFICACIÓN ---
-// Formatear fecha para la query (YYYY-MM-DD)
+// Usamos métodos locales (getFullYear, etc) en lugar de UTC para evitar
+// que el día cambie por diferencia horaria.
 export const formatDateForQuery = (date) => {
-  const year = date.getUTCFullYear();
-  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-  const day = date.getUTCDate().toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 // --- FIN DE LA MODIFICACIÓN ---

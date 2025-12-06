@@ -1,5 +1,8 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { formatDateForQuery } from '../utils/dateUtils';
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- HELPER: Buscar último rendimiento ---
 const findLastPerformance = (workoutLog, exerciseName) => {
@@ -133,19 +136,16 @@ export const createWorkoutSlice = (set, get) => ({
   // --- NUEVA ACCIÓN: Obtener rutinas completadas hoy ---
   fetchTodaysCompletedRoutines: async () => {
     try {
-      const now = new Date();
-      // Definir rango del día actual (local)
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
+      // --- INICIO DE LA MODIFICACIÓN ---
+      // Usamos la nueva utilidad para obtener la fecha local formateada (YYYY-MM-DD)
+      // Esto evita el problema de las zonas horarias con toISOString()
+      const todayQuery = formatDateForQuery(new Date());
 
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
-
-      // Llamar al servicio con el rango
+      // Llamar al servicio con la fecha exacta
       const workouts = await workoutService.getWorkouts({
-        startDate: start.toISOString(),
-        endDate: end.toISOString()
+        date: todayQuery
       });
+      // --- FIN DE LA MODIFICACIÓN ---
 
       if (Array.isArray(workouts)) {
         // Extraer IDs de rutinas completadas
