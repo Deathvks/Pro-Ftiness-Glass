@@ -11,8 +11,9 @@ import CalorieInputModal from '../components/CalorieInputModal';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import ExerciseReplaceModal from './ExerciseReplaceModal';
 import WorkoutExerciseDetailModal from './WorkoutExerciseDetailModal';
-// --- AÑADIDO: Import del Modal de Calculadora ---
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
+// --- AÑADIDO: Import del Modal de Historial ---
+import ExerciseHistoryModal from './ExerciseHistoryModal';
 
 // --- IMPORTS DE COMPONENTES MODULARIZADOS ---
 import NoActiveWorkout from '../components/Workout/NoActiveWorkout';
@@ -71,8 +72,9 @@ const Workout = ({ timer, setView }) => {
   const [showWorkoutSummaryModal, setShowWorkoutSummaryModal] = useState(false);
   const [completedWorkoutData, setCompletedWorkoutData] = useState(null);
   const [selectedExercise, setSelectedExercise] = useState(null);
-  // --- AÑADIDO: Estado para el modal de calculadora ---
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+  // --- AÑADIDO: Estado para el modal de Historial ---
+  const [historyExercise, setHistoryExercise] = useState(null);
 
   // Efecto de limpieza: Si el usuario sale de la página (desmonta el componente)
   // y el entrenamiento NO se ha iniciado (workoutStartTime es null), lo cancelamos.
@@ -294,7 +296,7 @@ const Workout = ({ timer, setView }) => {
         onBackClick={handleBackClick}
         onTogglePause={togglePauseWorkout}
         onFinishClick={handleFinishClick}
-        onShowCalculator={() => setShowCalculatorModal(true)} // <-- AÑADIDO: Prop para abrir calculadora
+        onShowCalculator={() => setShowCalculatorModal(true)}
       />
 
       {/* --- Componente: Lista de Ejercicios --- */}
@@ -305,6 +307,8 @@ const Workout = ({ timer, setView }) => {
           hasWorkoutStarted={hasWorkoutStarted}
           onSetSelectedExercise={setSelectedExercise}
           onSetExerciseToReplace={setExerciseToReplace}
+          // AÑADIDO: Pasamos la función para abrir historial
+          onShowHistory={setHistoryExercise}
           // Props para pasar a los componentes hijos
           baseInputClasses={baseInputClasses}
           onUpdateSet={updateActiveWorkoutSet}
@@ -378,10 +382,18 @@ const Workout = ({ timer, setView }) => {
         />
       )}
 
-      {/* --- AÑADIDO: Modal de Calculadora de Platos --- */}
+      {/* AÑADIDO: Modal de Calculadora de Platos */}
       {showCalculatorModal && (
         <PlateCalculatorModal
           onClose={() => setShowCalculatorModal(false)}
+        />
+      )}
+
+      {/* AÑADIDO: Modal de Historial */}
+      {historyExercise && (
+        <ExerciseHistoryModal
+          exercise={historyExercise}
+          onClose={() => setHistoryExercise(null)}
         />
       )}
     </div>

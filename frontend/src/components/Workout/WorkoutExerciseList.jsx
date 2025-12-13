@@ -3,7 +3,7 @@ import React from 'react';
 import { Link2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../GlassCard';
-import WorkoutExerciseCard from './WorkoutExerciseCard'; // Este será el siguiente fichero
+import WorkoutExerciseCard from './WorkoutExerciseCard';
 
 /**
  * Componente que renderiza la lista de grupos de ejercicios (superseries).
@@ -16,6 +16,8 @@ const WorkoutExerciseList = ({
   hasWorkoutStarted,
   onSetSelectedExercise,
   onSetExerciseToReplace,
+  // Nueva prop para pasar hacia abajo
+  onShowHistory,
 
   // --- Props para pasar a WorkoutExerciseCard ---
   // Estas se pasarán "hacia abajo"
@@ -35,9 +37,8 @@ const WorkoutExerciseList = ({
       {exerciseGroups.map((group, groupIndex) => (
         <GlassCard
           key={groupIndex}
-          className={`p-1 rounded-lg ${
-            group.length > 1 ? 'bg-accent/10 border border-accent/20' : ''
-          }`}
+          className={`p-1 rounded-lg ${group.length > 1 ? 'bg-accent/10 border border-accent/20' : ''
+            }`}
         >
           {group.length > 1 && (
             <div className="flex items-center gap-2 p-3 text-accent font-semibold">
@@ -71,7 +72,8 @@ const WorkoutExerciseList = ({
                   hasWorkoutStarted={hasWorkoutStarted}
                   onSetSelectedExercise={onSetSelectedExercise}
                   onSetExerciseToReplace={onSetExerciseToReplace}
-                  
+                  onShowHistory={onShowHistory} // Pasamos la función
+
                   // Props para el grid (prop-drilling)
                   baseInputClasses={baseInputClasses}
                   onUpdateSet={onUpdateSet}

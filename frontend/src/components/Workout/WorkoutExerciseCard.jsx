@@ -24,6 +24,8 @@ const WorkoutExerciseCard = ({
   onDisabledInputClick,
   onDisabledButtonClick,
   normalizeDecimalInput,
+  // Nueva prop para abrir historial
+  onShowHistory,
 }) => {
   const { addWarmupSets } = useAppStore(state => ({ addWarmupSets: state.addWarmupSets }));
 
@@ -41,11 +43,8 @@ const WorkoutExerciseCard = ({
   // Helper para formatear el historial
   const formatLastPerformance = (perf) => {
     if (!perf || !perf.sets || perf.sets.length === 0) return 'Sin datos';
-    // Filtramos series vacías o de calentamiento si quisieras
     const validSets = perf.sets.filter(s => s.weight_kg > 0 && s.reps > 0);
     if (validSets.length === 0) return 'Sin series efectivas';
-
-    // Mostramos formato "100x8, 100x8..."
     return validSets.map(s => `${s.weight_kg}x${s.reps}`).join(', ');
   };
 
@@ -98,6 +97,21 @@ const WorkoutExerciseCard = ({
 
         {/* Botones de Acción */}
         <div className="flex gap-2 items-start">
+          {/* Botón de Historial */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              // Usamos la nueva prop específica para historial
+              if (onShowHistory) {
+                onShowHistory(exercise);
+              }
+            }}
+            className="p-2 rounded-xl transition shrink-0 bg-bg-primary text-text-secondary hover:text-accent hover:shadow-md hover:shadow-accent/10"
+            title="Ver Historial"
+          >
+            <History size={18} />
+          </button>
+
           {/* Generador de Calentamiento */}
           <button
             onClick={(e) => {

@@ -2,18 +2,27 @@
 import React, { useMemo } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import useAppStore from '../store/useAppStore';
 
-export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], onClose }) {
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 1. CORRECCIÓN: Apuntamos 't' al namespace 'exercise_names'
-  const { t } = useTranslation('exercise_names'); // Para el nombre del ejercicio
-  const { t: tCommon } = useTranslation('translation'); // Para UI general
-  // --- FIN DE LA MODIFICACIÓN ---
+export default function ExerciseHistoryModal({ exercise, onClose }) {
+  // 1. Obtenemos el historial global desde el store
+  const workoutLog = useAppStore((state) => state.workoutLog);
+
+  const { t } = useTranslation('exercise_names');
+  const { t: tCommon } = useTranslation('translation');
+
+  // 2. Extraemos el nombre de forma segura
+  const exerciseName = exercise?.name;
 
   const historyByDay = useMemo(() => {
-    // ... (lógica de 'historyByDay' sin cambios) ...
+    if (!exerciseName) return [];
+
+    // Aseguramos que workoutLog sea un array válido
+    const logs = Array.isArray(workoutLog) ? workoutLog : [];
     const groups = {};
-    for (const log of workoutLog || []) {
+
+    for (const log of logs) {
+      // Filtramos por nombre de ejercicio
       const details = (log.WorkoutLogDetails || []).filter(d => d.exercise_name === exerciseName);
       if (!details.length) continue;
 
@@ -26,6 +35,7 @@ export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], on
         groups[dateKey].push(...sets);
       }
     }
+
     return Object.entries(groups)
       .sort(([a], [b]) => new Date(b) - new Date(a))
       .map(([dateKey, sets]) => ({ dateKey, sets }));
@@ -39,67 +49,90 @@ export default function ExerciseHistoryModal({ exerciseName, workoutLog = [], on
       day: 'numeric',
     });
 
+  if (!exercise) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.25s_ease-out]">
-      <div className="relative w-full max-w-2xl m-4 sm:m-6 md:m-12 lg:m-16 rounded-3xl border border-[--glass-border] bg-bg-secondary shadow-2xl p-6">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"
-          aria-label={tCommon('Cerrar', { defaultValue: 'Cerrar' })}
-        >
-          <X size={22} />
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4">
+      {/* 3. Contenedor Modal Responsive:
+          - max-h-[85vh] evita que se salga de la pantalla en móviles
+          - flex-col para mantener header fijo y cuerpo scrollable 
+      */}
+      <div className="relative w-full max-w-lg md:max-w-2xl rounded-3xl border border-glass-border bg-bg-secondary shadow-2xl flex flex-col max-h-[85vh] md:max-h-[80vh] animate-scale-in overflow-hidden">
 
-        {/* 2. Tu lógica de traducción aquí ya era correcta, ahora 't' funcionará */}
-        <h2 className="text-2xl md:text-3xl font-extrabold text-center px-8 break-words">
-          {tCommon('Historial de', { defaultValue: 'Historial de' })}{' '}
-          {t(exerciseName, { defaultValue: exerciseName })}
-        </h2>
+        {/* Header Fijo */}
+        <div className="p-5 md:p-6 border-b border-glass-border flex justify-between items-start shrink-0 bg-bg-secondary z-10">
+          <h2 className="text-xl md:text-2xl font-extrabold text-text-primary pr-8 leading-tight">
+            {tCommon('Historial de', { defaultValue: 'Historial de' })}{' '}
+            <span className="text-accent block md:inline mt-1 md:mt-0">
+              {t(exerciseName, { defaultValue: exerciseName })}
+            </span>
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-text-secondary hover:text-text-primary transition-colors p-1"
+            aria-label={tCommon('Cerrar', { defaultValue: 'Cerrar' })}
+          >
+            <X size={24} />
+          </button>
+        </div>
 
-        <div className="h-px bg-[--glass-border] my-4" />
-
-        <div className="rounded-3xl bg-bg-primary border border-[--glass-border] p-4 md:p-5 max-h-[60vh] overflow-y-auto">
+        {/* Contenido Scrollable */}
+        <div className="overflow-y-auto p-4 md:p-6 custom-scrollbar bg-bg-secondary/50">
           {historyByDay.length === 0 ? (
-            <div className="text-center text-text-muted py-12">
-              {tCommon('No hay series registradas para este ejercicio.', { defaultValue: 'No hay series registradas para este ejercicio.' })}
+            <div className="flex flex-col items-center justify-center py-12 text-center text-text-muted opacity-60">
+              <span className="text-4xl mb-3">📅</span>
+              <p>{tCommon('No hay registros previos para este ejercicio.', { defaultValue: 'No hay registros previos para este ejercicio.' })}</p>
             </div>
           ) : (
-            historyByDay.map(({ dateKey, sets }, idx) => (
-              <div
-                key={dateKey}
-                className={idx > 0 ? 'pt-5 mt-5 border-t border-[--glass-border]' : ''}
-              >
-                <h3 className="text-accent font-bold mb-3 capitalize">
-                  {formatDate(dateKey)}
-                </h3>
+            <div className="space-y-6">
+              {historyByDay.map(({ dateKey, sets }, idx) => (
+                <div key={dateKey} className="animate-fade-in" style={{ animationDelay: `${idx * 0.05}s` }}>
+                  <h3 className="text-accent/90 text-sm font-bold mb-3 uppercase tracking-wider flex items-center gap-2 sticky top-0 bg-bg-secondary/95 backdrop-blur py-2 z-10">
+                    <span className="w-2 h-2 rounded-full bg-accent shadow-[0_0_8px_rgba(var(--accent),0.5)]"></span>
+                    {formatDate(dateKey)}
+                  </h3>
 
-                {sets.length === 0 ? (
-                  <div className="text-text-muted text-sm">{tCommon('No se registraron series.', { defaultValue: 'No se registraron series.' })}</div>
-                ) : (
-                  <ul className="space-y-3">
+                  <div className="space-y-2 pl-2 border-l-2 border-glass-border ml-1">
                     {sets.map((set, i) => (
-                      <li
+                      <div
                         key={`${dateKey}-${i}`}
-                        className="flex items-center justify-between rounded-2xl px-4 py-2 text-sm bg-bg-secondary/60 border border-[--glass-border]"
+                        className="flex items-center justify-between rounded-xl px-4 py-3 bg-bg-primary/50 border border-glass-border/50 hover:border-accent/30 transition-colors ml-2"
                       >
-                        <span>
-                          {tCommon('Serie', { defaultValue: 'Serie' })} {set.set_number ?? i + 1}:{' '}
-                          <strong>{Number(set.reps ?? 0)} {tCommon('reps', { defaultValue: 'reps' })}</strong> {tCommon('con', 'con')}{' '}
-                          <strong>{Number(set.weight_kg ?? 0).toFixed(2)} kg</strong>
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-text-muted w-6">#{set.set_number ?? i + 1}</span>
+                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                            <span className="text-lg font-bold text-text-primary">
+                              {Number(set.weight_kg ?? 0).toFixed(1).replace('.0', '')} <span className="text-xs text-text-secondary font-normal">kg</span>
+                            </span>
+                            <span className="hidden sm:inline text-text-muted/50">×</span>
+                            <span className="text-base font-semibold text-text-secondary">
+                              {Number(set.reps ?? 0)} <span className="text-xs font-normal">reps</span>
+                            </span>
+                          </div>
+                        </div>
 
                         {set.is_dropset && (
-                          <span className="ml-3 shrink-0 bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full text-[10px]">
-                            {tCommon('DROPSET', { defaultValue: 'DROPSET' })}
+                          <span className="bg-red-500/10 text-red-400 text-[10px] font-bold px-2 py-1 rounded-md border border-red-500/20 shadow-sm">
+                            DROP
                           </span>
                         )}
-                      </li>
+                      </div>
                     ))}
-                  </ul>
-                )}
-              </div>
-            ))
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
+        </div>
+
+        {/* Footer (Solo visible en móvil para facilitar el cierre con una mano) */}
+        <div className="p-4 border-t border-glass-border md:hidden shrink-0 bg-bg-secondary z-10">
+          <button
+            onClick={onClose}
+            className="w-full py-3.5 bg-bg-primary rounded-xl text-text-secondary font-semibold border border-glass-border active:scale-[0.98] transition-transform shadow-sm"
+          >
+            {tCommon('Cerrar', { defaultValue: 'Cerrar' })}
+          </button>
         </div>
       </div>
     </div>
