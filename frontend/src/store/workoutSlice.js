@@ -339,18 +339,36 @@ export const createWorkoutSlice = (set, get) => ({
     const weight = parseFloat(workingWeight);
     if (!weight || weight <= 0) return;
 
-    const roundTo2_5 = (w) => Math.round(w / 2.5) * 2.5;
+    // --- Lógica de redondeo inteligente ---
+    const getSmartRoundedWeight = (w) => {
+      // Para pesos bajos (< 20kg), asumimos mancuernas (pasos de 1kg)
+      if (weight < 20) return Math.round(w);
+      // Para pesos mayores, usamos el estándar de 2.5kg
+      return Math.round(w / 2.5) * 2.5;
+    };
 
     const warmupSets = [
       { p: 0.5, reps: 12 },
       { p: 0.7, reps: 8 },
       { p: 0.9, reps: 4 },
-    ].map((stage) => ({
-      reps: stage.reps,
-      weight_kg: roundTo2_5(weight * stage.p),
-      is_dropset: false,
-      is_warmup: true,
-    }));
+    ].map((stage) => {
+      let calculatedW = getSmartRoundedWeight(weight * stage.p);
+
+      // --- Protección: El calentamiento NUNCA debe superar el peso de trabajo ---
+      if (calculatedW >= weight) {
+        // Si lo iguala o supera, forzamos un valor menor.
+        // Si el peso es bajo (<20), restamos 1kg. Si es alto, 2.5kg.
+        const decrement = weight < 20 ? 1 : 2.5;
+        calculatedW = Math.max(0, weight - decrement);
+      }
+
+      return {
+        reps: stage.reps,
+        weight_kg: calculatedW,
+        is_dropset: false,
+        is_warmup: true,
+      };
+    });
 
     targetExercise.setsDone = [...warmupSets, ...targetExercise.setsDone];
 

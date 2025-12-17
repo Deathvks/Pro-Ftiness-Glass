@@ -41,6 +41,8 @@ const Workout = ({ timer, setView }) => {
     updateActiveWorkoutSet,
     addDropset,
     removeDropset,
+    // --- NUEVO: Acción para alternar calentamiento ---
+    toggleWarmupSet,
     isWorkoutPaused,
     togglePauseWorkout,
     workoutStartTime,
@@ -54,6 +56,8 @@ const Workout = ({ timer, setView }) => {
     updateActiveWorkoutSet: state.updateActiveWorkoutSet,
     addDropset: state.addDropset,
     removeDropset: state.removeDropset,
+    // --- Extraemos toggleWarmupSet del store ---
+    toggleWarmupSet: state.toggleWarmupSet,
     isWorkoutPaused: state.isWorkoutPaused,
     togglePauseWorkout: state.togglePauseWorkout,
     workoutStartTime: state.workoutStartTime,
@@ -244,6 +248,8 @@ const Workout = ({ timer, setView }) => {
               reps: safeParseReps(set.reps),
               weight_kg: safeParseFloat(set.weight_kg),
               is_dropset: set.is_dropset || false,
+              // --- AÑADIDO: Mapear is_warmup ---
+              is_warmup: set.is_warmup || false,
             })),
         })),
     };
@@ -314,6 +320,8 @@ const Workout = ({ timer, setView }) => {
           onUpdateSet={updateActiveWorkoutSet}
           onAddDropset={addDropset}
           onRemoveDropset={removeDropset}
+          // --- AÑADIDO: Pasamos toggleWarmupSet ---
+          onToggleWarmup={toggleWarmupSet}
           onOpenRestModal={openRestModal}
           onDisabledInputClick={handleDisabledInputClick}
           onDisabledButtonClick={handleDisabledButtonClick}

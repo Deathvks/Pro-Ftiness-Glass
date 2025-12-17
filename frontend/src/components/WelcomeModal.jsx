@@ -292,7 +292,29 @@ const WelcomeModal = ({ onClose }) => {
                 <Sparkles size={12} className="text-accent" /> Últimas Mejoras
               </h2>
               <div className="space-y-3">
-                {/* Item 1 */}
+                {/* --- NUEVO: Series de Calentamiento --- */}
+                <div className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 shrink-0">
+                    <Flame size={16} />
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-bold text-text-primary">Series de Calentamiento</p>
+                    <p className="text-text-muted">Márcalas con un click. Excluidas de PRs y 1RM.</p>
+                  </div>
+                </div>
+
+                {/* --- NUEVO: Cálculo Inteligente --- */}
+                <div className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-400 shrink-0">
+                    <Calculator size={16} />
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-bold text-text-primary">Generador Smart</p>
+                    <p className="text-text-muted">Redondeo inteligente (1kg/2.5kg) para el calentamiento.</p>
+                  </div>
+                </div>
+
+                {/* Item 1 (Existente) */}
                 <div className="flex gap-3 items-center">
                   <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0">
                     <History size={16} />
@@ -302,7 +324,7 @@ const WelcomeModal = ({ onClose }) => {
                     <p className="text-text-muted">Busca por Año y Mes en tus registros.</p>
                   </div>
                 </div>
-                {/* Item 2 */}
+                {/* Item 2 (Existente) */}
                 <div className="flex gap-3 items-center">
                   <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 shrink-0">
                     <Utensils size={16} />
@@ -312,7 +334,7 @@ const WelcomeModal = ({ onClose }) => {
                     <p className="text-text-muted">Imágenes actualizadas al instante.</p>
                   </div>
                 </div>
-                {/* Item 3 */}
+                {/* Item 3 (Existente) */}
                 <div className="flex gap-3 items-center">
                   <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0">
                     <Smartphone size={16} />

@@ -3,7 +3,7 @@ import { validationResult } from 'express-validator';
 import { Op } from 'sequelize'; // Importamos Op para los operadores de consulta
 import models from '../models/index.js';
 
-// --- INICIO DE LA MODIFICACIÓN ---
+// --- INICIO DE LA MODIFICACIÓN (Lógica 1RM) ---
 // Importamos la función para calcular el 1RM desde el frontend (ajusta la ruta si es necesario)
 // Asumimos que existe una forma de compartir/importar esta función en el backend.
 // Si no es así, duplicaremos la función aquí.
@@ -22,7 +22,7 @@ const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, sequelize }
 
 export const getWorkoutHistory = async (req, res, next) => {
   try {
-    // --- INICIO DE LA MODIFICACIÓN ---
+    // --- INICIO DE LA MODIFICACIÓN (Filtros Fecha) ---
     // Recibimos los parámetros de fecha del query string
     const { date, startDate, endDate } = req.query;
 
@@ -87,8 +87,10 @@ export const getWorkoutHistory = async (req, res, next) => {
               detail.WorkoutLogSets.forEach(set => {
                 const weight = parseFloat(set.weight_kg) || 0;
                 const reps = parseInt(set.reps, 10) || 0;
+                // --- CAMBIO: Ignorar series de calentamiento para el cálculo ---
+                const isWarmup = set.is_warmup;
 
-                if (weight > 0 && reps > 0) {
+                if (weight > 0 && reps > 0 && !isWarmup) {
                   if (weight > bestSetWeight) {
                     bestSetWeight = weight;
                     bestSetFor1RM = set;
@@ -157,23 +159,30 @@ export const logWorkoutSession = async (req, res, next) => {
         exercise.setsDone.forEach(set => {
           const weight = parseFloat(set.weight_kg) || 0;
           const reps = parseInt(set.reps, 10) || 0;
+          // --- CAMBIO: Detectar si es calentamiento ---
+          const isWarmup = set.is_warmup === true || set.is_warmup === 'true';
+
           if (weight > 0 && reps > 0) { // Solo consideramos series válidas
             totalVolume += weight * reps;
-            if (weight > bestSetWeight) {
-              bestSetWeight = weight;
+
+            // --- CAMBIO: Solo consideramos para PR y 1RM si NO es calentamiento ---
+            if (!isWarmup) {
+              if (weight > bestSetWeight) {
+                bestSetWeight = weight;
+                // --- INICIO DE LA MODIFICACIÓN ---
+                // Si este peso es el mayor hasta ahora, esta es la mejor serie para 1RM
+                bestSetFor1RM = set;
+                // --- FIN DE LA MODIFICACIÓN ---
+              }
               // --- INICIO DE LA MODIFICACIÓN ---
-              // Si este peso es el mayor hasta ahora, esta es la mejor serie para 1RM
-              bestSetFor1RM = set;
+              // Si el peso es el mismo pero las repeticiones son más,
+              // esta serie también podría ser candidata para el 1RM (aunque Epley da el mismo resultado).
+              // Lo guardamos por si acaso quisiéramos usar otra fórmula en el futuro.
+              else if (weight === bestSetWeight && reps > (parseInt(bestSetFor1RM?.reps, 10) || 0)) {
+                bestSetFor1RM = set;
+              }
               // --- FIN DE LA MODIFICACIÓN ---
             }
-            // --- INICIO DE LA MODIFICACIÓN ---
-            // Si el peso es el mismo pero las repeticiones son más,
-            // esta serie también podría ser candidata para el 1RM (aunque Epley da el mismo resultado).
-            // Lo guardamos por si acaso quisiéramos usar otra fórmula en el futuro.
-            else if (weight === bestSetWeight && reps > (parseInt(bestSetFor1RM?.reps, 10) || 0)) {
-              bestSetFor1RM = set;
-            }
-            // --- FIN DE LA MODIFICACIÓN ---
           }
         });
       }
@@ -190,7 +199,7 @@ export const logWorkoutSession = async (req, res, next) => {
         workout_log_id: newWorkoutLog.id,
         exercise_name: exercise.exerciseName,
         total_volume: totalVolume,
-        best_set_weight: bestSetWeight,
+        best_set_weight: bestSetWeight, // Nota: Esto ahora excluye series de calentamiento
         superset_group_id: exercise.superset_group_id,
         // --- INICIO DE LA MODIFICACIÓN ---
         estimated_1rm: estimated1RM, // Guardamos el valor calculado
@@ -207,6 +216,8 @@ export const logWorkoutSession = async (req, res, next) => {
             reps: parseInt(set.reps, 10) || 0, // Asegurar que sea número
             weight_kg: parseFloat(set.weight_kg) || 0, // Asegurar que sea número
             is_dropset: set.is_dropset || false,
+            // --- CAMBIO: Guardamos el estado de calentamiento ---
+            is_warmup: set.is_warmup || false,
           }));
         if (setsToCreate.length > 0) {
           await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
@@ -214,6 +225,7 @@ export const logWorkoutSession = async (req, res, next) => {
       }
 
       // Lógica de PR (basada en bestSetWeight, no cambia)
+      // Como bestSetWeight ahora excluye calentamiento, los PRs también lo harán.
       if (bestSetWeight > 0) {
         const existingPR = await PersonalRecord.findOne({
           where: {
@@ -303,6 +315,7 @@ export const deleteWorkoutLog = async (req, res, next) => {
         const newBestLogDetail = await WorkoutLogDetail.findOne({
           include: [{
             model: WorkoutLog,
+            as: 'WorkoutLog',
             as: 'WorkoutLog',
             where: { user_id: userId },
             attributes: []

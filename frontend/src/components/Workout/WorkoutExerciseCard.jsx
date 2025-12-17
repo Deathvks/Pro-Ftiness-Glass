@@ -20,6 +20,7 @@ const WorkoutExerciseCard = ({
   onUpdateSet,
   onAddDropset,
   onRemoveDropset,
+  onToggleWarmup, // <--- NUEVA PROP
   onOpenRestModal,
   onDisabledInputClick,
   onDisabledButtonClick,
@@ -205,6 +206,7 @@ const WorkoutExerciseCard = ({
         onUpdateSet={onUpdateSet}
         onAddDropset={onAddDropset}
         onRemoveDropset={onRemoveDropset}
+        onToggleWarmup={onToggleWarmup} // <--- NUEVA PROP PASADA AL GRID
         onOpenRestModal={onOpenRestModal}
         onDisabledInputClick={onDisabledInputClick}
         onDisabledButtonClick={onDisabledButtonClick}

@@ -1,6 +1,6 @@
 /* frontend/src/components/Workout/WorkoutSetGrid.jsx */
 import React from 'react';
-import { CornerDownRight, X, Clock } from 'lucide-react';
+import { CornerDownRight, X, Clock, Flame } from 'lucide-react';
 
 /**
  * Normaliza el valor de un input para que sea un decimal válido.
@@ -10,12 +10,12 @@ import { CornerDownRight, X, Clock } from 'lucide-react';
  */
 const normalizeDecimalInput = (value) => {
   if (value === null || value === undefined) return '';
-  
+
   let strValue = String(value);
 
   // 1. Reemplazar comas por puntos
   strValue = strValue.replace(',', '.');
-  
+
   // 2. Eliminar caracteres no válidos (todo excepto números y el primer punto)
   strValue = strValue.replace(/[^0-9.]/g, '');
 
@@ -23,11 +23,11 @@ const normalizeDecimalInput = (value) => {
   const firstDotIndex = strValue.indexOf('.');
   if (firstDotIndex !== -1) {
     // Si se encontró un punto, eliminar todos los puntos subsiguientes
-    strValue = 
-      strValue.substring(0, firstDotIndex + 1) + 
+    strValue =
+      strValue.substring(0, firstDotIndex + 1) +
       strValue.substring(firstDotIndex + 1).replace(/\./g, '');
   }
-  
+
   return strValue;
 };
 
@@ -46,6 +46,7 @@ const WorkoutSetGrid = ({
   onUpdateSet,
   onAddDropset,
   onRemoveDropset,
+  onToggleWarmup, // <--- NUEVA PROP: Para manejar el click en calentamiento
   onOpenRestModal,
   onDisabledInputClick,
   onDisabledButtonClick,
@@ -72,25 +73,43 @@ const WorkoutSetGrid = ({
       {/* --- Filas de Series --- */}
       {setsDone.map((set, setIndex) => (
         <div key={setIndex} className="contents">
-          {/* Número de Serie o 'DS' */}
-          <span className="text-center font-semibold text-text-secondary bg-bg-primary border border-glass-border rounded-md px-3 py-3">
-            {set.is_dropset ? 'DS' : set.set_number}
+          {/* --- CAMBIO: Ahora es interactivo (onClick) --- */}
+          <span
+            onClick={
+              hasWorkoutStarted
+                ? () => onToggleWarmup && onToggleWarmup(actualExIndex, setIndex)
+                : onDisabledButtonClick
+            }
+            className={`
+              text-center font-bold text-sm rounded-md px-1 py-3 flex items-center justify-center transition-all duration-200 select-none
+              ${hasWorkoutStarted ? 'cursor-pointer hover:brightness-110 active:scale-95' : 'cursor-not-allowed opacity-70'}
+              ${set.is_dropset
+                ? 'bg-red-500/10 text-red-500' // Dropset
+                : set.is_warmup
+                  ? 'bg-accent/10 text-accent' // Calentamiento: Solo fondo, sin borde
+                  : 'bg-bg-secondary text-text-secondary hover:bg-bg-secondary/80' // Normal
+              }
+            `}
+            title={
+              hasWorkoutStarted
+                ? "Click para marcar/desmarcar como Calentamiento"
+                : "Inicia el entrenamiento para editar"
+            }
+          >
+            {set.is_dropset ? 'DS' : set.is_warmup ? <Flame size={16} strokeWidth={2.5} /> : set.set_number}
           </span>
 
           {/* Input: Peso (kg) */}
           <input
-            // --- INICIO DE LA MODIFICACIÓN ---
             type="text"
-            // Se elimina inputMode="tel"
-            // --- FIN DE LA MODIFICACIÓN ---
             placeholder="0"
             value={set.weight_kg}
             onChange={
               hasWorkoutStarted
                 ? (e) => {
-                    const value = normalizeDecimalInput(e.target.value);
-                    onUpdateSet(actualExIndex, setIndex, 'weight_kg', value);
-                  }
+                  const value = normalizeDecimalInput(e.target.value);
+                  onUpdateSet(actualExIndex, setIndex, 'weight_kg', value);
+                }
                 : undefined
             }
             onClick={!hasWorkoutStarted ? onDisabledInputClick : undefined}
@@ -101,18 +120,15 @@ const WorkoutSetGrid = ({
 
           {/* Input: Reps */}
           <input
-            // --- INICIO DE LA MODIFICACIÓN ---
             type="text"
-            // Se elimina inputMode="tel"
-            // --- FIN DE LA MODIFICACIÓN ---
             placeholder="0"
             value={set.reps}
             onChange={
               hasWorkoutStarted
                 ? (e) => {
-                    const value = normalizeDecimalInput(e.target.value);
-                    onUpdateSet(actualExIndex, setIndex, 'reps', value);
-                  }
+                  const value = normalizeDecimalInput(e.target.value);
+                  onUpdateSet(actualExIndex, setIndex, 'reps', value);
+                }
                 : undefined
             }
             onClick={!hasWorkoutStarted ? onDisabledInputClick : undefined}
@@ -129,11 +145,10 @@ const WorkoutSetGrid = ({
                   ? () => onRemoveDropset(actualExIndex, setIndex)
                   : onDisabledButtonClick
               }
-              className={`p-3 rounded-md border transition h-full flex items-center justify-center ${
-                hasWorkoutStarted
-                  ? 'bg-bg-primary border-glass-border text-text-muted hover:bg-red/20 hover:text-red'
-                  : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-              }`}
+              className={`p-3 rounded-md border transition h-full flex items-center justify-center ${hasWorkoutStarted
+                ? 'bg-bg-primary border-glass-border text-text-muted hover:bg-red/20 hover:text-red'
+                : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
+                }`}
               title={
                 hasWorkoutStarted
                   ? 'Eliminar Dropset'
@@ -150,11 +165,10 @@ const WorkoutSetGrid = ({
                   ? () => onAddDropset(actualExIndex, setIndex)
                   : onDisabledButtonClick
               }
-              className={`p-3 rounded-md border transition h-full flex items-center justify-center ${
-                hasWorkoutStarted
-                  ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
-                  : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-              }`}
+              className={`p-3 rounded-md border transition h-full flex items-center justify-center ${hasWorkoutStarted
+                ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
+                : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
+                }`}
               title={
                 hasWorkoutStarted
                   ? 'Añadir Dropset'
@@ -173,11 +187,10 @@ const WorkoutSetGrid = ({
                 ? () => onOpenRestModal(restSeconds)
                 : onDisabledButtonClick
             }
-            className={`p-3 rounded-md border transition h-full flex items-center justify-center ${
-              hasWorkoutStarted
-                ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
-                : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
-            }`}
+            className={`p-3 rounded-md border transition h-full flex items-center justify-center ${hasWorkoutStarted
+              ? 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50'
+              : 'bg-bg-primary border-glass-border text-text-muted opacity-50 cursor-not-allowed'
+              }`}
             title={
               hasWorkoutStarted
                 ? 'Iniciar descanso'

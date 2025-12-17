@@ -1,10 +1,7 @@
 /* frontend/src/components/progress/DailyDetailView.jsx */
 import React, { useState, useMemo } from 'react';
 import { X, Trash2, Link2, Timer, Flame, BarChartHorizontal, TrendingUp } from 'lucide-react';
-// --- INICIO DE LA MODIFICACIÓN ---
-// 1. Importamos el hook de traducción
 import { useTranslation } from 'react-i18next';
-// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from '../GlassCard';
 import ConfirmationModal from '../ConfirmationModal';
 import { calculateCalories } from '../../utils/helpers';
@@ -12,10 +9,7 @@ import useAppStore from '../../store/useAppStore';
 import { useToast } from '../../hooks/useToast';
 
 const DailyDetailView = ({ logs, onClose }) => {
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 2. Inicializamos el traductor
   const { t } = useTranslation(['exercise_names']);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const { userProfile, bodyWeightLog, deleteWorkoutLog } = useAppStore(state => ({
     userProfile: state.userProfile,
@@ -25,6 +19,8 @@ const DailyDetailView = ({ logs, onClose }) => {
   const { addToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logToDelete, setLogToDelete] = useState(null);
+  // NUEVO: Estado para ocultar visualmente los logs borrados al instante
+  const [deletedLogIds, setDeletedLogIds] = useState([]);
 
   const handleDeleteClick = (log) => {
     setLogToDelete(log);
@@ -33,10 +29,19 @@ const DailyDetailView = ({ logs, onClose }) => {
 
   const confirmDelete = async () => {
     if (logToDelete) {
-      const result = await deleteWorkoutLog(logToDelete.id);
+      const idToDelete = logToDelete.id;
+      const result = await deleteWorkoutLog(idToDelete);
+
       if (result.success) {
         addToast(result.message, 'success');
-        if (logs.length === 1) {
+
+        // AÑADIDO: Actualizamos la lista local para feedback instantáneo
+        const newDeletedIds = [...deletedLogIds, idToDelete];
+        setDeletedLogIds(newDeletedIds);
+
+        // Comprobamos si quedan logs visibles
+        const remainingLogs = logs.filter(l => !newDeletedIds.includes(l.id));
+        if (remainingLogs.length === 0) {
           onClose();
         }
       } else {
@@ -53,7 +58,6 @@ const DailyDetailView = ({ logs, onClose }) => {
   };
 
   const groupExercises = (exercises) => {
-    // ... (lógica de agrupación sin cambios) ...
     if (!exercises || exercises.length === 0) return [];
     const groups = [];
     let currentGroup = [];
@@ -76,13 +80,14 @@ const DailyDetailView = ({ logs, onClose }) => {
   };
 
   const latestWeight = useMemo(() => {
-    // ... (lógica de peso sin cambios) ...
     if (!bodyWeightLog || bodyWeightLog.length === 0) return 75;
     const sortedLog = [...bodyWeightLog].sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
     return parseFloat(sortedLog[0].weight_kg);
   }, [bodyWeightLog]);
 
-  const visibleLogs = logs.filter(log => !logToDelete || log.id !== logToDelete.id);
+  // CAMBIO: Filtramos usando la lista local de borrados
+  const visibleLogs = logs.filter(log => !deletedLogIds.includes(log.id));
+
   const totalDuration = visibleLogs.reduce((acc, log) => acc + log.duration_seconds, 0);
   const totalCalories = visibleLogs.reduce((acc, log) => {
     const calories = log.calories_burned || calculateCalories(log.duration_seconds, latestWeight);
@@ -96,7 +101,10 @@ const DailyDetailView = ({ logs, onClose }) => {
           <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"><X size={20} /></button>
           <div className="text-center pb-4 border-b border-glass-border">
             <h3 className="text-xl font-bold">Resumen del Día</h3>
-            <p className="text-text-muted text-sm">{new Date(logs[0].workout_date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            {/* Protección para mostrar la fecha incluso si se borran todos antes de cerrar */}
+            {logs.length > 0 && (
+              <p className="text-text-muted text-sm">{new Date(logs[0].workout_date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4 text-center">
             <div>
@@ -129,7 +137,6 @@ const DailyDetailView = ({ logs, onClose }) => {
                     )}
                     {isCardioOnly ? (
                       <div className="bg-bg-primary rounded-md border border-glass-border p-3 flex justify-around text-center">
-                        {/* ... (JSX de Cardio sin cambios) ... */}
                         <div>
                           <p className="text-xs text-text-secondary flex items-center gap-1"><Timer size={12} /> Duración</p>
                           <p className="font-bold">{Math.round(log.duration_seconds / 60)} min</p>
@@ -151,16 +158,13 @@ const DailyDetailView = ({ logs, onClose }) => {
                           <div className="p-3">
                             {group.map((exercise, exIdx) => (
                               <div key={exIdx} className={exIdx > 0 ? 'mt-3 pt-3 border-t border-glass-border' : ''}>
-                                
-                                {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                                {/* 3. Traducimos el nombre del ejercicio */}
+
                                 <p className="font-semibold">
                                   {t(exercise.exercise_name, {
                                     ns: 'exercise_names',
                                     defaultValue: exercise.exercise_name
                                   })}
                                 </p>
-                                {/* --- FIN DE LA MODIFICACIÓN --- */}
 
                                 <div className="flex gap-4 text-xs text-text-muted my-2">
                                   <div className="flex items-center gap-1"><BarChartHorizontal size={12} /><span>Volumen: <strong>{exercise.total_volume} kg</strong></span></div>
@@ -173,11 +177,20 @@ const DailyDetailView = ({ logs, onClose }) => {
                                         <span>
                                           Serie {set.set_number}: <strong>{set.reps} reps</strong> con <strong>{set.weight_kg} kg</strong>
                                         </span>
-                                        {set.is_dropset && (
-                                          <span className="bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full text-[10px]">
-                                            DROPSET
-                                          </span>
-                                        )}
+                                        <div className="flex gap-1">
+                                          {/* --- CAMBIO: Badge Calentamiento sin borde --- */}
+                                          {set.is_warmup && (
+                                            <span className="bg-accent/10 text-accent font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1">
+                                              <Flame size={10} strokeWidth={3} /> CALENTAMIENTO
+                                            </span>
+                                          )}
+                                          {/* --- Badge Dropset sin borde --- */}
+                                          {set.is_dropset && (
+                                            <span className="bg-red-500/10 text-red-500 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                                              DROPSET
+                                            </span>
+                                          )}
+                                        </div>
                                       </li>
                                     ))
                                   ) : (

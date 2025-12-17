@@ -25,6 +25,7 @@ const WorkoutExerciseList = ({
   onUpdateSet,
   onAddDropset,
   onRemoveDropset,
+  onToggleWarmup, // <--- NUEVA PROP RECIBIDA
   onOpenRestModal,
   onDisabledInputClick,
   onDisabledButtonClick,
@@ -79,6 +80,7 @@ const WorkoutExerciseList = ({
                   onUpdateSet={onUpdateSet}
                   onAddDropset={onAddDropset}
                   onRemoveDropset={onRemoveDropset}
+                  onToggleWarmup={onToggleWarmup} // <--- SE PASA AL CARD
                   onOpenRestModal={onOpenRestModal}
                   onDisabledInputClick={onDisabledInputClick}
                   onDisabledButtonClick={onDisabledButtonClick}

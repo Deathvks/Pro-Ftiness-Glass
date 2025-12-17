@@ -1,6 +1,6 @@
 /* frontend/src/pages/ExerciseHistoryModal.jsx */
 import React, { useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Calendar, Filter, Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import CustomSelect from '../components/CustomSelect';
@@ -15,7 +15,6 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
 
-  // --- 1. Calcular AÑOS y MESES disponibles dinámicamente ---
   const { availableYears, availableMonths } = useMemo(() => {
     const yearsSet = new Set();
     const monthsSet = new Set();
@@ -25,7 +24,6 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
     const logs = Array.isArray(workoutLog) ? workoutLog : [];
 
     for (const log of logs) {
-      // Verificar si este log contiene el ejercicio
       const hasExercise = (log.WorkoutLogDetails || []).some(
         (d) => d.exercise_name === exerciseName
       );
@@ -33,12 +31,10 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
 
       const date = new Date(log.workout_date);
       const year = date.getFullYear();
-      const month = date.getMonth(); // 0-11
+      const month = date.getMonth();
 
-      // Siempre añadimos el año a la lista de opciones
       yearsSet.add(year);
 
-      // Añadimos el mes SOLO si coincide con el año seleccionado (o si está en 'all')
       if (selectedYear === 'all' || String(year) === String(selectedYear)) {
         monthsSet.add(month);
       }
@@ -50,7 +46,6 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
     };
   }, [workoutLog, exerciseName, selectedYear]);
 
-  // --- 2. Filtrar el HISTORIAL a mostrar ---
   const historyByDay = useMemo(() => {
     if (!exerciseName) return [];
 
@@ -68,15 +63,14 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
       const month = date.getMonth();
       const dateKey = date.toISOString().split('T')[0];
 
-      // Filtro de Año
       if (selectedYear !== 'all' && String(year) !== String(selectedYear)) continue;
-      // Filtro de Mes
       if (selectedMonth !== 'all' && String(month) !== String(selectedMonth)) continue;
 
       if (!groups[dateKey]) groups[dateKey] = [];
 
       for (const d of details) {
         const sets = d.WorkoutLogSets && d.WorkoutLogSets.length > 0 ? d.WorkoutLogSets : [];
+        // Ordenar series por número
         sets.sort((a, b) => (a.set_number || 0) - (b.set_number || 0));
         groups[dateKey].push(...sets);
       }
@@ -95,13 +89,11 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
       day: 'numeric',
     });
 
-  // Mapa de nombres de meses
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  // Construcción de opciones para CustomSelect
   const yearOptions = [
     { value: 'all', label: 'Todo el historial' },
     ...availableYears.map((y) => ({ value: y, label: String(y) })),
@@ -112,9 +104,6 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
     ...availableMonths.map((m) => ({ value: m, label: monthNames[m] })),
   ];
 
-  // Si seleccionamos un año y el mes seleccionado ya no está disponible, reseteamos mes
-  // (Esto se maneja mejor con un useEffect, pero para simplicidad visual,
-  // si el usuario cambia de año, es lógico que quiera ver 'todos' los meses o que seleccione uno nuevo)
   React.useEffect(() => {
     if (selectedMonth !== 'all' && !availableMonths.includes(Number(selectedMonth))) {
       setSelectedMonth('all');
@@ -222,11 +211,21 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
                           </div>
                         </div>
 
-                        {set.is_dropset && (
-                          <span className="shrink-0 bg-red-500/10 text-red-400 text-[10px] font-bold px-2 py-1 rounded-md border border-red-500/20 shadow-sm">
-                            DROP
-                          </span>
-                        )}
+                        {/* Badges para Calentamiento e Intensidad */}
+                        <div className="flex flex-col gap-1 items-end shrink-0">
+                          {/* Badge de Calentamiento */}
+                          {set.is_warmup && (
+                            <span className="bg-accent/10 text-accent text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                              <Flame size={10} strokeWidth={3} /> C
+                            </span>
+                          )}
+                          {/* Badge de Dropset */}
+                          {set.is_dropset && (
+                            <span className="bg-red-500/10 text-red-500 text-[10px] font-bold px-2 py-1 rounded-md">
+                              DROP
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

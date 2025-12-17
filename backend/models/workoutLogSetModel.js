@@ -1,3 +1,4 @@
+/* backend/models/workoutLogSetModel.js */
 import { DataTypes } from "sequelize";
 import sequelize from "../db.js";
 
@@ -29,8 +30,13 @@ const WorkoutLogSet = sequelize.define(
       type: DataTypes.DECIMAL(6, 2),
       allowNull: false,
     },
-    // --- INICIO DE LA MODIFICACIÓN ---
     is_dropset: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    // --- INICIO DE LA MODIFICACIÓN ---
+    is_warmup: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
