@@ -23,17 +23,25 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
   const [isPer100g, setIsPer100g] = useState(false);
 
   const { addToast } = useToast();
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Obtenemos nutritionLog y recentMeals para la sincronización de imágenes
   const {
     favoriteMeals,
     addFavoriteMeal,
     deleteFavoriteMeal,
     updateFavoriteMeal,
+    nutritionLog,
+    recentMeals
   } = useAppStore((state) => ({
     favoriteMeals: state.favoriteMeals,
     addFavoriteMeal: state.addFavoriteMeal,
     deleteFavoriteMeal: state.deleteFavoriteMeal,
     updateFavoriteMeal: state.updateFavoriteMeal,
+    nutritionLog: state.nutritionLog,
+    recentMeals: state.recentMeals || [],
   }));
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const [isDarkTheme] = useState(
     () =>
@@ -45,10 +53,60 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
 
   const {
     isLoadingRecents,
-    filteredRecents,
-    paginatedFavorites,
+    filteredRecents: rawFilteredRecents, // Renombramos para procesar
+    paginatedFavorites: rawPaginatedFavorites, // Renombramos para procesar
     totalPages,
   } = useNutritionData(activeTab, favoriteMeals, searchTerm, favoritesPage);
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Lógica de "mapa de imágenes" para sincronizar la vista del modal 
+  // con las imágenes más recientes (mismo mecanismo que en Nutrition.jsx)
+  const imageMap = useMemo(() => {
+    const map = {};
+    const mergeItems = (items) => {
+      if (!items) return;
+      items.forEach(item => {
+        const name = item.description || item.name;
+        if (!name) return;
+        const key = name.toLowerCase().trim();
+        const img = item.image_url || item.image || item.img;
+        if (img) {
+          const ts = item.updated_at ? new Date(item.updated_at).getTime() : 0;
+          if (!map[key] || ts >= map[key].timestamp) {
+            map[key] = { url: img, timestamp: ts };
+          }
+        }
+      });
+    };
+
+    mergeItems(favoriteMeals);
+    mergeItems(recentMeals);
+    mergeItems(nutritionLog);
+    return map;
+  }, [nutritionLog, favoriteMeals, recentMeals]);
+
+  // Función auxiliar para aplicar la mejor imagen a una lista de items
+  const patchItemsWithImage = (items) => {
+    if (!items) return [];
+    return items.map(item => {
+      const key = (item.name || item.description || '').toLowerCase().trim();
+      const bestImage = imageMap[key];
+
+      if (bestImage && bestImage.url) {
+        return {
+          ...item,
+          image_url: bestImage.url,
+          updated_at: bestImage.timestamp // Pasamos el timestamp para el cache busting
+        };
+      }
+      return item;
+    });
+  };
+
+  // Listas con imágenes sincronizadas
+  const filteredRecents = useMemo(() => patchItemsWithImage(rawFilteredRecents), [rawFilteredRecents, imageMap]);
+  const paginatedFavorites = useMemo(() => patchItemsWithImage(rawPaginatedFavorites), [rawPaginatedFavorites, imageMap]);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const {
     itemsToAdd,

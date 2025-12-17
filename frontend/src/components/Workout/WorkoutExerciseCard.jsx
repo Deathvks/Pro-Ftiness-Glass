@@ -24,7 +24,6 @@ const WorkoutExerciseCard = ({
   onDisabledInputClick,
   onDisabledButtonClick,
   normalizeDecimalInput,
-  // Nueva prop para abrir historial
   onShowHistory,
 }) => {
   const { addWarmupSets } = useAppStore(state => ({ addWarmupSets: state.addWarmupSets }));
@@ -62,46 +61,49 @@ const WorkoutExerciseCard = ({
         />
       </button>
 
-      {/* Cabecera: Título, Info y Acciones */}
-      <div className="flex items-start justify-between gap-3 mb-4">
+      {/* --- NUEVA ESTRUCTURA: Título Arriba (Ancho Completo) --- */}
+      <button
+        onClick={() => onSetSelectedExercise(exercise)}
+        className="w-full text-left mb-2 group"
+      >
+        <h3 className="text-lg font-semibold truncate group-hover:text-accent">
+          {t(exercise.name, { ns: 'exercise_names' })}
+        </h3>
+      </button>
+
+      {/* --- Fila Inferior: Info (Izq) y Botones (Der) --- */}
+      <div className="flex items-end justify-between gap-3 mb-4">
 
         {/* Info del Ejercicio + Historial */}
         <button
           onClick={() => onSetSelectedExercise(exercise)}
-          className="flex-1 min-w-0 text-left group flex flex-col"
+          className="flex-1 min-w-0 text-left group flex flex-col gap-1"
           title="Ver detalles del ejercicio"
         >
-          <h3 className="text-lg font-semibold truncate group-hover:text-accent">
-            {t(exercise.name, { ns: 'exercise_names' })}
-          </h3>
+          <span className="text-sm font-semibold text-accent">
+            {exercise.sets} series × {exercise.reps} reps
+          </span>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-accent">
-              {exercise.sets} series × {exercise.reps} reps
-            </span>
-
-            {/* Visualización del Historial "En Vivo" */}
-            {exercise.last_performance && (
-              <div className="flex items-center gap-1.5 text-xs text-text-muted/80 animate-fade-in">
-                <History size={12} className="text-accent/70 shrink-0" />
-                <span className="truncate">
-                  <span className="font-medium text-text-secondary">
-                    {new Date(exercise.last_performance.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}:
-                  </span>{' '}
-                  {formatLastPerformance(exercise.last_performance)}
-                </span>
-              </div>
-            )}
-          </div>
+          {/* Visualización del Historial "En Vivo" */}
+          {exercise.last_performance && (
+            <div className="flex items-center gap-1.5 text-xs text-text-muted/80 animate-fade-in">
+              <History size={12} className="text-accent/70 shrink-0" />
+              <span className="truncate">
+                <span className="font-medium text-text-secondary">
+                  {new Date(exercise.last_performance.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}:
+                </span>{' '}
+                {formatLastPerformance(exercise.last_performance)}
+              </span>
+            </div>
+          )}
         </button>
 
         {/* Botones de Acción */}
-        <div className="flex gap-2 items-start">
+        <div className="flex gap-2 items-center shrink-0">
           {/* Botón de Historial */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              // Usamos la nueva prop específica para historial
               if (onShowHistory) {
                 onShowHistory(exercise);
               }

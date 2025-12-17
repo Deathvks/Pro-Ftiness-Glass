@@ -8,23 +8,37 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
     const [imgError, setImgError] = useState(false);
 
     const micronutrients = item.micronutrients;
-    
+
     // 1. Lógica para construir la URL correcta de la imagen
-    const getImageUrl = (url) => {
+    const getImageUrl = (url, updatedAt) => {
         if (!url) return null;
         // Si ya es una URL completa (ej: OpenFoodFacts), la usamos tal cual
         if (url.startsWith('http')) return url;
-        
+
         // Si es una ruta relativa local, le añadimos el dominio del backend
         // Usamos VITE_API_BASE_URL pero quitamos '/api' si está presente para ir a la raíz
         const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-        const rootUrl = apiBase.replace(/\/api\/?$/, ''); 
-        
+        const rootUrl = apiBase.replace(/\/api\/?$/, '');
+
         // Aseguramos que haya un slash entre el dominio y la ruta
-        return `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+        const fullUrl = `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Añadimos timestamp para cache busting si está disponible
+        if (updatedAt) {
+            const separator = fullUrl.includes('?') ? '&' : '?';
+            // Si updatedAt es un string ISO, lo convertimos a timestamp, si es número lo usamos directo
+            const ts = new Date(updatedAt).getTime();
+            if (!isNaN(ts)) {
+                return `${fullUrl}${separator}v=${ts}`;
+            }
+        }
+        // --- FIN DE LA MODIFICACIÓN ---
+
+        return fullUrl;
     };
 
-    const displayImage = getImageUrl(item.image_url);
+    const displayImage = getImageUrl(item.image_url, item.updated_at);
 
     // 2. Lista simplificada de micronutrientes
     const simpleMicrosList = [
@@ -42,9 +56,9 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
             const value = micronutrients[micro.key];
             let unit = micronutrients[micro.key.replace('_100g', '_unit')] || 'g';
             if (micro.key === 'sodium_100g' && unit === 'g') unit = 'mg';
-            
-            return (value && parseFloat(value) > 0) 
-                ? `${micro.name}: ${formatNumber(value, 2)} ${unit}` 
+
+            return (value && parseFloat(value) > 0)
+                ? `${micro.name}: ${formatNumber(value, 2)} ${unit}`
                 : null;
         })
         .filter(Boolean) : [];
@@ -55,17 +69,17 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
         <div
             className="flex flex-wrap items-center justify-between p-3 rounded-lg bg-bg-primary hover:bg-bg-secondary transition-colors border border-glass-border cursor-pointer group"
             onClick={(e) => {
-                 if (e.target.closest('button')) return;
-                 onAdd(item);
+                if (e.target.closest('button')) return;
+                onAdd(item);
             }}
         >
             <div className="flex items-center flex-1 min-w-0 mr-3">
                 {/* --- SECCIÓN DE IMAGEN --- */}
                 <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-gray-700 overflow-hidden mr-3 border border-glass-border flex items-center justify-center relative">
                     {displayImage && !imgError ? (
-                        <img 
-                            src={displayImage} 
-                            alt={item.name} 
+                        <img
+                            src={displayImage}
+                            alt={item.name}
                             className="w-full h-full object-cover"
                             onError={() => setImgError(true)}
                         />
@@ -130,7 +144,7 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                         <Trash2 size={16} />
                     </button>
                 )}
-                
+
                 <button
                     type="button"
                     className="p-2 rounded-full text-accent group-hover:bg-accent-transparent transition pointer-events-none"
@@ -144,7 +158,7 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
 
             {/* --- MICRONUTRIENTES (Desplegable) --- */}
             {hasMicros && showMicros && (
-                <div 
+                <div
                     className="w-full mt-2 p-2 bg-bg-secondary rounded-md border border-glass-border cursor-default"
                     onClick={(e) => e.stopPropagation()}
                 >

@@ -286,6 +286,45 @@ const WelcomeModal = ({ onClose }) => {
               </div>
             </div>
 
+            {/* --- ÚLTIMAS MEJORAS (NUEVO BLOQUE) --- */}
+            <div className="w-full bg-bg-secondary/20 border border-glass-border rounded-2xl p-4 backdrop-blur-sm">
+              <h2 className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Sparkles size={12} className="text-accent" /> Últimas Mejoras
+              </h2>
+              <div className="space-y-3">
+                {/* Item 1 */}
+                <div className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0">
+                    <History size={16} />
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-bold text-text-primary">Filtros de Historial</p>
+                    <p className="text-text-muted">Busca por Año y Mes en tus registros.</p>
+                  </div>
+                </div>
+                {/* Item 2 */}
+                <div className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 shrink-0">
+                    <Utensils size={16} />
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-bold text-text-primary">Sync Nutrición</p>
+                    <p className="text-text-muted">Imágenes actualizadas al instante.</p>
+                  </div>
+                </div>
+                {/* Item 3 */}
+                <div className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0">
+                    <Smartphone size={16} />
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-bold text-text-primary">UI Móvil Mejorada</p>
+                    <p className="text-text-muted">Títulos de ejercicios completos.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* --- Footer --- */}

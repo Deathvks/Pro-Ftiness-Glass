@@ -1,7 +1,7 @@
 /* frontend/src/pages/Nutrition.jsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, BookOpen, X, Scale } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, BookOpen, X, Scale, Image as ImageIcon } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -62,6 +62,43 @@ const getImageUrl = (url, updatedAt) => {
     return fullUrl;
 };
 
+// --- INICIO DE LA MODIFICACIÓN ---
+// Nuevo componente para manejar la carga de imágenes y errores (evita el cuadro negro)
+const MealImage = ({ src, alt, className, onClick }) => {
+    const [hasError, setHasError] = useState(false);
+    const [imgSrc, setImgSrc] = useState(src);
+
+    // Reiniciar estado si cambia el src
+    useEffect(() => {
+        setImgSrc(src);
+        setHasError(false);
+    }, [src]);
+
+    // Si no hay imagen o dio error, mostramos el fallback (Icono)
+    if (!imgSrc || hasError) {
+        return (
+            <div
+                className={`flex-shrink-0 rounded-md bg-bg-secondary/50 overflow-hidden border border-glass-border flex items-center justify-center ${className}`}
+                onClick={onClick}
+            >
+                <ImageIcon size={20} className="text-text-muted opacity-70" />
+            </div>
+        );
+    }
+
+    return (
+        <div className={`flex-shrink-0 rounded-md bg-bg-primary overflow-hidden border border-glass-border ${className}`} onClick={onClick}>
+            <img
+                src={imgSrc}
+                alt={alt}
+                className="w-full h-full object-cover"
+                onError={() => setHasError(true)}
+            />
+        </div>
+    );
+};
+// --- FIN DE LA MODIFICACIÓN ---
+
 // Componente principal de la página de Nutrición
 const Nutrition = ({ setView }) => {
     const { addToast } = useToast();
@@ -105,12 +142,15 @@ const Nutrition = ({ setView }) => {
                 const img = item.image_url || item.image || item.img;
                 if (img) {
                     const ts = item.updated_at ? new Date(item.updated_at).getTime() : 0;
+                    // Si ya existe una entrada, solo la reemplazamos si la nueva es más reciente
+                    // O si tiene el mismo timestamp (por ejemplo, items actuales)
                     if (!map[key] || ts >= map[key].timestamp) {
                         map[key] = { url: img, timestamp: ts };
                     }
                 }
             });
         };
+        // El orden importa: Favoritos -> Recientes -> Log Actual (El log actual tiene prioridad si es más reciente)
         mergeItems(favoriteMeals);
         mergeItems(recentMeals);
         mergeItems(nutritionLog);
@@ -241,9 +281,18 @@ const Nutrition = ({ setView }) => {
     // Función auxiliar para obtener la imagen de un log específico para el modal
     const getLogImage = (log) => {
         if (!log) return null;
+
+        // Prioridad 1: Si el log tiene imagen explícita, usarla (útil para actualizaciones inmediatas)
+        if (log.image_url) {
+            return getImageUrl(log.image_url, log.updated_at);
+        }
+        // Prioridad 2: Buscar en el mapa (para favoritos, recientes, o si se borró pero hay histórico)
         const normalizedName = log.description?.toLowerCase().trim();
         const bestImage = imageMap[normalizedName];
-        return getImageUrl(bestImage?.url, bestImage?.timestamp);
+        if (bestImage) {
+            return getImageUrl(bestImage.url, bestImage.timestamp);
+        }
+        return null;
     };
 
     return (
@@ -258,7 +307,6 @@ const Nutrition = ({ setView }) => {
                 <h1 className="hidden md:block text-4xl font-extrabold">Nutrición</h1>
                 <button
                     onClick={() => setView('templateDiets')}
-                    // CAMBIO: Botón sólido con color de usuario (bg-accent)
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-white font-bold shadow-lg shadow-accent/20 hover:brightness-110 transition-all w-full md:w-auto justify-center"
                 >
                     <BookOpen size={20} />
@@ -341,20 +389,15 @@ const Nutrition = ({ setView }) => {
                                         return (
                                             <div
                                                 key={log.id}
-                                                onClick={() => setViewLog(log)} // CLIC PARA VER DETALLES
+                                                onClick={() => setViewLog(log)}
                                                 className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-all active:scale-[0.99]"
                                             >
-                                                {/* Imagen miniatura */}
-                                                {displayImage && (
-                                                    <div className="w-12 h-12 flex-shrink-0 rounded-md bg-bg-primary overflow-hidden border border-glass-border">
-                                                        <img
-                                                            src={displayImage}
-                                                            alt={log.description}
-                                                            className="w-full h-full object-cover"
-                                                            onError={(e) => e.target.style.display = 'none'}
-                                                        />
-                                                    </div>
-                                                )}
+                                                {/* Uso del nuevo componente MealImage */}
+                                                <MealImage
+                                                    src={displayImage}
+                                                    alt={log.description}
+                                                    className="w-12 h-12"
+                                                />
 
                                                 <div className="flex-grow pr-20 sm:pr-16 min-w-0">
                                                     <p className="font-semibold truncate">
@@ -394,24 +437,29 @@ const Nutrition = ({ setView }) => {
                 </>
             )}
 
-            {/* Modal de Detalle de Comida (Solo Lectura) */}
+            {/* Modal de Detalle de Comida */}
             {viewLog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
                     <div className="absolute inset-0" onClick={() => setViewLog(null)} />
                     <GlassCard className="w-full max-w-md p-0 overflow-hidden relative z-10 animate-scale-in flex flex-col max-h-[90vh]">
 
-                        {/* Cabecera con Imagen (si existe) o Color sólido */}
-                        {/* CAMBIO: Altura h-64 y object-contain para ver la imagen completa */}
+                        {/* Cabecera con Imagen */}
                         <div className="relative h-64 bg-black/50 flex items-center justify-center">
+                            {/* Uso de MealImage con fallback manual si falla o no hay imagen para mostrar el icono */}
                             {getLogImage(viewLog) ? (
                                 <img
                                     src={getLogImage(viewLog)}
                                     alt={viewLog.description}
                                     className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        // Podríamos mostrar el icono aquí si quisiéramos una lógica más compleja
+                                    }}
                                 />
                             ) : (
                                 <Salad size={64} className="text-text-muted opacity-20" />
                             )}
+
                             <button
                                 onClick={() => setViewLog(null)}
                                 className="absolute top-4 right-4 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors backdrop-blur-md"
@@ -466,7 +514,6 @@ const Nutrition = ({ setView }) => {
                             </div>
                         </div>
 
-                        {/* Botón Cerrar inferior en móvil */}
                         <div className="p-4 border-t border-glass-border bg-bg-secondary/30">
                             <button
                                 onClick={() => setViewLog(null)}
