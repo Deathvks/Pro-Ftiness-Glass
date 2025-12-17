@@ -369,7 +369,7 @@ const WelcomeModal = ({ onClose }) => {
       </div>
 
       {/* Estilos inline para la animación de marquee */}
-      <style jsx>{`
+      <style>{`
         @keyframes marquee-vertical {
           0% { transform: translateY(0); }
           100% { transform: translateY(-50%); }

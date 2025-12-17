@@ -21,11 +21,11 @@ const { NutritionLog, WaterLog, FavoriteMeal, sequelize } = db;
 
 // Helper para asegurar que el directorio de subida existe
 const ensureUploadDirExists = async (dirPath) => {
-    try {
-        await fs.access(dirPath);
-    } catch (error) {
-        await fs.mkdir(dirPath, { recursive: true });
-    }
+  try {
+    await fs.access(dirPath);
+  } catch (error) {
+    await fs.mkdir(dirPath, { recursive: true });
+  }
 };
 
 /**
@@ -35,41 +35,41 @@ const ensureUploadDirExists = async (dirPath) => {
  * @returns {Promise<string|null>} La URL relativa de la imagen WebP guardada o null si falla.
  */
 const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
-    if (!imageUrl) return null;
+  if (!imageUrl) return null;
 
-    try {
-        // Asegurar que el directorio existe
-        await ensureUploadDirExists(outputDir);
+  try {
+    // Asegurar que el directorio existe
+    await ensureUploadDirExists(outputDir);
 
-        // Descargar la imagen
-        const response = await axios({
-            url: imageUrl,
-            responseType: 'arraybuffer' // Importante para obtener los datos binarios
-        });
-        const imageBuffer = Buffer.from(response.data);
+    // Descargar la imagen
+    const response = await axios({
+      url: imageUrl,
+      responseType: 'arraybuffer' // Importante para obtener los datos binarios
+    });
+    const imageBuffer = Buffer.from(response.data);
 
-        // Generar nombre de archivo único para WebP
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const webpFilename = `barcode-${uniqueSuffix}.webp`;
-        const outputPath = path.join(outputDir, webpFilename);
+    // Generar nombre de archivo único para WebP
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const webpFilename = `barcode-${uniqueSuffix}.webp`;
+    const outputPath = path.join(outputDir, webpFilename);
 
-        // Convertir a WebP usando Sharp
-        await sharp(imageBuffer)
-            .resize(800, 800, { // Opcional: Redimensionar como las otras imágenes
-                fit: sharp.fit.inside,
-                withoutEnlargement: true
-            })
-            .webp({ quality: 75 })
-            .toFile(outputPath);
+    // Convertir a WebP usando Sharp
+    await sharp(imageBuffer)
+      .resize(800, 800, { // Opcional: Redimensionar como las otras imágenes
+        fit: sharp.fit.inside,
+        withoutEnlargement: true
+      })
+      .webp({ quality: 75 })
+      .toFile(outputPath);
 
-        // Devolver la URL relativa
-        return `/images/food/${webpFilename}`;
+    // Devolver la URL relativa
+    return `/images/food/${webpFilename}`;
 
-    } catch (error) {
-        console.error(`Error al descargar o convertir la imagen ${imageUrl}:`, error.message);
-        // Si falla la descarga o conversión, simplemente no tendremos imagen local.
-        return null; // Devolvemos null para que el frontend sepa que no hay imagen local
-    }
+  } catch (error) {
+    console.error(`Error al descargar o convertir la imagen ${imageUrl}:`, error.message);
+    // Si falla la descarga o conversión, simplemente no tendremos imagen local.
+    return null; // Devolvemos null para que el frontend sepa que no hay imagen local
+  }
 };
 
 
@@ -144,8 +144,7 @@ const getRecentMeals = async (req, res, next) => {
     }
     const result = uniqueMeals.slice(0, 20);
     res.json(result);
-  } catch (error)
- {
+  } catch (error) {
     next(error);
   }
 };
@@ -223,12 +222,19 @@ const addFoodLog = async (req, res, next) => {
       fat_per_100g
     } = req.body;
 
+    // --- INICIO CORRECCIÓN: Validar null strings ---
+    // Si viene de FormData, "null" puede llegar como string. Aseguramos que sea null real.
+    let sanitizedImageUrl = image_url;
+    if (sanitizedImageUrl === 'null' || sanitizedImageUrl === '') {
+      sanitizedImageUrl = null;
+    }
+
     // Priorizar la imagen recién subida y procesada (req.file)
-    // Si no hay, usar la image_url del body (de barcode/separada)
-    // Si no, null.
+    // Si no hay, usar la image_url del body (de barcode/separada o null)
     const finalImageUrl = (req.file && req.file.processedPath)
-        ? req.file.processedPath
-        : (image_url || null);
+      ? req.file.processedPath
+      : sanitizedImageUrl;
+    // --- FIN CORRECCIÓN ---
 
     const foodData = {
       user_id: userId,
@@ -297,14 +303,20 @@ const updateFoodLog = async (req, res, next) => {
     let newImageUrl;
 
     if (req.file && req.file.processedPath) {
-        // 1. Si se subió un archivo nuevo, esa es la URL
-        newImageUrl = req.file.processedPath;
+      // 1. Si se subió un archivo nuevo, esa es la URL
+      newImageUrl = req.file.processedPath;
     } else if (image_url !== undefined) {
-        // 2. Si se pasó 'image_url' en el body (incluso si es null para borrarla)
+      // 2. Si se pasó 'image_url' en el body
+      // --- INICIO CORRECCIÓN: Convertir "null" string a null real ---
+      if (image_url === 'null' || image_url === '') {
+        newImageUrl = null;
+      } else {
         newImageUrl = image_url;
+      }
+      // --- FIN CORRECCIÓN ---
     } else {
-        // 3. Si no vino ni archivo ni 'image_url' en el body, se mantiene la antigua
-        newImageUrl = oldImageUrl;
+      // 3. Si no vino ni archivo ni 'image_url' en el body, se mantiene la antigua
+      newImageUrl = oldImageUrl;
     }
 
     // Si la URL antigua existe Y es diferente de la nueva
@@ -367,9 +379,9 @@ const deleteFoodLog = async (req, res, next) => {
     if (log.image_url) {
       const imagePath = path.join(__dirname, '..', 'public', log.image_url);
       fs.unlink(imagePath).catch(err => {
-            if (err.code !== 'ENOENT') {
-              console.error(`Error al borrar imagen ${imagePath} al eliminar log:`, err);
-            }
+        if (err.code !== 'ENOENT') {
+          console.error(`Error al borrar imagen ${imagePath} al eliminar log:`, err);
+        }
       });
     }
 
@@ -396,14 +408,14 @@ const upsertWaterLog = async (req, res, next) => {
 
     // Usamos findOrCreate para simplificar la lógica
     const [waterLog, created] = await WaterLog.findOrCreate({
-        where: { user_id: userId, log_date },
-        defaults: { quantity_ml }
+      where: { user_id: userId, log_date },
+      defaults: { quantity_ml }
     });
 
     // Si no fue creado, significa que existía, así que lo actualizamos
     if (!created) {
-        waterLog.quantity_ml = quantity_ml;
-        await waterLog.save();
+      waterLog.quantity_ml = quantity_ml;
+      await waterLog.save();
     }
 
     res.json(waterLog);
@@ -429,9 +441,9 @@ const searchByBarcode = async (req, res, next) => {
 
 
     if (!response.data || response.data.status === 0 || !response.data.product || !response.data.product.product_name) {
-        console.log(`[BACKEND] Producto no encontrado en OFF para ${barcode}`);
-        // Devolvemos 404 pero con un objeto 'product' vacío o con info mínima para consistencia
-        return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
+      console.log(`[BACKEND] Producto no encontrado en OFF para ${barcode}`);
+      // Devolvemos 404 pero con un objeto 'product' vacío o con info mínima para consistencia
+      return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
     }
 
     const product = response.data.product;
@@ -441,11 +453,11 @@ const searchByBarcode = async (req, res, next) => {
     const originalImageUrl = product.image_url || product.image_front_url || null;
     let localImageUrl = null;
     if (originalImageUrl) {
-         console.log(`[BACKEND] Descargando y convirtiendo imagen para ${barcode}: ${originalImageUrl}`);
-         localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
-         console.log(`[BACKEND] Imagen local generada para ${barcode}: ${localImageUrl}`);
+      console.log(`[BACKEND] Descargando y convirtiendo imagen para ${barcode}: ${originalImageUrl}`);
+      localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
+      console.log(`[BACKEND] Imagen local generada para ${barcode}: ${localImageUrl}`);
     } else {
-         console.log(`[BACKEND] Producto ${barcode} no tiene imagen en OFF.`);
+      console.log(`[BACKEND] Producto ${barcode} no tiene imagen en OFF.`);
     }
 
     const foodData = {
@@ -461,10 +473,10 @@ const searchByBarcode = async (req, res, next) => {
   } catch (error) {
     console.error(`[BACKEND] Error en searchByBarcode para ${req.params.barcode}:`, error.message);
     if (error.response) {
-       console.error('[BACKEND] Detalles del error de respuesta:', error.response.status, error.response.data);
-       if (error.response.status === 404) {
-           return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
-       }
+      console.error('[BACKEND] Detalles del error de respuesta:', error.response.status, error.response.data);
+      if (error.response.status === 404) {
+        return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
+      }
     }
     // Para otros errores, pasamos al manejador global
     next(error);
@@ -475,14 +487,14 @@ const searchByBarcode = async (req, res, next) => {
 // la lógica está en la ruta POST /food/image y en downloadAndConvertToWebP.
 // Mantenemos la exportación por si se usa en otro lado, pero debería estar vacía o eliminarse.
 const uploadFoodImage = async (req, res, next) => {
-    // Esta función ya no se usa directamente en la ruta /food/image
-    // La URL se devuelve directamente en esa ruta tras procesar con Sharp.
-    console.warn("Llamada a uploadFoodImage - esta función está obsoleta y no debería usarse.");
-    if (req.imageUrl) {
-        res.status(201).json({ imageUrl: req.imageUrl });
-    } else {
-        res.status(400).json({ error: "No se procesó ninguna imagen." });
-    }
+  // Esta función ya no se usa directamente en la ruta /food/image
+  // La URL se devuelve directamente en esa ruta tras procesar con Sharp.
+  console.warn("Llamada a uploadFoodImage - esta función está obsoleta y no debería usarse.");
+  if (req.imageUrl) {
+    res.status(201).json({ imageUrl: req.imageUrl });
+  } else {
+    res.status(400).json({ error: "No se procesó ninguna imagen." });
+  }
 };
 
 /**
@@ -509,53 +521,53 @@ const searchFoods = async (req, res, next) => {
     // 2. Buscar en Open Food Facts (API Global)
     // Usamos la API de búsqueda de OFF
     const offSearchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_es,nutriments,image_url,image_small_url`;
-    
+
     const offResultsPromise = axios.get(offSearchUrl)
-        .then(response => {
-             if (response.data && response.data.products) {
-                 return response.data.products.map(p => ({
-                     // Mapeamos al formato que el frontend pueda entender (híbrido entre FavoriteMeal y OFF)
-                     id: `off-${p.code}`, // ID temporal único
-                     name: p.product_name_es || p.product_name || 'Sin nombre',
-                     // OFF devuelve valores por 100g en nutriments
-                     calories: p.nutriments?.['energy-kcal_100g'] || 0,
-                     protein_g: p.nutriments?.proteins_100g || 0,
-                     carbs_g: p.nutriments?.carbohydrates_100g || 0,
-                     fats_g: p.nutriments?.fat_100g || 0,
-                     // Campos extra útiles
-                     calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
-                     protein_per_100g: p.nutriments?.proteins_100g || 0,
-                     carbs_per_100g: p.nutriments?.carbohydrates_100g || 0,
-                     fat_per_100g: p.nutriments?.fat_100g || 0,
-                     
-                     image_url: p.image_small_url || p.image_url || null,
-                     source: 'global', // Flag para saber que viene de fuera
-                     weight_g: 100, // Referencia base
-                 }));
-             }
-             return [];
-        })
-        .catch(err => {
-            console.error("Error buscando en Open Food Facts:", err.message);
-            return []; // Si falla OFF, devolvemos array vacío y no rompemos todo
-        });
+      .then(response => {
+        if (response.data && response.data.products) {
+          return response.data.products.map(p => ({
+            // Mapeamos al formato que el frontend pueda entender (híbrido entre FavoriteMeal y OFF)
+            id: `off-${p.code}`, // ID temporal único
+            name: p.product_name_es || p.product_name || 'Sin nombre',
+            // OFF devuelve valores por 100g en nutriments
+            calories: p.nutriments?.['energy-kcal_100g'] || 0,
+            protein_g: p.nutriments?.proteins_100g || 0,
+            carbs_g: p.nutriments?.carbohydrates_100g || 0,
+            fats_g: p.nutriments?.fat_100g || 0,
+            // Campos extra útiles
+            calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
+            protein_per_100g: p.nutriments?.proteins_100g || 0,
+            carbs_per_100g: p.nutriments?.carbohydrates_100g || 0,
+            fat_per_100g: p.nutriments?.fat_100g || 0,
+
+            image_url: p.image_small_url || p.image_url || null,
+            source: 'global', // Flag para saber que viene de fuera
+            weight_g: 100, // Referencia base
+          }));
+        }
+        return [];
+      })
+      .catch(err => {
+        console.error("Error buscando en Open Food Facts:", err.message);
+        return []; // Si falla OFF, devolvemos array vacío y no rompemos todo
+      });
 
     // Ejecutamos ambas en paralelo
     const [favoriteResults, offResults] = await Promise.all([favoriteResultsPromise, offResultsPromise]);
 
     // Marcamos los favoritos como locales
     const formattedFavorites = favoriteResults.map(f => ({
-        ...f.toJSON(), // Convertir instancia Sequelize a objeto plano
-        source: 'local',
-        // Asegurar campos _per_100g si no existen (asumiendo que lo guardado es la porción o base 100g según lógica de tu app)
-        // Si weight_g es 100, los valores son per_100g.
-        calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0, 
-        // ... puedes calcular el resto si lo necesitas
+      ...f.toJSON(), // Convertir instancia Sequelize a objeto plano
+      source: 'local',
+      // Asegurar campos _per_100g si no existen (asumiendo que lo guardado es la porción o base 100g según lógica de tu app)
+      // Si weight_g es 100, los valores son per_100g.
+      calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0,
+      // ... puedes calcular el resto si lo necesitas
     }));
 
     // Combinamos resultados: Primero favoritos, luego globales
     const combinedResults = [...formattedFavorites, ...offResults];
-    
+
     res.json(combinedResults);
 
   } catch (error) {

@@ -94,15 +94,17 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
+  // --- INICIO CAMBIO: Textos "Año" y "Mes" ---
   const yearOptions = [
-    { value: 'all', label: 'Todo el historial' },
+    { value: 'all', label: 'Año' }, // Antes "Historial"
     ...availableYears.map((y) => ({ value: y, label: String(y) })),
   ];
 
   const monthOptions = [
-    { value: 'all', label: 'Todos los meses' },
+    { value: 'all', label: 'Mes' }, // Antes "Todo el año"
     ...availableMonths.map((m) => ({ value: m, label: monthNames[m] })),
   ];
+  // --- FIN CAMBIO ---
 
   React.useEffect(() => {
     if (selectedMonth !== 'all' && !availableMonths.includes(Number(selectedMonth))) {
@@ -114,11 +116,11 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
   if (!exercise) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4">
-      <div className="relative w-full max-w-lg md:max-w-2xl rounded-3xl border border-glass-border bg-bg-secondary shadow-2xl flex flex-col max-h-[90vh] md:max-h-[85vh] animate-scale-in overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4">
+      <div className="relative w-full max-w-lg md:max-w-2xl rounded-3xl bg-bg-secondary shadow-2xl flex flex-col max-h-[90vh] md:max-h-[85vh] animate-scale-in overflow-hidden">
 
         {/* Header Fijo */}
-        <div className="p-5 md:p-6 border-b border-glass-border flex flex-col gap-4 bg-bg-secondary z-10 shrink-0">
+        <div className="p-5 md:p-6 flex flex-col gap-4 bg-bg-secondary z-10 shrink-0">
           <div className="flex justify-between items-start gap-4">
             <h2 className="text-xl md:text-2xl font-extrabold text-text-primary leading-tight break-words whitespace-normal">
               {tCommon('Historial de', { defaultValue: 'Historial de' })}{' '}
@@ -159,7 +161,7 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
         </div>
 
         {/* Contenido Scrollable */}
-        <div className="overflow-y-auto p-4 md:p-6 custom-scrollbar bg-bg-secondary/50">
+        <div className="overflow-y-auto p-4 md:p-6 custom-scrollbar bg-bg-secondary">
           {historyByDay.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-text-muted opacity-60">
               <span className="text-4xl mb-3">📅</span>
@@ -178,16 +180,16 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
                   className="animate-fade-in"
                   style={{ animationDelay: `${idx * 0.05}s` }}
                 >
-                  <h3 className="text-accent/90 text-sm font-bold mb-3 uppercase tracking-wider flex items-center gap-2 sticky top-0 bg-bg-secondary/95 backdrop-blur py-2 z-10 rounded-md pl-1">
+                  <h3 className="text-accent/90 text-sm font-bold mb-3 uppercase tracking-wider flex items-center gap-2 sticky top-0 bg-bg-secondary py-2 z-10 rounded-md pl-1">
                     <span className="w-2 h-2 rounded-full bg-accent shadow-[0_0_8px_rgba(var(--accent),0.5)]"></span>
                     {formatDate(dateKey)}
                   </h3>
 
-                  <div className="space-y-2 pl-2 border-l-2 border-glass-border ml-1">
+                  <div className="space-y-2 pl-2 border-l-2 border-white/5 ml-1">
                     {sets.map((set, i) => (
                       <div
                         key={`${dateKey}-${i}`}
-                        className="group flex items-center justify-between rounded-xl px-4 py-3 bg-bg-primary/50 border border-glass-border/50 hover:bg-bg-primary hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5 transition-all duration-200 ml-2 cursor-default"
+                        className="group flex items-center justify-between rounded-xl px-4 py-3 bg-bg-primary hover:bg-bg-primary/80 transition-all duration-200 ml-2 cursor-default shadow-sm"
                       >
                         <div className="flex items-center gap-3 w-full">
                           <span className="text-xs font-bold text-text-muted w-6 group-hover:text-accent/70 transition-colors">
@@ -236,10 +238,10 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
         </div>
 
         {/* Footer Móvil */}
-        <div className="p-4 border-t border-glass-border md:hidden shrink-0 bg-bg-secondary z-10">
+        <div className="p-4 md:hidden shrink-0 bg-bg-secondary z-10">
           <button
             onClick={onClose}
-            className="w-full py-3.5 bg-bg-primary rounded-xl text-text-secondary font-semibold border border-glass-border active:scale-[0.98] transition-transform shadow-sm hover:text-text-primary"
+            className="w-full py-3.5 bg-bg-primary rounded-xl text-text-secondary font-semibold active:scale-[0.98] transition-transform shadow-sm hover:text-text-primary"
           >
             {tCommon('Cerrar', { defaultValue: 'Cerrar' })}
           </button>
