@@ -1,5 +1,5 @@
 /* frontend/src/hooks/useAppTheme.js */
-import { useState, useLayoutEffect } from 'react'; // Usamos useLayoutEffect para cambios visuales inmediatos
+import { useState, useLayoutEffect } from 'react';
 import useAppStore from '../store/useAppStore';
 
 const THEME_COLORS = {
@@ -39,7 +39,7 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // --- EFECTO PRINCIPAL: Gestión de DOM y Meta Tags ---
+  // --- EFECTO PRINCIPAL ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
@@ -58,7 +58,7 @@ export const useAppTheme = () => {
         root.classList.add(`${theme}-theme`);
       }
 
-      // 2. Determinar color
+      // 2. Determinar color exacto
       let color = THEME_COLORS.dark;
       if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
@@ -68,22 +68,22 @@ export const useAppTheme = () => {
         color = THEME_COLORS.light;
       }
 
-      // 3. Aplicar color al fondo del HTML (Cubre el rebote de iOS)
+      // 3. Aplicar color al fondo (Crucial para el "rebote" de iOS y zonas seguras)
       root.style.backgroundColor = color;
+      document.body.style.backgroundColor = color;
 
-      // 4. GESTIÓN DIRECTA DE META TAGS
-      // Eliminamos cualquier etiqueta existente para forzar al navegador a leer la nueva
-      const oldMetas = document.querySelectorAll('meta[name="theme-color"]');
-      oldMetas.forEach(m => m.remove());
+      // 4. GESTIÓN DE META TAGS
+      // IMPORTANTE: Solo actualizamos 'theme-color'.
+      // NO tocamos 'apple-mobile-web-app-status-bar-style' (se queda en 'default' estático).
+      // Esto evita el bloqueo que obligaba a recargar la página.
 
-      const metaTheme = document.createElement('meta');
-      metaTheme.name = "theme-color";
-      metaTheme.content = color;
-      document.head.appendChild(metaTheme);
-
-      // IMPORTANTE: NO cambiamos 'apple-mobile-web-app-status-bar-style' dinámicamente.
-      // Dejamos que iOS decida el color del texto (blanco/negro) basándose en el 'theme-color' de arriba.
-      // Esto evita el bug de que la barra se quede "congelada" al cambiar de tema.
+      let metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (!metaTheme) {
+        metaTheme = document.createElement('meta');
+        metaTheme.name = "theme-color";
+        document.head.appendChild(metaTheme);
+      }
+      metaTheme.setAttribute('content', color);
     };
 
     updateAppearance();

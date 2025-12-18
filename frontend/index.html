@@ -74,11 +74,19 @@
           root.classList.add(theme + '-theme');
         }
 
-        // Aplicar color de fondo inmediatamente
+        // Aplicar color de fondo inmediatamente (HTML y BODY)
         root.style.backgroundColor = selectedColor;
+        // IMPORTANTE: Forzamos el body también para asegurar consistencia en iOS
+        if (document.body) {
+          document.body.style.backgroundColor = selectedColor;
+        } else {
+          // Si el body aún no existe (muy temprano), esperamos al DOMContentLoaded
+          document.addEventListener('DOMContentLoaded', function () {
+            document.body.style.backgroundColor = selectedColor;
+          });
+        }
 
         // Limpiar y establecer theme-color
-        // (Nota: No tocamos status-bar-style, dejamos el 'default' estático de arriba)
         var oldMetas = document.querySelectorAll('meta[name="theme-color"]');
         oldMetas.forEach(function (meta) { meta.remove(); });
 
