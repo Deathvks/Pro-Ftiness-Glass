@@ -58,6 +58,7 @@ const processAndSaveFoodImage = async (req, res, next) => {
 
         // Procesar con Sharp: redimensionar a máx 800px y convertir a WebP
         await sharp(req.file.buffer)
+            .rotate() // <--- CORRECCIÓN: Autocorregir rotación basada en EXIF
             .resize(800, 800, {
                 fit: sharp.fit.inside,
                 withoutEnlargement: true
@@ -92,7 +93,7 @@ const foodLogValidationRules = [
     body('log_date').isISO8601().toDate().withMessage('Fecha inválida.'),
     // No validamos image_url aquí porque se maneja en la subida y se pasa al crear/actualizar
     body('micronutrients').optional({ nullable: true }).isObject().withMessage('Micronutrientes debe ser un objeto JSON.'),
-    
+
     // --- INICIO: Validaciones para campos por 100g ---
     body('calories_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las calorías por 100g deben ser un número positivo.'),
     body('protein_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las proteínas por 100g deben ser un número positivo.'),
@@ -110,7 +111,7 @@ const updateFoodLogValidationRules = [
     body('weight_g').optional({ nullable: true }).isFloat({ min: 0.1 }).withMessage('El peso debe ser un número positivo.'),
     // No validamos image_url aquí
     body('micronutrients').optional({ nullable: true }).isObject().withMessage('Micronutrientes debe ser un objeto JSON.'),
-    
+
     // --- INICIO: Validaciones para campos por 100g ---
     body('calories_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las calorías por 100g deben ser un número positivo.'),
     body('protein_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las proteínas por 100g deben ser un número positivo.'),
@@ -125,8 +126,8 @@ const handleValidationErrors = (req, res, next) => {
     if (!errors.isEmpty()) {
         // Borrar archivo si la validación falla después de procesarlo
         if (req.file && req.file.processedPath) {
-             const filePath = path.join(__dirname, '..', 'public', req.file.processedPath);
-             fs.unlink(filePath).catch(err => console.error("Error al borrar archivo tras validación fallida:", err));
+            const filePath = path.join(__dirname, '..', 'public', req.file.processedPath);
+            fs.unlink(filePath).catch(err => console.error("Error al borrar archivo tras validación fallida:", err));
         }
         return res.status(400).json({ errors: errors.array() });
     }

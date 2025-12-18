@@ -50,19 +50,8 @@ export const useAppTheme = () => {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
-      // 1. Clases CSS (Visuales)
-      root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
-      if (theme === 'system') {
-        root.classList.add(effectiveTheme === 'dark' ? 'dark-theme' : 'light-theme');
-      } else {
-        root.classList.add(`${theme}-theme`);
-      }
-
-      // 2. LIMPIEZA DE ESTILOS INLINE (Mantenemos esto para que el CSS funcione bien)
-      root.style.removeProperty('background-color');
-      document.body.style.removeProperty('background-color');
-
-      // 3. Determinar color exacto para la interfaz de iOS
+      // 1. Determinar el color HEX exacto ANTES de aplicarlo.
+      // iOS 26 necesita el valor hexadecimal preciso para la barra de estado.
       let color = THEME_COLORS.dark;
       if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
@@ -72,29 +61,50 @@ export const useAppTheme = () => {
         color = THEME_COLORS.light;
       }
 
-      // 4. ACTUALIZACIÓN META TAGS (FIX IOS SAFARI & CHROME MOBILE)
-      // En lugar de borrar y crear (que puede causar parpadeos o ser ignorado),
-      // buscamos la etiqueta y actualizamos su atributo 'content' directamente.
-
-      // A) theme-color (Barra de direcciones / Estado en navegador)
-      let metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (!metaTheme) {
-        metaTheme = document.createElement('meta');
-        metaTheme.name = "theme-color";
-        document.head.appendChild(metaTheme);
+      // 2. Clases CSS (Para el estilo interno de la app)
+      root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
+      if (theme === 'system') {
+        root.classList.add(effectiveTheme === 'dark' ? 'dark-theme' : 'light-theme');
+      } else {
+        root.classList.add(`${theme}-theme`);
       }
-      metaTheme.setAttribute('content', color);
 
-      // B) apple-mobile-web-app-status-bar-style (Standalone / PWA)
-      // Ajustamos también este valor para mayor consistencia en iOS
-      let metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      if (!metaStatus) {
-        metaStatus = document.createElement('meta');
-        metaStatus.name = "apple-mobile-web-app-status-bar-style";
-        document.head.appendChild(metaStatus);
+      // 3. FIX CRÍTICO IOS 26.2 (SAFARI LIQUID GLASS)
+      // Safari usa el 'background-color' del body para calcular el tinte de la barra inferior
+      // cuando es transparente. Si solo cambiamos la clase CSS, el motor de renderizado
+      // a veces no repinta la interfaz del navegador ("chrome") inmediatamente.
+      // Forzamos el estilo inline para asegurar la sincronización.
+      root.style.backgroundColor = color;
+      document.body.style.backgroundColor = color;
+
+      // 4. FORZAR RE-RENDER DE META TAGS (ISLA DINÁMICA)
+      // En lugar de actualizar el atributo 'content', borramos y recreamos las etiquetas.
+      // Esto obliga a Safari a leer de nuevo la configuración de color.
+
+      // A) theme-color (Barra de direcciones / Estado)
+      const existingMetaTheme = document.querySelector('meta[name="theme-color"]');
+      if (existingMetaTheme) {
+        existingMetaTheme.remove();
       }
-      // 'default' es blanco/gris (texto negro), 'black' es negro (texto blanco)
-      metaStatus.setAttribute('content', effectiveTheme === 'light' ? 'default' : 'black');
+
+      const newMetaTheme = document.createElement('meta');
+      newMetaTheme.name = "theme-color";
+      newMetaTheme.content = color;
+      document.head.appendChild(newMetaTheme);
+
+      // B) apple-mobile-web-app-status-bar-style (PWA / Standalone)
+      // iOS 26 maneja esto de forma distinta para el modo oscuro/oled.
+      const existingMetaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if (existingMetaStatus) {
+        existingMetaStatus.remove();
+      }
+
+      const newMetaStatus = document.createElement('meta');
+      newMetaStatus.name = "apple-mobile-web-app-status-bar-style";
+      // 'default' = Texto negro (para fondo claro)
+      // 'black-translucent' = Texto blanco y fondo que permite ver el color del body (para dark/oled)
+      newMetaStatus.content = effectiveTheme === 'light' ? 'default' : 'black-translucent';
+      document.head.appendChild(newMetaStatus);
     };
 
     updateAppearance();

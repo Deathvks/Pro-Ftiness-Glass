@@ -46,6 +46,7 @@ const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
     const outputPath = path.join(outputDir, webpFilename);
 
     await sharp(imageBuffer)
+      .rotate() // <--- CORRECCIÓN: Respetar orientación EXIF si la hay
       .resize(800, 800, {
         fit: sharp.fit.inside,
         withoutEnlargement: true
