@@ -5,24 +5,18 @@ import { Home, Dumbbell, BarChart2, Settings, Utensils, Bell } from 'lucide-reac
 import { useTranslation } from 'react-i18next';
 import useAppStore from './store/useAppStore';
 
-// --- Imports de Hooks Modularizados ---
 import { useAppNavigation } from './hooks/useAppNavigation';
-import { useAppTheme } from './hooks/useAppTheme'; // Hook modificado que devuelve colores
+import { useAppTheme } from './hooks/useAppTheme';
 import { useWorkoutTimer } from './hooks/useWorkoutTimer';
 import { useAppInitialization } from './hooks/useAppInitialization';
 
-// --- Imports de Componentes de Layout ---
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
-import Spinner from './components/Spinner';
 import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
-
-// --- Imports de Componentes Modales ---
 import TwoFactorPromoModal from './components/TwoFactorPromoModal';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
 
-// --- Imports de Páginas (Lazy) ---
 import OnboardingScreen from './pages/OnboardingScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 
@@ -40,17 +34,14 @@ const Profile = lazy(() => import('./pages/Profile'));
 const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
 const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
 
-// --- Constantes ---
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
 
 export default function App() {
-  // --- 1. Estado Local ---
   const [authView, setAuthView] = useState('login');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
 
-  // --- 2. Hooks Personalizados ---
   const {
     view,
     setView,
@@ -61,8 +52,8 @@ export default function App() {
     handleShowPolicy
   } = useAppNavigation();
 
-  // Obtenemos los colores calculados dinámicamente desde el hook
-  const { theme, setTheme, accent, setAccent, themeColor, statusBarStyle } = useAppTheme();
+  // Gestión de tema controlada únicamente por este hook
+  const { theme, setTheme, accent, setAccent } = useAppTheme();
 
   const timer = useWorkoutTimer();
   const { t } = useTranslation('translation');
@@ -72,7 +63,6 @@ export default function App() {
     ...verificationProps
   } = useAppInitialization({ setView, setAuthView, view });
 
-  // --- 3. Hook de Zustand (Datos Globales) ---
   const {
     isAuthenticated,
     userProfile,
@@ -91,9 +81,6 @@ export default function App() {
     restTimerMode: state.restTimerMode,
   }));
 
-  // --- 4. Efectos ---
-
-  // Lógica para mostrar la promo de 2FA una sola vez
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
@@ -108,7 +95,6 @@ export default function App() {
     }
   }, [isAuthenticated, userProfile, isLoading]);
 
-  // --- 5. Callbacks ---
   const handleLogoutClick = useCallback(() => {
     setShowLogoutConfirm(true);
   }, []);
@@ -127,8 +113,6 @@ export default function App() {
     handleClose2FAPromo();
     navigate('twoFactorSetup');
   };
-
-  // --- 6. Memos para Títulos, Descripciones y Vista Actual ---
 
   const currentTitle = useMemo(() => {
     const titleMap = {
@@ -225,10 +209,6 @@ export default function App() {
     handleCancelProfile
   ]);
 
-
-  // --- 7. Guard Clauses ---
-
-  // Interceptar ruta de reset password
   if (window.location.pathname === '/reset-password') {
     return (
       <ResetPasswordScreen
@@ -239,7 +219,6 @@ export default function App() {
     );
   }
 
-  // Reemplazamos el texto "Cargando..." con el nuevo Skeleton
   if (isLoading && isInitialLoad) {
     return <InitialLoadingSkeleton />;
   }
@@ -255,8 +234,6 @@ export default function App() {
   if (!userProfile) {
     return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
   }
-
-  // --- 8. Renderizado Principal ---
 
   const navItems = [
     { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
@@ -275,15 +252,10 @@ export default function App() {
         <link rel="canonical" href={canonicalUrl} />
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
-
-        {/* --- MODIFICACIÓN: Inyección dinámica de theme-color y status-bar --- */}
-        {/* Usamos 'key' para forzar a React/Helmet a re-renderizar la etiqueta si el color cambia */}
-        <meta name="theme-color" content={themeColor} key="theme-color" />
-        <meta name="apple-mobile-web-app-status-bar-style" content={statusBarStyle} key="status-bar-style" />
+        {/* Sin meta theme-color aquí, controlado por useAppTheme */}
 
         <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
 
-        {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:title" content={fullPageTitle} />
@@ -291,7 +263,6 @@ export default function App() {
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta property="og:site_name" content="Pro Fitness Glass" />
 
-        {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content={canonicalUrl} />
         <meta property="twitter:title" content={fullPageTitle} />
@@ -315,7 +286,6 @@ export default function App() {
         {...verificationProps}
       />
 
-      {/* Temporizador Global (Modal o Isla Dinámica) */}
       {isResting && (
         restTimerMode === 'minimized' ? (
           <DynamicIslandTimer />
@@ -324,7 +294,6 @@ export default function App() {
         )
       )}
 
-      {/* Modal Promocional 2FA */}
       {show2FAPromo && (
         <TwoFactorPromoModal
           onClose={handleClose2FAPromo}

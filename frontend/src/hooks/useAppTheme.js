@@ -1,8 +1,7 @@
 /* frontend/src/hooks/useAppTheme.js */
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react'; // Usamos useLayoutEffect para cambios visuales inmediatos
 import useAppStore from '../store/useAppStore';
 
-// Definimos los colores fuera para reutilizarlos y asegurar consistencia con index.html/css
 const THEME_COLORS = {
   oled: '#000000',
   dark: '#0c111b',
@@ -12,7 +11,6 @@ const THEME_COLORS = {
 export const useAppTheme = () => {
   const cookieConsent = useAppStore(state => state.cookieConsent);
 
-  // 1. Inicialización de estado del tema (desde localStorage o system)
   const [theme, setThemeState] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') || 'system';
@@ -25,43 +23,6 @@ export const useAppTheme = () => {
       return localStorage.getItem('accent') || 'green';
     }
     return 'green';
-  });
-
-  // Helper para resolver el tema efectivo (system -> light/dark)
-  const getEffectiveTheme = (currentTheme) => {
-    if (currentTheme === 'system') {
-      if (typeof window !== 'undefined') {
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      }
-      return 'dark';
-    }
-    return currentTheme;
-  };
-
-  // 2. Estados calculados para Helmet (Meta Tags)
-  const [themeColor, setThemeColor] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') || 'system';
-      const effective = getEffectiveTheme(savedTheme);
-      return THEME_COLORS[effective] || THEME_COLORS.dark;
-    }
-    return THEME_COLORS.dark;
-  });
-
-  const [statusBarStyle, setStatusBarStyle] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') || 'system';
-      const effective = getEffectiveTheme(savedTheme);
-
-      // CORRECCIÓN: Usar 'black-translucent' también para modo Dark.
-      // Esto hace que la barra sea transparente y se vea el fondo azulado (#0c111b)
-      // en lugar de forzar una barra negra sólida.
-      if (effective === 'oled' || effective === 'dark') {
-        return 'black-translucent';
-      }
-      return 'default'; // Light mode se queda en default (texto negro)
-    }
-    return 'default';
   });
 
   const setTheme = (newTheme) => {
@@ -78,66 +39,69 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // Efecto Principal: Clases CSS, Inline Styles y Meta Tags
-  useEffect(() => {
+  // --- EFECTO PRINCIPAL: Gestión de DOM y Meta Tags ---
+  useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
 
     const updateAppearance = () => {
-      const effectiveTheme = getEffectiveTheme(theme);
+      let effectiveTheme = theme;
+      if (theme === 'system') {
+        effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
+      }
 
-      // 1. Aplicar Clases CSS al Root
+      // 1. Clases CSS
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
-
       if (theme === 'system') {
         root.classList.add(effectiveTheme === 'dark' ? 'dark-theme' : 'light-theme');
       } else {
         root.classList.add(`${theme}-theme`);
       }
 
-      // 2. Calcular valores
+      // 2. Determinar color
       let color = THEME_COLORS.dark;
-      let barStyle = 'default';
-
       if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
-        barStyle = 'black-translucent';
       } else if (effectiveTheme === 'dark') {
         color = THEME_COLORS.dark;
-        // FIX: Dark también usa black-translucent para ver el fondo real
-        barStyle = 'black-translucent';
       } else {
-        // Light
         color = THEME_COLORS.light;
-        barStyle = 'default';
       }
 
-      // 3. Actualizar estado (Helmet se encarga de las meta tags)
-      setThemeColor(color);
-      setStatusBarStyle(barStyle);
-
-      // 4. Actualizar el inline-style background-color
+      // 3. Aplicar color al fondo del HTML (Cubre el rebote de iOS)
       root.style.backgroundColor = color;
+
+      // 4. GESTIÓN DIRECTA DE META TAGS
+      // Eliminamos cualquier etiqueta existente para forzar al navegador a leer la nueva
+      const oldMetas = document.querySelectorAll('meta[name="theme-color"]');
+      oldMetas.forEach(m => m.remove());
+
+      const metaTheme = document.createElement('meta');
+      metaTheme.name = "theme-color";
+      metaTheme.content = color;
+      document.head.appendChild(metaTheme);
+
+      // IMPORTANTE: NO cambiamos 'apple-mobile-web-app-status-bar-style' dinámicamente.
+      // Dejamos que iOS decida el color del texto (blanco/negro) basándose en el 'theme-color' de arriba.
+      // Esto evita el bug de que la barra se quede "congelada" al cambiar de tema.
     };
 
     updateAppearance();
 
     const handleSystemChange = () => {
-      if (theme === 'system') {
-        updateAppearance();
-      }
+      if (theme === 'system') updateAppearance();
     };
 
     mediaQuery.addEventListener('change', handleSystemChange);
     return () => mediaQuery.removeEventListener('change', handleSystemChange);
   }, [theme]);
 
-  // Efecto Secundario: Color de Acento
-  useEffect(() => {
+  // Efecto Acento
+  useLayoutEffect(() => {
     const root = document.documentElement;
     const classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));
     root.className = classes.join(' ') + ` accent-${accent}`;
   }, [accent]);
 
-  return { theme, setTheme, accent, setAccent, themeColor, statusBarStyle };
+  return { theme, setTheme, accent, setAccent };
 };

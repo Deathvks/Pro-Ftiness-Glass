@@ -21,9 +21,6 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
 
-  <meta name="theme-color" content="#f7fafc" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#0c111b" media="(prefers-color-scheme: dark)" />
-
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Pro Fitness Glass" />
@@ -77,8 +74,11 @@
           root.classList.add(theme + '-theme');
         }
 
+        // Aplicar color de fondo inmediatamente
         root.style.backgroundColor = selectedColor;
 
+        // Limpiar y establecer theme-color
+        // (Nota: No tocamos status-bar-style, dejamos el 'default' estático de arriba)
         var oldMetas = document.querySelectorAll('meta[name="theme-color"]');
         oldMetas.forEach(function (meta) { meta.remove(); });
 
@@ -87,39 +87,11 @@
         newMeta.content = selectedColor;
         document.head.appendChild(newMeta);
 
-        // SYNC: Igualamos la lógica con useAppTheme.js
-        // Dark y OLED usan black-translucent para ver el fondo real.
-        var metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-        if (metaStatus) {
-          if (theme === 'oled' || theme === 'dark') {
-            metaStatus.setAttribute('content', 'black-translucent');
-          } else {
-            metaStatus.setAttribute('content', 'default');
-          }
-        }
-
       } catch (e) {
         console.error('Error aplicando tema inicial', e);
       }
     })();
   </script>
-
-  <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Pro Fitness Glass",
-        "applicationCategory": "HealthApplication",
-        "operatingSystem": "Web",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "EUR"
-        },
-        "description": "Aplicación web progresiva para el seguimiento de rutinas de gimnasio, registro de peso corporal y control nutricional.",
-        "image": "https://pro-fitness-glass.zeabur.app/logo.webp"
-      }
-    </script>
 </head>
 
 <body>
