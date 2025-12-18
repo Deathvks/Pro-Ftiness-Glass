@@ -2,14 +2,17 @@
 import { useState, useEffect } from 'react';
 import useAppStore from '../store/useAppStore';
 
-/**
- * Hook para gestionar el tema y calcular los colores de la interfaz.
- * Delega la renderización de meta tags a App.jsx (Helmet).
- */
+// Definimos los colores fuera para reutilizarlos y asegurar consistencia con index.html/css
+const THEME_COLORS = {
+  oled: '#000000',
+  dark: '#0c111b',
+  light: '#f7fafc',
+};
+
 export const useAppTheme = () => {
   const cookieConsent = useAppStore(state => state.cookieConsent);
 
-  // Inicialización de estado
+  // 1. Inicialización de estado del tema (desde localStorage o system)
   const [theme, setThemeState] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') || 'system';
@@ -24,10 +27,37 @@ export const useAppTheme = () => {
     return 'green';
   });
 
-  // Estados calculados para Helmet (Meta Tags)
-  // Inicializamos con un valor seguro (Dark por defecto)
-  const [themeColor, setThemeColor] = useState('#0c111b');
-  const [statusBarStyle, setStatusBarStyle] = useState('default');
+  // Helper para resolver el tema efectivo (system -> light/dark)
+  const getEffectiveTheme = (currentTheme) => {
+    if (currentTheme === 'system') {
+      if (typeof window !== 'undefined') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return 'dark';
+    }
+    return currentTheme;
+  };
+
+  // 2. Estados calculados para Helmet (Meta Tags)
+  // IMPORTANTE: Inicializamos con el valor CORRECTO calculado al momento,
+  // para evitar que React sobrescriba lo que hizo el script de index.html con un valor por defecto incorrecto.
+  const [themeColor, setThemeColor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // Intentamos leer el tema inicial igual que hicimos con 'theme'
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      const effective = getEffectiveTheme(savedTheme);
+      return THEME_COLORS[effective] || THEME_COLORS.dark;
+    }
+    return THEME_COLORS.dark;
+  });
+
+  const [statusBarStyle, setStatusBarStyle] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      return savedTheme === 'oled' ? 'black-translucent' : 'default';
+    }
+    return 'default';
+  });
 
   const setTheme = (newTheme) => {
     if (cookieConsent) {
@@ -43,18 +73,13 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // Efecto Principal: Clases CSS y Cálculo de Colores
+  // Efecto Principal: Clases CSS, Inline Styles y Meta Tags
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
 
     const updateAppearance = () => {
-      let effectiveTheme = theme;
-
-      // Resolver tema del sistema
-      if (theme === 'system') {
-        effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
-      }
+      const effectiveTheme = getEffectiveTheme(theme);
 
       // 1. Aplicar Clases CSS al Root
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
@@ -65,23 +90,29 @@ export const useAppTheme = () => {
         root.classList.add(`${theme}-theme`);
       }
 
-      // 2. Calcular valores para Helmet (Meta Tags)
-      // Ajustamos los colores HEX para que coincidan EXACTAMENTE con las variables --bg-primary de index.css
+      // 2. Calcular valores
+      let color = THEME_COLORS.dark;
+      let barStyle = 'default';
+
       if (effectiveTheme === 'oled') {
-        // OLED: Negro puro (#000000)
-        setThemeColor('#000000');
-        setStatusBarStyle('black-translucent');
-      } else if (effectiveTheme === 'dark') {
-        // DARK: Color de fondo primario (#0c111b)
-        // Antes estaba #121826, que es gris azulado. Ahora coincide con el fondo.
-        setThemeColor('#0c111b');
-        setStatusBarStyle('default');
+        color = THEME_COLORS.oled;
+        barStyle = 'black-translucent';
+      } else if (effectiveTheme === 'light') {
+        color = THEME_COLORS.light;
+        barStyle = 'default';
       } else {
-        // LIGHT: Color de fondo primario (#f7fafc)
-        // Antes estaba #ffffff. Ahora coincide con el fondo real.
-        setThemeColor('#f7fafc');
-        setStatusBarStyle('default');
+        color = THEME_COLORS.dark;
+        barStyle = 'default';
       }
+
+      // 3. Actualizar estado (Helmet se encarga de las meta tags)
+      setThemeColor(color);
+      setStatusBarStyle(barStyle);
+
+      // 4. IMPORTANTE: Actualizar el inline-style background-color
+      // El script de index.html lo puso para cubrir la carga inicial.
+      // Debemos mantenerlo sincronizado si el usuario cambia el tema en tiempo de ejecución.
+      root.style.backgroundColor = color;
     };
 
     updateAppearance();
