@@ -5,12 +5,9 @@ import useAppStore from '../store/useAppStore';
 /**
  * Hook para gestionar el tema (claro/oscuro/sistema) y el color de acento.
  * Sincroniza con localStorage (si el consentimiento de cookies está dado)
- * y aplica las clases CSS al <body>.
+ * y aplica las clases CSS al elemento raíz (<html>).
  */
 export const useAppTheme = () => {
-  // Suscribirse al estado de cookieConsent.
-  // Esto asegura que las funciones 'setTheme' y 'setAccent'
-  // se re-creen con el valor actualizado si 'cookieConsent' cambia.
   const cookieConsent = useAppStore(state => state.cookieConsent);
 
   // Estados locales para 'theme' y 'accent', inicializados desde localStorage
@@ -37,48 +34,73 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // Efecto para APLICAR EL TEMA (theme) al <body>
+  // Efecto para APLICAR EL TEMA (theme)
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    // Elemento raíz HTML (mejor que body para iOS/Overscroll)
+    const root = document.documentElement;
 
     const applyTheme = (themeValue) => {
-      // --- INICIO DE LA MODIFICACIÓN ---
-      document.body.classList.remove('light-theme', 'dark-theme', 'oled-theme');
-      // --- FIN DE LA MODIFICACIÓN ---
+      // 1. Limpiar clases de tema anteriores del HTML
+      root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
 
+      let effectiveTheme = themeValue;
+
+      // Resolver tema del sistema
       if (themeValue === 'system') {
-        document.body.classList.add(mediaQuery.matches ? 'dark-theme' : 'light-theme');
+        effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
+        root.classList.add(mediaQuery.matches ? 'dark-theme' : 'light-theme');
       } else {
-        document.body.classList.add(`${themeValue}-theme`);
+        root.classList.add(`${themeValue}-theme`);
+      }
+
+      // 2. Gestionar Meta Tags para Status Bar (iOS/PWA)
+      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+      const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+
+      let metaColor = '#ffffff'; // Default Light
+      let statusBarStyle = 'default';
+
+      if (effectiveTheme === 'oled') {
+        metaColor = '#000000'; // Negro Puro
+        statusBarStyle = 'black-translucent'; // Contenido tras la barra
+      } else if (effectiveTheme === 'dark') {
+        metaColor = '#0c111b'; // Color base dark (coincide con --bg-primary)
+        statusBarStyle = 'black';
+      }
+
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute('content', metaColor);
+      }
+      if (appleStatusMeta) {
+        appleStatusMeta.setAttribute('content', statusBarStyle);
       }
     };
 
-    // Callback para cuando el 'prefers-color-scheme' del S.O. cambia
     const handleSystemThemeChange = () => {
-      // Usamos el valor 'theme' del estado de React
       if (theme === 'system') {
         applyTheme('system');
       }
     };
 
-    applyTheme(theme); // Aplicar al cargar o al cambiar 'theme'
-    mediaQuery.addEventListener('change', handleSystemThemeChange); // Escuchar cambios del S.O.
+    applyTheme(theme);
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
 
-    // Limpieza
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-  }, [theme]); // Se re-ejecuta solo si 'theme' cambia
+  }, [theme]);
 
-  // Efecto para APLICAR EL COLOR DE ACENTO (accent) al <body>
+  // Efecto para APLICAR EL COLOR DE ACENTO (accent)
   useEffect(() => {
+    const root = document.documentElement;
+
     // Limpiar clases de acento anteriores
-    const toRemove = Array.from(document.body.classList).filter(c => c.startsWith('accent-'));
-    toRemove.forEach(c => document.body.classList.remove(c));
+    const toRemove = Array.from(root.classList).filter(c => c.startsWith('accent-'));
+    toRemove.forEach(c => root.classList.remove(c));
 
     // Añadir la nueva clase de acento
-    document.body.classList.add(`accent-${accent}`);
-  }, [accent]); // Se re-ejecuta solo si 'accent' cambia
+    root.classList.add(`accent-${accent}`);
+  }, [accent]);
 
-  // Retornar la API del hook
   return {
     theme,
     setTheme,

@@ -12,7 +12,7 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 import Spinner from '../components/Spinner';
 import * as userService from '../services/userService';
 import { useToast } from '../hooks/useToast';
-import ActiveSessions from '../components/ActiveSessions'; // --- AÑADIDO ---
+import ActiveSessions from '../components/ActiveSessions';
 
 // --- Constantes ---
 const ACCENT_OPTIONS = [
@@ -335,7 +335,8 @@ export default function SettingsScreen({
                   ${!userProfile?.two_factor_enabled ? 'opacity-60 bg-bg-secondary/20' : 'hover:bg-bg-secondary/30'}
                 `}>
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${userProfile?.two_factor_enabled ? 'bg-orange-500/10 text-orange-500' : 'bg-text-muted/10 text-text-muted'}`}>
+                  {/* --- MODIFICADO: Color de icono dinámico (acento) --- */}
+                  <div className={`p-2 rounded-lg ${userProfile?.two_factor_enabled ? 'bg-accent/10 text-accent' : 'bg-text-muted/10 text-text-muted'}`}>
                     {userProfile?.two_factor_enabled ? <ShieldAlert size={20} /> : <MailWarning size={20} />}
                   </div>
                   <div>

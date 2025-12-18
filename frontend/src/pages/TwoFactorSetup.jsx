@@ -327,10 +327,11 @@ const TwoFactorSetup = ({ setView }) => {
 
                         <div className="h-px w-full bg-glass-border my-4" />
 
+                        {/* --- CAMBIO AQUÍ: Botón con fondo ROJO y texto BLANCO siempre --- */}
                         <button
-                            onClick={handleDisableClick} // Cambiado para abrir modal
+                            onClick={handleDisableClick}
                             disabled={isLoading}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-red/30 text-red hover:bg-red/10 transition"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red text-white hover:bg-red/90 transition shadow-lg shadow-red/20"
                         >
                             {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Unlock size={18} />}
                             Desactivar 2FA

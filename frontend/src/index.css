@@ -9,239 +9,192 @@
 :root {
   /* Base (dark by default) */
   --bg-primary: #0c111b;
-  /* fondo principal */
   --bg-secondary: #121826;
-  /* tarjetas / contenedores */
   --text-primary: #e5e7eb;
-  /* texto */
   --text-secondary: #9ca3af;
-  /* texto secundario */
   --text-muted: #6b7280;
-  /* texto deshabilitado */
 
   /* Acento (GREEN por defecto) */
   --color-accent: #22c55e;
-  /* green-500 */
   --color-accent-transparent: rgba(34, 197, 94, 0.12);
   --color-accent-border: rgba(34, 197, 94, 0.28);
 
-  /* Semánticos extra (mapeados en tailwind.config.js) */
+  /* Semánticos extra */
   --color-green: #22c55e;
   --color-red: #ef4444;
   --color-neutral: #6b7280;
 
-  /* --- INICIO DE LA MODIFICACIÓN --- */
-  /* Glassmorphism mejorado */
+  /* Glassmorphism */
   --glass-border: rgba(255, 255, 255, 0.08);
-  /* Borde ligeramente más opaco */
   --glass-bg: rgba(26, 35, 53, 0.55);
-  /* Fondo ligeramente más oscuro y opaco */
   --glass-highlight: rgba(255, 255, 255, 0.12);
-  /* Borde superior más brillante */
   --glass-shadow-inner: rgba(0, 0, 0, 0.2);
-  /* Sombra interior */
-  /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
-/* 3) TEMAS */
-body.dark-theme {
+/* 3) TEMAS - APLICADOS AL ROOT (HTML) */
+/* Al estar la clase en <html>, usamos el selector general o html.clase */
+.dark-theme {
   --bg-primary: #0c111b;
   --bg-secondary: #121826;
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
 
-  /* --- INICIO DE LA MODIFICACIÓN --- */
-  /* El acento se define por la clase accent-* */
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-bg: rgba(26, 35, 53, 0.55);
   --glass-highlight: rgba(255, 255, 255, 0.12);
   --glass-shadow-inner: rgba(0, 0, 0, 0.2);
-  /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
-body.light-theme {
+.light-theme {
   --bg-primary: #f7fafc;
-  /* gris muy claro */
   --bg-secondary: #ffffff;
-  /* tarjetas blancas */
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
 
-  /* --- INICIO DE LA MODIFICACIÓN --- */
-  /* El acento se define por la clase accent-* */
-  /* Ajustes para el tema claro */
   --glass-border: rgba(0, 0, 0, 0.09);
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-highlight: rgba(255, 255, 255, 0.4);
   --glass-shadow-inner: rgba(0, 0, 0, 0.05);
-  /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
-/* --- INICIO DE LA MODIFICACIÓN --- */
 /* TEMA OLED (Negro Puro) */
-body.oled-theme {
+.oled-theme {
   --bg-primary: #000000;
   --bg-secondary: #000000;
   --text-primary: #ffffff;
   --text-secondary: #a3a3a3;
   --text-muted: #525252;
 
-  /* Ajustes específicos para OLED: contrastes más altos en bordes, sin transparencias de fondo */
-  /* Se han suavizado los bordes (menos opacidad) respecto a la versión anterior */
   --glass-border: rgba(255, 255, 255, 0.15);
   --glass-bg: #000000;
   --glass-highlight: rgba(255, 255, 255, 0.08);
   --glass-shadow-inner: none;
 }
 
-/* --- FIN DE LA MODIFICACIÓN --- */
-
-/* 4) PALETAS DE ACENTO (solo cambian las vars del acento) */
-/* ... (paletas sin cambios) ... */
-/* GREEN (default) */
-body.accent-green {
+/* 4) PALETAS DE ACENTO */
+.accent-green {
   --color-accent: #22c55e;
   --color-accent-transparent: rgba(34, 197, 94, 0.12);
   --color-accent-border: rgba(34, 197, 94, 0.28);
 }
 
-/* BLUE */
-body.accent-blue {
+.accent-blue {
   --color-accent: #3b82f6;
   --color-accent-transparent: rgba(59, 130, 246, 0.12);
   --color-accent-border: rgba(59, 130, 246, 0.28);
 }
 
-/* VIOLET */
-body.accent-violet {
+.accent-violet {
   --color-accent: #8b5cf6;
   --color-accent-transparent: rgba(139, 92, 246, 0.12);
   --color-accent-border: rgba(139, 92, 246, 0.28);
 }
 
-/* AMBER */
-body.accent-amber {
+.accent-amber {
   --color-accent: #f59e0b;
   --color-accent-transparent: rgba(245, 158, 11, 0.12);
   --color-accent-border: rgba(245, 158, 11, 0.28);
 }
 
-/* ROSE */
-body.accent-rose {
+.accent-rose {
   --color-accent: #f43f5e;
   --color-accent-transparent: rgba(244, 63, 94, 0.12);
   --color-accent-border: rgba(244, 63, 94, 0.28);
 }
 
-/* TEAL */
-body.accent-teal {
+.accent-teal {
   --color-accent: #14b8a6;
   --color-accent-transparent: rgba(20, 184, 166, 0.12);
   --color-accent-border: rgba(20, 184, 166, 0.28);
 }
 
-/* CYAN */
-body.accent-cyan {
+.accent-cyan {
   --color-accent: #06b6d4;
   --color-accent-transparent: rgba(6, 182, 212, 0.12);
   --color-accent-border: rgba(6, 182, 212, 0.28);
 }
 
-/* ORANGE */
-body.accent-orange {
+.accent-orange {
   --color-accent: #f97316;
   --color-accent-transparent: rgba(249, 115, 22, 0.12);
   --color-accent-border: rgba(249, 115, 22, 0.28);
 }
 
-/* LIME */
-body.accent-lime {
+.accent-lime {
   --color-accent: #84cc16;
   --color-accent-transparent: rgba(132, 204, 22, 0.12);
   --color-accent-border: rgba(132, 204, 22, 0.28);
 }
 
-/* FUCHSIA */
-body.accent-fuchsia {
+.accent-fuchsia {
   --color-accent: #d946ef;
   --color-accent-transparent: rgba(217, 70, 239, 0.12);
   --color-accent-border: rgba(217, 70, 239, 0.28);
 }
 
-/* EMERALD */
-body.accent-emerald {
+.accent-emerald {
   --color-accent: #10b981;
   --color-accent-transparent: rgba(16, 185, 129, 0.12);
   --color-accent-border: rgba(16, 185, 129, 0.28);
 }
 
-/* INDIGO */
-body.accent-indigo {
+.accent-indigo {
   --color-accent: #6366f1;
   --color-accent-transparent: rgba(99, 102, 241, 0.12);
   --color-accent-border: rgba(99, 102, 241, 0.28);
 }
 
-/* PURPLE */
-body.accent-purple {
+.accent-purple {
   --color-accent: #a855f7;
   --color-accent-transparent: rgba(168, 85, 247, 0.12);
   --color-accent-border: rgba(168, 85, 247, 0.28);
 }
 
-/* PINK */
-body.accent-pink {
+.accent-pink {
   --color-accent: #ec4899;
   --color-accent-transparent: rgba(236, 72, 153, 0.12);
   --color-accent-border: rgba(236, 72, 153, 0.28);
 }
 
-/* RED */
-body.accent-red {
+.accent-red {
   --color-accent: #ef4444;
   --color-accent-transparent: rgba(239, 68, 68, 0.12);
   --color-accent-border: rgba(239, 68, 68, 0.28);
 }
 
-/* YELLOW */
-body.accent-yellow {
+.accent-yellow {
   --color-accent: #eab308;
   --color-accent-transparent: rgba(234, 179, 8, 0.12);
   --color-accent-border: rgba(234, 179, 8, 0.28);
 }
 
-/* SKY */
-body.accent-sky {
+.accent-sky {
   --color-accent: #0ea5e9;
   --color-accent-transparent: rgba(14, 165, 233, 0.12);
   --color-accent-border: rgba(14, 165, 233, 0.28);
 }
 
-/* SLATE */
-body.accent-slate {
+.accent-slate {
   --color-accent: #64748b;
   --color-accent-transparent: rgba(100, 116, 139, 0.12);
   --color-accent-border: rgba(100, 116, 139, 0.28);
 }
 
-/* ZINC */
-body.accent-zinc {
+.accent-zinc {
   --color-accent: #71717a;
   --color-accent-transparent: rgba(113, 113, 122, 0.12);
   --color-accent-border: rgba(113, 113, 122, 0.28);
 }
 
-/* STONE */
-body.accent-stone {
+.accent-stone {
   --color-accent: #78716c;
   --color-accent-transparent: rgba(120, 113, 108, 0.12);
   --color-accent-border: rgba(120, 113, 108, 0.28);
 }
 
-/* NEUTRAL */
-body.accent-neutral {
+.accent-neutral {
   --color-accent: #737373;
   --color-accent-transparent: rgba(115, 115, 115, 0.12);
   --color-accent-border: rgba(115, 115, 115, 0.28);
@@ -257,26 +210,49 @@ body.accent-neutral {
     @apply h-full;
   }
 
+  /* FIX IOS/OLED: Color de fondo en el HTML (root) */
+  html {
+    background-color: var(--bg-primary);
+    transition: background-color 0.3s ease;
+  }
+
   body {
-    @apply bg-bg-primary text-text-primary antialiased;
-    /* Evita doble scroll al tener nav fijo + main con scroll */
+    @apply text-text-primary antialiased;
     overflow: hidden;
+    /* Body transparente para que se vea el fondo del HTML y el blob */
+    background-color: transparent;
+  }
+
+  /* --- RESTAURADO: Círculo de fondo animado (Blob) --- */
+  /* Reducido el tamaño para que no sea tan invasivo (antes 60vh) */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20rem;
+    height: 20rem;
+    background-color: var(--color-accent);
+    opacity: 0.15;
+    filter: blur(80px);
+    /* Blur ajustado */
+    border-radius: 50%;
+    z-index: -1;
+    animation: roam-blob 10s infinite alternate ease-in-out;
+    pointer-events: none;
   }
 
   main {
-    /* El scroll va en main (ya lo usas) */
     height: 100%;
   }
 
-  /* Titulares y textos (opcional / suave) */
   h1,
   h2,
   h3 {
     @apply text-text-primary;
   }
 
-  /* --- INICIO DE LA MODIFICACIÓN --- */
-  /* Quitar outline por defecto en focus y focus-visible para inputs y botones */
   input:focus,
   textarea:focus,
   select:focus,
@@ -286,37 +262,21 @@ body.accent-neutral {
   select:focus-visible,
   button:focus-visible {
     @apply outline-none;
-    /* Esto quita el outline azul/predeterminado */
-    /* Los estilos focus:ring-*, focus:border-* de Tailwind seguirán aplicándose */
   }
 
-  /* Aplicar estilos glass mejorados a los componentes que usan bg-[--glass-bg] */
   .bg-\[--glass-bg\] {
     background-color: var(--glass-bg);
-    /* Se eliminan 'border: 1px solid;' y 'border-color: var(--glass-border);' 
-      para permitir que las clases de utilidad de Tailwind (ej. border-transparent, 
-      border-[--color-accent], border-[--glass-border]) controlen el color y 
-      estilo del borde.
-    */
-
-    /* Borde superior más brillante (Efecto de reflejo) */
     border-top-color: var(--glass-highlight);
-
-    /* Sombra interior sutil para dar profundidad */
     box-shadow: inset 0 1px 1px var(--glass-shadow-inner),
       0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      /* Sombra exterior original */
       0 2px 4px -2px rgba(0, 0, 0, 0.1);
   }
 
-  /* --- FIN DE LA MODIFICACIÓN --- */
-
-  /* Errores de formularios reutilizados en la app */
   .form-error-text {
     @apply text-red text-sm mt-1;
   }
 
-  /* Estilos personalizados para checkboxes */
+  /* Checkbox */
   input[type="checkbox"] {
     background-color: transparent !important;
     border: 1px solid var(--glass-border) !important;
@@ -332,52 +292,33 @@ body.accent-neutral {
     outline: none !important;
   }
 
-  input[type="checkbox"]:focus {
+  input[type="checkbox"]:focus,
+  input[type="checkbox"]:focus-visible {
     outline: none !important;
     box-shadow: none !important;
   }
 
-  input[type="checkbox"]:focus-visible {
-    outline: none !important;
-    /* Quitamos outline aquí también */
-    box-shadow: 0 0 0 2px var(--color-accent-transparent) !important;
-  }
-
-  /* En modo claro, usar fondo blanco para checkboxes no marcados */
-  body.light-theme input[type="checkbox"] {
+  /* Checkbox Light Theme */
+  .light-theme input[type="checkbox"] {
     background-color: white !important;
     border-color: #d1d5db !important;
-    outline: none !important;
   }
 
-  body.light-theme input[type="checkbox"]:checked {
+  .light-theme input[type="checkbox"]:checked {
     background-color: var(--color-accent) !important;
     border-color: var(--color-accent) !important;
-    outline: none !important;
   }
 
-  body.light-theme input[type="checkbox"]:focus-visible {
-    outline: none !important;
-    /* Quitamos outline aquí también */
-    box-shadow: 0 0 0 2px var(--color-accent-transparent) !important;
-  }
-
-  /* Agregar el ícono de check personalizado */
   input[type="checkbox"]:checked::before {
     content: '✓';
     display: block;
     text-align: center;
     color: white;
-    /* Color del check */
-    /* Ajustar tamaño y posición si es necesario */
     font-size: 12px;
-    /* ejemplo */
     line-height: 14px;
-    /* ejemplo */
   }
 
-
-  /* Estilos para personalizar el escáner de QR */
+  /* QR Scanner */
   @keyframes scan {
     0% {
       transform: translateY(0);
@@ -392,12 +333,10 @@ body.accent-neutral {
     animation: scan 2.5s infinite alternate ease-in-out;
   }
 
-  /* Ocultar elementos no deseados de la librería html5-qrcode */
   .scanner-wrapper>div,
   .scanner-wrapper #qr-shaded-region {
     border: none !important;
     border-radius: 0.5rem;
-    /* Ajustar si es necesario para que coincida con tu diseño */
   }
 
   .scanner-wrapper #qr-shaded-region * {
@@ -420,8 +359,6 @@ body.accent-neutral {
 
 /* 6) UTILIDADES */
 @layer utilities {
-
-  /* Ocultar scrollbars sin romper el scroll */
   ::-webkit-scrollbar {
     display: none;
   }
@@ -430,7 +367,6 @@ body.accent-neutral {
     scrollbar-width: none;
   }
 
-  /* Animaciones que usa la app */
   @keyframes roam-blob {
     0% {
       transform: translate(-50%, -50%) scale(1);
