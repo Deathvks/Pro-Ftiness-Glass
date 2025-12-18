@@ -25,8 +25,8 @@ export const useAppTheme = () => {
   });
 
   // Estados calculados para Helmet (Meta Tags)
-  // Inicializamos con valores por defecto
-  const [themeColor, setThemeColor] = useState('#ffffff');
+  // Inicializamos con un valor seguro (Dark por defecto)
+  const [themeColor, setThemeColor] = useState('#0c111b');
   const [statusBarStyle, setStatusBarStyle] = useState('default');
 
   const setTheme = (newTheme) => {
@@ -56,7 +56,7 @@ export const useAppTheme = () => {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
-      // 1. Aplicar Clases CSS al Root (Necesario para Tailwind)
+      // 1. Aplicar Clases CSS al Root
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
 
       if (theme === 'system') {
@@ -65,18 +65,21 @@ export const useAppTheme = () => {
         root.classList.add(`${theme}-theme`);
       }
 
-      // 2. Calcular valores para Helmet (NO tocamos el DOM aquí)
+      // 2. Calcular valores para Helmet (Meta Tags)
+      // Ajustamos los colores HEX para que coincidan EXACTAMENTE con las variables --bg-primary de index.css
       if (effectiveTheme === 'oled') {
-        // OLED: Negro puro y barra translúcida
+        // OLED: Negro puro (#000000)
         setThemeColor('#000000');
         setStatusBarStyle('black-translucent');
       } else if (effectiveTheme === 'dark') {
-        // DARK: Usamos el color del Header (#121826) para que no sea negro total
-        setThemeColor('#121826');
+        // DARK: Color de fondo primario (#0c111b)
+        // Antes estaba #121826, que es gris azulado. Ahora coincide con el fondo.
+        setThemeColor('#0c111b');
         setStatusBarStyle('default');
       } else {
-        // LIGHT: Blanco puro
-        setThemeColor('#ffffff');
+        // LIGHT: Color de fondo primario (#f7fafc)
+        // Antes estaba #ffffff. Ahora coincide con el fondo real.
+        setThemeColor('#f7fafc');
         setStatusBarStyle('default');
       }
     };
@@ -100,6 +103,5 @@ export const useAppTheme = () => {
     root.className = classes.join(' ') + ` accent-${accent}`;
   }, [accent]);
 
-  // Devolvemos los valores para que App.jsx los inyecte en el <head>
   return { theme, setTheme, accent, setAccent, themeColor, statusBarStyle };
 };

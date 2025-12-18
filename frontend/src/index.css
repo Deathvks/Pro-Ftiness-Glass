@@ -7,7 +7,7 @@
 
 /* 2) VARIABLES (modo oscuro por defecto) */
 :root {
-  /* Base (dark by default) */
+  /* Coincide con el Dark Theme en useAppTheme.js (#0c111b) */
   --bg-primary: #0c111b;
   --bg-secondary: #121826;
   --text-primary: #e5e7eb;
@@ -32,9 +32,9 @@
 }
 
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
-/* IMPORTANTE: Usamos selectores de clase (.clase) para que apliquen al <html> */
 
 .dark-theme {
+  /* Coincide con useAppTheme.js (#0c111b) */
   --bg-primary: #0c111b;
   --bg-secondary: #121826;
   --text-primary: #e5e7eb;
@@ -48,6 +48,7 @@
 }
 
 .light-theme {
+  /* Coincide con useAppTheme.js (#f7fafc) */
   --bg-primary: #f7fafc;
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
@@ -60,8 +61,8 @@
   --glass-shadow-inner: rgba(0, 0, 0, 0.05);
 }
 
-/* TEMA OLED (Negro Puro) */
 .oled-theme {
+  /* Coincide con useAppTheme.js (#000000) */
   --bg-primary: #000000;
   --bg-secondary: #000000;
   --text-primary: #ffffff;
@@ -201,7 +202,6 @@
   --color-accent-border: rgba(115, 115, 115, 0.28);
 }
 
-
 /* 5) COMPONENTES BASE */
 @layer components {
 
@@ -211,7 +211,7 @@
     @apply h-full;
   }
 
-  /* FIX IOS/OLED: Color de fondo en el HTML (root) */
+  /* FIX IOS/OLED: Color de fondo en el HTML (root) y transición suave */
   html {
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
@@ -220,12 +220,11 @@
   body {
     @apply text-text-primary antialiased;
     overflow: hidden;
-    /* Body transparente para que se vea el fondo del HTML y el blob */
+    /* Body transparente para que se vea el background del HTML */
     background-color: transparent;
   }
 
-  /* --- RESTAURADO: Círculo de fondo animado (Blob) --- */
-  /* Reducido el tamaño para que no sea tan invasivo (antes 60vh) */
+  /* Círculo de fondo animado (Blob) */
   body::before {
     content: '';
     position: fixed;
@@ -237,7 +236,6 @@
     background-color: var(--color-accent);
     opacity: 0.15;
     filter: blur(80px);
-    /* Blur ajustado */
     border-radius: 50%;
     z-index: -1;
     animation: roam-blob 10s infinite alternate ease-in-out;
