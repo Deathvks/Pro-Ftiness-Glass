@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
-  ShieldAlert, MailWarning, Instagram, Share2
+  ShieldAlert, MailWarning, Instagram, Share2, Binary
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -53,20 +53,29 @@ const SettingsCard = ({ children, className = '' }) => (
   </div>
 );
 
-const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent transition-all hover:bg-bg-secondary/50 
-      ${danger ? 'text-red hover:bg-red/10' : 'text-text-primary hover:border-[--glass-border]'}`}
-  >
-    {Icon && <Icon size={20} className={danger ? 'text-red' : 'text-accent'} />}
-    <div className="flex-1 text-left">
-      <div className="text-sm font-semibold">{title}</div>
-      {subtitle && <div className={`text-xs ${danger ? 'text-red/70' : 'text-text-secondary'}`}>{subtitle}</div>}
-    </div>
-    {action}
-  </button>
-);
+// Componente interactivo inteligente (SOLUCIÓN STICKY HOVER)
+// Usamos 'active:' para feedback táctil instantáneo y 'md:hover:' para hover solo en escritorio.
+const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) => {
+  const Component = onClick ? 'button' : 'div';
+
+  return (
+    <Component
+      onClick={onClick}
+      className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent transition-all 
+        active:bg-bg-secondary/50 md:hover:bg-bg-secondary/50
+        ${danger
+          ? 'text-red active:bg-red/10 md:hover:bg-red/10'
+          : 'text-text-primary md:hover:border-[--glass-border]'}`}
+    >
+      {Icon && <Icon size={20} className={danger ? 'text-red' : 'text-accent'} />}
+      <div className="flex-1 text-left">
+        <div className="text-sm font-semibold">{title}</div>
+        {subtitle && <div className={`text-xs ${danger ? 'text-red/70' : 'text-text-secondary'}`}>{subtitle}</div>}
+      </div>
+      {action}
+    </Component>
+  );
+};
 
 export default function SettingsScreen({
   theme = 'system',
@@ -138,7 +147,7 @@ export default function SettingsScreen({
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
-      {/* Header Mobile/Desktop */}
+      {/* Header Mobile/Desktop - Oculto título en móvil */}
       <div className="flex items-center justify-between mb-6 pt-4 md:pt-0">
         <button
           onClick={() => setView('dashboard')}
@@ -146,7 +155,8 @@ export default function SettingsScreen({
         >
           <ChevronLeft size={18} /> <span className="text-sm font-medium">Volver</span>
         </button>
-        <h1 className="text-2xl font-bold flex-1 text-center md:text-left md:ml-4">Ajustes</h1>
+        {/* Título visible solo en desktop (md en adelante) */}
+        <h1 className="hidden md:block text-2xl font-bold flex-1 text-left md:ml-4">Ajustes</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
@@ -403,6 +413,15 @@ export default function SettingsScreen({
                 />
               </a>
 
+              {/* VERSIÓN INTEGRADA (MD:HIDDEN) - SIN EFECTOS DE BOTÓN */}
+              <div className="md:hidden flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
+                <Binary size={20} className="text-accent" />
+                <div className="flex-1 text-left">
+                  <div className="text-sm font-semibold">Versión de App</div>
+                  <div className="text-xs text-text-secondary">v{APP_VERSION}</div>
+                </div>
+              </div>
+
               <div className="my-2 h-px bg-[--glass-border]" />
 
               <SettingsItem
@@ -411,10 +430,6 @@ export default function SettingsScreen({
                 onClick={onLogoutClick}
                 danger
               />
-
-              <div className="mt-4 text-center text-xs text-text-muted font-mono">
-                v{APP_VERSION}
-              </div>
             </div>
           </SettingsCard>
         </div>
