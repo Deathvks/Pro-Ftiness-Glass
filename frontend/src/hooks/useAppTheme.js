@@ -56,7 +56,7 @@ export const useAppTheme = () => {
       // 2. Gestionar Meta Tags para Status Bar (iOS/PWA y Android)
 
       // --- ESTRATEGIA: BORRAR Y RECREAR ---
-      // Eliminamos TODAS las etiquetas existentes para evitar conflictos y asegurar prioridad
+      // Eliminamos TODAS las etiquetas existentes para asegurar prioridad absoluta de JS
       const existingMetaTags = document.querySelectorAll('meta[name="theme-color"]');
       existingMetaTags.forEach(tag => tag.remove());
 
@@ -67,20 +67,21 @@ export const useAppTheme = () => {
       const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
 
       // --- CONFIGURACIÓN DE COLORES ---
-      let metaColor = '#ffffff'; // Fallback
+      let metaColor = '#ffffff';
       let statusBarStyle = 'default';
 
       if (effectiveTheme === 'oled') {
-        // OLED: Negro puro
+        // OLED: Negro puro y barra translúcida (contenido fluye por debajo)
         metaColor = '#000000';
         statusBarStyle = 'black-translucent';
       } else if (effectiveTheme === 'dark') {
-        // DARK: Usamos #121826 (Color Secundario/Header) en lugar de #0c111b
-        // para que coincida visualmente con la barra de navegación.
+        // DARK: Usamos 'black-translucent' también aquí.
+        // Esto permite que el Header con efecto Glass (#121826 con opacidad) se vea 
+        // detrás de la hora/batería, igualando el look del modo OLED.
         metaColor = '#121826';
-        statusBarStyle = 'default';
+        statusBarStyle = 'black-translucent';
       } else {
-        // LIGHT: Blanco puro (#ffffff) para coincidir con el header claro
+        // LIGHT: Blanco puro (#ffffff) con estilo default (letras negras)
         metaColor = '#ffffff';
         statusBarStyle = 'default';
       }
