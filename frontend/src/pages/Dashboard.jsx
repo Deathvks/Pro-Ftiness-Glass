@@ -189,14 +189,15 @@ const Dashboard = ({ setView }) => {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 pb-20 md:p-8 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        /* --- MODIFICADO: Añadido pt-6 para dar espacio en móvil, md:p-8 mantiene el padding en escritorio --- */
+        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-20 md:p-8 lg:p-10 animate-[fade-in_0.5s_ease-out]">
             <Helmet>
                 <title>Dashboard - Pro Fitness Glass</title>
                 <meta name="description" content="Tu resumen diario de actividad física, nutrición, peso corporal y acceso rápido a tus rutinas y entrenamientos." />
             </Helmet>
 
-            {/* Header Section */}
-            <div className="mb-8 mt-6 md:mt-0">
+            {/* Header Section - MODIFICADO: hidden en móvil, block en md+ */}
+            <div className="mb-8 hidden md:block">
                 <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary inline-block">
                     Dashboard
                 </h1>

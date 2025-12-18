@@ -32,7 +32,8 @@
 }
 
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
-/* Al estar la clase en <html>, usamos el selector general o html.clase */
+/* IMPORTANTE: Usamos selectores de clase (.clase) para que apliquen al <html> */
+
 .dark-theme {
   --bg-primary: #0c111b;
   --bg-secondary: #121826;

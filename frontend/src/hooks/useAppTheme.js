@@ -37,11 +37,10 @@ export const useAppTheme = () => {
   // Efecto para APLICAR EL TEMA (theme)
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    // Elemento raíz HTML (mejor que body para iOS/Overscroll)
     const root = document.documentElement;
 
     const applyTheme = (themeValue) => {
-      // 1. Limpiar clases de tema anteriores del HTML
+      // 1. Limpiar clases de tema anteriores
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
 
       let effectiveTheme = themeValue;
@@ -54,20 +53,26 @@ export const useAppTheme = () => {
         root.classList.add(`${themeValue}-theme`);
       }
 
-      // 2. Gestionar Meta Tags para Status Bar (iOS/PWA)
+      // 2. Gestionar Meta Tags para Status Bar (iOS/PWA y Android)
       const themeColorMeta = document.querySelector('meta[name="theme-color"]');
       const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
 
-      let metaColor = '#f7fafc'; // Default Light (coincide con --bg-primary light)
-      let statusBarStyle = 'default'; // Iconos negros para fondo claro
+      let metaColor = '#ffffff';
+      let statusBarStyle = 'default';
 
       if (effectiveTheme === 'oled') {
-        metaColor = '#000000'; // Negro Puro
-        statusBarStyle = 'black-translucent'; // Contenido tras la barra, iconos blancos
-      } else if (effectiveTheme === 'dark') {
-        metaColor = '#0c111b'; // Color base dark (coincide con --bg-primary dark)
-        // Usamos black-translucent para que el fondo html (#0c111b) cubra la zona notch
+        // OLED: Negro puro y barra translúcida (contenido fluye por debajo)
+        metaColor = '#000000';
         statusBarStyle = 'black-translucent';
+      } else if (effectiveTheme === 'dark') {
+        // DARK: Color exacto (#0c111b) y estilo default.
+        // 'default' en iOS con theme-color oscuro pone el texto en blanco automáticamente.
+        metaColor = '#0c111b';
+        statusBarStyle = 'default';
+      } else {
+        // LIGHT: Color exacto (#f7fafc) y estilo default (texto negro).
+        metaColor = '#f7fafc';
+        statusBarStyle = 'default';
       }
 
       if (themeColorMeta) {
