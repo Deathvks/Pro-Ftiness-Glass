@@ -55,38 +55,46 @@ export const useAppTheme = () => {
 
       // 2. Gestionar Meta Tags para Status Bar (iOS/PWA y Android)
 
-      // --- ESTRATEGIA SEGURA: COLORES SÓLIDOS Y ESTILO DEFAULT ---
+      // --- ESTRATEGIA: LIMPIEZA Y ACTUALIZACIÓN FORZADA ---
 
-      // Limpieza total de etiquetas previas
-      const existingMetaTags = document.querySelectorAll('meta[name="theme-color"]');
-      existingMetaTags.forEach(tag => tag.remove());
+      // Obtener TODAS las etiquetas de theme-color
+      const allMetaTags = document.querySelectorAll('meta[name="theme-color"]');
+      let themeColorMeta = allMetaTags[0];
 
-      // Crear nueva etiqueta
-      const themeColorMeta = document.createElement('meta');
-      themeColorMeta.name = 'theme-color';
+      // Si hay más de una (por HMR o duplicados en HTML), borrar las sobrantes
+      if (allMetaTags.length > 1) {
+        for (let i = 1; i < allMetaTags.length; i++) {
+          allMetaTags[i].remove();
+        }
+      }
+
+      // Si no existe ninguna, crearla
+      if (!themeColorMeta) {
+        themeColorMeta = document.createElement('meta');
+        themeColorMeta.name = 'theme-color';
+        document.head.appendChild(themeColorMeta);
+      }
 
       const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
 
-      // --- CONFIGURACIÓN DE COLORES (USANDO BACKGROUND/HEADER SÓLIDO) ---
-      let metaColor = '#ffffff';
+      // --- CONFIGURACIÓN DE COLORES ---
+      // Light: Blanco puro (coincide con header claro)
+      // Dark:  Color de fondo (#0c111b) - Solución estable solicitada
+      // OLED:  Negro puro (#000000)
 
-      // Siempre usamos 'default' para que el sistema elija el color de texto correcto (blanco/negro)
-      const statusBarStyle = 'default';
+      let metaColor = '#ffffff';
+      let statusBarStyle = 'default';
 
       if (effectiveTheme === 'oled') {
-        // OLED: Negro puro
         metaColor = '#000000';
       } else if (effectiveTheme === 'dark') {
-        // DARK: Color de fondo base (#0c111b). 
-        // Es la opción más segura si el header tiene transparencias.
         metaColor = '#0c111b';
       } else {
-        // LIGHT: Blanco puro (#ffffff).
         metaColor = '#ffffff';
       }
 
-      themeColorMeta.content = metaColor;
-      document.head.appendChild(themeColorMeta);
+      // Aplicar cambio
+      themeColorMeta.setAttribute('content', metaColor);
 
       if (appleStatusMeta) {
         appleStatusMeta.setAttribute('content', statusBarStyle);
@@ -99,11 +107,14 @@ export const useAppTheme = () => {
       }
     };
 
+    // Aplicar inmediatamente al montar
     applyTheme(theme);
+
+    // Escuchar cambios del sistema
     mediaQuery.addEventListener('change', handleSystemThemeChange);
 
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-  }, [theme]);
+  }, [theme]); // Dependencia clave: se ejecuta cada vez que cambia el tema
 
   // Efecto para APLICAR EL COLOR DE ACENTO (accent)
   useEffect(() => {
