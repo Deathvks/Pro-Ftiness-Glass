@@ -208,13 +208,14 @@
     @apply h-full;
   }
 
-  /* IMPORTANTE: Crear contexto de apilamiento en root para que z-index -1 
-     no se oculte tras el background del html */
+  /* IMPORTANTE: Crear contexto de apilamiento en root para que el Blob (z-index -1)
+     se pinte sobre el background del body */
   #root {
     isolation: isolate;
   }
 
-  /* FIX IOS/OLED: Color de fondo en el HTML (root) */
+  /* FIX IOS 26: El HTML y el BODY deben tener el color de fondo asignado.
+     iOS 26 usa el color del body para teñir las barras de interfaz. */
   html {
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
@@ -223,8 +224,10 @@
   body {
     @apply text-text-primary antialiased;
     overflow: hidden;
-    /* Body transparente */
-    background-color: transparent;
+
+    /* CAMBIO CLAVE: Ponemos el color aquí para que iOS 26 lo detecte */
+    background-color: var(--bg-primary);
+    transition: background-color 0.3s ease;
   }
 
   main {
