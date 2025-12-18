@@ -21,7 +21,7 @@ export const createAuthSlice = (set, get) => ({
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
-    
+
     // --- INICIO MODIFICACIÓN 2FA ---
     // Estado para saber si estamos esperando el código de segunda fase
     twoFactorPending: null, // Contendrá { userId, method, email? } si se requiere 2FA
@@ -29,23 +29,24 @@ export const createAuthSlice = (set, get) => ({
 
     // Inicializamos leyendo directamente para evitar "flash" del banner.
     // Usamos la clave global 'cookie_consent' para coincidir con GoogleTermsModal.
-    cookieConsent: localStorage.getItem('cookie_consent') || null, 
+    cookieConsent: localStorage.getItem('cookie_consent') || null,
 
     // --- ACCIONES ---
 
-    // Inicia sesión: guarda el token, actualiza el estado y carga los datos iniciales.
+    // Inicia sesión: guarda el token, actualiza el estado.
+    // MODIFICADO: Ya no llama a fetchInitialData() aquí para evitar doble carga/race condition.
     handleLogin: async (credentials) => {
         const response = await authService.loginUser(credentials);
-        
+
         // --- INICIO MODIFICACIÓN 2FA ---
         // Si el backend indica que se requiere 2FA, guardamos estado y paramos aquí.
         if (response.requires2FA) {
-            set({ 
-                twoFactorPending: { 
-                    userId: response.userId, 
+            set({
+                twoFactorPending: {
+                    userId: response.userId,
                     method: response.method,
                     email: credentials.email // Útil para mostrar "enviado a..."
-                } 
+                }
             });
             return;
         }
@@ -53,25 +54,27 @@ export const createAuthSlice = (set, get) => ({
 
         // Flujo normal si no hay 2FA o ya devolvió token
         const { token } = response;
-        
-        localStorage.removeItem('fittrack_token'); 
+
+        localStorage.removeItem('fittrack_token');
 
         localStorage.setItem('pro_fitness_token', token);
+        // Al establecer isAuthenticated: true, el componente MainAppLayout se montará
+        // y su hook useAppInitialization se encargará de llamar a fetchInitialData.
         set({ token, isAuthenticated: true, twoFactorPending: null });
-        await get().fetchInitialData();
     },
 
     // Inicia sesión con Google
+    // MODIFICADO: Eliminada la llamada redundante a fetchInitialData()
     handleGoogleLogin: async (googleToken) => {
         const response = await authService.googleLogin(googleToken);
 
         // --- INICIO MODIFICACIÓN 2FA ---
         if (response.requires2FA) {
-            set({ 
-                twoFactorPending: { 
-                    userId: response.userId, 
+            set({
+                twoFactorPending: {
+                    userId: response.userId,
                     method: response.method
-                } 
+                }
             });
             return;
         }
@@ -81,23 +84,23 @@ export const createAuthSlice = (set, get) => ({
 
         localStorage.removeItem('fittrack_token');
         localStorage.setItem('pro_fitness_token', token);
-        
+
         set({ token, isAuthenticated: true, twoFactorPending: null });
-        await get().fetchInitialData();
     },
 
     // --- INICIO MODIFICACIÓN 2FA ---
     // Nueva acción para completar el login con el código 2FA
+    // MODIFICADO: Eliminada la llamada redundante a fetchInitialData()
     handleVerify2FA: async (verificationData) => {
         // verificationData trae { userId, token/code, method }
         const { token } = await authService.verify2FALogin(verificationData);
 
-        localStorage.removeItem('fittrack_token'); 
+        localStorage.removeItem('fittrack_token');
         localStorage.setItem('pro_fitness_token', token);
-        
-        // Limpiamos el estado pendiente y marcamos autenticado
+
+        // Limpiamos el estado pendiente y marcamos autenticado.
+        // useAppInitialization detectará el cambio y cargará los datos.
         set({ token, isAuthenticated: true, twoFactorPending: null });
-        await get().fetchInitialData();
     },
 
     // Acción para cancelar el proceso de 2FA y volver al login normal
@@ -126,7 +129,7 @@ export const createAuthSlice = (set, get) => ({
         clearAuthStorage();
         // Mantenemos el workout activo en localStorage
         get().clearDataState();
-        
+
         set({
             isAuthenticated: false,
             token: null,
@@ -172,7 +175,7 @@ export const createAuthSlice = (set, get) => ({
     // --- GESTIÓN DE COOKIES ---
     checkCookieConsent: () => {
         const consent = localStorage.getItem('cookie_consent');
-        set({ cookieConsent: consent }); 
+        set({ cookieConsent: consent });
     },
 
     handleAcceptCookies: () => {

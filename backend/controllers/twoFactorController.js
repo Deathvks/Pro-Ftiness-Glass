@@ -3,11 +3,12 @@ import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { UAParser } from 'ua-parser-js'; // Importación necesaria
 import db from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendLoginAlertEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
 
-const { User } = db;
+const { User, UserSession } = db;
 
 /**
  * Genera un secreto temporal y código QR para configurar Google Authenticator.
@@ -47,7 +48,7 @@ export const verifyAndEnableApp = async (req, res, next) => {
       secret: secret,
       encoding: 'base32',
       token: token,
-      window: 2, 
+      window: 2,
     });
 
     if (!verified) {
@@ -84,11 +85,11 @@ export const sendEmailCode = async (req, res, next) => {
   try {
     let user;
     if (req.user && req.user.userId) {
-        user = await User.findByPk(req.user.userId);
+      user = await User.findByPk(req.user.userId);
     } else if (req.body.email) {
-        user = await User.findOne({ where: { email: req.body.email } });
+      user = await User.findOne({ where: { email: req.body.email } });
     } else if (req.body.userId) {
-        user = await User.findByPk(req.body.userId);
+      user = await User.findByPk(req.body.userId);
     }
 
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
@@ -183,30 +184,28 @@ export const verifyLogin2FA = async (req, res, next) => {
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
     let verified = false;
-    let updates = {}; // Objeto para acumular actualizaciones
+    let updates = {};
 
     if (user.two_factor_method === 'app') {
       if (!token) return res.status(400).json({ error: 'Código TOTP requerido.' });
 
       const currentSlice = Math.floor(Date.now() / 30000);
-      
-      // Protección simple contra reuso (replay attack)
+
       if (user.last_totp_slice === currentSlice) {
-          return res.status(400).json({ 
-              error: 'Este código ya ha sido utilizado. Por favor, espera unos segundos.' 
-          });
+        return res.status(400).json({
+          error: 'Este código ya ha sido utilizado. Por favor, espera unos segundos.'
+        });
       }
 
-      // Aumentamos window a 2 para permitir mayor tolerancia de tiempo
       verified = speakeasy.totp.verify({
         secret: user.two_factor_secret,
         encoding: 'base32',
         token: token,
-        window: 2, 
+        window: 2,
       });
 
       if (verified) {
-          updates.last_totp_slice = currentSlice;
+        updates.last_totp_slice = currentSlice;
       }
 
     } else if (user.two_factor_method === 'email') {
@@ -216,7 +215,7 @@ export const verifyLogin2FA = async (req, res, next) => {
         new Date() < user.verification_code_expires_at
       ) {
         verified = true;
-        updates.verification_code = null; // Limpiar código
+        updates.verification_code = null;
       }
     }
 
@@ -227,44 +226,68 @@ export const verifyLogin2FA = async (req, res, next) => {
     // --- GENERACIÓN DE TOKEN DE RESET PARA EL EMAIL ---
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    
-    updates.password_reset_token = hashedToken;
-    updates.password_reset_expires_at = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
-    // Aplicamos todas las actualizaciones
+    updates.password_reset_token = hashedToken;
+    updates.password_reset_expires_at = new Date(Date.now() + 60 * 60 * 1000);
+
     await user.update(updates);
 
-    // --- ENVIAR ALERTA (Lógica IP Mejorada) ---
+    // --- ENVIAR ALERTA ---
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) {
-        ip = ip.split(',')[0].trim();
+      ip = ip.split(',')[0].trim();
     }
-
     const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
-    
-    // Solo enviar email si el usuario tiene activada la preferencia
+
     if (user.login_email_notifications) {
-        sendLoginAlertEmail(user.email, { ip, userAgent, token: resetToken }).catch(err => 
-            console.error('Fallo al enviar alerta de login 2FA:', err)
-        );
+      sendLoginAlertEmail(user.email, { ip, userAgent, token: resetToken }).catch(err =>
+        console.error('Fallo al enviar alerta de login 2FA:', err)
+      );
     }
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Notificación interna de inicio de sesión con DATOS EXTRA
     createNotification(user.id, {
       type: 'warning',
       title: 'Nuevo inicio de sesión (2FA)',
       message: 'Se ha iniciado sesión correctamente utilizando la verificación en dos pasos.',
-      data: { // Guardamos IP y UserAgent para que el frontend los muestre
-          ip,
-          userAgent,
-          date: new Date()
-      }
+      data: { ip, userAgent, date: new Date() }
     });
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const payload = { userId: user.id, role: user.role };
     const jwtToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    // --- CREAR O ACTUALIZAR SESIÓN (CORREGIDO) ---
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
+    const deviceType = result.device.type || 'desktop';
+    const browserName = result.browser.name || 'Navegador desconocido';
+    const osName = result.os.name || 'SO desconocido';
+    const deviceName = `${browserName} en ${osName}`;
+
+    // Buscar sesión existente para reutilizarla
+    const existingSession = await UserSession.findOne({
+      where: {
+        user_id: user.id,
+        device_name: deviceName,
+        device_type: deviceType
+      }
+    });
+
+    if (existingSession) {
+      await existingSession.update({
+        token: jwtToken,
+        ip_address: ip,
+        last_active: new Date()
+      });
+    } else {
+      await UserSession.create({
+        user_id: user.id, // Nombre correcto de la columna
+        token: jwtToken,
+        device_type: deviceType,
+        device_name: deviceName,
+        ip_address: ip,
+        last_active: new Date()
+      });
+    }
 
     res.json({
       message: 'Verificación exitosa.',
