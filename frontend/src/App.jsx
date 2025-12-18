@@ -252,7 +252,6 @@ export default function App() {
         <link rel="canonical" href={canonicalUrl} />
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
-        {/* Sin meta theme-color aquí, controlado por useAppTheme */}
 
         <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
 
@@ -270,21 +269,44 @@ export default function App() {
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
 
-      <MainAppLayout
-        view={view}
-        navigate={navigate}
-        mainContentRef={mainContentRef}
-        currentTitle={currentTitle}
-        currentViewComponent={currentViewComponent}
-        navItems={navItems}
-        handleLogoutClick={handleLogoutClick}
-        showLogoutConfirm={showLogoutConfirm}
-        confirmLogout={confirmLogout}
-        setShowLogoutConfirm={setShowLogoutConfirm}
-        handleShowPolicy={handleShowPolicy}
-        fetchInitialData={fetchInitialData}
-        {...verificationProps}
+      {/* Blob de fondo animado */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '12rem',
+          height: '12rem',
+          backgroundColor: 'var(--color-accent)',
+          opacity: 0.15,
+          filter: 'blur(60px)',
+          borderRadius: '50%',
+          zIndex: 0, // FIX: Elevado a 0 para que no se oculte tras el HTML
+          animation: 'roam-blob 10s infinite alternate ease-in-out',
+          pointerEvents: 'none'
+        }}
+        aria-hidden="true"
       />
+
+      {/* FIX: Wrapper relativo para que el contenido esté POR ENCIMA del blob (z-0) */}
+      <div className="relative z-10 h-full">
+        <MainAppLayout
+          view={view}
+          navigate={navigate}
+          mainContentRef={mainContentRef}
+          currentTitle={currentTitle}
+          currentViewComponent={currentViewComponent}
+          navItems={navItems}
+          handleLogoutClick={handleLogoutClick}
+          showLogoutConfirm={showLogoutConfirm}
+          confirmLogout={confirmLogout}
+          setShowLogoutConfirm={setShowLogoutConfirm}
+          handleShowPolicy={handleShowPolicy}
+          fetchInitialData={fetchInitialData}
+          {...verificationProps}
+        />
+      </div>
 
       {isResting && (
         restTimerMode === 'minimized' ? (

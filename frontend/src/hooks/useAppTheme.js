@@ -69,12 +69,15 @@ export const useAppTheme = () => {
       }
 
       // 3. Aplicar color al fondo
+      // IMPORTANTE: Aplicamos color SOLO al HTML (root). 
+      // El body se mantiene transparente (vía CSS) para que se vea el 'blob' (body::before).
       root.style.backgroundColor = color;
-      document.body.style.backgroundColor = color;
+
+      // Si forzamos color en body, tapamos el blob. Lo eliminamos para respetar index.css.
+      // document.body.style.backgroundColor = color; <--- ELIMINADO
 
       // 4. GESTIÓN DE META TAGS (FIX IOS SAFARI)
-      // Usamos un pequeño timeout para dar tiempo a Safari a procesar el cambio de renderizado
-      // del cuerpo antes de forzar la actualización de la interfaz del navegador.
+      // Usamos un pequeño timeout para dar tiempo a Safari a procesar el cambio
       setTimeout(() => {
         const metaTags = document.querySelectorAll('meta[name="theme-color"]');
         metaTags.forEach(m => m.remove());
@@ -83,7 +86,7 @@ export const useAppTheme = () => {
         newMeta.name = "theme-color";
         newMeta.content = color;
         document.head.appendChild(newMeta);
-      }, 50); // 50ms de delay
+      }, 50);
     };
 
     updateAppearance();
