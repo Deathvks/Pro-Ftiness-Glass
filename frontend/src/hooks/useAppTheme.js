@@ -55,35 +55,34 @@ export const useAppTheme = () => {
 
       // 2. Gestionar Meta Tags para Status Bar (iOS/PWA y Android)
 
-      // --- ESTRATEGIA: BORRAR Y RECREAR ---
-      // Eliminamos TODAS las etiquetas existentes para asegurar prioridad absoluta de JS
+      // --- ESTRATEGIA SEGURA: COLORES SÓLIDOS Y ESTILO DEFAULT ---
+
+      // Limpieza total de etiquetas previas
       const existingMetaTags = document.querySelectorAll('meta[name="theme-color"]');
       existingMetaTags.forEach(tag => tag.remove());
 
-      // Creamos una etiqueta nueva y limpia
+      // Crear nueva etiqueta
       const themeColorMeta = document.createElement('meta');
       themeColorMeta.name = 'theme-color';
 
       const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
 
-      // --- CONFIGURACIÓN DE COLORES ---
+      // --- CONFIGURACIÓN DE COLORES (USANDO BACKGROUND/HEADER SÓLIDO) ---
       let metaColor = '#ffffff';
-      let statusBarStyle = 'default';
+
+      // Siempre usamos 'default' para que el sistema elija el color de texto correcto (blanco/negro)
+      const statusBarStyle = 'default';
 
       if (effectiveTheme === 'oled') {
-        // OLED: Negro puro y barra translúcida (contenido fluye por debajo)
+        // OLED: Negro puro
         metaColor = '#000000';
-        statusBarStyle = 'black-translucent';
       } else if (effectiveTheme === 'dark') {
-        // DARK: Usamos 'black-translucent' también aquí.
-        // Esto permite que el Header con efecto Glass (#121826 con opacidad) se vea 
-        // detrás de la hora/batería, igualando el look del modo OLED.
-        metaColor = '#121826';
-        statusBarStyle = 'black-translucent';
+        // DARK: Color de fondo base (#0c111b). 
+        // Es la opción más segura si el header tiene transparencias.
+        metaColor = '#0c111b';
       } else {
-        // LIGHT: Blanco puro (#ffffff) con estilo default (letras negras)
+        // LIGHT: Blanco puro (#ffffff).
         metaColor = '#ffffff';
-        statusBarStyle = 'default';
       }
 
       themeColorMeta.content = metaColor;
