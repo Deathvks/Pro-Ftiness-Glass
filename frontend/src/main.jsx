@@ -1,14 +1,13 @@
 /* frontend/src/main.jsx */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { HelmetProvider } from 'react-helmet-async';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import './index.css';
+import './i18n';
 import App from './App.jsx';
 import ToastProvider from './contexts/ToastProvider.jsx';
-import { HelmetProvider } from 'react-helmet-async';
-import './i18n';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 
-// Obtenemos el ID desde las variables de entorno de Vite
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 if (!googleClientId) {

@@ -227,7 +227,7 @@ export default function MainAppLayout({
       </main>
 
       {/* Navbar (Móvil) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border]
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border] z-50
                       pb-[env(safe-area-inset-bottom)] 
                       pl-[max(env(safe-area-inset-left),_0.5rem)] 
                       pr-[max(env(safe-area-inset-right),_0.5rem)]">

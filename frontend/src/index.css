@@ -214,8 +214,9 @@
     isolation: isolate;
   }
 
-  /* FIX IOS 26: El HTML y el BODY deben tener el color de fondo asignado.
-     iOS 26 usa el color del body para teñir las barras de interfaz. */
+  /* FIX IOS 26: Sincronización de fondo
+     Safari usa el background-color del body/html para el overscroll
+     y la barra de estado en modo 'Liquid Glass'. */
   html {
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
@@ -225,7 +226,7 @@
     @apply text-text-primary antialiased;
     overflow: hidden;
 
-    /* CAMBIO CLAVE: Ponemos el color aquí para que iOS 26 lo detecte */
+    /* Sincronización explícita para iOS */
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
   }

@@ -22,7 +22,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
 
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Pro Fitness Glass" />
 
   <title>Pro Fitness Glass - Tu App de Fitness</title>
@@ -50,50 +49,72 @@
   <script>
     (function () {
       try {
+        // 1. Recuperar preferencias
         var savedTheme = localStorage.getItem('theme') || 'system';
         var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var theme = savedTheme;
 
-        if (theme === 'system') {
-          theme = systemDark ? 'dark' : 'light';
+        // 2. Determinar tema efectivo
+        var effectiveTheme = savedTheme;
+        if (effectiveTheme === 'system') {
+          effectiveTheme = systemDark ? 'dark' : 'light';
         }
 
+        // 3. Definir paleta exacta (Debe coincidir con useAppTheme.js)
         var colors = {
           light: '#f7fafc',
           dark: '#0c111b',
           oled: '#000000'
         };
-        var selectedColor = colors[theme] || colors.dark;
+        var selectedColor = colors[effectiveTheme] || colors.dark;
 
+        // 4. Determinar estilo de Status Bar (iOS 26 Logic)
+        // 'default' = texto negro (para fondos claros)
+        // 'black-translucent' = texto blanco sobre fondo body (para dark/oled)
+        var statusBarStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
+
+        // 5. Aplicar clases al ROOT
         var root = document.documentElement;
         root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
 
         if (savedTheme === 'system') {
           root.classList.add(systemDark ? 'dark-theme' : 'light-theme');
         } else {
-          root.classList.add(theme + '-theme');
+          root.classList.add(effectiveTheme + '-theme');
         }
 
-        // Aplicar color de fondo inmediatamente (HTML y BODY)
+        // 6. FIX CRÍTICO iOS 26: Sincronizar Background INMEDIATAMENTE
+        // Safari usa el background-color del body/html para el "overscroll" y la barra inferior
+        // cuando la interfaz es traslúcida ("Liquid Glass").
         root.style.backgroundColor = selectedColor;
-        // IMPORTANTE: Forzamos el body también para asegurar consistencia en iOS
+
+        // Intentar aplicar al body si ya existe, si no, esperar al evento.
         if (document.body) {
           document.body.style.backgroundColor = selectedColor;
         } else {
-          // Si el body aún no existe (muy temprano), esperamos al DOMContentLoaded
           document.addEventListener('DOMContentLoaded', function () {
             document.body.style.backgroundColor = selectedColor;
           });
         }
 
-        // Limpiar y establecer theme-color
-        var oldMetas = document.querySelectorAll('meta[name="theme-color"]');
-        oldMetas.forEach(function (meta) { meta.remove(); });
+        // 7. Gestión de Meta Tags (Sin borrar, buscar o crear)
 
-        var newMeta = document.createElement('meta');
-        newMeta.name = "theme-color";
-        newMeta.content = selectedColor;
-        document.head.appendChild(newMeta);
+        // A) theme-color
+        var metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (!metaTheme) {
+          metaTheme = document.createElement('meta');
+          metaTheme.name = "theme-color";
+          document.head.appendChild(metaTheme);
+        }
+        metaTheme.content = selectedColor;
+
+        // B) apple-mobile-web-app-status-bar-style
+        var metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+        if (!metaStatus) {
+          metaStatus = document.createElement('meta');
+          metaStatus.name = "apple-mobile-web-app-status-bar-style";
+          document.head.appendChild(metaStatus);
+        }
+        metaStatus.content = statusBarStyle;
 
       } catch (e) {
         console.error('Error aplicando tema inicial', e);

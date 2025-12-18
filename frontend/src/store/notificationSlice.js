@@ -15,124 +15,78 @@ export const createNotificationSlice = (set, get) => ({
   notificationPage: 1,
   notificationTotalPages: 1,
 
-  /**
-   * Obtiene las notificaciones del servidor.
-   * Si page > 1, las añade a la lista existente (scroll infinito/paginación).
-   */
   fetchNotifications: async (page = 1) => {
-    // Solo mostramos loading global si es la primera página
-    if (page === 1) {
-        set({ notificationsLoading: true, notificationsError: null });
-    }
+    if (page === 1) set({ notificationsLoading: true, notificationsError: null });
 
     try {
-      // --- CAMBIO: Límite ajustado a 10 para paginación ---
-      const response = await getNotifications({ page, limit: 10 });
-      
-      set(state => {
-        const newNotifications = response.notifications;
-        // Si es página 1, reemplazamos. Si no, concatenamos.
-        const updatedList = page === 1 
-            ? newNotifications 
-            : [...state.notifications, ...newNotifications];
-        
-        return {
-            notifications: updatedList,
-            unreadCount: response.unreadCount,
-            notificationPage: response.currentPage,
-            notificationTotalPages: response.totalPages,
-            notificationsLoading: false
-        };
-      });
+      const { notifications, unreadCount, currentPage, totalPages } = await getNotifications({ page, limit: 10 });
+
+      set(state => ({
+        notifications: page === 1 ? notifications : [...state.notifications, ...notifications],
+        unreadCount,
+        notificationPage: currentPage,
+        notificationTotalPages: totalPages,
+        notificationsLoading: false
+      }));
     } catch (error) {
-      console.error("Error fetching notifications:", error);
       set({ notificationsLoading: false, notificationsError: error.message || 'Error al cargar notificaciones' });
     }
   },
 
-  /**
-   * Marca una notificación como leída (Optimista).
-   */
   markNotificationAsRead: async (id) => {
     const { notifications, unreadCount } = get();
-    const notificationIndex = notifications.findIndex(n => n.id === id);
-    
-    if (notificationIndex === -1) return;
-    if (notifications[notificationIndex].is_read) return; // Ya estaba leída
+    const index = notifications.findIndex(n => n.id === id);
 
-    // Actualización optimista
+    if (index === -1 || notifications[index].is_read) return;
+
     const updatedList = [...notifications];
-    updatedList[notificationIndex] = { ...updatedList[notificationIndex], is_read: true };
+    updatedList[index] = { ...updatedList[index], is_read: true };
 
-    set({
-        notifications: updatedList,
-        unreadCount: Math.max(0, unreadCount - 1)
-    });
+    set({ notifications: updatedList, unreadCount: Math.max(0, unreadCount - 1) });
 
     try {
       await markAsRead(id);
-    } catch (error) {
-      console.error("Error marcando como leída:", error);
+    } catch (e) {
+      console.error(e);
     }
   },
 
-  /**
-   * Marca todas como leídas (Optimista).
-   */
   markAllNotificationsAsRead: async () => {
     const { notifications } = get();
-    
-    const updatedList = notifications.map(n => ({ ...n, is_read: true }));
-    
-    set({
-        notifications: updatedList,
-        unreadCount: 0
-    });
+    set({ notifications: notifications.map(n => ({ ...n, is_read: true })), unreadCount: 0 });
 
     try {
       await markAllAsRead();
-    } catch (error) {
-      console.error("Error marcando todas como leídas:", error);
+    } catch (e) {
+      console.error(e);
     }
   },
 
-  /**
-   * Elimina una notificación (Optimista).
-   */
   removeNotification: async (id) => {
     const { notifications, unreadCount } = get();
-    const notificationToDelete = notifications.find(n => n.id === id);
-    
-    if (!notificationToDelete) return;
-
-    const wasUnread = !notificationToDelete.is_read;
-    const updatedList = notifications.filter(n => n.id !== id);
+    const target = notifications.find(n => n.id === id);
+    if (!target) return;
 
     set({
-        notifications: updatedList,
-        unreadCount: wasUnread ? Math.max(0, unreadCount - 1) : unreadCount
+      notifications: notifications.filter(n => n.id !== id),
+      unreadCount: !target.is_read ? Math.max(0, unreadCount - 1) : unreadCount
     });
 
     try {
       await deleteNotification(id);
-    } catch (error) {
-      console.error("Error eliminando notificación:", error);
+    } catch (e) {
+      console.error(e);
     }
   },
 
-  /**
-   * Elimina todas las notificaciones (Optimista).
-   */
   clearAllNotifications: async () => {
     set({ notifications: [], unreadCount: 0 });
     try {
       await deleteAllNotifications();
-    } catch (error) {
-      console.error("Error vaciando notificaciones:", error);
+    } catch (e) {
+      console.error(e);
     }
   },
-  
-  incrementUnreadCount: () => {
-      set(state => ({ unreadCount: state.unreadCount + 1 }));
-  }
+
+  incrementUnreadCount: () => set(state => ({ unreadCount: state.unreadCount + 1 }))
 });
