@@ -3,14 +3,14 @@ import { useState, useEffect } from 'react';
 import useAppStore from '../store/useAppStore';
 
 /**
- * Hook para gestionar el tema y el color de la barra de estado.
+ * Hook para gestionar el tema y calcular los colores de la interfaz.
+ * Delega la renderización de meta tags a App.jsx (Helmet).
  */
 export const useAppTheme = () => {
   const cookieConsent = useAppStore(state => state.cookieConsent);
 
-  // Inicializar estado desde localStorage o default 'system'
+  // Inicialización de estado
   const [theme, setThemeState] = useState(() => {
-    // Verificación de seguridad para SSR
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') || 'system';
     }
@@ -23,6 +23,11 @@ export const useAppTheme = () => {
     }
     return 'green';
   });
+
+  // Estados calculados para Helmet (Meta Tags)
+  // Inicializamos con valores seguros por defecto
+  const [themeColor, setThemeColor] = useState('#ffffff');
+  const [statusBarStyle, setStatusBarStyle] = useState('default');
 
   const setTheme = (newTheme) => {
     if (cookieConsent) {
@@ -38,70 +43,46 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // Efecto Principal: Gestiona Clases CSS y Meta Tags
+  // Efecto Principal: Clases CSS y Cálculo de Colores
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
 
     const updateAppearance = () => {
-      // 1. Determinar el tema efectivo (light/dark/oled)
       let effectiveTheme = theme;
+
+      // Resolver tema del sistema
       if (theme === 'system') {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
-      // 2. Aplicar Clases al Root (HTML)
+      // 1. Aplicar Clases CSS al Root (Necesario para Tailwind)
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
 
       if (theme === 'system') {
-        // Si es sistema, aplicamos la clase específica resuelta
         root.classList.add(effectiveTheme === 'dark' ? 'dark-theme' : 'light-theme');
       } else {
-        // Si es manual (light, dark, oled), aplicamos esa clase
         root.classList.add(`${theme}-theme`);
       }
 
-      // 3. Gestionar Meta Tag "theme-color" (Status Bar)
-      // Usamos un ID específico para asegurar que controlamos ESTA etiqueta y no otra
-      const META_ID = 'dynamic-theme-color-meta';
-      let themeMeta = document.getElementById(META_ID);
-
-      // Si no existe por ID, buscamos por nombre para limpiarlas y crear la nuestra
-      if (!themeMeta) {
-        const existingMetas = document.querySelectorAll('meta[name="theme-color"]');
-        existingMetas.forEach(m => m.remove()); // Borrón y cuenta nueva
-
-        themeMeta = document.createElement('meta');
-        themeMeta.name = 'theme-color';
-        themeMeta.id = META_ID; // Marcamos nuestra etiqueta
-        document.head.appendChild(themeMeta);
-      }
-
-      // 4. Definir Colores Exactos
-      let colorHex;
+      // 2. Calcular valores para Helmet (NO tocamos el DOM aquí)
       if (effectiveTheme === 'oled') {
-        colorHex = '#000000'; // Negro Absoluto
+        // OLED: Negro puro y barra transparente
+        setThemeColor('#000000');
+        setStatusBarStyle('black-translucent');
       } else if (effectiveTheme === 'dark') {
-        colorHex = '#0c111b'; // Background Oscuro
+        // DARK: Color de fondo (#0c111b) - Sólido y seguro
+        setThemeColor('#0c111b');
+        setStatusBarStyle('default');
       } else {
-        colorHex = '#ffffff'; // Blanco Puro
-      }
-
-      // 5. Aplicar el color
-      themeMeta.setAttribute('content', colorHex);
-
-      // 6. Gestionar Estilo de Barra iOS (Texto blanco/negro)
-      const appleMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      if (appleMeta) {
-        // 'default' permite que iOS decida el color del texto (negro en fondo claro, blanco en oscuro)
-        appleMeta.setAttribute('content', 'default');
+        // LIGHT: Blanco puro (#ffffff)
+        setThemeColor('#ffffff');
+        setStatusBarStyle('default');
       }
     };
 
-    // Ejecutar al inicio y cuando cambie el tema
     updateAppearance();
 
-    // Listener para cambios en el sistema (solo si el tema es 'system')
     const handleSystemChange = () => {
       if (theme === 'system') {
         updateAppearance();
@@ -110,15 +91,15 @@ export const useAppTheme = () => {
 
     mediaQuery.addEventListener('change', handleSystemChange);
     return () => mediaQuery.removeEventListener('change', handleSystemChange);
-  }, [theme]); // Dependencia única: 'theme'
+  }, [theme]);
 
   // Efecto Secundario: Color de Acento
   useEffect(() => {
     const root = document.documentElement;
-    // Limpiar clases de acento previas (accent-blue, accent-green, etc.)
     const classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));
     root.className = classes.join(' ') + ` accent-${accent}`;
   }, [accent]);
 
-  return { theme, setTheme, accent, setAccent };
+  // Devolvemos los valores para que App.jsx los inyecte en el <head>
+  return { theme, setTheme, accent, setAccent, themeColor, statusBarStyle };
 };

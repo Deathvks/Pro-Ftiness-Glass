@@ -1,13 +1,13 @@
 /* frontend/src/App.jsx */
 import React, { useState, lazy, Suspense, useMemo, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Home, Dumbbell, BarChart2, Settings, Utensils, Bell } from 'lucide-react'; // Añadido Bell
+import { Home, Dumbbell, BarChart2, Settings, Utensils, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from './store/useAppStore';
 
 // --- Imports de Hooks Modularizados ---
 import { useAppNavigation } from './hooks/useAppNavigation';
-import { useAppTheme } from './hooks/useAppTheme';
+import { useAppTheme } from './hooks/useAppTheme'; // Hook modificado que devuelve colores
 import { useWorkoutTimer } from './hooks/useWorkoutTimer';
 import { useAppInitialization } from './hooks/useAppInitialization';
 
@@ -19,10 +19,8 @@ import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
 
 // --- Imports de Componentes Modales ---
 import TwoFactorPromoModal from './components/TwoFactorPromoModal';
-// --- INICIO DE LA MODIFICACIÓN ---
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
-// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Imports de Páginas (Lazy) ---
 import OnboardingScreen from './pages/OnboardingScreen';
@@ -33,9 +31,7 @@ const Progress = lazy(() => import('./pages/Progress'));
 const Routines = lazy(() => import('./pages/Routines'));
 const Workout = lazy(() => import('./pages/Workout'));
 const Nutrition = lazy(() => import('./pages/Nutrition'));
-// --- INICIO DE LA MODIFICACIÓN ---
 const TemplateDiets = lazy(() => import('./pages/TemplateDiets'));
-// --- FIN DE LA MODIFICACIÓN ---
 const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
 const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
@@ -65,7 +61,9 @@ export default function App() {
     handleShowPolicy
   } = useAppNavigation();
 
-  const { theme, setTheme, accent, setAccent } = useAppTheme();
+  // Obtenemos los colores calculados dinámicamente desde el hook
+  const { theme, setTheme, accent, setAccent, themeColor, statusBarStyle } = useAppTheme();
+
   const timer = useWorkoutTimer();
   const { t } = useTranslation('translation');
 
@@ -81,20 +79,16 @@ export default function App() {
     isLoading,
     handleLogout: performLogout,
     fetchInitialData,
-    // --- INICIO DE LA MODIFICACIÓN ---
     isResting,
     restTimerMode,
-    // --- FIN DE LA MODIFICACIÓN ---
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
     isLoading: state.isLoading,
     handleLogout: state.handleLogout,
     fetchInitialData: state.fetchInitialData,
-    // --- INICIO DE LA MODIFICACIÓN ---
     isResting: state.isResting,
     restTimerMode: state.restTimerMode,
-    // --- FIN DE LA MODIFICACIÓN ---
   }));
 
   // --- 4. Efectos ---
@@ -150,9 +144,7 @@ export default function App() {
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
-      // --- INICIO DE LA MODIFICACIÓN ---
       templateDiets: { key: 'Dietas Plantilla', default: 'Dietas Plantilla' },
-      // --- FIN DE LA MODIFICACIÓN ---
     };
     const titleInfo = titleMap[view];
     if (titleInfo) {
@@ -176,9 +168,7 @@ export default function App() {
       privacyPolicy: t('privacyPolicy_desc', { defaultValue: 'Información sobre cómo tratamos tus datos y el uso de cookies.' }),
       twoFactorSetup: t('twoFactorSetup_desc', { defaultValue: 'Configura la seguridad adicional de tu cuenta.' }),
       notifications: t('notifications_desc', { defaultValue: 'Consulta tus alertas y recordatorios.' }),
-      // --- INICIO DE LA MODIFICACIÓN ---
       templateDiets: t('templateDiets_desc', { defaultValue: 'Explora dietas predefinidas adaptadas a tus objetivos.' }),
-      // --- FIN DE LA MODIFICACIÓN ---
       default: t('default_desc', { defaultValue: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.' }),
     };
     return descKeys[view] || descKeys.default;
@@ -199,11 +189,8 @@ export default function App() {
       case 'progress': return <Progress darkMode={theme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout timer={timer} setView={navigate} />;
-      // --- INICIO DE LA MODIFICACIÓN ---
       case 'nutrition': return <Nutrition setView={navigate} />;
-      // AÑADIDO: Pasamos setView para poder volver atrás
       case 'templateDiets': return <TemplateDiets setView={navigate} />;
-      // --- FIN DE LA MODIFICACIÓN ---
       case 'settings':
         return (
           <SettingsScreen
@@ -289,7 +276,10 @@ export default function App() {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
 
-        {/* --- MODIFICACIÓN: Eliminada etiqueta theme-color estática. Se gestiona en useAppTheme.js --- */}
+        {/* --- MODIFICACIÓN: Inyección dinámica de theme-color y status-bar --- */}
+        {/* Usamos 'key' para forzar a React/Helmet a re-renderizar la etiqueta si el color cambia */}
+        <meta name="theme-color" content={themeColor} key="theme-color" />
+        <meta name="apple-mobile-web-app-status-bar-style" content={statusBarStyle} key="status-bar-style" />
 
         <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
 
@@ -325,7 +315,6 @@ export default function App() {
         {...verificationProps}
       />
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
       {/* Temporizador Global (Modal o Isla Dinámica) */}
       {isResting && (
         restTimerMode === 'minimized' ? (
@@ -334,7 +323,6 @@ export default function App() {
           <RestTimerModal />
         )
       )}
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {/* Modal Promocional 2FA */}
       {show2FAPromo && (
