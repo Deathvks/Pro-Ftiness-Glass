@@ -21,7 +21,9 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
 
-  <meta name="theme-color" content="#0c111b" />
+  <meta name="theme-color" content="#f7fafc" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0c111b" media="(prefers-color-scheme: dark)" />
+
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Pro Fitness Glass" />
@@ -51,42 +53,50 @@
   <script>
     (function () {
       try {
-        // 1. Recuperar preferencia o sistema
+        // 1. Recuperar preferencia
         var savedTheme = localStorage.getItem('theme') || 'system';
         var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         var theme = savedTheme;
 
+        // Resolver tema efectivo
         if (theme === 'system') {
           theme = systemDark ? 'dark' : 'light';
         }
 
-        // 2. Colores HEX exactos (coinciden con index.css/useAppTheme.js)
+        // 2. Definir colores exactos
         var colors = {
           light: '#f7fafc',
           dark: '#0c111b',
           oled: '#000000'
         };
-
         var selectedColor = colors[theme] || colors.dark;
 
         // 3. Aplicar clase al HTML
         var root = document.documentElement;
         root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
-        if (theme === 'oled') root.classList.add('oled-theme');
-        else if (theme === 'light') root.classList.add('light-theme');
-        else root.classList.add('dark-theme');
 
-        // 4. Forzar background-color inline inmediatamente
-        // Esto es lo que iOS usa para pintar la zona de "rebote" y la isla dinámica
-        root.style.backgroundColor = selectedColor;
-
-        // 5. Actualizar meta tag theme-color
-        var metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (metaTheme) {
-          metaTheme.setAttribute('content', selectedColor);
+        if (savedTheme === 'system') {
+          // Si es system, usamos las clases específicas para que el CSS responda
+          root.classList.add(systemDark ? 'dark-theme' : 'light-theme');
+        } else {
+          root.classList.add(theme + '-theme');
         }
 
-        // 6. Actualizar status-bar-style para iOS
+        // 4. Forzar background-color inline inmediatamente (Cubre el rebote de iOS)
+        root.style.backgroundColor = selectedColor;
+
+        // 5. GESTIÓN DE META TAGS (Crucial para iOS)
+        // Eliminamos las etiquetas estáticas con media queries para evitar conflictos
+        // y creamos una única etiqueta definitiva con el color calculado.
+        var oldMetas = document.querySelectorAll('meta[name="theme-color"]');
+        oldMetas.forEach(function (meta) { meta.remove(); });
+
+        var newMeta = document.createElement('meta');
+        newMeta.name = "theme-color";
+        newMeta.content = selectedColor;
+        document.head.appendChild(newMeta);
+
+        // 6. Actualizar status-bar-style
         var metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
         if (metaStatus) {
           if (theme === 'oled') {
@@ -123,8 +133,7 @@
 <body>
   <div id="root">
     <style>
-      /* Estilos básicos del Splash Screen */
-      /* Nota: El color de fondo del HTML ya lo gestiona el script de arriba */
+      /* El background-color lo gestiona el script en <html>, aquí solo heredamos */
       .app-splash-screen {
         display: flex;
         flex-direction: column;
@@ -137,7 +146,6 @@
         height: 100vh;
         z-index: 9999;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        /* Usamos inherit para que tome el color que puso el script en <html> */
         background-color: inherit;
         color: #ffffff;
       }
@@ -151,7 +159,7 @@
         animation: spin 1s ease-in-out infinite;
       }
 
-      /* Ajustes específicos para modo claro en el splash */
+      /* Ajustes para modo claro en el splash */
       html.light-theme .app-splash-screen {
         color: #0f172a;
       }
