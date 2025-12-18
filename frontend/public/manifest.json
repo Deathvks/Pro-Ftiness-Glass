@@ -1,0 +1,28 @@
+{
+  "name": "Pro Fitness Glass",
+  "short_name": "FitTrack-Pro",
+  "description": "Tu compañero de fitness definitivo para registrar entrenamientos y progreso.",
+  "theme_color": "#0c111b",
+  "background_color": "#0c111b",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "pwa-192x192.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    },
+    {
+      "src": "pwa-512x512.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    },
+    {
+      "src": "pwa-512x512.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
+}

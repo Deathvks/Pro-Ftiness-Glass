@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml
