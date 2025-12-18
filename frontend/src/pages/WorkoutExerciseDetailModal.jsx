@@ -22,7 +22,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   // 3. ESTADO LOCAL: Mantenemos un estado local para los detalles.
   // Se inicializa UNA VEZ con los props (posiblemente incompletos).
   const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
-  
+
   // 4. ESTADO DE CARGA: Derivado de los 'localDetails'.
   const nameKey = exercise.name;
   const isDataMissing = (details) => {
@@ -30,7 +30,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     const missingMedia = !details.image_url && !details.video_url;
     return (missingDescription || missingMedia) && nameKey;
   };
-  
+
   // Se inicializa con el estado actual de los 'localDetails'
   const [localIsLoading, setLocalIsLoading] = useState(isDataMissing(localDetails));
 
@@ -54,7 +54,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
             // Aseguramos la descripción usando el campo de la DB
             description: fullDetails.description_es || fullDetails.description || localDetails.description,
           };
-          
+
           // 7. ACTUALIZAMOS EL ESTADO LOCAL.
           // Esto dispara UN solo re-renderizado con los datos completos.
           setLocalDetails(mergedDetails);
@@ -68,9 +68,9 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     };
 
     fetchMissingDetails();
-  
-  // 9. Depende de 'localIsLoading' y 'nameKey'.
-  }, [localIsLoading, nameKey, getOrFetchAllExercises]); 
+
+    // 9. Depende de 'localIsLoading' y 'nameKey'.
+  }, [localIsLoading, nameKey, getOrFetchAllExercises]);
 
   // --- FIN DE LA MODIFICACIÓN ---
 
@@ -81,13 +81,13 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
    */
   const getTranslatedDescription = () => {
     // 10. Leemos del estado local, que ya está fusionado y normalizado
-    const descKey = localDetails.description || localDetails.description_es; 
+    const descKey = localDetails.description || localDetails.description_es;
     if (!descKey) return null;
-    
+
     // Intenta traducir (si 'descKey' es una clave)
-    const translated = t(descKey, { 
-      ns: 'exercise_descriptions', 
-      defaultValue: null 
+    const translated = t(descKey, {
+      ns: 'exercise_descriptions',
+      defaultValue: null
     });
 
     // Devuelve la traducción, o el 'descKey' (que es el texto completo)
@@ -120,14 +120,18 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
         {/* --- Renderizado condicional (Media) --- */}
         {/* Lee de 'localDetails', pero comprueba 'localIsLoading' */}
-        { (localDetails.image_url || localDetails.video_url) ? (
-          <ExerciseMedia details={localDetails} className="w-full mx-auto mb-4" />
+        {(localDetails.image_url || localDetails.video_url) ? (
+          <ExerciseMedia
+            details={localDetails}
+            // MODIFICADO: Añadido 'border border-glass-border' y 'rounded-xl'
+            className="w-full mx-auto mb-4 border border-glass-border rounded-xl"
+          />
         ) : localIsLoading ? (
-          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
+          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-xl flex items-center justify-center text-text-muted w-full mx-auto mb-4">
             <Spinner />
           </div>
         ) : (
-          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-lg flex items-center justify-center text-text-muted w-full mx-auto mb-4">
+          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-xl flex items-center justify-center text-text-muted w-full mx-auto mb-4">
             <ImageIcon size={48} />
           </div>
         )}
@@ -166,7 +170,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
             {t('description', { ns: 'exercise_ui' })}
           </h3>
 
-          { description ? (
+          {description ? (
             <div
               className="prose prose-sm prose-invert max-w-none text-text-primary leading-relaxed"
               dangerouslySetInnerHTML={{ __html: description }}

@@ -20,7 +20,7 @@ const WorkoutExerciseCard = ({
   onUpdateSet,
   onAddDropset,
   onRemoveDropset,
-  onToggleWarmup, // <--- NUEVA PROP
+  onToggleWarmup,
   onOpenRestModal,
   onDisabledInputClick,
   onDisabledButtonClick,
@@ -58,7 +58,8 @@ const WorkoutExerciseCard = ({
       >
         <ExerciseMedia
           details={exercise.exercise_details}
-          className="w-full lg:max-w-lg mx-auto mb-4 transition rounded-xl overflow-hidden relative shadow-sm"
+          // Añadido 'border border-glass-border' para delimitar el media en fondos oscuros (OLED)
+          className="w-full lg:max-w-lg mx-auto mb-4 transition rounded-xl overflow-hidden relative shadow-sm border border-glass-border"
         />
       </button>
 
@@ -206,7 +207,7 @@ const WorkoutExerciseCard = ({
         onUpdateSet={onUpdateSet}
         onAddDropset={onAddDropset}
         onRemoveDropset={onRemoveDropset}
-        onToggleWarmup={onToggleWarmup} // <--- NUEVA PROP PASADA AL GRID
+        onToggleWarmup={onToggleWarmup}
         onOpenRestModal={onOpenRestModal}
         onDisabledInputClick={onDisabledInputClick}
         onDisabledButtonClick={onDisabledButtonClick}

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
 import { ChevronLeft, Plus, Check, Repeat } from 'lucide-react'; // 1. Importar Repeat
 // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+import { useAppTheme } from '../../../hooks/useAppTheme'; // Importamos hook de tema
 
 // Componente para la vista de detalle
 const ExerciseDetailView = ({
@@ -18,6 +19,7 @@ const ExerciseDetailView = ({
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState('8-12');
   const [rest, setRest] = useState(60);
+  const { theme } = useAppTheme(); // Hook de tema
 
   const handleAddClick = () => {
     // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
@@ -58,23 +60,28 @@ const ExerciseDetailView = ({
     ns: 'exercise_equipment',
     defaultValue: equipment, // Fallback a la lista completa si no hay traducción
   });
-  
+
   // 4. Traducir la descripción
   // La clave en 'exercises.json' es la descripción original en inglés.
   // Usamos 'exercise.description' (ej: "The Bird Dog is...") como la clave.
   const descriptionKey = exercise.description;
-  
+
   // El valor por defecto es la propia descripción en inglés (por si falla la búsqueda)
   const defaultDescription = exercise.description || t('exercise_ui:no_description_available', 'No hay descripción disponible.');
-  
+
   // Buscamos la clave (la descripción en inglés) en el namespace 'exercise_descriptions'
   const translatedDescription = t(descriptionKey, {
     ns: 'exercise_descriptions',
     defaultValue: defaultDescription,
   });
-  
+
   // --- FIN DE LA MODIFICACIÓN ---
 
+  // Lógica de contraste para OLED:
+  const isOled = theme === 'oled';
+  const hasVideo = !!exercise.video_url;
+  // Si no hay vídeo (es imagen) y es OLED, fondo gris claro. Si no, fondo primario.
+  const mediaBgClass = (!hasVideo && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
 
   return (
     <div className="flex flex-col h-full">
@@ -93,7 +100,8 @@ const ExerciseDetailView = ({
       {/* Contenido */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {/* Visor de medios */}
-        <div className="mb-6 aspect-video bg-bg-primary rounded-xl border border-glass-border overflow-hidden flex items-center justify-center">
+        {/* Aplicamos la clase de fondo dinámica */}
+        <div className={`mb-6 aspect-video ${mediaBgClass} rounded-xl border border-glass-border overflow-hidden flex items-center justify-center`}>
           {exercise.video_url ? (
             <video
               src={exercise.video_url}
@@ -146,7 +154,7 @@ const ExerciseDetailView = ({
 
       {/* Footer (Formulario y Añadir) */}
       <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm">
-        
+
         {/* --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
         {/* 5. Ocultar inputs en modo reemplazo */}
         {!isReplacing && (
@@ -182,7 +190,7 @@ const ExerciseDetailView = ({
         )}
         {/* --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
 
-        
+
         {/* --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
         {/* 6. Lógica de botón dinámica */}
         {isReplacing ? (
@@ -199,11 +207,10 @@ const ExerciseDetailView = ({
           <button
             onClick={isStaged ? onBack : handleAddClick}
             disabled={false}
-            className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition ${
-              isStaged
-                ? 'bg-green/20 text-green'
-                : 'bg-accent text-bg-secondary'
-            }`}
+            className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition ${isStaged
+              ? 'bg-green/20 text-green'
+              : 'bg-accent text-bg-secondary'
+              }`}
           >
             {isStaged ? (
               <>
@@ -219,7 +226,7 @@ const ExerciseDetailView = ({
           </button>
         )}
         {/* --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
-        
+
       </div>
     </div>
   );

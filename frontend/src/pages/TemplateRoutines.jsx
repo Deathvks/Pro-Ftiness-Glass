@@ -6,6 +6,8 @@ import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 import exerciseTranslations from '../locales/es/exercise_names.json';
+// Importamos hook de tema para detectar OLED
+import { useAppTheme } from '../hooks/useAppTheme';
 
 // --- INICIO DE LA MODIFICACIÓN ---
 // Traducciones manuales para ejercicios que falten en el JSON
@@ -111,6 +113,7 @@ const TemplateRoutines = ({ setView }) => {
     createRoutine: state.createRoutine,
     exercises: state.allExercises || [],
   }));
+  const { theme } = useAppTheme(); // Hook de tema
 
   const templateRoutines = useMemo(() => {
     if (!fetchedRoutines || Object.keys(fetchedRoutines).length === 0) {
@@ -288,6 +291,10 @@ const TemplateRoutines = ({ setView }) => {
   const categoryOptions = [{ value: 'all', label: 'Todas' }, ...categories.map(c => ({ value: c, label: c }))];
   const difficultyOptions = [{ value: 'all', label: 'Todas' }, { value: 'Principiante', label: 'Principiante' }, { value: 'Intermedio', label: 'Intermedio' }, { value: 'Avanzado', label: 'Avanzado' }];
 
+  // Lógica de contraste para OLED:
+  const isOled = theme === 'oled';
+  const imageBgClass = isOled ? 'bg-gray-200' : 'bg-bg-primary';
+
   return (
     <div className="flex flex-col gap-6 animate-[fade-in_0.5s_ease_out]">
       <div className="space-y-4">
@@ -372,8 +379,15 @@ const TemplateRoutines = ({ setView }) => {
                                   <li key={ex.id} className="bg-bg-secondary/50 p-3 rounded-lg text-sm min-w-max md:min-w-0">
                                     <div className="flex items-center gap-3">
                                       {mediaUrl ? (
-                                        <div className="w-10 h-10 rounded overflow-hidden bg-bg-primary shrink-0 border border-glass-border">
-                                          <img src={mediaUrl} alt={displayName} className="w-full h-full object-cover" loading="lazy" />
+                                        // Aplicamos 'imageBgClass' dinámicamente
+                                        <div className={`w-10 h-10 rounded overflow-hidden ${imageBgClass} shrink-0 border border-glass-border`}>
+                                          <img
+                                            src={mediaUrl}
+                                            alt={displayName}
+                                            // Cambiado a object-contain para asegurar que se vea la silueta completa
+                                            className="w-full h-full object-contain"
+                                            loading="lazy"
+                                          />
                                         </div>
                                       ) : (
                                         <div className="w-10 h-10 rounded bg-bg-primary flex items-center justify-center text-text-muted shrink-0 border border-glass-border">

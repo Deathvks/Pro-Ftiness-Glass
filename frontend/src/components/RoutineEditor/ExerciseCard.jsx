@@ -6,6 +6,8 @@ import ExerciseSearchInput from '../ExerciseSearchInput';
 import { useTranslation } from 'react-i18next';
 // 1. Importamos el nuevo componente
 import EditableMuscleGroup from './EditableMuscleGroup';
+// Importamos el hook de tema para detectar OLED
+import { useAppTheme } from '../../hooks/useAppTheme';
 
 // Clases de input (sin cambios)
 const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-3 py-2 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition text-center";
@@ -27,6 +29,7 @@ const ExerciseCard = ({
   const { t: tName } = useTranslation('exercise_names');
   // 2. Eliminamos 'tMuscle' y 'translatedMuscle' ya que no se usan más.
   const { t: tCommon } = useTranslation('translation');
+  const { theme } = useAppTheme();
 
   const translatedName = tName(exercise.name, { defaultValue: exercise.name });
 
@@ -37,11 +40,18 @@ const ExerciseCard = ({
   const videoUrl = exercise.video_url || (exercise.exercise && exercise.exercise.video_url);
   const imageUrl = exercise.image_url_start || (exercise.exercise && exercise.exercise.image_url_start);
   const mediaUrl = videoUrl || imageUrl;
-  
+
+  // Lógica de contraste para OLED:
+  // Si es imagen (no vídeo) y el tema es OLED, usamos fondo claro.
+  // De lo contrario, usamos el fondo primario estándar del componente.
+  const isOled = theme === 'oled';
+  const isVideo = mediaUrl && (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm'));
+  const containerBgClass = (!isVideo && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
+
   return (
     <GlassCard className="p-3 bg-bg-secondary/50 relative">
       <div className="flex flex-col sm:flex-row items-start sm:items-start gap-3">
-        
+
         {dragHandleProps && (
           <div
             {...dragHandleProps}
@@ -54,10 +64,9 @@ const ExerciseCard = ({
 
         {/* --- INICIO DE LA MODIFICACIÓN (IMAGE BLOCK) --- */}
         {/* Bloque de Imagen/Video */}
-        {/* En móvil: ocupa el ancho completo, h-40. 
-            En sm: ocupa 40% (sm:w-2/5) y altura h-40 (misma que en móvil). */}
-        <div className="flex-shrink-0 w-full h-40 sm:w-2/5 sm:h-40 rounded-md overflow-hidden bg-bg-primary border border-glass-border mb-3 sm:mb-0">
-        {/* --- FIN DE LA MODIFICACIÓN (IMAGE BLOCK) --- */}
+        {/* Aplicamos 'containerBgClass' en lugar de 'bg-bg-primary' fijo */}
+        <div className={`flex-shrink-0 w-full h-40 sm:w-2/5 sm:h-40 rounded-md overflow-hidden ${containerBgClass} border border-glass-border mb-3 sm:mb-0`}>
+          {/* --- FIN DE LA MODIFICACIÓN (IMAGE BLOCK) --- */}
           {mediaUrl ? (
             (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm')) ? (
               <video
@@ -69,7 +78,7 @@ const ExerciseCard = ({
                 /* --- INICIO DE LA MODIFICACIÓN (Image fit) --- */
                 // Cambiamos 'object-cover' a 'object-contain'
                 className="w-full h-full object-contain"
-                /* --- FIN DE LA MODIFICACIÓN (Image fit) --- */
+              /* --- FIN DE LA MODIFICACIÓN (Image fit) --- */
               />
             ) : (
               <img
@@ -87,7 +96,7 @@ const ExerciseCard = ({
               <ImageIcon size={32} />
             </div>
           )
-        }
+          }
         </div>
 
         {/* Columna de Información (Nombre, Músculo, Inputs) */}
@@ -95,14 +104,14 @@ const ExerciseCard = ({
             y que se estire (comportamiento normal) en 'sm' y más grande */}
         {/* Añadimos 'sm:w-3/5' para que ocupe el 60% restante en desktop */}
         <div className="flex-grow min-w-0 w-full sm:w-3/5 flex flex-col items-center sm:items-stretch">
-        
+
           {/* Input de Búsqueda (sin cambios) */}
           <ExerciseSearchInput
             initialQuery={translatedName}
             onExerciseSelect={handleExerciseSelected}
             className="w-full" // Añadido para asegurar el stretch en desktop
           />
-          
+
           {/* --- INICIO DE LA MODIFICACIÓN --- */}
           {/* Añadimos 'mt-2' para separación superior */}
           <div className="mt-2">
@@ -120,7 +129,7 @@ const ExerciseCard = ({
 
           {/* Inputs (Series, Reps Y Descanso) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 w-full">
-            
+
             {/* Series */}
             <div>
               <label className={baseLabelClasses}>
@@ -138,7 +147,7 @@ const ExerciseCard = ({
               />
               {errors?.sets && <p className="text-red text-xs mt-1">{errors.sets}</p>}
             </div>
-            
+
             {/* Repeticiones */}
             <div>
               <label className={baseLabelClasses}>

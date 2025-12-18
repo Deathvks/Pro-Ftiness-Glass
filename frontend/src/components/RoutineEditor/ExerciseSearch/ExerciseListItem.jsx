@@ -1,8 +1,7 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseListItem.jsx */
 import React from 'react';
-// --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
-import { Plus, Check, Repeat } from 'lucide-react'; // 1. Importar Repeat
-// --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+import { Plus, Check, Repeat } from 'lucide-react';
+import { useAppTheme } from '../../../hooks/useAppTheme'; // Importar hook de tema
 
 // Componente de la tarjeta de ejercicio en la lista
 const ExerciseListItem = ({
@@ -11,18 +10,16 @@ const ExerciseListItem = ({
   onView,
   isStaged,
   t,
-  // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
-  isReplacing = false, // 2. Recibir la prop
-  // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+  isReplacing = false,
 }) => {
+  const { theme } = useAppTheme(); // Usar hook
+
   const handleAddClick = (e) => {
     e.stopPropagation();
     onAdd(exercise);
   };
 
   const muscleGroup = exercise.category || exercise.muscle_group;
-
-  // --- INICIO DE LA MODIFICACIÓN ---
 
   // 1. Traducir el nombre del ejercicio
   const translatedName = t(exercise.name, {
@@ -31,50 +28,44 @@ const ExerciseListItem = ({
   });
 
   // 2. Traducir la descripción
-  
-  // La clave en 'exercises.json' es la descripción original en inglés.
-  // Usamos 'exercise.description' (ej: "The Bird Dog is...") como la clave.
   const descriptionKey = exercise.description;
-  
-  // El valor por defecto es la propia descripción en inglés (por si falla la búsqueda)
   const defaultDescription = exercise.description || t('exercise_ui:no_description', 'Sin descripción');
-  
-  // Buscamos la clave (la descripción en inglés) en el namespace 'exercise_descriptions'
-  // (Asumiendo que tienes un namespace 'exercise_descriptions'. Si no, ajusta 'ns')
+
   const translatedDescription = t(descriptionKey, {
-    ns: 'exercise_descriptions', // Asegúrate de que este namespace exista en tu i18n.js
+    ns: 'exercise_descriptions',
     defaultValue: defaultDescription,
   });
-  // --- FIN DE LA MODIFICACIÓN ---
 
+  // Lógica OLED para la miniatura
+  const isOled = theme === 'oled';
+  const imageBgClass = isOled ? 'bg-gray-200' : 'bg-bg-primary';
 
   return (
     <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-xl border border-glass-border">
       <button
         onClick={() => onView(exercise)}
-        className="shrink-0 rounded-md overflow-hidden w-16 h-16 bg-bg-primary border border-glass-border"
+        // Aplicar clase de fondo dinámica
+        className={`shrink-0 rounded-md overflow-hidden w-16 h-16 ${imageBgClass} border border-glass-border`}
       >
         <img
           src={exercise.image_url_start || '/logo.webp'}
           alt={`Imagen de ${translatedName}`}
-          className="w-full h-full object-cover"
+          // Cambiamos a object-contain para asegurar que la silueta se vea entera
+          className="w-full h-full object-contain"
           loading="lazy"
         />
       </button>
       <div className="flex-1 min-w-0" onClick={() => onView(exercise)}>
-        <p className="font-semibold truncate">{translatedName}</p> {/* Usar nombre traducido */}
+        <p className="font-semibold truncate">{translatedName}</p>
         <p className="text-sm text-text-muted truncate capitalize">
-          {/* Esto ya funcionaba: usa el namespace 'exercise_muscles' */}
           {t(`exercise_muscles:${muscleGroup}`, { defaultValue: muscleGroup })}
         </p>
         <p className="text-sm text-text-secondary truncate">
-          {translatedDescription} {/* Usar descripción traducida */}
+          {translatedDescription}
         </p>
       </div>
 
-      {/* --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
       {isReplacing ? (
-        // 3. Botón en modo "Reemplazar"
         <button
           onClick={handleAddClick}
           className="p-3 rounded-full transition bg-accent/10 text-accent hover:bg-accent/20"
@@ -83,21 +74,18 @@ const ExerciseListItem = ({
           <Repeat size={20} />
         </button>
       ) : (
-        // 4. Botón en modo "Añadir" (comportamiento original)
         <button
           onClick={handleAddClick}
           disabled={isStaged}
-          className={`p-3 rounded-full transition ${
-            isStaged
+          className={`p-3 rounded-full transition ${isStaged
               ? 'bg-green/20 text-green'
               : 'bg-accent/10 text-accent hover:bg-accent/20'
-          }`}
+            }`}
           title={isStaged ? t('exercise_ui:added', 'Añadido') : t('exercise_ui:add_to_cart', 'Añadir al carrito')}
         >
           {isStaged ? <Check size={20} /> : <Plus size={20} />}
         </button>
       )}
-      {/* --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
     </div>
   );
 };

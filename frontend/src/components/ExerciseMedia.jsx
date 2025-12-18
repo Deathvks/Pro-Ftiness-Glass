@@ -1,6 +1,7 @@
 /* frontend/src/components/ExerciseMedia.jsx */
 import React, { useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 // Base URL para construir las rutas de imágenes/vídeos
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -12,6 +13,7 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
  */
 const ExerciseMedia = ({ details, className = '' }) => {
   const [mediaError, setMediaError] = useState(false);
+  const { theme } = useAppTheme();
 
   const getMediaUrl = (url) => {
     if (!url) return null;
@@ -21,11 +23,17 @@ const ExerciseMedia = ({ details, className = '' }) => {
   const videoUrl = getMediaUrl(details?.video_url);
   const imageUrl = getMediaUrl(details?.image_url);
 
+  // Lógica de contraste para OLED:
+  // Si el tema es 'oled', las siluetas negras necesitan un fondo claro (gris) para verse.
+  // En otros temas, usamos el fondo secundario estándar.
+  const isOled = theme === 'oled';
+  const imageBgClass = isOled ? 'bg-gray-200' : 'bg-bg-secondary';
+  const placeholderBgClass = 'bg-bg-secondary'; // El placeholder usa iconos del sistema (colores controlados), puede quedarse oscuro.
+
   // Fallback si no hay media
   if (mediaError || !details || (!imageUrl && !videoUrl)) {
     return (
-      // Añadido 'rounded-xl overflow-hidden' para bordes redondeados
-      <div className={`aspect-video bg-bg-secondary rounded-xl overflow-hidden flex items-center justify-center text-text-muted ${className}`}>
+      <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center text-text-muted ${className}`}>
         <ImageIcon size={48} />
       </div>
     );
@@ -35,8 +43,8 @@ const ExerciseMedia = ({ details, className = '' }) => {
     return (
       <video
         key={videoUrl}
-        // Añadido 'rounded-xl overflow-hidden' para bordes redondeados
-        className={`aspect-video object-contain rounded-xl overflow-hidden bg-black ${className}`}
+        // Los vídeos suelen tener su propio fondo/iluminación, mantenemos bg-bg-secondary para evitar destellos blancos
+        className={`aspect-video object-contain rounded-xl overflow-hidden bg-bg-secondary ${className}`}
         src={videoUrl}
         autoPlay
         loop
@@ -50,8 +58,8 @@ const ExerciseMedia = ({ details, className = '' }) => {
   }
 
   if (imageUrl) {
-    // Añadido 'rounded-xl overflow-hidden' para bordes redondeados
-    const imageClasses = `aspect-video object-contain rounded-xl overflow-hidden ${className}`;
+    // Aplicamos el fondo calculado (gris claro en OLED, estándar en otros)
+    const imageClasses = `aspect-video object-contain rounded-xl overflow-hidden ${imageBgClass} ${className}`;
 
     return (
       <img
@@ -66,8 +74,7 @@ const ExerciseMedia = ({ details, className = '' }) => {
 
   // Fallback final
   return (
-    // Añadido 'rounded-xl overflow-hidden' para bordes redondeados
-    <div className={`aspect-video bg-bg-secondary rounded-xl overflow-hidden flex items-center justify-center text-text-muted ${className}`}>
+    <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center text-text-muted ${className}`}>
       <ImageIcon size={48} />
     </div>
   );
