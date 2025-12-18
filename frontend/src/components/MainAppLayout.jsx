@@ -150,7 +150,10 @@ export default function MainAppLayout({
       >
 
         {/* Header (Móvil) */}
-        <div className="md:hidden flex justify-between items-center p-4 sm:p-6 border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10">
+        {/* MODIFICADO: Añadido padding-top dinámico para safe-area-inset-top (iOS Notch/Island) y reestructurado padding */}
+        <div className="md:hidden flex justify-between items-center border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10
+                        px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]
+                        sm:px-6 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]">
 
           {/* Animación Título Header */}
           <span
