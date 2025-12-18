@@ -54,30 +54,51 @@ export const useAppTheme = () => {
       }
 
       // 2. Gestionar Meta Tags para Status Bar (iOS/PWA y Android)
-      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+      // --- CORRECCIÓN ---
+      // Buscamos TODAS las etiquetas theme-color existentes (debido a las media queries del index.html)
+      const existingMetaTags = document.querySelectorAll('meta[name="theme-color"]');
+
+      // Eliminamos las etiquetas duplicadas o con atributos 'media' para tomar control total con JS
+      // Mantenemos solo la primera (o creamos una nueva si no hay) y la limpiamos.
+      let themeColorMeta;
+
+      if (existingMetaTags.length > 0) {
+        themeColorMeta = existingMetaTags[0];
+        // Eliminamos el resto si existen
+        for (let i = 1; i < existingMetaTags.length; i++) {
+          existingMetaTags[i].remove();
+        }
+      } else {
+        themeColorMeta = document.createElement('meta');
+        themeColorMeta.name = 'theme-color';
+        document.head.appendChild(themeColorMeta);
+      }
+
+      // CRUCIAL: Eliminamos el atributo media para que el navegador obedezca nuestro 'content' siempre
+      themeColorMeta.removeAttribute('media');
+
       const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
 
-      let metaColor = '#ffffff';
+      let metaColor = '#f7fafc'; // Default Light (coincide con bg-primary light)
       let statusBarStyle = 'default';
 
       if (effectiveTheme === 'oled') {
-        // OLED: Negro puro y barra translúcida (contenido fluye por debajo)
+        // OLED: Negro puro y barra translúcida
         metaColor = '#000000';
         statusBarStyle = 'black-translucent';
       } else if (effectiveTheme === 'dark') {
-        // DARK: Color exacto (#0c111b) y estilo default.
-        // 'default' en iOS con theme-color oscuro pone el texto en blanco automáticamente.
+        // DARK: Color exacto del header oscuro (#0c111b)
         metaColor = '#0c111b';
-        statusBarStyle = 'default';
+        statusBarStyle = 'default'; // default en oscuro pone letras blancas
       } else {
-        // LIGHT: Color exacto (#f7fafc) y estilo default (texto negro).
+        // LIGHT: Color exacto del header claro (#f7fafc)
         metaColor = '#f7fafc';
-        statusBarStyle = 'default';
+        statusBarStyle = 'default'; // default en claro pone letras negras
       }
 
-      if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', metaColor);
-      }
+      themeColorMeta.setAttribute('content', metaColor);
+
       if (appleStatusMeta) {
         appleStatusMeta.setAttribute('content', statusBarStyle);
       }
