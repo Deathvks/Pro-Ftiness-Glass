@@ -39,6 +39,7 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
+  // --- EFECTO PRINCIPAL ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
@@ -49,7 +50,7 @@ export const useAppTheme = () => {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
-      // 1. Clases CSS (Esto controla el fondo visual de la web)
+      // 1. Clases CSS (Visuales)
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
       if (theme === 'system') {
         root.classList.add(effectiveTheme === 'dark' ? 'dark-theme' : 'light-theme');
@@ -57,12 +58,11 @@ export const useAppTheme = () => {
         root.classList.add(`${theme}-theme`);
       }
 
-      // 2. LIMPIEZA CRÍTICA: Eliminamos cualquier style inline que se haya quedado pegado
-      // de intentos anteriores. Esto permite que la clase CSS vuelva a mandar.
+      // 2. LIMPIEZA DE ESTILOS INLINE (Mantenemos esto para que el CSS funcione bien)
       root.style.removeProperty('background-color');
       document.body.style.removeProperty('background-color');
 
-      // 3. Determinar color hexadecimal para iOS
+      // 3. Determinar color exacto para la interfaz de iOS
       let color = THEME_COLORS.dark;
       if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
@@ -72,16 +72,29 @@ export const useAppTheme = () => {
         color = THEME_COLORS.light;
       }
 
-      // 4. Actualizar Meta Tags (Solo para la interfaz de Safari)
-      setTimeout(() => {
-        const metaTags = document.querySelectorAll('meta[name="theme-color"]');
-        metaTags.forEach(m => m.remove());
+      // 4. ACTUALIZACIÓN META TAGS (FIX IOS SAFARI & CHROME MOBILE)
+      // En lugar de borrar y crear (que puede causar parpadeos o ser ignorado),
+      // buscamos la etiqueta y actualizamos su atributo 'content' directamente.
 
-        const newMeta = document.createElement('meta');
-        newMeta.name = "theme-color";
-        newMeta.content = color;
-        document.head.appendChild(newMeta);
-      }, 100);
+      // A) theme-color (Barra de direcciones / Estado en navegador)
+      let metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (!metaTheme) {
+        metaTheme = document.createElement('meta');
+        metaTheme.name = "theme-color";
+        document.head.appendChild(metaTheme);
+      }
+      metaTheme.setAttribute('content', color);
+
+      // B) apple-mobile-web-app-status-bar-style (Standalone / PWA)
+      // Ajustamos también este valor para mayor consistencia en iOS
+      let metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if (!metaStatus) {
+        metaStatus = document.createElement('meta');
+        metaStatus.name = "apple-mobile-web-app-status-bar-style";
+        document.head.appendChild(metaStatus);
+      }
+      // 'default' es blanco/gris (texto negro), 'black' es negro (texto blanco)
+      metaStatus.setAttribute('content', effectiveTheme === 'light' ? 'default' : 'black');
     };
 
     updateAppearance();
@@ -94,6 +107,7 @@ export const useAppTheme = () => {
     return () => mediaQuery.removeEventListener('change', handleSystemChange);
   }, [theme]);
 
+  // Efecto Acento
   useLayoutEffect(() => {
     const root = document.documentElement;
     const classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));

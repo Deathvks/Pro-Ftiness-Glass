@@ -282,14 +282,13 @@ export default function App() {
           opacity: 0.15,
           filter: 'blur(60px)',
           borderRadius: '50%',
-          zIndex: -1, // Z-INDEX NEGATIVO (funciona gracias a isolation: isolate en CSS)
+          zIndex: -1,
           animation: 'roam-blob 10s infinite alternate ease-in-out',
           pointerEvents: 'none'
         }}
         aria-hidden="true"
       />
 
-      {/* Wrapper eliminado: MainAppLayout se renderiza directamente */}
       <MainAppLayout
         view={view}
         navigate={navigate}
