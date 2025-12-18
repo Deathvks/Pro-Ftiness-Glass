@@ -121,7 +121,6 @@ const Dashboard = ({ setView }) => {
     const weekDays = useMemo(() => {
         const today = new Date();
         const day = today.getDay(); // 0 (Domingo) - 6 (Sábado)
-        // Calcular el Lunes de esta semana
         const diff = today.getDate() - day + (day === 0 ? -6 : 1);
         const startOfWeek = new Date(today.getFullYear(), today.getMonth(), diff);
         startOfWeek.setHours(0, 0, 0, 0);
@@ -189,14 +188,14 @@ const Dashboard = ({ setView }) => {
     };
 
     return (
-        /* --- MODIFICADO: Añadido pt-6 para dar espacio en móvil, md:p-8 mantiene el padding en escritorio --- */
-        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-20 md:p-8 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        // FIX: Ajustado pb-20 a pb-6. El layout principal ya maneja el espacio del navbar.
+        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-6 md:p-8 lg:p-10 animate-[fade-in_0.5s_ease-out]">
             <Helmet>
                 <title>Dashboard - Pro Fitness Glass</title>
                 <meta name="description" content="Tu resumen diario de actividad física, nutrición, peso corporal y acceso rápido a tus rutinas y entrenamientos." />
             </Helmet>
 
-            {/* Header Section - MODIFICADO: hidden en móvil, block en md+ */}
+            {/* Header Section */}
             <div className="mb-8 hidden md:block">
                 <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary inline-block">
                     Dashboard
@@ -208,7 +207,6 @@ const Dashboard = ({ setView }) => {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {/* Custom Weekly Sessions Card */}
                 <GlassCard className="p-4 flex flex-col justify-between h-full relative overflow-hidden">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
@@ -224,24 +222,20 @@ const Dashboard = ({ setView }) => {
                         {weekDays.map((date, i) => {
                             const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
                             const isToday = isSameDay(date, new Date());
-                            // Buscamos si hay logs en este día
                             const hasWorkout = workoutLog.some(log => isSameDay(new Date(log.workout_date), date));
 
                             return (
                                 <div key={i} className="flex flex-col items-center gap-2">
-                                    {/* Día arriba */}
                                     <span className={`text-xs font-semibold ${isToday ? 'text-accent' : 'text-text-muted'}`}>
                                         {dayLetters[i]}
                                     </span>
-
-                                    {/* Círculo abajo con check */}
                                     <div className={`
-                                        w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
-                                        ${hasWorkout
+                      w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
+                      ${hasWorkout
                                             ? 'bg-accent text-white shadow-lg shadow-accent/25'
                                             : 'bg-bg-secondary/50 text-transparent'
                                         }
-                                    `}>
+                    `}>
                                         {hasWorkout && <Check size={16} strokeWidth={3} />}
                                     </div>
                                 </div>
@@ -266,19 +260,15 @@ const Dashboard = ({ setView }) => {
                         <Activity size={160} />
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
-                        {/* Nutrition Circle */}
                         <button onClick={() => setView('nutrition')} className="group flex flex-col items-center gap-2 transition-transform hover:scale-105">
                             <CircularProgress value={nutritionTotals.calories} maxValue={calorieTarget} label="Calorías" icon={Flame} colorClass="text-amber-400" />
                         </button>
-                        {/* Protein Circle */}
                         <button onClick={() => setView('nutrition')} className="group flex flex-col items-center gap-2 transition-transform hover:scale-105">
                             <CircularProgress value={parseFloat(nutritionTotals.protein.toFixed(1))} maxValue={proteinTarget} label="Proteína" icon={Beef} colorClass="text-rose-400" />
                         </button>
-                        {/* Water Circle */}
                         <button onClick={() => setModal({ type: 'water' })} className="group flex flex-col items-center gap-2 transition-transform hover:scale-105">
                             <CircularProgress value={waterLog?.quantity_ml || 0} maxValue={waterTarget} label="Agua" icon={Droplet} colorClass="text-sky-400" />
                         </button>
-                        {/* Creatine Circle */}
                         <button onClick={() => setModal({ type: 'creatine' })} className="group flex flex-col items-center gap-2 transition-transform hover:scale-105">
                             <CircularProgress
                                 value={todaysCreatineLog.length}
@@ -331,15 +321,15 @@ const Dashboard = ({ setView }) => {
                                                 }}
                                                 disabled={isCompleted && !isActive}
                                                 className={`w-full text-left p-4 flex items-center justify-between group 
-                                                    ${isActive ? 'bg-accent/10' : 'hover:bg-white/5'}
-                                                    ${isCompleted && !isActive ? 'opacity-50 cursor-not-allowed' : ''}
-                                                `}
+                            ${isActive ? 'bg-accent/10' : 'hover:bg-white/5'}
+                            ${isCompleted && !isActive ? 'opacity-50 cursor-not-allowed' : ''}
+                          `}
                                             >
                                                 <div className="flex items-center gap-4">
                                                     <div className={`
-                                                        w-10 h-10 rounded-full flex items-center justify-center 
-                                                        ${isActive ? 'bg-accent text-white' : (isCompleted ? 'bg-green-500/20 text-green-500' : 'bg-bg-secondary text-text-secondary group-hover:bg-accent/20 group-hover:text-accent transition-colors')}
-                                                    `}>
+                              w-10 h-10 rounded-full flex items-center justify-center 
+                              ${isActive ? 'bg-accent text-white' : (isCompleted ? 'bg-green-500/20 text-green-500' : 'bg-bg-secondary text-text-secondary group-hover:bg-accent/20 group-hover:text-accent transition-colors')}
+                            `}>
                                                         {isActive ? <Clock size={20} /> : (isCompleted ? <CheckCircle size={20} /> : <Play size={20} fill="currentColor" />)}
                                                     </div>
                                                     <div>

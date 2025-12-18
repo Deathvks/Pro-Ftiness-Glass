@@ -15,7 +15,6 @@ import FavoritesList from './nutrition/logModal/FavoritesList';
 import RecentList from './nutrition/logModal/RecentList';
 import SearchResultItem from './nutrition/logModal/SearchResultItem';
 
-// --- NUEVO IMPORT ---
 import FoodDetailView from './nutrition/logModal/FoodDetailView';
 
 const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
@@ -34,8 +33,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
 
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
-    
-    // --- NUEVO ESTADO: Elemento seleccionado para ver detalle ---
+
     const [selectedDetailItem, setSelectedDetailItem] = useState(null);
 
     useEffect(() => {
@@ -60,18 +58,16 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
     }, [searchTerm, activeTab]);
 
     const handleSelectSearchResult = (food) => {
-        // Mapeamos los datos y ABRIMOS EL DETALLE (no el manual directo)
         const foodData = {
             description: food.name || food.description || 'Alimento',
             calories: food.calories || 0,
             protein_g: food.protein_g || food.protein || 0,
             carbs_g: food.carbs_g || food.carbs || 0,
             fats_g: food.fats_g || food.fat || 0,
-            weight_g: food.weight_g || 100, // Peso base
-            serving_weight_g: food.serving_weight_g, // Peso ración si existe
+            weight_g: food.weight_g || 100,
+            serving_weight_g: food.serving_weight_g,
             image_url: food.image_url,
             brand: food.brand,
-            // Datos base
             calories_per_100g: food.calories_per_100g,
             protein_per_100g: food.protein_per_100g,
             carbs_per_100g: food.carbs_per_100g,
@@ -85,27 +81,23 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
         setSelectedDetailItem(foodData);
     };
 
-    // Función callback cuando se añade desde el detalle
     const handleAddFromDetail = (itemToAdd) => {
-        // Usamos handleAddRecentItem porque acepta un objeto item completo
-        // y lo añade a la lista temporal (itemsToAdd)
-        handleAddRecentItem(itemToAdd); 
-        setSelectedDetailItem(null); // Cerramos detalle
-        setSearchTerm(''); // Limpiamos búsqueda
+        handleAddRecentItem(itemToAdd);
+        setSelectedDetailItem(null);
+        setSearchTerm('');
     };
 
-    // --- RENDERIZADO DEL DETALLE COMO OVERLAY ---
     if (selectedDetailItem) {
         return (
-             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s]">
-                 <GlassCard className={`relative w-11/12 max-w-md overflow-hidden m-4 ${!isDarkTheme ? '!bg-bg-secondary' : ''}`} onClick={(e) => e.stopPropagation()}>
-                    <FoodDetailView 
-                        food={selectedDetailItem} 
-                        onClose={() => setSelectedDetailItem(null)} 
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s]">
+                <GlassCard className={`relative w-11/12 max-w-md overflow-hidden m-4 ${!isDarkTheme ? '!bg-bg-secondary' : ''}`} onClick={(e) => e.stopPropagation()}>
+                    <FoodDetailView
+                        food={selectedDetailItem}
+                        onClose={() => setSelectedDetailItem(null)}
                         onAdd={handleAddFromDetail}
                     />
-                 </GlassCard>
-             </div>
+                </GlassCard>
+            </div>
         );
     }
 
@@ -123,10 +115,10 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                             </div>
                         ) : searchResults.length > 0 ? (
                             searchResults.map((food, index) => (
-                                <SearchResultItem 
-                                    key={`${food.id || index}-search`} 
-                                    item={food} 
-                                    onAdd={() => handleSelectSearchResult(food)} 
+                                <SearchResultItem
+                                    key={`${food.id || index}-search`}
+                                    item={food}
+                                    onAdd={() => handleSelectSearchResult(food)}
                                 />
                             ))
                         ) : (
@@ -167,15 +159,15 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                         onSaveSingle={handleSaveSingle}
                         onSaveEdit={handleSaveEdit}
                         onSaveListItem={handleSaveListItem}
-                        isLoading={false} 
+                        isLoading={false}
                         isEditing={isEditingLog || !!editingFavorite}
                         editingListItem={itemsToAdd.find(item => item.tempId === editingListItemId)}
-                        showFavoriteToggle={!editingFavorite} 
+                        showFavoriteToggle={!editingFavorite}
                         formState={manualFormState}
                         onFormStateChange={setManualFormState}
                         isUploading={isUploading}
                         onImageUpload={handleImageUpload}
-                        editingFavorite={editingFavorite} 
+                        editingFavorite={editingFavorite}
                         isPer100g={isPer100g}
                         setIsPer100g={setIsPer100g}
                     />
@@ -186,39 +178,40 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
 
     if (showScanner) {
         return (
-            <div className="fixed inset-0 bg-bg-primary z-50 flex flex-col p-4 animate-[slide-in-up_0.3s]">
+            <div className="fixed inset-0 bg-bg-primary z-[70] flex flex-col p-4 animate-[slide-in-up_0.3s]">
                 <div className="relative flex-grow">
                     {renderContent()}
                 </div>
-                 <button onClick={() => setShowScanner(false)} className="mt-4 w-full py-3 bg-bg-secondary text-text-primary font-bold rounded-xl">Cancelar</button>
+                <button onClick={() => setShowScanner(false)} className="mt-4 w-full py-3 bg-bg-secondary text-text-primary font-bold rounded-xl">Cancelar</button>
             </div>
         );
     }
 
     return (
         <>
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
-                <GlassCard className={`relative w-11/12 max-w-lg p-0 m-4 flex flex-col max-h-[90vh] ${!isDarkTheme ? '!bg-bg-secondary' : ''}`} onClick={(e) => e.stopPropagation()}>
+            {/* Contenedor principal: z-60 para estar sobre el navbar. Padding inferior externo reducido a pb-12 para equilibrio */}
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] p-4 sm:p-0 pb-12 md:pb-0">
+                <GlassCard className={`relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col h-full max-h-[85dvh] sm:h-auto sm:max-h-[90vh] ${!isDarkTheme ? '!bg-bg-secondary' : ''}`} onClick={(e) => e.stopPropagation()}>
                     <div className="p-5 flex items-center justify-between border-b border-glass-border flex-shrink-0">
                         <h3 className="text-xl font-bold truncate pr-4 text-text-primary">{title}</h3>
                         <button onClick={onClose} className="p-2 -m-2 rounded-full hover:bg-bg-primary transition flex-shrink-0"><X size={20} className="text-text-secondary" /></button>
                     </div>
 
-                    <div className="flex-grow overflow-hidden flex flex-col">
+                    <div className="flex-grow overflow-hidden flex flex-col min-h-0">
                         {!(isEditingLog || editingFavorite) && (
                             <div className="p-5 flex-shrink-0">
                                 {(activeTab === 'search' || activeTab === 'favorites' || activeTab === 'recent') && (
-                                     <div className="relative mb-4">
-                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
-                                         <input
-                                             type="text"
-                                             placeholder={activeTab === 'search' ? "Buscar en base de datos..." : "Filtrar lista..."}
-                                             value={searchTerm}
-                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                             autoFocus={activeTab === 'search'}
-                                             className="w-full pl-10 pr-4 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent"
-                                         />
-                                     </div>
+                                    <div className="relative mb-4">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+                                        <input
+                                            type="text"
+                                            placeholder={activeTab === 'search' ? "Buscar en base de datos..." : "Filtrar lista..."}
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            autoFocus={activeTab === 'search'}
+                                            className="w-full pl-10 pr-4 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent"
+                                        />
+                                    </div>
                                 )}
 
                                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -249,27 +242,29 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                                 </div>
                             </div>
                         )}
-                        <div className="overflow-y-auto px-5 pb-3 flex-grow min-h-[200px]">
+
+                        {/* FIX: Reducido pb-24 a pb-5 para quitar el espacio excesivo interno */}
+                        <div className="overflow-y-auto px-5 pb-5 flex-grow overscroll-contain">
                             {renderContent()}
                         </div>
                     </div>
 
-                     {!(isEditingLog || editingFavorite) && itemsToAdd.length > 0 && (
-                         <div className="p-5 border-t border-glass-border flex-shrink-0 animate-[fade-in-up_0.3s_ease-out]">
-                             <div className="flex justify-between items-center mb-2">
-                                 <h4 className="font-semibold text-text-primary">Añadir ({itemsToAdd.length})</h4>
-                             </div>
-                             <div className="space-y-2 max-h-32 overflow-y-auto mb-4 pr-1">
-                                 {itemsToAdd.map(item =>
-                                     <SelectedItem key={item.tempId} item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />
-                                 )}
-                             </div>
-                             <button onClick={handleSaveList} disabled={false} className="w-full flex items-center justify-center py-3 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold hover:scale-[1.01] transition disabled:opacity-60">
+                    {!(isEditingLog || editingFavorite) && itemsToAdd.length > 0 && (
+                        <div className="p-5 border-t border-glass-border flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-[--glass-bg] backdrop-blur-xl z-10">
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-text-primary">Añadir ({itemsToAdd.length})</h4>
+                            </div>
+                            <div className="space-y-2 max-h-32 overflow-y-auto mb-4 pr-1">
+                                {itemsToAdd.map(item =>
+                                    <SelectedItem key={item.tempId} item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />
+                                )}
+                            </div>
+                            <button onClick={handleSaveList} disabled={false} className="w-full flex items-center justify-center py-3 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold hover:scale-[1.01] transition disabled:opacity-60">
                                 <Plus size={18} className="mr-2" />
                                 {`Añadir ${itemsToAdd.length} Alimento${itemsToAdd.length > 1 ? 's' : ''}`}
-                             </button>
-                         </div>
-                     )}
+                            </button>
+                        </div>
+                    )}
                 </GlassCard>
             </div>
 
