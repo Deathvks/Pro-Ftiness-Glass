@@ -58,15 +58,16 @@ export const useAppTheme = () => {
       const themeColorMeta = document.querySelector('meta[name="theme-color"]');
       const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
 
-      let metaColor = '#ffffff'; // Default Light
-      let statusBarStyle = 'default';
+      let metaColor = '#f7fafc'; // Default Light (coincide con --bg-primary light)
+      let statusBarStyle = 'default'; // Iconos negros para fondo claro
 
       if (effectiveTheme === 'oled') {
         metaColor = '#000000'; // Negro Puro
-        statusBarStyle = 'black-translucent'; // Contenido tras la barra
+        statusBarStyle = 'black-translucent'; // Contenido tras la barra, iconos blancos
       } else if (effectiveTheme === 'dark') {
-        metaColor = '#0c111b'; // Color base dark (coincide con --bg-primary)
-        statusBarStyle = 'black';
+        metaColor = '#0c111b'; // Color base dark (coincide con --bg-primary dark)
+        // Usamos black-translucent para que el fondo html (#0c111b) cubra la zona notch
+        statusBarStyle = 'black-translucent';
       }
 
       if (themeColorMeta) {
