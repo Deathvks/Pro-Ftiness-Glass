@@ -39,7 +39,6 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // --- EFECTO PRINCIPAL ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
@@ -50,7 +49,7 @@ export const useAppTheme = () => {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
-      // 1. Clases CSS
+      // 1. Clases CSS (Esto controla el fondo visual de la web)
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
       if (theme === 'system') {
         root.classList.add(effectiveTheme === 'dark' ? 'dark-theme' : 'light-theme');
@@ -58,7 +57,12 @@ export const useAppTheme = () => {
         root.classList.add(`${theme}-theme`);
       }
 
-      // 2. Determinar color exacto
+      // 2. LIMPIEZA CRÍTICA: Eliminamos cualquier style inline que se haya quedado pegado
+      // de intentos anteriores. Esto permite que la clase CSS vuelva a mandar.
+      root.style.removeProperty('background-color');
+      document.body.style.removeProperty('background-color');
+
+      // 3. Determinar color hexadecimal para iOS
       let color = THEME_COLORS.dark;
       if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
@@ -68,16 +72,7 @@ export const useAppTheme = () => {
         color = THEME_COLORS.light;
       }
 
-      // 3. Aplicar color al fondo
-      // IMPORTANTE: Aplicamos color SOLO al HTML (root). 
-      // El body se mantiene transparente (vía CSS) para que se vea el 'blob' (body::before).
-      root.style.backgroundColor = color;
-
-      // Si forzamos color en body, tapamos el blob. Lo eliminamos para respetar index.css.
-      // document.body.style.backgroundColor = color; <--- ELIMINADO
-
-      // 4. GESTIÓN DE META TAGS (FIX IOS SAFARI)
-      // Usamos un pequeño timeout para dar tiempo a Safari a procesar el cambio
+      // 4. Actualizar Meta Tags (Solo para la interfaz de Safari)
       setTimeout(() => {
         const metaTags = document.querySelectorAll('meta[name="theme-color"]');
         metaTags.forEach(m => m.remove());
@@ -86,7 +81,7 @@ export const useAppTheme = () => {
         newMeta.name = "theme-color";
         newMeta.content = color;
         document.head.appendChild(newMeta);
-      }, 50);
+      }, 100);
     };
 
     updateAppearance();
@@ -99,7 +94,6 @@ export const useAppTheme = () => {
     return () => mediaQuery.removeEventListener('change', handleSystemChange);
   }, [theme]);
 
-  // Efecto Acento
   useLayoutEffect(() => {
     const root = document.documentElement;
     const classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));

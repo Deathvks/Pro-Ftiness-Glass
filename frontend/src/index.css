@@ -34,7 +34,6 @@
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
 
 .dark-theme {
-  /* Coincide con useAppTheme.js (#0c111b) */
   --bg-primary: #0c111b;
   --bg-secondary: #121826;
   --text-primary: #e5e7eb;
@@ -48,7 +47,6 @@
 }
 
 .light-theme {
-  /* Coincide con useAppTheme.js (#f7fafc) */
   --bg-primary: #f7fafc;
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
@@ -62,7 +60,6 @@
 }
 
 .oled-theme {
-  /* Coincide con useAppTheme.js (#000000) */
   --bg-primary: #000000;
   --bg-secondary: #000000;
   --text-primary: #ffffff;
@@ -211,7 +208,13 @@
     @apply h-full;
   }
 
-  /* FIX IOS/OLED: Color de fondo en el HTML (root) y transición suave */
+  /* IMPORTANTE: Crear contexto de apilamiento en root para que z-index -1 
+     no se oculte tras el background del html */
+  #root {
+    isolation: isolate;
+  }
+
+  /* FIX IOS/OLED: Color de fondo en el HTML (root) */
   html {
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
@@ -220,11 +223,9 @@
   body {
     @apply text-text-primary antialiased;
     overflow: hidden;
-    /* Body transparente para que se vea el background del HTML */
+    /* Body transparente */
     background-color: transparent;
   }
-
-  /* ELIMINADO: body::before para el Blob. Ahora se inyectará como componente en App.jsx */
 
   main {
     height: 100%;

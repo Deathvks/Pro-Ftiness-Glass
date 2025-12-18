@@ -282,31 +282,29 @@ export default function App() {
           opacity: 0.15,
           filter: 'blur(60px)',
           borderRadius: '50%',
-          zIndex: 0, // FIX: Elevado a 0 para que no se oculte tras el HTML
+          zIndex: -1, // Z-INDEX NEGATIVO (funciona gracias a isolation: isolate en CSS)
           animation: 'roam-blob 10s infinite alternate ease-in-out',
           pointerEvents: 'none'
         }}
         aria-hidden="true"
       />
 
-      {/* FIX: Wrapper relativo para que el contenido esté POR ENCIMA del blob (z-0) */}
-      <div className="relative z-10 h-full">
-        <MainAppLayout
-          view={view}
-          navigate={navigate}
-          mainContentRef={mainContentRef}
-          currentTitle={currentTitle}
-          currentViewComponent={currentViewComponent}
-          navItems={navItems}
-          handleLogoutClick={handleLogoutClick}
-          showLogoutConfirm={showLogoutConfirm}
-          confirmLogout={confirmLogout}
-          setShowLogoutConfirm={setShowLogoutConfirm}
-          handleShowPolicy={handleShowPolicy}
-          fetchInitialData={fetchInitialData}
-          {...verificationProps}
-        />
-      </div>
+      {/* Wrapper eliminado: MainAppLayout se renderiza directamente */}
+      <MainAppLayout
+        view={view}
+        navigate={navigate}
+        mainContentRef={mainContentRef}
+        currentTitle={currentTitle}
+        currentViewComponent={currentViewComponent}
+        navItems={navItems}
+        handleLogoutClick={handleLogoutClick}
+        showLogoutConfirm={showLogoutConfirm}
+        confirmLogout={confirmLogout}
+        setShowLogoutConfirm={setShowLogoutConfirm}
+        handleShowPolicy={handleShowPolicy}
+        fetchInitialData={fetchInitialData}
+        {...verificationProps}
+      />
 
       {isResting && (
         restTimerMode === 'minimized' ? (
