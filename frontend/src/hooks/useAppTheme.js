@@ -39,11 +39,8 @@ export const useAppTheme = () => {
   };
 
   // 2. Estados calculados para Helmet (Meta Tags)
-  // IMPORTANTE: Inicializamos con el valor CORRECTO calculado al momento,
-  // para evitar que React sobrescriba lo que hizo el script de index.html con un valor por defecto incorrecto.
   const [themeColor, setThemeColor] = useState(() => {
     if (typeof window !== 'undefined') {
-      // Intentamos leer el tema inicial igual que hicimos con 'theme'
       const savedTheme = localStorage.getItem('theme') || 'system';
       const effective = getEffectiveTheme(savedTheme);
       return THEME_COLORS[effective] || THEME_COLORS.dark;
@@ -54,7 +51,15 @@ export const useAppTheme = () => {
   const [statusBarStyle, setStatusBarStyle] = useState(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme') || 'system';
-      return savedTheme === 'oled' ? 'black-translucent' : 'default';
+      const effective = getEffectiveTheme(savedTheme);
+
+      // CORRECCIÓN: Usar 'black-translucent' también para modo Dark.
+      // Esto hace que la barra sea transparente y se vea el fondo azulado (#0c111b)
+      // en lugar de forzar una barra negra sólida.
+      if (effective === 'oled' || effective === 'dark') {
+        return 'black-translucent';
+      }
+      return 'default'; // Light mode se queda en default (texto negro)
     }
     return 'default';
   });
@@ -97,11 +102,13 @@ export const useAppTheme = () => {
       if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
         barStyle = 'black-translucent';
-      } else if (effectiveTheme === 'light') {
-        color = THEME_COLORS.light;
-        barStyle = 'default';
-      } else {
+      } else if (effectiveTheme === 'dark') {
         color = THEME_COLORS.dark;
+        // FIX: Dark también usa black-translucent para ver el fondo real
+        barStyle = 'black-translucent';
+      } else {
+        // Light
+        color = THEME_COLORS.light;
         barStyle = 'default';
       }
 
@@ -109,9 +116,7 @@ export const useAppTheme = () => {
       setThemeColor(color);
       setStatusBarStyle(barStyle);
 
-      // 4. IMPORTANTE: Actualizar el inline-style background-color
-      // El script de index.html lo puso para cubrir la carga inicial.
-      // Debemos mantenerlo sincronizado si el usuario cambia el tema en tiempo de ejecución.
+      // 4. Actualizar el inline-style background-color
       root.style.backgroundColor = color;
     };
 

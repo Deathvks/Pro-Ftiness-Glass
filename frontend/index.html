@@ -53,17 +53,14 @@
   <script>
     (function () {
       try {
-        // 1. Recuperar preferencia
         var savedTheme = localStorage.getItem('theme') || 'system';
         var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         var theme = savedTheme;
 
-        // Resolver tema efectivo
         if (theme === 'system') {
           theme = systemDark ? 'dark' : 'light';
         }
 
-        // 2. Definir colores exactos
         var colors = {
           light: '#f7fafc',
           dark: '#0c111b',
@@ -71,23 +68,17 @@
         };
         var selectedColor = colors[theme] || colors.dark;
 
-        // 3. Aplicar clase al HTML
         var root = document.documentElement;
         root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
 
         if (savedTheme === 'system') {
-          // Si es system, usamos las clases específicas para que el CSS responda
           root.classList.add(systemDark ? 'dark-theme' : 'light-theme');
         } else {
           root.classList.add(theme + '-theme');
         }
 
-        // 4. Forzar background-color inline inmediatamente (Cubre el rebote de iOS)
         root.style.backgroundColor = selectedColor;
 
-        // 5. GESTIÓN DE META TAGS (Crucial para iOS)
-        // Eliminamos las etiquetas estáticas con media queries para evitar conflictos
-        // y creamos una única etiqueta definitiva con el color calculado.
         var oldMetas = document.querySelectorAll('meta[name="theme-color"]');
         oldMetas.forEach(function (meta) { meta.remove(); });
 
@@ -96,10 +87,11 @@
         newMeta.content = selectedColor;
         document.head.appendChild(newMeta);
 
-        // 6. Actualizar status-bar-style
+        // SYNC: Igualamos la lógica con useAppTheme.js
+        // Dark y OLED usan black-translucent para ver el fondo real.
         var metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
         if (metaStatus) {
-          if (theme === 'oled') {
+          if (theme === 'oled' || theme === 'dark') {
             metaStatus.setAttribute('content', 'black-translucent');
           } else {
             metaStatus.setAttribute('content', 'default');
@@ -133,7 +125,6 @@
 <body>
   <div id="root">
     <style>
-      /* El background-color lo gestiona el script en <html>, aquí solo heredamos */
       .app-splash-screen {
         display: flex;
         flex-direction: column;
@@ -159,7 +150,6 @@
         animation: spin 1s ease-in-out infinite;
       }
 
-      /* Ajustes para modo claro en el splash */
       html.light-theme .app-splash-screen {
         color: #0f172a;
       }

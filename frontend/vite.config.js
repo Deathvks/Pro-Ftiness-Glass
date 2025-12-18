@@ -32,11 +32,11 @@ export default defineConfig({
         name: 'Pro Fitness Glass',
         short_name: 'FitTrack-Pro',
         description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
-        // --- CORRECCIÓN IMPORTANTE ---
-        // Eliminamos theme_color y background_color.
-        // Esto devuelve el control a las etiquetas <meta> de index.html,
-        // permitiendo que iOS cambie entre blanco/negro según el tema elegido.
-        // theme_color: '#0c111b', 
+        // --- CORRECCIÓN CRÍTICA ---
+        // Eliminamos theme_color y background_color del manifiesto.
+        // Esto permite que las metaetiquetas dinámicas del index.html controlen
+        // el color de las barras en iOS/Android según el tema elegido (Claro/Oscuro).
+        // theme_color: '#0c111b',
         // background_color: '#0c111b',
         display: 'standalone',
         scope: '/',
