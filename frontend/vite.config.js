@@ -8,9 +8,6 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Hemos eliminado las cabeceras manuales para dejar que el SW gestione el caché.
-    // Mantenemos los proxies para asegurar que las rutas funcionen en dev.
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
@@ -25,7 +22,6 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
-    // --- FIN DE LA MODIFICACIÓN ---
   },
   plugins: [
     react(),
