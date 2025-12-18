@@ -56,8 +56,7 @@ export const useAppTheme = () => {
       // 2. Gestionar Meta Tags para Status Bar (iOS/PWA y Android)
 
       // --- ESTRATEGIA: BORRAR Y RECREAR ---
-      // Para evitar conflictos con las etiquetas estáticas del index.html (que tienen 'media'),
-      // las eliminamos TODAS antes de aplicar la nueva.
+      // Eliminamos TODAS las etiquetas existentes para evitar conflictos y asegurar prioridad
       const existingMetaTags = document.querySelectorAll('meta[name="theme-color"]');
       existingMetaTags.forEach(tag => tag.remove());
 
@@ -74,15 +73,16 @@ export const useAppTheme = () => {
       if (effectiveTheme === 'oled') {
         // OLED: Negro puro
         metaColor = '#000000';
-        statusBarStyle = 'black-translucent'; // Contenido fluye bajo la barra
+        statusBarStyle = 'black-translucent';
       } else if (effectiveTheme === 'dark') {
-        // DARK: Color exacto del header/background oscuro
-        metaColor = '#0c111b';
-        statusBarStyle = 'default'; // Letras blancas sobre fondo oscuro
+        // DARK: Usamos #121826 (Color Secundario/Header) en lugar de #0c111b
+        // para que coincida visualmente con la barra de navegación.
+        metaColor = '#121826';
+        statusBarStyle = 'default';
       } else {
-        // LIGHT: Blanco puro (coincide con el header claro)
+        // LIGHT: Blanco puro (#ffffff) para coincidir con el header claro
         metaColor = '#ffffff';
-        statusBarStyle = 'default'; // Letras negras sobre fondo blanco
+        statusBarStyle = 'default';
       }
 
       themeColorMeta.content = metaColor;
