@@ -68,22 +68,19 @@ export const useAppTheme = () => {
         color = THEME_COLORS.light;
       }
 
-      // 3. Aplicar color al fondo (Crucial para el "rebote" de iOS y zonas seguras)
+      // 3. Aplicar color al fondo
       root.style.backgroundColor = color;
       document.body.style.backgroundColor = color;
 
-      // 4. GESTIÓN DE META TAGS
-      // IMPORTANTE: Solo actualizamos 'theme-color'.
-      // NO tocamos 'apple-mobile-web-app-status-bar-style' (se queda en 'default' estático).
-      // Esto evita el bloqueo que obligaba a recargar la página.
+      // 4. GESTIÓN DE META TAGS (FIX IOS SAFARI)
+      // Eliminamos todos los meta tags de theme-color existentes para forzar la actualización
+      document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove());
 
-      let metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (!metaTheme) {
-        metaTheme = document.createElement('meta');
-        metaTheme.name = "theme-color";
-        document.head.appendChild(metaTheme);
-      }
-      metaTheme.setAttribute('content', color);
+      // Creamos uno nuevo y lo añadimos
+      const metaTheme = document.createElement('meta');
+      metaTheme.name = "theme-color";
+      metaTheme.content = color;
+      document.head.appendChild(metaTheme);
     };
 
     updateAppearance();
