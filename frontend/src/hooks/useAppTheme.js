@@ -73,14 +73,17 @@ export const useAppTheme = () => {
       document.body.style.backgroundColor = color;
 
       // 4. GESTIÓN DE META TAGS (FIX IOS SAFARI)
-      // Eliminamos todos los meta tags de theme-color existentes para forzar la actualización
-      document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove());
+      // Usamos un pequeño timeout para dar tiempo a Safari a procesar el cambio de renderizado
+      // del cuerpo antes de forzar la actualización de la interfaz del navegador.
+      setTimeout(() => {
+        const metaTags = document.querySelectorAll('meta[name="theme-color"]');
+        metaTags.forEach(m => m.remove());
 
-      // Creamos uno nuevo y lo añadimos
-      const metaTheme = document.createElement('meta');
-      metaTheme.name = "theme-color";
-      metaTheme.content = color;
-      document.head.appendChild(metaTheme);
+        const newMeta = document.createElement('meta');
+        newMeta.name = "theme-color";
+        newMeta.content = color;
+        document.head.appendChild(newMeta);
+      }, 50); // 50ms de delay
     };
 
     updateAppearance();
