@@ -25,7 +25,7 @@ export const useAppTheme = () => {
   });
 
   // Estados calculados para Helmet (Meta Tags)
-  // Inicializamos con valores seguros por defecto
+  // Inicializamos con valores por defecto
   const [themeColor, setThemeColor] = useState('#ffffff');
   const [statusBarStyle, setStatusBarStyle] = useState('default');
 
@@ -67,15 +67,15 @@ export const useAppTheme = () => {
 
       // 2. Calcular valores para Helmet (NO tocamos el DOM aquí)
       if (effectiveTheme === 'oled') {
-        // OLED: Negro puro y barra transparente
+        // OLED: Negro puro y barra translúcida
         setThemeColor('#000000');
         setStatusBarStyle('black-translucent');
       } else if (effectiveTheme === 'dark') {
-        // DARK: Color de fondo (#0c111b) - Sólido y seguro
-        setThemeColor('#0c111b');
+        // DARK: Usamos el color del Header (#121826) para que no sea negro total
+        setThemeColor('#121826');
         setStatusBarStyle('default');
       } else {
-        // LIGHT: Blanco puro (#ffffff)
+        // LIGHT: Blanco puro
         setThemeColor('#ffffff');
         setStatusBarStyle('default');
       }
