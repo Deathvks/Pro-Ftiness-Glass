@@ -26,6 +26,7 @@ import workoutRoutes from './routes/workouts.js';
 import adminRoutes from './routes/admin.js';
 import notificationRoutes from './routes/notifications.js';
 import twoFactorRoutes from './routes/twoFactor.js';
+import sessionRoutes from './routes/sessionRoutes.js'; // --- AÑADIDO ---
 // --- ELIMINADO: import templateDietRoutes from './routes/templateDiets.js'; ---
 import { startCronJobs } from './services/cronService.js';
 
@@ -111,6 +112,7 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/2fa', twoFactorRoutes);
+app.use('/api/sessions', sessionRoutes); // --- AÑADIDO ---
 // --- ELIMINADO: app.use('/api/template-diets', templateDietRoutes); ---
 
 app.use(errorHandler);

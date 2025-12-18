@@ -5,16 +5,65 @@ import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
-import models from '../models/index.js'; 
+import { UAParser } from 'ua-parser-js';
+import models from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { createNotification } from '../services/notificationService.js';
-// --- FIN DE LA MODIFICACIÓN ---
 
-const { User } = models;
+const { User, UserSession } = models;
 
 // Inicializar cliente de Google
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// --- HELPER PARA CREAR O ACTUALIZAR SESIÓN ---
+const createUserSession = async (userId, token, req) => {
+  try {
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) {
+      ip = ip.split(',')[0].trim();
+    }
+    const userAgent = req.headers['user-agent'] || '';
+
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
+
+    // ua-parser-js devuelve undefined para desktop
+    const deviceType = result.device.type || 'desktop';
+    const browserName = result.browser.name || 'Navegador desconocido';
+    const osName = result.os.name || 'SO desconocido';
+    const deviceName = `${browserName} en ${osName}`;
+
+    // Buscar si ya existe una sesión para este usuario en este dispositivo (mismo SO y Navegador)
+    const existingSession = await UserSession.findOne({
+      where: {
+        user_id: userId,
+        device_name: deviceName,
+        device_type: deviceType
+      }
+    });
+
+    if (existingSession) {
+      // Actualizamos la sesión existente (nuevo token, ip y fecha)
+      await existingSession.update({
+        token: token,
+        ip_address: ip,
+        last_active: new Date()
+      });
+    } else {
+      // Creamos una nueva sesión si no existe coincidencia
+      await UserSession.create({
+        user_id: userId,
+        token: token,
+        device_type: deviceType,
+        device_name: deviceName,
+        ip_address: ip,
+        last_active: new Date()
+      });
+    }
+  } catch (error) {
+    console.error('Error al gestionar la sesión del usuario:', error);
+  }
+};
 
 // --- FUNCIONES DE AUTENTICACIÓN ---
 
@@ -67,11 +116,11 @@ export const loginUser = async (req, res, next) => {
       if (user.two_factor_method === 'email') {
         const code = generateVerificationCode();
         try {
-            await sendVerificationEmail(user.email, code);
+          await sendVerificationEmail(user.email, code);
         } catch (emailError) {
-            console.error("Error enviando código 2FA por email:", emailError);
+          console.error("Error enviando código 2FA por email:", emailError);
         }
-        
+
         await user.update({
           verification_code: code,
           verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
@@ -87,28 +136,21 @@ export const loginUser = async (req, res, next) => {
 
     // Si NO tiene 2FA, genera el token y notifica
     const payload = { userId: user.id, role: user.role };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Obtener IP y UserAgent para la notificación
+    // Guardar o Actualizar Sesión
+    await createUserSession(user.id, token, req);
+
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
-    if (typeof ip === 'string' && ip.includes(',')) {
-        ip = ip.split(',')[0].trim();
-    }
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
     const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
 
-    // Notificación de inicio de sesión con datos extra
     createNotification(user.id, {
-      type: 'warning', // Warning porque es un evento de seguridad
+      type: 'warning',
       title: 'Nuevo inicio de sesión',
       message: 'Se ha detectado un nuevo inicio de sesión en tu cuenta.',
-      data: {
-          ip,
-          userAgent,
-          date: new Date()
-      }
+      data: { ip, userAgent, date: new Date() }
     });
-    // --- FIN DE LA MODIFICACIÓN ---
 
     res.json({ message: 'Inicio de sesión exitoso.', token });
 
@@ -128,7 +170,7 @@ export const googleLogin = async (req, res, next) => {
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID, 
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
     const { email, name, sub: googleId, picture } = payload;
@@ -137,13 +179,13 @@ export const googleLogin = async (req, res, next) => {
 
     if (user) {
       if (!user.google_id) {
-        return res.status(409).json({ 
-          error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' 
+        return res.status(409).json({
+          error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.'
         });
       }
 
       let updated = false;
-      
+
       if (!user.is_verified) {
         user.is_verified = true;
         user.verification_code = null;
@@ -159,23 +201,23 @@ export const googleLogin = async (req, res, next) => {
       // 2FA Check para Google
       if (user.two_factor_enabled) {
         if (user.two_factor_method === 'email') {
-            const code = generateVerificationCode();
-            try {
-                await sendVerificationEmail(user.email, code);
-            } catch (emailError) {
-                console.error("Error enviando código 2FA (Google Login):", emailError);
-            }
-            
-            await user.update({
-              verification_code: code,
-              verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
-            });
+          const code = generateVerificationCode();
+          try {
+            await sendVerificationEmail(user.email, code);
+          } catch (emailError) {
+            console.error("Error enviando código 2FA (Google Login):", emailError);
+          }
+
+          await user.update({
+            verification_code: code,
+            verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
+          });
         }
 
         return res.json({
-            requires2FA: true,
-            userId: user.id,
-            method: user.two_factor_method
+          requires2FA: true,
+          userId: user.id,
+          method: user.two_factor_method
         });
       }
 
@@ -184,7 +226,7 @@ export const googleLogin = async (req, res, next) => {
       let baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '');
       let username = baseUsername;
       let counter = 1;
-      
+
       while (await User.findOne({ where: { username } })) {
         username = `${baseUsername}${counter}`;
         counter++;
@@ -200,43 +242,33 @@ export const googleLogin = async (req, res, next) => {
         is_verified: true,
         role: 'user'
       });
-      
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Notificación de bienvenida para nuevo usuario Google
+
       createNotification(user.id, {
         type: 'success',
         title: '¡Bienvenido!',
         message: 'Gracias por registrarte en Pro Fitness Glass con Google.'
       });
-      // --- FIN DE LA MODIFICACIÓN ---
     }
 
     const appPayload = { userId: user.id, role: user.role };
-    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Obtener IP y UserAgent
+    // Guardar o Actualizar Sesión
+    await createUserSession(user.id, appToken, req);
+
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
-    if (typeof ip === 'string' && ip.includes(',')) {
-        ip = ip.split(',')[0].trim();
-    }
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
     const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
 
-    // Notificación de inicio de sesión con Google
     createNotification(user.id, {
       type: 'warning',
       title: 'Inicio de sesión (Google)',
       message: 'Se ha iniciado sesión con Google.',
-      data: {
-          ip,
-          userAgent,
-          date: new Date()
-      }
+      data: { ip, userAgent, date: new Date() }
     });
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    res.json({ 
-      message: 'Inicio de sesión con Google exitoso.', 
+    res.json({
+      message: 'Inicio de sesión con Google exitoso.',
       token: appToken,
       user: {
         id: user.id,
@@ -254,7 +286,18 @@ export const googleLogin = async (req, res, next) => {
   }
 };
 
-export const logoutUser = (req, res) => {
+export const logoutUser = async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token) {
+    try {
+      await UserSession.destroy({ where: { token } });
+    } catch (err) {
+      console.error("Error al eliminar sesión en logout:", err);
+    }
+  }
+
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
 
@@ -351,7 +394,11 @@ export const verifyEmail = async (req, res, next) => {
 
     if (user.is_verified) {
       const payload = { userId: user.id, role: user.role };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+      // Guardar o Actualizar Sesión
+      await createUserSession(user.id, token, req);
+
       return res.status(200).json({
         message: 'Email ya verificado.',
         token,
@@ -388,16 +435,16 @@ export const verifyEmail = async (req, res, next) => {
     });
 
     const payload = { userId: user.id, role: user.role };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Notificación de bienvenida/verificación
+    // Guardar o Actualizar Sesión
+    await createUserSession(user.id, token, req);
+
     createNotification(user.id, {
       type: 'success',
       title: '¡Email verificado!',
       message: 'Tu cuenta ha sido verificada correctamente. ¡Bienvenido!'
     });
-    // --- FIN DE LA MODIFICACIÓN ---
 
     return res.status(200).json({
       message: 'Email verificado exitosamente',
@@ -497,7 +544,7 @@ export const forgotPassword = async (req, res, next) => {
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
     user.password_reset_token = hashedToken;
-    user.password_reset_expires_at = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+    user.password_reset_expires_at = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
     await sendPasswordResetEmail(user.email, resetToken);
@@ -540,14 +587,11 @@ export const resetPassword = async (req, res, next) => {
     user.password_reset_expires_at = null;
     await user.save();
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Notificación de cambio de contraseña
     createNotification(user.id, {
-      type: 'alert', // Alert porque es un cambio crítico
+      type: 'alert',
       title: 'Contraseña modificada',
       message: 'Tu contraseña ha sido restablecida correctamente.'
     });
-    // --- FIN DE LA MODIFICACIÓN ---
 
     res.json({ message: 'Contraseña actualizada correctamente.' });
   } catch (error) {

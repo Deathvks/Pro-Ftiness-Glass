@@ -2,14 +2,9 @@
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import models from '../models/index.js';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { createNotification } from '../services/notificationService.js';
-// --- FIN DE LA MODIFICACIÓN ---
+import { deleteFile } from '../services/imageService.js';
 
-// Importar todos los modelos necesarios para el borrado
 const {
   User,
   BodyWeightLog,
@@ -23,17 +18,11 @@ const {
   CreatinaLog,
 } = models;
 
-// Simulación de __dirname en ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename); // Esto será /app/backend/controllers
-
 /**
  * Helper para encontrar y eliminar todos los ficheros de un usuario (perfil, comidas).
- * @param {number} userId - ID del usuario.
- * @param {object} userInstance - Instancia del modelo User (opcional, para la foto de perfil).
+ * Usa el servicio centralizado deleteFile para la limpieza.
  */
 const deleteAllUserFiles = async (userId, userInstance) => {
-  const publicPath = path.join(__dirname, '..', 'public');
   const pathsToDelete = new Set();
 
   // 1. Imagen de perfil
@@ -47,9 +36,7 @@ const deleteAllUserFiles = async (userId, userInstance) => {
     attributes: ['image_url'],
     raw: true,
   });
-  nutritionLogs.forEach(
-    (log) => log.image_url && pathsToDelete.add(log.image_url)
-  );
+  nutritionLogs.forEach((log) => log.image_url && pathsToDelete.add(log.image_url));
 
   // 3. Imágenes de FavoriteMeal
   const favoriteMeals = await FavoriteMeal.findAll({
@@ -57,26 +44,12 @@ const deleteAllUserFiles = async (userId, userInstance) => {
     attributes: ['image_url'],
     raw: true,
   });
-  favoriteMeals.forEach(
-    (meal) => meal.image_url && pathsToDelete.add(meal.image_url)
-  );
+  favoriteMeals.forEach((meal) => meal.image_url && pathsToDelete.add(meal.image_url));
 
-  // 4. Borrar todos los ficheros en paralelo
-  const deletePromises = [];
-  for (const relativePath of pathsToDelete) {
-    if (relativePath) {
-      const fullPath = path.join(publicPath, relativePath);
-      deletePromises.push(
-        fs.unlink(fullPath).catch((err) => {
-          // Ignorar errores "No such file or directory"
-          if (err.code !== 'ENOENT') {
-            console.warn(`Fallo al borrar fichero ${fullPath}: ${err.message}`);
-          }
-        })
-      );
-    }
-  }
-  await Promise.all(deletePromises);
+  // 4. Borrar ficheros usando el servicio
+  pathsToDelete.forEach((relativePath) => {
+    deleteFile(relativePath);
+  });
 };
 
 // Obtener el perfil del usuario autenticado
@@ -92,11 +65,11 @@ export const getMyProfile = async (req, res, next) => {
 
     // Obtenemos el usuario completo (con hash) para comprobar si tiene contraseña
     const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'] });
-    
+
     const userData = user.toJSON();
     // Añadimos un flag para que el frontend sepa si pedir contraseña o no
     userData.hasPassword = !!userWithPass.password_hash;
-    
+
     res.json(userData);
   } catch (error) {
     next(error);
@@ -127,9 +100,7 @@ export const updateMyProfile = async (req, res, next) => {
         height,
         activity_level: activityLevel,
         goal,
-        // --- INICIO DE LA MODIFICACIÓN ---
-        login_email_notifications // Se actualiza si viene en el body, se ignora si es undefined
-        // --- FIN DE LA MODIFICACIÓN ---
+        login_email_notifications // Se actualiza si viene en el body
       },
       { transaction: t }
     );
@@ -150,33 +121,30 @@ export const updateMyProfile = async (req, res, next) => {
 
     await t.commit();
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Obtener IP y UserAgent
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) {
-        ip = ip.split(',')[0].trim();
+      ip = ip.split(',')[0].trim();
     }
     const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
 
     // Notificación de actualización
     if (weight || goal || activityLevel) {
-        createNotification(userId, {
+      createNotification(userId, {
         type: 'info',
         title: 'Perfil físico actualizado',
         message: 'Has actualizado tus datos físicos y objetivos.',
         data: { ip, userAgent, date: new Date() }
-        });
+      });
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const updatedUser = await User.findByPk(userId, {
       attributes: { exclude: ['password_hash'] },
     });
-    // Mantenemos la coherencia devolviendo hasPassword
     const userWithPass = await User.findByPk(userId, { attributes: ['password_hash'] });
     const userData = updatedUser.toJSON();
     userData.hasPassword = !!userWithPass.password_hash;
-    
+
     res.json(userData);
   } catch (error) {
     await t.rollback();
@@ -186,13 +154,7 @@ export const updateMyProfile = async (req, res, next) => {
 
 // Actualizar datos de la cuenta (username, email, pass, imagen)
 export const updateMyAccount = async (req, res, next) => {
-  let oldImagePath = null;
-  const newImagePath = req.processedImagePath || null; 
-  let imagePathToDeleteOnError = null;
-
-  if (newImagePath) {
-    imagePathToDeleteOnError = path.join(__dirname, '..', 'public', newImagePath);
-  }
+  const newImagePath = req.processedImagePath || null;
 
   try {
     const { userId } = req.user;
@@ -200,121 +162,91 @@ export const updateMyAccount = async (req, res, next) => {
 
     const user = await User.findByPk(userId);
     if (!user) {
-      if (imagePathToDeleteOnError)
-        await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
+      if (newImagePath) deleteFile(newImagePath);
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    if (user.profile_image_url) {
-      oldImagePath = path.join(__dirname, '..', 'public', user.profile_image_url);
-    }
-
+    const oldImageUrl = user.profile_image_url;
     const fieldsToUpdate = {};
-    // --- INICIO DE LA MODIFICACIÓN (Tracking de cambios) ---
-    const changes = []; 
-    // --- FIN DE LA MODIFICACIÓN ---
+    const changes = [];
 
     if (newImagePath) {
       fieldsToUpdate.profile_image_url = newImagePath;
       changes.push('foto de perfil');
-      if (oldImagePath && oldImagePath === imagePathToDeleteOnError) {
-        oldImagePath = null;
-      }
     }
 
     if (newPassword) {
       // Solo requerimos currentPassword SI el usuario YA tiene una contraseña.
       if (user.password_hash) {
         if (!currentPassword) {
-          if (imagePathToDeleteOnError)
-            await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
-          return res
-            .status(400)
-            .json({ error: 'La contraseña actual es requerida para cambiarla.' });
+          if (newImagePath) deleteFile(newImagePath);
+          return res.status(400).json({ error: 'La contraseña actual es requerida para cambiarla.' });
         }
         const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
         if (!isMatch) {
-          if (imagePathToDeleteOnError)
-            await fs.unlink(imagePathToDeleteOnError).catch((e) => {});
-          return res
-            .status(401)
-            .json({ error: 'La contraseña actual es incorrecta.' });
+          if (newImagePath) deleteFile(newImagePath);
+          return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
         }
       }
-      
-      fieldsToUpdate.password_hash = newPassword; // El hook se encarga del hash
+
+      fieldsToUpdate.password_hash = newPassword;
       changes.push('contraseña');
     }
 
     if (name !== undefined && name !== user.name) {
-        fieldsToUpdate.name = name;
-        changes.push('nombre');
+      fieldsToUpdate.name = name;
+      changes.push('nombre');
     }
     if (username !== undefined && username !== user.username) {
-        fieldsToUpdate.username = username;
-        // --- CAMBIO SOLICITADO: Mostrar old -> new en la notificación ---
-        changes.push(`usuario (${user.username} -> ${username})`);
+      fieldsToUpdate.username = username;
+      changes.push(`usuario (${user.username} -> ${username})`);
     }
     if (email !== undefined && email !== user.email) {
-        fieldsToUpdate.email = email;
-        changes.push('email');
+      fieldsToUpdate.email = email;
+      changes.push('email');
     }
 
     if (Object.keys(fieldsToUpdate).length > 0) {
       await user.update(fieldsToUpdate);
 
-      // --- INICIO DE LA MODIFICACIÓN ---
+      // Si había imagen nueva y todo salió bien, borramos la antigua
+      if (newImagePath && oldImageUrl) {
+        deleteFile(oldImageUrl);
+      }
+
       // Obtener IP y UserAgent
       let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
       if (typeof ip === 'string' && ip.includes(',')) {
-          ip = ip.split(',')[0].trim();
+        ip = ip.split(',')[0].trim();
       }
       const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
 
       // Notificación con resumen de cambios
       if (changes.length > 0) {
-          const message = `Datos actualizados: ${changes.join(', ')}.`;
-          createNotification(userId, {
-              type: 'info',
-              title: 'Cuenta actualizada',
-              message: message,
-              data: { ip, userAgent, date: new Date() }
-          });
-      }
-      // --- FIN DE LA MODIFICACIÓN ---
-    }
-
-    if (oldImagePath && fieldsToUpdate.profile_image_url) {
-      try {
-        await fs.unlink(oldImagePath);
-      } catch (unlinkError) {
-        if (unlinkError.code !== 'ENOENT') {
-          console.warn(
-            `No se pudo borrar la imagen antigua: ${oldImagePath}`,
-            unlinkError
-          );
-        }
+        const message = `Datos actualizados: ${changes.join(', ')}.`;
+        createNotification(userId, {
+          type: 'info',
+          title: 'Cuenta actualizada',
+          message: message,
+          data: { ip, userAgent, date: new Date() }
+        });
       }
     }
 
     await user.reload();
 
     const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
-    // Devolver el flag actualizado (ahora tendrá password si la acaba de poner)
     userWithoutPassword.hasPassword = !!user.password_hash;
     res.json(userWithoutPassword);
 
   } catch (error) {
-    if (imagePathToDeleteOnError) {
-      await fs
-        .unlink(imagePathToDeleteOnError)
-        .catch((e) => console.error('Error borrando imagen tras fallo:', e));
+    // Si falla algo, borramos la imagen nueva que se acababa de subir
+    if (newImagePath) {
+      deleteFile(newImagePath);
     }
 
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return res
-        .status(409)
-        .json({ error: 'El email o nombre de usuario ya está en uso.' });
+      return res.status(409).json({ error: 'El email o nombre de usuario ya está en uso.' });
     }
 
     next(error);
@@ -339,15 +271,15 @@ export const clearMyData = async (req, res, next) => {
 
     // Si el usuario tiene contraseña, la verificamos.
     if (user.password_hash) {
-        if (!password) {
-            await t.rollback();
-            return res.status(400).json({ error: 'La contraseña es requerida.' });
-        }
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
-            await t.rollback();
-            return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
-        }
+      if (!password) {
+        await t.rollback();
+        return res.status(400).json({ error: 'La contraseña es requerida.' });
+      }
+      const isMatch = await bcrypt.compare(password, user.password_hash);
+      if (!isMatch) {
+        await t.rollback();
+        return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+      }
     }
 
     // 1. Recolectar y borrar todos los ficheros
@@ -379,22 +311,20 @@ export const clearMyData = async (req, res, next) => {
     // 4. Commit
     await t.commit();
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Obtener IP y UserAgent
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) {
-        ip = ip.split(',')[0].trim();
+      ip = ip.split(',')[0].trim();
     }
     const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
 
     // Notificación de borrado de datos
     createNotification(userId, {
-        type: 'warning',
-        title: 'Datos eliminados',
-        message: 'Has eliminado todos tus datos de progreso y registros de la aplicación.',
-        data: { ip, userAgent, date: new Date() }
+      type: 'warning',
+      title: 'Datos eliminados',
+      message: 'Has eliminado todos tus datos de progreso y registros de la aplicación.',
+      data: { ip, userAgent, date: new Date() }
     });
-    // --- FIN DE LA MODIFICACIÓN ---
 
     res.status(200).json({
       message:
@@ -413,22 +343,21 @@ export const deleteMyAccount = async (req, res, next) => {
   const { userId } = req.user;
   const { password } = req.body;
 
-  let user;
   try {
-    user = await User.findByPk(userId);
+    const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
     // Verificación condicional de contraseña
     if (user.password_hash) {
-        if (!password) {
-            return res.status(400).json({ error: 'La contraseña es requerida.' });
-        }
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
-            return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
-        }
+      if (!password) {
+        return res.status(400).json({ error: 'La contraseña es requerida.' });
+      }
+      const isMatch = await bcrypt.compare(password, user.password_hash);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+      }
     }
 
     // 1. Recolectar y borrar todos los ficheros

@@ -288,7 +288,9 @@ export default function App() {
         <link rel="canonical" href={canonicalUrl} />
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
-        <meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#121212'} />
+        {/* --- INICIO DE LA MODIFICACIÓN: Color Negro para OLED --- */}
+        <meta name="theme-color" content={theme === 'oled' ? '#000000' : (theme === 'light' ? '#ffffff' : '#121212')} />
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
 

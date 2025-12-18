@@ -1,7 +1,11 @@
 /* frontend/src/pages/Dashboard.jsx */
 import React, { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints, Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import {
+    Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
+    Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle,
+    ArrowUp, ArrowDown, Minus, ChevronRight, Trophy, Check
+} from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
@@ -19,7 +23,6 @@ const Dashboard = ({ setView }) => {
         routines, workoutLog, bodyWeightLog, userProfile, logBodyWeight,
         updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
         waterLog, todaysCreatineLog, fetchDataForDate,
-        // --- NUEVO: Obtenemos el estado de rutinas completadas y workout activo ---
         completedRoutineIdsToday,
         activeWorkout
     } = useAppStore(state => ({
@@ -35,7 +38,6 @@ const Dashboard = ({ setView }) => {
         waterLog: state.waterLog,
         todaysCreatineLog: state.todaysCreatineLog,
         fetchDataForDate: state.fetchDataForDate,
-        // --- NUEVO ---
         completedRoutineIdsToday: state.completedRoutineIdsToday,
         activeWorkout: state.activeWorkout,
     }));
@@ -115,15 +117,27 @@ const Dashboard = ({ setView }) => {
             : { icon: ArrowDown, color: 'text-text-secondary' };
     };
 
-    const weeklyLogs = useMemo(() => {
+    // --- Lógica de la semana actual ---
+    const weekDays = useMemo(() => {
         const today = new Date();
-        const day = today.getDay();
+        const day = today.getDay(); // 0 (Domingo) - 6 (Sábado)
+        // Calcular el Lunes de esta semana
         const diff = today.getDate() - day + (day === 0 ? -6 : 1);
         const startOfWeek = new Date(today.getFullYear(), today.getMonth(), diff);
         startOfWeek.setHours(0, 0, 0, 0);
 
+        return Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            return d;
+        });
+    }, []);
+
+    const weeklyLogs = useMemo(() => {
+        if (!weekDays.length) return [];
+        const startOfWeek = weekDays[0];
         return workoutLog.filter(log => new Date(log.workout_date) >= startOfWeek);
-    }, [workoutLog]);
+    }, [workoutLog, weekDays]);
 
     const weeklySessions = weeklyLogs.length;
     const weeklyTimeInSeconds = weeklyLogs.reduce((acc, log) => acc + log.duration_seconds, 0);
@@ -175,153 +189,282 @@ const Dashboard = ({ setView }) => {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-
+        <div className="w-full max-w-7xl mx-auto px-4 pb-20 md:p-8 lg:p-10 animate-[fade-in_0.5s_ease-out]">
             <Helmet>
                 <title>Dashboard - Pro Fitness Glass</title>
                 <meta name="description" content="Tu resumen diario de actividad física, nutrición, peso corporal y acceso rápido a tus rutinas y entrenamientos." />
             </Helmet>
 
-            {/* Header para PC (MANTENIDO) */}
-            <h1 className="hidden md:block text-4xl font-extrabold mb-8 mt-10 md:mt-0">Dashboard</h1>
-
-            <div className="mt-6 sm:mt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <StatCard icon={<Dumbbell size={24} />} title="Sesiones Semanales" value={weeklySessions} unit="" />
-                <StatCard icon={<Target size={24} />} title="Objetivo Calorías" value={calorieTarget?.toLocaleString('es-ES') ?? 'N/A'} unit="kcal" />
-                <StatCard icon={<Clock size={24} />} title="Tiempo Semanal" value={weeklyTimeDisplay} unit="" />
-                <StatCard icon={<Flame size={24} />} title="Calorías Semanales" value={weeklyCalories.toLocaleString('es-ES')} unit="kcal" />
+            {/* Header Section */}
+            <div className="mb-8 mt-6 md:mt-0">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary inline-block">
+                    Dashboard
+                </h1>
+                <p className="text-text-secondary mt-2">
+                    Bienvenido de nuevo, <span className="text-accent font-semibold">{userProfile?.username || 'Atleta'}</span>.
+                </p>
             </div>
 
-            <GlassCard className="p-6 mb-6">
-                <h2 className="text-xl font-bold mb-4">Resumen de Hoy</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <button onClick={() => setView('nutrition')} className="hover:scale-105 transition-transform"><CircularProgress value={nutritionTotals.calories} maxValue={calorieTarget} label="Calorías" icon={Flame} colorClass="text-amber-400" /></button>
-                    <button onClick={() => setView('nutrition')} className="hover:scale-105 transition-transform"><CircularProgress value={parseFloat(nutritionTotals.protein.toFixed(1))} maxValue={proteinTarget} label="Proteína" icon={Beef} colorClass="text-rose-400" /></button>
-                    <button onClick={() => setModal({ type: 'water' })} className="hover:scale-105 transition-transform"><CircularProgress value={waterLog?.quantity_ml || 0} maxValue={waterTarget} label="Agua" icon={Droplet} colorClass="text-sky-400" /></button>
-                    <button onClick={() => setModal({ type: 'creatine' })} className="hover:scale-105 transition-transform">
-                        <CircularProgress
-                            value={todaysCreatineLog.length}
-                            maxValue={2}
-                            label="Creatina"
-                            icon={todaysCreatineLog.length > 0 ? CheckCircle : XCircle}
-                            colorClass={todaysCreatineLog.length > 0 ? 'text-violet-400' : 'text-text-muted'}
-                            displayText={todaysCreatineLog.length > 0 ? `${todaysCreatineLog.length} toma${todaysCreatineLog.length > 1 ? 's' : ''}` : 'Sin tomas'}
-                        />
-                    </button>
-                </div>
-            </GlassCard>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {/* Custom Weekly Sessions Card */}
+                <GlassCard className="p-4 flex flex-col justify-between h-full relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-accent/10 rounded-lg text-accent">
+                                <Dumbbell size={20} />
+                            </div>
+                            <span className="text-sm font-medium text-text-muted">Sesiones</span>
+                        </div>
+                        <span className="text-2xl font-bold text-text-primary">{weeklySessions}</span>
+                    </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <div className="flex flex-col gap-6">
-                    <GlassCard className="p-6 flex flex-col gap-4">
-                        <h2 className="text-xl font-bold">Iniciar un Entrenamiento</h2>
-                        <div className="flex flex-col gap-3">
+                    <div className="flex justify-between items-center">
+                        {weekDays.map((date, i) => {
+                            const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+                            const isToday = isSameDay(date, new Date());
+                            // Buscamos si hay logs en este día
+                            const hasWorkout = workoutLog.some(log => isSameDay(new Date(log.workout_date), date));
+
+                            return (
+                                <div key={i} className="flex flex-col items-center gap-2">
+                                    {/* Día arriba */}
+                                    <span className={`text-xs font-semibold ${isToday ? 'text-accent' : 'text-text-muted'}`}>
+                                        {dayLetters[i]}
+                                    </span>
+
+                                    {/* Círculo abajo con check */}
+                                    <div className={`
+                                        w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
+                                        ${hasWorkout
+                                            ? 'bg-accent text-white shadow-lg shadow-accent/25'
+                                            : 'bg-bg-secondary/50 text-transparent'
+                                        }
+                                    `}>
+                                        {hasWorkout && <Check size={16} strokeWidth={3} />}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </GlassCard>
+
+                <StatCard icon={<Target size={24} />} title="Meta Calórica" value={calorieTarget?.toLocaleString('es-ES') ?? 'N/A'} unit="kcal" />
+                <StatCard icon={<Clock size={24} />} title="Tiempo Activo" value={weeklyTimeDisplay} unit="" />
+                <StatCard icon={<Flame size={24} />} title="Quemadas" value={weeklyCalories.toLocaleString('es-ES')} unit="kcal" />
+            </div>
+
+            {/* Today's Summary Section */}
+            <section className="mb-8">
+                <div className="flex items-center gap-2 mb-4 px-1">
+                    <Activity size={20} className="text-accent" />
+                    <h2 className="text-xl font-bold">Resumen de Hoy</h2>
+                </div>
+                <GlassCard className="p-6 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-accent/5">
+                    <div className="hidden md:block absolute -right-6 -bottom-8 opacity-5 pointer-events-none transform rotate-12">
+                        <Activity size={160} />
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
+                        {/* Nutrition Circle */}
+                        <button onClick={() => setView('nutrition')} className="group flex flex-col items-center gap-2 transition-transform hover:scale-105">
+                            <CircularProgress value={nutritionTotals.calories} maxValue={calorieTarget} label="Calorías" icon={Flame} colorClass="text-amber-400" />
+                        </button>
+                        {/* Protein Circle */}
+                        <button onClick={() => setView('nutrition')} className="group flex flex-col items-center gap-2 transition-transform hover:scale-105">
+                            <CircularProgress value={parseFloat(nutritionTotals.protein.toFixed(1))} maxValue={proteinTarget} label="Proteína" icon={Beef} colorClass="text-rose-400" />
+                        </button>
+                        {/* Water Circle */}
+                        <button onClick={() => setModal({ type: 'water' })} className="group flex flex-col items-center gap-2 transition-transform hover:scale-105">
+                            <CircularProgress value={waterLog?.quantity_ml || 0} maxValue={waterTarget} label="Agua" icon={Droplet} colorClass="text-sky-400" />
+                        </button>
+                        {/* Creatine Circle */}
+                        <button onClick={() => setModal({ type: 'creatine' })} className="group flex flex-col items-center gap-2 transition-transform hover:scale-105">
+                            <CircularProgress
+                                value={todaysCreatineLog.length}
+                                maxValue={2}
+                                label="Creatina"
+                                icon={todaysCreatineLog.length > 0 ? CheckCircle : XCircle}
+                                colorClass={todaysCreatineLog.length > 0 ? 'text-violet-400' : 'text-text-muted'}
+                                displayText={todaysCreatineLog.length > 0 ? `${todaysCreatineLog.length}/2` : '0/2'}
+                            />
+                        </button>
+                    </div>
+                </GlassCard>
+            </section>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+
+                {/* Left Column */}
+                <div className="flex flex-col gap-8">
+
+                    {/* Workouts */}
+                    <section>
+                        <div className="flex items-center justify-between mb-4 px-1">
+                            <div className="flex items-center gap-2">
+                                <Dumbbell size={20} className="text-accent" />
+                                <h2 className="text-xl font-bold">Rutinas</h2>
+                            </div>
+                            <button
+                                onClick={() => setView('routines', { forceTab: 'myRoutines' })}
+                                className="text-xs font-semibold text-accent hover:text-accent/80 flex items-center gap-1"
+                            >
+                                Ver todas <ChevronRight size={14} />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
                             {routines.length > 0 ? (
-                                routines.slice(0, 2).map(routine => {
-                                    // Comprobamos estado de la rutina
+                                routines.slice(0, 3).map(routine => {
                                     const isCompleted = completedRoutineIdsToday.includes(routine.id);
                                     const isActive = activeWorkout && activeWorkout.routineId === routine.id;
 
                                     return (
-                                        <button
+                                        <GlassCard
                                             key={routine.id}
-                                            onClick={async () => {
-                                                // Si está activa, vamos directo al workout
-                                                if (isActive) {
-                                                    setView('workout');
-                                                    return;
-                                                }
-                                                // Si no está completada, iniciamos
-                                                if (!isCompleted) {
-                                                    await startWorkout(routine);
-                                                    setView('workout');
-                                                }
-                                            }}
-                                            // Deshabilitado solo si está completado Y NO está activo
-                                            disabled={isCompleted && !isActive}
-                                            className={`flex justify-between items-center w-full p-4 rounded-md border border-glass-border transition-colors ${isActive
-                                                    ? 'bg-accent/10 border-accent/30 text-accent'
-                                                    : isCompleted
-                                                        ? 'bg-bg-secondary/50 text-text-muted cursor-not-allowed'
-                                                        : 'hover:bg-white/10'
-                                                }`}
+                                            className={`p-0 overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-accent/5 hover:-translate-y-1 ${isActive ? 'ring-2 ring-accent shadow-accent/20' : ''}`}
                                         >
-                                            <div className="flex flex-col items-start">
-                                                <span className="font-semibold">{routine.name}</span>
-                                                {isActive && <span className="text-xs font-bold">En curso</span>}
-                                                {isCompleted && !isActive && <span className="text-xs">Completada hoy</span>}
-                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    if (isActive) { setView('workout'); return; }
+                                                    if (!isCompleted) { await startWorkout(routine); setView('workout'); }
+                                                }}
+                                                disabled={isCompleted && !isActive}
+                                                className={`w-full text-left p-4 flex items-center justify-between group 
+                                                    ${isActive ? 'bg-accent/10' : 'hover:bg-white/5'}
+                                                    ${isCompleted && !isActive ? 'opacity-50 cursor-not-allowed' : ''}
+                                                `}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`
+                                                        w-10 h-10 rounded-full flex items-center justify-center 
+                                                        ${isActive ? 'bg-accent text-white' : (isCompleted ? 'bg-green-500/20 text-green-500' : 'bg-bg-secondary text-text-secondary group-hover:bg-accent/20 group-hover:text-accent transition-colors')}
+                                                    `}>
+                                                        {isActive ? <Clock size={20} /> : (isCompleted ? <CheckCircle size={20} /> : <Play size={20} fill="currentColor" />)}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className={`font-bold ${isActive ? 'text-accent' : 'text-text-primary'}`}>{routine.name}</h3>
+                                                        <p className="text-xs text-text-secondary">
+                                                            {isActive ? 'En curso - Click para continuar' : (isCompleted ? 'Completada hoy' : 'Click para iniciar')}
+                                                        </p>
+                                                    </div>
+                                                </div>
 
-                                            {isActive ? (
-                                                <Clock size={20} />
-                                            ) : isCompleted ? (
-                                                <CheckCircle size={20} />
-                                            ) : (
-                                                <Play size={20} />
-                                            )}
-                                        </button>
+                                                {!isCompleted && !isActive && (
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-accent">
+                                                        <ChevronRight size={20} />
+                                                    </div>
+                                                )}
+                                            </button>
+                                        </GlassCard>
                                     );
                                 })
                             ) : (
-                                <p className="text-text-muted text-center py-4">No tienes rutinas. ¡Crea una para empezar!</p>
+                                <GlassCard className="p-8 text-center transition-all duration-300 hover:shadow-lg">
+                                    <p className="text-text-muted mb-4">No tienes rutinas asignadas.</p>
+                                    <button onClick={() => setView('routines')} className="text-accent font-bold hover:underline">
+                                        Crear mi primera rutina
+                                    </button>
+                                </GlassCard>
                             )}
                         </div>
-                        <button onClick={() => setView('routines', { forceTab: 'myRoutines' })} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
-                            <Plus size={20} />
-                            <span>Ver todas mis rutinas</span>
-                        </button>
-                    </GlassCard>
+                    </section>
 
-                    <GlassCard className="p-6 flex flex-col gap-4">
-                        <h2 className="text-xl font-bold">Cardio Rápido</h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <button onClick={() => { startSimpleWorkout('Cardio: Cinta'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Footprints size={20} /><span className="font-semibold">Cinta</span></button>
-                            <button onClick={() => { startSimpleWorkout('Cardio: Bici'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Bike size={20} /><span className="font-semibold">Bici</span></button>
-                            <button onClick={() => { startSimpleWorkout('Cardio: Elíptica'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Activity size={20} /><span className="font-semibold">Elíptica</span></button>
-                            <button onClick={() => { startSimpleWorkout('Cardio: Comba'); setView('workout'); }} className="flex items-center justify-center gap-3 p-4 rounded-md border border-glass-border hover:bg-white/10 transition-colors"><Repeat size={20} /><span className="font-semibold">Comba</span></button>
+                    {/* Quick Cardio */}
+                    <section>
+                        <div className="flex items-center gap-2 mb-4 px-1">
+                            <Zap size={20} className="text-accent" />
+                            <h2 className="text-xl font-bold">Cardio Rápido</h2>
                         </div>
-                    </GlassCard>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {[
+                                { name: 'Cinta', icon: Footprints },
+                                { name: 'Bici', icon: Bike },
+                                { name: 'Elíptica', icon: Activity },
+                                { name: 'Comba', icon: Repeat },
+                            ].map((item) => (
+                                <GlassCard key={item.name} className="p-0 overflow-hidden group hover:-translate-y-1 transition-all duration-300 hover:shadow-lg">
+                                    <button
+                                        onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }}
+                                        className="w-full h-full p-4 flex flex-col items-center justify-center gap-2 hover:bg-accent/10 transition-colors"
+                                    >
+                                        <item.icon size={24} className="text-accent group-hover:text-white transition-colors" />
+                                        <span className="text-sm font-semibold">{item.name}</span>
+                                    </button>
+                                </GlassCard>
+                            ))}
+                        </div>
+                    </section>
+
                 </div>
 
-                <GlassCard className="p-6 flex flex-col gap-4">
-                    <h2 className="text-xl font-bold">Registro de Peso</h2>
-                    <div className="text-center">
-                        <p className="text-sm text-text-secondary">Peso Actual</p>
-                        <div className="flex items-center justify-center gap-3">
-                            <p className="text-5xl font-extrabold">
-                                {latestWeight ? latestWeight.toFixed(2) : '--'}
-                                <span className="text-2xl font-bold text-text-muted ml-1">kg</span>
-                            </p>
-                            {weightTrend && (
-                                <div className={`p-2 rounded-full ${weightTrend.bg}`} title={`Tendencia: ${weightTrend.text}`}>
-                                    <weightTrend.icon size={24} className={weightTrend.color} />
-                                </div>
-                            )}
+                {/* Right Column */}
+                <div className="flex flex-col gap-8">
+                    {/* Weight Section */}
+                    <section>
+                        <div className="flex items-center justify-between mb-4 px-1">
+                            <div className="flex items-center gap-2">
+                                <Trophy size={20} className="text-accent" />
+                                <h2 className="text-xl font-bold">Peso Corporal</h2>
+                            </div>
+                            <button onClick={() => setShowWeightModal(true)} className="text-xs font-semibold text-accent hover:text-accent/80 flex items-center gap-1">
+                                {todaysWeightLog ? <><Edit size={14} /> Editar hoy</> : <><Plus size={14} /> Registrar</>}
+                            </button>
                         </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <h3 className="font-semibold text-text-secondary">Historial Reciente</h3>
-                        {sortedWeightLog.length > 0 ? sortedWeightLog.slice(0, 4).map((log, index) => {
-                            const trend = getTrendForLog(log, sortedWeightLog[index + 1]);
-                            return (
-                                <div key={log.id} className="flex justify-between items-center bg-bg-secondary/50 p-3 rounded-md">
-                                    <div className="flex items-center">
-                                        <span className="font-semibold">{parseFloat(log.weight_kg).toFixed(2)} kg</span>
-                                        {trend && <trend.icon size={16} className={`${trend.color} ml-1.5`} />}
+
+                        <GlassCard className="p-6 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                            {/* Big Number */}
+                            <div className="flex items-end justify-between mb-8">
+                                <div>
+                                    <p className="text-sm text-text-secondary uppercase tracking-wider font-semibold mb-1">Actual</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-5xl font-extrabold text-text-primary tracking-tight">
+                                            {latestWeight ? latestWeight.toFixed(1) : '--'}
+                                        </span>
+                                        <span className="text-xl text-text-muted font-medium">kg</span>
                                     </div>
-                                    <span className="text-sm text-text-muted">{new Date(log.log_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</span>
                                 </div>
-                            );
-                        }) : (
-                            <p className="text-text-muted text-center py-4">No hay registros de peso todavía.</p>
-                        )}
-                    </div>
-                    <button onClick={() => setShowWeightModal(true)} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
-                        {todaysWeightLog ? <><Edit size={20} /><span>Editar Peso de Hoy</span></> : <><Plus size={20} /><span>Registrar Peso</span></>}
-                    </button>
-                </GlassCard>
+
+                                {weightTrend && (
+                                    <div className={`flex flex-col items-end ${weightTrend.color}`}>
+                                        <weightTrend.icon size={32} />
+                                        <span className="text-xs font-bold mt-1 uppercase">Tendencia</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Mini Graph/History List */}
+                            <div className="space-y-3">
+                                <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Historial Reciente</p>
+                                {sortedWeightLog.length > 0 ? (
+                                    <div className="flex flex-col gap-2">
+                                        {sortedWeightLog.slice(0, 3).map((log, index) => {
+                                            const trend = getTrendForLog(log, sortedWeightLog[index + 1]);
+                                            return (
+                                                <div key={log.id} className="flex items-center justify-between p-3 rounded-xl bg-bg-secondary/40 border border-transparent hover:border-glass-border transition-colors">
+                                                    <span className="text-sm font-medium text-text-secondary">
+                                                        {new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-text-primary">{parseFloat(log.weight_kg).toFixed(1)}</span>
+                                                        {trend && <trend.icon size={14} className={trend.color} />}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="p-4 text-center text-sm text-text-muted italic">
+                                        Sin registros recientes.
+                                    </div>
+                                )}
+                            </div>
+                        </GlassCard>
+                    </section>
+                </div>
+
             </div>
 
+            {/* Modals */}
             {showWeightModal &&
                 <BodyWeightModal
                     onClose={() => setShowWeightModal(false)}

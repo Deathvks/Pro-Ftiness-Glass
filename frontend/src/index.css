@@ -8,14 +8,20 @@
 /* 2) VARIABLES (modo oscuro por defecto) */
 :root {
   /* Base (dark by default) */
-  --bg-primary: #0c111b;          /* fondo principal */
-  --bg-secondary: #121826;        /* tarjetas / contenedores */
-  --text-primary: #e5e7eb;        /* texto */
-  --text-secondary: #9ca3af;      /* texto secundario */
-  --text-muted: #6b7280;          /* texto deshabilitado */
+  --bg-primary: #0c111b;
+  /* fondo principal */
+  --bg-secondary: #121826;
+  /* tarjetas / contenedores */
+  --text-primary: #e5e7eb;
+  /* texto */
+  --text-secondary: #9ca3af;
+  /* texto secundario */
+  --text-muted: #6b7280;
+  /* texto deshabilitado */
 
   /* Acento (GREEN por defecto) */
-  --color-accent: #22c55e;        /* green-500 */
+  --color-accent: #22c55e;
+  /* green-500 */
   --color-accent-transparent: rgba(34, 197, 94, 0.12);
   --color-accent-border: rgba(34, 197, 94, 0.28);
 
@@ -26,10 +32,14 @@
 
   /* --- INICIO DE LA MODIFICACIÓN --- */
   /* Glassmorphism mejorado */
-  --glass-border: rgba(255, 255, 255, 0.08); /* Borde ligeramente más opaco */
-  --glass-bg: rgba(26, 35, 53, 0.55); /* Fondo ligeramente más oscuro y opaco */
-  --glass-highlight: rgba(255, 255, 255, 0.12); /* Borde superior más brillante */
-  --glass-shadow-inner: rgba(0, 0, 0, 0.2); /* Sombra interior */
+  --glass-border: rgba(255, 255, 255, 0.08);
+  /* Borde ligeramente más opaco */
+  --glass-bg: rgba(26, 35, 53, 0.55);
+  /* Fondo ligeramente más oscuro y opaco */
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  /* Borde superior más brillante */
+  --glass-shadow-inner: rgba(0, 0, 0, 0.2);
+  /* Sombra interior */
   /* --- FIN DE LA MODIFICACIÓN --- */
 }
 
@@ -51,8 +61,10 @@ body.dark-theme {
 }
 
 body.light-theme {
-  --bg-primary: #f7fafc;   /* gris muy claro */
-  --bg-secondary: #ffffff; /* tarjetas blancas */
+  --bg-primary: #f7fafc;
+  /* gris muy claro */
+  --bg-secondary: #ffffff;
+  /* tarjetas blancas */
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
@@ -66,6 +78,25 @@ body.light-theme {
   --glass-shadow-inner: rgba(0, 0, 0, 0.05);
   /* --- FIN DE LA MODIFICACIÓN --- */
 }
+
+/* --- INICIO DE LA MODIFICACIÓN --- */
+/* TEMA OLED (Negro Puro) */
+body.oled-theme {
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --text-muted: #525252;
+
+  /* Ajustes específicos para OLED: contrastes más altos en bordes, sin transparencias de fondo */
+  /* Se han suavizado los bordes (menos opacidad) respecto a la versión anterior */
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-bg: #000000;
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --glass-shadow-inner: none;
+}
+
+/* --- FIN DE LA MODIFICACIÓN --- */
 
 /* 4) PALETAS DE ACENTO (solo cambian las vars del acento) */
 /* ... (paletas sin cambios) ... */
@@ -219,29 +250,43 @@ body.accent-neutral {
 
 /* 5) COMPONENTES BASE */
 @layer components {
-  html, body, #root {
+
+  html,
+  body,
+  #root {
     @apply h-full;
   }
+
   body {
     @apply bg-bg-primary text-text-primary antialiased;
     /* Evita doble scroll al tener nav fijo + main con scroll */
     overflow: hidden;
   }
+
   main {
     /* El scroll va en main (ya lo usas) */
     height: 100%;
   }
 
   /* Titulares y textos (opcional / suave) */
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     @apply text-text-primary;
   }
 
   /* --- INICIO DE LA MODIFICACIÓN --- */
   /* Quitar outline por defecto en focus y focus-visible para inputs y botones */
-  input:focus, textarea:focus, select:focus, button:focus,
-  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
-    @apply outline-none; /* Esto quita el outline azul/predeterminado */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
+    @apply outline-none;
+    /* Esto quita el outline azul/predeterminado */
     /* Los estilos focus:ring-*, focus:border-* de Tailwind seguirán aplicándose */
   }
 
@@ -253,15 +298,17 @@ body.accent-neutral {
       border-[--color-accent], border-[--glass-border]) controlen el color y 
       estilo del borde.
     */
-    
+
     /* Borde superior más brillante (Efecto de reflejo) */
     border-top-color: var(--glass-highlight);
-    
+
     /* Sombra interior sutil para dar profundidad */
     box-shadow: inset 0 1px 1px var(--glass-shadow-inner),
-                0 4px 6px -1px rgba(0, 0, 0, 0.1), /* Sombra exterior original */
-                0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      /* Sombra exterior original */
+      0 2px 4px -2px rgba(0, 0, 0, 0.1);
   }
+
   /* --- FIN DE LA MODIFICACIÓN --- */
 
   /* Errores de formularios reutilizados en la app */
@@ -291,7 +338,8 @@ body.accent-neutral {
   }
 
   input[type="checkbox"]:focus-visible {
-    outline: none !important; /* Quitamos outline aquí también */
+    outline: none !important;
+    /* Quitamos outline aquí también */
     box-shadow: 0 0 0 2px var(--color-accent-transparent) !important;
   }
 
@@ -309,7 +357,8 @@ body.accent-neutral {
   }
 
   body.light-theme input[type="checkbox"]:focus-visible {
-    outline: none !important; /* Quitamos outline aquí también */
+    outline: none !important;
+    /* Quitamos outline aquí también */
     box-shadow: 0 0 0 2px var(--color-accent-transparent) !important;
   }
 
@@ -318,27 +367,37 @@ body.accent-neutral {
     content: '✓';
     display: block;
     text-align: center;
-    color: white; /* Color del check */
+    color: white;
+    /* Color del check */
     /* Ajustar tamaño y posición si es necesario */
-    font-size: 12px; /* ejemplo */
-    line-height: 14px; /* ejemplo */
+    font-size: 12px;
+    /* ejemplo */
+    line-height: 14px;
+    /* ejemplo */
   }
 
 
   /* Estilos para personalizar el escáner de QR */
   @keyframes scan {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(240px); }
+    0% {
+      transform: translateY(0);
+    }
+
+    100% {
+      transform: translateY(240px);
+    }
   }
+
   .scan-line {
     animation: scan 2.5s infinite alternate ease-in-out;
   }
 
   /* Ocultar elementos no deseados de la librería html5-qrcode */
-  .scanner-wrapper > div,
+  .scanner-wrapper>div,
   .scanner-wrapper #qr-shaded-region {
     border: none !important;
-    border-radius: 0.5rem; /* Ajustar si es necesario para que coincida con tu diseño */
+    border-radius: 0.5rem;
+    /* Ajustar si es necesario para que coincida con tu diseño */
   }
 
   .scanner-wrapper #qr-shaded-region * {
@@ -361,31 +420,78 @@ body.accent-neutral {
 
 /* 6) UTILIDADES */
 @layer utilities {
+
   /* Ocultar scrollbars sin romper el scroll */
-  ::-webkit-scrollbar { display: none; }
-  * { scrollbar-width: none; }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  * {
+    scrollbar-width: none;
+  }
 
   /* Animaciones que usa la app */
   @keyframes roam-blob {
-    0%   { transform: translate(-50%, -50%) scale(1);   }
-    33%  { transform: translate(-60%, -40%) scale(1.15);}
-    66%  { transform: translate(-40%, -60%) scale(0.9); }
-    100% { transform: translate(-50%, -50%) scale(1);   }
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    33% {
+      transform: translate(-60%, -40%) scale(1.15);
+    }
+
+    66% {
+      transform: translate(-40%, -60%) scale(0.9);
+    }
+
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+    }
   }
+
   @keyframes fade-in-up {
-    0%   { opacity: 0; transform: translateY(6px); }
-    100% { opacity: 1; transform: translateY(0);   }
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
+
   @keyframes fade-in {
-    0%   { opacity: 0 }
-    100% { opacity: 1 }
+    0% {
+      opacity: 0
+    }
+
+    100% {
+      opacity: 1
+    }
   }
+
   @keyframes toast-in {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0);    opacity: 1; }
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
+
   @keyframes toast-out {
-    from { transform: translateX(0);    opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
   }
 }

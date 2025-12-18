@@ -1,12 +1,10 @@
 /* backend/services/cronService.js */
 import cron from 'node-cron';
 import { Op, literal, fn, col } from 'sequelize';
-// Importamos el objeto 'db' principal
 import db from '../models/index.js';
 import pushService from './pushService.js';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { createNotification } from './notificationService.js';
-// --- FIN DE LA MODIFICACIÓN ---
+import { cleanOrphanedImages } from './imageService.js'; // --- AÑADIDO ---
 
 /**
  * Envía notificaciones a un usuario específico (Push + Interna).
@@ -15,22 +13,17 @@ import { createNotification } from './notificationService.js';
  */
 const notifyUser = async (userId, payload) => {
   try {
-    // --- INICIO DE LA MODIFICACIÓN ---
     // 1. Crear notificación interna (Persistencia en la App)
-    // Lo hacemos antes de comprobar las suscripciones push para que el usuario
-    // reciba el aviso en la campana de la web/app aunque no tenga notificaciones móviles.
     await createNotification(userId, {
-      type: 'info', // Tipo genérico para recordatorios
+      type: 'info',
       title: payload.title,
       message: payload.body,
       data: { url: payload.url }
     });
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // 2. Enviar notificación Push (al móvil/navegador)
     const subscriptions = await db.PushSubscription.findAll({ where: { user_id: userId } });
-    
-    // Si no hay suscripciones push, terminamos aquí (pero la notificación interna ya se guardó)
+
     if (subscriptions.length === 0) return;
 
     console.log(`[Cron] Enviando Push "${payload.title}" a usuario ${userId}...`);
@@ -39,11 +32,11 @@ const notifyUser = async (userId, payload) => {
       const subscriptionObject = {
         endpoint: sub.endpoint,
         keys: {
-          p256dh: sub.p256dh_key || sub.keys.p256dh, // Soporte para ambas estructuras por si acaso
+          p256dh: sub.p256dh_key || sub.keys.p256dh,
           auth: sub.auth_key || sub.keys.auth,
         },
       };
-      
+
       return pushService.sendNotification(subscriptionObject, payload)
         .catch(error => {
           if (error.statusCode === 410 || error.statusCode === 404) {
@@ -78,7 +71,7 @@ const checkNutritionGoals = () => {
         },
         include: [{
           model: db.NutritionLog,
-          as: 'NutritionLogs', // Asegúrate de que coincida con el alias en models/index.js
+          as: 'NutritionLogs',
           where: { log_date: today },
           attributes: [],
           required: false,
@@ -88,20 +81,18 @@ const checkNutritionGoals = () => {
           'target_calories',
           'target_protein',
           [fn('SUM', col('NutritionLogs.calories')), 'totalCalories'],
-          [fn('SUM', col('NutritionLogs.protein_g')), 'totalProtein'], // Corregido a protein_g si ese es el campo
+          [fn('SUM', col('NutritionLogs.protein_g')), 'totalProtein'],
         ],
         group: ['User.id'],
       });
 
       const usersToNotify = users.filter(user => {
-        // Valores actuales (si es null es 0)
         const currentCals = parseFloat(user.dataValues.totalCalories || 0);
         const currentProt = parseFloat(user.dataValues.totalProtein || 0);
-        
+
         const caloriesMet = user.target_calories > 0 && currentCals >= user.target_calories;
         const proteinMet = user.target_protein > 0 && currentProt >= user.target_protein;
-        
-        // Notificar si tiene meta y NO la ha cumplido
+
         return (user.target_calories > 0 && !caloriesMet) || (user.target_protein > 0 && !proteinMet);
       });
 
@@ -131,11 +122,8 @@ const checkTrainingReminder = () => {
   cron.schedule('0 10 * * *', async () => {
     console.log('[Cron] Ejecutando tarea: Recordatorio de Entrenamiento...');
     try {
-      // Buscamos usuarios que tengan suscripción Push activa
-      // Nota: Si quieres avisar también a usuarios SIN push (solo app), deberías consultar db.User en su lugar.
-      // Por ahora mantenemos la lógica de avisar a los que tienen push activado.
       const usersWithSubscriptions = await db.PushSubscription.findAll({
-        attributes: [[fn('DISTINCT', col('userId')), 'userId']], // Corregido col userId camelCase
+        attributes: [[fn('DISTINCT', col('userId')), 'userId']],
       });
 
       const payload = {
@@ -165,20 +153,18 @@ const checkWeightLogReminder = () => {
     try {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-      // --- MODIFICACIÓN: Corregido nombre del modelo a BodyWeightLog ---
       const usersToNotify = await db.User.findAll({
         attributes: ['id'],
         include: [{
-          model: db.BodyWeightLog, // Nombre correcto del modelo
-          as: 'BodyWeightLogs',    // Alias correcto según index.js
+          model: db.BodyWeightLog,
+          as: 'BodyWeightLogs',
           attributes: [],
           required: false,
         }],
-        // Buscamos usuarios cuyo último log sea antiguo O no tengan logs
         group: ['User.id'],
         having: literal(`COUNT(\`BodyWeightLogs\`.\`id\`) = 0 OR MAX(\`BodyWeightLogs\`.\`log_date\`) < '${thirtyDaysAgo.toISOString().split('T')[0]}'`)
       });
-      
+
       console.log(`[Cron] ${usersToNotify.length} usuarios deben registrar su peso.`);
 
       const payload = {
@@ -199,6 +185,22 @@ const checkWeightLogReminder = () => {
   });
 };
 
+/**
+ * TAREA 4: Limpieza de imágenes huérfanas (Semanal, Domingos a las 04:00 AM)
+ */
+const scheduleImageCleanup = () => {
+  // 0 4 * * 0 = A las 04:00 AM del Domingo (0)
+  cron.schedule('0 4 * * 0', async () => {
+    console.log('[Cron] Ejecutando tarea: Limpieza de imágenes huérfanas...');
+    try {
+      await cleanOrphanedImages();
+    } catch (error) {
+      console.error('[Cron] Error en la limpieza de imágenes:', error);
+    }
+  }, {
+    timezone: "Europe/Madrid"
+  });
+};
 
 /**
  * Inicializa todas las tareas programadas.
@@ -208,5 +210,6 @@ export const startCronJobs = () => {
   checkNutritionGoals();
   checkTrainingReminder();
   checkWeightLogReminder();
+  scheduleImageCleanup(); // --- AÑADIDO ---
   console.log('[Cron] Tareas programadas iniciadas.');
 };

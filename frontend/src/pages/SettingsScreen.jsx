@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
-  ShieldAlert, MailWarning, Instagram, Share2 // Añadidos Instagram y Share2
+  ShieldAlert, MailWarning, Instagram, Share2
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -12,6 +12,7 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 import Spinner from '../components/Spinner';
 import * as userService from '../services/userService';
 import { useToast } from '../hooks/useToast';
+import ActiveSessions from '../components/ActiveSessions'; // --- AÑADIDO ---
 
 // --- Constantes ---
 const ACCENT_OPTIONS = [
@@ -156,20 +157,25 @@ export default function SettingsScreen({
 
           <div className="mb-6">
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Tema</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {['system', 'light', 'dark'].map((mode) => (
+            <div className="grid grid-cols-4 gap-2">
+              {['system', 'light', 'dark', 'oled'].map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setTheme(mode)}
                   className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${theme === mode
-                      ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20'
-                      : 'border-[--glass-border] text-text-secondary hover:bg-bg-secondary'
+                    ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20'
+                    : 'border-[--glass-border] text-text-secondary hover:bg-bg-secondary'
                     }`}
                 >
                   {mode === 'system' && <MonitorCog size={20} />}
                   {mode === 'light' && <Sun size={20} />}
                   {mode === 'dark' && <Moon size={20} />}
-                  <span className="text-xs font-medium capitalize">{mode === 'system' ? 'Sistema' : mode === 'light' ? 'Claro' : 'Oscuro'}</span>
+                  {mode === 'oled' && <Smartphone size={20} />}
+                  <span className="text-xs font-medium capitalize">
+                    {mode === 'system' ? 'Sistema' :
+                      mode === 'light' ? 'Claro' :
+                        mode === 'dark' ? 'Oscuro' : 'OLED'}
+                  </span>
                 </button>
               ))}
             </div>
@@ -276,6 +282,11 @@ export default function SettingsScreen({
               )}
             </div>
           </SettingsCard>
+
+          {/* --- NUEVA SECCIÓN: GESTIÓN DE SESIONES --- */}
+          <SettingsCard>
+            <ActiveSessions />
+          </SettingsCard>
         </div>
 
         {/* --- COLUMNA 3: NOTIFICACIONES Y GENERAL --- */}
@@ -358,7 +369,7 @@ export default function SettingsScreen({
             </div>
           </SettingsCard>
 
-          {/* --- NUEVA SECCIÓN: REDES SOCIALES --- */}
+          {/* --- REDES SOCIALES --- */}
           <SettingsCard>
             <SectionTitle icon={Share2} title="Síguenos" />
             <div className="flex flex-col gap-1">

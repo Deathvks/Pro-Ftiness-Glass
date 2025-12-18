@@ -5,10 +5,8 @@ import { CameraIcon, StarIcon, CheckIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarIconOutline } from '@heroicons/react/24/outline';
 import { getFavoriteMeals } from '../../../services/favoriteMealService';
 import { uploadFoodImage } from '../../../services/nutritionService';
-// --- INICIO DE LA CORRECCIÓN ---
-// El hook useToast se encuentra en la carpeta hooks, no en contexts/ToastProvider
+// --- CORRECCIÓN: Importación correcta del hook useToast ---
 import { useToast } from '../../../hooks/useToast';
-// --- FIN DE LA CORRECCIÓN ---
 
 // Componente para un campo de entrada de macros
 const MacroInput = ({ label, value, onChange, unit }) => (
@@ -70,24 +68,24 @@ function FoodEntryForm({
     const baseWeight = per100gMode
       ? 100
       : selectedItem.serving_weight_g || 100;
-    
+
     if (baseWeight === 0) return {};
 
     const factor = newWeight / baseWeight;
 
     const baseMacros = per100gMode
       ? {
-          calories: selectedItem.calories_per_100g || 0,
-          protein_g: selectedItem.protein_per_100g || 0,
-          carbs_g: selectedItem.carbs_per_100g || 0,
-          fats_g: selectedItem.fat_per_100g || 0,
-        }
+        calories: selectedItem.calories_per_100g || 0,
+        protein_g: selectedItem.protein_per_100g || 0,
+        carbs_g: selectedItem.carbs_per_100g || 0,
+        fats_g: selectedItem.fat_per_100g || 0,
+      }
       : {
-          calories: selectedItem.calories_per_serving || 0,
-          protein_g: selectedItem.protein_per_serving || 0,
-          carbs_g: selectedItem.carbs_per_serving || 0,
-          fats_g: selectedItem.fat_per_serving || 0,
-        };
+        calories: selectedItem.calories_per_serving || 0,
+        protein_g: selectedItem.protein_per_serving || 0,
+        carbs_g: selectedItem.carbs_per_serving || 0,
+        fats_g: selectedItem.fat_per_serving || 0,
+      };
 
     return {
       calories: parseFloat((baseMacros.calories * factor).toFixed(1)),
@@ -105,7 +103,7 @@ function FoodEntryForm({
     if (shouldBePer100g && !isPer100g) {
       setIsPer100g(true);
     }
-    
+
     let baseData;
     let baseWeight;
 
@@ -127,15 +125,18 @@ function FoodEntryForm({
       baseWeight = selectedItem.serving_weight_g || 100;
     }
 
+    // Aseguramos que image_url no sea una cadena vacía
+    const initialImageUrl = (selectedItem.image_url && selectedItem.image_url !== "") ? selectedItem.image_url : null;
+
     setFormData({
       description: selectedItem.description || 'Alimento',
-      image_url: selectedItem.image_url || null,
+      image_url: initialImageUrl,
       weight_g: baseWeight,
       ...baseData,
     });
 
     checkIfFavorite(selectedItem.description);
-    
+
   }, [selectedItem, isPer100g, setIsPer100g]);
 
   const checkIfFavorite = async (description) => {
@@ -209,7 +210,7 @@ function FoodEntryForm({
     }
 
     setIsUploading(true);
-    
+
     try {
       const res = await uploadFoodImage(file);
       setFormData((prev) => ({
@@ -260,6 +261,14 @@ function FoodEntryForm({
     return `Ración (${selectedItem.serving_size || '1 ración'})`;
   };
 
+  // --- NUEVO MANEJADOR DE ERROR DE IMAGEN ---
+  const handleImageError = (e) => {
+    // 1. Ocultar inmediatamente la imagen rota para evitar el "flickeo" visual
+    e.target.style.display = 'none';
+    // 2. Actualizar el estado para mostrar el icono de cámara
+    setFormData((prev) => ({ ...prev, image_url: null }));
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Sección de Imagen y Descripción */}
@@ -288,6 +297,8 @@ function FoodEntryForm({
               }
               alt={formData.description}
               className="w-full h-full object-cover"
+              // Manejo robusto de error para evitar "ghost images"
+              onError={handleImageError}
             />
           ) : (
             <CameraIcon className="w-8 h-8" />
@@ -314,11 +325,10 @@ function FoodEntryForm({
             <button
               type="button"
               onClick={handleToggleFavorite}
-              className={`p-2 border border-l-0 border-gray-600 rounded-r-md ${
-                isFavorite
+              className={`p-2 border border-l-0 border-gray-600 rounded-r-md ${isFavorite
                   ? 'bg-yellow-500 text-white'
                   : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-              }`}
+                }`}
               aria-label={
                 isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'
               }
@@ -343,14 +353,12 @@ function FoodEntryForm({
           <Switch
             checked={isPer100g}
             onChange={setIsPer100g}
-            className={`${
-              isPer100g ? 'bg-blue-600' : 'bg-gray-600'
-            } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
+            className={`${isPer100g ? 'bg-blue-600' : 'bg-gray-600'
+              } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
           >
             <span
-              className={`${
-                isPer100g ? 'translate-x-6' : 'translate-x-1'
-              } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+              className={`${isPer100g ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
             />
           </Switch>
         </div>

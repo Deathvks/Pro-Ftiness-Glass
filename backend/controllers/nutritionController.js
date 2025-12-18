@@ -1,22 +1,20 @@
 /* backend/controllers/nutritionController.js */
 import db from '../models/index.js';
 import { Op } from 'sequelize';
-import axios from 'axios'; // Necesario para descargar la imagen
+import axios from 'axios';
 import path from 'path';
 import fs from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid'; // Para nombres de archivo únicos
-import multer from 'multer';
-import sharp from 'sharp'; // Necesario para la conversión
+import sharp from 'sharp';
 import { fileURLToPath } from 'url';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { deleteFile } from '../services/imageService.js';
+// --- FIN DE LA MODIFICACIÓN ---
 
-// Simulación de __dirname en ESM
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename); // /app/backend/controllers
+const __dirname = path.dirname(__filename);
 
-// Directorio donde se guardarán las imágenes de comida (incluyendo las de códigos de barras)
 const FOOD_IMAGES_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 
-// Obtener modelos desde db
 const { NutritionLog, WaterLog, FavoriteMeal, sequelize } = db;
 
 // Helper para asegurar que el directorio de subida existe
@@ -30,107 +28,93 @@ const ensureUploadDirExists = async (dirPath) => {
 
 /**
  * Descarga una imagen desde una URL, la convierte a WebP y la guarda localmente.
- * @param {string} imageUrl URL de la imagen original.
- * @param {string} outputDir Directorio donde guardar la imagen WebP.
- * @returns {Promise<string|null>} La URL relativa de la imagen WebP guardada o null si falla.
  */
 const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
   if (!imageUrl) return null;
 
   try {
-    // Asegurar que el directorio existe
     await ensureUploadDirExists(outputDir);
 
-    // Descargar la imagen
     const response = await axios({
       url: imageUrl,
-      responseType: 'arraybuffer' // Importante para obtener los datos binarios
+      responseType: 'arraybuffer'
     });
     const imageBuffer = Buffer.from(response.data);
 
-    // Generar nombre de archivo único para WebP
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const webpFilename = `barcode-${uniqueSuffix}.webp`;
     const outputPath = path.join(outputDir, webpFilename);
 
-    // Convertir a WebP usando Sharp
     await sharp(imageBuffer)
-      .resize(800, 800, { // Opcional: Redimensionar como las otras imágenes
+      .resize(800, 800, {
         fit: sharp.fit.inside,
         withoutEnlargement: true
       })
       .webp({ quality: 75 })
       .toFile(outputPath);
 
-    // Devolver la URL relativa
     return `/images/food/${webpFilename}`;
 
   } catch (error) {
     console.error(`Error al descargar o convertir la imagen ${imageUrl}:`, error.message);
-    // Si falla la descarga o conversión, simplemente no tendremos imagen local.
-    return null; // Devolvemos null para que el frontend sepa que no hay imagen local
+    return null;
   }
 };
 
+/**
+ * Helper para verificar si una imagen está siendo usada por otros registros.
+ */
+const isImageInUse = async (imageUrl, excludeLogId = null) => {
+  if (!imageUrl) return false;
 
-// --- getNutritionLogsByDate, getRecentMeals, getNutritionSummary (sin cambios) ---
+  const whereClause = { image_url: imageUrl };
+  if (excludeLogId) {
+    whereClause.id = { [Op.ne]: excludeLogId };
+  }
+
+  const logsCount = await NutritionLog.count({ where: whereClause });
+  if (logsCount > 0) return true;
+
+  const favsCount = await FavoriteMeal.count({ where: { image_url: imageUrl } });
+  if (favsCount > 0) return true;
+
+  return false;
+};
+
+// --- GETTERS ---
+
 const getNutritionLogsByDate = async (req, res, next) => {
   try {
     const { date } = req.query;
     const { userId } = req.user;
 
-    if (!date) {
-      return res.status(400).json({
-        error: 'La fecha es requerida.',
-      });
-    }
+    if (!date) return res.status(400).json({ error: 'La fecha es requerida.' });
 
     const nutritionLogs = await NutritionLog.findAll({
-      where: {
-        user_id: userId,
-        log_date: date,
-      },
-      order: [
-        ['meal_type', 'ASC'],
-        ['id', 'ASC'],
-      ],
+      where: { user_id: userId, log_date: date },
+      order: [['meal_type', 'ASC'], ['id', 'ASC']],
     });
 
     const waterLog = await WaterLog.findOne({
-      where: {
-        user_id: userId,
-        log_date: date,
-      },
+      where: { user_id: userId, log_date: date },
     });
 
-    res.json({
-      nutrition: nutritionLogs,
-      water: waterLog,
-    });
-
+    res.json({ nutrition: nutritionLogs, water: waterLog });
   } catch (error) {
     next(error);
   }
 };
+
 const getRecentMeals = async (req, res, next) => {
   try {
     const { userId } = req.user;
     const recentLogs = await NutritionLog.findAll({
-      where: {
-        user_id: userId,
-      },
+      where: { user_id: userId },
       limit: 50,
       order: [['id', 'DESC']],
       attributes: [
-        'id',
-        'description',
-        'calories',
-        'protein_g',
-        'carbs_g',
-        'fats_g',
-        'weight_g',
-        'image_url',
-        'micronutrients',
+        'id', 'description', 'calories', 'protein_g', 'carbs_g', 'fats_g',
+        'weight_g', 'image_url', 'micronutrients',
       ],
     });
     const uniqueMeals = [];
@@ -148,16 +132,13 @@ const getRecentMeals = async (req, res, next) => {
     next(error);
   }
 };
+
 const getNutritionSummary = async (req, res, next) => {
   try {
     const { userId } = req.user;
     const { month, year } = req.query;
 
-    if (!month || !year) {
-      return res.status(400).json({
-        error: 'El mes y el año son requeridos.',
-      });
-    }
+    if (!month || !year) return res.status(400).json({ error: 'El mes y el año son requeridos.' });
 
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
@@ -165,9 +146,7 @@ const getNutritionSummary = async (req, res, next) => {
     const nutritionSummary = await NutritionLog.findAll({
       where: {
         user_id: userId,
-        log_date: {
-          [Op.between]: [startDate, endDate],
-        },
+        log_date: { [Op.between]: [startDate, endDate] },
       },
       attributes: [
         ['log_date', 'date'],
@@ -183,21 +162,17 @@ const getNutritionSummary = async (req, res, next) => {
     const waterSummary = await WaterLog.findAll({
       where: {
         user_id: userId,
-        log_date: {
-          [Op.between]: [startDate, endDate],
-        },
+        log_date: { [Op.between]: [startDate, endDate] },
       },
       attributes: ['log_date', 'quantity_ml'],
       order: [['log_date', 'ASC']],
     });
 
     res.json({ nutritionSummary, waterSummary });
-
   } catch (error) {
     next(error);
   }
 };
-// --- Fin de funciones sin cambios ---
 
 /**
  * Añade un nuevo registro de comida.
@@ -206,47 +181,31 @@ const addFoodLog = async (req, res, next) => {
   try {
     const { userId } = req.user;
     const {
-      log_date,
-      meal_type,
-      description,
-      calories,
-      protein_g,
-      carbs_g,
-      fats_g,
-      weight_g,
-      image_url, // URL de código de barras o subida separada
-      micronutrients,
-      calories_per_100g,
-      protein_per_100g,
-      carbs_per_100g,
-      fat_per_100g
+      log_date, meal_type, description, calories, protein_g, carbs_g, fats_g,
+      weight_g, image_url, micronutrients,
+      calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g
     } = req.body;
 
-    // --- INICIO CORRECCIÓN: Validar null strings ---
-    // Si viene de FormData, "null" puede llegar como string. Aseguramos que sea null real.
     let sanitizedImageUrl = image_url;
-    if (sanitizedImageUrl === 'null' || sanitizedImageUrl === '') {
+    if (sanitizedImageUrl === 'null' || sanitizedImageUrl === 'undefined' || sanitizedImageUrl === '') {
       sanitizedImageUrl = null;
     }
 
-    // Priorizar la imagen recién subida y procesada (req.file)
-    // Si no hay, usar la image_url del body (de barcode/separada o null)
     const finalImageUrl = (req.file && req.file.processedPath)
       ? req.file.processedPath
       : sanitizedImageUrl;
-    // --- FIN CORRECCIÓN ---
 
     const foodData = {
       user_id: userId,
       log_date,
       meal_type,
       description,
-      calories: calories || 0, // Default a 0 si es null/undefined
+      calories: calories || 0,
       protein_g: protein_g || null,
       carbs_g: carbs_g || null,
       fats_g: fats_g || null,
       weight_g: weight_g || null,
-      image_url: finalImageUrl, // Usamos la URL final
+      image_url: finalImageUrl,
       micronutrients: micronutrients || null,
       calories_per_100g: calories_per_100g || null,
       protein_per_100g: protein_per_100g || null,
@@ -257,6 +216,10 @@ const addFoodLog = async (req, res, next) => {
     const newLog = await NutritionLog.create(foodData);
     res.status(201).json(newLog);
   } catch (error) {
+    // Si falla la creación y subimos una imagen, la borramos
+    if (req.file && req.file.processedPath) {
+      deleteFile(req.file.processedPath);
+    }
     next(error);
   }
 };
@@ -269,65 +232,32 @@ const updateFoodLog = async (req, res, next) => {
     const { logId } = req.params;
     const { userId } = req.user;
 
-    const log = await NutritionLog.findOne({
-      where: {
-        id: logId,
-        user_id: userId,
-      },
-    });
+    const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
     if (!log) {
-      return res
-        .status(404)
-        .json({ error: 'Registro de comida no encontrado.' });
+      // Si no existe y subimos imagen, limpiar
+      if (req.file && req.file.processedPath) deleteFile(req.file.processedPath);
+      return res.status(404).json({ error: 'Registro de comida no encontrado.' });
     }
 
     const {
-      description,
-      calories,
-      protein_g,
-      carbs_g,
-      fats_g,
-      weight_g,
-      image_url, // La URL del body (puede ser null o de barcode)
-      meal_type,
-      log_date,
-      micronutrients,
-      calories_per_100g,
-      protein_per_100g,
-      carbs_per_100g,
-      fat_per_100g
+      description, calories, protein_g, carbs_g, fats_g, weight_g, image_url,
+      meal_type, log_date, micronutrients,
+      calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g
     } = req.body;
 
-    // Determinar la nueva URL y borrar la antigua
     const oldImageUrl = log.image_url;
     let newImageUrl;
 
     if (req.file && req.file.processedPath) {
-      // 1. Si se subió un archivo nuevo, esa es la URL
       newImageUrl = req.file.processedPath;
     } else if (image_url !== undefined) {
-      // 2. Si se pasó 'image_url' en el body
-      // --- INICIO CORRECCIÓN: Convertir "null" string a null real ---
-      if (image_url === 'null' || image_url === '') {
+      if (image_url === 'null' || image_url === 'undefined' || image_url === '') {
         newImageUrl = null;
       } else {
         newImageUrl = image_url;
       }
-      // --- FIN CORRECCIÓN ---
     } else {
-      // 3. Si no vino ni archivo ni 'image_url' en el body, se mantiene la antigua
       newImageUrl = oldImageUrl;
-    }
-
-    // Si la URL antigua existe Y es diferente de la nueva
-    if (oldImageUrl && oldImageUrl !== newImageUrl) {
-      const oldImagePath = path.join(__dirname, '..', 'public', oldImageUrl);
-      fs.unlink(oldImagePath).catch(err => {
-        // Ignorar error si el archivo no existe (ENOENT), loguear otros errores
-        if (err.code !== 'ENOENT') {
-          console.error(`Error al borrar imagen antigua ${oldImagePath}:`, err);
-        }
-      });
     }
 
     const foodData = {
@@ -337,7 +267,7 @@ const updateFoodLog = async (req, res, next) => {
       carbs_g: carbs_g !== undefined ? carbs_g : log.carbs_g,
       fats_g: fats_g !== undefined ? fats_g : log.fats_g,
       weight_g: weight_g !== undefined ? weight_g : log.weight_g,
-      image_url: newImageUrl, // Usamos la URL nueva o la mantenida
+      image_url: newImageUrl,
       meal_type: meal_type !== undefined ? meal_type : log.meal_type,
       log_date: log_date !== undefined ? log_date : log.log_date,
       micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients,
@@ -348,12 +278,38 @@ const updateFoodLog = async (req, res, next) => {
     };
 
     await log.update(foodData);
+
+    // Propagar cambios a Favoritos
+    const favorite = await FavoriteMeal.findOne({ where: { user_id: userId, name: foodData.description } });
+    if (favorite) {
+      await favorite.update({
+        calories: foodData.calories,
+        protein_g: foodData.protein_g,
+        carbs_g: foodData.carbs_g,
+        fats_g: foodData.fats_g,
+        weight_g: foodData.weight_g,
+        image_url: foodData.image_url,
+        micronutrients: foodData.micronutrients,
+      });
+    }
+
+    // --- Borrado de imagen antigua si cambió y no se usa en otros logs/favoritos ---
+    if (oldImageUrl && oldImageUrl !== newImageUrl) {
+      const inUse = await isImageInUse(oldImageUrl, logId);
+      if (!inUse) {
+        deleteFile(oldImageUrl);
+      }
+    }
+
     res.json(log);
   } catch (error) {
+    // Si falló la actualización y subimos imagen nueva, borrarla
+    if (req.file && req.file.processedPath) {
+      deleteFile(req.file.processedPath);
+    }
     next(error);
   }
 };
-
 
 /**
  * Elimina un registro de comida.
@@ -363,29 +319,24 @@ const deleteFoodLog = async (req, res, next) => {
     const { logId } = req.params;
     const { userId } = req.user;
 
-    const log = await NutritionLog.findOne({
-      where: {
-        id: logId,
-        user_id: userId,
-      },
-    });
+    const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
     if (!log) {
-      return res
-        .status(404)
-        .json({ error: 'Registro de comida no encontrado.' });
+      return res.status(404).json({ error: 'Registro de comida no encontrado.' });
     }
 
-    // Borrar imagen asociada si existe
-    if (log.image_url) {
-      const imagePath = path.join(__dirname, '..', 'public', log.image_url);
-      fs.unlink(imagePath).catch(err => {
-        if (err.code !== 'ENOENT') {
-          console.error(`Error al borrar imagen ${imagePath} al eliminar log:`, err);
-        }
-      });
-    }
+    const imageUrl = log.image_url;
 
     await log.destroy();
+
+    // --- Borrado de imagen si ya no se usa ---
+    if (imageUrl) {
+      // Al haber borrado el log, ya no cuenta en isImageInUse
+      const inUse = await isImageInUse(imageUrl);
+      if (!inUse) {
+        deleteFile(imageUrl);
+      }
+    }
+
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -393,7 +344,7 @@ const deleteFoodLog = async (req, res, next) => {
 };
 
 /**
- * Añade o actualiza la cantidad de agua para un día.
+ * Añade o actualiza la cantidad de agua.
  */
 const upsertWaterLog = async (req, res, next) => {
   try {
@@ -401,18 +352,14 @@ const upsertWaterLog = async (req, res, next) => {
     const { log_date, quantity_ml } = req.body;
 
     if (!log_date || quantity_ml === undefined) {
-      return res
-        .status(400)
-        .json({ error: 'Fecha y cantidad son requeridas.' });
+      return res.status(400).json({ error: 'Fecha y cantidad son requeridas.' });
     }
 
-    // Usamos findOrCreate para simplificar la lógica
     const [waterLog, created] = await WaterLog.findOrCreate({
       where: { user_id: userId, log_date },
       defaults: { quantity_ml }
     });
 
-    // Si no fue creado, significa que existía, así que lo actualizamos
     if (!created) {
       waterLog.quantity_ml = quantity_ml;
       await waterLog.save();
@@ -424,10 +371,8 @@ const upsertWaterLog = async (req, res, next) => {
   }
 };
 
-
 /**
- * Busca un producto por su código de barras usando la API de Open Food Facts,
- * descarga su imagen, la convierte a WebP y la guarda localmente.
+ * Busca producto por código de barras (Open Food Facts).
  */
 const searchByBarcode = async (req, res, next) => {
   try {
@@ -437,59 +382,40 @@ const searchByBarcode = async (req, res, next) => {
     const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
 
     const response = await axios.get(apiUrl);
-    console.log(`[BACKEND] Respuesta de OpenFoodFacts para ${barcode}:`, JSON.stringify(response.data, null, 2));
 
-
-    if (!response.data || response.data.status === 0 || !response.data.product || !response.data.product.product_name) {
-      console.log(`[BACKEND] Producto no encontrado en OFF para ${barcode}`);
-      // Devolvemos 404 pero con un objeto 'product' vacío o con info mínima para consistencia
+    if (!response.data || response.data.status === 0 || !response.data.product) {
       return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
     }
 
     const product = response.data.product;
     const nutriments = product.nutriments || {};
 
-    // Descargar y convertir imagen
     const originalImageUrl = product.image_url || product.image_front_url || null;
     let localImageUrl = null;
     if (originalImageUrl) {
-      console.log(`[BACKEND] Descargando y convirtiendo imagen para ${barcode}: ${originalImageUrl}`);
       localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
-      console.log(`[BACKEND] Imagen local generada para ${barcode}: ${localImageUrl}`);
-    } else {
-      console.log(`[BACKEND] Producto ${barcode} no tiene imagen en OFF.`);
     }
 
     const foodData = {
       product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
       nutriments: nutriments,
-      image_url: localImageUrl, // <-- Usamos la URL local procesada (o null)
+      image_url: localImageUrl,
       serving_quantity: product.serving_quantity || null
     };
 
-    console.log(`[BACKEND] Datos procesados enviados al frontend para ${barcode}:`, JSON.stringify(foodData, null, 2));
-    res.json({ product: foodData }); // Enviar objeto con clave 'product'
+    res.json({ product: foodData });
 
   } catch (error) {
     console.error(`[BACKEND] Error en searchByBarcode para ${req.params.barcode}:`, error.message);
-    if (error.response) {
-      console.error('[BACKEND] Detalles del error de respuesta:', error.response.status, error.response.data);
-      if (error.response.status === 404) {
-        return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
-      }
+    if (error.response && error.response.status === 404) {
+      return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
     }
-    // Para otros errores, pasamos al manejador global
     next(error);
   }
 };
 
-// uploadFoodImage ahora no es necesario como controlador separado,
-// la lógica está en la ruta POST /food/image y en downloadAndConvertToWebP.
-// Mantenemos la exportación por si se usa en otro lado, pero debería estar vacía o eliminarse.
+// Obsoleto, pero mantenido por compatibilidad si es necesario
 const uploadFoodImage = async (req, res, next) => {
-  // Esta función ya no se usa directamente en la ruta /food/image
-  // La URL se devuelve directamente en esa ruta tras procesar con Sharp.
-  console.warn("Llamada a uploadFoodImage - esta función está obsoleta y no debería usarse.");
   if (req.imageUrl) {
     res.status(201).json({ imageUrl: req.imageUrl });
   } else {
@@ -498,84 +424,66 @@ const uploadFoodImage = async (req, res, next) => {
 };
 
 /**
- * Busca en las comidas favoritas (guardadas) del usuario y en Open Food Facts.
+ * Busca en comidas favoritas y Open Food Facts.
  */
 const searchFoods = async (req, res, next) => {
   try {
     const { userId } = req.user;
-    const { q } = req.query; // 'q' ya está validado por el router
+    const { q } = req.query;
 
     console.log(`[BACKEND] Buscando alimentos: "${q}"`);
 
-    // 1. Buscar en las comidas favoritas del usuario
     const favoriteResultsPromise = FavoriteMeal.findAll({
       where: {
         user_id: userId,
-        name: {
-          [Op.like]: `%${q}%` // Búsqueda 'like' (case-insensitive en Postgres/MySQL)
-        }
+        name: { [Op.like]: `%${q}%` }
       },
-      limit: 10 // Limitamos locales
+      limit: 10
     });
 
-    // 2. Buscar en Open Food Facts (API Global)
-    // Usamos la API de búsqueda de OFF
     const offSearchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_es,nutriments,image_url,image_small_url`;
 
     const offResultsPromise = axios.get(offSearchUrl)
       .then(response => {
         if (response.data && response.data.products) {
           return response.data.products.map(p => ({
-            // Mapeamos al formato que el frontend pueda entender (híbrido entre FavoriteMeal y OFF)
-            id: `off-${p.code}`, // ID temporal único
+            id: `off-${p.code}`,
             name: p.product_name_es || p.product_name || 'Sin nombre',
-            // OFF devuelve valores por 100g en nutriments
             calories: p.nutriments?.['energy-kcal_100g'] || 0,
             protein_g: p.nutriments?.proteins_100g || 0,
             carbs_g: p.nutriments?.carbohydrates_100g || 0,
             fats_g: p.nutriments?.fat_100g || 0,
-            // Campos extra útiles
             calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
             protein_per_100g: p.nutriments?.proteins_100g || 0,
             carbs_per_100g: p.nutriments?.carbohydrates_100g || 0,
             fat_per_100g: p.nutriments?.fat_100g || 0,
-
             image_url: p.image_small_url || p.image_url || null,
-            source: 'global', // Flag para saber que viene de fuera
-            weight_g: 100, // Referencia base
+            source: 'global',
+            weight_g: 100,
           }));
         }
         return [];
       })
       .catch(err => {
         console.error("Error buscando en Open Food Facts:", err.message);
-        return []; // Si falla OFF, devolvemos array vacío y no rompemos todo
+        return [];
       });
 
-    // Ejecutamos ambas en paralelo
     const [favoriteResults, offResults] = await Promise.all([favoriteResultsPromise, offResultsPromise]);
 
-    // Marcamos los favoritos como locales
     const formattedFavorites = favoriteResults.map(f => ({
-      ...f.toJSON(), // Convertir instancia Sequelize a objeto plano
+      ...f.toJSON(),
       source: 'local',
-      // Asegurar campos _per_100g si no existen (asumiendo que lo guardado es la porción o base 100g según lógica de tu app)
-      // Si weight_g es 100, los valores son per_100g.
       calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0,
-      // ... puedes calcular el resto si lo necesitas
     }));
 
-    // Combinamos resultados: Primero favoritos, luego globales
     const combinedResults = [...formattedFavorites, ...offResults];
-
     res.json(combinedResults);
 
   } catch (error) {
-    console.error("Error fatal en searchFoods:", error);
     next(error);
   }
 };
-
 
 export default {
   getNutritionLogsByDate,
@@ -586,6 +494,6 @@ export default {
   deleteFoodLog,
   upsertWaterLog,
   searchByBarcode,
-  uploadFoodImage, // Aunque obsoleta, la mantenemos por ahora
+  uploadFoodImage,
   searchFoods,
 };

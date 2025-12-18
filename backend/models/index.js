@@ -19,6 +19,7 @@ import TemplateRoutine from './templateRoutineModel.js';
 import TemplateRoutineExercise from './templateRoutineExerciseModel.js';
 import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
+import UserSession from './userSessionModel.js'; // --- AÑADIDO ---
 // --- ELIMINADO: import TemplateDiet from './templateDietModel.js'; ---
 // --- ELIMINADO: import TemplateDietMeal from './templateDietMealModel.js'; ---
 
@@ -73,6 +74,10 @@ PushSubscription.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(Notification, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Notifications' });
 Notification.belongsTo(User, { foreignKey: 'user_id' });
 
+// --- NUEVA ASOCIACIÓN: User - UserSession ---
+User.hasMany(UserSession, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Sessions' });
+UserSession.belongsTo(User, { foreignKey: 'user_id' });
+
 
 // 3. Exporta un único objeto que contiene todos los modelos
 const models = {
@@ -95,7 +100,8 @@ const models = {
     // --- ELIMINADO: TemplateDietMeal, ---
     CreatinaLog,
     PushSubscription,
-    Notification
+    Notification,
+    UserSession // --- AÑADIDO ---
 };
 
 export default models;

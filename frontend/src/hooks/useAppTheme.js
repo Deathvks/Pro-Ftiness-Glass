@@ -40,9 +40,12 @@ export const useAppTheme = () => {
   // Efecto para APLICAR EL TEMA (theme) al <body>
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const applyTheme = (themeValue) => {
-      document.body.classList.remove('light-theme', 'dark-theme');
+      // --- INICIO DE LA MODIFICACIÓN ---
+      document.body.classList.remove('light-theme', 'dark-theme', 'oled-theme');
+      // --- FIN DE LA MODIFICACIÓN ---
+
       if (themeValue === 'system') {
         document.body.classList.add(mediaQuery.matches ? 'dark-theme' : 'light-theme');
       } else {
@@ -60,7 +63,7 @@ export const useAppTheme = () => {
 
     applyTheme(theme); // Aplicar al cargar o al cambiar 'theme'
     mediaQuery.addEventListener('change', handleSystemThemeChange); // Escuchar cambios del S.O.
-    
+
     // Limpieza
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   }, [theme]); // Se re-ejecuta solo si 'theme' cambia
@@ -70,7 +73,7 @@ export const useAppTheme = () => {
     // Limpiar clases de acento anteriores
     const toRemove = Array.from(document.body.classList).filter(c => c.startsWith('accent-'));
     toRemove.forEach(c => document.body.classList.remove(c));
-    
+
     // Añadir la nueva clase de acento
     document.body.classList.add(`accent-${accent}`);
   }, [accent]); // Se re-ejecuta solo si 'accent' cambia
