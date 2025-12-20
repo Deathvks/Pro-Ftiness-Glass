@@ -9,6 +9,7 @@ import { UAParser } from 'ua-parser-js';
 import models from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
+import { checkStreak, unlockBadge, addXp, DAILY_LOGIN_XP } from '../services/gamificationService.js';
 
 const { User, UserSession } = models;
 
@@ -27,13 +28,11 @@ const createUserSession = async (userId, token, req) => {
     const parser = new UAParser(userAgent);
     const result = parser.getResult();
 
-    // ua-parser-js devuelve undefined para desktop
     const deviceType = result.device.type || 'desktop';
     const browserName = result.browser.name || 'Navegador desconocido';
     const osName = result.os.name || 'SO desconocido';
     const deviceName = `${browserName} en ${osName}`;
 
-    // Buscar si ya existe una sesión para este usuario en este dispositivo (mismo SO y Navegador)
     const existingSession = await UserSession.findOne({
       where: {
         user_id: userId,
@@ -43,14 +42,12 @@ const createUserSession = async (userId, token, req) => {
     });
 
     if (existingSession) {
-      // Actualizamos la sesión existente (nuevo token, ip y fecha)
       await existingSession.update({
         token: token,
         ip_address: ip,
         last_active: new Date()
       });
     } else {
-      // Creamos una nueva sesión si no existe coincidencia
       await UserSession.create({
         user_id: userId,
         token: token,
@@ -62,6 +59,42 @@ const createUserSession = async (userId, token, req) => {
     }
   } catch (error) {
     console.error('Error al gestionar la sesión del usuario:', error);
+  }
+};
+
+// --- HELPER PARA GAMIFICACIÓN DIARIA ---
+const handleDailyLoginGamification = async (user) => {
+  try {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+
+    // Obtenemos la fecha del último login (antes de actualizarla)
+    const lastSeenDate = user.last_seen
+      ? new Date(user.last_seen).toISOString().split('T')[0]
+      : null;
+
+    // Actualizamos last_seen al momento actual
+    await user.update({ last_seen: now });
+
+    // Si ya se logueó hoy, no hacemos nada más (evita spam de XP al recargar)
+    if (lastSeenDate === today) return;
+
+    // Intentamos desbloquear 'first_login'
+    // Si devuelve unlocked: true, es la PRIMERA vez absoluta -> Gana 50 XP (por configuración de badge)
+    const badgeResult = await unlockBadge(user.id, 'first_login');
+
+    if (badgeResult.unlocked) {
+      // Fue la primera vez de todas. Iniciamos racha sin dar XP extra (ya obtuvo los 50 de la badge)
+      await checkStreak(user.id, today);
+    } else {
+      // No es la primera vez absoluta (ya tenía la badge).
+      // Como lastSeenDate !== today, es el primer login DE HOY.
+      // Damos XP diario (25) + procesamos racha.
+      await addXp(user.id, DAILY_LOGIN_XP, 'Login diario');
+      await checkStreak(user.id, today);
+    }
+  } catch (gError) {
+    console.error('Error gamificación en login:', gError);
   }
 };
 
@@ -87,6 +120,15 @@ export const loginUser = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: 'La cuenta no existe.' });
     }
+
+    // --- CORRECCIÓN: Verificar si el usuario tiene contraseña (puede ser usuario de Google) ---
+    if (!user.password_hash) {
+      if (user.google_id) {
+        return res.status(400).json({ error: 'Esta cuenta se creó con Google. Por favor, inicia sesión con Google.' });
+      }
+      return res.status(400).json({ error: 'La cuenta no tiene contraseña configurada.' });
+    }
+    // --- FIN CORRECCIÓN ---
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
@@ -134,12 +176,14 @@ export const loginUser = async (req, res, next) => {
       });
     }
 
-    // Si NO tiene 2FA, genera el token y notifica
     const payload = { userId: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    // Guardar o Actualizar Sesión
     await createUserSession(user.id, token, req);
+
+    // --- MODIFICACIÓN: Gamificación controlada ---
+    await handleDailyLoginGamification(user);
+    // --- FIN MODIFICACIÓN ---
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
@@ -168,12 +212,46 @@ export const googleLogin = async (req, res, next) => {
   }
 
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    const { email, name, sub: googleId, picture } = payload;
+    let googleUser = {};
+
+    // 1. Intentar verificar como ID Token (JWT) - Flujo estándar de botón Google
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      googleUser = {
+        email: payload.email,
+        name: payload.name,
+        googleId: payload.sub,
+        picture: payload.picture
+      };
+    } catch (idTokenError) {
+      // 2. Si falla, intentar verificar como Access Token - Flujo useGoogleLogin
+      try {
+        const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Token inválido');
+        }
+
+        const data = await response.json();
+        googleUser = {
+          email: data.email,
+          name: data.name,
+          googleId: data.sub,
+          picture: data.picture
+        };
+      } catch (accessTokenError) {
+        console.error("Fallo verificación de token Google (ID y Access):", accessTokenError.message);
+        return res.status(401).json({ error: 'Token de Google inválido.' });
+      }
+    }
+
+    const { email, name, googleId, picture } = googleUser;
 
     let user = await User.findOne({ where: { email } });
 
@@ -253,8 +331,11 @@ export const googleLogin = async (req, res, next) => {
     const appPayload = { userId: user.id, role: user.role };
     const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    // Guardar o Actualizar Sesión
     await createUserSession(user.id, appToken, req);
+
+    // --- MODIFICACIÓN: Gamificación controlada ---
+    await handleDailyLoginGamification(user);
+    // --- FIN MODIFICACIÓN ---
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
     if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
@@ -395,10 +476,7 @@ export const verifyEmail = async (req, res, next) => {
     if (user.is_verified) {
       const payload = { userId: user.id, role: user.role };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
-
-      // Guardar o Actualizar Sesión
       await createUserSession(user.id, token, req);
-
       return res.status(200).json({
         message: 'Email ya verificado.',
         token,
@@ -437,8 +515,11 @@ export const verifyEmail = async (req, res, next) => {
     const payload = { userId: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-    // Guardar o Actualizar Sesión
     await createUserSession(user.id, token, req);
+
+    // --- MODIFICACIÓN: Gamificación controlada ---
+    await handleDailyLoginGamification(user);
+    // --- FIN MODIFICACIÓN ---
 
     createNotification(user.id, {
       type: 'success',

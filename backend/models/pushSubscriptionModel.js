@@ -11,7 +11,7 @@ class PushSubscription extends Model {
   static associate(models) {
     // Una suscripción pertenece a un usuario
     PushSubscription.belongsTo(models.User, {
-      foreignKey: 'userId',
+      foreignKey: 'user_id', // Cambiado a snake_case para coincidir con la DB
       onDelete: 'CASCADE', // Si se borra el usuario, se borran sus suscripciones
     });
   }
@@ -24,11 +24,12 @@ PushSubscription.init({
     primaryKey: true,
     type: DataTypes.INTEGER
   },
-  userId: {
+  // Cambiado de userId a user_id para evitar error "Unknown column"
+  user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'users', // Cambiado de 'Users' a 'users' (minúscula)
+      model: 'users', // Referencia a la tabla 'users' en minúscula
       key: 'id',
     },
   },
@@ -48,6 +49,7 @@ PushSubscription.init({
   modelName: 'PushSubscription',
   tableName: 'PushSubscriptions',
   timestamps: true, // Creado por defecto (createdAt, updatedAt)
+  underscored: true, // IMPORTANTE: Fuerza el uso de snake_case (created_at, updated_at)
 });
 
 export default PushSubscription;

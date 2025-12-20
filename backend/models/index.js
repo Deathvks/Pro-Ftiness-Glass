@@ -19,10 +19,8 @@ import TemplateRoutine from './templateRoutineModel.js';
 import TemplateRoutineExercise from './templateRoutineExerciseModel.js';
 import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
-import UserSession from './userSessionModel.js'; // --- AÑADIDO ---
-// --- ELIMINADO: import TemplateDiet from './templateDietModel.js'; ---
-// --- ELIMINADO: import TemplateDietMeal from './templateDietMealModel.js'; ---
-
+import UserSession from './userSessionModel.js';
+import Friendship from './friendshipModel.js'; // --- AÑADIDO ---
 
 // 2. Configuración de las asociaciones (relaciones) con sus alias
 User.hasMany(Routine, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Routines' });
@@ -61,23 +59,23 @@ PersonalRecord.belongsTo(User, { foreignKey: 'user_id' });
 TemplateRoutine.hasMany(TemplateRoutineExercise, { foreignKey: 'template_routine_id', as: 'TemplateRoutineExercises' });
 TemplateRoutineExercise.belongsTo(TemplateRoutine, { foreignKey: 'template_routine_id' });
 
-// --- ELIMINADO: Asociaciones de TemplateDiet y TemplateDietMeal ---
-
 User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
 CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-// Asociación para PushSubscription (usa 'userId' camelCase en la BBDD según la migración)
 User.hasMany(PushSubscription, { foreignKey: 'userId', onDelete: 'CASCADE', as: 'PushSubscriptions' });
 PushSubscription.belongsTo(User, { foreignKey: 'userId' });
 
-// Asociación para Notificaciones Internas (usa 'user_id' snake_case en la BBDD según la migración)
 User.hasMany(Notification, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Notifications' });
 Notification.belongsTo(User, { foreignKey: 'user_id' });
 
-// --- NUEVA ASOCIACIÓN: User - UserSession ---
 User.hasMany(UserSession, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Sessions' });
 UserSession.belongsTo(User, { foreignKey: 'user_id' });
 
+// --- ASOCIACIONES SOCIALES ---
+User.hasMany(Friendship, { foreignKey: 'requester_id', as: 'SentRequests' });
+User.hasMany(Friendship, { foreignKey: 'addressee_id', as: 'ReceivedRequests' });
+Friendship.belongsTo(User, { foreignKey: 'requester_id', as: 'Requester' });
+Friendship.belongsTo(User, { foreignKey: 'addressee_id', as: 'Addressee' });
 
 // 3. Exporta un único objeto que contiene todos los modelos
 const models = {
@@ -96,12 +94,11 @@ const models = {
     FavoriteMeal,
     TemplateRoutine,
     TemplateRoutineExercise,
-    // --- ELIMINADO: TemplateDiet, ---
-    // --- ELIMINADO: TemplateDietMeal, ---
     CreatinaLog,
     PushSubscription,
     Notification,
-    UserSession // --- AÑADIDO ---
+    UserSession,
+    Friendship // --- AÑADIDO ---
 };
 
 export default models;

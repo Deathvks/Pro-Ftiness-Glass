@@ -1,3 +1,4 @@
+/* backend/models/routineModel.js */
 import { DataTypes } from "sequelize";
 import sequelize from "../db.js";
 
@@ -13,7 +14,7 @@ const Routine = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'users', // Nombre de la tabla a la que hace referencia
+        model: 'users',
         key: 'id',
       }
     },
@@ -23,13 +24,22 @@ const Routine = sequelize.define(
     },
     description: {
       type: DataTypes.TEXT,
-      allowNull: true, // La descripción puede ser nula
+      allowNull: true,
     },
+    // --- NUEVOS CAMPOS SOCIALES ---
+    is_public: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
+    },
+    downloads_count: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false
+    }
   },
   {
     tableName: 'routines',
-    // Le decimos a Sequelize que gestione los timestamps,
-    // pero que use los nombres de columna de tu BBDD.
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',

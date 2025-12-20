@@ -1,7 +1,10 @@
 /* frontend/src/pages/Profile.jsx */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, Save, User, Camera, AlertTriangle } from 'lucide-react';
+import {
+  ChevronLeft, ChevronRight, Save, User, Camera, AlertTriangle,
+  Trophy, Flame, Dumbbell, Crown, Star
+} from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -18,12 +21,66 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api')
   ? API_BASE_URL.slice(0, -4)
   : API_BASE_URL;
 
+// --- Configuración de Insignias ---
+const BADGE_DETAILS = {
+  first_login: {
+    name: 'Primer Paso',
+    desc: 'Inicia sesión por primera vez',
+    icon: User,
+    color: 'text-blue-400',
+    bg: 'bg-blue-400/10'
+  },
+  first_workout: {
+    name: 'Primer Sudor',
+    desc: 'Completa tu primer entrenamiento',
+    icon: Dumbbell,
+    color: 'text-green-400',
+    bg: 'bg-green-400/10'
+  },
+  streak_3: {
+    name: 'En Llamas',
+    desc: 'Racha de 3 días',
+    icon: Flame,
+    color: 'text-orange-400',
+    bg: 'bg-orange-400/10'
+  },
+  streak_7: {
+    name: 'Imparable',
+    desc: 'Racha de 7 días',
+    icon: Flame,
+    color: 'text-red-500',
+    bg: 'bg-red-500/10'
+  },
+  streak_30: {
+    name: 'Leyenda',
+    desc: 'Racha de 30 días',
+    icon: Crown,
+    color: 'text-yellow-400',
+    bg: 'bg-yellow-400/10'
+  },
+  nutrition_master: {
+    name: 'Chef',
+    desc: 'Registra 5 comidas',
+    icon: Star,
+    color: 'text-purple-400',
+    bg: 'bg-purple-400/10'
+  },
+  default: {
+    name: 'Insignia',
+    desc: 'Logro desbloqueado',
+    icon: Star,
+    color: 'text-accent',
+    bg: 'bg-accent/10'
+  }
+};
+
 const Profile = ({ onCancel }) => {
-  const { userProfile, fetchInitialData, handleLogout } = useAppStore(
+  const { userProfile, fetchInitialData, handleLogout, gamification } = useAppStore(
     (state) => ({
       userProfile: state.userProfile,
       fetchInitialData: state.fetchInitialData,
       handleLogout: state.handleLogout,
+      gamification: state.gamification,
     }),
   );
   const { addToast } = useToast();
@@ -38,6 +95,27 @@ const Profile = ({ onCancel }) => {
 
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
+  // --- Estado para Paginación de Insignias Responsiva ---
+  // Inicializamos basado en el ancho de la ventana para evitar flash
+  const [itemsPerPage, setItemsPerPage] = useState(() => window.innerWidth < 640 ? 1 : 3);
+  const [badgePage, setBadgePage] = useState(0);
+
+  // Listener para cambiar el número de items al redimensionar
+  useEffect(() => {
+    const handleResize = () => {
+      const newItems = window.innerWidth < 640 ? 1 : 3;
+      setItemsPerPage(newItems);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Resetear página si cambia el número de items para no quedar fuera de rango
+  useEffect(() => {
+    setBadgePage(0);
+  }, [itemsPerPage]);
+
   const openImageModal = () => {
     if (imagePreview) {
       setIsImageModalOpen(true);
@@ -51,15 +129,12 @@ const Profile = ({ onCancel }) => {
     newPassword: '',
   });
 
-  const [modalAction, setModalAction] = useState(null); // 'deleteData' | 'deleteAccount'
+  const [modalAction, setModalAction] = useState(null);
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [modalPassword, setModalPassword] = useState('');
   const [modalError, setModalError] = useState('');
 
-  // --- INICIO DE LA MODIFICACIÓN: Flag de contraseña ---
-  // Obtenemos si el usuario tiene contraseña configurada
   const hasPassword = userProfile?.hasPassword;
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const handleChange = (e) => {
     setErrors({});
@@ -76,7 +151,6 @@ const Profile = ({ onCancel }) => {
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        // 2MB
         addToast('La imagen no debe pesar más de 2MB.', 'error');
         return;
       }
@@ -90,8 +164,7 @@ const Profile = ({ onCancel }) => {
     if (!formData.username.trim()) {
       newErrors.username = 'El nombre de usuario es requerido.';
     } else if (formData.username.length < 3 || formData.username.length > 30) {
-      newErrors.username =
-        'El nombre de usuario debe tener entre 3 y 30 caracteres.';
+      newErrors.username = 'El nombre de usuario debe tener entre 3 y 30 caracteres.';
     } else if (!/^[a-zA-Z0-9_.-]+$/.test(formData.username)) {
       newErrors.username = 'Solo letras, números, _, . y -';
     }
@@ -101,15 +174,11 @@ const Profile = ({ onCancel }) => {
       newErrors.email = 'El formato del email no es válido.';
 
     if (formData.newPassword) {
-      // --- INICIO DE LA MODIFICACIÓN: Validación condicional ---
       if (hasPassword && !formData.currentPassword) {
-        newErrors.currentPassword =
-          'La contraseña actual es requerida para cambiarla.';
+        newErrors.currentPassword = 'La contraseña actual es requerida para cambiarla.';
       }
-      // --- FIN DE LA MODIFICACIÓN ---
       if (formData.newPassword.length < 6) {
-        newErrors.newPassword =
-          'La nueva contraseña debe tener al menos 6 caracteres.';
+        newErrors.newPassword = 'La nueva contraseña debe tener al menos 6 caracteres.';
       }
     }
 
@@ -144,11 +213,9 @@ const Profile = ({ onCancel }) => {
     }
 
     if (formData.newPassword) {
-      // --- INICIO DE LA MODIFICACIÓN: Enviar currentPassword solo si existe ---
       if (hasPassword) {
-          data.append('currentPassword', formData.currentPassword);
+        data.append('currentPassword', formData.currentPassword);
       }
-      // --- FIN DE LA MODIFICACIÓN ---
       data.append('newPassword', formData.newPassword);
     }
 
@@ -170,15 +237,12 @@ const Profile = ({ onCancel }) => {
 
     try {
       await updateUserAccount(data);
-      
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Si se cambió la contraseña, cerramos sesión para obligar al re-login
+
       if (formData.newPassword) {
         addToast('Contraseña actualizada. Por favor, inicia sesión de nuevo.', 'success');
-        handleLogout(); // Esto cambiará isAuthenticated a false y llevará a AuthScreens
+        handleLogout();
         return;
       }
-      // --- FIN DE LA MODIFICACIÓN ---
 
       addToast('Perfil actualizado.', 'success');
       await fetchInitialData();
@@ -209,12 +273,10 @@ const Profile = ({ onCancel }) => {
   };
 
   const handleModalConfirm = async () => {
-    // --- INICIO DE LA MODIFICACIÓN: Validación condicional ---
     if (hasPassword && !modalPassword) {
       setModalError('La contraseña es requerida.');
       return;
     }
-    // --- FIN DE LA MODIFICACIÓN ---
     setIsModalLoading(true);
     setModalError('');
 
@@ -222,13 +284,13 @@ const Profile = ({ onCancel }) => {
       if (modalAction === 'deleteData') {
         await deleteMyData(modalPassword);
         addToast('Todos tus datos han sido borrados.', 'success');
-        await fetchInitialData(); // Recarga los datos (ahora vacíos)
+        await fetchInitialData();
         handleModalClose();
       } else if (modalAction === 'deleteAccount') {
         await deleteMyAccount(modalPassword);
         addToast('Tu cuenta ha sido borrada permanentemente.', 'success');
         handleModalClose();
-        handleLogout(); // Desloguea al usuario
+        handleLogout();
       }
     } catch (error) {
       setModalError(error.message || 'Ha ocurrido un error.');
@@ -243,15 +305,8 @@ const Profile = ({ onCancel }) => {
   return (
     <>
       <Helmet>
-        <title>{`Editar Perfil: ${
-          formData.username || 'Usuario'
-        } - Pro Fitness Glass`}</title>
-        <meta
-          name="description"
-          content={`Edita tu foto de perfil, nombre de usuario (${
-            formData.username || 'Usuario'
-          }), email y contraseña en Pro Fitness Glass.`}
-        />
+        <title>{`Editar Perfil: ${formData.username || 'Usuario'
+          } - Pro Fitness Glass`}</title>
       </Helmet>
 
       <div className="w-full max-w-4xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-6 sm:mt-0">
@@ -289,7 +344,7 @@ const Profile = ({ onCancel }) => {
                   <img
                     src={
                       imagePreview.startsWith('blob:') ||
-                      imagePreview.startsWith('http')
+                        imagePreview.startsWith('http')
                         ? imagePreview
                         : `${BACKEND_BASE_URL}${imagePreview}`
                     }
@@ -322,10 +377,7 @@ const Profile = ({ onCancel }) => {
               <h2 className="text-lg font-bold mb-4">Datos Básicos</h2>
               <div className="flex flex-col gap-4">
                 <div>
-                  <label
-                    htmlFor="username"
-                    className="block text-sm font-medium text-text-secondary mb-2"
-                  >
+                  <label htmlFor="username" className="block text-sm font-medium text-text-secondary mb-2">
                     Nombre de usuario
                   </label>
                   <input
@@ -342,10 +394,7 @@ const Profile = ({ onCancel }) => {
                   )}
                 </div>
                 <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-text-secondary mb-2"
-                  >
+                  <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-2">
                     Email
                   </label>
                   <input
@@ -368,18 +417,14 @@ const Profile = ({ onCancel }) => {
                 {hasPassword ? 'Cambiar Contraseña' : 'Establecer Contraseña'}
               </h2>
               <p className="text-sm text-text-secondary mb-4 -mt-3">
-                {hasPassword 
-                  ? 'Deja los campos en blanco si no quieres cambiar tu contraseña.' 
+                {hasPassword
+                  ? 'Deja los campos en blanco si no quieres cambiar tu contraseña.'
                   : 'Añade una contraseña para poder iniciar sesión con tu email.'}
               </p>
               <div className="flex flex-col gap-4">
-                {/* --- INICIO DE LA MODIFICACIÓN: Input condicional --- */}
                 {hasPassword && (
                   <div>
-                    <label
-                      htmlFor="currentPassword"
-                      className="block text-sm font-medium text-text-secondary mb-2"
-                    >
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-text-secondary mb-2">
                       Contraseña Actual
                     </label>
                     <input
@@ -397,12 +442,8 @@ const Profile = ({ onCancel }) => {
                     )}
                   </div>
                 )}
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
                 <div>
-                  <label
-                    htmlFor="newPassword"
-                    className="block text-sm font-medium text-text-secondary mb-2"
-                  >
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-text-secondary mb-2">
                     {hasPassword ? 'Nueva Contraseña' : 'Contraseña'}
                   </label>
                   <input
@@ -439,13 +480,91 @@ const Profile = ({ onCancel }) => {
           </form>
         </GlassCard>
 
+        {/* --- Sección de Insignias (Con Paginación Responsiva) --- */}
+        <GlassCard className="p-6 mt-8">
+          <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+            <Trophy size={20} className="text-accent" />
+            Insignias Desbloqueadas
+          </h3>
+
+          {gamification?.unlockedBadges && gamification.unlockedBadges.length > 0 ? (
+            (() => {
+              const unlockedBadges = gamification.unlockedBadges;
+              const totalPages = Math.ceil(unlockedBadges.length / itemsPerPage);
+              const currentBadges = unlockedBadges.slice(
+                badgePage * itemsPerPage,
+                (badgePage + 1) * itemsPerPage
+              );
+
+              return (
+                <div className="relative px-8">
+                  {/* Flechas de Navegación */}
+                  {totalPages > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setBadgePage(p => Math.max(0, p - 1))}
+                        disabled={badgePage === 0}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-full text-text-secondary hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft size={24} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBadgePage(p => Math.min(totalPages - 1, p + 1))}
+                        disabled={badgePage === totalPages - 1}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-full text-text-secondary hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight size={24} />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Grid de Insignias (Adaptable: 1 columna en móvil, 3 en escritorio) */}
+                  <div className={`grid gap-4 ${itemsPerPage === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
+                    {currentBadges.map((badgeId) => {
+                      const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
+                      return (
+                        <div key={badgeId} className={`flex flex-col items-center text-center p-3 rounded-xl border border-white/5 ${badge.bg}`}>
+                          <div className={`p-2 rounded-full mb-2 bg-bg-secondary ${badge.color}`}>
+                            <badge.icon size={24} />
+                          </div>
+                          <span className="font-bold text-sm text-text-primary line-clamp-1">{badge.name}</span>
+                          <span className="text-xs text-text-secondary line-clamp-2">{badge.desc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Indicadores de Página */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center gap-2 mt-4">
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-1.5 h-1.5 rounded-full transition-colors ${i === badgePage ? 'bg-accent' : 'bg-white/20'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          ) : (
+            <div className="text-center p-4 border border-dashed border-glass-border rounded-xl">
+              <p className="text-text-muted text-sm">Aún no has desbloqueado ninguna insignia. ¡Sigue entrenando!</p>
+            </div>
+          )}
+        </GlassCard>
+        {/* --- FIN Sección de Insignias --- */}
+
         <GlassCard className="p-6 mt-8 border border-red-500/50">
           <h3 className="text-xl font-bold text-red-500 mb-4 flex items-center gap-2">
             <AlertTriangle size={20} />
             Zona de Peligro
           </h3>
           <div className="flex flex-col gap-4">
-            {/* Borrar Datos */}
             <div className="flex-1">
               <p className="text-sm text-text-secondary mb-2">
                 Borra todos tus datos (entrenamientos, nutrición, etc.) pero
@@ -460,7 +579,6 @@ const Profile = ({ onCancel }) => {
               </button>
             </div>
 
-            {/* Borrar Cuenta */}
             <div className="flex-1">
               <p className="text-sm text-text-secondary mb-2">
                 Borra permanentemente tu cuenta y todos tus datos. Esta acción
@@ -488,14 +606,14 @@ const Profile = ({ onCancel }) => {
         handleModalClose={handleModalClose}
         handleModalConfirm={handleModalConfirm}
         baseInputClasses={baseInputClasses}
-        hasPassword={hasPassword} // --- INICIO DE LA MODIFICACIÓN: Pasar prop ---
+        hasPassword={hasPassword}
       />
 
       {isImageModalOpen && (
         <ProfileImageModal
           imageUrl={
             imagePreview?.startsWith('blob:') ||
-            imagePreview?.startsWith('http')
+              imagePreview?.startsWith('http')
               ? imagePreview
               : `${BACKEND_BASE_URL}${imagePreview}`
           }
@@ -507,9 +625,6 @@ const Profile = ({ onCancel }) => {
   );
 };
 
-/**
- * Modal de confirmación que solicita contraseña para acciones destructivas.
- */
 const DeleteConfirmationModal = ({
   modalAction,
   isModalLoading,
@@ -520,18 +635,16 @@ const DeleteConfirmationModal = ({
   handleModalClose,
   handleModalConfirm,
   baseInputClasses,
-  hasPassword, // --- INICIO DE LA MODIFICACIÓN: Recibir prop ---
+  hasPassword,
 }) => {
   if (!modalAction) return null;
 
   const isDeleteAccount = modalAction === 'deleteAccount';
   const title = isDeleteAccount ? 'Borrar Cuenta' : 'Borrar Datos';
-  
-  // --- INICIO DE LA MODIFICACIÓN: Texto condicional ---
-  const passwordText = hasPassword 
-    ? ' Escribe tu contraseña actual para confirmar.' 
+
+  const passwordText = hasPassword
+    ? ' Escribe tu contraseña actual para confirmar.'
     : '';
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const message = isDeleteAccount
     ? `¿Estás ABSOLUTAMENTE seguro? Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente.${passwordText}`
@@ -541,15 +654,13 @@ const DeleteConfirmationModal = ({
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-[fade-in_0.2s_ease-out]">
       <GlassCard className="w-full max-w-md p-6 sm:p-8">
         <h3
-          className={`text-2xl font-bold mb-4 ${
-            isDeleteAccount ? 'text-red-500' : 'text-accent'
-          }`}
+          className={`text-2xl font-bold mb-4 ${isDeleteAccount ? 'text-red-500' : 'text-accent'
+            }`}
         >
           {title}
         </h3>
         <p className="text-text-secondary mb-6">{message}</p>
 
-        {/* --- INICIO DE LA MODIFICACIÓN: Input condicional --- */}
         {hasPassword && (
           <div>
             <label
@@ -572,7 +683,6 @@ const DeleteConfirmationModal = ({
             {modalError && <p className="form-error-text mt-1">{modalError}</p>}
           </div>
         )}
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         <div className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
           <button
@@ -585,17 +695,15 @@ const DeleteConfirmationModal = ({
           <button
             onClick={handleModalConfirm}
             disabled={isModalLoading}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition w-full sm:w-auto ${
-              isDeleteAccount
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-accent text-bg-secondary hover:opacity-90'
-            }`}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition w-full sm:w-auto ${isDeleteAccount
+              ? 'bg-red-600 text-white hover:bg-red-700'
+              : 'bg-accent text-bg-secondary hover:opacity-90'
+              }`}
           >
             {isModalLoading ? (
               <Spinner size={18} />
             ) : (
-              `Confirmar ${
-                isDeleteAccount ? 'Borrado de Cuenta' : 'Borrado de Datos'
+              `Confirmar ${isDeleteAccount ? 'Borrado de Cuenta' : 'Borrado de Datos'
               }`
             )}
           </button>

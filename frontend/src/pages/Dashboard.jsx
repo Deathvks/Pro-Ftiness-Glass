@@ -1,19 +1,22 @@
 /* frontend/src/pages/Dashboard.jsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
     Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
     Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle,
-    ArrowUp, ArrowDown, Minus, ChevronRight, Trophy, Check
+    ArrowUp, ArrowDown, Minus, ChevronRight, Trophy, Check, Crown, Star,
+    Info
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
 import { isSameDay } from '../utils/helpers';
 import useAppStore from '../store/useAppStore';
+import { getXpRequiredForLevel } from '../store/gamificationSlice';
 import CircularProgress from '../components/CircularProgress';
 import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
+import XPGuideModal from '../components/XPGuideModal';
 import * as nutritionService from '../services/nutritionService';
 import { useToast } from '../hooks/useToast';
 
@@ -24,7 +27,10 @@ const Dashboard = ({ setView }) => {
         updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
         waterLog, todaysCreatineLog, fetchDataForDate,
         completedRoutineIdsToday,
-        activeWorkout
+        activeWorkout,
+        gamification,
+        checkStreak,
+        addXp
     } = useAppStore(state => ({
         routines: state.routines,
         workoutLog: state.workoutLog,
@@ -40,10 +46,39 @@ const Dashboard = ({ setView }) => {
         fetchDataForDate: state.fetchDataForDate,
         completedRoutineIdsToday: state.completedRoutineIdsToday,
         activeWorkout: state.activeWorkout,
+        gamification: state.gamification,
+        checkStreak: state.checkStreak,
+        addXp: state.addXp
     }));
 
     const [showWeightModal, setShowWeightModal] = useState(false);
+    const [showXPModal, setShowXPModal] = useState(false);
     const [modal, setModal] = useState({ type: null });
+
+    // Verificar racha al montar el dashboard
+    useEffect(() => {
+        if (checkStreak) {
+            checkStreak(new Date().toISOString().split('T')[0]);
+        }
+    }, [checkStreak]);
+
+    // Cálculos de Gamificación
+    const levelData = useMemo(() => {
+        const level = gamification?.level || 1;
+        const xp = gamification?.xp || 0;
+        const streak = gamification?.streak || 0;
+
+        const currentLevelStart = getXpRequiredForLevel(level);
+        const nextLevelStart = getXpRequiredForLevel(level + 1);
+
+        const xpNeededForLevel = nextLevelStart - currentLevelStart;
+        const xpProgress = xp - currentLevelStart;
+
+        const percentage = Math.min(100, Math.max(0, (xpProgress / xpNeededForLevel) * 100));
+
+        return { level, xp, streak, percentage, xpProgress, xpNeededForLevel };
+    }, [gamification]);
+
 
     const sortedWeightLog = useMemo(() =>
         [...bodyWeightLog].sort((a, b) => new Date(b.log_date) - new Date(a.log_date)),
@@ -117,7 +152,6 @@ const Dashboard = ({ setView }) => {
             : { icon: ArrowDown, color: 'text-text-secondary' };
     };
 
-    // --- Lógica de la semana actual ---
     const weekDays = useMemo(() => {
         const today = new Date();
         const day = today.getDay(); // 0 (Domingo) - 6 (Sábado)
@@ -178,6 +212,10 @@ const Dashboard = ({ setView }) => {
         setModal({ type: 'submitting' });
         try {
             await nutritionService.upsertWaterLog({ log_date: new Date().toISOString().split('T')[0], quantity_ml });
+
+            if (addXp) addXp(5);
+            if (checkStreak) checkStreak(new Date().toISOString().split('T')[0]);
+
             addToast('Registro de agua actualizado.', 'success');
             await fetchDataForDate(new Date().toISOString().split('T')[0]);
         } catch (error) {
@@ -188,21 +226,62 @@ const Dashboard = ({ setView }) => {
     };
 
     return (
-        // FIX: Ajustado pb-20 a pb-6. El layout principal ya maneja el espacio del navbar.
         <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-6 md:p-8 lg:p-10 animate-[fade-in_0.5s_ease-out]">
             <Helmet>
                 <title>Dashboard - Pro Fitness Glass</title>
                 <meta name="description" content="Tu resumen diario de actividad física, nutrición, peso corporal y acceso rápido a tus rutinas y entrenamientos." />
             </Helmet>
 
-            {/* Header Section */}
-            <div className="mb-8 hidden md:block">
-                <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary inline-block">
-                    Dashboard
-                </h1>
-                <p className="text-text-secondary mt-2">
-                    Bienvenido de nuevo, <span className="text-accent font-semibold">{userProfile?.username || 'Atleta'}</span>.
-                </p>
+            {/* Header + Gamification Card */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="hidden md:inline-block text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
+                        Dashboard
+                    </h1>
+                    <p className="text-text-secondary mt-1">
+                        Bienvenido, <span className="text-accent font-semibold">{userProfile?.username || 'Atleta'}</span>.
+                    </p>
+                </div>
+
+                <GlassCard className="p-3 md:p-4 flex items-center gap-4 min-w-[280px] bg-gradient-to-br from-bg-secondary/80 to-accent/5 border-accent/20">
+                    <div className="relative">
+                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-accent/20 flex items-center justify-center border-2 border-accent text-accent font-black text-xl md:text-2xl shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]">
+                            {levelData.level}
+                        </div>
+                        <div className="absolute -top-2 -right-2 bg-bg-primary rounded-full p-1 border border-glass-border shadow-sm">
+                            <Crown size={14} className="text-amber-400 fill-amber-400" />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center mb-1">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Nivel {levelData.level}</span>
+                                <button
+                                    onClick={() => setShowXPModal(true)}
+                                    className="text-text-muted hover:text-accent transition-colors p-0.5 rounded-full hover:bg-white/5"
+                                    aria-label="Ver guía de XP"
+                                >
+                                    <Info size={14} />
+                                </button>
+                            </div>
+                            <span className="text-xs font-medium text-text-muted">{levelData.xpProgress} / {levelData.xpNeededForLevel} XP</span>
+                        </div>
+                        <div className="h-2 w-full bg-bg-primary rounded-full overflow-hidden border border-glass-border/50">
+                            <div
+                                className="h-full bg-gradient-to-r from-accent to-accent-light transition-all duration-1000 ease-out"
+                                style={{ width: `${levelData.percentage}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center pl-3 border-l border-glass-border">
+                        <div className={`transition-all duration-500 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.5)]' : 'text-text-muted opacity-50'}`}>
+                            <Flame size={24} fill={levelData.streak > 0 ? "currentColor" : "none"} />
+                        </div>
+                        <span className="text-xs font-bold mt-0.5">{levelData.streak} días</span>
+                    </div>
+                </GlassCard>
             </div>
 
             {/* Stats Cards */}
@@ -436,7 +515,9 @@ const Dashboard = ({ setView }) => {
                                                         {new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
                                                     </span>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-bold text-text-primary">{parseFloat(log.weight_kg).toFixed(1)}</span>
+                                                        <span className="font-bold text-text-primary">
+                                                            {parseFloat(log.weight_kg).toFixed(1)} <span className="text-xs font-normal text-text-muted">kg</span>
+                                                        </span>
                                                         {trend && <trend.icon size={14} className={trend.color} />}
                                                     </div>
                                                 </div>
@@ -456,6 +537,8 @@ const Dashboard = ({ setView }) => {
             </div>
 
             {/* Modals */}
+            {showXPModal && <XPGuideModal onClose={() => setShowXPModal(false)} />}
+
             {showWeightModal &&
                 <BodyWeightModal
                     onClose={() => setShowWeightModal(false)}

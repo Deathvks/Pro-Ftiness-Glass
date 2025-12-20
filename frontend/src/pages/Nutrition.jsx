@@ -26,6 +26,10 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
 
     const isToday = today.toISOString().split('T')[0] === selectedDate;
 
+    // Formatear fecha con la primera letra en mayúscula
+    const dateString = date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    const formattedDate = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+
     return (
         <div className="flex items-center justify-between mb-8 mt-6 sm:mt-0">
             <button onClick={() => changeDay(-1)} className="p-2 rounded-full hover:bg-white/10 transition">
@@ -33,7 +37,7 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
             </button>
             <div className="text-center">
                 <p className="text-xl font-bold">
-                    {date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {formattedDate}
                 </p>
                 {isToday && <span className="text-xs font-semibold text-accent">HOY</span>}
             </div>
@@ -62,7 +66,6 @@ const getImageUrl = (url, updatedAt) => {
     return fullUrl;
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Nuevo componente para manejar la carga de imágenes y errores (evita el cuadro negro)
 const MealImage = ({ src, alt, className, onClick }) => {
     const [hasError, setHasError] = useState(false);
@@ -97,7 +100,6 @@ const MealImage = ({ src, alt, className, onClick }) => {
         </div>
     );
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 // Componente principal de la página de Nutrición
 const Nutrition = ({ setView }) => {
@@ -111,7 +113,11 @@ const Nutrition = ({ setView }) => {
         isLoading,
         bodyWeightLog,
         favoriteMeals,
-        recentMeals
+        recentMeals,
+        // --- INICIO DE LA MODIFICACIÓN: Importar acciones de favoritos ---
+        addFavoriteMeal,
+        deleteFavoriteMeal,
+        // --- FIN DE LA MODIFICACIÓN ---
     } = useAppStore(state => ({
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
@@ -121,7 +127,11 @@ const Nutrition = ({ setView }) => {
         isLoading: state.isLoading,
         bodyWeightLog: state.bodyWeightLog,
         favoriteMeals: state.favoriteMeals || [],
-        recentMeals: state.recentMeals || []
+        recentMeals: state.recentMeals || [],
+        // --- INICIO DE LA MODIFICACIÓN ---
+        addFavoriteMeal: state.addFavoriteMeal,
+        deleteFavoriteMeal: state.deleteFavoriteMeal,
+        // --- FIN DE LA MODIFICACIÓN ---
     }));
 
     const [modal, setModal] = useState({ type: null, data: null });
@@ -204,6 +214,59 @@ const Nutrition = ({ setView }) => {
         setIsSubmitting(true);
         try {
             const isArray = Array.isArray(formDataOrArray);
+
+            // --- INICIO DE LA MODIFICACIÓN: Gestión robusta de favoritos ---
+            const processFavorites = async (food) => {
+                // Normalizar banderas: puede venir como 'isFavorite' o 'saveAsFavorite'
+                const shouldBeFavorite = food.isFavorite || food.saveAsFavorite;
+
+                if (shouldBeFavorite) {
+                    try {
+                        // Verificar si ya existe para no duplicar (chequeo simple por nombre)
+                        const alreadyExists = favoriteMeals.some(
+                            f => f.name.toLowerCase().trim() === food.description.toLowerCase().trim()
+                        );
+
+                        if (!alreadyExists) {
+                            await addFavoriteMeal({
+                                name: food.description,
+                                calories: food.calories,
+                                protein_g: food.protein_g,
+                                carbs_g: food.carbs_g,
+                                fats_g: food.fats_g,
+                                weight_g: food.weight_g,
+                                image_url: food.image_url,
+                                micronutrients: food.micronutrients // Si están disponibles
+                            });
+                            // No mostramos toast aquí para no saturar, ya que "Comida añadida" saldrá al final
+                        }
+                    } catch (err) {
+                        console.error("Error guardando favorito en background:", err);
+                        // No fallamos toda la operación por esto, pero lo logueamos
+                    }
+                }
+                // Si el usuario lo desmarcó (solo aplica en ediciones donde sepamos que era favorito)
+                else if (food.wasInitiallyFavorite && !shouldBeFavorite) {
+                    // Buscar el ID del favorito para borrarlo
+                    const favToDelete = favoriteMeals.find(
+                        f => f.name.toLowerCase().trim() === food.description.toLowerCase().trim()
+                    );
+                    if (favToDelete) {
+                        try {
+                            await deleteFavoriteMeal(favToDelete.id);
+                        } catch (err) {
+                            console.error("Error eliminando favorito en background:", err);
+                        }
+                    }
+                }
+            };
+
+            const foodsToProcess = isArray ? formDataOrArray : [formDataOrArray];
+
+            // Procesar favoritos en paralelo pero sin bloquear el guardado principal si fallan
+            // Usamos map para disparar las promesas
+            foodsToProcess.forEach(food => processFavorites(food));
+            // --- FIN DE LA MODIFICACIÓN ---
 
             if (modal.data?.id) {
                 const formData = isArray ? formDataOrArray[0] : formDataOrArray;
@@ -304,7 +367,7 @@ const Nutrition = ({ setView }) => {
             </Helmet>
 
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 mt-10 md:mt-0 gap-4">
-                <h1 className="hidden md:block text-4xl font-extrabold">Nutrición</h1>
+                <h1 className="hidden md:block text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">Nutrición</h1>
                 <button
                     onClick={() => setView('templateDiets')}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-white font-bold shadow-lg shadow-accent/20 hover:brightness-110 transition-all w-full md:w-auto justify-center"
@@ -439,12 +502,12 @@ const Nutrition = ({ setView }) => {
 
             {/* Modal de Detalle de Comida */}
             {viewLog && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
                     <div className="absolute inset-0" onClick={() => setViewLog(null)} />
-                    <GlassCard className="w-full max-w-md p-0 overflow-hidden relative z-10 animate-scale-in flex flex-col max-h-[90vh]">
+                    <GlassCard className="w-full max-w-md p-0 overflow-hidden relative z-10 animate-scale-in flex flex-col max-h-[85vh] sm:max-h-[90vh]">
 
                         {/* Cabecera con Imagen */}
-                        <div className="relative h-64 bg-black/50 flex items-center justify-center">
+                        <div className="relative h-64 bg-black/50 flex items-center justify-center shrink-0">
                             {/* Uso de MealImage con fallback manual si falla o no hay imagen para mostrar el icono */}
                             {getLogImage(viewLog) ? (
                                 <img
@@ -474,7 +537,7 @@ const Nutrition = ({ setView }) => {
                         </div>
 
                         {/* Contenido */}
-                        <div className="p-6 overflow-y-auto">
+                        <div className="p-6 overflow-y-auto flex-1 min-h-0">
                             <div className="flex items-center justify-between mb-6 pb-4 border-b border-glass-border">
                                 <div className="flex flex-col">
                                     <span className="text-sm text-text-secondary">Calorías Totales</span>
@@ -514,7 +577,8 @@ const Nutrition = ({ setView }) => {
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-glass-border bg-bg-secondary/30">
+                        {/* Footer */}
+                        <div className="p-4 border-t border-glass-border bg-bg-secondary/30 shrink-0">
                             <button
                                 onClick={() => setViewLog(null)}
                                 className="w-full py-3 rounded-xl bg-bg-secondary hover:bg-white/5 border border-glass-border font-semibold transition-colors"

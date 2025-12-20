@@ -2,6 +2,9 @@
 import { validationResult } from 'express-validator';
 import { Op } from 'sequelize'; // Importamos Op para los operadores de consulta
 import models from '../models/index.js';
+// --- INICIO MODIFICACIÓN: Importar servicios de gamificación ---
+import { addXp, checkStreak, unlockBadge, WORKOUT_COMPLETION_XP } from '../services/gamificationService.js';
+// --- FIN MODIFICACIÓN ---
 
 // --- INICIO DE LA MODIFICACIÓN (Lógica 1RM) ---
 // Importamos la función para calcular el 1RM desde el frontend (ajusta la ruta si es necesario)
@@ -253,6 +256,22 @@ export const logWorkoutSession = async (req, res, next) => {
     }
 
     await t.commit();
+
+    // --- INICIO MODIFICACIÓN: Gamificación Workout ---
+    // Se ejecuta fuera de la transacción principal para no bloquear si falla
+    try {
+      // Usamos fecha YYYY-MM-DD consistente
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+
+      await addXp(userId, WORKOUT_COMPLETION_XP, 'Entrenamiento completado'); // AÑADIDO: motivo
+      await checkStreak(userId, todayStr);
+      await unlockBadge(userId, 'first_workout');
+    } catch (gamificationError) {
+      console.error('Error al actualizar gamificación en workout:', gamificationError);
+    }
+    // --- FIN MODIFICACIÓN ---
+
     res.status(201).json({
       message: 'Entrenamiento guardado con éxito',
       workoutId: newWorkoutLog.id,
@@ -315,7 +334,6 @@ export const deleteWorkoutLog = async (req, res, next) => {
         const newBestLogDetail = await WorkoutLogDetail.findOne({
           include: [{
             model: WorkoutLog,
-            as: 'WorkoutLog',
             as: 'WorkoutLog',
             where: { user_id: userId },
             attributes: []

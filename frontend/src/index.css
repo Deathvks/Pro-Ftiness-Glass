@@ -50,8 +50,11 @@
   --bg-primary: #f7fafc;
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
+  /* Slate 900 (Casi negro) */
+  --text-secondary: #64748b;
+  /* Slate 500 (Gris azulado medio) - Más claro para contraste */
+  --text-muted: #94a3b8;
+  /* Slate 400 (Gris azulado claro) */
 
   --glass-border: rgba(0, 0, 0, 0.09);
   --glass-bg: rgba(255, 255, 255, 0.7);

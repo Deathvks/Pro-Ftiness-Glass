@@ -1,6 +1,10 @@
+/* backend/controllers/creatinaController.js */
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 import { Op } from 'sequelize';
+// --- INICIO MODIFICACIÓN ---
+import { addXp, checkStreak } from '../services/gamificationService.js';
+// --- FIN MODIFICACIÓN ---
 
 const { CreatinaLog } = models;
 
@@ -16,7 +20,7 @@ export const getCreatinaLogs = async (req, res, next) => {
         [Op.between]: [startDate, endDate]
       };
     }
-    
+
     // Si no se especifican fechas, aplicamos el límite por defecto de 30
     const logs = await CreatinaLog.findAll({
       where: whereClause,
@@ -60,6 +64,17 @@ export const createCreatinaLog = async (req, res, next) => {
       grams,
       notes
     });
+
+    // --- INICIO MODIFICACIÓN: Gamificación ---
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      // 5 XP por registrar creatina
+      await addXp(userId, 5, 'Creatina registrada');
+      await checkStreak(userId, todayStr);
+    } catch (gError) {
+      console.error('Error gamificación en createCreatinaLog:', gError);
+    }
+    // --- FIN MODIFICACIÓN ---
 
     res.status(201).json({
       message: 'Registro de creatina creado exitosamente',
@@ -125,91 +140,91 @@ export const deleteCreatinaLog = async (req, res, next) => {
 };
 
 export const getCreatinaStats = async (req, res, next) => {
-    try {
-        const { userId } = req.user;
+  try {
+    const { userId } = req.user;
 
-        const allLogs = await CreatinaLog.findAll({
-            where: { user_id: userId },
-            order: [['log_date', 'DESC'], ['id', 'DESC']],
-        });
+    const allLogs = await CreatinaLog.findAll({
+      where: { user_id: userId },
+      order: [['log_date', 'DESC'], ['id', 'DESC']],
+    });
 
-        if (allLogs.length === 0) {
-            return res.json({
-                data: { totalDays: 0, currentStreak: 0, averageGrams: 0, thisWeekDays: 0 }
-            });
-        }
-        
-        // Usamos un Map para agrupar tomas por día y sumar gramos
-        const dailyTotals = new Map();
-        allLogs.forEach(log => {
-            const date = log.log_date;
-            if (!dailyTotals.has(date)) {
-                dailyTotals.set(date, 0);
-            }
-            dailyTotals.set(date, dailyTotals.get(date) + parseFloat(log.grams));
-        });
-
-        const uniqueDates = [...dailyTotals.keys()].sort((a, b) => new Date(b) - new Date(a));
-        
-        const totalDays = uniqueDates.length;
-        const totalGrams = allLogs.reduce((sum, log) => sum + parseFloat(log.grams), 0);
-        // El promedio debe ser por DÍA, no por TOMA.
-        const averageGrams = totalDays > 0 ? totalGrams / totalDays : 0;
-        
-        let currentStreak = 0;
-        if (uniqueDates.length > 0) {
-            // Obtener la fecha de hoy en UTC para una comparación consistente
-            const todayUTC = new Date(new Date().toISOString().split('T')[0]);
-            const lastLogDate = new Date(uniqueDates[0]);
-
-            const timeDiff = todayUTC.getTime() - lastLogDate.getTime();
-            const dayDiff = Math.round(timeDiff / (1000 * 3600 * 24));
-
-            if (dayDiff <= 1) {
-                currentStreak = 1;
-                for (let i = 0; i < uniqueDates.length - 1; i++) {
-                    const date1 = new Date(uniqueDates[i]);
-                    const date2 = new Date(uniqueDates[i+1]);
-                    const diffDays = (date1.getTime() - date2.getTime()) / (1000 * 3600 * 24);
-                    
-                    if (diffDays === 1) {
-                        currentStreak++;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // Cálculo de la semana actual (de Lunes a Hoy)
-        const todayForWeek = new Date();
-        const dayOfWeek = todayForWeek.getUTCDay(); // 0=Dom, 1=Lun, ...
-        // Ajuste para que Lunes sea 0 (0 -> 6, 1 -> 0, 2 -> 1, ...)
-        const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1; 
-        
-        const startOfWeek = new Date(todayForWeek);
-        startOfWeek.setUTCDate(todayForWeek.getUTCDate() - offset);
-        startOfWeek.setUTCHours(0, 0, 0, 0); // Inicio del lunes
-        
-        // Convertimos las fechas únicas a objetos Date para comparar
-        const thisWeekDays = uniqueDates.filter(dateStr => {
-            const logDate = new Date(dateStr);
-            logDate.setUTCHours(0, 0, 0, 0); // Asegurar comparación solo por fecha
-            return logDate >= startOfWeek && logDate <= todayForWeek;
-        }).length;
-        
-        res.json({
-            data: {
-                totalDays,
-                currentStreak,
-                averageGrams, // Promedio por día, no por toma
-                thisWeekDays,
-            }
-        });
-    } catch (error) {
-        console.error('Error detallado en getCreatinaStats:', error);
-        next(error);
+    if (allLogs.length === 0) {
+      return res.json({
+        data: { totalDays: 0, currentStreak: 0, averageGrams: 0, thisWeekDays: 0 }
+      });
     }
+
+    // Usamos un Map para agrupar tomas por día y sumar gramos
+    const dailyTotals = new Map();
+    allLogs.forEach(log => {
+      const date = log.log_date;
+      if (!dailyTotals.has(date)) {
+        dailyTotals.set(date, 0);
+      }
+      dailyTotals.set(date, dailyTotals.get(date) + parseFloat(log.grams));
+    });
+
+    const uniqueDates = [...dailyTotals.keys()].sort((a, b) => new Date(b) - new Date(a));
+
+    const totalDays = uniqueDates.length;
+    const totalGrams = allLogs.reduce((sum, log) => sum + parseFloat(log.grams), 0);
+    // El promedio debe ser por DÍA, no por TOMA.
+    const averageGrams = totalDays > 0 ? totalGrams / totalDays : 0;
+
+    let currentStreak = 0;
+    if (uniqueDates.length > 0) {
+      // Obtener la fecha de hoy en UTC para una comparación consistente
+      const todayUTC = new Date(new Date().toISOString().split('T')[0]);
+      const lastLogDate = new Date(uniqueDates[0]);
+
+      const timeDiff = todayUTC.getTime() - lastLogDate.getTime();
+      const dayDiff = Math.round(timeDiff / (1000 * 3600 * 24));
+
+      if (dayDiff <= 1) {
+        currentStreak = 1;
+        for (let i = 0; i < uniqueDates.length - 1; i++) {
+          const date1 = new Date(uniqueDates[i]);
+          const date2 = new Date(uniqueDates[i + 1]);
+          const diffDays = (date1.getTime() - date2.getTime()) / (1000 * 3600 * 24);
+
+          if (diffDays === 1) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    // Cálculo de la semana actual (de Lunes a Hoy)
+    const todayForWeek = new Date();
+    const dayOfWeek = todayForWeek.getUTCDay(); // 0=Dom, 1=Lun, ...
+    // Ajuste para que Lunes sea 0 (0 -> 6, 1 -> 0, 2 -> 1, ...)
+    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+
+    const startOfWeek = new Date(todayForWeek);
+    startOfWeek.setUTCDate(todayForWeek.getUTCDate() - offset);
+    startOfWeek.setUTCHours(0, 0, 0, 0); // Inicio del lunes
+
+    // Convertimos las fechas únicas a objetos Date para comparar
+    const thisWeekDays = uniqueDates.filter(dateStr => {
+      const logDate = new Date(dateStr);
+      logDate.setUTCHours(0, 0, 0, 0); // Asegurar comparación solo por fecha
+      return logDate >= startOfWeek && logDate <= todayForWeek;
+    }).length;
+
+    res.json({
+      data: {
+        totalDays,
+        currentStreak,
+        averageGrams, // Promedio por día, no por toma
+        thisWeekDays,
+      }
+    });
+  } catch (error) {
+    console.error('Error detallado en getCreatinaStats:', error);
+    next(error);
+  }
 };
 
 const creatinaController = {

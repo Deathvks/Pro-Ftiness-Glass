@@ -1,6 +1,7 @@
 /* frontend/src/main.jsx */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom'; // --- AÑADIDO ---
 import { HelmetProvider } from 'react-helmet-async';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './index.css';
@@ -18,9 +19,12 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={googleClientId}>
       <HelmetProvider>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
+        {/* Envolvemos la aplicación con BrowserRouter para habilitar useLocation y la navegación */}
+        <BrowserRouter>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </BrowserRouter>
       </HelmetProvider>
     </GoogleOAuthProvider>
   </StrictMode>,

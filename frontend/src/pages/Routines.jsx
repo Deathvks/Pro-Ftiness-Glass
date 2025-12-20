@@ -350,7 +350,7 @@ const Routines = ({ setView }) => {
       </Helmet>
 
       <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0">
+        <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
           Rutinas
         </h1>
         {activeTab === 'myRoutines' && <CreateRoutineButton />}

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+/* frontend/src/components/nutrition/FoodSearchModal.jsx */
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Star, Clock, Plus, Trash2, Save, ChevronsRight, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import Spinner from '../Spinner';
@@ -161,7 +162,7 @@ const ManualEntryForm = ({
                 </div>
             )}
             {per100Mode && !isEditing && !editingListItem ? (
-                 <>
+                <>
                     <div className="grid grid-cols-2 gap-4">
                         <input name="calories" type="text" inputMode="decimal" value={per100Data.calories} onChange={handlePer100Change} className={baseInputClasses} placeholder="Cal/100g" />
                         <input name="protein_g" type="text" inputMode="decimal" value={per100Data.protein_g} onChange={handlePer100Change} className={baseInputClasses} placeholder="Prot/100g" />
@@ -241,16 +242,33 @@ const FoodSearchModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) =>
     const ITEMS_PER_PAGE = 5;
 
     const { addToast } = useToast();
-    const { favoriteMeals, addFavoriteMeal, deleteFavoriteMeal } = useAppStore(state => ({
-        favoriteMeals: state.favoriteMeals, addFavoriteMeal: state.addFavoriteMeal, deleteFavoriteMeal: state.deleteFavoriteMeal,
+    const { favoriteMeals, deleteFavoriteMeal } = useAppStore(state => ({
+        favoriteMeals: state.favoriteMeals, deleteFavoriteMeal: state.deleteFavoriteMeal,
     }));
 
     const [isDarkTheme, setIsDarkTheme] = useState(() => typeof document !== 'undefined' && !document.body.classList.contains('light-theme'));
     useEffect(() => { const observer = new MutationObserver(() => { setIsDarkTheme(!document.body.classList.contains('light-theme')); }); observer.observe(document.body, { attributes: true, attributeFilter: ['class'] }); return () => observer.disconnect(); }, []);
 
+    // Función para normalizar texto (ignorar tildes y diacríticos)
+    const normalizeText = (text) => {
+        return (text || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    };
+
     const recentMeals = useMemo(() => [...favoriteMeals].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10), [favoriteMeals]);
-    const filteredFavorites = useMemo(() => [...favoriteMeals].sort((a, b) => a.name.localeCompare(b.name)).filter(meal => meal.name.toLowerCase().includes(searchTerm.toLowerCase())), [favoriteMeals, searchTerm]);
-    const filteredRecents = useMemo(() => recentMeals.filter(meal => meal.name.toLowerCase().includes(searchTerm.toLowerCase())), [recentMeals, searchTerm]);
+
+    // Filtrado inteligente usando normalizeText
+    const filteredFavorites = useMemo(() => {
+        const term = normalizeText(searchTerm);
+        return [...favoriteMeals]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .filter(meal => normalizeText(meal.name).includes(term));
+    }, [favoriteMeals, searchTerm]);
+
+    const filteredRecents = useMemo(() => {
+        const term = normalizeText(searchTerm);
+        return recentMeals.filter(meal => normalizeText(meal.name).includes(term));
+    }, [recentMeals, searchTerm]);
+
     const paginatedFavorites = useMemo(() => { const startIndex = (favoritesPage - 1) * ITEMS_PER_PAGE; return filteredFavorites.slice(startIndex, startIndex + ITEMS_PER_PAGE); }, [filteredFavorites, favoritesPage]);
     const totalPages = Math.ceil(filteredFavorites.length / ITEMS_PER_PAGE);
 
@@ -302,7 +320,10 @@ const FoodSearchModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) =>
     const handleAddItem = (item, isManual = false) => {
         const baseWeight = parseFloat(item.weight_g) || (isManual ? 0 : 100);
         const newItem = {
-            ...item, tempId: `item-${Date.now()}-${Math.random()}`, description: item.name, isFavorite: item.isFavorite || false,
+            ...item,
+            tempId: `item-${Date.now()}-${Math.random()}`,
+            description: item.name,
+            isFavorite: item.isFavorite || false,
             base: baseWeight > 0 ? { calories: (parseFloat(item.calories) || 0) / baseWeight, protein_g: (parseFloat(item.protein_g) || 0) / baseWeight, carbs_g: (parseFloat(item.carbs_g) || 0) / baseWeight, fats_g: (parseFloat(item.fats_g) || 0) / baseWeight } : null
         };
         setItemsToAdd(prev => [...prev, newItem]);
@@ -323,13 +344,12 @@ const FoodSearchModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) =>
         setBaseMacros(null);
     };
 
-    const handleSaveList = async () => { if (itemsToAdd.length === 0) return addToast('No has añadido ninguna comida.', 'info'); const newFavorites = itemsToAdd.filter(item => item.isFavorite); if (newFavorites.length > 0) { try { await Promise.all(newFavorites.map(fav => addFavoriteMeal({ name: fav.description, calories: fav.calories, protein_g: fav.protein_g, carbs_g: fav.carbs_g, fats_g: fav.fats_g, weight_g: fav.weight_g }))); addToast(`${newFavorites.length} comida(s) guardada(s) en favoritos.`, 'success'); } catch (error) { addToast('Error al guardar en favoritos.', 'error'); } } onSave(itemsToAdd); };
+    const handleSaveList = () => {
+        if (itemsToAdd.length === 0) return addToast('No has añadido ninguna comida.', 'info');
+        onSave(itemsToAdd);
+    };
 
-    const handleSaveSingle = async (itemData) => {
-        const item = itemData[0];
-        if (item.saveAsFavorite) {
-            try { await addFavoriteMeal({ name: item.description, calories: item.calories, protein_g: item.protein_g, carbs_g: item.carbs_g, fats_g: item.fats_g, weight_g: item.weight_g }); addToast(`'${item.description}' guardado en favoritos.`, 'success'); } catch (error) { addToast(error.message || 'Error al guardar en favoritos.', 'error'); }
-        }
+    const handleSaveSingle = (itemData) => {
         setManualFormState(initialManualFormState);
         onSave(itemData);
     };

@@ -1,6 +1,6 @@
 /* frontend/src/pages/LoginScreen.jsx */
 import React, { useState, useEffect, useRef } from 'react';
-import { Dumbbell, LogIn, ShieldCheck, ArrowLeft, Smartphone, Mail } from 'lucide-react';
+import { Dumbbell, LogIn, ArrowLeft, Smartphone, Mail } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -8,7 +8,8 @@ import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import GoogleTermsModal from '../components/GoogleTermsModal';
 import PrivacyPolicy from './PrivacyPolicy';
-import { GoogleLogin } from '@react-oauth/google';
+// --- MODIFICACIÓN: Usamos el hook useGoogleLogin ---
+import { useGoogleLogin } from '@react-oauth/google';
 import { resend2FACode } from '../services/authService';
 
 const LoginScreen = ({ showRegister, showForgotPassword }) => {
@@ -28,7 +29,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [password, setPassword] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
 
-    // Nuevo estado para los 6 inputs individuales
     const [otp, setOtp] = useState(new Array(6).fill(""));
     const inputRefs = useRef([]);
 
@@ -39,10 +39,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [showGoogleModal, setShowGoogleModal] = useState(false);
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
-
-    // Refs para el botón de Google
-    const googleParentRef = useRef(null);
-    const [googleBtnWidth, setGoogleBtnWidth] = useState('300');
 
     // Verificar consentimiento al montar
     useEffect(() => {
@@ -55,27 +51,61 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         return () => window.removeEventListener('storage', checkConsent);
     }, []);
 
-    // Calcular ancho del botón Google
-    useEffect(() => {
-        const updateWidth = () => {
-            if (googleParentRef.current) {
-                const width = googleParentRef.current.offsetWidth;
-                setGoogleBtnWidth(width > 400 ? '400' : width.toString());
-            }
-        };
-        updateWidth();
-        window.addEventListener('resize', updateWidth);
-        return () => window.removeEventListener('resize', updateWidth);
-    }, []);
+    // --- LÓGICA GOOGLE UNIFICADA ---
 
-    // Enfocar el primer input de 2FA cuando aparezca la pantalla
+    // Procesa el token (sea Access Token o ID Token)
+    const processGoogleToken = async (token) => {
+        setShowGoogleModal(false);
+        setIsLoading(true);
+        setErrors({});
+        try {
+            await handleGoogleLogin(token);
+            setIsLoading(false);
+        } catch (err) {
+            const msg = err.message || 'Error con Google.';
+            addToast(msg, 'error');
+            setErrors({ api: msg });
+            setIsLoading(false);
+        }
+    };
+
+    // Hook para el Popup de Google (Access Token)
+    const loginWithGoogle = useGoogleLogin({
+        onSuccess: (tokenResponse) => processGoogleToken(tokenResponse.access_token),
+        onError: () => addToast('No se pudo conectar con Google.', 'error'),
+    });
+
+    // Manejador del clic en el botón
+    const handleGoogleClick = () => {
+        if (hasConsented) {
+            loginWithGoogle();
+        } else {
+            setShowGoogleModal(true);
+        }
+    };
+
+    // Adaptador para el Modal (si el modal devuelve Credential Response)
+    const onModalSuccess = (credentialResponse) => {
+        if (credentialResponse.credential) {
+            processGoogleToken(credentialResponse.credential);
+        }
+    };
+
+    const onModalError = () => {
+        setShowGoogleModal(false);
+        addToast('No se pudo conectar con Google.', 'error');
+    };
+
+    // --- LÓGICA 2FA Y FORMULARIO ---
+
+    // Enfocar el primer input de 2FA
     useEffect(() => {
         if (twoFactorPending && inputRefs.current[0]) {
             inputRefs.current[0].focus();
         }
     }, [twoFactorPending]);
 
-    // Sincronizar limpieza: Si se limpia el código (ej: error), limpiar los inputs visuales
+    // Sincronizar limpieza de OTP
     useEffect(() => {
         if (verificationCode === '') {
             setOtp(new Array(6).fill(""));
@@ -112,29 +142,18 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         }
     };
 
-    // Manejadores para los inputs de OTP
     const handleOtpChange = (element, index) => {
         if (isNaN(element.value)) return false;
-
         const newOtp = [...otp];
-        // Tomamos solo el último caracter ingresado para evitar problemas
         newOtp[index] = element.value.substring(element.value.length - 1);
-
         setOtp(newOtp);
         setVerificationCode(newOtp.join(""));
-
-        // Enfocar siguiente input si se escribió algo
-        if (element.value && index < 5) {
-            inputRefs.current[index + 1].focus();
-        }
+        if (element.value && index < 5) inputRefs.current[index + 1].focus();
     };
 
     const handleOtpKeyDown = (e, index) => {
-        if (e.key === "Backspace") {
-            // Si la casilla actual está vacía y pulsamos backspace, ir a la anterior
-            if (!otp[index] && index > 0) {
-                inputRefs.current[index - 1].focus();
-            }
+        if (e.key === "Backspace" && !otp[index] && index > 0) {
+            inputRefs.current[index - 1].focus();
         }
     };
 
@@ -142,24 +161,14 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         e.preventDefault();
         const data = e.clipboardData.getData("text");
         if (!data) return;
-
-        // Limpiar y tomar solo números, máximo 6
         const numbers = data.replace(/\D/g, '').slice(0, 6).split("");
         if (numbers.length === 0) return;
-
         const newOtp = [...otp];
-        numbers.forEach((num, i) => {
-            if (i < 6) newOtp[i] = num;
-        });
-
+        numbers.forEach((num, i) => { if (i < 6) newOtp[i] = num; });
         setOtp(newOtp);
         setVerificationCode(newOtp.join(""));
-
-        // Enfocar el input siguiente al último pegado
         const nextIndex = Math.min(numbers.length, 5);
-        if (inputRefs.current[nextIndex]) {
-            inputRefs.current[nextIndex].focus();
-        }
+        if (inputRefs.current[nextIndex]) inputRefs.current[nextIndex].focus();
     };
 
     const handle2FASubmit = async (e) => {
@@ -170,7 +179,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         }
         setIsLoading(true);
         setErrors({});
-
         try {
             const payload = {
                 userId: twoFactorPending.userId,
@@ -178,14 +186,13 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 token: twoFactorPending.method === 'app' ? verificationCode : undefined,
                 code: twoFactorPending.method === 'email' ? verificationCode : undefined,
             };
-
             await handleVerify2FA(payload);
         } catch (err) {
             const msg = err.message || 'Código incorrecto.';
             addToast(msg, 'error');
             setErrors({ api: msg, code: msg });
             setIsLoading(false);
-            setVerificationCode(''); // Esto disparará el useEffect para limpiar otp
+            setVerificationCode('');
         }
     };
 
@@ -206,58 +213,24 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         setIsLoading(false);
     };
 
-    const onGoogleSuccess = async (credentialResponse) => {
-        setShowGoogleModal(false);
-        if (!credentialResponse.credential) return;
-
-        setIsLoading(true);
-        setErrors({});
-        try {
-            if (handleGoogleLogin) {
-                await handleGoogleLogin(credentialResponse.credential);
-            } else {
-                throw new Error("Configuración interna incompleta.");
-            }
-            setIsLoading(false);
-        } catch (err) {
-            const msg = err.message || 'Error con Google.';
-            addToast(msg, 'error');
-            setErrors({ api: msg });
-            setIsLoading(false);
-        }
-    };
-
-    const onGoogleError = () => {
-        setShowGoogleModal(false);
-        addToast('No se pudo conectar con Google.', 'error');
-    };
-
     if (showPolicy) return <PrivacyPolicy onBack={() => setShowPolicy(false)} />;
 
     // --- RENDERIZADO 2FA ---
     if (twoFactorPending) {
         const isEmailMethod = twoFactorPending.method === 'email';
-
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-sm text-center">
-                    {/* Header Icon */}
                     <div className="mx-auto text-accent mb-4 flex justify-center">
                         {isEmailMethod ? <Mail size={48} /> : <Smartphone size={48} />}
                     </div>
-
                     <h1 className="text-3xl font-bold mb-2">Verificación</h1>
                     <p className="text-text-secondary mb-6">
-                        {isEmailMethod
-                            ? `Introduce el código enviado a ${twoFactorPending.email}`
-                            : 'Introduce el código de tu aplicación autenticadora'}
+                        {isEmailMethod ? `Introduce el código enviado a ${twoFactorPending.email}` : 'Introduce el código de tu aplicación autenticadora'}
                     </p>
-
                     <GlassCard className="p-8">
                         <form onSubmit={handle2FASubmit} className="flex flex-col gap-5">
                             {errors.api && <p className="text-center text-red text-sm">{errors.api}</p>}
-
-                            {/* --- SLOT INPUTS INDIVIDUALES --- */}
                             <div className="flex justify-between gap-2">
                                 {otp.map((digit, index) => (
                                     <input
@@ -270,49 +243,23 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                         onChange={(e) => handleOtpChange(e.target, index)}
                                         onKeyDown={(e) => handleOtpKeyDown(e, index)}
                                         onPaste={handlePaste}
-                                        onFocus={(e) => e.target.select()} // Seleccionar todo al enfocar
-                                        className={`
-                                            w-10 h-12 sm:w-11 sm:h-14 rounded-lg border-2 
-                                            text-xl sm:text-2xl font-bold text-center 
-                                            outline-none transition-all 
-                                            bg-bg-secondary text-text-primary caret-accent
-                                            ${digit
-                                                ? 'border-accent shadow-lg shadow-accent/20'
-                                                : 'border-glass-border focus:border-accent focus:shadow-lg focus:shadow-accent/20'
-                                            }
-                                        `}
+                                        onFocus={(e) => e.target.select()}
+                                        className={`w-10 h-12 sm:w-11 sm:h-14 rounded-lg border-2 text-xl sm:text-2xl font-bold text-center outline-none transition-all bg-bg-secondary text-text-primary caret-accent ${digit ? 'border-accent shadow-lg shadow-accent/20' : 'border-glass-border focus:border-accent focus:shadow-lg focus:shadow-accent/20'}`}
                                     />
                                 ))}
                             </div>
-                            {/* --- FIN SLOT INPUTS --- */}
-
                             {errors.code && <p className="form-error-text text-center mt-2">{errors.code}</p>}
-
-                            <button
-                                type="submit"
-                                disabled={isLoading || verificationCode.length < 6}
-                                className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
-                            >
+                            <button type="submit" disabled={isLoading || verificationCode.length < 6} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed mt-2">
                                 {isLoading ? <Spinner /> : <span>Verificar</span>}
                             </button>
                         </form>
-
                         <div className="mt-6 flex flex-col gap-3">
                             {isEmailMethod && (
-                                <button
-                                    onClick={handleResendCode}
-                                    type="button"
-                                    className="text-sm text-accent hover:underline"
-                                >
+                                <button onClick={handleResendCode} type="button" className="text-sm text-accent hover:underline">
                                     ¿No recibiste el código? Reenviar
                                 </button>
                             )}
-
-                            <button
-                                onClick={handleCancel2FA}
-                                type="button"
-                                className="flex items-center justify-center gap-1 text-text-muted hover:text-text-primary transition-colors text-sm"
-                            >
+                            <button onClick={handleCancel2FA} type="button" className="flex items-center justify-center gap-1 text-text-muted hover:text-text-primary transition-colors text-sm">
                                 <ArrowLeft size={14} /> Volver al inicio de sesión
                             </button>
                         </div>
@@ -322,7 +269,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         );
     }
 
-    // --- RENDERIZADO LOGIN NORMAL ---
+    // --- RENDERIZADO LOGIN ---
     return (
         <>
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
@@ -335,30 +282,14 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                             {errors.api && <p className="text-center text-red">{errors.api}</p>}
                             <div>
-                                <input
-                                    type="email"
-                                    placeholder="Email"
-                                    className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                />
+                                <input type="email" placeholder="Email" className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition" value={email} onChange={(e) => setEmail(e.target.value)} />
                                 {errors.email && <p className="form-error-text text-left">{errors.email}</p>}
                             </div>
                             <div>
-                                <input
-                                    type="password"
-                                    placeholder="Contraseña"
-                                    className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
+                                <input type="password" placeholder="Contraseña" className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition" value={password} onChange={(e) => setPassword(e.target.value)} />
                                 {errors.password && <p className="form-error-text text-left">{errors.password}</p>}
                             </div>
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
+                            <button type="submit" disabled={isLoading} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed">
                                 {isLoading ? <Spinner /> : <><LogIn size={18} /> <span>Iniciar Sesión</span></>}
                             </button>
                         </form>
@@ -369,44 +300,17 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                             <div className="flex-grow border-t border-glass-border"></div>
                         </div>
 
-                        {/* Botón Híbrido de Google */}
-                        <div
-                            className="relative w-full h-11 flex justify-center items-center group"
-                            ref={googleParentRef}
+                        {/* Botón de Google Simplificado y Seguro */}
+                        <button
+                            onClick={handleGoogleClick}
+                            disabled={isLoading}
+                            className="w-full h-11 bg-accent text-bg-secondary rounded-md flex items-center justify-center gap-3 font-semibold shadow transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {/* Capa Visual (Siempre visible) */}
-                            <div className="absolute inset-0 w-full h-full bg-accent text-bg-secondary rounded-md flex items-center justify-center gap-3 font-semibold shadow transition group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-accent/20 pointer-events-none z-0">
-                                <div className="bg-white rounded-full p-1 flex items-center justify-center">
-                                    <FcGoogle size={18} />
-                                </div>
-                                <span>Continuar con Google</span>
+                            <div className="bg-white rounded-full p-1 flex items-center justify-center">
+                                <FcGoogle size={18} />
                             </div>
-
-                            {/* Capa Funcional (Condicional) */}
-                            {hasConsented ? (
-                                /* Si hay cookies: Login Directo (Iframe invisible) */
-                                <div className="absolute inset-0 w-full h-full opacity-0 z-10 overflow-hidden flex justify-center items-center">
-                                    <GoogleLogin
-                                        onSuccess={onGoogleSuccess}
-                                        onError={onGoogleError}
-                                        width={googleBtnWidth}
-                                        text="signin_with"
-                                        shape="rectangular"
-                                        locale="es"
-                                    />
-                                </div>
-                            ) : (
-                                /* No hay cookies: Botón transparente para abrir Modal */
-                                <button
-                                    type="button"
-                                    onClick={() => setShowGoogleModal(true)}
-                                    disabled={isLoading}
-                                    className="absolute inset-0 w-full h-full z-10 cursor-pointer opacity-0"
-                                >
-                                    Abrir Modal Google
-                                </button>
-                            )}
-                        </div>
+                            <span>Continuar con Google</span>
+                        </button>
 
                         <div className="text-center mt-6 text-sm">
                             <button onClick={showForgotPassword} className="text-accent hover:opacity-80 transition-opacity font-medium">
@@ -424,8 +328,8 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             <GoogleTermsModal
                 isOpen={showGoogleModal}
                 onClose={() => setShowGoogleModal(false)}
-                onSuccess={onGoogleSuccess}
-                onError={onGoogleError}
+                onSuccess={onModalSuccess}
+                onError={onModalError}
                 onShowPolicy={() => setShowPolicy(true)}
             />
         </>

@@ -1,9 +1,7 @@
 /* backend/routes/notifications.js */
 
 import express from 'express';
-// --- INICIO DE LA MODIFICACIÓN ---
-import { param } from 'express-validator'; // Importar validador para IDs
-// --- FIN DE LA MODIFICACIÓN ---
+import { param } from 'express-validator';
 import notificationController from '../controllers/notificationController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
 
@@ -53,6 +51,17 @@ router.post(
 const validateId = [
   param('id').isInt().withMessage('ID de notificación inválido')
 ];
+
+/**
+ * @route   POST /api/notifications
+ * @desc    Crea una notificación manual (interno/admin)
+ * @access  Private
+ */
+router.post(
+  '/',
+  authenticateToken,
+  notificationController.create
+);
 
 /**
  * @route   GET /api/notifications

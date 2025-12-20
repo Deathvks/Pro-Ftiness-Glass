@@ -1,12 +1,14 @@
 /* frontend/src/pages/NotificationsScreen.jsx */
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // --- AÑADIDO: Para navegación con params ---
 import useAppStore from '../store/useAppStore';
 import Spinner from '../components/Spinner';
 import { format, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   Bell, CheckCheck, Trash2, X, Info, AlertTriangle, CheckCircle, AlertCircle,
-  Filter, ChevronDown, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft
+  Filter, ChevronDown, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
+  UserPlus, Users
 } from 'lucide-react';
 
 // --- Imports de Modales Separados ---
@@ -94,6 +96,7 @@ const LoginDetailsModal = ({ notification, onClose }) => {
 };
 
 const NotificationsScreen = ({ setView }) => {
+  const navigate = useNavigate(); // Hook para navegación de router
   const {
     notifications,
     unreadCount,
@@ -128,12 +131,20 @@ const NotificationsScreen = ({ setView }) => {
       return;
     }
 
-    // Navegación normal
-    if (notification.data?.url && setView) {
-      const target = notification.data.url.startsWith('/')
-        ? notification.data.url.slice(1)
-        : notification.data.url;
-      setView(target);
+    // Navegación inteligente (Social, Rutinas, etc.)
+    if (notification.data?.url) {
+      const targetUrl = notification.data.url;
+
+      // 1. Navegar usando React Router para aplicar los parámetros (query params)
+      navigate(targetUrl);
+
+      // 2. Actualizar el estado 'view' de App.jsx para que renderice el componente correcto
+      if (setView) {
+        // Extraemos la parte base de la ruta (ej: "/social?tab=..." -> "social")
+        const path = targetUrl.startsWith('/') ? targetUrl.slice(1) : targetUrl;
+        const viewName = path.split('?')[0];
+        setView(viewName);
+      }
     }
   };
 
@@ -195,8 +206,14 @@ const NotificationsScreen = ({ setView }) => {
     return groups;
   }, [filteredList]);
 
-  const getIcon = (type) => {
-    switch (type) {
+  const getIcon = (n) => {
+    // Iconos específicos para eventos sociales
+    const subType = n.data?.type || n.type;
+
+    if (subType === 'friend_request') return <UserPlus className="text-accent" size={24} />;
+    if (subType === 'friend_accept') return <Users className="text-green-500" size={24} />;
+
+    switch (n.type) {
       case 'success': return <CheckCircle className="text-green-500" size={24} />;
       case 'warning': return <AlertTriangle className="text-yellow-500" size={24} />;
       case 'alert': return <AlertCircle className="text-red-500" size={24} />;
@@ -343,7 +360,7 @@ const NotificationsScreen = ({ setView }) => {
                         }
                       `}
                     >
-                      <div className="flex-shrink-0 mt-0.5">{getIcon(n.type)}</div>
+                      <div className="flex-shrink-0 mt-0.5">{getIcon(n)}</div>
 
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-semibold mb-1 ${n.is_read ? 'text-text-secondary' : 'text-text-primary'}`}>
@@ -353,9 +370,15 @@ const NotificationsScreen = ({ setView }) => {
                           {n.message}
                         </p>
 
+                        {/* Indicadores de acción */}
                         {n.data && (n.data.ip || n.data.userAgent) && (
                           <p className="text-xs text-accent mt-2 font-medium flex items-center gap-1">
                             Ver detalles <ChevronDown size={12} className="-rotate-90" />
+                          </p>
+                        )}
+                        {n.data?.url && (
+                          <p className="text-xs text-accent mt-2 font-medium flex items-center gap-1">
+                            Ver ahora <ChevronDown size={12} className="-rotate-90" />
                           </p>
                         )}
                       </div>

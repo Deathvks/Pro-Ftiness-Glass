@@ -1,16 +1,12 @@
 /* frontend/src/sw.js */
-// --- INICIO DE LA MODIFICACIÓN ---
 // Desactivamos logs
 self.__WB_DISABLE_DEV_LOGS = true;
-// --- FIN DE LA MODIFICACIÓN ---
 
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importamos NetworkOnly para forzar la carga desde internet
 import { StaleWhileRevalidate, NetworkFirst, NetworkOnly } from 'workbox-strategies';
-// --- FIN DE LA MODIFICACIÓN ---
 import { ExpirationPlugin } from 'workbox-expiration';
+import { BackgroundSyncPlugin } from 'workbox-background-sync'; // Nuevo import
 import { clientsClaim } from 'workbox-core';
 
 // 1. Control inmediato
@@ -23,7 +19,7 @@ precacheAndRoute(self.__WB_MANIFEST || []);
 
 // --- 3. ESTRATEGIAS DE CACHÉ (RUNTIME) ---
 
-// A. Fuentes de Google (Mantenemos caché aquí, no suelen cambiar)
+// A. Fuentes de Google
 registerRoute(
   ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
   new StaleWhileRevalidate({
@@ -35,39 +31,44 @@ registerRoute(
 );
 
 // B. Imágenes y Uploads (NetworkOnly)
-// --- INICIO DE LA MODIFICACIÓN ---
-// CAMBIO IMPORTANTE: Usamos NetworkOnly. 
-// Esto desactiva el caché del Service Worker para tus imágenes.
-// Siempre se pedirán al servidor. Si cambias la foto, se verá al instante.
 registerRoute(
   ({ request, url }) =>
     request.destination === 'image' ||
     url.pathname.startsWith('/images/') ||
     url.pathname.startsWith('/uploads/'),
   new NetworkOnly({
-    plugins: [], // No necesitamos plugins de expiración porque no guardamos nada.
+    plugins: [],
   })
 );
-// --- FIN DE LA MODIFICACIÓN ---
 
-// C. API (NetworkFirst)
-// --- INICIO DE LA MODIFICACIÓN ---
-// Usamos NetworkFirst para la API. Intenta internet primero.
-// Solo si falla (offline), usa lo guardado.
+// C. API - Lectura (GET) -> NetworkFirst
+// Intenta internet primero. Si falla (offline), usa lo guardado en caché.
 registerRoute(
-  ({ url, request }) => url.pathname.startsWith('/api/'),
+  ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
   new NetworkFirst({
-    cacheName: 'api-cache',
+    cacheName: 'api-read-cache',
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
         maxAgeSeconds: 24 * 60 * 60, // 24 horas
       }),
     ],
-    networkTimeoutSeconds: 5, // Esperamos 5s a la red antes de tirar de caché
+    networkTimeoutSeconds: 5,
   })
 );
-// --- FIN DE LA MODIFICACIÓN ---
+
+// D. API - Escritura (POST, PUT, DELETE) -> Background Sync
+// Si falla por falta de conexión, se encola y se reintenta automáticamente cuando vuelva internet.
+registerRoute(
+  ({ url, request }) => url.pathname.startsWith('/api/') && request.method !== 'GET',
+  new NetworkOnly({
+    plugins: [
+      new BackgroundSyncPlugin('api-mutation-queue', {
+        maxRetentionTime: 24 * 60, // Retener peticiones hasta 24 horas
+      }),
+    ],
+  })
+);
 
 // --- 4. LÓGICA DE PUSH NOTIFICATIONS ---
 

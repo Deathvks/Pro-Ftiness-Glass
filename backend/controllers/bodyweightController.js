@@ -1,6 +1,10 @@
+/* backend/controllers/bodyweightController.js */
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 import { Op } from 'sequelize';
+// --- INICIO MODIFICACIÓN ---
+import { addXp, checkStreak } from '../services/gamificationService.js';
+// --- FIN MODIFICACIÓN ---
 
 const { BodyWeightLog } = models;
 
@@ -56,6 +60,17 @@ export const logBodyWeight = async (req, res, next) => {
       weight_kg: weight,
       log_date: new Date(),
     });
+
+    // --- INICIO MODIFICACIÓN: Gamificación ---
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      // AÑADIDO: motivo 'Peso registrado' (+10 XP)
+      await addXp(userId, 10, 'Peso registrado');
+      await checkStreak(userId, todayStr);
+    } catch (gError) {
+      console.error('Error gamificación en logBodyWeight:', gError);
+    }
+    // --- FIN MODIFICACIÓN ---
 
     res.status(201).json(newLog);
   } catch (error) {

@@ -1,7 +1,7 @@
 /* frontend/src/App.jsx */
 import React, { useState, lazy, Suspense, useMemo, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Home, Dumbbell, BarChart2, Settings, Utensils } from 'lucide-react';
+import { Home, Dumbbell, BarChart2, Settings, Utensils, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from './store/useAppStore';
 
@@ -34,6 +34,8 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Profile = lazy(() => import('./pages/Profile'));
 const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
 const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
+const Social = lazy(() => import('./pages/Social'));
+const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
@@ -46,6 +48,7 @@ export default function App() {
   const {
     view,
     setView,
+    navParams,
     mainContentRef,
     navigate,
     handleBackFromPolicy,
@@ -53,9 +56,7 @@ export default function App() {
     handleShowPolicy
   } = useAppNavigation();
 
-  // Gestión de tema (La lógica crítica de iOS reside dentro de este hook)
   const { theme, setTheme, accent, setAccent } = useAppTheme();
-
   const timer = useWorkoutTimer();
   const { t } = useTranslation('translation');
 
@@ -82,7 +83,6 @@ export default function App() {
     restTimerMode: state.restTimerMode,
   }));
 
-  // Lógica para mostrar promo 2FA
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
@@ -112,7 +112,6 @@ export default function App() {
     navigate('twoFactorSetup');
   };
 
-  // Títulos dinámicos
   const currentTitle = useMemo(() => {
     const titleMap = {
       dashboard: { key: 'Dashboard', default: 'Dashboard' },
@@ -128,6 +127,8 @@ export default function App() {
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
       templateDiets: { key: 'Dietas Plantilla', default: 'Dietas Plantilla' },
+      social: { key: 'Comunidad', default: 'Comunidad' },
+      publicProfile: { key: 'Perfil Público', default: 'Perfil Público' },
     };
     const titleInfo = titleMap[view];
     if (titleInfo) return t(titleInfo.key, { defaultValue: titleInfo.default });
@@ -136,12 +137,12 @@ export default function App() {
     return t(fallbackKey, { defaultValue: fallbackKey });
   }, [view, t]);
 
-  // Descripciones SEO dinámicas
   const currentDescription = useMemo(() => {
     const descKeys = {
       dashboard: t('dashboard_desc', { defaultValue: 'Tu resumen diario de actividad, nutrición y progreso.' }),
       nutrition: t('nutrition_desc', { defaultValue: 'Registra tus comidas, agua y suplementos. Sigue tus macros y calorías.' }),
-      // ... (Resto de descripciones se mantienen igual)
+      social: t('social_desc', { defaultValue: 'Conecta con amigos, comparte rutinas y compite en el ranking global.' }),
+      publicProfile: t('public_profile_desc', { defaultValue: 'Explora el perfil, estadísticas y rutinas de otros usuarios.' }),
       default: t('default_desc', { defaultValue: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.' }),
     };
     return descKeys[view] || descKeys.default;
@@ -151,7 +152,6 @@ export default function App() {
   const canonicalUrl = `${CANONICAL_BASE_URL}${currentPath}`;
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
 
-  // Renderizado de Componentes
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigate} />;
@@ -160,6 +160,9 @@ export default function App() {
       case 'workout': return <Workout timer={timer} setView={navigate} />;
       case 'nutrition': return <Nutrition setView={navigate} />;
       case 'templateDiets': return <TemplateDiets setView={navigate} />;
+      // --- CORRECCIÓN: Pasamos navigate como setView a Social ---
+      case 'social': return <Social setView={navigate} />;
+      case 'publicProfile': return <PublicProfile userId={navParams?.userId} />;
       case 'settings':
         return (
           <SettingsScreen
@@ -179,9 +182,7 @@ export default function App() {
       case 'notifications': return <NotificationsScreen setView={navigate} />;
       default: return <Dashboard setView={navigate} />;
     }
-  }, [view, navigate, theme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile]);
-
-  // --- Renders condicionales (Loading, Auth, Reset Password) ---
+  }, [view, navigate, theme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
 
   if (window.location.pathname === '/reset-password') {
     return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
@@ -205,6 +206,7 @@ export default function App() {
 
   const navItems = [
     { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
+    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: <Users size={24} /> },
     { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: <Utensils size={24} /> },
     { id: 'progress', label: t('Progreso', { defaultValue: 'Progreso' }), icon: <BarChart2 size={24} /> },
     { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: <Dumbbell size={24} /> },
@@ -221,8 +223,6 @@ export default function App() {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
         <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
-
-        {/* Open Graph / Twitter */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:title" content={fullPageTitle} />
@@ -235,8 +235,6 @@ export default function App() {
         <meta property="twitter:description" content={currentDescription} />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
-
-      {/* Nota: El blob de fondo se ha movido a MainAppLayout para evitar duplicidad */}
 
       <MainAppLayout
         view={view}

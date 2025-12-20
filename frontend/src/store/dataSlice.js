@@ -6,7 +6,7 @@ import * as bodyWeightService from '../services/bodyweightService';
 import * as nutritionService from '../services/nutritionService';
 import * as favoriteMealService from '../services/favoriteMealService';
 import * as templateRoutineService from '../services/templateRoutineService';
-import * as creatinaService from '../services/creatinaService'; // Importamos el servicio de creatina
+import * as creatinaService from '../services/creatinaService';
 import * as exerciseService from '../services/exerciseService';
 
 // Función para obtener la fecha actual en formato YYYY-MM-DD
@@ -54,6 +54,29 @@ export const createDataSlice = (set, get) => ({
       const profileData = await userService.getMyProfile();
       set({ userProfile: profileData, isAuthenticated: true });
 
+      // --- INICIO MODIFICACIÓN: Cargar datos de Gamificación ---
+      if (profileData && get().setGamificationData) {
+        // CORRECCIÓN: Usar las claves exactas que espera gamificationSlice (snake_case)
+        get().setGamificationData({
+          xp: profileData.xp,
+          level: profileData.level,
+          streak: profileData.streak,
+          last_activity_date: profileData.last_activity_date, // Clave corregida
+          unlocked_badges: profileData.unlocked_badges        // Clave corregida
+        });
+
+        // Comprobar racha al iniciar
+        const today = getTodayDateString();
+        if (get().checkStreak) get().checkStreak(today);
+
+        // Otorgar insignia de primer login solo si NO la tiene ya (evita duplicados en reload)
+        const hasFirstLoginBadge = profileData.unlocked_badges && profileData.unlocked_badges.includes('first_login');
+        if (get().unlockBadge && !hasFirstLoginBadge) {
+          get().unlockBadge('first_login');
+        }
+      }
+      // --- FIN MODIFICACIÓN ---
+
       if (profileData?.id) {
         await get().checkCookieConsent(profileData.id);
       }
@@ -100,16 +123,13 @@ export const createDataSlice = (set, get) => ({
       }
     } catch (error) {
       console.error("Error de autenticación o carga de datos:", error);
-      get().handleLogout(); // Llama a la acción del authSlice
+      get().handleLogout();
     } finally {
       set({ isLoading: false });
     }
   },
 
   // Obtiene los datos de nutrición para una fecha específica.
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Ahora recargamos también favoritos y recientes para asegurar que las imágenes
-  // se sincronicen si se editaron desde el modal de añadir.
   fetchDataForDate: async (date) => {
     set({ selectedDate: date, isLoading: true });
     try {
@@ -132,7 +152,6 @@ export const createDataSlice = (set, get) => ({
       set({ isLoading: false });
     }
   },
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // Obtiene el resumen de nutrición para un mes y año.
   fetchNutritionSummary: async (month, year) => {
@@ -149,51 +168,43 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   /**
    * Obtiene la lista maestra de ejercicios de forma segura.
    * Si no está en el estado, la va a buscar a la API.
-   * Esto previene 'race conditions' si se llama antes de que fetchInitialData termine.
-   * @returns {Promise<Array>} - La lista de allExercises.
    */
   getOrFetchAllExercises: async () => {
-    // 1. Revisa si ya la tenemos en el estado.
     const currentExercises = get().allExercises;
     if (currentExercises && currentExercises.length > 0) {
       return Promise.resolve(currentExercises);
     }
 
-    // 2. Si no, la vamos a buscar (fallback).
     try {
       const exercises = await exerciseService.getExerciseList();
       set({ allExercises: exercises || [] });
       return exercises || [];
     } catch (error) {
       console.error("Error crítico en getOrFetchAllExercises:", error);
-      return []; // Devuelve array vacío para no crashear
+      return [];
     }
   },
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // --- Acciones C.R.U.D. para Rutinas ---
 
-  /**
-   * Crea una nueva rutina.
-   * @param {object} routineData - Los datos de la nueva rutina.
-   * @returns {object} - { success: boolean, routine: object|null, message: string }
-   */
   createRoutine: async (routineData) => {
     try {
       const newRoutine = await routineService.createRoutine(routineData);
 
       if (!newRoutine || !newRoutine.id) {
-        console.error('Error: createRoutine service did not return a valid routine with ID.', newRoutine);
         throw new Error('La respuesta del servidor no incluyó la rutina creada.');
       }
 
       set(state => ({
         routines: [...state.routines, newRoutine]
       }));
+
+      // --- GAMIFICACIÓN: XP por crear rutina y mantener racha ---
+      if (get().addXp) get().addXp(20);
+      if (get().checkStreak) get().checkStreak(getTodayDateString());
 
       return { success: true, routine: newRoutine, message: 'Rutina creada con éxito.' };
     } catch (error) {
@@ -202,18 +213,11 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  /**
-   * Actualiza una rutina existente.
-   * @param {string} routineId - El ID de la rutina a actualizar.
-   * @param {object} routineData - Los nuevos datos para la rutina.
-   * @returns {object} - { success: boolean, routine: object|null, message: string }
-   */
   updateRoutine: async (routineId, routineData) => {
     try {
       const updatedRoutine = await routineService.updateRoutine(routineId, routineData);
 
       if (!updatedRoutine || !updatedRoutine.id) {
-        console.error('Error: updateRoutine service did not return a valid routine with ID.', updatedRoutine);
         throw new Error('La respuesta del servidor no incluyó la rutina actualizada.');
       }
 
@@ -230,11 +234,6 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  /**
-   * Elimina una rutina.
-   * @param {string} routineId - El ID de la rutina a eliminar.
-   * @returns {object} - { success: boolean, message: string }
-   */
   deleteRoutine: async (routineId) => {
     try {
       await routineService.deleteRoutine(routineId);
@@ -301,7 +300,22 @@ export const createDataSlice = (set, get) => ({
   logBodyWeight: async (weightData) => {
     try {
       await bodyWeightService.logWeight(weightData);
-      await get().fetchInitialData();
+
+      // OPTIMIZACIÓN: Actualizar solo el historial de peso en lugar de recargar toda la app
+      const history = await bodyWeightService.getHistory();
+      set({ bodyWeightLog: history });
+
+      // Actualizar peso en perfil localmente si es más reciente
+      if (weightData.weight) {
+        set(state => ({
+          userProfile: { ...state.userProfile, weight: weightData.weight }
+        }));
+      }
+
+      // --- GAMIFICACIÓN: XP por peso y racha ---
+      if (get().addXp) get().addXp(10);
+      if (get().checkStreak) get().checkStreak(getTodayDateString());
+
       return { success: true, message: 'Peso registrado con éxito.' };
     } catch (error) {
       return { success: false, message: `Error al guardar: ${error.message}` };
@@ -312,7 +326,18 @@ export const createDataSlice = (set, get) => ({
   updateTodayBodyWeight: async (weightData) => {
     try {
       await bodyWeightService.updateTodaysWeight(weightData);
-      await get().fetchInitialData();
+
+      // OPTIMIZACIÓN: Actualizar solo el historial de peso
+      const history = await bodyWeightService.getHistory();
+      set({ bodyWeightLog: history });
+
+      // Actualizar peso en perfil localmente
+      if (weightData.weight) {
+        set(state => ({
+          userProfile: { ...state.userProfile, weight: weightData.weight }
+        }));
+      }
+
       return { success: true, message: 'Peso actualizado con éxito.' };
     } catch (error) {
       return { success: false, message: `Error al actualizar: ${error.message}` };

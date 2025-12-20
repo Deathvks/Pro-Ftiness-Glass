@@ -3,89 +3,163 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 
 /**
  * Hook para gestionar el estado de navegación principal de la aplicación.
- * @param {boolean} isInitialLoad - Estado que indica si es la carga inicial de la app.
+ * Prioriza siempre la URL actual sobre el estado guardado para soportar recargas (F5).
  */
 export const useAppNavigation = (isInitialLoad) => {
-  // Estado para la vista actual (ej: 'dashboard', 'routines')
-  // Inicializamos el estado leyendo de localStorage para persistir la vista al recargar.
-  // Si no hay nada guardado, usamos 'dashboard' por defecto.
+  // 1. Inicialización basada estrictamente en la URL
   const [view, setView] = useState(() => {
+    const path = window.location.pathname;
+
+    // Rutas Deep Linking (Prioridad Alta)
+    if (path.match(/^\/profile\/\d+$/)) return 'publicProfile';
+    if (path === '/social') return 'social';
+    if (path === '/nutrition') return 'nutrition';
+    if (path === '/routines') return 'routines';
+    if (path === '/progress') return 'progress';
+    if (path === '/settings') return 'settings';
+    if (path === '/notifications') return 'notifications';
+
+    // Fallback a LocalStorage solo si no hay ruta específica
     const savedView = localStorage.getItem('lastView');
     return savedView || 'dashboard';
   });
 
-  // Estado para guardar la vista anterior (ej: para el botón 'atrás' de Perfil o Política)
-  const [previousView, setPreviousView] = useState(null);
+  // 2. Estado para parámetros (ej: ID de usuario)
+  const [navParams, setNavParams] = useState(() => {
+    const path = window.location.pathname;
+    const profileMatch = path.match(/^\/profile\/(\d+)$/);
+    if (profileMatch) {
+      return { userId: profileMatch[1] };
+    }
+    return {};
+  });
 
-  // Referencia al contenedor principal para hacer scroll-to-top
+  const [previousView, setPreviousView] = useState(null);
   const mainContentRef = useRef(null);
 
-  /**
-   * Función de navegación estable (Callback).
-   * Cambia la vista actual y guarda la anterior.
-   */
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Corregimos la lógica de navigate para guardar correctamente la 'view' actual en 'previousView'.
-  // Añadimos 'view' a las dependencias para tener acceso al valor actual.
+  // --- SEGURIDAD ANTI-REDIRECCIÓN ---
+  // Este efecto corrige la vista si la app intenta mandarte al dashboard 
+  // pero la URL dice que deberías estar en un perfil o social.
+  useEffect(() => {
+    const path = window.location.pathname;
+
+    // Caso: Estamos en perfil por URL, pero la vista interna cambió (ej: por auth)
+    const profileMatch = path.match(/^\/profile\/(\d+)$/);
+    if (profileMatch) {
+      if (view !== 'publicProfile' || navParams.userId !== profileMatch[1]) {
+        setView('publicProfile');
+        setNavParams({ userId: profileMatch[1] });
+      }
+    }
+    // Caso: Estamos en social por URL
+    else if (path === '/social' && view !== 'social') {
+      setView('social');
+    }
+  }, [view, navParams.userId]);
+  // -----------------------------------
+
+  // Función de navegación principal
   const navigate = useCallback((viewName, options = {}) => {
-    // Opción para forzar una pestaña en la vista de Rutinas
     if (options.forceTab) {
       localStorage.setItem('routinesForceTab', options.forceTab);
     }
 
-    // Solo actualizamos si la vista cambia
-    if (view !== viewName) {
-      setPreviousView(view); // Guardamos la vista actual (origen) antes de cambiar
-      setView(viewName);     // Vamos a la nueva vista (destino)
+    // Gestión de parámetros
+    if (options.userId) {
+      setNavParams({ userId: options.userId });
+    } else if (viewName !== 'publicProfile') {
+      // Limpiamos params si no los necesitamos
+      setNavParams({});
     }
-  }, [view]);
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  /**
-   * Callback para volver desde la Política de Privacidad a la vista anterior.
-   */
+    if (view !== viewName || (viewName === 'publicProfile' && options.userId !== navParams.userId)) {
+      setPreviousView(view);
+      setView(viewName);
+
+      // Actualización de URL (History API)
+      let newPath = '/';
+      switch (viewName) {
+        case 'dashboard': newPath = '/'; break;
+        case 'publicProfile':
+          const targetId = options.userId || navParams.userId;
+          if (targetId) newPath = `/profile/${targetId}`;
+          break;
+        default: newPath = `/${viewName}`; break;
+      }
+
+      if (window.location.pathname !== newPath) {
+        window.history.pushState({ view: viewName }, '', newPath);
+      }
+    }
+  }, [view, navParams]);
+
+  // Handlers auxiliares
   const handleBackFromPolicy = useCallback(() => {
-    setPreviousView(currentPreviousView => {
-      setView(currentPreviousView || 'dashboard'); // Vuelve a la anterior o a dashboard
-      return null; // Limpia previousView
+    setPreviousView(current => {
+      const next = current || 'dashboard';
+      navigate(next);
+      return null;
     });
-  }, []);
+  }, [navigate]);
 
-  /**
-   * Callback para volver desde el Perfil a la vista anterior.
-   */
   const handleCancelProfile = useCallback(() => {
-    setPreviousView(currentPreviousView => {
-      setView(currentPreviousView || 'dashboard'); // Vuelve a la anterior o a dashboard
-      return null; // Limpia previousView
+    setPreviousView(current => {
+      const next = current || 'dashboard';
+      navigate(next);
+      return null;
     });
-  }, []);
+  }, [navigate]);
 
-  /**
-   * Callback para mostrar la Política de Privacidad.
-   */
   const handleShowPolicy = useCallback(() => {
     navigate('privacyPolicy');
   }, [navigate]);
 
-  // Efecto: Hacer scroll al inicio del contenido al cambiar de vista
+  // Scroll to top
   useEffect(() => {
-    if (mainContentRef.current) {
-      mainContentRef.current.scrollTop = 0;
-    }
+    if (mainContentRef.current) mainContentRef.current.scrollTop = 0;
   }, [view]);
 
-  // Efecto: Guardar la última vista en localStorage
+  // Persistencia simple (excluyendo rutas dinámicas para evitar errores de estado obsoleto)
   useEffect(() => {
-    // Guardamos la vista actual salvo si es la política de privacidad (para no recargar ahí)
-    if (!isInitialLoad && view !== 'privacyPolicy') {
+    if (!isInitialLoad && view !== 'privacyPolicy' && view !== 'publicProfile') {
       localStorage.setItem('lastView', view);
     }
   }, [view, isInitialLoad]);
 
+  // Manejo de botones Atrás/Adelante del navegador
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const profileMatch = path.match(/^\/profile\/(\d+)$/);
+
+      if (profileMatch) {
+        setView('publicProfile');
+        setNavParams({ userId: profileMatch[1] });
+      } else if (path === '/social') {
+        setView('social');
+      } else if (path === '/nutrition') {
+        setView('nutrition');
+      } else if (path === '/routines') {
+        setView('routines');
+      } else if (path === '/progress') {
+        setView('progress');
+      } else if (path === '/settings') {
+        setView('settings');
+      } else if (path === '/notifications') {
+        setView('notifications');
+      } else {
+        setView('dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   return {
     view,
     setView,
+    navParams,
     previousView,
     mainContentRef,
     navigate,

@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
-  ChevronLeft, Check, Palette, Sun, Moon, MonitorCog, User, Shield,
+  Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
-  ShieldAlert, MailWarning, Instagram, Share2, Binary
+  ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -39,7 +39,7 @@ const ACCENT_OPTIONS = [
   { id: 'neutral', label: 'Neutral', hex: '#737373' }
 ];
 
-// --- Sub-componentes para mantener el código limpio ---
+// --- Sub-componentes ---
 const SectionTitle = ({ icon: Icon, title }) => (
   <div className="flex items-center gap-2 mb-4 text-text-primary">
     <Icon size={18} className="text-accent" />
@@ -59,8 +59,8 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
     <Component
       onClick={onClick}
       className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent transition-all 
-        active:bg-bg-secondary/50 md:hover:bg-bg-secondary/50
-        ${danger
+      active:bg-bg-secondary/50 md:hover:bg-bg-secondary/50
+      ${danger
           ? 'text-red active:bg-red/10 md:hover:bg-red/10'
           : 'text-text-primary md:hover:border-[--glass-border]'}`}
     >
@@ -73,6 +73,34 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
     </Component>
   );
 };
+
+const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, loading }) => (
+  <div className={`flex items-center justify-between p-3 rounded-xl transition ${disabled ? 'opacity-50' : 'hover:bg-bg-secondary/30'}`}>
+    <div className="flex items-center gap-3">
+      <div className={`p-2 rounded-lg ${checked ? 'bg-accent/10 text-accent' : 'bg-text-muted/10 text-text-muted'}`}>
+        <Icon size={20} />
+      </div>
+      <div>
+        <div className="text-sm font-semibold">{title}</div>
+        <div className="text-xs text-text-secondary">{subtitle}</div>
+      </div>
+    </div>
+    {loading ? <Spinner size={20} /> : (
+      <button
+        role="switch"
+        aria-checked={checked}
+        onClick={onChange}
+        disabled={disabled}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
+        ${checked ? 'bg-accent' : 'bg-bg-secondary [.light-theme_&]:bg-zinc-300'} 
+        ${disabled ? 'cursor-not-allowed' : ''}
+        `}
+      >
+        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+      </button>
+    )}
+  </div>
+);
 
 export default function SettingsScreen({
   theme = 'system',
@@ -91,6 +119,7 @@ export default function SettingsScreen({
   const { addToast } = useToast();
   const [currentColorPage, setCurrentColorPage] = useState(0);
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
 
   const {
     isSubscribed,
@@ -126,8 +155,27 @@ export default function SettingsScreen({
     }
   };
 
+  const handleTogglePrivacy = async (key, label) => {
+    if (isUpdatingPrivacy) return;
+    setIsUpdatingPrivacy(true);
+    const newValue = !userProfile?.[key];
+
+    // Optimistic Update
+    const prevValue = userProfile?.[key];
+    setUserProfile({ ...userProfile, [key]: newValue });
+
+    try {
+      await userService.updateUserProfile({ [key]: newValue });
+      addToast(`${label} ${newValue ? 'activado' : 'desactivado'}`, 'success');
+    } catch (error) {
+      setUserProfile({ ...userProfile, [key]: prevValue });
+      addToast(`Error al actualizar ${label.toLowerCase()}`, 'error');
+    } finally {
+      setIsUpdatingPrivacy(false);
+    }
+  };
+
   return (
-    // FIX: Reducido pb-20 a pb-6. El Layout ya maneja el espacio del navbar.
     <div className="px-4 pb-6 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
@@ -135,13 +183,10 @@ export default function SettingsScreen({
 
       {/* Header Mobile/Desktop */}
       <div className="flex items-center justify-between mb-6 pt-4 md:pt-0">
-        <button
-          onClick={() => setView('dashboard')}
-          className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition"
-        >
-          <ChevronLeft size={18} /> <span className="text-sm font-medium">Volver</span>
-        </button>
-        <h1 className="hidden md:block text-2xl font-bold flex-1 text-left md:ml-4">Ajustes</h1>
+        {/* CORRECCIÓN: Usamos un span para el texto con degradado dentro del h1 flex-1 y eliminamos el botón de volver */}
+        <h1 className="hidden md:flex text-3xl md:text-4xl font-extrabold flex-1 text-left text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary mt-10 md:mt-0">
+          Ajustes
+        </h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
@@ -241,7 +286,37 @@ export default function SettingsScreen({
           </SettingsCard>
 
           <SettingsCard>
-            <SectionTitle icon={Shield} title="Seguridad y Privacidad" />
+            <SectionTitle icon={Users} title="Privacidad Social" />
+            <div className="flex flex-col gap-2">
+              <SwitchItem
+                icon={Eye}
+                title="Perfil Público"
+                subtitle="Aparecer en búsquedas y ranking"
+                checked={!!userProfile?.is_public_profile}
+                onChange={() => handleTogglePrivacy('is_public_profile', 'Perfil público')}
+                disabled={isUpdatingPrivacy}
+              />
+              <SwitchItem
+                icon={Trophy}
+                title="Mostrar Nivel y XP"
+                subtitle="Visible para otros usuarios"
+                checked={!!userProfile?.show_level_xp}
+                onChange={() => handleTogglePrivacy('show_level_xp', 'Nivel y XP')}
+                disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
+              />
+              <SwitchItem
+                icon={Medal}
+                title="Mostrar Insignias"
+                subtitle="Compartir tus logros"
+                checked={!!userProfile?.show_badges}
+                onChange={() => handleTogglePrivacy('show_badges', 'Insignias')}
+                disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
+              />
+            </div>
+          </SettingsCard>
+
+          <SettingsCard>
+            <SectionTitle icon={Shield} title="Seguridad" />
             <div className="flex flex-col gap-1">
               <SettingsItem
                 icon={Smartphone}
@@ -286,63 +361,27 @@ export default function SettingsScreen({
         <div className="flex flex-col gap-6">
           <SettingsCard>
             <SectionTitle icon={BellRing} title="Notificaciones" />
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
               {isPushSupported && (
-                <div className="flex items-center justify-between p-3 rounded-xl hover:bg-bg-secondary/30 transition">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-accent/10 rounded-lg text-accent">
-                      <BellRing size={20} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold">Push Notifications</div>
-                      <div className="text-xs text-text-secondary">
-                        {pushPermission === 'denied' ? 'Bloqueadas en navegador' : (isSubscribed ? 'Recibiendo alertas' : 'Pausadas')}
-                      </div>
-                    </div>
-                  </div>
-                  {isPushLoading ? <Spinner size={20} /> : (
-                    <button
-                      role="switch"
-                      aria-checked={isSubscribed}
-                      onClick={() => (isSubscribed ? unsubscribe() : subscribe())}
-                      disabled={pushPermission === 'denied'}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
-                        ${isSubscribed ? 'bg-accent' : 'bg-bg-secondary [.light-theme_&]:bg-zinc-300'} 
-                        ${pushPermission === 'denied' ? 'opacity-50 cursor-not-allowed' : ''}
-                      `}
-                    >
-                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isSubscribed ? 'translate-x-5' : 'translate-x-0'} `} />
-                    </button>
-                  )}
-                </div>
+                <SwitchItem
+                  icon={BellRing}
+                  title="Push Notifications"
+                  subtitle={pushPermission === 'denied' ? 'Bloqueadas en navegador' : (isSubscribed ? 'Recibiendo alertas' : 'Pausadas')}
+                  checked={isSubscribed}
+                  onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
+                  disabled={pushPermission === 'denied'}
+                  loading={isPushLoading}
+                />
               )}
 
-              <div className={`flex items-center justify-between p-3 rounded-xl transition ${!userProfile?.two_factor_enabled ? 'opacity-60 bg-bg-secondary/20' : 'hover:bg-bg-secondary/30'}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${userProfile?.two_factor_enabled ? 'bg-accent/10 text-accent' : 'bg-text-muted/10 text-text-muted'}`}>
-                    {userProfile?.two_factor_enabled ? <ShieldAlert size={20} /> : <MailWarning size={20} />}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold">Alertas de Inicio de Sesión</div>
-                    <div className="text-xs text-text-secondary">
-                      {userProfile?.two_factor_enabled ? 'Recibir email al iniciar sesión' : 'Requiere verificación en 2 pasos'}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  role="switch"
-                  aria-checked={!!userProfile?.login_email_notifications}
-                  onClick={handleToggleLoginEmail}
-                  disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
-                    ${userProfile?.login_email_notifications ? 'bg-accent' : 'bg-bg-secondary [.light-theme_&]:bg-zinc-300'}
-                    ${(!userProfile?.two_factor_enabled || isUpdatingEmailPref) ? 'opacity-50 cursor-not-allowed' : ''}
-                  `}
-                >
-                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${userProfile?.login_email_notifications ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-              </div>
+              <SwitchItem
+                icon={userProfile?.two_factor_enabled ? ShieldAlert : MailWarning}
+                title="Alertas de Inicio"
+                subtitle={userProfile?.two_factor_enabled ? 'Email al iniciar sesión' : 'Requiere 2FA'}
+                checked={!!userProfile?.login_email_notifications}
+                onChange={handleToggleLoginEmail}
+                disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
+              />
             </div>
           </SettingsCard>
 

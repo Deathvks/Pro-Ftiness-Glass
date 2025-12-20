@@ -2,32 +2,31 @@
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 import { Op } from 'sequelize';
+// --- INICIO MODIFICACIÓN ---
+import { addXp, checkStreak } from '../services/gamificationService.js';
+// --- FIN MODIFICACIÓN ---
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Mantenemos sequelize, que es la clave para la solución.
-// Importamos ExerciseList directamente para más claridad al crear manuales.
 const {
   sequelize,
-  ExerciseList, // <-- Importar ExerciseList
+  ExerciseList,
+  User // Traemos el modelo User para mostrar el autor en rutinas públicas
 } = models;
-// --- FIN DE LA MODIFICACIÓN ---
 
-// OBTENER TODAS LAS RUTINAS
+// OBTENER TODAS LAS RUTINAS (Personales del usuario)
 export const getAllRoutines = async (req, res, next) => {
   try {
-    // CORRECCIÓN: Usar req.user.userId
-    const routines = await sequelize.models.Routine.findAll({ // <--- MODIFICADO
+    const routines = await sequelize.models.Routine.findAll({
       where: { user_id: req.user.userId },
       include: [
         {
-          model: sequelize.models.RoutineExercise, // <--- MODIFICADO
+          model: sequelize.models.RoutineExercise,
           as: 'RoutineExercises',
           required: false,
         },
       ],
       order: [
         ['id', 'ASC'],
-        ['RoutineExercises', 'exercise_order', 'ASC'], // <-- Ordenar por exercise_order
+        ['RoutineExercises', 'exercise_order', 'ASC'],
         ['RoutineExercises', 'id', 'ASC'],
       ],
     });
@@ -40,25 +39,34 @@ export const getAllRoutines = async (req, res, next) => {
 // OBTENER UNA RUTINA ESPECÍFICA POR ID
 export const getRoutineById = async (req, res, next) => {
   try {
-    const routine = await sequelize.models.Routine.findOne({ // <--- MODIFICADO
+    const routine = await sequelize.models.Routine.findOne({
       where: {
         id: req.params.id,
-        user_id: req.user.userId, // CORRECCIÓN: Usar req.user.userId
+        // Permitimos verla si es mía O si es pública
+        [Op.or]: [
+          { user_id: req.user.userId },
+          { is_public: true }
+        ]
       },
       include: [
         {
-          model: sequelize.models.RoutineExercise, // <--- MODIFICADO
+          model: sequelize.models.RoutineExercise,
           as: 'RoutineExercises',
         },
+        // Si no es mía, quiero ver quién la creó
+        {
+          model: User,
+          attributes: ['id', 'username']
+        }
       ],
       order: [
-        ['RoutineExercises', 'exercise_order', 'ASC'], // <-- Ordenar por exercise_order
+        ['RoutineExercises', 'exercise_order', 'ASC'],
         ['RoutineExercises', 'id', 'ASC']
       ],
     });
 
     if (!routine) {
-      return res.status(404).json({ error: 'Rutina no encontrada' });
+      return res.status(404).json({ error: 'Rutina no encontrada o acceso denegado' });
     }
     res.json(routine);
   } catch (error) {
@@ -66,7 +74,6 @@ export const getRoutineById = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
 const processAndSaveExercises = async (
   exercises,
   routineId,
@@ -74,84 +81,52 @@ const processAndSaveExercises = async (
   transaction
 ) => {
   if (!exercises || exercises.length === 0) {
-    return; // No hay ejercicios que procesar
+    return;
   }
 
-  // 1. Procesar todos los ejercicios con Promise.all
   const exercisesToCreate = await Promise.all(
     exercises.map(async (ex) => {
       let exerciseListId = ex.exercise_list_id;
-      let exerciseName = ex.name; // Nombre original del ejercicio en la rutina
-      let muscleGroup = ex.muscle_group; // Grupo muscular original
+      let exerciseName = ex.name;
+      let muscleGroup = ex.muscle_group;
 
-      // 2. Comprobar si es un ejercicio manual (nuevo o existente personalizado)
       const isManual =
         ex.is_manual ||
         (typeof exerciseListId === 'string' && exerciseListId.startsWith('manual_'));
 
       if (isManual) {
-        // Podría ser un ejercicio manual ya existente o uno nuevo.
-        // Buscamos si ya existe un ejercicio personalizado con ese nombre PARA ESE USUARIO
-        // (Asumiendo que queremos reutilizar ejercicios manuales por nombre,
-        // o podríamos necesitar una forma de identificar unívocamente los manuales)
-
-        // **Decisión:** Por simplicidad y evitar duplicados en ExerciseList,
-        // NO crearemos nuevas entradas en ExerciseList aquí. Asumiremos que
-        // los ejercicios manuales son simplemente nombres personalizados dentro
-        // de RoutineExercise, sin un ID de ExerciseList asociado.
-        // Si se quisiera persistir el ejercicio manual en ExerciseList,
-        // la lógica sería más compleja para manejar duplicados y asociar al usuario.
-
-        // Por lo tanto, para manuales, exerciseListId será null.
         exerciseListId = null;
-
-        // Si no viene nombre o grupo muscular para el manual (poco probable), intentamos obtenerlos
-        if (!exerciseName) exerciseName = "Ejercicio Manual"; // Nombre por defecto
-        if (!muscleGroup) muscleGroup = "Varios"; // Grupo por defecto
-
-        console.log(`Ejercicio manual detectado: "${exerciseName}". Se guardará sin exercise_list_id.`);
-
-
+        if (!exerciseName) exerciseName = "Ejercicio Manual";
+        if (!muscleGroup) muscleGroup = "Varios";
       } else if (exerciseListId && !isNaN(parseInt(exerciseListId))) {
-        // Si es un ejercicio de la lista (ID numérico), intentamos obtener
-        // el nombre y grupo muscular actualizados desde ExerciseList
         try {
           const exerciseFromList = await ExerciseList.findByPk(parseInt(exerciseListId), { transaction });
           if (exerciseFromList) {
-            exerciseName = exerciseFromList.name; // Usar el nombre de la lista maestra
-            muscleGroup = exerciseFromList.muscle_group; // Usar el grupo de la lista maestra
+            exerciseName = exerciseFromList.name;
+            muscleGroup = exerciseFromList.muscle_group;
           } else {
-            console.warn(`Ejercicio con ID ${exerciseListId} no encontrado en ExerciseList. Usando nombre/grupo de la rutina.`);
-            // Mantener exerciseListId original por si acaso, aunque no exista
+            console.warn(`Ejercicio con ID ${exerciseListId} no encontrado en ExerciseList.`);
           }
         } catch (findError) {
           console.error(`Error buscando ExerciseList ID ${exerciseListId}:`, findError);
-          // Mantener nombre/grupo originales si falla la búsqueda
         }
       } else {
-        // Si no es manual y no tiene un ID válido, tratarlo como manual (sin ID)
-        console.warn(`Ejercicio "${exerciseName}" sin ID válido y no marcado como manual. Tratando como manual.`);
+        // Si viene sin ID y no está marcado explícitamente como manual, pero tiene nombre, lo tratamos como manual
         exerciseListId = null;
-        if (!muscleGroup) muscleGroup = "Varios";
+        if (!exerciseName) { // Fallback final
+          exerciseName = "Ejercicio Manual";
+          muscleGroup = "Varios";
+        }
       }
 
-
-      // 5. Devolver el objeto para 'RoutineExercise'
       return {
-        // Usar el nombre y grupo muscular (potencialmente actualizados de ExerciseList o los originales)
         name: exerciseName,
         muscle_group: muscleGroup,
         sets: ex.sets,
         reps: ex.reps,
-
-        // --- INICIO DE LA MODIFICACIÓN (EL BUG ESTABA AQUÍ) ---
-        // Faltaban estos campos, que SÍ vienen del frontend (ex)
         rest_seconds: ex.rest_seconds,
         image_url_start: ex.image_url_start || null,
         video_url: ex.video_url || null,
-        // --- FIN DE LA MODIFICACIÓN ---
-
-        // Usar el ID numérico si existe, o null para manuales/no encontrados
         exercise_list_id: exerciseListId ? parseInt(exerciseListId) : null,
         routine_id: routineId,
         superset_group_id: ex.superset_group_id,
@@ -160,12 +135,10 @@ const processAndSaveExercises = async (
     })
   );
 
-  // 6. Insertar en lote todos los RoutineExercise
   if (exercisesToCreate.length > 0) {
     await sequelize.models.RoutineExercise.bulkCreate(exercisesToCreate, { transaction });
   }
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 // CREAR UNA NUEVA RUTINA
 export const createRoutine = async (req, res, next) => {
@@ -174,48 +147,57 @@ export const createRoutine = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, description, exercises = [] } = req.body;
-  // CORRECCIÓN: Usar req.user.userId
+  const { name, description, is_public = false, exercises = [] } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
-    const existingRoutine = await sequelize.models.Routine.findOne({ // <--- MODIFICADO
+    const existingRoutine = await sequelize.models.Routine.findOne({
       where: { name, user_id: userId },
       transaction: t,
     });
 
     if (existingRoutine) {
       await t.rollback();
-      return res
-        .status(409)
-        .json({ error: 'Ya existe una rutina con este nombre.' });
+      return res.status(409).json({ error: 'Ya existe una rutina con este nombre.' });
     }
 
-    const newRoutine = await sequelize.models.Routine.create( // <--- MODIFICADO
+    const newRoutine = await sequelize.models.Routine.create(
       {
         name,
         description,
         user_id: userId,
+        is_public, // Guardamos el estado público/privado
+        downloads_count: 0
       },
       { transaction: t }
     );
 
-    // Pasar userId a la función (aunque ya no se usa para crear en ExerciseList)
     await processAndSaveExercises(exercises, newRoutine.id, userId, t);
 
     await t.commit();
-    const result = await sequelize.models.Routine.findByPk(newRoutine.id, { // <--- MODIFICADO
-      include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }], // <--- MODIFICADO
+
+    // --- Gamificación ---
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      await addXp(userId, 20, 'Rutina creada');
+      await checkStreak(userId, todayStr);
+    } catch (gError) {
+      console.error('Error gamificación en createRoutine:', gError);
+    }
+    // --------------------
+
+    const result = await sequelize.models.Routine.findByPk(newRoutine.id, {
+      include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }],
       order: [
-        ['RoutineExercises', 'exercise_order', 'ASC'], // <-- Ordenar por exercise_order
+        ['RoutineExercises', 'exercise_order', 'ASC'],
         ['RoutineExercises', 'id', 'ASC']
       ],
     });
     res.status(201).json(result);
   } catch (error) {
     await t.rollback();
-    console.error("Error detallado en createRoutine:", error); // Log detallado
+    console.error("Error detallado en createRoutine:", error);
     next(error);
   }
 };
@@ -228,13 +210,12 @@ export const updateRoutine = async (req, res, next) => {
   }
 
   const { id } = req.params;
-  const { name, description, exercises = [] } = req.body;
-  // CORRECCIÓN: Usar req.user.userId
+  const { name, description, is_public, exercises = [] } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
-    const existingRoutine = await sequelize.models.Routine.findOne({ // <--- MODIFICADO
+    const existingRoutine = await sequelize.models.Routine.findOne({
       where: {
         name,
         user_id: userId,
@@ -245,14 +226,12 @@ export const updateRoutine = async (req, res, next) => {
 
     if (existingRoutine) {
       await t.rollback();
-      return res
-        .status(409)
-        .json({ error: 'Ya existe otra rutina con este nombre.' });
+      return res.status(409).json({ error: 'Ya existe otra rutina con este nombre.' });
     }
 
-    const routine = await sequelize.models.Routine.findOne({ // <--- MODIFICADO
+    const routine = await sequelize.models.Routine.findOne({
       where: { id, user_id: userId },
-      include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }], // <--- MODIFICADO
+      include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }],
       transaction: t,
     });
 
@@ -261,32 +240,31 @@ export const updateRoutine = async (req, res, next) => {
       return res.status(404).json({ error: 'Rutina no encontrada' });
     }
 
+    // Actualización de ejercicios y nombres (lógica existente mantenida)
     const oldExercises = routine.RoutineExercises;
     const renamedExercises = [];
     exercises.forEach((newEx) => {
-      // Intentar encontrar el ejercicio antiguo por ID si existe, o por nombre/orden si es nuevo/manual
       const oldEx = oldExercises.find((old) => old.id && old.id === newEx.id) ||
-        oldExercises.find((old) => old.exercise_order === newEx.exercise_order && old.name === newEx.name); // Fallback por si acaso
+        oldExercises.find((old) => old.exercise_order === newEx.exercise_order && old.name === newEx.name);
 
-      if (oldEx && oldEx.name !== newEx.name && !newEx.exercise_list_id) { // Solo si es manual y se renombró
+      if (oldEx && oldEx.name !== newEx.name && !newEx.exercise_list_id) {
         renamedExercises.push({ oldName: oldEx.name, newName: newEx.name });
       }
     });
 
-    await routine.update({ name, description }, { transaction: t });
-    // Borrar TODOS los ejercicios antiguos ANTES de insertar los nuevos
-    await sequelize.models.RoutineExercise.destroy({ where: { routine_id: id }, transaction: t }); // <--- MODIFICADO
+    // Actualizamos campos básicos e is_public si viene definido
+    const updateData = { name, description };
+    if (typeof is_public !== 'undefined') updateData.is_public = is_public;
 
-    // Re-insertar todos los ejercicios (actualizados)
-    // Pasar userId a la función (aunque ya no se usa para crear en ExerciseList)
+    await routine.update(updateData, { transaction: t });
+    await sequelize.models.RoutineExercise.destroy({ where: { routine_id: id }, transaction: t });
+
     await processAndSaveExercises(exercises, id, userId, t);
 
-    // Actualizar historial si hubo renombres de ejercicios MANUALES
     if (renamedExercises.length > 0) {
       for (const rename of renamedExercises) {
-        // Encontrar logs que usaron esta rutina
-        const workoutLogsForRoutine = await sequelize.models.WorkoutLog.findAll({ // <--- MODIFICADO
-          where: { routine_id: id, user_id: userId }, // CORRECCIÓN: Usar userId
+        const workoutLogsForRoutine = await sequelize.models.WorkoutLog.findAll({
+          where: { routine_id: id, user_id: userId },
           attributes: ['id'],
           raw: true,
           transaction: t,
@@ -294,8 +272,7 @@ export const updateRoutine = async (req, res, next) => {
         const workoutLogIds = workoutLogsForRoutine.map((log) => log.id);
 
         if (workoutLogIds.length > 0) {
-          // Actualizar detalles de log con el nombre antiguo
-          await sequelize.models.WorkoutLogDetail.update( // <--- MODIFICADO
+          await sequelize.models.WorkoutLogDetail.update(
             { exercise_name: rename.newName },
             {
               where: {
@@ -306,11 +283,10 @@ export const updateRoutine = async (req, res, next) => {
             }
           );
         }
-        // Actualizar Récords Personales con el nombre antiguo
-        await sequelize.models.PersonalRecord.update( // <--- MODIFICADO
+        await sequelize.models.PersonalRecord.update(
           { exercise_name: rename.newName },
           {
-            where: { user_id: userId, exercise_name: rename.oldName }, // CORRECCIÓN: Usar userId
+            where: { user_id: userId, exercise_name: rename.oldName },
             transaction: t,
           }
         );
@@ -318,45 +294,41 @@ export const updateRoutine = async (req, res, next) => {
     }
 
     await t.commit();
-    // Devolver la rutina actualizada con los ejercicios reinsertados
-    const result = await sequelize.models.Routine.findByPk(id, { // <--- MODIFICADO
-      include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }], // <--- MODIFICADO
+    const result = await sequelize.models.Routine.findByPk(id, {
+      include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }],
       order: [
-        ['RoutineExercises', 'exercise_order', 'ASC'], // <-- Ordenar por exercise_order
+        ['RoutineExercises', 'exercise_order', 'ASC'],
         ['RoutineExercises', 'id', 'ASC']
       ],
     });
     res.json(result);
   } catch (error) {
     await t.rollback();
-    console.error("Error detallado en updateRoutine:", error); // Log detallado
+    console.error("Error detallado en updateRoutine:", error);
     next(error);
   }
 };
 
-
 // ELIMINAR UNA RUTINA
 export const deleteRoutine = async (req, res, next) => {
   const { id } = req.params;
-  // CORRECCIÓN: Usar req.user.userId
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
-    const routine = await sequelize.models.Routine.findOne({ // <--- MODIFICADO
+    const routine = await sequelize.models.Routine.findOne({
       where: { id, user_id: userId },
       transaction: t,
     });
 
     if (!routine) {
       await t.rollback();
-      return res.status(404).json({ error: 'Rutina no encontrada' }); // Corregido 4404 -> 404
+      return res.status(404).json({ error: 'Rutina no encontrada' });
     }
 
-    // 1. Recolectar todos los detalles de los entrenamientos que se van a borrar
-    const logsToDelete = await sequelize.models.WorkoutLog.findAll({ // <--- MODIFICADO
+    const logsToDelete = await sequelize.models.WorkoutLog.findAll({
       where: { routine_id: id, user_id: userId },
-      include: [{ model: sequelize.models.WorkoutLogDetail, as: 'WorkoutLogDetails' }], // <--- MODIFICADO
+      include: [{ model: sequelize.models.WorkoutLogDetail, as: 'WorkoutLogDetails' }],
       transaction: t,
     });
     const detailsToDelete = logsToDelete.flatMap((log) => log.WorkoutLogDetails);
@@ -364,22 +336,20 @@ export const deleteRoutine = async (req, res, next) => {
       ...new Set(detailsToDelete.map((d) => d.exercise_name)),
     ];
 
-    // 2. Eliminar la rutina (esto borrará en cascada los logs, detalles y series)
     await routine.destroy({ transaction: t });
 
-    // 3. Recalcular PRs para los ejercicios afectados
+    // Recálculo de PRs (lógica existente mantenida)
     for (const exerciseName of affectedExercises) {
-      const currentPR = await sequelize.models.PersonalRecord.findOne({ // <--- MODIFICADO
+      const currentPR = await sequelize.models.PersonalRecord.findOne({
         where: { user_id: userId, exercise_name: exerciseName },
         transaction: t,
       });
 
       if (currentPR) {
-        // Buscar el nuevo mejor set en el resto de entrenamientos (los que no hemos borrado)
-        const newBestLogDetail = await sequelize.models.WorkoutLogDetail.findOne({ // <--- MODIFICADO
+        const newBestLogDetail = await sequelize.models.WorkoutLogDetail.findOne({
           include: [
             {
-              model: sequelize.models.WorkoutLog, // <--- MODIFICADO
+              model: sequelize.models.WorkoutLog,
               as: 'WorkoutLog',
               where: { user_id: userId },
               attributes: [],
@@ -391,8 +361,7 @@ export const deleteRoutine = async (req, res, next) => {
         });
 
         if (newBestLogDetail) {
-          // Si encontramos un nuevo mejor, actualizamos el PR
-          const newBestWorkout = await sequelize.models.WorkoutLog.findByPk( // <--- MODIFICADO
+          const newBestWorkout = await sequelize.models.WorkoutLog.findByPk(
             newBestLogDetail.workout_log_id,
             { attributes: ['workout_date'], transaction: t }
           );
@@ -400,7 +369,6 @@ export const deleteRoutine = async (req, res, next) => {
           currentPR.date = newBestWorkout.workout_date;
           await currentPR.save({ transaction: t });
         } else {
-          // Si no quedan registros para ese ejercicio, borramos el PR
           await currentPR.destroy({ transaction: t });
         }
       }
@@ -415,7 +383,134 @@ export const deleteRoutine = async (req, res, next) => {
     next(error);
   }
 };
-// --- FIN DE LA CORRECCIÓN ---
+
+// --- NUEVOS MÉTODOS SOCIALES PARA RUTINAS ---
+
+// CAMBIAR ESTADO PÚBLICO/PRIVADO
+export const togglePublicStatus = async (req, res, next) => {
+  const { id } = req.params;
+  const { userId } = req.user;
+
+  try {
+    const routine = await sequelize.models.Routine.findOne({
+      where: { id, user_id: userId }
+    });
+
+    if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' });
+
+    routine.is_public = !routine.is_public;
+    await routine.save();
+
+    res.json({ success: true, is_public: routine.is_public });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// OBTENER RUTINAS PÚBLICAS (COMUNIDAD)
+export const getPublicRoutines = async (req, res, next) => {
+  try {
+    const { sort = 'popular', query } = req.query; // sort: popular | recent
+
+    const whereClause = { is_public: true };
+    if (query) {
+      whereClause.name = { [Op.like]: `%${query}%` };
+    }
+
+    const order = sort === 'recent'
+      ? [['created_at', 'DESC']]
+      : [['downloads_count', 'DESC']];
+
+    const routines = await sequelize.models.Routine.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'username', 'profile_image_url']
+        },
+        {
+          model: sequelize.models.RoutineExercise,
+          as: 'RoutineExercises',
+          attributes: ['name', 'muscle_group'] // Solo info básica para previsualizar
+        }
+      ],
+      order,
+      limit: 50 // Límite por seguridad
+    });
+    res.json(routines);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DESCARGAR (COPIAR) RUTINA DE OTRO USUARIO
+export const downloadRoutine = async (req, res, next) => {
+  const { id } = req.params; // ID de la rutina pública
+  const { userId } = req.user;
+  const t = await sequelize.transaction();
+
+  try {
+    const sourceRoutine = await sequelize.models.Routine.findByPk(id, {
+      include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }],
+      transaction: t
+    });
+
+    if (!sourceRoutine) {
+      await t.rollback();
+      return res.status(404).json({ error: 'Rutina original no encontrada' });
+    }
+
+    // Solo permitir copiar si es pública o si es mía (duplicar mi propia rutina)
+    if (!sourceRoutine.is_public && sourceRoutine.user_id !== userId) {
+      await t.rollback();
+      return res.status(403).json({ error: 'Esta rutina es privada' });
+    }
+
+    // Crear la copia
+    const newRoutine = await sequelize.models.Routine.create({
+      name: `${sourceRoutine.name} (Copia)`,
+      description: sourceRoutine.description,
+      user_id: userId,
+      is_public: false, // La copia nace privada
+      downloads_count: 0
+    }, { transaction: t });
+
+    // Preparar ejercicios para la copia
+    const exercisesToCopy = sourceRoutine.RoutineExercises.map(ex => ({
+      exercise_list_id: ex.exercise_list_id,
+      name: ex.name,
+      muscle_group: ex.muscle_group,
+      sets: ex.sets,
+      reps: ex.reps,
+      rest_seconds: ex.rest_seconds,
+      video_url: ex.video_url,
+      image_url_start: ex.image_url_start,
+      superset_group_id: ex.superset_group_id,
+      exercise_order: ex.exercise_order,
+      is_manual: ex.exercise_list_id === null
+    }));
+
+    await processAndSaveExercises(exercisesToCopy, newRoutine.id, userId, t);
+
+    // Incrementar contador de descargas si no es mi propia rutina
+    if (sourceRoutine.user_id !== userId) {
+      await sourceRoutine.increment('downloads_count', { transaction: t });
+
+      // --- Gamificación para el AUTOR original (Opcional) ---
+      // Podríamos dar XP al autor original por cada descarga
+      try {
+        await addXp(sourceRoutine.user_id, 5, `Tu rutina "${sourceRoutine.name}" fue descargada`);
+      } catch (ignore) { }
+    }
+
+    await t.commit();
+    res.json({ success: true, message: 'Rutina descargada con éxito', newRoutineId: newRoutine.id });
+
+  } catch (error) {
+    await t.rollback();
+    next(error);
+  }
+};
 
 const routineController = {
   getAllRoutines,
@@ -423,6 +518,9 @@ const routineController = {
   createRoutine,
   updateRoutine,
   deleteRoutine,
+  togglePublicStatus,
+  getPublicRoutines,
+  downloadRoutine
 };
 
 export default routineController;

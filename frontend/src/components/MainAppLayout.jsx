@@ -1,5 +1,5 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { User, Zap, Bell } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -8,6 +8,7 @@ import { APP_VERSION } from '../config/version';
 import Sidebar from './Sidebar';
 import Spinner from './Spinner';
 import PRToast from './PRToast';
+import Toast from './Toast';
 import ConfirmationModal from './ConfirmationModal';
 import WelcomeModal from './WelcomeModal';
 import EmailVerificationModal from './EmailVerificationModal';
@@ -53,6 +54,9 @@ export default function MainAppLayout({
   fetchInitialData,
 }) {
 
+  // Estado local para Toast de Gamificación
+  const [gamificationToast, setGamificationToast] = useState(null);
+
   // Estados y acciones obtenidos directamente de Zustand
   const {
     userProfile,
@@ -64,8 +68,13 @@ export default function MainAppLayout({
     handleDeclineCookies,
     activeWorkout,
     workoutStartTime,
-    notifications, // Obtenemos el array de notificaciones
-    fetchNotifications // Para cargar el estado inicial
+    notifications,
+    fetchNotifications,
+    // Gamificación
+    gamificationEvent,
+    clearGamificationEvent,
+    // Solicitudes sociales para el badge del navbar
+    socialRequests
   } = useAppStore(state => ({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
@@ -76,19 +85,47 @@ export default function MainAppLayout({
     handleDeclineCookies: state.handleDeclineCookies,
     activeWorkout: state.activeWorkout,
     workoutStartTime: state.workoutStartTime,
-    notifications: state.notifications || [], // Aseguramos que sea un array
-    fetchNotifications: state.fetchNotifications
+    notifications: state.notifications || [],
+    fetchNotifications: state.fetchNotifications,
+    // Gamificación
+    gamificationEvent: state.gamification?.gamificationEvent,
+    clearGamificationEvent: state.clearGamificationEvent,
+    socialRequests: state.socialRequests
   }));
 
   // Calculamos el contador de no leídas localmente para asegurar consistencia
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  // Cargar notificaciones al inicio para actualizar el badge
+  // Cargar notificaciones al inicio
   useEffect(() => {
     if (userProfile) {
       fetchNotifications();
     }
   }, [fetchNotifications, userProfile]);
+
+  // Efecto para detectar eventos de Gamificación y lanzar Toast
+  useEffect(() => {
+    if (gamificationEvent) {
+      if (gamificationEvent.type === 'xp') {
+        setGamificationToast({
+          message: `+${gamificationEvent.amount} XP: ${gamificationEvent.reason}`,
+          type: 'success'
+        });
+      } else if (gamificationEvent.type === 'badge') {
+        setGamificationToast({
+          message: `¡Insignia Desbloqueada! ${gamificationEvent.badge.name}`,
+          type: 'success'
+        });
+      }
+
+      // Limpiamos el evento del store para que no se repita
+      clearGamificationEvent();
+
+      // El Toast se autocierra en su componente interno, pero limpiamos estado local a los 5s
+      setTimeout(() => setGamificationToast(null), 5000);
+    }
+  }, [gamificationEvent, clearGamificationEvent]);
+
 
   // --- Sincronización de Cookies ---
   useEffect(() => {
@@ -139,7 +176,7 @@ export default function MainAppLayout({
         userProfile={userProfile}
         BACKEND_BASE_URL={BACKEND_BASE_URL}
         handleLogoutClick={handleLogoutClick}
-        unreadCount={unreadCount} // Pasamos el contador calculado
+        unreadCount={unreadCount}
       />
 
       {/* Contenido Principal */}
@@ -150,18 +187,25 @@ export default function MainAppLayout({
       >
 
         {/* Header (Móvil) */}
-        {/* MODIFICADO: Añadido padding-top dinámico para safe-area-inset-top (iOS Notch/Island) y reestructurado padding */}
         <div className="md:hidden flex justify-between items-center border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10
                         px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]
                         sm:px-6 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]">
 
           {/* Animación Título Header */}
-          <span
-            key={currentTitle}
-            className="text-3xl font-extrabold text-text-primary animate-fade-in-up"
-          >
-            {currentTitle}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              key={currentTitle}
+              className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary animate-fade-in-up"
+            >
+              {currentTitle}
+            </span>
+            {/* MODIFICACIÓN: Badge BETA en Header Móvil */}
+            {view === 'social' && (
+              <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase animate-fade-in-up">
+                BETA
+              </span>
+            )}
+          </div>
 
           {/* Botones de Header (Notif + Perfil) */}
           <div className="flex items-center">
@@ -233,12 +277,17 @@ export default function MainAppLayout({
                       pr-[max(env(safe-area-inset-right),_0.5rem)]">
         {navItems.map((item, index) => {
           const isActive = view === item.id;
+
+          // Lógica para badge de solicitudes sociales
+          const isSocial = item.id === 'social';
+          const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
+
           return (
             <button
               key={item.id}
               onClick={() => navigate(item.id)}
               className={`
-                group flex flex-col items-center justify-center gap-1 h-20 flex-grow 
+                group flex flex-col items-center justify-center h-20 flex-grow 
                 transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
                 outline-none focus:outline-none ring-0
                 ${isActive ? 'text-accent' : 'text-text-secondary'}
@@ -246,24 +295,33 @@ export default function MainAppLayout({
               style={{
                 animationDelay: `${index * 100}ms`,
                 animationFillMode: 'both',
-                WebkitTapHighlightColor: 'transparent' // Elimina el recuadro azul/gris en móviles
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
-              {/* Icono con animación de escala y elevación al estar activo */}
-              <div className={`transition-transform duration-300 ${isActive ? '-translate-y-1 scale-110' : 'group-hover:scale-105'}`}>
+              {/* Contenedor relativo para posicionar el badge */}
+              <div className={`transition-transform duration-300 ${isActive ? 'scale-125' : 'group-hover:scale-110'} relative`}>
                 {item.icon}
+                {pendingCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
+                )}
               </div>
-
-              {/* Etiqueta con transición de opacidad SOLAMENTE (para evitar lag de color) */}
-              <span className={`text-xs transition-opacity duration-300 ease-out ${isActive ? 'font-bold opacity-100' : 'font-medium opacity-80'}`}>
-                {item.label}
-              </span>
             </button>
           );
         })}
       </nav>
 
       {/* --- Modales y Notificaciones --- */}
+
+      {/* Toast de Gamificación */}
+      {gamificationToast && (
+        <div className="fixed top-20 md:top-6 right-4 z-[60] w-full max-w-sm animate-fade-in-down">
+          <Toast
+            message={gamificationToast.message}
+            type={gamificationToast.type}
+            onClose={() => setGamificationToast(null)}
+          />
+        </div>
+      )}
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
@@ -326,7 +384,7 @@ export default function MainAppLayout({
           email={verificationEmail}
           onSuccess={() => {
             setShowCodeVerificationModal(false);
-            fetchInitialData(); // Refrescar datos del usuario
+            fetchInitialData();
           }}
           onBack={() => {
             setShowCodeVerificationModal(false);

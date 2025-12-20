@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import models from '../models/index.js';
 import { createNotification } from '../services/notificationService.js';
 import { deleteFile } from '../services/imageService.js';
+import { addXp, checkStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
 
 const {
   User,
@@ -55,6 +56,7 @@ const deleteAllUserFiles = async (userId, userInstance) => {
 // Obtener el perfil del usuario autenticado
 export const getMyProfile = async (req, res, next) => {
   try {
+    // User.findByPk devuelve todas las columnas por defecto
     const user = await User.findByPk(req.user.userId, {
       attributes: { exclude: ['password_hash'] },
     });
@@ -63,12 +65,29 @@ export const getMyProfile = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // Obtenemos el usuario completo (con hash) para comprobar si tiene contraseña
     const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'] });
-
     const userData = user.toJSON();
-    // Añadimos un flag para que el frontend sepa si pedir contraseña o no
     userData.hasPassword = !!userWithPass.password_hash;
+
+    // --- CORRECCIÓN: Normalizar fecha de última actividad ---
+    // Esto evita problemas de zona horaria donde la fecha retrocede un día al enviarse al frontend
+    if (userData.last_activity_date) {
+      const d = new Date(userData.last_activity_date);
+      if (!isNaN(d.getTime())) {
+        userData.last_activity_date = d.toISOString().split('T')[0];
+      }
+    }
+
+    if (userData.unlocked_badges && typeof userData.unlocked_badges === 'string') {
+      try {
+        userData.unlocked_badges = JSON.parse(userData.unlocked_badges);
+      } catch (e) {
+        console.error("Error parseando insignias:", e);
+        userData.unlocked_badges = [];
+      }
+    } else if (!userData.unlocked_badges) {
+      userData.unlocked_badges = [];
+    }
 
     res.json(userData);
   } catch (error) {
@@ -76,7 +95,162 @@ export const getMyProfile = async (req, res, next) => {
   }
 };
 
-// Actualizar el perfil físico del usuario (y preferencias)
+// Endpoint de Gamificación (Actualización manual/admin si fuese necesario)
+export const updateGamificationStats = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const {
+      xp, level, streak,
+      lastActivityDate, last_activity_date,
+      unlockedBadges, unlocked_badges,
+      reason
+    } = req.body;
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    // --- INICIO DE LA MODIFICACIÓN (FIX XP INFINITA) ---
+    // Si es "Login Diario", usamos checkStreak del servicio que tiene la protección de fecha.
+    if (reason === 'Login Diario') {
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      // Llamamos al servicio (que ahora maneja la lógica de 'solo una vez al día' y valida mayúsculas/minúsculas)
+      const result = await checkStreak(userId, todayStr);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Error procesando racha');
+      }
+
+      // Recargamos el usuario para tener los datos finales (XP sumada o no, nivel, etc.)
+      await user.reload();
+
+      let currentBadges = [];
+      try {
+        currentBadges = typeof user.unlocked_badges === 'string'
+          ? JSON.parse(user.unlocked_badges)
+          : user.unlocked_badges || [];
+      } catch (e) { currentBadges = []; }
+
+      // Normalizar fecha para respuesta
+      let returnDate = user.last_activity_date;
+      if (returnDate) {
+        returnDate = new Date(returnDate).toISOString().split('T')[0];
+      }
+
+      return res.json({
+        message: result.xpAwarded > 0 ? 'Login diario procesado (+XP)' : 'Login diario ya registrado hoy',
+        success: true,
+        data: {
+          xp: user.xp,
+          level: user.level,
+          streak: user.streak,
+          last_activity_date: returnDate,
+          unlocked_badges: currentBadges
+        },
+        ignored: result.xpAwarded === 0 // Flag para que el frontend sepa si se sumó o no
+      });
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // --- LÓGICA MANUAL (Para otras actualizaciones que no sean Login Diario) ---
+    const updates = {};
+    const oldXp = user.xp;
+    const oldLevel = user.level;
+
+    if (xp !== undefined) updates.xp = xp;
+    if (level !== undefined) updates.level = level;
+    if (streak !== undefined) updates.streak = streak;
+
+    // Prioridad a lo que hayamos forzado (req.body), luego snake_case, luego camelCase
+    const finalDate = req.body.last_activity_date !== undefined
+      ? req.body.last_activity_date
+      : (last_activity_date !== undefined ? last_activity_date : lastActivityDate);
+
+    if (finalDate !== undefined) {
+      updates.last_activity_date = finalDate;
+    }
+
+    const finalBadges = unlocked_badges !== undefined ? unlocked_badges : unlockedBadges;
+    if (finalBadges !== undefined) {
+      updates.unlocked_badges = Array.isArray(finalBadges)
+        ? JSON.stringify(finalBadges)
+        : finalBadges;
+    }
+
+    // --- LÓGICA DE NOTIFICACIONES ---
+    if (xp !== undefined && xp > oldXp) {
+      const diff = xp - oldXp;
+      if (diff > 0) {
+        const noteReason = reason || 'Progreso sincronizado';
+        createNotification(userId, {
+          type: 'info',
+          title: `+${diff} XP`,
+          message: `Has ganado ${diff} XP. Motivo: ${noteReason}`
+        });
+      }
+    }
+
+    if (level !== undefined && level > oldLevel) {
+      createNotification(userId, {
+        type: 'success',
+        title: '¡Subida de Nivel!',
+        message: `¡Felicidades! Has alcanzado el Nivel ${level}.`
+      });
+    }
+
+    if (finalBadges !== undefined) {
+      let currentBadges = [];
+      try {
+        currentBadges = typeof user.unlocked_badges === 'string'
+          ? JSON.parse(user.unlocked_badges)
+          : user.unlocked_badges || [];
+      } catch (e) { currentBadges = []; }
+
+      const newBadgesList = Array.isArray(finalBadges) ? finalBadges : [];
+      const earnedBadges = newBadgesList.filter(b => !currentBadges.includes(b));
+
+      if (earnedBadges.length > 0) {
+        createNotification(userId, {
+          type: 'success',
+          title: '¡Insignia Desbloqueada!',
+          message: `Has conseguido ${earnedBadges.length} nueva(s) insignia(s).`
+        });
+      }
+    }
+
+    await user.update(updates);
+
+    // Preparar respuesta con datos normalizados
+    let returnDate = updates.last_activity_date || user.last_activity_date;
+    if (returnDate) {
+      returnDate = new Date(returnDate).toISOString().split('T')[0];
+    }
+
+    let returnBadges = updates.unlocked_badges || user.unlocked_badges;
+    if (typeof returnBadges === 'string') {
+      try { returnBadges = JSON.parse(returnBadges); } catch (e) { returnBadges = []; }
+    }
+
+    // Devolvemos SIEMPRE el objeto 'data' con el estado final
+    res.json({
+      message: 'Progreso guardado',
+      success: true,
+      data: {
+        xp: updates.xp !== undefined ? updates.xp : user.xp,
+        level: updates.level !== undefined ? updates.level : user.level,
+        streak: updates.streak !== undefined ? updates.streak : user.streak,
+        last_activity_date: returnDate,
+        unlocked_badges: returnBadges
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Actualizar el perfil físico, preferencias y PRIVACIDAD
 export const updateMyProfile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -86,49 +260,54 @@ export const updateMyProfile = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
     const { userId } = req.user;
-    const { gender, age, height, activityLevel, goal, weight, login_email_notifications } = req.body;
+    const {
+      gender, age, height, activityLevel, goal, weight, login_email_notifications,
+      is_public_profile, show_level_xp, show_badges
+    } = req.body;
 
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    await user.update(
-      {
-        gender,
-        age,
-        height,
-        activity_level: activityLevel,
-        goal,
-        login_email_notifications // Se actualiza si viene en el body
-      },
-      { transaction: t }
-    );
+    const updateData = {
+      gender, age, height, activity_level: activityLevel, goal, login_email_notifications
+    };
 
+    if (typeof is_public_profile !== 'undefined') updateData.is_public_profile = is_public_profile;
+    if (typeof show_level_xp !== 'undefined') updateData.show_level_xp = show_level_xp;
+    if (typeof show_badges !== 'undefined') updateData.show_badges = show_badges;
+
+    await user.update(updateData, { transaction: t });
+
+    let weightUpdated = false;
     if (weight) {
       const weightValue = parseFloat(weight);
       if (weightValue > 0) {
         await BodyWeightLog.create(
-          {
-            user_id: userId,
-            weight_kg: weightValue,
-            log_date: new Date(),
-          },
+          { user_id: userId, weight_kg: weightValue, log_date: new Date() },
           { transaction: t }
         );
+        weightUpdated = true;
       }
     }
 
     await t.commit();
 
-    // Obtener IP y UserAgent
-    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
-    if (typeof ip === 'string' && ip.includes(',')) {
-      ip = ip.split(',')[0].trim();
+    if (weightUpdated) {
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        await addXp(userId, WEIGHT_UPDATE_XP, 'Peso registrado (Perfil)');
+        await checkStreak(userId, todayStr);
+      } catch (gError) {
+        console.error('Error gamificación en updateMyProfile (weight):', gError);
+      }
     }
+
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
     const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
 
-    // Notificación de actualización
     if (weight || goal || activityLevel) {
       createNotification(userId, {
         type: 'info',
@@ -138,12 +317,14 @@ export const updateMyProfile = async (req, res, next) => {
       });
     }
 
-    const updatedUser = await User.findByPk(userId, {
-      attributes: { exclude: ['password_hash'] },
-    });
+    const updatedUser = await User.findByPk(userId, { attributes: { exclude: ['password_hash'] } });
     const userWithPass = await User.findByPk(userId, { attributes: ['password_hash'] });
     const userData = updatedUser.toJSON();
     userData.hasPassword = !!userWithPass.password_hash;
+
+    if (userData.unlocked_badges && typeof userData.unlocked_badges === 'string') {
+      try { userData.unlocked_badges = JSON.parse(userData.unlocked_badges); } catch (e) { userData.unlocked_badges = []; }
+    }
 
     res.json(userData);
   } catch (error) {
@@ -176,7 +357,6 @@ export const updateMyAccount = async (req, res, next) => {
     }
 
     if (newPassword) {
-      // Solo requerimos currentPassword SI el usuario YA tiene una contraseña.
       if (user.password_hash) {
         if (!currentPassword) {
           if (newImagePath) deleteFile(newImagePath);
@@ -188,7 +368,6 @@ export const updateMyAccount = async (req, res, next) => {
           return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
         }
       }
-
       fieldsToUpdate.password_hash = newPassword;
       changes.push('contraseña');
     }
@@ -208,20 +387,12 @@ export const updateMyAccount = async (req, res, next) => {
 
     if (Object.keys(fieldsToUpdate).length > 0) {
       await user.update(fieldsToUpdate);
+      if (newImagePath && oldImageUrl) deleteFile(oldImageUrl);
 
-      // Si había imagen nueva y todo salió bien, borramos la antigua
-      if (newImagePath && oldImageUrl) {
-        deleteFile(oldImageUrl);
-      }
-
-      // Obtener IP y UserAgent
       let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
-      if (typeof ip === 'string' && ip.includes(',')) {
-        ip = ip.split(',')[0].trim();
-      }
+      if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
       const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
 
-      // Notificación con resumen de cambios
       if (changes.length > 0) {
         const message = `Datos actualizados: ${changes.join(', ')}.`;
         createNotification(userId, {
@@ -234,42 +405,38 @@ export const updateMyAccount = async (req, res, next) => {
     }
 
     await user.reload();
-
     const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
     userWithoutPassword.hasPassword = !!user.password_hash;
+
+    if (userWithoutPassword.unlocked_badges && typeof userWithoutPassword.unlocked_badges === 'string') {
+      try { userWithoutPassword.unlocked_badges = JSON.parse(userWithoutPassword.unlocked_badges); } catch (e) { userWithoutPassword.unlocked_badges = []; }
+    }
+
     res.json(userWithoutPassword);
 
   } catch (error) {
-    // Si falla algo, borramos la imagen nueva que se acababa de subir
-    if (newImagePath) {
-      deleteFile(newImagePath);
-    }
-
+    if (newImagePath) deleteFile(newImagePath);
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(409).json({ error: 'El email o nombre de usuario ya está en uso.' });
+      if (error.fields && error.fields.email) return res.status(409).json({ error: 'El email o nombre de usuario ya está en uso.' });
+      if (error.fields && error.fields.username) return res.status(409).json({ error: 'El nombre de usuario ya está en uso.' });
     }
-
     next(error);
   }
 };
 
-/**
- * Borra todos los datos del usuario (logs, rutinas, etc.) pero conserva la cuenta.
- */
+// Borra todos los datos del usuario pero conserva la cuenta
 export const clearMyData = async (req, res, next) => {
   const { userId } = req.user;
   const { password } = req.body;
 
   const t = await sequelize.transaction();
-  let user;
   try {
-    user = await User.findByPk(userId);
+    const user = await User.findByPk(userId);
     if (!user) {
       await t.rollback();
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // Si el usuario tiene contraseña, la verificamos.
     if (user.password_hash) {
       if (!password) {
         await t.rollback();
@@ -282,10 +449,8 @@ export const clearMyData = async (req, res, next) => {
       }
     }
 
-    // 1. Recolectar y borrar todos los ficheros
     await deleteAllUserFiles(userId, user);
 
-    // 2. Borrar todos los datos asociados en la BBDD
     await Routine.destroy({ where: { user_id: userId }, transaction: t });
     await WorkoutLog.destroy({ where: { user_id: userId }, transaction: t });
     await BodyWeightLog.destroy({ where: { user_id: userId }, transaction: t });
@@ -295,7 +460,6 @@ export const clearMyData = async (req, res, next) => {
     await PersonalRecord.destroy({ where: { user_id: userId }, transaction: t });
     await CreatinaLog.destroy({ where: { user_id: userId }, transaction: t });
 
-    // 3. Resetear los campos del perfil del usuario
     await user.update(
       {
         profile_image_url: null,
@@ -304,21 +468,20 @@ export const clearMyData = async (req, res, next) => {
         height: null,
         activity_level: null,
         goal: null,
+        xp: 0,
+        level: 1,
+        streak: 0,
+        unlocked_badges: '[]'
       },
       { transaction: t }
     );
 
-    // 4. Commit
     await t.commit();
 
-    // Obtener IP y UserAgent
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
-    if (typeof ip === 'string' && ip.includes(',')) {
-      ip = ip.split(',')[0].trim();
-    }
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
     const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
 
-    // Notificación de borrado de datos
     createNotification(userId, {
       type: 'warning',
       title: 'Datos eliminados',
@@ -327,8 +490,7 @@ export const clearMyData = async (req, res, next) => {
     });
 
     res.status(200).json({
-      message:
-        'Todos tus datos de progreso han sido eliminados. Tu cuenta se mantiene.',
+      message: 'Todos tus datos de progreso han sido eliminados. Tu cuenta se mantiene.',
     });
   } catch (error) {
     await t.rollback();
@@ -336,9 +498,7 @@ export const clearMyData = async (req, res, next) => {
   }
 };
 
-/**
- * Borra permanentemente la cuenta del usuario y todos sus datos.
- */
+// Borra permanentemente la cuenta
 export const deleteMyAccount = async (req, res, next) => {
   const { userId } = req.user;
   const { password } = req.body;
@@ -349,7 +509,6 @@ export const deleteMyAccount = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // Verificación condicional de contraseña
     if (user.password_hash) {
       if (!password) {
         return res.status(400).json({ error: 'La contraseña es requerida.' });
@@ -360,12 +519,7 @@ export const deleteMyAccount = async (req, res, next) => {
       }
     }
 
-    // 1. Recolectar y borrar todos los ficheros
-    // (Debe hacerse antes de que los logs de BBDD desaparezcan)
     await deleteAllUserFiles(userId, user);
-
-    // 2. Borrar el usuario de la BBDD
-    // (onDelete: 'CASCADE' se encargará de borrar todos los registros asociados)
     await user.destroy();
 
     res.status(200).json({
@@ -382,6 +536,7 @@ const userController = {
   updateMyAccount,
   clearMyData,
   deleteMyAccount,
+  updateGamificationStats,
 };
 
 export default userController;

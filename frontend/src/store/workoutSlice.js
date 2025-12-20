@@ -572,6 +572,14 @@ export const createWorkoutSlice = (set, get) => ({
         }
       }
 
+      // --- INICIO MODIFICACIÓN GAMIFICACIÓN ---
+      if (get().addXp) get().addXp(50);
+
+      const todayStr = formatDateForQuery(new Date());
+      if (get().checkStreak) get().checkStreak(todayStr);
+      if (get().unlockBadge) get().unlockBadge('first_workout');
+      // --- FIN MODIFICACIÓN GAMIFICACIÓN ---
+
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         get().showPRNotification(responseData.newPRs);
         get()._showLocalPRNotification(responseData.newPRs);

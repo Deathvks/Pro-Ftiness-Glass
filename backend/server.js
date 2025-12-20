@@ -26,14 +26,14 @@ import workoutRoutes from './routes/workouts.js';
 import adminRoutes from './routes/admin.js';
 import notificationRoutes from './routes/notifications.js';
 import twoFactorRoutes from './routes/twoFactor.js';
-import sessionRoutes from './routes/sessionRoutes.js'; // --- AÑADIDO ---
-// --- ELIMINADO: import templateDietRoutes from './routes/templateDiets.js'; ---
+import sessionRoutes from './routes/sessionRoutes.js';
+import socialRoutes from './routes/social.js';
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
 app.set('trust proxy', 1);
 
-// --- Configuración CORS (Sin cambios) ---
+// --- Configuración CORS ---
 const isProduction = process.env.NODE_ENV === 'production';
 
 const allowedOrigins = [
@@ -63,9 +63,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-// --- Fin Configuración CORS ---
 
-// --- Headers para Google Auth (COOP/COEP) ---
+// --- Headers para Google Auth ---
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
@@ -78,7 +77,11 @@ const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath));
 console.log(`Sirviendo archivos estáticos desde: ${staticPath}`);
 
-// Middleware para actualizar 'lastSeen'
+// --- MODIFICACIÓN: Eliminado/Comentado Middleware lastSeen global ---
+// Este middleware actualizaba la fecha en cada petición (imágenes, datos, etc.),
+// causando problemas de rendimiento y lógica de "primera vez del día".
+// La actualización de actividad se manejará en puntos clave (login, completar entreno).
+/*
 app.use(async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -91,10 +94,11 @@ app.use(async (req, res, next) => {
           { where: { id: payload.userId } }
         );
       }
-    } catch (err) { /* Ignorar errores de token inválido */ }
+    } catch (err) { }
   }
   next();
 });
+*/
 
 // Rutas API
 app.use('/api/auth', authRoutes);
@@ -112,8 +116,8 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/2fa', twoFactorRoutes);
-app.use('/api/sessions', sessionRoutes); // --- AÑADIDO ---
-// --- ELIMINADO: app.use('/api/template-diets', templateDietRoutes); ---
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/social', socialRoutes);
 
 app.use(errorHandler);
 
@@ -124,8 +128,6 @@ db.sequelize.sync()
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
-
-    // Iniciar las tareas programadas (Cron Jobs)
     startCronJobs();
   })
   .catch(err => {

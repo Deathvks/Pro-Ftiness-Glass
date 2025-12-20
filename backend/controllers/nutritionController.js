@@ -8,6 +8,7 @@ import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 // --- INICIO DE LA MODIFICACIÓN ---
 import { deleteFile } from '../services/imageService.js';
+import { addXp, checkStreak, unlockBadge, FOOD_LOG_XP, WATER_LOG_XP } from '../services/gamificationService.js';
 // --- FIN DE LA MODIFICACIÓN ---
 
 const __filename = fileURLToPath(import.meta.url);
@@ -215,6 +216,24 @@ const addFoodLog = async (req, res, next) => {
     };
 
     const newLog = await NutritionLog.create(foodData);
+
+    // --- INICIO MODIFICACIÓN: Gamificación ---
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      // XP por registrar comida
+      await addXp(userId, FOOD_LOG_XP, 'Comida registrada');
+      await checkStreak(userId, todayStr);
+
+      // Verificar insignia 'Chef' (5 comidas)
+      const count = await NutritionLog.count({ where: { user_id: userId } });
+      if (count >= 5) {
+        await unlockBadge(userId, 'nutrition_master');
+      }
+    } catch (gError) {
+      console.error('Error gamificación en addFoodLog:', gError);
+    }
+    // --- FIN MODIFICACIÓN ---
+
     res.status(201).json(newLog);
   } catch (error) {
     // Si falla la creación y subimos una imagen, la borramos
@@ -365,6 +384,17 @@ const upsertWaterLog = async (req, res, next) => {
       waterLog.quantity_ml = quantity_ml;
       await waterLog.save();
     }
+
+    // --- INICIO MODIFICACIÓN: Gamificación ---
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      // XP por registrar agua
+      await addXp(userId, WATER_LOG_XP, 'Hidratación registrada');
+      await checkStreak(userId, todayStr);
+    } catch (gError) {
+      console.error('Error gamificación en upsertWaterLog:', gError);
+    }
+    // --- FIN MODIFICACIÓN ---
 
     res.json(waterLog);
   } catch (error) {
