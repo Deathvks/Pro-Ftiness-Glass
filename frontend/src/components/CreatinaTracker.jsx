@@ -1,11 +1,10 @@
+/* frontend/src/components/CreatinaTracker.jsx */
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Calendar, TrendingUp, Zap, Save, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { useToast } from '../hooks/useToast';
 import * as creatinaService from '../services/creatinaService';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { formatDateForDisplay, formatDateToShort, formatDateForQuery } from '../utils/dateUtils';
-// --- FIN DE LA MODIFICACIÓN ---
 import ConfirmationModal from './ConfirmationModal';
 
 const CreatinaTracker = ({ onClose, selectedDate }) => {
@@ -36,7 +35,6 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
         setGrams(''); // Limpiar el input al cambiar de día
     }, [selectedDate]);
 
-    // --- INICIO DE LA MODIFICACIÓN ---
     const fetchCreatinaData = async () => {
         setIsLoading(true);
         try {
@@ -45,11 +43,11 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
             // Aseguramos UTC para consistencia con el backend
             const dayOfWeek = today.getUTCDay(); // 0=Dom, 1=Lun, ...
             // Ajuste para que Lunes sea 0 (0 -> 6, 1 -> 0, 2 -> 1, ...)
-            const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1; 
-            
+            const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+
             const startOfWeek = new Date(today);
             startOfWeek.setUTCDate(today.getUTCDate() - offset);
-            
+
             const startDate = formatDateForQuery(startOfWeek);
             const endDate = formatDateForQuery(today);
 
@@ -60,7 +58,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                 // Pedir los logs del día seleccionado para el formulario de añadir toma
                 creatinaService.getCreatinaLogs({ startDate: selectedDate, endDate: selectedDate })
             ]);
-            
+
             setCreatinaLogs(logsResponse.data || []);
             setStats(statsResponse.data || stats);
             setDailyLogs(dailyLogsResponse.data || []);
@@ -73,17 +71,16 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
             setIsLoading(false);
         }
     };
-    // --- FIN DE LA MODIFICACIÓN ---
-    
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         const gramsValue = parseFloat(grams);
         if (isNaN(gramsValue) || gramsValue <= 0) {
             addToast('Por favor ingresa una cantidad válida de gramos', 'error');
             return;
         }
-    
+
         setIsSubmitting(true);
         try {
             await creatinaService.createCreatinaLog({
@@ -99,7 +96,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
             setIsSubmitting(false);
         }
     };
-    
+
     const getStreakColor = (streak) => {
         if (streak >= 30) return 'text-green-400';
         if (streak >= 14) return 'text-blue-400';
@@ -110,7 +107,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
     useEffect(() => {
         // Bloquea el scroll del body cuando el modal está abierto
         document.body.style.overflow = 'hidden';
-        
+
         // Función de limpieza para restaurar el scroll cuando el modal se cierra
         return () => {
             document.body.style.overflow = 'auto';
@@ -131,18 +128,18 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
     const handleSaveEdit = async (e) => {
         e.preventDefault();
-        
+
         if (!editGrams || editGrams.trim() === '') {
             addToast('Por favor ingresa una cantidad de gramos', 'error');
             return;
         }
-        
+
         const gramsValue = parseFloat(editGrams);
         if (isNaN(gramsValue) || gramsValue <= 0) {
             addToast('Por favor ingresa una cantidad válida de gramos', 'error');
             return;
         }
-    
+
         setIsSubmitting(true);
         try {
             await creatinaService.updateCreatinaLog(editingLog.id, {
@@ -182,8 +179,10 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-                <div className="bg-bg-primary rounded-2xl border border-glass-border max-w-5xl w-full max-h-[95vh] flex flex-col">
+            {/* MODIFICACIÓN: z-[100] para estar sobre el navbar. items-center para centrado. */}
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[100]">
+                {/* MODIFICACIÓN: max-h-[85vh] en móvil para evitar bordes. Shadow añadido. */}
+                <div className="bg-bg-primary rounded-2xl border border-glass-border max-w-5xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl">
                     <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-b border-glass-border">
                         <div className="flex items-center gap-3">
                             <Zap className="text-accent" size={28} />
@@ -192,7 +191,8 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                         <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors"><X size={24} /></button>
                     </div>
 
-                    <div className="flex-grow overflow-y-auto p-4 sm:p-6">
+                    {/* MODIFICACIÓN: pb-24 en móvil para scroll seguro. custom-scrollbar opcional si tienes la clase. */}
+                    <div className="flex-grow overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-6 custom-scrollbar">
                         <div className="space-y-4 sm:space-y-6">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                                 <GlassCard className="p-3 sm:p-4 text-center"><div className="flex items-center justify-center mb-2"><Calendar className="text-blue-400" size={24} /></div><p className="text-xl sm:text-2xl font-bold">{stats.totalDays}</p><p className="text-xs sm:text-sm text-text-muted">Días totales</p></GlassCard>
@@ -258,9 +258,10 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                 </div>
             </div>
 
+            {/* MODIFICACIÓN: z-[110] para estar sobre el tracker. */}
             {showEditModal && editingLog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-                    <div className="bg-bg-primary rounded-xl border border-glass-border max-w-md w-full">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110]">
+                    <div className="bg-bg-primary rounded-xl border border-glass-border max-w-md w-full shadow-2xl">
                         <div className="flex items-center justify-between p-6 border-b border-glass-border"><h3 className="text-xl font-bold">Editar Registro</h3><button onClick={handleCloseEditModal} className="p-2 rounded-full hover:bg-white/10"><X size={20} /></button></div>
                         <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
                             <div><label className="block text-sm font-medium mb-2">Fecha</label><p className="bg-bg-secondary px-3 py-2 rounded-lg border border-glass-border">{formatDateForDisplay(editingLog.log_date)}</p></div>

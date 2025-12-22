@@ -186,8 +186,8 @@ export default function MainAppLayout({
                    pb-[calc(5rem+env(safe-area-inset-bottom))]" // 5rem (h-20) + safe-area
       >
 
-        {/* Header (Móvil) */}
-        <div className="md:hidden flex justify-between items-center border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-10
+        {/* Header (Móvil) - MODIFICADO: z-50 para máxima prioridad */}
+        <div className="md:hidden flex justify-between items-center border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50
                         px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]
                         sm:px-6 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]">
 

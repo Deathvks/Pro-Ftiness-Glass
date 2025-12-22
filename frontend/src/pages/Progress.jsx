@@ -105,7 +105,7 @@ const Progress = ({ darkMode }) => {
                 <meta name="description" content="Visualiza tu progreso en gráficos: evolución del peso corporal, progresión de fuerza por ejercicio, resumen nutricional mensual y calendario de entrenamientos." />
             </Helmet>
 
-            {/* Header para PC (modificado) */}
+            {/* Header para PC (Restaurado a estático para evitar desalineación) */}
             <div className="hidden md:flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
                 <h1 className="text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">Tu Progreso</h1>
 
@@ -118,7 +118,8 @@ const Progress = ({ darkMode }) => {
                 </div>
             </div>
 
-            <div className="md:hidden flex flex-wrap gap-2 mt-6 sm:mt-0 mb-6">
+            {/* Header Móvil (z-0 para evitar superposición con el header global) */}
+            <div className="md:hidden flex flex-wrap gap-2 mt-6 sm:mt-0 mb-6 relative z-0">
                 <button onClick={() => setViewType('exercise')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'exercise' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Por Ejercicio</button>
                 <button onClick={() => setViewType('nutrition')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'nutrition' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Nutrición</button>
                 <button onClick={() => setViewType('records')} className={`px-4 py-2 text-sm font-semibold rounded-full transition ${viewType === 'records' ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary hover:bg-white/10'}`}>Récords</button>

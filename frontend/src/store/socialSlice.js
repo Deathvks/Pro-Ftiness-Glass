@@ -113,9 +113,11 @@ export const createSocialSlice = (set, get) => ({
 
     // Ver perfil público
     fetchPublicProfile: async (userId) => {
+        // Limpiamos el perfil anterior para evitar flasheos de datos viejos
         set({ isSocialLoading: true, socialError: null, socialViewedProfile: null });
         try {
             const profile = await socialService.getPublicProfile(userId);
+            // Ahora profile puede incluir { warning: "..." } si no son amigos
             set({ socialViewedProfile: profile, isSocialLoading: false });
         } catch (error) {
             set({ socialError: error.message, isSocialLoading: false });

@@ -114,10 +114,8 @@ const Nutrition = ({ setView }) => {
         bodyWeightLog,
         favoriteMeals,
         recentMeals,
-        // --- INICIO DE LA MODIFICACIÓN: Importar acciones de favoritos ---
         addFavoriteMeal,
         deleteFavoriteMeal,
-        // --- FIN DE LA MODIFICACIÓN ---
     } = useAppStore(state => ({
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
@@ -128,10 +126,8 @@ const Nutrition = ({ setView }) => {
         bodyWeightLog: state.bodyWeightLog,
         favoriteMeals: state.favoriteMeals || [],
         recentMeals: state.recentMeals || [],
-        // --- INICIO DE LA MODIFICACIÓN ---
         addFavoriteMeal: state.addFavoriteMeal,
         deleteFavoriteMeal: state.deleteFavoriteMeal,
-        // --- FIN DE LA MODIFICACIÓN ---
     }));
 
     const [modal, setModal] = useState({ type: null, data: null });
@@ -215,7 +211,6 @@ const Nutrition = ({ setView }) => {
         try {
             const isArray = Array.isArray(formDataOrArray);
 
-            // --- INICIO DE LA MODIFICACIÓN: Gestión robusta de favoritos ---
             const processFavorites = async (food) => {
                 // Normalizar banderas: puede venir como 'isFavorite' o 'saveAsFavorite'
                 const shouldBeFavorite = food.isFavorite || food.saveAsFavorite;
@@ -266,7 +261,6 @@ const Nutrition = ({ setView }) => {
             // Procesar favoritos en paralelo pero sin bloquear el guardado principal si fallan
             // Usamos map para disparar las promesas
             foodsToProcess.forEach(food => processFavorites(food));
-            // --- FIN DE LA MODIFICACIÓN ---
 
             if (modal.data?.id) {
                 const formData = isArray ? formDataOrArray[0] : formDataOrArray;
@@ -403,7 +397,11 @@ const Nutrition = ({ setView }) => {
                                     <Droplet size={32} className="text-blue-400" />
                                     <p className="text-4xl font-bold">{(waterLog?.quantity_ml || 0)}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
                                 </div>
-                                <button onClick={() => setModal({ type: 'water', data: null })} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors">
+                                {/* MODIFICACIÓN: Botón con background de acento, sin borde y texto blanco */}
+                                <button
+                                    onClick={() => setModal({ type: 'water', data: null })}
+                                    className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-white font-semibold py-3 hover:brightness-110 transition-all shadow-md"
+                                >
                                     <Plus size={20} />
                                     <span>Añadir / Editar Agua</span>
                                 </button>
@@ -417,9 +415,10 @@ const Nutrition = ({ setView }) => {
                                         Creatina
                                     </h2>
                                 </div>
+                                {/* MODIFICACIÓN: Botón con background de acento, sin borde y texto blanco */}
                                 <button
                                     onClick={() => setShowCreatinaTracker(true)}
-                                    className="flex items-center justify-center gap-2 w-full rounded-md bg-accent/10 text-accent font-semibold py-3 border border-accent/20 hover:bg-accent/20 transition-colors"
+                                    className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-white font-semibold py-3 hover:brightness-110 transition-all shadow-md"
                                 >
                                     <Zap size={20} />
                                     <span>Gestionar Creatina</span>

@@ -345,7 +345,7 @@ export default function Social({ setView }) {
                         <button
                             type="submit"
                             disabled={isSocialLoading}
-                            className="bg-accent-primary text-bg-primary font-bold px-4 py-1.5 rounded-lg active:scale-95 transition-all hover:bg-accent-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            className="bg-transparent text-text-primary font-bold px-4 py-1.5 rounded-lg active:scale-95 transition-all hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             {isSocialLoading ? <Spinner size={18} /> : 'Buscar'}
                         </button>
@@ -498,7 +498,8 @@ export default function Social({ setView }) {
 
                 {/* Navegación (Tabs) */}
                 <div className="md:col-span-1">
-                    <GlassCard className="flex md:flex-col overflow-hidden md:p-2 sticky md:top-24 z-10">
+                    {/* MODIFICACIÓN: md:z-10 para desktop, z-auto/0 para móvil */}
+                    <GlassCard className="flex md:flex-col overflow-hidden md:p-2 sticky md:top-24 md:z-10">
                         <TabButton
                             id="friends"
                             icon={Users}

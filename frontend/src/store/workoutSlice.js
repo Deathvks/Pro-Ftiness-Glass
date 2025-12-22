@@ -1,8 +1,7 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { formatDateForQuery } from '../utils/dateUtils';
-// --- FIN DE LA MODIFICACIÓN ---
+import { v4 as uuidv4 } from 'uuid'; // --- AÑADIDO ---
 
 // --- HELPER: Buscar último rendimiento ---
 const findLastPerformance = (workoutLog, exerciseName) => {
@@ -125,7 +124,7 @@ const initialState = {
   restTimerMode: 'modal',
   isRestTimerPaused: false,
   restTimerRemaining: null,
-  completedRoutineIdsToday: [], // <--- NUEVO
+  completedRoutineIdsToday: [],
 };
 
 export const createWorkoutSlice = (set, get) => ({
@@ -136,24 +135,17 @@ export const createWorkoutSlice = (set, get) => ({
   // --- NUEVA ACCIÓN: Obtener rutinas completadas hoy ---
   fetchTodaysCompletedRoutines: async () => {
     try {
-      // --- INICIO DE LA MODIFICACIÓN ---
-      // Usamos la nueva utilidad para obtener la fecha local formateada (YYYY-MM-DD)
-      // Esto evita el problema de las zonas horarias con toISOString()
       const todayQuery = formatDateForQuery(new Date());
 
-      // Llamar al servicio con la fecha exacta
       const workouts = await workoutService.getWorkouts({
         date: todayQuery
       });
-      // --- FIN DE LA MODIFICACIÓN ---
 
       if (Array.isArray(workouts)) {
-        // Extraer IDs de rutinas completadas
         const completedIds = workouts
           .map(w => w.routine_id || w.routineId)
           .filter(id => id != null);
 
-        // Guardar sin duplicados
         set({ completedRoutineIdsToday: [...new Set(completedIds)] });
       }
     } catch (error) {
@@ -162,7 +154,6 @@ export const createWorkoutSlice = (set, get) => ({
   },
 
   startWorkout: async (routine) => {
-    // 1. Obtener toda la biblioteca de ejercicios y el historial
     const state = get();
     const allExercises = await state.getOrFetchAllExercises();
     const workoutLog = state.workoutLog || [];
@@ -172,20 +163,16 @@ export const createWorkoutSlice = (set, get) => ({
     ].sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0));
 
     const exercises = sortedExercises.map((ex) => {
-      // 2. Intentar encontrar el ejercicio en la biblioteca
       const targetId = ex.exercise_list_id || ex.exercise_id;
       let fullDetails = allExercises.find((detail) => detail.id === targetId);
 
-      // Backup: Match por nombre
       if (!fullDetails && ex.name) {
         const normName = ex.name.toLowerCase().trim();
         fullDetails = allExercises.find(d => d.name.toLowerCase().trim() === normName);
       }
 
-      // Nombre final
       const exerciseKeyName = fullDetails?.name || ex.exercise?.name || ex.name;
 
-      // 3. Resolución de Media
       const mediaUrl =
         ex.image_url ||
         ex.gifUrl ||
@@ -207,7 +194,6 @@ export const createWorkoutSlice = (set, get) => ({
         video_url: videoUrl,
       };
 
-      // 4. Buscar Último Rendimiento
       const lastPerformance = findLastPerformance(workoutLog, exerciseKeyName);
 
       return {
@@ -227,7 +213,7 @@ export const createWorkoutSlice = (set, get) => ({
         })),
         exercise_list_id: fullDetails?.id || null,
         muscle_group: fullDetails?.muscle_group || null,
-        last_performance: lastPerformance, // <--- NUEVO
+        last_performance: lastPerformance,
       };
     });
 
@@ -329,7 +315,6 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
-  // --- Generador de Calentamiento ---
   addWarmupSets: (exIndex, workingWeight) => {
     const session = get().activeWorkout;
     if (!session) return;
@@ -339,11 +324,8 @@ export const createWorkoutSlice = (set, get) => ({
     const weight = parseFloat(workingWeight);
     if (!weight || weight <= 0) return;
 
-    // --- Lógica de redondeo inteligente ---
     const getSmartRoundedWeight = (w) => {
-      // Para pesos bajos (< 20kg), asumimos mancuernas (pasos de 1kg)
       if (weight < 20) return Math.round(w);
-      // Para pesos mayores, usamos el estándar de 2.5kg
       return Math.round(w / 2.5) * 2.5;
     };
 
@@ -354,10 +336,7 @@ export const createWorkoutSlice = (set, get) => ({
     ].map((stage) => {
       let calculatedW = getSmartRoundedWeight(weight * stage.p);
 
-      // --- Protección: El calentamiento NUNCA debe superar el peso de trabajo ---
       if (calculatedW >= weight) {
-        // Si lo iguala o supera, forzamos un valor menor.
-        // Si el peso es bajo (<20), restamos 1kg. Si es alto, 2.5kg.
         const decrement = weight < 20 ? 1 : 2.5;
         calculatedW = Math.max(0, weight - decrement);
       }
@@ -398,7 +377,6 @@ export const createWorkoutSlice = (set, get) => ({
       description: newExercise.description_es || newExercise.description || null,
     };
 
-    // Buscar rendimiento para el nuevo ejercicio
     const lastPerformance = findLastPerformance(workoutLog, newExercise.name);
 
     newExercises[exIndex] = {
@@ -411,10 +389,12 @@ export const createWorkoutSlice = (set, get) => ({
         weight_kg: '',
         is_dropset: false,
       })),
-      id: null,
+      // --- MODIFICACIÓN: Usamos un UUID temporal para evitar colisiones de keys en React ---
+      id: uuidv4(),
+      // --- FIN MODIFICACIÓN ---
       exercise_list_id: newExercise.id,
       muscle_group: newExercise.muscle_group,
-      last_performance: lastPerformance, // <--- NUEVO
+      last_performance: lastPerformance,
     };
     const newState = {
       activeWorkout: { ...session, exercises: newExercises },
@@ -564,7 +544,6 @@ export const createWorkoutSlice = (set, get) => ({
     try {
       const responseData = await workoutService.logWorkout(workoutData);
 
-      // --- ACTUALIZACIÓN DE RUTINAS COMPLETADAS HOY ---
       if (workoutData.routineId) {
         const current = get().completedRoutineIdsToday;
         if (!current.includes(workoutData.routineId)) {
@@ -572,13 +551,11 @@ export const createWorkoutSlice = (set, get) => ({
         }
       }
 
-      // --- INICIO MODIFICACIÓN GAMIFICACIÓN ---
       if (get().addXp) get().addXp(50);
 
       const todayStr = formatDateForQuery(new Date());
       if (get().checkStreak) get().checkStreak(todayStr);
       if (get().unlockBadge) get().unlockBadge('first_workout');
-      // --- FIN MODIFICACIÓN GAMIFICACIÓN ---
 
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         get().showPRNotification(responseData.newPRs);
@@ -597,9 +574,6 @@ export const createWorkoutSlice = (set, get) => ({
     try {
       await workoutService.deleteWorkout(workoutId);
       await get().fetchInitialData();
-      // Nota: Si borramos un workout, idealmente deberíamos refrescar completedRoutineIdsToday
-      // o quitarlo del array, pero por simplicidad dejaremos que fetchInitialData maneje la recarga global si es necesario
-      // o el usuario recargue. Para ser consistentes podríamos llamar a fetchTodaysCompletedRoutines aquí.
       await get().fetchTodaysCompletedRoutines();
 
       return { success: true, message: 'Entrenamiento eliminado.' };

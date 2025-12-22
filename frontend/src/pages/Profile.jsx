@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, ChevronRight, Save, User, Camera, AlertTriangle,
-  Trophy, Flame, Dumbbell, Crown, Star
+  Trophy, Flame, Dumbbell, Crown, Star, Eye
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
@@ -74,7 +74,8 @@ const BADGE_DETAILS = {
   }
 };
 
-const Profile = ({ onCancel }) => {
+// --- MODIFICACIÓN: Añadido navigate a los props por compatibilidad ---
+const Profile = ({ onCancel, setView, navigate }) => {
   const { userProfile, fetchInitialData, handleLogout, gamification } = useAppStore(
     (state) => ({
       userProfile: state.userProfile,
@@ -96,11 +97,9 @@ const Profile = ({ onCancel }) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   // --- Estado para Paginación de Insignias Responsiva ---
-  // Inicializamos basado en el ancho de la ventana para evitar flash
   const [itemsPerPage, setItemsPerPage] = useState(() => window.innerWidth < 640 ? 1 : 3);
   const [badgePage, setBadgePage] = useState(0);
 
-  // Listener para cambiar el número de items al redimensionar
   useEffect(() => {
     const handleResize = () => {
       const newItems = window.innerWidth < 640 ? 1 : 3;
@@ -111,7 +110,6 @@ const Profile = ({ onCancel }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Resetear página si cambia el número de items para no quedar fuera de rango
   useEffect(() => {
     setBadgePage(0);
   }, [itemsPerPage]);
@@ -119,6 +117,18 @@ const Profile = ({ onCancel }) => {
   const openImageModal = () => {
     if (imagePreview) {
       setIsImageModalOpen(true);
+    }
+  };
+
+  // Función robusta para navegar al perfil público
+  const handleViewPublicProfile = () => {
+    if (setView) {
+      setView('publicProfile', { userId: userProfile.id });
+    } else if (navigate) {
+      navigate('publicProfile', { userId: userProfile.id });
+    } else {
+      console.warn("No se encontró función de navegación (setView o navigate)");
+      addToast("Error de navegación", "error");
     }
   };
 
@@ -478,6 +488,27 @@ const Profile = ({ onCancel }) => {
               </button>
             </div>
           </form>
+        </GlassCard>
+
+        {/* --- NUEVO APARTADO: PERFIL SOCIAL --- */}
+        <GlassCard className="p-6 mt-8">
+          <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+            <User size={20} className="text-accent" />
+            Perfil Social
+          </h3>
+          <p className="text-sm text-text-secondary mb-4">
+            Así es como otros usuarios ven tu perfil, logros y estadísticas.
+            Puedes personalizar qué información es pública desde los ajustes.
+          </p>
+          {/* MODIFICACIÓN: Botón con estilo sólido y lógica de navegación robusta */}
+          <button
+            type="button"
+            onClick={handleViewPublicProfile}
+            className="flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto rounded-full bg-accent text-bg-secondary font-bold shadow-lg shadow-accent/20 hover:scale-105 transition-transform active:scale-95"
+          >
+            <Eye size={18} />
+            <span>Ver mi perfil público</span>
+          </button>
         </GlassCard>
 
         {/* --- Sección de Insignias (Con Paginación Responsiva) --- */}

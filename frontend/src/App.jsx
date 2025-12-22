@@ -160,9 +160,8 @@ export default function App() {
       case 'workout': return <Workout timer={timer} setView={navigate} />;
       case 'nutrition': return <Nutrition setView={navigate} />;
       case 'templateDiets': return <TemplateDiets setView={navigate} />;
-      // --- CORRECCIÓN: Pasamos navigate como setView a Social ---
       case 'social': return <Social setView={navigate} />;
-      case 'publicProfile': return <PublicProfile userId={navParams?.userId} />;
+      case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigate('social')} />;
       case 'settings':
         return (
           <SettingsScreen
@@ -175,7 +174,8 @@ export default function App() {
           />
         );
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />;
-      case 'profile': return <Profile onCancel={handleCancelProfile} />;
+      // MODIFICACIÓN: Se añade la prop navigate para que funcione el botón de ver perfil público
+      case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigate} />;
       case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigate('settings')} /> : <Dashboard setView={navigate} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigate} />;

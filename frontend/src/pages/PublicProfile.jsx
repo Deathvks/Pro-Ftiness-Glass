@@ -1,5 +1,5 @@
 /* frontend/src/pages/PublicProfile.jsx */
-import React, { useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     User,
@@ -8,13 +8,15 @@ import {
     Flame,
     Calendar,
     ChevronLeft,
+    ChevronRight, // --- AÑADIDO ---
     UserPlus,
     UserCheck,
     UserX,
     Dumbbell,
     Shield,
     Clock,
-    Construction
+    Construction,
+    Lock
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import GlassCard from '../components/GlassCard';
@@ -23,7 +25,7 @@ import { useToast } from '../hooks/useToast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-// --- DICCIONARIO DE INSIGNIAS ---
+// --- DICCIONARIO DE INSIGNIAS (Diseño Original con Emojis) ---
 const BADGES_MAP = {
     // --- Login / Cuenta ---
     'first_login': { name: 'Bienvenido', icon: '👋' },
@@ -39,15 +41,21 @@ const BADGES_MAP = {
     'morning_bird': { name: 'Madrugador', icon: '🌅' },
     'night_owl': { name: 'Nocturno', icon: '🌙' },
 
+    // --- Maestrías ---
+    'nutrition_master': { name: 'Master Nutrición', icon: '🍎' },
+    'routine_master': { name: 'Creador Rutinas', icon: '📋' },
+    'exercise_master': { name: 'Pro del Gym', icon: '💪' },
+    'social_master': { name: 'Influencer', icon: '🌟' },
+
     // --- Rachas (Streaks) ---
-    'streak_3': { name: 'Calentando', icon: '🔥' },
-    'streak_7': { name: 'Semana Perfecta', icon: '📅' },
-    'streak_14': { name: 'Imparable', icon: '🚀' },
-    'streak_30': { name: 'Hábito de Hierro', icon: '🛡️' },
-    'streak_60': { name: 'Leyenda', icon: '👑' },
+    'streak_3': { name: 'En Llamas', icon: '🔥' },
+    'streak_7': { name: 'Imparable', icon: '⚡' },
+    'streak_14': { name: 'Muro de Acero', icon: '🛡️' },
+    'streak_30': { name: 'Leyenda', icon: '👑' },
+    'streak_60': { name: 'Dios del Gym', icon: '🔱' },
 
     // --- Social ---
-    'social_add': { name: 'Sociable', icon: '🤝' },
+    'social_add': { name: 'Amigable', icon: '🤝' },
     'social_10_friends': { name: 'Popular', icon: '🌟' },
 
     // --- Objetivos / Peso ---
@@ -55,29 +63,35 @@ const BADGES_MAP = {
     'first_pr': { name: 'Récord Personal', icon: '🏆' },
 
     // --- Fallback ---
-    'default': { name: 'Logro Desbloqueado', icon: '🏅' }
+    'default': { name: 'Logro', icon: '🏅' }
 };
 
 // Helper para resolver los datos de la insignia
 const resolveBadge = (badge) => {
     if (!badge) return BADGES_MAP['default'];
 
-    if (typeof badge === 'string') {
-        return BADGES_MAP[badge] || { name: badge, icon: '🏅' };
-    }
+    let badgeId = '';
+    // Normalizar ID
+    if (typeof badge === 'string') badgeId = badge;
+    else if (typeof badge === 'object') badgeId = badge.id || badge.name;
 
-    if (typeof badge === 'object') {
-        const mapData = badge.id ? BADGES_MAP[badge.id] : null;
-        return {
-            name: mapData?.name || badge.name || badge.id || 'Logro',
-            icon: mapData?.icon || badge.icon || '🏅'
-        };
+    // 1. Buscar en el mapa manual
+    if (BADGES_MAP[badgeId]) return BADGES_MAP[badgeId];
+
+    // 2. Fallback inteligente
+    if (badgeId) {
+        const friendlyName = badgeId
+            .toString()
+            .replace(/[_-]/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+
+        return { name: friendlyName, icon: '🏅' };
     }
 
     return BADGES_MAP['default'];
 };
 
-export default function PublicProfile({ userId: propUserId }) {
+export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const { userId: paramUserId } = useParams();
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -96,6 +110,10 @@ export default function PublicProfile({ userId: propUserId }) {
         removeFriend,
         userProfile: myProfile
     } = useAppStore();
+
+    // --- ESTADO PARA PAGINACIÓN DE INSIGNIAS ---
+    const [badgePage, setBadgePage] = useState(0);
+    const BADGES_PER_PAGE = 4;
 
     useEffect(() => {
         if (userId) {
@@ -132,8 +150,31 @@ export default function PublicProfile({ userId: propUserId }) {
         if (window.confirm('¿Seguro que quieres eliminar a este amigo?')) {
             await removeFriend(userId);
             showToast('Amigo eliminado', 'success');
-            navigate('/social'); // Redirigir a social tras eliminar
+            handleGoBack({ preventDefault: () => { }, stopPropagation: () => { } });
         }
+    };
+
+    // --- LÓGICA DE NAVEGACIÓN ROBUSTA ---
+    const handleGoBack = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // 1. Prioridad: onBack (patrón Profile.jsx)
+        if (onBack) {
+            onBack();
+            return;
+        }
+
+        // 2. Soporte: setView (por si acaso se pasa esta prop)
+        if (setView) {
+            setView('social');
+            return;
+        }
+
+        // 3. Fallback: Recarga segura a Social
+        window.location.href = '/social';
     };
 
     if (isSocialLoading) {
@@ -146,13 +187,31 @@ export default function PublicProfile({ userId: propUserId }) {
     }
 
     if (socialError || !profile) {
+        const isPrivate = socialError && (
+            socialError.toLowerCase().includes('permiso') ||
+            socialError.toLowerCase().includes('privado') ||
+            socialError.toLowerCase().includes('forbidden')
+        );
+
         return (
             <div className="p-8 flex flex-col items-center justify-center text-center">
-                <UserX size={64} className="text-red-400 mb-4 opacity-50" />
-                <h2 className="text-xl font-bold text-text-primary mb-2">Perfil no encontrado</h2>
-                <p className="text-text-tertiary mb-6">El usuario no existe o ha restringido su perfil.</p>
+                {isPrivate ? (
+                    <>
+                        <Lock size={64} className="text-accent-primary mb-4 opacity-50" />
+                        <h2 className="text-xl font-bold text-text-primary mb-2">Perfil Privado</h2>
+                        <p className="text-text-tertiary mb-6">Este perfil es privado. Debes añadir a este usuario a tus amigos para ver su actividad.</p>
+                    </>
+                ) : (
+                    <>
+                        <UserX size={64} className="text-red-400 mb-4 opacity-50" />
+                        <h2 className="text-xl font-bold text-text-primary mb-2">Perfil no encontrado</h2>
+                        <p className="text-text-tertiary mb-6">El usuario no existe o ha restringido su perfil.</p>
+                    </>
+                )}
+
                 <button
-                    onClick={() => navigate('/social')}
+                    type="button"
+                    onClick={handleGoBack}
                     className="px-6 py-2 bg-bg-secondary rounded-xl text-text-primary hover:bg-bg-secondary/80 transition"
                 >
                     Volver
@@ -170,15 +229,19 @@ export default function PublicProfile({ userId: propUserId }) {
         badges = [];
     }
 
+    // --- CÁLCULOS PAGINACIÓN ---
+    const totalBadgePages = Math.ceil(badges.length / BADGES_PER_PAGE);
+    const visibleBadges = badges.slice(badgePage * BADGES_PER_PAGE, (badgePage + 1) * BADGES_PER_PAGE);
+
     return (
-        // MODIFICACIÓN: Cambiado 'space-y-6' por 'flex flex-col gap-6' para evitar márgenes fantasma en elementos hidden
         <div className="pb-24 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
 
             {/* --- HEADER DESKTOP --- */}
-            <div className="hidden md:flex items-center justify-between pt-6 mb-2">
+            <div className="hidden md:flex items-center justify-between pt-6 mb-2 relative z-50">
                 <button
-                    onClick={() => navigate('/social')}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition"
+                    type="button"
+                    onClick={handleGoBack}
+                    className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition"
                 >
                     <ChevronLeft size={18} /> <span className="text-sm font-medium">Volver</span>
                 </button>
@@ -188,10 +251,11 @@ export default function PublicProfile({ userId: propUserId }) {
             </div>
 
             {/* --- HEADER NAVBAR (Móvil) --- */}
-            <div className="md:hidden pt-4 flex items-center gap-4">
+            <div className="md:hidden pt-4 flex items-center gap-4 relative z-50">
                 <button
-                    onClick={() => navigate('/social')}
-                    className="p-2 rounded-xl bg-bg-secondary/50 hover:bg-bg-secondary transition text-text-primary"
+                    type="button"
+                    onClick={handleGoBack}
+                    className="cursor-pointer p-2 rounded-xl bg-bg-secondary/50 hover:bg-bg-secondary transition text-text-primary"
                 >
                     <ChevronLeft size={24} />
                 </button>
@@ -277,7 +341,7 @@ export default function PublicProfile({ userId: propUserId }) {
                         )}
 
                         {relationshipStatus === 'pending_received' && (
-                            <button onClick={() => navigate('/social')} className="flex items-center gap-2 px-6 py-2 bg-accent-primary/20 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/30">
+                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-2 bg-accent-primary/20 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/30">
                                 <UserCheck size={18} />
                                 Responder Solicitud
                             </button>
@@ -322,18 +386,43 @@ export default function PublicProfile({ userId: propUserId }) {
                 </GlassCard>
             )}
 
-            {/* --- INSIGNIAS --- */}
+            {/* --- INSIGNIAS (PAGINADAS) --- */}
             {profile.show_badges && badges.length > 0 && (
                 <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
-                        <Medal size={20} className="text-accent-primary" />
-                        Insignias Desbloqueadas
-                    </h3>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                        {badges.map((badge, idx) => {
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                            <Medal size={20} className="text-accent-primary" />
+                            Insignias Desbloqueadas
+                        </h3>
+                        {/* Controles de Paginación */}
+                        {badges.length > BADGES_PER_PAGE && (
+                            <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-lg p-1 border border-glass-border">
+                                <button
+                                    onClick={() => setBadgePage(p => Math.max(0, p - 1))}
+                                    disabled={badgePage === 0}
+                                    className="p-1 hover:bg-white/10 rounded disabled:opacity-30 transition cursor-pointer"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <span className="text-xs font-mono text-text-secondary px-1 select-none">
+                                    {badgePage + 1}/{totalBadgePages}
+                                </span>
+                                <button
+                                    onClick={() => setBadgePage(p => Math.min(totalBadgePages - 1, p + 1))}
+                                    disabled={badgePage === totalBadgePages - 1}
+                                    className="p-1 hover:bg-white/10 rounded disabled:opacity-30 transition cursor-pointer"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-3">
+                        {visibleBadges.map((badge, idx) => {
                             const b = resolveBadge(badge);
                             return (
-                                <GlassCard key={idx} className="aspect-square flex flex-col items-center justify-center p-2 gap-2 hover:bg-white/5 transition">
+                                <GlassCard key={idx} className="aspect-square flex flex-col items-center justify-center p-2 gap-2 hover:bg-white/5 transition animate-fade-in">
                                     <div className="text-3xl">{b.icon}</div>
                                     <span className="text-[10px] text-center font-medium leading-tight text-text-secondary line-clamp-2">
                                         {b.name}
@@ -341,6 +430,7 @@ export default function PublicProfile({ userId: propUserId }) {
                                 </GlassCard>
                             );
                         })}
+                        {/* Relleno para mantener el layout si hay menos de 4 en la última página (opcional, por ahora solo grid) */}
                     </div>
                 </div>
             )}
@@ -356,7 +446,6 @@ export default function PublicProfile({ userId: propUserId }) {
                     <div className="p-3 rounded-full bg-accent/10">
                         <Construction size={24} className="text-accent" />
                     </div>
-                    {/* Texto del color de acento del usuario */}
                     <span className="text-xl font-bold text-accent">Próximamente</span>
                     <p className="text-sm text-text-tertiary text-center max-w-xs">
                         Estamos trabajando para que pronto puedas explorar y copiar las rutinas de <span className="font-bold text-accent-primary">{profile.username}</span>.
