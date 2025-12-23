@@ -32,8 +32,8 @@ const XPGuideModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                {/* Contenido con Scroll - Padding inferior ajustado a pb-6 */}
-                <div className="p-6 overflow-y-auto custom-scrollbar pb-6">
+                {/* Contenido con Scroll - Padding inferior ajustado a pb-24 para móviles */}
+                <div className="p-6 overflow-y-auto custom-scrollbar pb-24">
 
                     {/* Nota informativa SIN BORDE y alineada arriba */}
                     <div className="bg-accent/10 rounded-xl p-4 flex items-start gap-3 mb-6">
@@ -120,7 +120,7 @@ const XPGuideModal = ({ onClose }) => {
                                 <span className={dailyXpClass}>+5 XP</span>
                             </div>
 
-                            {/* Agua - MODIFICADO CON EXPLICACIÓN DE LÍMITE */}
+                            {/* Agua */}
                             <div className={dailyCardClass}>
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
