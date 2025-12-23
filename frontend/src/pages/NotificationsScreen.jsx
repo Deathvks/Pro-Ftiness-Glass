@@ -174,7 +174,7 @@ const NotificationsScreen = ({ setView }) => {
   const filters = [
     { id: 'all', label: 'Todas' },
     { id: 'unread', label: 'No leídas' },
-    { id: 'xp', label: 'XP' }, // --- AÑADIDO: Filtro XP ---
+    { id: 'xp', label: 'XP' },
     { id: 'info', label: 'Info' },
     { id: 'success', label: 'Éxito' },
     { id: 'alert', label: 'Alertas' },
@@ -185,11 +185,10 @@ const NotificationsScreen = ({ setView }) => {
       if (activeFilter === 'all') return true;
       if (activeFilter === 'unread') return !n.is_read;
 
-      // --- LÓGICA FILTRO XP ---
+      // Lógica filtro XP
       if (activeFilter === 'xp') {
         const title = n.title?.toLowerCase() || '';
         const message = n.message?.toLowerCase() || '';
-        // Busca "xp" en título o mensaje, o si el tipo interno es 'xp'
         return title.includes('xp') || message.includes('xp') || n.data?.type === 'xp';
       }
 
@@ -241,7 +240,8 @@ const NotificationsScreen = ({ setView }) => {
   const canLoadMore = notificationPage < notificationTotalPages && activeFilter === 'all';
 
   return (
-    <div className="pb-24 pt-6 px-4 max-w-2xl mx-auto min-h-full relative">
+    // MODIFICACIÓN: pb-24 -> pb-6 para igualar con el resto de páginas (el layout ya tiene padding)
+    <div className="pb-6 pt-6 px-4 max-w-2xl mx-auto min-h-full relative">
 
       {/* Modales */}
       {selectedNotification && (
