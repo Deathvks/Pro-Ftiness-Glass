@@ -1,6 +1,6 @@
 /* frontend/src/pages/NotificationsScreen.jsx */
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // --- AÑADIDO: Para navegación con params ---
+import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import Spinner from '../components/Spinner';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -96,7 +96,7 @@ const LoginDetailsModal = ({ notification, onClose }) => {
 };
 
 const NotificationsScreen = ({ setView }) => {
-  const navigate = useNavigate(); // Hook para navegación de router
+  const navigate = useNavigate();
   const {
     notifications,
     unreadCount,
@@ -114,8 +114,8 @@ const NotificationsScreen = ({ setView }) => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Estados para modales
-  const [selectedNotification, setSelectedNotification] = useState(null); // Detalles
-  const [deleteAction, setDeleteAction] = useState(null); // Confirmación borrado { type: 'all' | 'single', id?: number }
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [deleteAction, setDeleteAction] = useState(null);
 
   // Carga inicial
   useEffect(() => {
@@ -131,16 +131,11 @@ const NotificationsScreen = ({ setView }) => {
       return;
     }
 
-    // Navegación inteligente (Social, Rutinas, etc.)
+    // Navegación inteligente
     if (notification.data?.url) {
       const targetUrl = notification.data.url;
-
-      // 1. Navegar usando React Router para aplicar los parámetros (query params)
       navigate(targetUrl);
-
-      // 2. Actualizar el estado 'view' de App.jsx para que renderice el componente correcto
       if (setView) {
-        // Extraemos la parte base de la ruta (ej: "/social?tab=..." -> "social")
         const path = targetUrl.startsWith('/') ? targetUrl.slice(1) : targetUrl;
         const viewName = path.split('?')[0];
         setView(viewName);
@@ -179,6 +174,7 @@ const NotificationsScreen = ({ setView }) => {
   const filters = [
     { id: 'all', label: 'Todas' },
     { id: 'unread', label: 'No leídas' },
+    { id: 'xp', label: 'XP' }, // --- AÑADIDO: Filtro XP ---
     { id: 'info', label: 'Info' },
     { id: 'success', label: 'Éxito' },
     { id: 'alert', label: 'Alertas' },
@@ -188,6 +184,15 @@ const NotificationsScreen = ({ setView }) => {
     return notifications.filter(n => {
       if (activeFilter === 'all') return true;
       if (activeFilter === 'unread') return !n.is_read;
+
+      // --- LÓGICA FILTRO XP ---
+      if (activeFilter === 'xp') {
+        const title = n.title?.toLowerCase() || '';
+        const message = n.message?.toLowerCase() || '';
+        // Busca "xp" en título o mensaje, o si el tipo interno es 'xp'
+        return title.includes('xp') || message.includes('xp') || n.data?.type === 'xp';
+      }
+
       if (activeFilter === 'success') return n.type === 'success';
       if (activeFilter === 'alert') return ['warning', 'alert'].includes(n.type);
       if (activeFilter === 'info') return !['success', 'warning', 'alert'].includes(n.type);
@@ -207,7 +212,7 @@ const NotificationsScreen = ({ setView }) => {
   }, [filteredList]);
 
   const getIcon = (n) => {
-    // Iconos específicos para eventos sociales
+    // Iconos específicos
     const subType = n.data?.type || n.type;
 
     if (subType === 'friend_request') return <UserPlus className="text-accent" size={24} />;
