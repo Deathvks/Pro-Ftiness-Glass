@@ -8,7 +8,7 @@ import {
     Flame,
     Calendar,
     ChevronLeft,
-    ChevronRight, // --- AÑADIDO ---
+    ChevronRight,
     UserPlus,
     UserCheck,
     UserX,
@@ -24,6 +24,18 @@ import Spinner from '../components/Spinner';
 import { useToast } from '../hooks/useToast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+
+// --- AÑADIDO: Constantes para construir la URL correcta ---
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BACKEND_BASE_URL = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+
+// --- AÑADIDO: Helper para procesar la imagen ---
+const getProfileImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+    // Si es relativa, le pegamos el dominio del backend
+    return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 // --- DICCIONARIO DE INSIGNIAS (Diseño Original con Emojis) ---
 const BADGES_MAP = {
@@ -233,6 +245,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const totalBadgePages = Math.ceil(badges.length / BADGES_PER_PAGE);
     const visibleBadges = badges.slice(badgePage * BADGES_PER_PAGE, (badgePage + 1) * BADGES_PER_PAGE);
 
+    // --- MODIFICACIÓN: Procesar imagen ---
+    const imgSrc = getProfileImageUrl(profile.profile_image_url);
+
     return (
         <div className="pb-24 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
 
@@ -270,9 +285,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
                 <div className="relative z-10 w-32 h-32 rounded-full p-1 bg-gradient-to-br from-accent-primary to-accent-secondary shadow-xl shadow-accent-primary/20">
                     <div className="w-full h-full rounded-full bg-bg-primary overflow-hidden relative">
-                        {profile.profile_image_url ? (
+                        {imgSrc ? (
                             <img
-                                src={profile.profile_image_url}
+                                src={imgSrc}
                                 alt={profile.username}
                                 className="w-full h-full object-cover"
                             />
@@ -430,7 +445,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                 </GlassCard>
                             );
                         })}
-                        {/* Relleno para mantener el layout si hay menos de 4 en la última página (opcional, por ahora solo grid) */}
                     </div>
                 </div>
             )}
