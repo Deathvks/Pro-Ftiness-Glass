@@ -9,12 +9,12 @@ const XPGuideModal = ({ onClose }) => {
     // Clase base para las tarjetas de acciones diarias
     const dailyCardClass = "flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-accent/30 transition-all duration-300 group";
     // Clase para el texto de XP diario
-    const dailyXpClass = "font-bold text-accent text-sm drop-shadow-[0_0_6px_rgba(34,211,238,0.4)] transition-transform group-hover:scale-110 whitespace-nowrap";
+    const dailyXpClass = "font-bold text-accent text-sm drop-shadow-[0_0_6px_rgba(34,211,238,0.4)] transition-transform group-hover:scale-110 whitespace-nowrap text-right";
 
     // Clase base para las tarjetas doradas (Hitos)
     const goldCardClass = "flex items-center justify-between p-3 bg-gradient-to-br from-amber-500/5 to-amber-500/15 rounded-xl border border-amber-500/20 hover:border-amber-400/50 transition-all duration-300 group";
     // Clase para el texto de XP dorado
-    const goldXpClass = "font-extrabold text-amber-400 text-sm drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] transition-transform group-hover:scale-110 whitespace-nowrap";
+    const goldXpClass = "font-extrabold text-amber-400 text-sm drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] transition-transform group-hover:scale-110 whitespace-nowrap text-right";
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
@@ -120,7 +120,7 @@ const XPGuideModal = ({ onClose }) => {
                                 <span className={dailyXpClass}>+5 XP</span>
                             </div>
 
-                            {/* Agua */}
+                            {/* Agua - MODIFICADO CON EXPLICACIÓN DE LÍMITE */}
                             <div className={dailyCardClass}>
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg">
@@ -131,7 +131,10 @@ const XPGuideModal = ({ onClose }) => {
                                         <span className="text-xs text-text-muted">Registra tu hidratación</span>
                                     </div>
                                 </div>
-                                <span className={dailyXpClass}>+5 XP</span>
+                                <div className="flex flex-col items-end">
+                                    <span className={dailyXpClass}>+5 XP por avance</span>
+                                    <span className="text-[10px] text-text-muted font-medium">Máx 50 XP/día</span>
+                                </div>
                             </div>
 
                             {/* Creatina */}

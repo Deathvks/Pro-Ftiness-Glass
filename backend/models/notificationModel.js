@@ -22,7 +22,7 @@ const Notification = sequelize.define(
     type: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      defaultValue: 'info', // 'info', 'success', 'warning', 'alert'
+      defaultValue: 'info',
     },
     title: {
       type: DataTypes.STRING(255),
@@ -40,14 +40,25 @@ const Notification = sequelize.define(
     data: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: 'Datos adicionales opcionales (ej: enlace interno)'
     },
+    // Definimos MANUALMENTE las columnas para que coincidan 100% con tu CSV
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    }
   },
   {
     tableName: 'notifications',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    // Desactivamos timestamps automáticos para evitar conflictos.
+    // Nosotros ya hemos definido created_at y updated_at arriba.
+    timestamps: false,
+    underscored: true,
     indexes: [
       {
         fields: ['user_id', 'is_read']

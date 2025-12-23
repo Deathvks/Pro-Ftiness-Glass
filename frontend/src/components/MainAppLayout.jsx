@@ -1,14 +1,14 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { User, Zap, Bell } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
+import { useToast } from '../hooks/useToast'; // --- AÑADIDO: Importamos el hook ---
 
 // Componentes UI
 import Sidebar from './Sidebar';
 import Spinner from './Spinner';
 import PRToast from './PRToast';
-import Toast from './Toast';
 import ConfirmationModal from './ConfirmationModal';
 import WelcomeModal from './WelcomeModal';
 import EmailVerificationModal from './EmailVerificationModal';
@@ -53,9 +53,8 @@ export default function MainAppLayout({
   setShowCodeVerificationModal,
   fetchInitialData,
 }) {
-
-  // Estado local para Toast de Gamificación
-  const [gamificationToast, setGamificationToast] = useState(null);
+  // --- AÑADIDO: Hook de Toast para unificar notificaciones ---
+  const { addToast } = useToast();
 
   // Estados y acciones obtenidos directamente de Zustand
   const {
@@ -107,24 +106,16 @@ export default function MainAppLayout({
   useEffect(() => {
     if (gamificationEvent) {
       if (gamificationEvent.type === 'xp') {
-        setGamificationToast({
-          message: `+${gamificationEvent.amount} XP: ${gamificationEvent.reason}`,
-          type: 'success'
-        });
+        // --- MODIFICADO: Usamos addToast del sistema central ---
+        addToast(`+${gamificationEvent.amount} XP: ${gamificationEvent.reason}`, 'success');
       } else if (gamificationEvent.type === 'badge') {
-        setGamificationToast({
-          message: `¡Insignia Desbloqueada! ${gamificationEvent.badge.name}`,
-          type: 'success'
-        });
+        addToast(`¡Insignia Desbloqueada! ${gamificationEvent.badge.name}`, 'success');
       }
 
-      // Limpiamos el evento del store para que no se repita
+      // Limpiamos el evento del store
       clearGamificationEvent();
-
-      // El Toast se autocierra en su componente interno, pero limpiamos estado local a los 5s
-      setTimeout(() => setGamificationToast(null), 5000);
     }
-  }, [gamificationEvent, clearGamificationEvent]);
+  }, [gamificationEvent, clearGamificationEvent, addToast]);
 
 
   // --- Sincronización de Cookies ---
@@ -186,7 +177,7 @@ export default function MainAppLayout({
                    pb-[calc(5rem+env(safe-area-inset-bottom))]" // 5rem (h-20) + safe-area
       >
 
-        {/* Header (Móvil) - MODIFICADO: z-50 para máxima prioridad */}
+        {/* Header (Móvil) - z-50 para máxima prioridad */}
         <div className="md:hidden flex justify-between items-center border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50
                         px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]
                         sm:px-6 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]">
@@ -199,7 +190,7 @@ export default function MainAppLayout({
             >
               {currentTitle}
             </span>
-            {/* MODIFICACIÓN: Badge BETA en Header Móvil */}
+            {/* Badge BETA en Header Móvil */}
             {view === 'social' && (
               <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase animate-fade-in-up">
                 BETA
@@ -312,16 +303,8 @@ export default function MainAppLayout({
 
       {/* --- Modales y Notificaciones --- */}
 
-      {/* Toast de Gamificación */}
-      {gamificationToast && (
-        <div className="fixed top-20 md:top-6 right-4 z-[60] w-full max-w-sm animate-fade-in-down">
-          <Toast
-            message={gamificationToast.message}
-            type={gamificationToast.type}
-            onClose={() => setGamificationToast(null)}
-          />
-        </div>
-      )}
+      {/* ELIMINADO: Toast de Gamificación manual */}
+      {/* Se eliminó el bloque condicional local y el componente Toast importado directamente */}
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 

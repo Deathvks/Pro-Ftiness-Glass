@@ -154,7 +154,7 @@ const getNotifications = async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const offset = (page - 1) * limit;
     const unreadOnly = req.query.unread === 'true';
-    const { type } = req.query; // Nuevo: Filtro por tipo
+    const { type } = req.query;
 
     const whereClause = { user_id: userId };
     if (unreadOnly) {
@@ -166,6 +166,7 @@ const getNotifications = async (req, res, next) => {
 
     const { count, rows } = await Notification.findAndCountAll({
       where: whereClause,
+      // CAMBIO: Usamos 'created_at' explícitamente para evitar conflicto de alias
       order: [['created_at', 'DESC']],
       limit,
       offset,

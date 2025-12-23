@@ -6,9 +6,18 @@ import { useToast } from '../hooks/useToast';
 import * as creatinaService from '../services/creatinaService';
 import { formatDateForDisplay, formatDateToShort, formatDateForQuery } from '../utils/dateUtils';
 import ConfirmationModal from './ConfirmationModal';
+import useAppStore from '../store/useAppStore';
 
 const CreatinaTracker = ({ onClose, selectedDate }) => {
     const { addToast } = useToast();
+    // --- MODIFICACIÓN: Añadimos addXp y checkStreak ---
+    const { fetchNotifications, fetchInitialData, addXp, checkStreak } = useAppStore(state => ({
+        fetchNotifications: state.fetchNotifications,
+        fetchInitialData: state.fetchInitialData,
+        addXp: state.addXp,
+        checkStreak: state.checkStreak
+    }));
+
     const [creatinaLogs, setCreatinaLogs] = useState([]);
     const [dailyLogs, setDailyLogs] = useState([]);
     const [grams, setGrams] = useState('');
@@ -32,17 +41,14 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
     useEffect(() => {
         fetchCreatinaData();
-        setGrams(''); // Limpiar el input al cambiar de día
+        setGrams('');
     }, [selectedDate]);
 
     const fetchCreatinaData = async () => {
         setIsLoading(true);
         try {
-            // Calcular inicio de semana (Lunes) y hoy
             const today = new Date();
-            // Aseguramos UTC para consistencia con el backend
-            const dayOfWeek = today.getUTCDay(); // 0=Dom, 1=Lun, ...
-            // Ajuste para que Lunes sea 0 (0 -> 6, 1 -> 0, 2 -> 1, ...)
+            const dayOfWeek = today.getUTCDay();
             const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
 
             const startOfWeek = new Date(today);
@@ -52,17 +58,15 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
             const endDate = formatDateForQuery(today);
 
             const [logsResponse, statsResponse, dailyLogsResponse] = await Promise.all([
-                // Pedir solo los logs de la semana actual (Lunes a Hoy) para el historial reciente
                 creatinaService.getCreatinaLogs({ startDate, endDate }),
                 creatinaService.getCreatinaStats(),
-                // Pedir los logs del día seleccionado para el formulario de añadir toma
                 creatinaService.getCreatinaLogs({ startDate: selectedDate, endDate: selectedDate })
             ]);
 
             setCreatinaLogs(logsResponse.data || []);
             setStats(statsResponse.data || stats);
             setDailyLogs(dailyLogsResponse.data || []);
-            setCurrentPage(1); // Resetear paginación
+            setCurrentPage(1);
 
         } catch (error) {
             console.error('Error fetching creatina data:', error);
@@ -87,9 +91,18 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                 grams: gramsValue,
                 log_date: selectedDate
             });
+
+            // --- MODIFICACIÓN: Activamos XP y verificamos racha ---
+            if (addXp) addXp(10, 'Creatina registrada');
+            if (checkStreak) checkStreak(new Date().toISOString().split('T')[0]);
+
             addToast('Registro de creatina guardado', 'success');
             setGrams('');
             await fetchCreatinaData();
+
+            if (fetchNotifications) fetchNotifications();
+            if (fetchInitialData) fetchInitialData();
+
         } catch (error) {
             addToast(error.message || 'Error al guardar el registro', 'error');
         } finally {
@@ -105,10 +118,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
     };
 
     useEffect(() => {
-        // Bloquea el scroll del body cuando el modal está abierto
         document.body.style.overflow = 'hidden';
-
-        // Función de limpieza para restaurar el scroll cuando el modal se cierra
         return () => {
             document.body.style.overflow = 'auto';
         };
@@ -148,6 +158,10 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
             addToast('Registro actualizado correctamente', 'success');
             handleCloseEditModal();
             await fetchCreatinaData();
+
+            if (fetchNotifications) fetchNotifications();
+            if (fetchInitialData) fetchInitialData();
+
         } catch (error) {
             console.error('Error updating creatina log:', error);
             addToast('Error al actualizar el registro', 'error');
@@ -168,6 +182,10 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
             await creatinaService.deleteCreatinaLog(logToDelete.id);
             addToast('Registro eliminado correctamente', 'success');
             await fetchCreatinaData();
+
+            if (fetchNotifications) fetchNotifications();
+            if (fetchInitialData) fetchInitialData();
+
         } catch (error) {
             console.error('Error deleting creatina log:', error);
             addToast('Error al eliminar el registro', 'error');
@@ -179,9 +197,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
     return (
         <>
-            {/* MODIFICACIÓN: z-[100] para estar sobre el navbar. items-center para centrado. */}
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[100]">
-                {/* MODIFICACIÓN: max-h-[85vh] en móvil para evitar bordes. Shadow añadido. */}
                 <div className="bg-bg-primary rounded-2xl border border-glass-border max-w-5xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl">
                     <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-b border-glass-border">
                         <div className="flex items-center gap-3">
@@ -191,7 +207,6 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                         <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors"><X size={24} /></button>
                     </div>
 
-                    {/* MODIFICACIÓN: pb-24 en móvil para scroll seguro. custom-scrollbar opcional si tienes la clase. */}
                     <div className="flex-grow overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-6 custom-scrollbar">
                         <div className="space-y-4 sm:space-y-6">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -258,7 +273,6 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                 </div>
             </div>
 
-            {/* MODIFICACIÓN: z-[110] para estar sobre el tracker. */}
             {showEditModal && editingLog && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110]">
                     <div className="bg-bg-primary rounded-xl border border-glass-border max-w-md w-full shadow-2xl">

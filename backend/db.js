@@ -1,9 +1,13 @@
 /* backend/db.js */
 import { Sequelize } from 'sequelize';
-import config from './config/config.cjs'; // <-- Cambio aquí
+import config from './config/config.cjs';
 
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
+
+// --- AÑADE ESTO PARA VERIFICAR ---
+console.log(`🔌 Conectando a Base de Datos: ${dbConfig.database} en ${dbConfig.host}`);
+// ---------------------------------
 
 const sequelize = new Sequelize(
   dbConfig.database,
@@ -15,10 +19,7 @@ const sequelize = new Sequelize(
     timezone: dbConfig.timezone,
     port: dbConfig.port,
     dialectOptions: dbConfig.dialectOptions || {},
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Cambia console.log a false para desactivar siempre los logs
-    logging: false, // env === 'development' ? console.log : false,
-    // --- FIN DE LA MODIFICACIÓN ---
+    logging: false,
   }
 );
 

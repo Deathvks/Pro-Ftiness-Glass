@@ -20,9 +20,9 @@ import TemplateRoutineExercise from './templateRoutineExerciseModel.js';
 import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
 import UserSession from './userSessionModel.js';
-import Friendship from './friendshipModel.js'; // --- AÑADIDO ---
+import Friendship from './friendshipModel.js';
 
-// 2. Configuración de las asociaciones (relaciones) con sus alias
+// 2. Configuración de las asociaciones
 User.hasMany(Routine, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Routines' });
 Routine.belongsTo(User, { foreignKey: 'user_id' });
 
@@ -62,8 +62,9 @@ TemplateRoutineExercise.belongsTo(TemplateRoutine, { foreignKey: 'template_routi
 User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
 CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-User.hasMany(PushSubscription, { foreignKey: 'userId', onDelete: 'CASCADE', as: 'PushSubscriptions' });
-PushSubscription.belongsTo(User, { foreignKey: 'userId' });
+// --- CORREGIDO: userId -> user_id ---
+User.hasMany(PushSubscription, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'PushSubscriptions' });
+PushSubscription.belongsTo(User, { foreignKey: 'user_id' });
 
 User.hasMany(Notification, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Notifications' });
 Notification.belongsTo(User, { foreignKey: 'user_id' });
@@ -71,13 +72,11 @@ Notification.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(UserSession, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Sessions' });
 UserSession.belongsTo(User, { foreignKey: 'user_id' });
 
-// --- ASOCIACIONES SOCIALES ---
 User.hasMany(Friendship, { foreignKey: 'requester_id', as: 'SentRequests' });
 User.hasMany(Friendship, { foreignKey: 'addressee_id', as: 'ReceivedRequests' });
 Friendship.belongsTo(User, { foreignKey: 'requester_id', as: 'Requester' });
 Friendship.belongsTo(User, { foreignKey: 'addressee_id', as: 'Addressee' });
 
-// 3. Exporta un único objeto que contiene todos los modelos
 const models = {
     sequelize,
     User,
@@ -98,7 +97,7 @@ const models = {
     PushSubscription,
     Notification,
     UserSession,
-    Friendship // --- AÑADIDO ---
+    Friendship
 };
 
 export default models;

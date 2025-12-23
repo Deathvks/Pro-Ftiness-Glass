@@ -26,7 +26,6 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
 
     const isToday = today.toISOString().split('T')[0] === selectedDate;
 
-    // Formatear fecha con la primera letra en mayúscula
     const dateString = date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
     const formattedDate = dateString.charAt(0).toUpperCase() + dateString.slice(1);
 
@@ -66,18 +65,16 @@ const getImageUrl = (url, updatedAt) => {
     return fullUrl;
 };
 
-// Nuevo componente para manejar la carga de imágenes y errores (evita el cuadro negro)
+// Nuevo componente para manejar la carga de imágenes y errores
 const MealImage = ({ src, alt, className, onClick }) => {
     const [hasError, setHasError] = useState(false);
     const [imgSrc, setImgSrc] = useState(src);
 
-    // Reiniciar estado si cambia el src
     useEffect(() => {
         setImgSrc(src);
         setHasError(false);
     }, [src]);
 
-    // Si no hay imagen o dio error, mostramos el fallback (Icono)
     if (!imgSrc || hasError) {
         return (
             <div
@@ -101,7 +98,6 @@ const MealImage = ({ src, alt, className, onClick }) => {
     );
 };
 
-// Componente principal de la página de Nutrición
 const Nutrition = ({ setView }) => {
     const { addToast } = useToast();
     const {
@@ -116,6 +112,10 @@ const Nutrition = ({ setView }) => {
         recentMeals,
         addFavoriteMeal,
         deleteFavoriteMeal,
+        fetchNotifications,
+        fetchInitialData,
+        // --- MODIFICACIÓN: Añadimos addXp ---
+        addXp
     } = useAppStore(state => ({
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
@@ -128,15 +128,18 @@ const Nutrition = ({ setView }) => {
         recentMeals: state.recentMeals || [],
         addFavoriteMeal: state.addFavoriteMeal,
         deleteFavoriteMeal: state.deleteFavoriteMeal,
+        fetchNotifications: state.fetchNotifications,
+        fetchInitialData: state.fetchInitialData,
+        // --- MODIFICACIÓN: Añadimos addXp ---
+        addXp: state.addXp
     }));
 
     const [modal, setModal] = useState({ type: null, data: null });
-    const [viewLog, setViewLog] = useState(null); // Estado para el modal de detalles
+    const [viewLog, setViewLog] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
 
-    // Mapa inteligente de imágenes
     const imageMap = useMemo(() => {
         const map = {};
         const mergeItems = (items) => {
@@ -148,15 +151,12 @@ const Nutrition = ({ setView }) => {
                 const img = item.image_url || item.image || item.img;
                 if (img) {
                     const ts = item.updated_at ? new Date(item.updated_at).getTime() : 0;
-                    // Si ya existe una entrada, solo la reemplazamos si la nueva es más reciente
-                    // O si tiene el mismo timestamp (por ejemplo, items actuales)
                     if (!map[key] || ts >= map[key].timestamp) {
                         map[key] = { url: img, timestamp: ts };
                     }
                 }
             });
         };
-        // El orden importa: Favoritos -> Recientes -> Log Actual (El log actual tiene prioridad si es más reciente)
         mergeItems(favoriteMeals);
         mergeItems(recentMeals);
         mergeItems(nutritionLog);
@@ -197,7 +197,41 @@ const Nutrition = ({ setView }) => {
         try {
             await nutritionService.upsertWaterLog({ log_date: selectedDate, quantity_ml });
             addToast('Registro de agua actualizado.', 'success');
+
+            // --- INICIO MODIFICACIÓN: Lógica de XP para Agua ---
+            if (userProfile?.id && addXp) {
+                const MAX_DAILY_XP = 50; // XP total por llegar al 100% del objetivo
+                const storageKey = `water_max_${userProfile.id}_${selectedDate}`;
+
+                // Obtenemos el máximo histórico registrado hoy (para evitar farmear borrando y añadiendo)
+                const prevMax = parseFloat(localStorage.getItem(storageKey) || '0');
+
+                // Calculamos progreso (0.0 a 1.0)
+                const prevProgress = Math.min(prevMax / waterTarget, 1);
+                const currentProgress = Math.min(quantity_ml / waterTarget, 1);
+
+                // Solo damos XP por el *nuevo* progreso realizado
+                if (currentProgress > prevProgress) {
+                    const progressDelta = currentProgress - prevProgress;
+                    const xpEarned = Math.round(progressDelta * MAX_DAILY_XP);
+
+                    if (xpEarned > 0) {
+                        addXp(xpEarned, `Hidratación: ${Math.round(currentProgress * 100)}% del objetivo`);
+                    }
+                }
+
+                // Actualizamos el "nivel del agua" máximo alcanzado hoy
+                if (quantity_ml > prevMax) {
+                    localStorage.setItem(storageKey, quantity_ml.toString());
+                }
+            }
+            // --- FIN MODIFICACIÓN ---
+
             await fetchDataForDate(selectedDate);
+
+            if (fetchNotifications) fetchNotifications();
+            if (fetchInitialData) fetchInitialData();
+
             setModal({ type: null, data: null });
         } catch (error) {
             addToast(error.message || 'Error al guardar el agua.', 'error');
@@ -212,12 +246,10 @@ const Nutrition = ({ setView }) => {
             const isArray = Array.isArray(formDataOrArray);
 
             const processFavorites = async (food) => {
-                // Normalizar banderas: puede venir como 'isFavorite' o 'saveAsFavorite'
                 const shouldBeFavorite = food.isFavorite || food.saveAsFavorite;
 
                 if (shouldBeFavorite) {
                     try {
-                        // Verificar si ya existe para no duplicar (chequeo simple por nombre)
                         const alreadyExists = favoriteMeals.some(
                             f => f.name.toLowerCase().trim() === food.description.toLowerCase().trim()
                         );
@@ -231,18 +263,14 @@ const Nutrition = ({ setView }) => {
                                 fats_g: food.fats_g,
                                 weight_g: food.weight_g,
                                 image_url: food.image_url,
-                                micronutrients: food.micronutrients // Si están disponibles
+                                micronutrients: food.micronutrients
                             });
-                            // No mostramos toast aquí para no saturar, ya que "Comida añadida" saldrá al final
                         }
                     } catch (err) {
                         console.error("Error guardando favorito en background:", err);
-                        // No fallamos toda la operación por esto, pero lo logueamos
                     }
                 }
-                // Si el usuario lo desmarcó (solo aplica en ediciones donde sepamos que era favorito)
                 else if (food.wasInitiallyFavorite && !shouldBeFavorite) {
-                    // Buscar el ID del favorito para borrarlo
                     const favToDelete = favoriteMeals.find(
                         f => f.name.toLowerCase().trim() === food.description.toLowerCase().trim()
                     );
@@ -257,9 +285,6 @@ const Nutrition = ({ setView }) => {
             };
 
             const foodsToProcess = isArray ? formDataOrArray : [formDataOrArray];
-
-            // Procesar favoritos en paralelo pero sin bloquear el guardado principal si fallan
-            // Usamos map para disparar las promesas
             foodsToProcess.forEach(food => processFavorites(food));
 
             if (modal.data?.id) {
@@ -281,6 +306,10 @@ const Nutrition = ({ setView }) => {
             }
 
             await fetchDataForDate(selectedDate);
+
+            if (fetchNotifications) fetchNotifications();
+            if (fetchInitialData) fetchInitialData();
+
             setModal({ type: null, data: null });
         } catch (error) {
             addToast(error.message || 'Error al guardar la(s) comida(s).', 'error');
@@ -296,6 +325,10 @@ const Nutrition = ({ setView }) => {
             await nutritionService.deleteFoodLog(logToDelete.id);
             addToast('Comida eliminada.', 'success');
             await fetchDataForDate(selectedDate);
+
+            if (fetchNotifications) fetchNotifications();
+            if (fetchInitialData) fetchInitialData();
+
             setLogToDelete(null);
         } catch (error) {
             addToast(error.message || 'Error al eliminar la comida.', 'error');
@@ -335,15 +368,11 @@ const Nutrition = ({ setView }) => {
         return totals;
     }, [nutritionLog]);
 
-    // Función auxiliar para obtener la imagen de un log específico para el modal
     const getLogImage = (log) => {
         if (!log) return null;
-
-        // Prioridad 1: Si el log tiene imagen explícita, usarla (útil para actualizaciones inmediatas)
         if (log.image_url) {
             return getImageUrl(log.image_url, log.updated_at);
         }
-        // Prioridad 2: Buscar en el mapa (para favoritos, recientes, o si se borró pero hay histórico)
         const normalizedName = log.description?.toLowerCase().trim();
         const bestImage = imageMap[normalizedName];
         if (bestImage) {
@@ -377,7 +406,6 @@ const Nutrition = ({ setView }) => {
                 <div className="flex justify-center items-center py-10"><Spinner size={40} /></div>
             ) : (
                 <>
-                    {/* Resumen y Suplementos */}
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
                         <GlassCard className="lg:col-span-3 p-6">
                             <h2 className="text-xl font-bold mb-4">Resumen del Día</h2>
@@ -390,14 +418,12 @@ const Nutrition = ({ setView }) => {
                         </GlassCard>
 
                         <div className="lg:col-span-2 space-y-4">
-                            {/* Agua */}
                             <GlassCard className="p-6 flex flex-col justify-between">
                                 <h2 className="text-xl font-bold">Agua</h2>
                                 <div className="flex items-center justify-center gap-4 my-4">
                                     <Droplet size={32} className="text-blue-400" />
                                     <p className="text-4xl font-bold">{(waterLog?.quantity_ml || 0)}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
                                 </div>
-                                {/* MODIFICACIÓN: Botón con background de acento, sin borde y texto blanco */}
                                 <button
                                     onClick={() => setModal({ type: 'water', data: null })}
                                     className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-white font-semibold py-3 hover:brightness-110 transition-all shadow-md"
@@ -407,7 +433,6 @@ const Nutrition = ({ setView }) => {
                                 </button>
                             </GlassCard>
 
-                            {/* Creatina */}
                             <GlassCard className="p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="text-xl font-bold flex items-center gap-2">
@@ -415,7 +440,6 @@ const Nutrition = ({ setView }) => {
                                         Creatina
                                     </h2>
                                 </div>
-                                {/* MODIFICACIÓN: Botón con background de acento, sin borde y texto blanco */}
                                 <button
                                     onClick={() => setShowCreatinaTracker(true)}
                                     className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-white font-semibold py-3 hover:brightness-110 transition-all shadow-md"
@@ -427,7 +451,6 @@ const Nutrition = ({ setView }) => {
                         </div>
                     </div>
 
-                    {/* Sección de Comidas */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {Object.entries(meals).map(([mealType, logs]) => (
                             <GlassCard key={mealType} className="p-6">
@@ -454,7 +477,6 @@ const Nutrition = ({ setView }) => {
                                                 onClick={() => setViewLog(log)}
                                                 className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-all active:scale-[0.99]"
                                             >
-                                                {/* Uso del nuevo componente MealImage */}
                                                 <MealImage
                                                     src={displayImage}
                                                     alt={log.description}
@@ -499,15 +521,12 @@ const Nutrition = ({ setView }) => {
                 </>
             )}
 
-            {/* Modal de Detalle de Comida */}
             {viewLog && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
                     <div className="absolute inset-0" onClick={() => setViewLog(null)} />
                     <GlassCard className="w-full max-w-md p-0 overflow-hidden relative z-10 animate-scale-in flex flex-col max-h-[85vh] sm:max-h-[90vh]">
 
-                        {/* Cabecera con Imagen */}
                         <div className="relative h-64 bg-black/50 flex items-center justify-center shrink-0">
-                            {/* Uso de MealImage con fallback manual si falla o no hay imagen para mostrar el icono */}
                             {getLogImage(viewLog) ? (
                                 <img
                                     src={getLogImage(viewLog)}
@@ -515,7 +534,6 @@ const Nutrition = ({ setView }) => {
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
                                         e.target.style.display = 'none';
-                                        // Podríamos mostrar el icono aquí si quisiéramos una lógica más compleja
                                     }}
                                 />
                             ) : (
@@ -535,7 +553,6 @@ const Nutrition = ({ setView }) => {
                             </div>
                         </div>
 
-                        {/* Contenido */}
                         <div className="p-6 overflow-y-auto flex-1 min-h-0">
                             <div className="flex items-center justify-between mb-6 pb-4 border-b border-glass-border">
                                 <div className="flex flex-col">
@@ -576,7 +593,6 @@ const Nutrition = ({ setView }) => {
                             </div>
                         </div>
 
-                        {/* Footer */}
                         <div className="p-4 border-t border-glass-border bg-bg-secondary/30 shrink-0">
                             <button
                                 onClick={() => setViewLog(null)}
@@ -589,7 +605,6 @@ const Nutrition = ({ setView }) => {
                 </div>
             )}
 
-            {/* Otros Modales */}
             {modal.type === 'water' && (
                 <WaterLogModal
                     initialQuantity={waterLog?.quantity_ml || 0}
