@@ -19,6 +19,18 @@ import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 
+// --- AÑADIDO: Constantes para construir la URL correcta ---
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BACKEND_BASE_URL = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+
+// --- AÑADIDO: Helper para procesar la imagen ---
+const getProfileImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+    // Si es relativa, le pegamos el dominio del backend
+    return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function Social({ setView }) {
     // Usamos useSearchParams para mantener la pestaña en la URL (persistencia al recargar)
     const [searchParams, setSearchParams] = useSearchParams();
@@ -155,6 +167,8 @@ export default function Social({ setView }) {
 
     const UserListItem = ({ user, action, subtext }) => {
         const isHighlighted = highlightedId && user.id === highlightedId;
+        // --- MODIFICACIÓN: Usar helper para la imagen ---
+        const imgSrc = getProfileImageUrl(user.profile_image_url);
 
         return (
             <div
@@ -167,8 +181,8 @@ export default function Social({ setView }) {
             >
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-bg-secondary flex items-center justify-center overflow-hidden border border-white/10 relative flex-shrink-0">
-                        {user.profile_image_url ? (
-                            <img src={user.profile_image_url} alt={user.username} className="w-full h-full object-cover" />
+                        {imgSrc ? (
+                            <img src={imgSrc} alt={user.username} className="w-full h-full object-cover" />
                         ) : (
                             <Users size={18} className="text-text-tertiary" />
                         )}
@@ -447,6 +461,8 @@ export default function Social({ setView }) {
                     if (rank === 3) rankIcon = <Medal size={20} className="text-amber-700 drop-shadow-md" />;
 
                     const isMe = user.id === userProfile?.id;
+                    // --- MODIFICACIÓN: Usar helper para la imagen ---
+                    const imgSrc = getProfileImageUrl(user.profile_image_url);
 
                     return (
                         <div
@@ -460,8 +476,8 @@ export default function Social({ setView }) {
                             </div>
                             <div className="flex-1 flex items-center gap-3 min-w-0 pl-2">
                                 <div className="w-9 h-9 rounded-full bg-bg-secondary overflow-hidden flex-shrink-0 border border-white/10">
-                                    {user.profile_image_url ? (
-                                        <img src={user.profile_image_url} alt="" className="w-full h-full object-cover" />
+                                    {imgSrc ? (
+                                        <img src={imgSrc} alt="" className="w-full h-full object-cover" />
                                     ) : (
                                         <Users size={16} className="text-text-tertiary m-auto mt-2" />
                                     )}
@@ -486,7 +502,7 @@ export default function Social({ setView }) {
                     <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
                         Comunidad
                     </h1>
-                    {/* AÑADIDO: Badge BETA */}
+                    {/* Badge BETA */}
                     <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase">
                         BETA
                     </span>
@@ -498,7 +514,7 @@ export default function Social({ setView }) {
 
                 {/* Navegación (Tabs) */}
                 <div className="md:col-span-1">
-                    {/* MODIFICACIÓN: md:z-10 para desktop, z-auto/0 para móvil */}
+                    {/* md:z-10 para desktop, z-auto/0 para móvil */}
                     <GlassCard className="flex md:flex-col overflow-hidden md:p-2 sticky md:top-24 md:z-10">
                         <TabButton
                             id="friends"

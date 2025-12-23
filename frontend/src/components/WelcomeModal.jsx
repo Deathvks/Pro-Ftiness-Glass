@@ -63,8 +63,8 @@ const WelcomeModal = ({ onClose }) => {
                   v4
                 </span>
               </div>
-              {/* Badge "New" */}
-              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-bounce">
+              {/* Badge "New" - MODIFICADO: Posición más pegada (-top-1 -right-1 en vez de -2) */}
+              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-bounce">
                 NUEVO
               </div>
             </div>
@@ -167,10 +167,10 @@ const WelcomeModal = ({ onClose }) => {
                   {/* Avatar AMIGO (Estado variable) */}
                   <div className="relative z-10 flex flex-col items-center gap-1">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${socialState === 2
-                        ? 'border-green-500 bg-green-500/10 text-green-500 scale-110'
-                        : socialState === 1
-                          ? 'border-accent/50 text-accent animate-pulse'
-                          : 'border-white/10 bg-bg-secondary text-text-tertiary'
+                      ? 'border-green-500 bg-green-500/10 text-green-500 scale-110'
+                      : socialState === 1
+                        ? 'border-accent/50 text-accent animate-pulse'
+                        : 'border-white/10 bg-bg-secondary text-text-tertiary'
                       }`}>
                       {socialState === 2 ? <Check size={16} strokeWidth={3} /> : <UserPlus size={16} />}
                     </div>

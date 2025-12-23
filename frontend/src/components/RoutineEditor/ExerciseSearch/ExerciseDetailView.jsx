@@ -1,9 +1,7 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseDetailView.jsx */
 import React, { useState } from 'react';
-// --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
-import { ChevronLeft, Plus, Check, Repeat } from 'lucide-react'; // 1. Importar Repeat
-// --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
-import { useAppTheme } from '../../../hooks/useAppTheme'; // Importamos hook de tema
+import { ChevronLeft, Plus, Check, Repeat } from 'lucide-react';
+import { useAppTheme } from '../../../hooks/useAppTheme';
 
 // Componente para la vista de detalle
 const ExerciseDetailView = ({
@@ -12,79 +10,59 @@ const ExerciseDetailView = ({
   onAdd,
   isStaged,
   t,
-  // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
-  isReplacing = false, // 2. Recibir la prop
-  // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
+  isReplacing = false,
 }) => {
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState('8-12');
   const [rest, setRest] = useState(60);
-  const { theme } = useAppTheme(); // Hook de tema
+  const { theme } = useAppTheme();
 
   const handleAddClick = () => {
-    // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
     if (isReplacing) {
-      // 3. MODO REEMPLAZO:
-      // La función 'onAdd' (que es 'onExerciseSelectForReplace')
-      // solo espera el objeto del ejercicio.
       onAdd(exercise);
     } else {
-      // 4. MODO AÑADIR (CARRITO):
-      // La función 'onAdd' (que es 'handleStageExercise')
-      // espera el ejercicio Y los detalles.
       onAdd(exercise, { sets, reps, rest_seconds: rest });
     }
-    // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
   };
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-
-  // 1. Traducir el nombre (usando namespace 'exercise_names')
+  // 1. Traducir el nombre
   const translatedName = t(exercise.name, {
     ns: 'exercise_names',
     defaultValue: exercise.name,
   });
 
-  // 2. Traducir grupo muscular (usando 'exercise_muscles')
+  // 2. Traducir grupo muscular
   const muscleGroup = exercise.category || exercise.muscle_group;
-  const translatedMuscle = t(muscleGroup, { // Se traduce la clave "Chest", "Legs", etc.
+  const translatedMuscle = t(muscleGroup, {
     ns: 'exercise_muscles',
     defaultValue: muscleGroup,
   });
 
-  // 3. Traducir equipamiento (usando 'exercise_equipment')
-  // Tomamos el primer equipamiento si hay una lista (ej: "Dumbbell, Bench")
-  const equipment = exercise.equipment || 'None'; // Asegurarse de que 'none' sea 'None'
+  // 3. Traducir equipamiento
+  const equipment = exercise.equipment || 'None';
   const equipmentKey = equipment.split(',')[0].trim();
-  const translatedEquipment = t(equipmentKey, { // Se traduce la clave "Dumbbell", "Barbell", etc.
+  const translatedEquipment = t(equipmentKey, {
     ns: 'exercise_equipment',
-    defaultValue: equipment, // Fallback a la lista completa si no hay traducción
+    defaultValue: equipment,
   });
 
   // 4. Traducir la descripción
-  // La clave en 'exercises.json' es la descripción original en inglés.
-  // Usamos 'exercise.description' (ej: "The Bird Dog is...") como la clave.
   const descriptionKey = exercise.description;
-
-  // El valor por defecto es la propia descripción en inglés (por si falla la búsqueda)
   const defaultDescription = exercise.description || t('exercise_ui:no_description_available', 'No hay descripción disponible.');
 
-  // Buscamos la clave (la descripción en inglés) en el namespace 'exercise_descriptions'
   const translatedDescription = t(descriptionKey, {
     ns: 'exercise_descriptions',
     defaultValue: defaultDescription,
   });
 
-  // --- FIN DE LA MODIFICACIÓN ---
-
   // Lógica de contraste para OLED:
   const isOled = theme === 'oled';
   const hasVideo = !!exercise.video_url;
-  // Si no hay vídeo (es imagen) y es OLED, fondo gris claro. Si no, fondo primario.
   const mediaBgClass = (!hasVideo && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
 
   return (
-    <div className="flex flex-col h-full">
+    // MODIFICACIÓN: Añadido overflow-hidden
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-glass-border">
         <button onClick={onBack} className="flex items-center gap-2 p-2 -m-2 rounded-lg hover:bg-white/10">
@@ -92,7 +70,7 @@ const ExerciseDetailView = ({
           <span className="font-semibold">{t('exercise_ui:back', 'Volver')}</span>
         </button>
         <h2 className="text-xl font-bold truncate px-4">
-          {translatedName} {/* Usar nombre traducido */}
+          {translatedName}
         </h2>
         <div className="w-16"></div>
       </div>
@@ -100,7 +78,6 @@ const ExerciseDetailView = ({
       {/* Contenido */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         {/* Visor de medios */}
-        {/* Aplicamos la clase de fondo dinámica */}
         <div className={`mb-6 aspect-video ${mediaBgClass} rounded-xl border border-glass-border overflow-hidden flex items-center justify-center`}>
           {exercise.video_url ? (
             <video
@@ -132,30 +109,30 @@ const ExerciseDetailView = ({
           <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
             <p className="text-sm text-text-muted">{t('exercise_ui:muscle_group', 'Grupo Muscular')}</p>
             <p className="font-semibold capitalize">
-              {translatedMuscle} {/* Usar músculo traducido */}
+              {translatedMuscle}
             </p>
           </div>
           <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
             <p className="text-sm text-text-muted">{t('exercise_ui:equipment', 'Equipamiento')}</p>
             <p className="font-semibold capitalize">
-              {translatedEquipment} {/* Usar equipamiento traducido */}
+              {translatedEquipment}
             </p>
           </div>
         </div>
 
         {/* Descripción */}
-        <div>
+        <div className="pb-4">
           <h3 className="text-lg font-semibold mb-2">{t('exercise_ui:description', 'Descripción')}</h3>
           <p className="text-text-secondary whitespace-pre-line leading-relaxed">
-            {translatedDescription} {/* Usar descripción traducida */}
+            {translatedDescription}
           </p>
         </div>
       </div>
 
       {/* Footer (Formulario y Añadir) */}
-      <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm">
+      {/* MODIFICACIÓN: Ajuste de padding inferior para móvil (pb-[calc(6rem+env...)]) */}
+      <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">
 
-        {/* --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
         {/* 5. Ocultar inputs en modo reemplazo */}
         {!isReplacing && (
           <div className="flex gap-4 mb-4">
@@ -188,10 +165,7 @@ const ExerciseDetailView = ({
             </div>
           </div>
         )}
-        {/* --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
 
-
-        {/* --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
         {/* 6. Lógica de botón dinámica */}
         {isReplacing ? (
           // 7. Botón MODO REEMPLAZO
@@ -225,7 +199,6 @@ const ExerciseDetailView = ({
             )}
           </button>
         )}
-        {/* --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) --- */}
 
       </div>
     </div>
