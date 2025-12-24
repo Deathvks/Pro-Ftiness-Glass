@@ -28,6 +28,9 @@ import notificationRoutes from './routes/notifications.js';
 import twoFactorRoutes from './routes/twoFactor.js';
 import sessionRoutes from './routes/sessionRoutes.js';
 import socialRoutes from './routes/social.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import reportRoutes from './routes/reports.js';
+// --- FIN DE LA MODIFICACIÓN ---
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
@@ -118,6 +121,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/social', socialRoutes);
+// --- INICIO DE LA MODIFICACIÓN ---
+app.use('/api/reports', reportRoutes);
+// --- FIN DE LA MODIFICACIÓN ---
 
 app.use(errorHandler);
 

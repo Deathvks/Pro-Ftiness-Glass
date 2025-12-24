@@ -3,7 +3,10 @@ import React, { Suspense, useEffect } from 'react';
 import { User, Zap, Bell } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
-import { useToast } from '../hooks/useToast'; // --- AÑADIDO: Importamos el hook ---
+import { useToast } from '../hooks/useToast';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { useOfflineSync } from '../hooks/useOfflineSync';
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Componentes UI
 import Sidebar from './Sidebar';
@@ -53,8 +56,11 @@ export default function MainAppLayout({
   setShowCodeVerificationModal,
   fetchInitialData,
 }) {
-  // --- AÑADIDO: Hook de Toast para unificar notificaciones ---
   const { addToast } = useToast();
+
+  // --- INICIO DE LA MODIFICACIÓN: Activamos la sincronización offline ---
+  useOfflineSync();
+  // --- FIN DE LA MODIFICACIÓN ---
 
   // Estados y acciones obtenidos directamente de Zustand
   const {
@@ -70,8 +76,8 @@ export default function MainAppLayout({
     notifications,
     fetchNotifications,
     // Gamificación
-    gamificationEvents, // MODIFICADO: Ahora recibimos el array de eventos
-    clearGamificationEvents, // MODIFICADO: Función para limpiar el array
+    gamificationEvents,
+    clearGamificationEvents,
     // Solicitudes sociales para el badge del navbar
     socialRequests
   } = useAppStore(state => ({
@@ -87,8 +93,8 @@ export default function MainAppLayout({
     notifications: state.notifications || [],
     fetchNotifications: state.fetchNotifications,
     // Gamificación
-    gamificationEvents: state.gamification?.gamificationEvents, // MODIFICADO
-    clearGamificationEvents: state.clearGamificationEvents, // MODIFICADO
+    gamificationEvents: state.gamification?.gamificationEvents,
+    clearGamificationEvents: state.clearGamificationEvents,
     socialRequests: state.socialRequests
   }));
 
@@ -104,7 +110,6 @@ export default function MainAppLayout({
 
   // Efecto para detectar eventos de Gamificación y lanzar Toast
   useEffect(() => {
-    // MODIFICADO: Iteramos sobre la cola de eventos para asegurar que salgan todos
     if (gamificationEvents && gamificationEvents.length > 0) {
       gamificationEvents.forEach(event => {
         if (event.type === 'xp') {

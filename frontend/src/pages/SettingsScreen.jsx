@@ -4,7 +4,8 @@ import { Helmet } from 'react-helmet-async';
 import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
-  ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft
+  ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
+  Bug // --- AÑADIDO ---
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -13,6 +14,9 @@ import Spinner from '../components/Spinner';
 import * as userService from '../services/userService';
 import { useToast } from '../hooks/useToast';
 import ActiveSessions from '../components/ActiveSessions';
+// --- INICIO DE LA MODIFICACIÓN ---
+import BugReportModal from '../components/BugReportModal';
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Constantes ---
 const ACCENT_OPTIONS = [
@@ -48,7 +52,7 @@ const SectionTitle = ({ icon: Icon, title }) => (
 );
 
 const SettingsCard = ({ children, className = '' }) => (
-  <div className={`rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 ${className}`}>
+  <div className={`rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 h-full ${className}`}>
     {children}
   </div>
 );
@@ -120,6 +124,8 @@ export default function SettingsScreen({
   const [currentColorPage, setCurrentColorPage] = useState(0);
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+  // --- MODIFICACIÓN: Estado para el modal de bugs ---
+  const [showBugModal, setShowBugModal] = useState(false);
 
   const {
     isSubscribed,
@@ -183,94 +189,122 @@ export default function SettingsScreen({
 
       {/* Header Mobile/Desktop */}
       <div className="flex items-center justify-between mb-6 pt-4 md:pt-0">
-        {/* CORRECCIÓN: Usamos un span para el texto con degradado dentro del h1 flex-1 y eliminamos el botón de volver */}
         <h1 className="hidden md:flex text-3xl md:text-4xl font-extrabold flex-1 text-left text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary mt-10 md:mt-0">
           Ajustes
         </h1>
       </div>
 
+      {/* Layout reorganizado para PC: 3 Columnas equilibradas */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
 
-        {/* --- COLUMNA 1: APARIENCIA --- */}
-        <SettingsCard>
-          <SectionTitle icon={Palette} title="Apariencia" />
+        {/* --- COLUMNA 1: APARIENCIA Y NOTIFICACIONES --- */}
+        <div className="flex flex-col gap-6">
+          <SettingsCard>
+            <SectionTitle icon={Palette} title="Apariencia" />
 
-          <div className="mb-6">
-            <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Tema</h3>
-            <div className="grid grid-cols-4 gap-2">
-              {['system', 'light', 'dark', 'oled'].map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setTheme(mode)}
-                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${theme === mode
-                    ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20'
-                    : 'border-[--glass-border] text-text-secondary hover:bg-bg-secondary'
-                    }`}
-                >
-                  {mode === 'system' && <MonitorCog size={20} />}
-                  {mode === 'light' && <Sun size={20} />}
-                  {mode === 'dark' && <Moon size={20} />}
-                  {mode === 'oled' && <Smartphone size={20} />}
-                  <span className="text-xs font-medium capitalize">
-                    {mode === 'system' ? 'Sistema' :
-                      mode === 'light' ? 'Claro' :
-                        mode === 'dark' ? 'Oscuro' : 'OLED'}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
-              {totalPages > 1 && (
-                <div className="flex gap-1">
+            <div className="mb-6">
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Tema</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {['system', 'light', 'dark', 'oled'].map((mode) => (
                   <button
-                    onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
-                    disabled={currentColorPage === 0}
-                    className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                    key={mode}
+                    onClick={() => setTheme(mode)}
+                    className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${theme === mode
+                      ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20'
+                      : 'border-[--glass-border] text-text-secondary hover:bg-bg-secondary'
+                      }`}
                   >
-                    <ChevronLeft size={14} />
-                  </button>
-                  <button
-                    onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
-                    disabled={currentColorPage === totalPages - 1}
-                    className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
-                  >
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-6 gap-3">
-              {currentColors.map(opt => (
-                <button
-                  key={opt.id}
-                  onClick={() => setAccent(opt.id)}
-                  title={opt.label}
-                  className="group relative flex justify-center items-center"
-                >
-                  <span
-                    className="w-8 h-8 rounded-full border transition-transform hover:scale-110"
-                    style={{
-                      backgroundColor: opt.hex,
-                      borderColor: accent === opt.id ? opt.hex : 'transparent',
-                      boxShadow: accent === opt.id ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${opt.hex}` : 'none'
-                    }}
-                  />
-                  {accent === opt.id && (
-                    <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none shadow-sm">
-                      <Check size={14} strokeWidth={3} />
+                    {mode === 'system' && <MonitorCog size={20} />}
+                    {mode === 'light' && <Sun size={20} />}
+                    {mode === 'dark' && <Moon size={20} />}
+                    {mode === 'oled' && <Smartphone size={20} />}
+                    <span className="text-xs font-medium capitalize">
+                      {mode === 'system' ? 'Sistema' :
+                        mode === 'light' ? 'Claro' :
+                          mode === 'dark' ? 'Oscuro' : 'OLED'}
                     </span>
-                  )}
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        </SettingsCard>
 
-        {/* --- COLUMNA 2: CUENTA Y SEGURIDAD --- */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
+                {totalPages > 1 && (
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
+                      disabled={currentColorPage === 0}
+                      className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    <button
+                      onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={currentColorPage === totalPages - 1}
+                      className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-6 gap-3">
+                {currentColors.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setAccent(opt.id)}
+                    title={opt.label}
+                    className="group relative flex justify-center items-center"
+                  >
+                    <span
+                      className="w-8 h-8 rounded-full border transition-transform hover:scale-110"
+                      style={{
+                        backgroundColor: opt.hex,
+                        borderColor: accent === opt.id ? opt.hex : 'transparent',
+                        boxShadow: accent === opt.id ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${opt.hex}` : 'none'
+                      }}
+                    />
+                    {accent === opt.id && (
+                      <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none shadow-sm">
+                        <Check size={14} strokeWidth={3} />
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </SettingsCard>
+
+          <SettingsCard>
+            <SectionTitle icon={BellRing} title="Notificaciones" />
+            <div className="flex flex-col gap-2">
+              {isPushSupported && (
+                <SwitchItem
+                  icon={BellRing}
+                  title="Push Notifications"
+                  subtitle={pushPermission === 'denied' ? 'Bloqueadas en navegador' : (isSubscribed ? 'Recibiendo alertas' : 'Pausadas')}
+                  checked={isSubscribed}
+                  onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
+                  disabled={pushPermission === 'denied'}
+                  loading={isPushLoading}
+                />
+              )}
+
+              <SwitchItem
+                icon={userProfile?.two_factor_enabled ? ShieldAlert : MailWarning}
+                title="Alertas de Inicio"
+                subtitle={userProfile?.two_factor_enabled ? 'Email al iniciar sesión' : 'Requiere 2FA'}
+                checked={!!userProfile?.login_email_notifications}
+                onChange={handleToggleLoginEmail}
+                disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
+              />
+            </div>
+          </SettingsCard>
+        </div>
+
+        {/* --- COLUMNA 2: PERFIL Y PRIVACIDAD --- */}
         <div className="flex flex-col gap-6">
           <SettingsCard>
             <SectionTitle icon={User} title="Perfil" />
@@ -316,6 +350,13 @@ export default function SettingsScreen({
           </SettingsCard>
 
           <SettingsCard>
+            <ActiveSessions />
+          </SettingsCard>
+        </div>
+
+        {/* --- COLUMNA 3: SEGURIDAD, SOPORTE Y GENERAL --- */}
+        <div className="flex flex-col gap-6">
+          <SettingsCard>
             <SectionTitle icon={Shield} title="Seguridad" />
             <div className="flex flex-col gap-1">
               <SettingsItem
@@ -353,63 +394,41 @@ export default function SettingsScreen({
           </SettingsCard>
 
           <SettingsCard>
-            <ActiveSessions />
-          </SettingsCard>
-        </div>
-
-        {/* --- COLUMNA 3: NOTIFICACIONES Y GENERAL --- */}
-        <div className="flex flex-col gap-6">
-          <SettingsCard>
-            <SectionTitle icon={BellRing} title="Notificaciones" />
-            <div className="flex flex-col gap-2">
-              {isPushSupported && (
-                <SwitchItem
-                  icon={BellRing}
-                  title="Push Notifications"
-                  subtitle={pushPermission === 'denied' ? 'Bloqueadas en navegador' : (isSubscribed ? 'Recibiendo alertas' : 'Pausadas')}
-                  checked={isSubscribed}
-                  onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
-                  disabled={pushPermission === 'denied'}
-                  loading={isPushLoading}
-                />
-              )}
-
-              <SwitchItem
-                icon={userProfile?.two_factor_enabled ? ShieldAlert : MailWarning}
-                title="Alertas de Inicio"
-                subtitle={userProfile?.two_factor_enabled ? 'Email al iniciar sesión' : 'Requiere 2FA'}
-                checked={!!userProfile?.login_email_notifications}
-                onChange={handleToggleLoginEmail}
-                disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
+            <SectionTitle icon={Info} title="Soporte y General" />
+            <div className="flex flex-col gap-1">
+              {/* --- MODIFICACIÓN: Botón de Reporte de Bugs --- */}
+              <SettingsItem
+                icon={Bug}
+                title="Reportar un problema"
+                subtitle="¿Algo no funciona bien?"
+                onClick={() => setShowBugModal(true)}
               />
-            </div>
-          </SettingsCard>
 
-          <SettingsCard>
-            <SectionTitle icon={Share2} title="Síguenos" />
-            <div className="flex flex-col gap-1">
-              <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
-                <SettingsItem
-                  icon={Instagram}
-                  title="Instagram"
-                  subtitle="@pro_fitness_glass"
-                  action={<ChevronRight size={16} className="text-text-muted" />}
-                />
-              </a>
-            </div>
-          </SettingsCard>
-
-          <SettingsCard>
-            <SectionTitle icon={Info} title="General" />
-            <div className="flex flex-col gap-1">
               <a href="mailto:profitnessglass@gmail.com" className="no-underline">
-                <SettingsItem icon={Mail} title="Soporte" subtitle="profitnessglass@gmail.com" />
+                <SettingsItem icon={Mail} title="Contactar Soporte" subtitle="profitnessglass@gmail.com" />
               </a>
+
+              <div className="my-2 h-px bg-[--glass-border]" />
+
+              <SettingsCard className="!bg-transparent !border-0 !p-0">
+                <SectionTitle icon={Share2} title="Síguenos" />
+                <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
+                  <SettingsItem
+                    icon={Instagram}
+                    title="Instagram"
+                    subtitle="@pro_fitness_glass"
+                    action={<ChevronRight size={16} className="text-text-muted" />}
+                  />
+                </a>
+              </SettingsCard>
+
+              <div className="my-2 h-px bg-[--glass-border]" />
+
               <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
                 <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
               </a>
 
-              <div className="md:hidden flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
+              <div className="hidden md:flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
                 <Binary size={20} className="text-accent" />
                 <div className="flex-1 text-left">
                   <div className="text-sm font-semibold">Versión de App</div>
@@ -429,6 +448,11 @@ export default function SettingsScreen({
           </SettingsCard>
         </div>
       </div>
+
+      {/* --- Renderizado del Modal de Bugs --- */}
+      {showBugModal && (
+        <BugReportModal onClose={() => setShowBugModal(false)} />
+      )}
     </div>
   );
 }

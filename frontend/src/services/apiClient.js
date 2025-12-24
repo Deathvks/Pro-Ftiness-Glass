@@ -44,9 +44,6 @@ const apiClient = async (endpoint, options = {}) => {
         if (!response.ok) {
             // Si la respuesta es un error (ej: 4xx, 5xx), intentamos leer el cuerpo del error.
 
-            // MODIFICACIÓN: Eliminamos "|| response.status === 403".
-            // El 403 (Forbidden) significa "Acceso denegado" (ej: perfil privado), 
-            // pero el token sigue siendo válido, así que NO cerramos sesión.
             if (response.status === 401) {
                 useAppStore.getState().handleSessionExpiry();
             }
@@ -80,8 +77,21 @@ const apiClient = async (endpoint, options = {}) => {
 
         return response.json();
     } catch (error) {
-        // Capturamos el error que hemos lanzado o un error de red (como 'Failed to fetch')
-        // Si el mensaje es 'Failed to fetch', lo traducimos a algo más amigable.
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Interceptamos fallos de red (Offline) para peticiones de escritura (POST, PUT, DELETE, etc.)
+        if (error.message === 'Failed to fetch' && config.method !== 'GET') {
+            // No guardamos FormData en la cola por complejidad de serialización (imágenes, etc.)
+            const isFormData = body instanceof FormData;
+
+            if (!isFormData) {
+                console.log('Detectado modo offline. Añadiendo petición a la cola de sincronización.');
+                useAppStore.getState().addToSyncQueue({ endpoint, options });
+                // Lanzamos un error específico para que la UI sepa que se guardó en local
+                throw new Error('Sin conexión. Cambio guardado localmente para sincronizar después.');
+            }
+        }
+        // --- FIN DE LA MODIFICACIÓN ---
+
         if (error.message === 'Failed to fetch') {
             throw new Error('No se pudo conectar con el servidor. Revisa tu conexión a internet.');
         }

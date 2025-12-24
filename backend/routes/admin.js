@@ -1,8 +1,10 @@
+/* backend/routes/admin.js */
 import express from 'express';
 import { body } from 'express-validator';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importamos todas las exportaciones nombradas en un objeto 'adminController'
+// Importamos los controladores
 import * as adminController from '../controllers/adminController.js';
+// --- INICIO DE LA MODIFICACIÓN ---
+import * as reportController from '../controllers/reportController.js';
 // --- FIN DE LA MODIFICACIÓN ---
 import authenticateToken from '../middleware/authenticateToken.js';
 import authorizeAdmin from '../middleware/authorizeAdmin.js';
@@ -32,5 +34,11 @@ router.get('/users', adminController.getAllUsers);
 router.post('/users', userCreateValidationRules, adminController.createUser);
 router.put('/users/:userId', userUpdateValidationRules, adminController.updateUser);
 router.delete('/users/:userId', adminController.deleteUser);
+
+// --- INICIO DE LA MODIFICACIÓN ---
+// Rutas de gestión de reportes de bugs
+router.get('/reports', reportController.getReports);
+router.delete('/reports/:id', reportController.deleteReport);
+// --- FIN DE LA MODIFICACIÓN ---
 
 export default router;

@@ -5,8 +5,9 @@ import { createDataSlice } from './dataSlice';
 import { createWorkoutSlice } from './workoutSlice';
 import { createNotificationSlice } from './notificationSlice';
 import { createGamificationSlice } from './gamificationSlice';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { createSocialSlice } from './socialSlice';
+// --- INICIO DE LA MODIFICACIÓN ---
+import { createSyncSlice } from './syncSlice';
 // --- FIN DE LA MODIFICACIÓN ---
 
 const useAppStore = create((set, get) => ({
@@ -15,8 +16,9 @@ const useAppStore = create((set, get) => ({
     ...createWorkoutSlice(set, get),
     ...createNotificationSlice(set, get),
     ...createGamificationSlice(set, get),
-    // --- INICIO DE LA MODIFICACIÓN ---
     ...createSocialSlice(set, get),
+    // --- INICIO DE LA MODIFICACIÓN ---
+    ...createSyncSlice(set, get),
     // --- FIN DE LA MODIFICACIÓN ---
 }));
 
