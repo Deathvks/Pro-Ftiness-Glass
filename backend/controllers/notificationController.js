@@ -45,7 +45,7 @@ const subscribe = [
         return res.status(401).json({ error: 'Usuario no autenticado.' });
       }
 
-      const userId = req.user.userId;
+      const { userId } = req.user;
       const { endpoint, keys } = req.body;
 
       // Buscar primero, luego crear o actualizar
@@ -54,12 +54,12 @@ const subscribe = [
       });
 
       if (subscription) {
-        subscription.userId = userId;
+        subscription.user_id = userId; // CORREGIDO: userId -> user_id
         subscription.keys = keys;
         await subscription.save();
       } else {
         await PushSubscription.create({
-          userId: userId,
+          user_id: userId, // CORREGIDO: userId -> user_id
           endpoint: endpoint,
           keys: keys
         });
@@ -94,13 +94,13 @@ const unsubscribe = [
         return res.status(401).json({ error: 'Usuario no autenticado.' });
       }
 
-      const userId = req.user.userId;
+      const { userId } = req.user;
       const { endpoint } = req.body;
 
       await PushSubscription.destroy({
         where: {
           endpoint: endpoint,
-          userId: userId,
+          user_id: userId, // CORREGIDO: userId -> user_id
         }
       });
 
@@ -166,7 +166,7 @@ const getNotifications = async (req, res, next) => {
 
     const { count, rows } = await Notification.findAndCountAll({
       where: whereClause,
-      // CAMBIO: Usamos 'created_at' explícitamente para evitar conflicto de alias
+      // Usamos 'created_at' explícitamente para evitar conflicto de alias
       order: [['created_at', 'DESC']],
       limit,
       offset,

@@ -5,7 +5,7 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug // --- AÑADIDO ---
+  Bug
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -14,9 +14,7 @@ import Spinner from '../components/Spinner';
 import * as userService from '../services/userService';
 import { useToast } from '../hooks/useToast';
 import ActiveSessions from '../components/ActiveSessions';
-// --- INICIO DE LA MODIFICACIÓN ---
 import BugReportModal from '../components/BugReportModal';
-// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Constantes ---
 const ACCENT_OPTIONS = [
@@ -124,7 +122,6 @@ export default function SettingsScreen({
   const [currentColorPage, setCurrentColorPage] = useState(0);
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
-  // --- MODIFICACIÓN: Estado para el modal de bugs ---
   const [showBugModal, setShowBugModal] = useState(false);
 
   const {
@@ -396,7 +393,6 @@ export default function SettingsScreen({
           <SettingsCard>
             <SectionTitle icon={Info} title="Soporte y General" />
             <div className="flex flex-col gap-1">
-              {/* --- MODIFICACIÓN: Botón de Reporte de Bugs --- */}
               <SettingsItem
                 icon={Bug}
                 title="Reportar un problema"
@@ -410,17 +406,17 @@ export default function SettingsScreen({
 
               <div className="my-2 h-px bg-[--glass-border]" />
 
-              <SettingsCard className="!bg-transparent !border-0 !p-0">
-                <SectionTitle icon={Share2} title="Síguenos" />
-                <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
-                  <SettingsItem
-                    icon={Instagram}
-                    title="Instagram"
-                    subtitle="@pro_fitness_glass"
-                    action={<ChevronRight size={16} className="text-text-muted" />}
-                  />
-                </a>
-              </SettingsCard>
+              {/* --- INICIO DE LA MODIFICACIÓN: Eliminado SettingsCard anidado --- */}
+              <SectionTitle icon={Share2} title="Síguenos" />
+              <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
+                <SettingsItem
+                  icon={Instagram}
+                  title="Instagram"
+                  subtitle="@pro_fitness_glass"
+                  action={<ChevronRight size={16} className="text-text-muted" />}
+                />
+              </a>
+              {/* --- FIN DE LA MODIFICACIÓN --- */}
 
               <div className="my-2 h-px bg-[--glass-border]" />
 

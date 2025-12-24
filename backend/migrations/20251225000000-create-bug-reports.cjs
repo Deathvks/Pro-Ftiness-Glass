@@ -3,7 +3,8 @@
 
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.createTable('BugReports', {
+        // CAMBIO: Nombre de tabla en snake_case para consistencia (bug_reports)
+        await queryInterface.createTable('bug_reports', {
             id: {
                 allowNull: false,
                 autoIncrement: true,
@@ -14,7 +15,7 @@ module.exports = {
                 type: Sequelize.INTEGER,
                 allowNull: false,
                 references: {
-                    model: 'Users',
+                    model: 'users', // CORREGIDO: 'Users' -> 'users' (tabla existente)
                     key: 'id'
                 },
                 onUpdate: 'CASCADE',
@@ -48,6 +49,6 @@ module.exports = {
     },
 
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('BugReports');
+        await queryInterface.dropTable('bug_reports');
     }
 };

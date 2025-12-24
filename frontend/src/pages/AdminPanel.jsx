@@ -10,9 +10,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
 import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adminService';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { getBugReports, deleteBugReport } from '../services/reportService';
-// --- FIN DE LA MODIFICACIÓN ---
 import { useToast } from '../hooks/useToast';
 
 // Definimos el umbral para considerar a un usuario "online" (5 minutos)
@@ -57,11 +55,9 @@ const StatusIndicator = ({ lastSeen }) => {
 };
 
 const AdminPanel = ({ onCancel }) => {
-  // --- INICIO DE LA MODIFICACIÓN: Estado de Pestañas ---
   const [activeTab, setActiveTab] = useState('users'); // 'users' | 'reports'
   const [reports, setReports] = useState([]);
   const [reportToDelete, setReportToDelete] = useState(null);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,7 +84,7 @@ const AdminPanel = ({ onCancel }) => {
     }
   }, [addToast]);
 
-  // --- INICIO DE LA MODIFICACIÓN: Cargar Reportes ---
+  // Cargar Reportes
   const fetchReports = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -117,14 +113,17 @@ const AdminPanel = ({ onCancel }) => {
     const interval = setInterval(() => fetchUsers(false), 30000);
     return () => clearInterval(interval);
   }, [activeTab, fetchUsers]);
-  // --- FIN DE LA MODIFICACIÓN ---
 
-  // ... (Handlers de usuarios existentes: handleSaveUser, handleDeleteUser, handleCreateUser) ...
-  const handleSaveUser = async (userData) => {
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Modificado para aceptar (userId, userData) tal como lo envía el UserEditModal
+  const handleSaveUser = async (userId, userData) => {
     setIsUpdating(true);
     try {
-      const updatedUser = await updateUser(userToEdit.id, userData);
-      setUsers(users.map(u => u.id === userToEdit.id ? updatedUser : u));
+      // Usamos userId pasado por el modal o el del estado, deben coincidir
+      const targetId = userId || userToEdit.id;
+      const updatedUser = await updateUser(targetId, userData);
+
+      setUsers(users.map(u => u.id === targetId ? updatedUser : u));
       addToast('Usuario actualizado con éxito.', 'success');
       setUserToEdit(null);
     } catch (error) {
@@ -133,6 +132,7 @@ const AdminPanel = ({ onCancel }) => {
       setIsUpdating(false);
     }
   };
+  // --- FIN DE LA CORRECCIÓN ---
 
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
@@ -163,7 +163,7 @@ const AdminPanel = ({ onCancel }) => {
     }
   };
 
-  // --- INICIO DE LA MODIFICACIÓN: Handler para resolver reportes ---
+  // Handler para resolver reportes
   const handleResolveReport = async () => {
     if (!reportToDelete) return;
     setIsUpdating(true);
@@ -178,7 +178,6 @@ const AdminPanel = ({ onCancel }) => {
       setIsUpdating(false);
     }
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const sortedUsers = React.useMemo(() => {
     return [...users]
@@ -197,7 +196,7 @@ const AdminPanel = ({ onCancel }) => {
       </button>
       <h1 className="text-4xl font-extrabold mb-8">Panel de Administración</h1>
 
-      {/* --- INICIO DE LA MODIFICACIÓN: Navegación de Pestañas --- */}
+      {/* Navegación de Pestañas */}
       <div className="flex gap-4 mb-6">
         <button
           onClick={() => setActiveTab('users')}
@@ -223,7 +222,6 @@ const AdminPanel = ({ onCancel }) => {
           )}
         </button>
       </div>
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       <GlassCard className="p-6">
         {activeTab === 'users' ? (
@@ -328,7 +326,7 @@ const AdminPanel = ({ onCancel }) => {
             )}
           </>
         ) : (
-          /* --- INICIO DE LA MODIFICACIÓN: CONTENIDO PESTAÑA REPORTES --- */
+          /* --- CONTENIDO PESTAÑA REPORTES --- */
           <>
             <div className="mb-6">
               <h2 className="text-xl font-bold">Reportes de Problemas</h2>
@@ -391,7 +389,6 @@ const AdminPanel = ({ onCancel }) => {
               </div>
             )}
           </>
-          /* --- FIN DE LA MODIFICACIÓN --- */
         )}
       </GlassCard>
 
@@ -414,7 +411,6 @@ const AdminPanel = ({ onCancel }) => {
         />
       )}
 
-      {/* --- INICIO DE LA MODIFICACIÓN: Modal de Confirmación para Reportes --- */}
       {reportToDelete && (
         <ConfirmationModal
           message="¿Marcar este reporte como resuelto? Se eliminará de la lista."
@@ -425,7 +421,6 @@ const AdminPanel = ({ onCancel }) => {
           confirmColor="bg-green-600 hover:bg-green-700"
         />
       )}
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       {isCreatingUser && (
         <UserCreateModal
