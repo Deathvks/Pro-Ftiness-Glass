@@ -1,8 +1,8 @@
 /* frontend/src/pages/AdminPanel.jsx */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe
+  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -13,8 +13,18 @@ import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adm
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 
-// Definimos el umbral para considerar a un usuario "online" (5 minutos)
+// Umbral para considerar a un usuario "online" (5 minutos)
 const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+const REPORTS_PER_PAGE = 5;
+
+const REPORT_CATEGORY_LABELS = {
+  bug: 'Bug',
+  ui: 'Interfaz',
+  account: 'Cuenta',
+  content: 'Datos',
+  feature: 'Mejora',
+  other: 'Otro'
+};
 
 // Componente para el indicador de estado
 const StatusIndicator = ({ lastSeen }) => {
@@ -57,7 +67,9 @@ const StatusIndicator = ({ lastSeen }) => {
 const AdminPanel = ({ onCancel }) => {
   const [activeTab, setActiveTab] = useState('users'); // 'users' | 'reports'
   const [reports, setReports] = useState([]);
+  const [reportPage, setReportPage] = useState(1);
   const [reportToDelete, setReportToDelete] = useState(null);
+  const [selectedImageForLightbox, setSelectedImageForLightbox] = useState(null);
 
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +78,8 @@ const AdminPanel = ({ onCancel }) => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const { addToast } = useToast();
+
+  const API_URL = import.meta.env.VITE_API_URL || '';
 
   // Cargar Usuarios
   const fetchUsers = useCallback(async (isInitialLoad = false) => {
@@ -114,12 +128,9 @@ const AdminPanel = ({ onCancel }) => {
     return () => clearInterval(interval);
   }, [activeTab, fetchUsers]);
 
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Modificado para aceptar (userId, userData) tal como lo envía el UserEditModal
   const handleSaveUser = async (userId, userData) => {
     setIsUpdating(true);
     try {
-      // Usamos userId pasado por el modal o el del estado, deben coincidir
       const targetId = userId || userToEdit.id;
       const updatedUser = await updateUser(targetId, userData);
 
@@ -132,7 +143,6 @@ const AdminPanel = ({ onCancel }) => {
       setIsUpdating(false);
     }
   };
-  // --- FIN DE LA CORRECCIÓN ---
 
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
@@ -163,7 +173,6 @@ const AdminPanel = ({ onCancel }) => {
     }
   };
 
-  // Handler para resolver reportes
   const handleResolveReport = async () => {
     if (!reportToDelete) return;
     setIsUpdating(true);
@@ -179,7 +188,7 @@ const AdminPanel = ({ onCancel }) => {
     }
   };
 
-  const sortedUsers = React.useMemo(() => {
+  const sortedUsers = useMemo(() => {
     return [...users]
       .sort((a, b) => {
         const dateA = a.lastSeen ? new Date(a.lastSeen) : new Date(0);
@@ -187,6 +196,13 @@ const AdminPanel = ({ onCancel }) => {
         return dateB - dateA;
       });
   }, [users]);
+
+  // Lógica de Paginación para Reportes
+  const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
+  const currentReports = useMemo(() => {
+    const startIndex = (reportPage - 1) * REPORTS_PER_PAGE;
+    return reports.slice(startIndex, startIndex + REPORTS_PER_PAGE);
+  }, [reports, reportPage]);
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
@@ -227,7 +243,7 @@ const AdminPanel = ({ onCancel }) => {
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 text-left">
               <h2 className="text-xl font-bold">Lista de Usuarios</h2>
               <button
                 onClick={() => setIsCreatingUser(true)}
@@ -292,7 +308,7 @@ const AdminPanel = ({ onCancel }) => {
                 {/* Tarjetas Móvil */}
                 <div className="md:hidden space-y-4">
                   {sortedUsers.map(user => (
-                    <div key={user.id} className="bg-glass-light border border-glass-border rounded-lg p-4">
+                    <div key={user.id} className="bg-glass-light border border-glass-border rounded-lg p-4 text-left">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-lg truncate">{user.username || user.name}</h3>
@@ -328,7 +344,7 @@ const AdminPanel = ({ onCancel }) => {
         ) : (
           /* --- CONTENIDO PESTAÑA REPORTES --- */
           <>
-            <div className="mb-6">
+            <div className="mb-6 text-left">
               <h2 className="text-xl font-bold">Reportes de Problemas</h2>
               <p className="text-text-muted text-sm">Feedback técnico enviado por los usuarios.</p>
             </div>
@@ -341,56 +357,120 @@ const AdminPanel = ({ onCancel }) => {
                 <p>¡Todo limpio! No hay reportes pendientes.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {reports.map((report) => (
-                  <div key={report.id} className="bg-bg-secondary/30 border border-glass-border rounded-xl p-4 md:p-6 hover:bg-bg-secondary/50 transition-colors">
-                    <div className="flex flex-col md:flex-row gap-4 justify-between items-start">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-3">
-                          <span className="px-2 py-1 bg-red-500/10 text-red-500 text-xs font-bold rounded uppercase tracking-wider">Bug</span>
-                          <span className="text-xs text-text-muted">{new Date(report.created_at).toLocaleString()}</span>
-                          <span className="text-xs text-accent font-medium">@{report.username || 'Anónimo'}</span>
-                        </div>
-                        <h3 className="text-lg font-bold text-white">{report.subject}</h3>
-                        <p className="text-text-secondary whitespace-pre-wrap text-sm leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
-                          {report.description}
-                        </p>
-
-                        {/* Información del Dispositivo */}
-                        {report.deviceInfo && (
-                          <div className="mt-4 flex flex-wrap gap-3 text-xs text-text-muted">
-                            <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
-                              {report.deviceInfo.userAgent?.includes('Mobile') ? <Smartphone size={12} /> : <Monitor size={12} />}
-                              <span>{report.deviceInfo.platform}</span>
-                            </div>
-                            <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
-                              <Globe size={12} />
-                              <span className="truncate max-w-[150px]" title={report.deviceInfo.userAgent}>{report.deviceInfo.userAgent}</span>
-                            </div>
-                            {report.deviceInfo.screenSize && (
-                              <div className="bg-white/5 px-2 py-1 rounded">
-                                {report.deviceInfo.screenSize}
-                              </div>
-                            )}
+              <div className="flex flex-col gap-4">
+                <div className="space-y-4 text-left">
+                  {currentReports.map((report) => (
+                    <div key={report.id} className="bg-bg-secondary/30 border border-glass-border rounded-xl p-4 md:p-6 hover:bg-bg-secondary/50 transition-colors animate-[fade-in_0.3s_ease-out]">
+                      <div className="flex flex-col md:flex-row gap-4 justify-between items-start">
+                        <div className="flex-1 space-y-3">
+                          <div className="flex flex-wrap items-center gap-3">
+                            {/* MODIFICACIÓN: Categoría circular, sin borde, color acento */}
+                            <span className="px-2.5 py-0.5 bg-accent text-bg-primary text-[10px] font-extrabold rounded-full uppercase tracking-wider">
+                              {REPORT_CATEGORY_LABELS[report.category] || report.category}
+                            </span>
+                            <span className="text-xs text-text-muted">{new Date(report.created_at).toLocaleString()}</span>
+                            <span className="text-xs text-accent font-medium">@{report.username || 'Anónimo'}</span>
                           </div>
-                        )}
-                      </div>
+                          <h3 className="text-lg font-bold text-white">{report.subject}</h3>
+                          <p className="text-text-secondary whitespace-pre-wrap text-sm leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
+                            {report.description}
+                          </p>
 
-                      <button
-                        onClick={() => setReportToDelete(report)}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-lg font-medium transition-colors shrink-0 mt-4 md:mt-0 w-full md:w-auto justify-center"
-                      >
-                        <CheckSquare size={18} />
-                        Resolver
-                      </button>
+                          {/* Previsualización de Imágenes si existen */}
+                          {report.images && report.images.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {report.images.map((img, idx) => (
+                                <div
+                                  key={idx}
+                                  className="relative group w-16 h-16 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in"
+                                  onClick={() => setSelectedImageForLightbox(API_URL + img)}
+                                >
+                                  <img src={API_URL + img} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="bug-snap" />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <ZoomIn size={16} className="text-white drop-shadow-md" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Información del Dispositivo */}
+                          {report.deviceInfo && (
+                            <div className="mt-4 flex flex-wrap gap-3 text-xs text-text-muted">
+                              <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
+                                {report.deviceInfo.userAgent?.includes('Mobile') ? <Smartphone size={12} /> : <Monitor size={12} />}
+                                <span>{report.deviceInfo.platform}</span>
+                              </div>
+                              <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
+                                <Globe size={12} />
+                                <span className="truncate max-w-[150px]" title={report.deviceInfo.userAgent}>{report.deviceInfo.userAgent}</span>
+                              </div>
+                              {report.deviceInfo.screenSize && (
+                                <div className="bg-white/5 px-2 py-1 rounded">
+                                  {report.deviceInfo.screenSize}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => setReportToDelete(report)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-lg font-medium transition-colors shrink-0 mt-4 md:mt-0 w-full md:w-auto justify-center"
+                        >
+                          <CheckSquare size={18} />
+                          Resolver
+                        </button>
+                      </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* PAGINACIÓN DE REPORTES */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-glass-border">
+                    <button
+                      onClick={() => setReportPage(p => Math.max(1, p - 1))}
+                      disabled={reportPage === 1}
+                      className="p-2 rounded-xl bg-bg-secondary text-text-primary disabled:opacity-30 hover:bg-accent hover:text-bg-primary transition-all shadow-lg"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    <span className="text-sm font-bold text-text-secondary">
+                      Página <span className="text-accent">{reportPage}</span> de {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setReportPage(p => Math.min(totalPages, p + 1))}
+                      disabled={reportPage === totalPages}
+                      className="p-2 rounded-xl bg-bg-secondary text-text-primary disabled:opacity-30 hover:bg-accent hover:text-bg-primary transition-all shadow-lg"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </>
         )}
       </GlassCard>
+
+      {/* Lightbox Visualizador */}
+      {selectedImageForLightbox && (
+        <div
+          className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
+          onClick={() => setSelectedImageForLightbox(null)}
+        >
+          <button className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors">
+            <X size={32} />
+          </button>
+          <img
+            src={selectedImageForLightbox}
+            alt="Reporte ampliado"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-[scale-in_0.2s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {userToEdit && (
         <UserEditModal
@@ -403,7 +483,7 @@ const AdminPanel = ({ onCancel }) => {
 
       {userToDelete && (
         <ConfirmationModal
-          message={`¿Seguro que quieres eliminar a ${userToDelete.name}? Esta acción no se puede deshacer.`}
+          message={`¿Seguro que quieres eliminar a ${userToDelete.username || userToDelete.name}? Esta acción no se puede deshacer.`}
           onConfirm={handleDeleteUser}
           onCancel={() => setUserToDelete(null)}
           isLoading={isUpdating}

@@ -1,16 +1,26 @@
 /* backend/models/bugReportModel.js */
 import { Model, DataTypes } from 'sequelize';
-import sequelize from '../db.js'; // Importamos la instancia configurada
+import sequelize from '../db.js';
 
 class BugReport extends Model { }
 
 BugReport.init({
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
     user_id: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    subject: {
+    category: {
         type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'bug'
+    },
+    subject: {
+        type: DataTypes.STRING(100),
         allowNull: false
     },
     description: {
@@ -19,7 +29,11 @@ BugReport.init({
     },
     deviceInfo: {
         type: DataTypes.JSON,
-        field: 'device_info' // Mapeamos camelCase a snake_case de la DB
+        field: 'device_info'
+    },
+    images: {
+        type: DataTypes.JSON,
+        defaultValue: []
     },
     status: {
         type: DataTypes.STRING,

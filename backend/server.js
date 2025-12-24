@@ -6,7 +6,6 @@ import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import jwt from 'jsonwebtoken';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,9 +27,7 @@ import notificationRoutes from './routes/notifications.js';
 import twoFactorRoutes from './routes/twoFactor.js';
 import sessionRoutes from './routes/sessionRoutes.js';
 import socialRoutes from './routes/social.js';
-// --- INICIO DE LA MODIFICACIÓN ---
 import reportRoutes from './routes/reports.js';
-// --- FIN DE LA MODIFICACIÓN ---
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
@@ -50,14 +47,11 @@ if (!isProduction) {
   allowedOrigins.push('http://localhost');
 }
 
-console.log("Orígenes CORS permitidos:", allowedOrigins);
-
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.error('CORS Error: Origen no permitido:', origin);
       callback(new Error(`El origen ${origin} no está permitido por CORS`));
     }
   },
@@ -67,7 +61,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// --- Headers para Google Auth ---
+// Headers para Google Auth
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
@@ -76,32 +70,9 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// Archivos estáticos (aquí se servirán las imágenes de los reportes)
 const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath));
-console.log(`Sirviendo archivos estáticos desde: ${staticPath}`);
-
-// --- MODIFICACIÓN: Eliminado/Comentado Middleware lastSeen global ---
-// Este middleware actualizaba la fecha en cada petición (imágenes, datos, etc.),
-// causando problemas de rendimiento y lógica de "primera vez del día".
-// La actualización de actividad se manejará en puntos clave (login, completar entreno).
-/*
-app.use(async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (token) {
-    try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
-      if (payload && payload.userId) {
-        await db.User.update(
-          { lastSeen: new Date() },
-          { where: { id: payload.userId } }
-        );
-      }
-    } catch (err) { }
-  }
-  next();
-});
-*/
 
 // Rutas API
 app.use('/api/auth', authRoutes);
@@ -121,9 +92,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/social', socialRoutes);
-// --- INICIO DE LA MODIFICACIÓN ---
 app.use('/api/reports', reportRoutes);
-// --- FIN DE LA MODIFICACIÓN ---
 
 app.use(errorHandler);
 

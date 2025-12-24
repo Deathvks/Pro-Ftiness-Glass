@@ -191,7 +191,6 @@ export default function SettingsScreen({
         </h1>
       </div>
 
-      {/* Layout reorganizado para PC: 3 Columnas equilibradas */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
 
         {/* --- COLUMNA 1: APARIENCIA Y NOTIFICACIONES --- */}
@@ -406,7 +405,6 @@ export default function SettingsScreen({
 
               <div className="my-2 h-px bg-[--glass-border]" />
 
-              {/* --- INICIO DE LA MODIFICACIÓN: Eliminado SettingsCard anidado --- */}
               <SectionTitle icon={Share2} title="Síguenos" />
               <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
                 <SettingsItem
@@ -416,7 +414,6 @@ export default function SettingsScreen({
                   action={<ChevronRight size={16} className="text-text-muted" />}
                 />
               </a>
-              {/* --- FIN DE LA MODIFICACIÓN --- */}
 
               <div className="my-2 h-px bg-[--glass-border]" />
 
@@ -424,7 +421,8 @@ export default function SettingsScreen({
                 <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
               </a>
 
-              <div className="hidden md:flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
+              {/* MODIFICACIÓN: flex para móvil, hidden para md (escritorio) */}
+              <div className="flex md:hidden items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
                 <Binary size={20} className="text-accent" />
                 <div className="flex-1 text-left">
                   <div className="text-sm font-semibold">Versión de App</div>
@@ -445,7 +443,6 @@ export default function SettingsScreen({
         </div>
       </div>
 
-      {/* --- Renderizado del Modal de Bugs --- */}
       {showBugModal && (
         <BugReportModal onClose={() => setShowBugModal(false)} />
       )}
