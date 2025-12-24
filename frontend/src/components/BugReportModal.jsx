@@ -1,5 +1,5 @@
 /* frontend/src/components/BugReportModal.jsx */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Bug, AlertCircle, ImagePlus, Trash2, ZoomIn } from 'lucide-react';
 import { createBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
@@ -16,11 +16,15 @@ const REPORT_CATEGORIES = [
 
 const MAX_FILES = 3;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const STORAGE_KEY = 'bug_report_draft';
 
 const BugReportModal = ({ onClose }) => {
-    const [category, setCategory] = useState('');
-    const [subject, setSubject] = useState('');
-    const [description, setDescription] = useState('');
+    // Cargamos borrador inicial si existe
+    const [draft] = useState(() => JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+
+    const [category, setCategory] = useState(draft.category || '');
+    const [subject, setSubject] = useState(draft.subject || '');
+    const [description, setDescription] = useState(draft.description || '');
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [imagePreviews, setImagePreviews] = useState([]);
     const [selectedImageForLightbox, setSelectedImageForLightbox] = useState(null);
@@ -29,6 +33,18 @@ const BugReportModal = ({ onClose }) => {
     const [formError, setFormError] = useState('');
     const { addToast } = useToast();
     const fileInputRef = useRef(null);
+
+    // Persistir cambios en los campos de texto
+    useEffect(() => {
+        const data = { category, subject, description };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }, [category, subject, description]);
+
+    // Limpia el borrador y cierra
+    const handleClose = () => {
+        localStorage.removeItem(STORAGE_KEY);
+        onClose();
+    };
 
     const handleFileSelect = async (e) => {
         setFormError('');
@@ -84,7 +100,7 @@ const BugReportModal = ({ onClose }) => {
         try {
             await createBugReport(category, subject, description, selectedFiles);
             addToast('¡Gracias! Tu reporte ha sido enviado con éxito.', 'success');
-            onClose();
+            handleClose(); // Limpia almacenamiento al tener éxito
         } catch (error) {
             console.error(error);
             const errorMsg = error.response?.data?.error || error.message || 'Error al enviar el reporte';
@@ -99,7 +115,6 @@ const BugReportModal = ({ onClose }) => {
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
 
-            {/* --- Lightbox --- */}
             {selectedImageForLightbox && (
                 <div
                     className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
@@ -125,7 +140,7 @@ const BugReportModal = ({ onClose }) => {
                         </div>
                         <h2 className="text-xl font-bold">Reportar un problema</h2>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                    <button onClick={handleClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -229,7 +244,6 @@ const BugReportModal = ({ onClose }) => {
                                                 className="w-full h-full object-cover transition-transform group-hover:scale-110"
                                                 onClick={() => setSelectedImageForLightbox(src)}
                                             />
-                                            {/* Corregido: pointer-events-none para que el clic pase a la imagen, pointer-events-auto en el botón */}
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-end p-1 pointer-events-none">
                                                 <button
                                                     type="button"
@@ -248,7 +262,7 @@ const BugReportModal = ({ onClose }) => {
                 </div>
 
                 <div className="p-5 border-t border-glass-border bg-bg-secondary/30 rounded-b-2xl flex justify-end gap-3 shrink-0">
-                    <button type="button" onClick={onClose} className="px-5 py-2.5 text-text-secondary hover:bg-white/5 rounded-xl transition-colors" disabled={isSubmitting}>
+                    <button type="button" onClick={handleClose} className="px-5 py-2.5 text-text-secondary hover:bg-white/5 rounded-xl transition-colors" disabled={isSubmitting}>
                         Cancelar
                     </button>
                     <button

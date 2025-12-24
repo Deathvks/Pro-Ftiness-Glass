@@ -94,15 +94,29 @@ const checkCalorieTargetReward = async (userId, logDate) => {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    const existingReward = await Notification.findOne({
+    // CORRECCIÓN: Verificación robusta de si ya se otorgó la recompensa hoy
+    // Buscamos todas las notificaciones del día para evitar problemas con Op.like simple
+    const todayNotifications = await Notification.findAll({
       where: {
         user_id: userId,
-        message: { [Op.like]: '%Objetivo de calorías cumplido%' },
         created_at: { [Op.between]: [startOfDay, endOfDay] }
       }
     });
 
-    if (existingReward) return null;
+    const alreadyAwarded = todayNotifications.some(n => {
+      let data = n.data;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) { }
+      }
+
+      // 1. Verificación precisa usando el campo 'reason' en data (si existe)
+      if (data && data.reason === 'Objetivo de calorías cumplido') return true;
+
+      // 2. Verificación de respaldo usando el mensaje
+      return n.message && n.message.includes('Objetivo de calorías cumplido');
+    });
+
+    if (alreadyAwarded) return null;
 
     const user = await User.findByPk(userId);
     if (!user) return null;

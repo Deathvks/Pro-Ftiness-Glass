@@ -122,7 +122,18 @@ export default function SettingsScreen({
   const [currentColorPage, setCurrentColorPage] = useState(0);
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
-  const [showBugModal, setShowBugModal] = useState(false);
+
+  // MODIFICACIÓN: Abre el modal automáticamente si hay un borrador con contenido
+  const [showBugModal, setShowBugModal] = useState(() => {
+    const draft = localStorage.getItem('bug_report_draft');
+    if (!draft) return false;
+    try {
+      const parsed = JSON.parse(draft);
+      return !!(parsed.category || parsed.subject?.trim() || parsed.description?.trim());
+    } catch {
+      return false;
+    }
+  });
 
   const {
     isSubscribed,
@@ -184,7 +195,6 @@ export default function SettingsScreen({
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
-      {/* Header Mobile/Desktop */}
       <div className="flex items-center justify-between mb-6 pt-4 md:pt-0">
         <h1 className="hidden md:flex text-3xl md:text-4xl font-extrabold flex-1 text-left text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary mt-10 md:mt-0">
           Ajustes
@@ -421,7 +431,6 @@ export default function SettingsScreen({
                 <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
               </a>
 
-              {/* MODIFICACIÓN: flex para móvil, hidden para md (escritorio) */}
               <div className="flex md:hidden items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
                 <Binary size={20} className="text-accent" />
                 <div className="flex-1 text-left">
