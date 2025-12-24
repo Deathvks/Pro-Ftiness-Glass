@@ -65,7 +65,9 @@ const StatusIndicator = ({ lastSeen }) => {
 };
 
 const AdminPanel = ({ onCancel }) => {
-  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'reports'
+  // Recuperar la pestaña activa de localStorage o usar default 'users'
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('admin_active_tab') || 'users');
+
   const [reports, setReports] = useState([]);
   const [reportPage, setReportPage] = useState(1);
   const [reportToDelete, setReportToDelete] = useState(null);
@@ -80,6 +82,11 @@ const AdminPanel = ({ onCancel }) => {
   const { addToast } = useToast();
 
   const API_URL = import.meta.env.VITE_API_URL || '';
+
+  // Guardar la pestaña activa cada vez que cambie
+  useEffect(() => {
+    localStorage.setItem('admin_active_tab', activeTab);
+  }, [activeTab]);
 
   // Cargar Usuarios
   const fetchUsers = useCallback(async (isInitialLoad = false) => {
@@ -364,7 +371,7 @@ const AdminPanel = ({ onCancel }) => {
                       <div className="flex flex-col md:flex-row gap-4 justify-between items-start">
                         <div className="flex-1 space-y-3">
                           <div className="flex flex-wrap items-center gap-3">
-                            {/* MODIFICACIÓN: Categoría circular, sin borde, color acento */}
+                            {/* Categoría circular, sin borde, color acento */}
                             <span className="px-2.5 py-0.5 bg-accent text-bg-primary text-[10px] font-extrabold rounded-full uppercase tracking-wider">
                               {REPORT_CATEGORY_LABELS[report.category] || report.category}
                             </span>
@@ -372,26 +379,33 @@ const AdminPanel = ({ onCancel }) => {
                             <span className="text-xs text-accent font-medium">@{report.username || 'Anónimo'}</span>
                           </div>
                           <h3 className="text-lg font-bold text-white">{report.subject}</h3>
-                          <p className="text-text-secondary whitespace-pre-wrap text-sm leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
+
+                          {/* MODIFICACIÓN: Sin background, ni padding, ni borde */}
+                          <p className="text-text-secondary whitespace-pre-wrap text-sm leading-relaxed">
                             {report.description}
                           </p>
 
                           {/* Previsualización de Imágenes si existen */}
                           {report.images && report.images.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {report.images.map((img, idx) => (
-                                <div
-                                  key={idx}
-                                  className="relative group w-16 h-16 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in"
-                                  onClick={() => setSelectedImageForLightbox(API_URL + img)}
-                                >
-                                  <img src={API_URL + img} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="bug-snap" />
-                                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <ZoomIn size={16} className="text-white drop-shadow-md" />
+                            <>
+                              <div className="text-xs font-bold text-text-muted uppercase tracking-wider mt-4 mb-2">
+                                Imágenes adjuntadas
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {report.images.map((img, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="relative group w-16 h-16 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in"
+                                    onClick={() => setSelectedImageForLightbox(API_URL + img)}
+                                  >
+                                    <img src={API_URL + img} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="bug-snap" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <ZoomIn size={16} className="text-white drop-shadow-md" />
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
-                            </div>
+                                ))}
+                              </div>
+                            </>
                           )}
 
                           {/* Información del Dispositivo */}
