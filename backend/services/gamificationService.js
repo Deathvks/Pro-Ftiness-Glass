@@ -50,15 +50,18 @@ export const addXp = async (userId, amount, reason = 'Actividad completada') => 
             await createNotification(userId, {
                 type: 'success',
                 title: '¡Subida de Nivel!',
-                message: `¡Felicidades! Has alcanzado el Nivel ${newLevel}.`
+                message: `¡Felicidades! Has alcanzado el Nivel ${newLevel}.`,
+                data: { type: 'level_up', newLevel }
             });
         }
 
         if (amount > 0) {
+            // CAMBIO: Añadimos 'data' con type: 'xp' y cambiamos el tipo visual a 'success'
             await createNotification(userId, {
-                type: 'info',
+                type: 'success',
                 title: `+${amount} XP`,
-                message: `Has ganado ${amount} XP. Motivo: ${reason}`
+                message: `Has ganado ${amount} XP. Motivo: ${reason}`,
+                data: { type: 'xp', amount, reason }
             });
         }
 
@@ -92,7 +95,8 @@ export const unlockBadge = async (userId, badgeId) => {
         await createNotification(userId, {
             type: 'success',
             title: '¡Insignia Desbloqueada!',
-            message: `Has conseguido: ${badge.name} (+${badge.xp} XP)`
+            message: `Has conseguido: ${badge.name} (+${badge.xp} XP)`,
+            data: { type: 'badge', badgeId, badgeName: badge.name }
         });
 
         await addXp(userId, badge.xp, `Insignia: ${badge.name}`);

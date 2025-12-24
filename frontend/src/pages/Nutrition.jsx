@@ -114,8 +114,6 @@ const Nutrition = ({ setView }) => {
         deleteFavoriteMeal,
         fetchNotifications,
         fetchInitialData,
-        // --- MODIFICACIÓN: Añadimos addXp ---
-        addXp
     } = useAppStore(state => ({
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
@@ -130,8 +128,6 @@ const Nutrition = ({ setView }) => {
         deleteFavoriteMeal: state.deleteFavoriteMeal,
         fetchNotifications: state.fetchNotifications,
         fetchInitialData: state.fetchInitialData,
-        // --- MODIFICACIÓN: Añadimos addXp ---
-        addXp: state.addXp
     }));
 
     const [modal, setModal] = useState({ type: null, data: null });
@@ -139,6 +135,18 @@ const Nutrition = ({ setView }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
+
+    // --- Helper para procesar eventos del servidor ---
+    const processGamificationEvents = (events) => {
+        if (!events || !Array.isArray(events)) return;
+        events.forEach(event => {
+            if (event.type === 'xp') {
+                addToast(`+${event.amount} XP: ${event.reason}`, 'success');
+            } else if (event.type === 'badge') {
+                addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+            }
+        });
+    };
 
     const imageMap = useMemo(() => {
         const map = {};
@@ -195,37 +203,13 @@ const Nutrition = ({ setView }) => {
     const handleSaveWater = async (quantity_ml) => {
         setIsSubmitting(true);
         try {
-            await nutritionService.upsertWaterLog({ log_date: selectedDate, quantity_ml });
+            const res = await nutritionService.upsertWaterLog({ log_date: selectedDate, quantity_ml });
             addToast('Registro de agua actualizado.', 'success');
 
-            // --- INICIO MODIFICACIÓN: Lógica de XP para Agua ---
-            if (userProfile?.id && addXp) {
-                const MAX_DAILY_XP = 50; // XP total por llegar al 100% del objetivo
-                const storageKey = `water_max_${userProfile.id}_${selectedDate}`;
-
-                // Obtenemos el máximo histórico registrado hoy (para evitar farmear borrando y añadiendo)
-                const prevMax = parseFloat(localStorage.getItem(storageKey) || '0');
-
-                // Calculamos progreso (0.0 a 1.0)
-                const prevProgress = Math.min(prevMax / waterTarget, 1);
-                const currentProgress = Math.min(quantity_ml / waterTarget, 1);
-
-                // Solo damos XP por el *nuevo* progreso realizado
-                if (currentProgress > prevProgress) {
-                    const progressDelta = currentProgress - prevProgress;
-                    const xpEarned = Math.round(progressDelta * MAX_DAILY_XP);
-
-                    if (xpEarned > 0) {
-                        addXp(xpEarned, `Hidratación: ${Math.round(currentProgress * 100)}% del objetivo`);
-                    }
-                }
-
-                // Actualizamos el "nivel del agua" máximo alcanzado hoy
-                if (quantity_ml > prevMax) {
-                    localStorage.setItem(storageKey, quantity_ml.toString());
-                }
+            // Procesar gamificación devuelta por el servidor
+            if (res && res.gamification) {
+                processGamificationEvents(res.gamification);
             }
-            // --- FIN MODIFICACIÓN ---
 
             await fetchDataForDate(selectedDate);
 
@@ -292,7 +276,13 @@ const Nutrition = ({ setView }) => {
                 if (!formData) {
                     throw new Error("No se proporcionaron datos para la actualización.");
                 }
-                await nutritionService.updateFoodLog(modal.data.id, formData);
+                const res = await nutritionService.updateFoodLog(modal.data.id, formData);
+
+                // Procesar gamificación (Ej: Objetivo calorías)
+                if (res && res.gamification) {
+                    processGamificationEvents(res.gamification);
+                }
+
                 addToast('Comida actualizada.', 'success');
             } else {
                 const foodsToAdd = isArray ? formDataOrArray : [formDataOrArray];
@@ -301,7 +291,16 @@ const Nutrition = ({ setView }) => {
                     log_date: selectedDate,
                     meal_type: modal.data.mealType,
                 }));
-                await Promise.all(payloads.map(payload => nutritionService.addFoodLog(payload)));
+
+                // Esperar a todas las peticiones y procesar sus respuestas
+                const responses = await Promise.all(payloads.map(payload => nutritionService.addFoodLog(payload)));
+
+                responses.forEach(res => {
+                    if (res && res.gamification) {
+                        processGamificationEvents(res.gamification);
+                    }
+                });
+
                 addToast(payloads.length > 1 ? `${payloads.length} comidas añadidas.` : 'Comida añadida.', 'success');
             }
 
@@ -451,7 +450,7 @@ const Nutrition = ({ setView }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         {Object.entries(meals).map(([mealType, logs]) => (
                             <GlassCard key={mealType} className="p-6">
                                 <div className="flex justify-between items-center mb-4">

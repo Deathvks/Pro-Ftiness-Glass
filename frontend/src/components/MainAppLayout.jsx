@@ -70,8 +70,8 @@ export default function MainAppLayout({
     notifications,
     fetchNotifications,
     // Gamificación
-    gamificationEvent,
-    clearGamificationEvent,
+    gamificationEvents, // MODIFICADO: Ahora recibimos el array de eventos
+    clearGamificationEvents, // MODIFICADO: Función para limpiar el array
     // Solicitudes sociales para el badge del navbar
     socialRequests
   } = useAppStore(state => ({
@@ -87,8 +87,8 @@ export default function MainAppLayout({
     notifications: state.notifications || [],
     fetchNotifications: state.fetchNotifications,
     // Gamificación
-    gamificationEvent: state.gamification?.gamificationEvent,
-    clearGamificationEvent: state.clearGamificationEvent,
+    gamificationEvents: state.gamification?.gamificationEvents, // MODIFICADO
+    clearGamificationEvents: state.clearGamificationEvents, // MODIFICADO
     socialRequests: state.socialRequests
   }));
 
@@ -104,18 +104,20 @@ export default function MainAppLayout({
 
   // Efecto para detectar eventos de Gamificación y lanzar Toast
   useEffect(() => {
-    if (gamificationEvent) {
-      if (gamificationEvent.type === 'xp') {
-        // --- MODIFICADO: Usamos addToast del sistema central ---
-        addToast(`+${gamificationEvent.amount} XP: ${gamificationEvent.reason}`, 'success');
-      } else if (gamificationEvent.type === 'badge') {
-        addToast(`¡Insignia Desbloqueada! ${gamificationEvent.badge.name}`, 'success');
-      }
+    // MODIFICADO: Iteramos sobre la cola de eventos para asegurar que salgan todos
+    if (gamificationEvents && gamificationEvents.length > 0) {
+      gamificationEvents.forEach(event => {
+        if (event.type === 'xp') {
+          addToast(`+${event.amount} XP: ${event.reason}`, 'success');
+        } else if (event.type === 'badge') {
+          addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+        }
+      });
 
-      // Limpiamos el evento del store
-      clearGamificationEvent();
+      // Limpiamos todos los eventos procesados
+      clearGamificationEvents();
     }
-  }, [gamificationEvent, clearGamificationEvent, addToast]);
+  }, [gamificationEvents, clearGamificationEvents, addToast]);
 
 
   // --- Sincronización de Cookies ---
@@ -302,9 +304,6 @@ export default function MainAppLayout({
       </nav>
 
       {/* --- Modales y Notificaciones --- */}
-
-      {/* ELIMINADO: Toast de Gamificación manual */}
-      {/* Se eliminó el bloque condicional local y el componente Toast importado directamente */}
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 

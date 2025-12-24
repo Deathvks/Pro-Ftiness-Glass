@@ -7,6 +7,9 @@ import ConfirmationModal from './ConfirmationModal';
 import { useNutritionModal } from '../hooks/useNutritionModal';
 import GlassCard from './GlassCard';
 import { searchFoods } from '../services/nutritionService';
+// --- AÑADIDO: Imports para Gamificación y Toasts ---
+import { useToast } from '../hooks/useToast';
+import useAppStore from '../store/useAppStore';
 
 import TabButton from './nutrition/logModal/TabButton';
 import ManualEntryForm from './nutrition/logModal/ManualEntryForm';
@@ -18,6 +21,10 @@ import SearchResultItem from './nutrition/logModal/SearchResultItem';
 import FoodDetailView from './nutrition/logModal/FoodDetailView';
 
 const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
+    // --- AÑADIDO: Hooks de feedback ---
+    const { addToast } = useToast();
+    const addXp = useAppStore(state => state.addXp);
+
     const {
         isEditingLog, editingFavorite, searchTerm, setSearchTerm, activeTab, setActiveTab,
         itemsToAdd, favoritesPage, setFavoritesPage, mealToDelete, setMealToDelete,
@@ -35,6 +42,18 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
     const [isSearching, setIsSearching] = useState(false);
 
     const [selectedDetailItem, setSelectedDetailItem] = useState(null);
+
+    // --- AÑADIDO: Wrapper para inyectar XP y Toast al guardar la lista ---
+    const handleSaveListWithFeedback = () => {
+        handleSaveList(); // Ejecuta la lógica original de guardado/cierre
+
+        // Añade XP y notificaciones si hay items
+        if (itemsToAdd.length > 0) {
+            const xpAmount = 15 * itemsToAdd.length;
+            if (addXp) addXp(xpAmount, 'Comidas registradas');
+            addToast(`Has guardado ${itemsToAdd.length} comida(s) correctamente`, 'success');
+        }
+    };
 
     useEffect(() => {
         if (activeTab !== 'search' || !searchTerm.trim()) {
@@ -259,7 +278,8 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                                     <SelectedItem key={item.tempId} item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />
                                 )}
                             </div>
-                            <button onClick={handleSaveList} disabled={false} className="w-full flex items-center justify-center py-3 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold hover:scale-[1.01] transition disabled:opacity-60">
+                            {/* --- MODIFICADO: Usamos handleSaveListWithFeedback en lugar de handleSaveList --- */}
+                            <button onClick={handleSaveListWithFeedback} disabled={false} className="w-full flex items-center justify-center py-3 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold hover:scale-[1.01] transition disabled:opacity-60">
                                 <Plus size={18} className="mr-2" />
                                 {`Añadir ${itemsToAdd.length} Alimento${itemsToAdd.length > 1 ? 's' : ''}`}
                             </button>

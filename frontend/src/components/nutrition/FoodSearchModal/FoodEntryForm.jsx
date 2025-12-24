@@ -7,6 +7,8 @@ import { getFavoriteMeals } from '../../../services/favoriteMealService';
 import { uploadFoodImage } from '../../../services/nutritionService';
 // --- CORRECCIÓN: Importación correcta del hook useToast ---
 import { useToast } from '../../../hooks/useToast';
+// --- AÑADIDO: Importamos useAppStore para la gamificación ---
+import useAppStore from '../../../store/useAppStore';
 
 // Componente para un campo de entrada de macros
 const MacroInput = ({ label, value, onChange, unit }) => (
@@ -60,7 +62,10 @@ function FoodEntryForm({
   const [favoriteId, setFavoriteId] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+
   const { addToast } = useToast();
+  // --- AÑADIDO: Obtenemos addXp del store ---
+  const { addXp } = useAppStore(state => ({ addXp: state.addXp }));
 
   const recalculateMacros = (newWeight, per100gMode) => {
     if (!selectedItem) return {};
@@ -252,6 +257,10 @@ function FoodEntryForm({
       isFavorite,
       wasInitiallyFavorite
     });
+
+    // --- AÑADIDO: Feedback de XP y Toast ---
+    if (addXp) addXp(15, 'Comida registrada');
+    addToast('Comida añadida correctamente', 'success');
   };
 
   const getServingSizeText = () => {
@@ -326,8 +335,8 @@ function FoodEntryForm({
               type="button"
               onClick={handleToggleFavorite}
               className={`p-2 border border-l-0 border-gray-600 rounded-r-md ${isFavorite
-                  ? 'bg-yellow-500 text-white'
-                  : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                ? 'bg-yellow-500 text-white'
+                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
                 }`}
               aria-label={
                 isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'

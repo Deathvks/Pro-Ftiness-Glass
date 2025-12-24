@@ -92,7 +92,7 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
 
 // Componente para mostrar macros calculados, ajustado para recibir directamente los valores calculados
 const CalculatedMacros = ({ calories, protein, carbs, fats }) => (
-     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Cal</p><p className="font-semibold">{Math.round(calories) || 0}</p></div>
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Prot</p><p className="font-semibold">{protein || 0} g</p></div>
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Carbs</p><p className="font-semibold">{carbs || 0} g</p></div>
@@ -118,7 +118,12 @@ const ManualEntryForm = ({
     setIsPer100g
 }) => {
     const { addToast } = useToast();
-    const favoriteMeals = useAppStore(state => state.favoriteMeals);
+    // --- MODIFICACIÓN: Importamos addXp ---
+    const { favoriteMeals, addXp } = useAppStore(state => ({
+        favoriteMeals: state.favoriteMeals,
+        addXp: state.addXp
+    }));
+
     const { formData, per100Data, isFavorite } = formState;
 
     // --- INICIO DE LA MODIFICACIÓN: Estado para saber si el item *original* era favorito ---
@@ -131,8 +136,8 @@ const ManualEntryForm = ({
         // ya existe en la lista de favoritos.
         if (isEditing || editingListItem) {
             const originalName = (isEditing ? formState.originalDescription : editingListItem?.description)?.trim().toLowerCase();
-             // Añadimos console.log para depurar
-             // console.log("Checking original favorite status:", { originalName, favoriteNames: favoriteMeals.map(f => f.name.toLowerCase()) });
+            // Añadimos console.log para depurar
+            // console.log("Checking original favorite status:", { originalName, favoriteNames: favoriteMeals.map(f => f.name.toLowerCase()) });
             return originalName && favoriteMeals.some(fav => fav.name.toLowerCase() === originalName);
         }
         // Si estamos añadiendo uno nuevo, no es originalmente favorito
@@ -188,44 +193,44 @@ const ManualEntryForm = ({
     };
 
     const round = useCallback((val, d = 1) => {
-     // Ya no necesitamos reemplazar comas aquí, porque el estado ya está normalizado
-     const n = parseFloat(val);
-     return isNaN(n)
-       ? ''
-       : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
+        // Ya no necesitamos reemplazar comas aquí, porque el estado ya está normalizado
+        const n = parseFloat(val);
+        return isNaN(n)
+            ? ''
+            : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
     }, []);
 
     const calculatedMacros = useMemo(() => {
-      // Todos los valores de formData y per100Data ya vienen con '.' como decimal
-      if (isPer100g) {
-        const weight = parseFloat(formData.weight_g) || 0;
-        const factor = weight / 100;
-        return {
-          calories: (parseFloat(per100Data.calories) || 0) * factor,
-          protein_g: round((parseFloat(per100Data.protein_g) || 0) * factor),
-          carbs_g: round((parseFloat(per100Data.carbs_g) || 0) * factor),
-          fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor),
-        };
-      } else {
-        return {
-          calories: parseFloat(formData.calories) || 0,
-          protein_g: round(formData.protein_g),
-          carbs_g: round(formData.carbs_g),
-          fats_g: round(formData.fats_g),
-        };
-      }
+        // Todos los valores de formData y per100Data ya vienen con '.' como decimal
+        if (isPer100g) {
+            const weight = parseFloat(formData.weight_g) || 0;
+            const factor = weight / 100;
+            return {
+                calories: (parseFloat(per100Data.calories) || 0) * factor,
+                protein_g: round((parseFloat(per100Data.protein_g) || 0) * factor),
+                carbs_g: round((parseFloat(per100Data.carbs_g) || 0) * factor),
+                fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor),
+            };
+        } else {
+            return {
+                calories: parseFloat(formData.calories) || 0,
+                protein_g: round(formData.protein_g),
+                carbs_g: round(formData.carbs_g),
+                fats_g: round(formData.fats_g),
+            };
+        }
     }, [formData, per100Data, isPer100g, round]);
 
     const validateAndGetData = useCallback(() => {
         // Todos los valores en formData y per100Data ya están normalizados (usan '.')
         const finalData = {
-          description: formData.description?.trim() || '',
-          calories: calculatedMacros.calories,
-          protein_g: calculatedMacros.protein_g,
-          carbs_g: calculatedMacros.carbs_g,
-          fats_g: calculatedMacros.fats_g,
-          weight_g: formData.weight_g, // ya está normalizado
-          image_url: formData.image_url,
+            description: formData.description?.trim() || '',
+            calories: calculatedMacros.calories,
+            protein_g: calculatedMacros.protein_g,
+            carbs_g: calculatedMacros.carbs_g,
+            fats_g: calculatedMacros.fats_g,
+            weight_g: formData.weight_g, // ya está normalizado
+            image_url: formData.image_url,
         };
 
         const weight = parseFloat(finalData.weight_g) || 0; // parseFloat maneja bien los '.'
@@ -237,19 +242,19 @@ const ManualEntryForm = ({
         }
 
         if (isPer100g) {
-             const cal100 = parseFloat(per100Data.calories); // ya está normalizado
-             if (isNaN(weight) || weight <= 0) {
-                 addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
-                 return null;
-             }
-             if (isNaN(cal100) || cal100 < 0) {
-                 addToast('Las calorías por 100g son obligatorias.', 'error');
-                 return null;
-             }
+            const cal100 = parseFloat(per100Data.calories); // ya está normalizado
+            if (isNaN(weight) || weight <= 0) {
+                addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
+                return null;
+            }
+            if (isNaN(cal100) || cal100 < 0) {
+                addToast('Las calorías por 100g son obligatorias.', 'error');
+                return null;
+            }
         } else {
             if (isNaN(calories) || calories <= 0) {
-                 addToast('Las calorías deben ser mayores a 0.', 'error');
-                 return null;
+                addToast('Las calorías deben ser mayores a 0.', 'error');
+                return null;
             }
             if (finalData.weight_g !== null && finalData.weight_g !== undefined && finalData.weight_g !== '' && (isNaN(weight) || weight <= 0)) {
                 addToast('Los gramos totales, si se indican, deben ser mayores a 0.', 'error');
@@ -259,12 +264,12 @@ const ManualEntryForm = ({
 
         Object.keys(finalData).forEach(key => {
             if (key !== 'description' && key !== 'image_url') {
-                 if (key === 'weight_g') {
-                     finalData[key] = (!isNaN(weight) && weight > 0) ? weight : null;
-                 } else {
-                     const numericValue = parseFloat(finalData[key]); // parseFloat funciona
-                     finalData[key] = isNaN(numericValue) ? 0 : numericValue;
-                 }
+                if (key === 'weight_g') {
+                    finalData[key] = (!isNaN(weight) && weight > 0) ? weight : null;
+                } else {
+                    const numericValue = parseFloat(finalData[key]); // parseFloat funciona
+                    finalData[key] = isNaN(numericValue) ? 0 : numericValue;
+                }
             }
         });
         if (!finalData.image_url) {
@@ -294,6 +299,7 @@ const ManualEntryForm = ({
         if (!finalData) return;
         // Pasamos el estado actual de isFavorite al guardar
         onSaveEdit({ ...finalData, isFavorite });
+        addToast('Comida actualizada correctamente', 'success');
     };
 
     const handleUpdateListItem = () => {
@@ -301,9 +307,10 @@ const ManualEntryForm = ({
         if (!finalData) return;
         // Pasamos el estado actual de isFavorite al guardar
         onSaveListItem({ ...editingListItem, ...finalData, name: finalData.description, isFavorite, image_url: finalData.image_url });
+        addToast('Comida actualizada', 'success');
     };
 
-     const handleSaveAndClose = () => {
+    const handleSaveAndClose = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
         const dataToSave = {
@@ -317,6 +324,10 @@ const ManualEntryForm = ({
             fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
         };
         onSaveSingle([dataToSave]);
+
+        // --- AÑADIDO: Feedback explícito de XP y Toast ---
+        if (addXp) addXp(15, 'Comida registrada');
+        addToast('Comida guardada correctamente', 'success');
     };
 
 

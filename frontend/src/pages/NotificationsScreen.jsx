@@ -8,7 +8,7 @@ import { es } from 'date-fns/locale';
 import {
   Bell, CheckCheck, Trash2, X, Info, AlertTriangle, CheckCircle, AlertCircle,
   Filter, ChevronDown, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
-  UserPlus, Users
+  UserPlus, Users, Zap, Award
 } from 'lucide-react';
 
 // --- Imports de Modales Separados ---
@@ -216,6 +216,9 @@ const NotificationsScreen = ({ setView }) => {
 
     if (subType === 'friend_request') return <UserPlus className="text-accent" size={24} />;
     if (subType === 'friend_accept') return <Users className="text-green-500" size={24} />;
+    // --- NUEVO: Iconos para Gamificación ---
+    if (subType === 'xp' || subType === 'level_up') return <Zap className="text-amber-400" size={24} fill="currentColor" fillOpacity={0.2} />;
+    if (subType === 'badge') return <Award className="text-amber-500" size={24} />;
 
     switch (n.type) {
       case 'success': return <CheckCircle className="text-green-500" size={24} />;

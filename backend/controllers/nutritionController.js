@@ -6,17 +6,20 @@ import path from 'path';
 import fs from 'fs/promises';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { deleteFile } from '../services/imageService.js';
-import { addXp, checkStreak, unlockBadge, FOOD_LOG_XP, WATER_LOG_XP } from '../services/gamificationService.js';
-// --- FIN DE LA MODIFICACIÓN ---
+import { addXp, checkStreak, unlockBadge, FOOD_LOG_XP } from '../services/gamificationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const FOOD_IMAGES_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 
-const { NutritionLog, WaterLog, FavoriteMeal, sequelize } = db;
+const { NutritionLog, WaterLog, FavoriteMeal, User, Notification, BodyWeightLog, sequelize } = db;
+
+// --- CONFIGURACIÓN ---
+const MAX_DAILY_FOOD_XP_COUNT = 5; // Máximo de comidas que dan XP por día
+const CALORIE_TARGET_XP = 50; // XP por cumplir el objetivo calórico
+const MAX_DAILY_WATER_XP = 50; // Límite diario de XP por hidratación
 
 // Helper para asegurar que el directorio de subida existe
 const ensureUploadDirExists = async (dirPath) => {
@@ -47,7 +50,7 @@ const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
     const outputPath = path.join(outputDir, webpFilename);
 
     await sharp(imageBuffer)
-      .rotate() // <--- CORRECCIÓN: Respetar orientación EXIF si la hay
+      .rotate()
       .resize(800, 800, {
         fit: sharp.fit.inside,
         withoutEnlargement: true
@@ -82,6 +85,68 @@ const isImageInUse = async (imageUrl, excludeLogId = null) => {
 
   return false;
 };
+
+// --- HELPER: Verificar Objetivo de Calorías (Devuelve el resultado de XP) ---
+const checkCalorieTargetReward = async (userId, logDate) => {
+  try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingReward = await Notification.findOne({
+      where: {
+        user_id: userId,
+        message: { [Op.like]: '%Objetivo de calorías cumplido%' },
+        created_at: { [Op.between]: [startOfDay, endOfDay] }
+      }
+    });
+
+    if (existingReward) return null;
+
+    const user = await User.findByPk(userId);
+    if (!user) return null;
+
+    const lastWeightLog = await BodyWeightLog.findOne({
+      where: { user_id: userId },
+      order: [['log_date', 'DESC']]
+    });
+    const weight = lastWeightLog ? parseFloat(lastWeightLog.weight_kg) : 70;
+
+    const { gender, age, height, activity_level, goal } = user;
+    const userHeight = height || 170;
+    const userAge = age || 30;
+    const userActivity = activity_level || 1.2;
+    const userGender = gender || 'male';
+
+    let bmr = userGender === 'male'
+      ? 10 * weight + 6.25 * userHeight - 5 * userAge + 5
+      : 10 * weight + 6.25 * userHeight - 5 * userAge - 161;
+
+    let target = bmr * userActivity;
+    if (goal === 'lose') target -= 500;
+    else if (goal === 'gain') target += 500;
+
+    target = Math.round(target);
+
+    const totalCalories = await NutritionLog.sum('calories', {
+      where: {
+        user_id: userId,
+        log_date: logDate
+      }
+    }) || 0;
+
+    if (totalCalories >= target) {
+      return await addXp(userId, CALORIE_TARGET_XP, 'Objetivo de calorías cumplido');
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error verificando recompensa de calorías:', error);
+    return null;
+  }
+};
+
 
 // --- GETTERS ---
 
@@ -217,26 +282,43 @@ const addFoodLog = async (req, res, next) => {
 
     const newLog = await NutritionLog.create(foodData);
 
-    // --- INICIO MODIFICACIÓN: Gamificación ---
+    const gamificationEvents = [];
     try {
       const todayStr = new Date().toISOString().split('T')[0];
-      // XP por registrar comida
-      await addXp(userId, FOOD_LOG_XP, 'Comida registrada');
+
+      const logsCount = await NutritionLog.count({
+        where: { user_id: userId, log_date: log_date }
+      });
+
+      if (logsCount <= MAX_DAILY_FOOD_XP_COUNT) {
+        const xpResult = await addXp(userId, FOOD_LOG_XP, 'Comida registrada');
+        if (xpResult.success) {
+          gamificationEvents.push({ type: 'xp', amount: FOOD_LOG_XP, reason: 'Comida registrada' });
+        }
+      }
+
+      const totalCount = await NutritionLog.count({ where: { user_id: userId } });
+      if (totalCount >= 5) {
+        const badgeResult = await unlockBadge(userId, 'nutrition_master');
+        if (badgeResult.success && badgeResult.unlocked) {
+          gamificationEvents.push({ type: 'badge', badge: badgeResult.badge });
+        }
+      }
+
       await checkStreak(userId, todayStr);
 
-      // Verificar insignia 'Chef' (5 comidas)
-      const count = await NutritionLog.count({ where: { user_id: userId } });
-      if (count >= 5) {
-        await unlockBadge(userId, 'nutrition_master');
+      const calorieResult = await checkCalorieTargetReward(userId, log_date);
+      if (calorieResult && calorieResult.success) {
+        gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
       }
+
     } catch (gError) {
       console.error('Error gamificación en addFoodLog:', gError);
     }
-    // --- FIN MODIFICACIÓN ---
 
-    res.status(201).json(newLog);
+    res.status(201).json({ ...newLog.toJSON(), gamification: gamificationEvents });
+
   } catch (error) {
-    // Si falla la creación y subimos una imagen, la borramos
     if (req.file && req.file.processedPath) {
       deleteFile(req.file.processedPath);
     }
@@ -254,7 +336,6 @@ const updateFoodLog = async (req, res, next) => {
 
     const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
     if (!log) {
-      // Si no existe y subimos imagen, limpiar
       if (req.file && req.file.processedPath) deleteFile(req.file.processedPath);
       return res.status(404).json({ error: 'Registro de comida no encontrado.' });
     }
@@ -299,7 +380,6 @@ const updateFoodLog = async (req, res, next) => {
 
     await log.update(foodData);
 
-    // Propagar cambios a Favoritos
     const favorite = await FavoriteMeal.findOne({ where: { user_id: userId, name: foodData.description } });
     if (favorite) {
       await favorite.update({
@@ -313,7 +393,6 @@ const updateFoodLog = async (req, res, next) => {
       });
     }
 
-    // --- Borrado de imagen antigua si cambió y no se usa en otros logs/favoritos ---
     if (oldImageUrl && oldImageUrl !== newImageUrl) {
       const inUse = await isImageInUse(oldImageUrl, logId);
       if (!inUse) {
@@ -321,9 +400,19 @@ const updateFoodLog = async (req, res, next) => {
       }
     }
 
-    res.json(log);
+    const gamificationEvents = [];
+    try {
+      const calorieResult = await checkCalorieTargetReward(userId, foodData.log_date);
+      if (calorieResult && calorieResult.success) {
+        gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
+      }
+    } catch (gError) {
+      console.error('Error verificando objetivo en updateFoodLog:', gError);
+    }
+
+    res.json({ ...log.toJSON(), gamification: gamificationEvents });
+
   } catch (error) {
-    // Si falló la actualización y subimos imagen nueva, borrarla
     if (req.file && req.file.processedPath) {
       deleteFile(req.file.processedPath);
     }
@@ -348,9 +437,7 @@ const deleteFoodLog = async (req, res, next) => {
 
     await log.destroy();
 
-    // --- Borrado de imagen si ya no se usa ---
     if (imageUrl) {
-      // Al haber borrado el log, ya no cuenta en isImageInUse
       const inUse = await isImageInUse(imageUrl);
       if (!inUse) {
         deleteFile(imageUrl);
@@ -364,7 +451,7 @@ const deleteFoodLog = async (req, res, next) => {
 };
 
 /**
- * Añade o actualiza la cantidad de agua.
+ * Añade o actualiza la cantidad de agua con control de XP estricto.
  */
 const upsertWaterLog = async (req, res, next) => {
   try {
@@ -375,36 +462,82 @@ const upsertWaterLog = async (req, res, next) => {
       return res.status(400).json({ error: 'Fecha y cantidad son requeridas.' });
     }
 
+    const user = await User.findByPk(userId);
+    const lastWeightLog = await BodyWeightLog.findOne({ where: { user_id: userId }, order: [['log_date', 'DESC']] });
+    const weight = lastWeightLog ? parseFloat(lastWeightLog.weight_kg) : 70;
+    const waterTarget = weight > 0 ? weight * 35 : 2500;
+
     const [waterLog, created] = await WaterLog.findOrCreate({
       where: { user_id: userId, log_date },
       defaults: { quantity_ml }
     });
+
+    const previousQty = created ? 0 : waterLog.quantity_ml;
 
     if (!created) {
       waterLog.quantity_ml = quantity_ml;
       await waterLog.save();
     }
 
-    // --- INICIO MODIFICACIÓN: Gamificación ---
+    // --- GAMIFICACIÓN ---
+    const gamificationEvents = [];
     try {
       const todayStr = new Date().toISOString().split('T')[0];
-      // XP por registrar agua
-      await addXp(userId, WATER_LOG_XP, 'Hidratación registrada');
+
+      // 1. Calcular cuánta XP de hidratación YA se ha ganado hoy
+      // Consultamos la tabla de notificaciones para encontrar eventos de 'Hidratación' del día actual
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const waterNotifications = await Notification.findAll({
+        where: {
+          user_id: userId,
+          message: { [Op.like]: '%Hidratación:%' }, // Buscamos mensajes que contengan "Hidratación:"
+          created_at: { [Op.between]: [startOfDay, endOfDay] }
+        }
+      });
+
+      // Sumamos la XP extraída de las notificaciones
+      let xpEarnedToday = 0;
+      waterNotifications.forEach(notif => {
+        if (notif.data && notif.data.amount) {
+          xpEarnedToday += parseInt(notif.data.amount, 10);
+        }
+      });
+
+      // 2. Calcular XP potencial basada en progreso
+      const prevProgress = Math.min(previousQty / waterTarget, 1);
+      const currentProgress = Math.min(quantity_ml / waterTarget, 1);
+
+      let xpToAward = 0;
+      if (currentProgress > prevProgress) {
+        xpToAward = Math.round((currentProgress - prevProgress) * MAX_DAILY_WATER_XP);
+      }
+
+      // 3. Aplicar límite diario restante
+      const xpRemainingToday = Math.max(0, MAX_DAILY_WATER_XP - xpEarnedToday);
+      xpToAward = Math.min(xpToAward, xpRemainingToday);
+
+      if (xpToAward > 0) {
+        const xpResult = await addXp(userId, xpToAward, `Hidratación: ${Math.round(currentProgress * 100)}% del objetivo`);
+        if (xpResult.success) {
+          gamificationEvents.push({ type: 'xp', amount: xpToAward, reason: `Hidratación: ${Math.round(currentProgress * 100)}%` });
+        }
+      }
+
       await checkStreak(userId, todayStr);
     } catch (gError) {
       console.error('Error gamificación en upsertWaterLog:', gError);
     }
-    // --- FIN MODIFICACIÓN ---
 
-    res.json(waterLog);
+    res.json({ ...waterLog.toJSON(), gamification: gamificationEvents });
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Busca producto por código de barras (Open Food Facts).
- */
 const searchByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
@@ -445,7 +578,6 @@ const searchByBarcode = async (req, res, next) => {
   }
 };
 
-// Obsoleto, pero mantenido por compatibilidad si es necesario
 const uploadFoodImage = async (req, res, next) => {
   if (req.imageUrl) {
     res.status(201).json({ imageUrl: req.imageUrl });
@@ -454,9 +586,6 @@ const uploadFoodImage = async (req, res, next) => {
   }
 };
 
-/**
- * Busca en comidas favoritas y Open Food Facts.
- */
 const searchFoods = async (req, res, next) => {
   try {
     const { userId } = req.user;

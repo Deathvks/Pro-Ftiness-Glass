@@ -10,12 +10,9 @@ import useAppStore from '../store/useAppStore';
 
 const CreatinaTracker = ({ onClose, selectedDate }) => {
     const { addToast } = useToast();
-    // --- MODIFICACIÓN: Añadimos addXp y checkStreak ---
-    const { fetchNotifications, fetchInitialData, addXp, checkStreak } = useAppStore(state => ({
+    const { fetchNotifications, fetchInitialData } = useAppStore(state => ({
         fetchNotifications: state.fetchNotifications,
-        fetchInitialData: state.fetchInitialData,
-        addXp: state.addXp,
-        checkStreak: state.checkStreak
+        fetchInitialData: state.fetchInitialData
     }));
 
     const [creatinaLogs, setCreatinaLogs] = useState([]);
@@ -85,16 +82,27 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
             return;
         }
 
+        if (gramsValue > 50) {
+            addToast('La cantidad máxima permitida es 50g', 'error');
+            return;
+        }
+
         setIsSubmitting(true);
         try {
-            await creatinaService.createCreatinaLog({
+            const response = await creatinaService.createCreatinaLog({
                 grams: gramsValue,
                 log_date: selectedDate
             });
 
-            // --- MODIFICACIÓN: Activamos XP y verificamos racha ---
-            if (addXp) addXp(10, 'Creatina registrada');
-            if (checkStreak) checkStreak(new Date().toISOString().split('T')[0]);
+            if (response && response.gamification) {
+                response.gamification.forEach(event => {
+                    if (event.type === 'xp') {
+                        addToast(`+${event.amount} XP: ${event.reason}`, 'success');
+                    } else if (event.type === 'badge') {
+                        addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+                    }
+                });
+            }
 
             addToast('Registro de creatina guardado', 'success');
             setGrams('');
@@ -147,6 +155,11 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
         const gramsValue = parseFloat(editGrams);
         if (isNaN(gramsValue) || gramsValue <= 0) {
             addToast('Por favor ingresa una cantidad válida de gramos', 'error');
+            return;
+        }
+
+        if (gramsValue > 50) {
+            addToast('La cantidad máxima permitida es 50g', 'error');
             return;
         }
 
@@ -223,7 +236,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                                         <form onSubmit={handleSubmit} className="space-y-4">
                                             <div>
                                                 <label className="block text-sm font-medium mb-2">Añadir nueva toma ({dailyLogs.length + 1} de 2)</label>
-                                                <input type="number" step="0.1" min="0.1" max="50" value={grams} onChange={(e) => setGrams(e.target.value)} className="w-full px-4 py-2 bg-bg-secondary border border-glass-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" placeholder="Ej: 5.0" disabled={isSubmitting} />
+                                                <input type="number" step="0.1" min="0.1" value={grams} onChange={(e) => setGrams(e.target.value)} className="w-full px-4 py-2 bg-bg-secondary border border-glass-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" placeholder="Ej: 5.0" disabled={isSubmitting} />
                                             </div>
                                             <div className="flex gap-3">
                                                 <button type="submit" disabled={isSubmitting || !grams} className="flex items-center gap-2 px-4 py-2 bg-accent text-bg-secondary rounded-lg hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Plus size={16} />{isSubmitting ? 'Guardando...' : 'Añadir Toma'}</button>
@@ -281,7 +294,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                             <div><label className="block text-sm font-medium mb-2">Fecha</label><p className="bg-bg-secondary px-3 py-2 rounded-lg border border-glass-border">{formatDateForDisplay(editingLog.log_date)}</p></div>
                             <div>
                                 <label className="block text-sm font-medium mb-2">Gramos de creatina</label>
-                                <input type="number" step="0.1" min="0.1" max="50" value={editGrams} onChange={(e) => setEditGrams(e.target.value)} className="w-full px-4 py-2 bg-bg-secondary border border-glass-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" required autoFocus />
+                                <input type="number" step="0.1" min="0.1" value={editGrams} onChange={(e) => setEditGrams(e.target.value)} className="w-full px-4 py-2 bg-bg-secondary border border-glass-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" required autoFocus />
                             </div>
                             <div className="flex gap-3 pt-4">
                                 <button type="submit" disabled={isSubmitting || !editGrams} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-accent text-bg-secondary rounded-lg hover:bg-accent/90 disabled:opacity-50"><Save size={16} />{isSubmitting ? 'Guardando...' : 'Guardar'}</button>

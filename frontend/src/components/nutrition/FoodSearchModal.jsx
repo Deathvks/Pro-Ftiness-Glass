@@ -242,8 +242,11 @@ const FoodSearchModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) =>
     const ITEMS_PER_PAGE = 5;
 
     const { addToast } = useToast();
-    const { favoriteMeals, deleteFavoriteMeal } = useAppStore(state => ({
-        favoriteMeals: state.favoriteMeals, deleteFavoriteMeal: state.deleteFavoriteMeal,
+    // --- MODIFICACIÓN: Importamos addXp ---
+    const { favoriteMeals, deleteFavoriteMeal, addXp } = useAppStore(state => ({
+        favoriteMeals: state.favoriteMeals,
+        deleteFavoriteMeal: state.deleteFavoriteMeal,
+        addXp: state.addXp
     }));
 
     const [isDarkTheme, setIsDarkTheme] = useState(() => typeof document !== 'undefined' && !document.body.classList.contains('light-theme'));
@@ -346,17 +349,27 @@ const FoodSearchModal = ({ mealType, onSave, onClose, isLoading, logToEdit }) =>
 
     const handleSaveList = () => {
         if (itemsToAdd.length === 0) return addToast('No has añadido ninguna comida.', 'info');
+
         onSave(itemsToAdd);
+
+        // --- AÑADIDO: Feedback XP y Toast de Guardado ---
+        if (addXp) addXp(15, 'Comidas registradas');
     };
 
     const handleSaveSingle = (itemData) => {
         setManualFormState(initialManualFormState);
+
         onSave(itemData);
+
+        // --- AÑADIDO: Feedback XP y Toast de Guardado ---
+        if (addXp) addXp(15, 'Comida registrada');
     };
 
     const handleSaveEdit = (formData) => {
         onSave([formData], true);
         setBaseMacros(null);
+        // Feedback para edición
+        addToast('Comida actualizada.', 'success');
     };
 
     const mealTitles = { breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snack' };

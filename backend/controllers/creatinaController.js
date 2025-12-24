@@ -40,14 +40,22 @@ export const createCreatinaLog = async (req, res, next) => {
 
     const log = await CreatinaLog.create({ user_id: userId, log_date, grams, notes });
 
+    // --- GAMIFICACIÓN ---
+    const gamificationEvents = [];
     try {
-      await addXp(userId, 5, 'Creatina registrada');
+      // 5 XP por registro
+      const xpResult = await addXp(userId, 5, 'Creatina registrada');
+      if (xpResult.success) {
+        gamificationEvents.push({ type: 'xp', amount: 5, reason: 'Creatina registrada' });
+      }
+
       await checkStreak(userId, new Date().toISOString().split('T')[0]);
     } catch (err) {
       console.error('Error gamificación:', err);
     }
 
-    res.status(201).json({ message: 'Registrado', log });
+    // Devolvemos log + eventos para que el frontend muestre el toast correcto
+    res.status(201).json({ message: 'Registrado', log, gamification: gamificationEvents });
   } catch (error) {
     next(error);
   }

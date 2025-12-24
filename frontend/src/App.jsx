@@ -16,6 +16,9 @@ import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
 import TwoFactorPromoModal from './components/TwoFactorPromoModal';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
+// --- INICIO DE LA MODIFICACIÓN ---
+import VersionUpdater from './components/VersionUpdater';
+// --- FIN DE LA MODIFICACIÓN ---
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
@@ -174,7 +177,6 @@ export default function App() {
           />
         );
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />;
-      // MODIFICACIÓN: Se añade la prop navigate para que funcione el botón de ver perfil público
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigate} />;
       case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigate('settings')} /> : <Dashboard setView={navigate} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
@@ -235,6 +237,10 @@ export default function App() {
         <meta property="twitter:description" content={currentDescription} />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
+
+      {/* --- INICIO DE LA MODIFICACIÓN --- */}
+      <VersionUpdater />
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
       <MainAppLayout
         view={view}
