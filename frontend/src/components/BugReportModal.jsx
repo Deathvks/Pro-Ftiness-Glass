@@ -1,6 +1,6 @@
 /* frontend/src/components/BugReportModal.jsx */
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Bug, AlertCircle, ImagePlus, Trash2, ZoomIn } from 'lucide-react';
+import { X, Send, Bug, AlertCircle, ImagePlus } from 'lucide-react';
 import { createBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from './CustomSelect';
@@ -18,72 +18,190 @@ const MAX_FILES = 3;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const STORAGE_KEY = 'bug_report_draft';
 
+// --- IndexedDB Helpers para manejar ficheros grandes ---
+const DB_NAME = 'PFGBugReportDB';
+const STORE_NAME = 'drafts';
+const DRAFT_KEY = 'current_draft';
+
+const getDB = () => new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+        }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+});
+
+const saveDraftDB = async (data) => {
+    try {
+        const db = await getDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(data, DRAFT_KEY);
+    } catch (err) {
+        console.error('Error saving draft:', err);
+    }
+};
+
+const getDraftDB = async () => {
+    try {
+        const db = await getDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const req = tx.objectStore(STORE_NAME).get(DRAFT_KEY);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    } catch (err) {
+        console.error('Error loading draft:', err);
+        return null;
+    }
+};
+
+const clearDraftDB = async () => {
+    try {
+        const db = await getDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).delete(DRAFT_KEY);
+    } catch (err) {
+        console.error('Error clearing draft:', err);
+    }
+};
+
+// Exportamos esta función por si el componente padre necesita verificar explícitamente
+export const hasBugReportDraft = async () => {
+    try {
+        const draft = await getDraftDB();
+        if (!draft) return false;
+        return !!(
+            draft.category ||
+            (draft.subject && draft.subject.trim()) ||
+            (draft.description && draft.description.trim()) ||
+            (draft.files && draft.files.length > 0)
+        );
+    } catch (e) {
+        return false;
+    }
+};
+
 const BugReportModal = ({ onClose }) => {
-    // Cargamos borrador inicial si existe
-    const [draft] = useState(() => JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
-
-    const [category, setCategory] = useState(draft.category || '');
-    const [subject, setSubject] = useState(draft.subject || '');
-    const [description, setDescription] = useState(draft.description || '');
-    const [selectedFiles, setSelectedFiles] = useState([]);
-    const [imagePreviews, setImagePreviews] = useState([]);
+    const [category, setCategory] = useState('');
+    const [subject, setSubject] = useState('');
+    const [description, setDescription] = useState('');
+    const [attachments, setAttachments] = useState([]); // { file, preview }
     const [selectedImageForLightbox, setSelectedImageForLightbox] = useState(null);
-
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState('');
+    const [isLoadingDraft, setIsLoadingDraft] = useState(true);
+
     const { addToast } = useToast();
     const fileInputRef = useRef(null);
 
-    // Persistir cambios en los campos de texto
+    // Cargar borrador al montar
     useEffect(() => {
-        const data = { category, subject, description };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }, [category, subject, description]);
+        const load = async () => {
+            const draft = await getDraftDB();
+            if (draft) {
+                setCategory(draft.category || '');
+                setSubject(draft.subject || '');
+                setDescription(draft.description || '');
 
-    // Limpia el borrador y cierra
-    const handleClose = () => {
+                if (draft.files && Array.isArray(draft.files)) {
+                    // Reconstruir previews desde los objetos File guardados
+                    const loadedAttachments = draft.files.map(file => ({
+                        file,
+                        preview: URL.createObjectURL(file)
+                    }));
+                    setAttachments(loadedAttachments);
+                }
+            }
+            setIsLoadingDraft(false);
+        };
+        load();
+    }, []);
+
+    // Guardar borrador al cambiar datos
+    useEffect(() => {
+        if (isLoadingDraft) return;
+
+        const filesToSave = attachments.map(a => a.file);
+        const data = {
+            category,
+            subject,
+            description,
+            files: filesToSave // IndexedDB permite guardar File objects directamente
+        };
+
+        // 1. Guardar datos completos en IndexedDB
+        saveDraftDB(data);
+
+        // 2. Guardar "flag" en localStorage para que el padre sepa que hay contenido y abra el modal al recargar
+        const hasContent = category || subject.trim() || description.trim() || attachments.length > 0;
+
+        if (hasContent) {
+            // Guardamos un objeto simple, el contenido real está en DB
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                hasContent: true,
+                timestamp: Date.now(),
+                note: 'Full content stored in IndexedDB'
+            }));
+        } else {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+
+    }, [category, subject, description, attachments, isLoadingDraft]);
+
+    // Limpiar URLs de objetos al desmontar
+    useEffect(() => {
+        return () => {
+            attachments.forEach(a => URL.revokeObjectURL(a.preview));
+        };
+    }, [attachments]);
+
+    const handleClose = async () => {
+        // Al cerrar manualmente, limpiamos todo
+        await clearDraftDB();
         localStorage.removeItem(STORAGE_KEY);
         onClose();
     };
 
-    const handleFileSelect = async (e) => {
+    const handleFileSelect = (e) => {
         setFormError('');
         const files = Array.from(e.target.files);
         const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
-        if (imageFiles.length + selectedFiles.length > MAX_FILES) {
+        if (imageFiles.length + attachments.length > MAX_FILES) {
             addToast(`Máximo ${MAX_FILES} imágenes permitidas.`, 'warning');
-            imageFiles.splice(MAX_FILES - selectedFiles.length);
+            imageFiles.splice(MAX_FILES - attachments.length);
         }
 
-        const validFiles = [];
-        const newPreviews = [];
-
+        const newAttachments = [];
         for (const file of imageFiles) {
             if (file.size > MAX_FILE_SIZE) {
                 setFormError(`"${file.name}" supera los 5MB permitidos.`);
                 continue;
             }
-            validFiles.push(file);
-            const preview = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(file);
+            newAttachments.push({
+                file,
+                preview: URL.createObjectURL(file)
             });
-            newPreviews.push(preview);
         }
 
-        if (validFiles.length > 0) {
-            setSelectedFiles(prev => [...prev, ...validFiles]);
-            setImagePreviews(prev => [...prev, ...newPreviews]);
+        if (newAttachments.length > 0) {
+            setAttachments(prev => [...prev, ...newAttachments]);
         }
-
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const removeImage = (indexToRemove) => {
-        setSelectedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
-        setImagePreviews(prev => prev.filter((_, index) => index !== indexToRemove));
+        setAttachments(prev => {
+            const newAtts = [...prev];
+            URL.revokeObjectURL(newAtts[indexToRemove].preview);
+            newAtts.splice(indexToRemove, 1);
+            return newAtts;
+        });
         setFormError('');
     };
 
@@ -98,9 +216,14 @@ const BugReportModal = ({ onClose }) => {
 
         setIsSubmitting(true);
         try {
-            await createBugReport(category, subject, description, selectedFiles);
+            const filesToSend = attachments.map(a => a.file);
+            await createBugReport(category, subject, description, filesToSend);
             addToast('¡Gracias! Tu reporte ha sido enviado con éxito.', 'success');
-            handleClose(); // Limpia almacenamiento al tener éxito
+
+            // Limpieza completa al enviar
+            await clearDraftDB();
+            localStorage.removeItem(STORAGE_KEY);
+            onClose();
         } catch (error) {
             console.error(error);
             const errorMsg = error.response?.data?.error || error.message || 'Error al enviar el reporte';
@@ -127,6 +250,7 @@ const BugReportModal = ({ onClose }) => {
                         src={selectedImageForLightbox}
                         className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-[scale-in_0.2s_ease-out]"
                         onClick={(e) => e.stopPropagation()}
+                        alt="Vista previa completa"
                     />
                 </div>
             )}
@@ -210,8 +334,8 @@ const BugReportModal = ({ onClose }) => {
                         <div>
                             <label className="flex justify-between items-center text-sm font-medium mb-2 text-text-secondary">
                                 <span>Capturas (Opcional - Máx 5MB)</span>
-                                <span className={`text-xs ${selectedFiles.length >= MAX_FILES ? 'text-accent' : 'text-text-muted'}`}>
-                                    {selectedFiles.length}/{MAX_FILES}
+                                <span className={`text-xs ${attachments.length >= MAX_FILES ? 'text-accent' : 'text-text-muted'}`}>
+                                    {attachments.length}/{MAX_FILES}
                                 </span>
                             </label>
 
@@ -222,27 +346,28 @@ const BugReportModal = ({ onClose }) => {
                                 accept="image/*"
                                 multiple
                                 className="hidden"
-                                disabled={isSubmitting || selectedFiles.length >= MAX_FILES}
+                                disabled={isSubmitting || attachments.length >= MAX_FILES}
                             />
 
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                disabled={isSubmitting || selectedFiles.length >= MAX_FILES}
+                                disabled={isSubmitting || attachments.length >= MAX_FILES}
                                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-bg-secondary border border-glass-border border-dashed rounded-xl text-text-secondary hover:text-accent hover:border-accent transition-all disabled:opacity-50"
                             >
                                 <ImagePlus size={20} />
                                 <span className="font-medium">Añadir imágenes</span>
                             </button>
 
-                            {imagePreviews.length > 0 && (
+                            {attachments.length > 0 && (
                                 <div className="flex flex-wrap gap-3 mt-4">
-                                    {imagePreviews.map((src, index) => (
+                                    {attachments.map((item, index) => (
                                         <div key={index} className="relative group w-20 h-20 shrink-0 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in">
                                             <img
-                                                src={src}
+                                                src={item.preview}
                                                 className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                                                onClick={() => setSelectedImageForLightbox(src)}
+                                                onClick={() => setSelectedImageForLightbox(item.preview)}
+                                                alt={`Adjunto ${index + 1}`}
                                             />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-end p-1 pointer-events-none">
                                                 <button

@@ -123,13 +123,16 @@ export default function SettingsScreen({
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
 
-  // MODIFICACIÓN: Abre el modal automáticamente si hay un borrador con contenido
+  // MODIFICACIÓN: Detecta si existe la bandera 'hasContent' en el borrador de localStorage
+  // Si existe, abrimos el modal automáticamente. El contenido real se cargará desde IndexedDB dentro del modal.
   const [showBugModal, setShowBugModal] = useState(() => {
-    const draft = localStorage.getItem('bug_report_draft');
-    if (!draft) return false;
     try {
-      const parsed = JSON.parse(draft);
-      return !!(parsed.category || parsed.subject?.trim() || parsed.description?.trim());
+      const draftStr = localStorage.getItem('bug_report_draft');
+      if (!draftStr) return false;
+      const draft = JSON.parse(draftStr);
+      // La nueva estructura guarda { hasContent: true, ... }
+      // Mantenemos compatibilidad con la estructura vieja por si acaso
+      return !!(draft.hasContent || draft.category || draft.subject?.trim() || draft.description?.trim());
     } catch {
       return false;
     }
