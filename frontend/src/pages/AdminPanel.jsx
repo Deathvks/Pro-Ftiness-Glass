@@ -9,6 +9,7 @@ import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
+import CustomSelect from '../components/CustomSelect';
 import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
@@ -68,6 +69,9 @@ const AdminPanel = ({ onCancel }) => {
   // Recuperar la pestaña activa de localStorage o usar default 'users'
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('admin_active_tab') || 'users');
 
+  // Recuperar filtro de localStorage o usar default
+  const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'default');
+
   const [reports, setReports] = useState([]);
   const [reportPage, setReportPage] = useState(1);
   const [reportToDelete, setReportToDelete] = useState(null);
@@ -87,6 +91,11 @@ const AdminPanel = ({ onCancel }) => {
   useEffect(() => {
     localStorage.setItem('admin_active_tab', activeTab);
   }, [activeTab]);
+
+  // Guardar el filtro cada vez que cambie
+  useEffect(() => {
+    localStorage.setItem('admin_users_sort', sortBy);
+  }, [sortBy]);
 
   // Cargar Usuarios
   const fetchUsers = useCallback(async (isInitialLoad = false) => {
@@ -195,14 +204,23 @@ const AdminPanel = ({ onCancel }) => {
     }
   };
 
+  // --- LÓGICA DE ORDENACIÓN ---
   const sortedUsers = useMemo(() => {
-    return [...users]
-      .sort((a, b) => {
-        const dateA = a.lastSeen ? new Date(a.lastSeen) : new Date(0);
-        const dateB = b.lastSeen ? new Date(b.lastSeen) : new Date(0);
-        return dateB - dateA;
-      });
-  }, [users]);
+    const sorted = [...users];
+    switch (sortBy) {
+      case 'date': // Por fecha de creación (más reciente primero)
+        return sorted.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      case 'alpha': // Alfabético (A-Z)
+        return sorted.sort((a, b) => (a.username || a.name || '').localeCompare(b.username || b.name || ''));
+      case 'default':
+      default: // Por última actividad (como estaba antes)
+        return sorted.sort((a, b) => {
+          const dateA = a.lastSeen ? new Date(a.lastSeen) : new Date(0);
+          const dateB = b.lastSeen ? new Date(b.lastSeen) : new Date(0);
+          return dateB - dateA;
+        });
+    }
+  }, [users, sortBy]);
 
   // Lógica de Paginación para Reportes
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
@@ -217,7 +235,9 @@ const AdminPanel = ({ onCancel }) => {
         <ChevronLeft size={20} />
         Volver a Ajustes
       </button>
-      <h1 className="text-4xl font-extrabold mb-8">Panel de Administración</h1>
+
+      {/* Título oculto en móvil */}
+      <h1 className="hidden md:block text-4xl font-extrabold mb-8">Panel de Administración</h1>
 
       {/* Navegación de Pestañas */}
       <div className="flex gap-4 mb-6">
@@ -250,11 +270,36 @@ const AdminPanel = ({ onCancel }) => {
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 text-left">
-              <h2 className="text-xl font-bold">Lista de Usuarios</h2>
+            {/* MODIFICACIÓN: Estructura plana (sin wrappers extraños) para permitir
+              que los botones bajen de línea individualmente.
+              - flex-wrap: permite bajar elementos si no caben.
+              - mr-auto: empuja los botones a la derecha mientras quepan.
+              - Sin w-full: los botones mantienen su tamaño.
+            */}
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+
+              <h2 className="text-xl font-bold whitespace-nowrap mr-auto">
+                Lista de Usuarios
+              </h2>
+
+              {/* Select: ancho fijo para que se vea bien, pero no full */}
+              <div className="w-52 z-20">
+                <CustomSelect
+                  value={sortBy}
+                  onChange={setSortBy}
+                  options={[
+                    { value: 'default', label: 'Predeterminado' },
+                    { value: 'date', label: 'Fecha de Creación' },
+                    { value: 'alpha', label: 'Alfabético (A-Z)' }
+                  ]}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Botón Crear: tamaño natural (auto) */}
               <button
                 onClick={() => setIsCreatingUser(true)}
-                className="flex items-center justify-center gap-2 mt-4 sm:mt-0 px-4 py-2 rounded-md bg-accent text-bg-secondary font-semibold transition hover:scale-105"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-accent text-bg-secondary font-semibold transition hover:scale-105 whitespace-nowrap"
               >
                 <Plus size={18} />
                 Crear Usuario
@@ -371,7 +416,6 @@ const AdminPanel = ({ onCancel }) => {
                       <div className="flex flex-col md:flex-row gap-4 justify-between items-start">
                         <div className="flex-1 space-y-3">
                           <div className="flex flex-wrap items-center gap-3">
-                            {/* Categoría circular, sin borde, color acento */}
                             <span className="px-2.5 py-0.5 bg-accent text-bg-primary text-[10px] font-extrabold rounded-full uppercase tracking-wider">
                               {REPORT_CATEGORY_LABELS[report.category] || report.category}
                             </span>
@@ -380,12 +424,10 @@ const AdminPanel = ({ onCancel }) => {
                           </div>
                           <h3 className="text-lg font-bold text-white">{report.subject}</h3>
 
-                          {/* MODIFICACIÓN: Sin background, ni padding, ni borde */}
                           <p className="text-text-secondary whitespace-pre-wrap text-sm leading-relaxed">
                             {report.description}
                           </p>
 
-                          {/* Previsualización de Imágenes si existen */}
                           {report.images && report.images.length > 0 && (
                             <>
                               <div className="text-xs font-bold text-text-muted uppercase tracking-wider mt-4 mb-2">
@@ -408,7 +450,6 @@ const AdminPanel = ({ onCancel }) => {
                             </>
                           )}
 
-                          {/* Información del Dispositivo */}
                           {report.deviceInfo && (
                             <div className="mt-4 flex flex-wrap gap-3 text-xs text-text-muted">
                               <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
@@ -440,7 +481,6 @@ const AdminPanel = ({ onCancel }) => {
                   ))}
                 </div>
 
-                {/* PAGINACIÓN DE REPORTES */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-glass-border">
                     <button
