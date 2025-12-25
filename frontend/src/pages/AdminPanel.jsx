@@ -209,7 +209,12 @@ const AdminPanel = ({ onCancel }) => {
     const sorted = [...users];
     switch (sortBy) {
       case 'date': // Por fecha de creación (más reciente primero)
-        return sorted.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        return sorted.sort((a, b) => {
+          // Soporte para created_at y createdAt para mayor robustez
+          const dateA = new Date(a.created_at || a.createdAt || 0);
+          const dateB = new Date(b.created_at || b.createdAt || 0);
+          return dateB - dateA; // Descendente (más nuevo arriba)
+        });
       case 'alpha': // Alfabético (A-Z)
         return sorted.sort((a, b) => (a.username || a.name || '').localeCompare(b.username || b.name || ''));
       case 'default':
@@ -270,33 +275,28 @@ const AdminPanel = ({ onCancel }) => {
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
-            {/* MODIFICACIÓN: Estructura plana (sin wrappers extraños) para permitir
-              que los botones bajen de línea individualmente.
-              - flex-wrap: permite bajar elementos si no caben.
-              - mr-auto: empuja los botones a la derecha mientras quepan.
-              - Sin w-full: los botones mantienen su tamaño.
-            */}
+            {/* MODIFICACIÓN: Estructura plana para botones */}
             <div className="flex flex-wrap items-center gap-4 mb-6">
 
               <h2 className="text-xl font-bold whitespace-nowrap mr-auto">
                 Lista de Usuarios
               </h2>
 
-              {/* Select: ancho fijo para que se vea bien, pero no full */}
+              {/* Select: ancho fijo */}
               <div className="w-52 z-20">
                 <CustomSelect
                   value={sortBy}
                   onChange={setSortBy}
                   options={[
                     { value: 'default', label: 'Predeterminado' },
-                    { value: 'date', label: 'Fecha de Creación' },
+                    { value: 'date', label: 'Recientes' }, // Etiqueta actualizada
                     { value: 'alpha', label: 'Alfabético (A-Z)' }
                   ]}
                   className="w-full"
                 />
               </div>
 
-              {/* Botón Crear: tamaño natural (auto) */}
+              {/* Botón Crear */}
               <button
                 onClick={() => setIsCreatingUser(true)}
                 className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-accent text-bg-secondary font-semibold transition hover:scale-105 whitespace-nowrap"
