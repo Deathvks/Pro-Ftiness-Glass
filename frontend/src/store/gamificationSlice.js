@@ -33,7 +33,8 @@ export const createGamificationSlice = (set, get) => ({
         streak: 0,
         lastActivityDate: null,
         unlockedBadges: [],
-        gamificationEvents: [], // Inicializamos la cola
+        gamificationEvents: [],
+        isCheckingStreak: false, // Flag para evitar doble ejecución
     },
 
     badgesList: [
@@ -52,12 +53,10 @@ export const createGamificationSlice = (set, get) => ({
     },
 
     addXp: async (amount, reason = 'Actividad completada') => {
-        console.log(`[Gamification] Añadiendo XP: ${amount} por ${reason}`); // Log para depuración
+        console.log(`[Gamification] Añadiendo XP: ${amount} por ${reason}`);
         set((state) => {
             const currentXp = (state.gamification.xp || 0) + amount;
             const newLevel = calculateLevel(currentXp);
-
-            // Protección: Si gamificationEvents es undefined (estado antiguo), usamos []
             const currentEvents = state.gamification.gamificationEvents || [];
 
             return {
@@ -113,25 +112,29 @@ export const createGamificationSlice = (set, get) => ({
             console.error("Error guardando insignia:", error);
         }
 
-        // Llamamos a addXp para dar la experiencia de la insignia
         get().addXp(badge.xp, `Insignia: ${badge.name}`);
         return badge;
     },
 
     checkStreak: async (todayDateString) => {
         const state = get();
+        // Evitar ejecución si ya se está comprobando
+        if (state.gamification.isCheckingStreak) return;
+
         const last = normalizeDate(state.gamification.lastActivityDate);
         const today = normalizeDate(todayDateString);
 
         if (last === today) return;
 
-        const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
-        let newStreak = state.gamification.streak || 0;
-        newStreak = (last === yesterdayStr) ? newStreak + 1 : 1;
+        // Bloquear futuras llamadas inmediatamente
+        set(s => ({ gamification: { ...s.gamification, isCheckingStreak: true } }));
 
         try {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const isConsecutive = last === yesterday.toISOString().split('T')[0];
+            const newStreak = isConsecutive ? (state.gamification.streak || 0) + 1 : 1;
+
             const response = await apiClient('/users/me/gamification', {
                 body: {
                     streak: newStreak,
@@ -142,7 +145,7 @@ export const createGamificationSlice = (set, get) => ({
 
             if (response && response.data) {
                 const serverData = response.data;
-                const previousXp = state.gamification.xp || 0;
+                const previousXp = get().gamification.xp || 0;
 
                 set((state) => {
                     const currentEvents = state.gamification.gamificationEvents || [];
@@ -165,18 +168,24 @@ export const createGamificationSlice = (set, get) => ({
                             streak: serverData.streak,
                             lastActivityDate: normalizeDate(serverData.last_activity_date),
                             unlockedBadges: serverData.unlocked_badges || [],
-                            gamificationEvents: newEvents
+                            gamificationEvents: newEvents,
+                            isCheckingStreak: false // Liberar bloqueo
                         }
                     };
                 });
+            } else {
+                // Liberar bloqueo si no hay datos
+                set(s => ({ gamification: { ...s.gamification, isCheckingStreak: false } }));
             }
 
         } catch (error) {
             console.error("Error sincronizando Login Diario:", error);
+            // Liberar bloqueo y marcar como actualizado para no reintentar infinitamente hoy en caso de error
             set((state) => ({
                 gamification: {
                     ...state.gamification,
                     lastActivityDate: today,
+                    isCheckingStreak: false
                 }
             }));
         }
@@ -191,13 +200,12 @@ export const createGamificationSlice = (set, get) => ({
         if (!data) return;
         set((state) => ({
             gamification: {
-                ...state.gamification, // IMPORTANTE: Mantener eventos existentes
+                ...state.gamification, // Mantiene isCheckingStreak y eventos existentes
                 xp: data.xp || 0,
                 level: data.level || 1,
                 streak: data.streak || 0,
                 lastActivityDate: normalizeDate(data.last_activity_date || data.lastActivityDate),
                 unlockedBadges: data.unlocked_badges || data.unlockedBadges || [],
-                // Aseguramos que gamificationEvents exista si el estado previo no lo tenía
                 gamificationEvents: state.gamification.gamificationEvents || []
             }
         }));

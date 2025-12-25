@@ -12,8 +12,10 @@ const XPGuideModal = ({ onClose }) => {
     const goldXpClass = "font-extrabold text-amber-400 text-sm drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] transition-transform group-hover:scale-110 whitespace-nowrap text-right";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
-            <div className="bg-bg-secondary border border-glass-border rounded-2xl w-full max-w-md max-h-[75vh] flex flex-col shadow-2xl shadow-accent/10 animate-[slide-up_0.3s_ease-out]">
+        // Modificado: z-[60] para superar al navbar (z-50)
+        <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-20 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+            {/* Modificado: max-h-[70vh] y mb-20 para dar espacio inferior en móvil */}
+            <div className="bg-bg-secondary border border-glass-border rounded-2xl w-full max-w-md max-h-[70vh] mb-20 md:mb-0 flex flex-col shadow-2xl shadow-accent/10 animate-[slide-up_0.3s_ease-out]">
 
                 <div className="shrink-0 bg-bg-secondary/95 backdrop-blur-md border-b border-glass-border p-4 flex items-center justify-between rounded-t-2xl z-10">
                     <h2 className="text-xl font-bold flex items-center gap-2">
