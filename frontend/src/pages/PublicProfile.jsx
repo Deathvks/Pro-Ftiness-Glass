@@ -269,7 +269,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const imgSrc = getProfileImageUrl(profile.profile_image_url);
 
     return (
-        <div className="pb-24 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
+        <div className="pb-6 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
 
             {/* --- HEADER DESKTOP --- */}
             <div className="hidden md:flex items-center justify-between pt-6 mb-2 relative z-50">
@@ -286,7 +286,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             </div>
 
             {/* --- HEADER NAVBAR (Móvil) --- */}
-            <div className="md:hidden pt-4 flex items-center gap-4 relative z-50">
+            {/* Corrección: Eliminado 'relative z-50' para que no se superponga al header global */}
+            <div className="md:hidden pt-4 flex items-center gap-4">
                 <button
                     type="button"
                     onClick={handleGoBack}

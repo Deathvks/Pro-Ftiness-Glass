@@ -27,7 +27,8 @@ const XPGuideModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto custom-scrollbar pb-24">
+                {/* Modificado: pb-6 en lugar de pb-24 para reducir espacio excesivo al final */}
+                <div className="p-6 overflow-y-auto custom-scrollbar pb-6">
                     <div className="bg-accent/10 rounded-xl p-4 flex items-start gap-3 mb-6">
                         <Info className="text-accent shrink-0" size={20} />
                         <p className="text-text-secondary text-sm">
