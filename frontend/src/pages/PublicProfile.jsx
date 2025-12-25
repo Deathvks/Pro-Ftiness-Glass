@@ -159,11 +159,13 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         if (relationshipStatus === 'me' && gamification) {
             return {
                 ...fetchedProfile,
-                // Sobreescribimos con datos en vivo del store local
+                // Sobreescribimos con datos en vivo del store local para XP, Nivel y Racha
                 xp: gamification.xp ?? fetchedProfile.xp,
                 level: gamification.level ?? fetchedProfile.level,
                 streak: gamification.streak ?? fetchedProfile.streak,
-                workoutsCount: gamification.workoutsCount ?? fetchedProfile.workoutsCount, // Sincronización añadida
+                // CORRECCIÓN: Usamos SIEMPRE el dato del backend para workoutsCount,
+                // ya que es un conteo dinámico de la BD y el estado local suele estar desactualizado.
+                workoutsCount: fetchedProfile.workoutsCount,
             };
         }
         return fetchedProfile;

@@ -31,7 +31,7 @@ export const createGamificationSlice = (set, get) => ({
         xp: 0,
         level: 1,
         streak: 0,
-        workoutsCount: 0, // Nuevo campo para contador de entrenos
+        workoutsCount: 0, // Se mantiene para recibir el dato real del servidor
         lastActivityDate: null,
         unlockedBadges: [],
         gamificationEvents: [],
@@ -53,15 +53,7 @@ export const createGamificationSlice = (set, get) => ({
         }));
     },
 
-    // Acción para incrementar entrenamientos manualmente (Optimistic UI)
-    incrementWorkouts: () => {
-        set((state) => ({
-            gamification: {
-                ...state.gamification,
-                workoutsCount: (state.gamification.workoutsCount || 0) + 1
-            }
-        }));
-    },
+    // --- ELIMINADO: incrementWorkouts (Contador ficticio) ---
 
     addXp: async (amount, reason = 'Actividad completada') => {
         console.log(`[Gamification] Añadiendo XP: ${amount} por ${reason}`);
@@ -175,7 +167,7 @@ export const createGamificationSlice = (set, get) => ({
                             xp: serverData.xp,
                             level: serverData.level,
                             streak: serverData.streak,
-                            workoutsCount: serverData.workouts_count ?? state.gamification.workoutsCount, // Sincronizar si viene del back
+                            workoutsCount: serverData.workouts_count ?? state.gamification.workoutsCount,
                             lastActivityDate: normalizeDate(serverData.last_activity_date),
                             unlockedBadges: serverData.unlocked_badges || [],
                             gamificationEvents: newEvents,

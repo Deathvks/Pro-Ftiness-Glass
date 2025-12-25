@@ -3,7 +3,7 @@ import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { createNotification } from '../services/notificationService.js';
 
-const { User, Friendship } = models;
+const { User, Friendship, WorkoutLog } = models;
 
 export const searchUsers = async (req, res) => {
     try {
@@ -83,7 +83,6 @@ export const sendFriendRequest = async (req, res) => {
                 data: {
                     type: 'friend_request',
                     senderId: requesterId,
-                    // Highlight con el ID del solicitante
                     url: `/social?tab=requests&highlight=${requesterId}`
                 }
             });
@@ -134,7 +133,6 @@ export const getFriendRequests = async (req, res) => {
             xp: user.show_level_xp ? user.xp : null
         });
 
-        // Formatear respuestas
         const formattedReceived = received.map(req => ({
             id: req.id,
             status: req.status,
@@ -148,7 +146,7 @@ export const getFriendRequests = async (req, res) => {
             id: req.id,
             status: req.status,
             createdAt: req.createdAt,
-            Addressee: sanitizeUser(req.Addressee), // Usamos Addressee aquí
+            Addressee: sanitizeUser(req.Addressee),
             requester_id: req.requester_id,
             addressee_id: req.addressee_id
         }));
@@ -186,7 +184,6 @@ export const respondFriendRequest = async (req, res) => {
                     data: {
                         type: 'friend_request_accepted',
                         userId: req.user.userId,
-                        // Highlight también al aceptar
                         url: `/social?tab=friends&highlight=${req.user.userId}`
                     }
                 });
@@ -254,7 +251,7 @@ export const getPublicProfile = async (req, res) => {
         const isFriend = !!friendship;
         const isMe = parseInt(userId) === viewerId;
 
-        // Si es privado y no soy yo ni mi amigo, error (o info mínima)
+        // Si es privado y no soy yo ni mi amigo, error
         if (!user.is_public_profile && !isFriend && !isMe) {
             return res.status(403).json({ error: 'Perfil privado' });
         }
@@ -265,12 +262,8 @@ export const getPublicProfile = async (req, res) => {
             profile_image_url: user.profile_image_url,
             is_friend: isFriend,
             bio: user.bio,
-            createdAt: user.created_at, // Útil para "Miembro desde"
-            lastSeen: user.updated_at, // Placeholder para última conexión
-
-            // --- CORRECCIÓN CLAVE ---
-            // Enviamos explícitamente las banderas al frontend.
-            // Si es 'isMe', forzamos true para que el dueño siempre vea sus datos.
+            createdAt: user.created_at,
+            lastSeen: user.updated_at,
             show_level_xp: !!(user.show_level_xp || isMe),
             show_badges: !!(user.show_badges || isMe)
         };
@@ -278,8 +271,12 @@ export const getPublicProfile = async (req, res) => {
         if (data.show_level_xp) {
             data.level = user.level;
             data.xp = user.xp;
-            data.streak = user.streak_current || 0; // Si tienes estos campos en el modelo
-            data.workoutsCount = 0; // Placeholder o consulta real de count
+            data.streak = user.streak || 0;
+
+            // Contamos los entrenamientos directamente de la tabla WorkoutLog
+            data.workoutsCount = await WorkoutLog.count({
+                where: { user_id: user.id }
+            });
         }
 
         if (data.show_badges) {

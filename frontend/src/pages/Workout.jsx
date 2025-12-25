@@ -48,7 +48,6 @@ const Workout = ({ timer, setView }) => {
     openRestModal,
     userProfile,
     fetchInitialData,
-    incrementWorkouts, // --- NUEVO: Acción para subir contador localmente ---
   } = useAppStore((state) => ({
     activeWorkout: state.activeWorkout,
     logWorkout: state.logWorkout,
@@ -63,7 +62,6 @@ const Workout = ({ timer, setView }) => {
     openRestModal: state.openRestModal,
     userProfile: state.userProfile,
     fetchInitialData: state.fetchInitialData,
-    incrementWorkouts: state.incrementWorkouts, // Mapeamos la acción
   }));
 
   // --- 2. Estado Local (Modales y Notas) ---
@@ -259,10 +257,6 @@ const Workout = ({ timer, setView }) => {
     const result = await logWorkout(workoutData);
     if (result.success) {
       addToast(result.message, 'success');
-
-      // --- NUEVO: Incrementamos el contador localmente (Optimistic Update) ---
-      incrementWorkouts();
-
       setShowCalorieModal(false);
       setShowWorkoutSummaryModal(true);
     } else {
