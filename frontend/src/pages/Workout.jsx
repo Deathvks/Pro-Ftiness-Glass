@@ -41,14 +41,14 @@ const Workout = ({ timer, setView }) => {
     updateActiveWorkoutSet,
     addDropset,
     removeDropset,
-    // --- NUEVO: Acción para alternar calentamiento ---
     toggleWarmupSet,
     isWorkoutPaused,
     togglePauseWorkout,
     workoutStartTime,
-    openRestModal, // isResting eliminado (se usa en App.jsx)
+    openRestModal,
     userProfile,
     fetchInitialData,
+    incrementWorkouts, // --- NUEVO: Acción para subir contador localmente ---
   } = useAppStore((state) => ({
     activeWorkout: state.activeWorkout,
     logWorkout: state.logWorkout,
@@ -56,7 +56,6 @@ const Workout = ({ timer, setView }) => {
     updateActiveWorkoutSet: state.updateActiveWorkoutSet,
     addDropset: state.addDropset,
     removeDropset: state.removeDropset,
-    // --- Extraemos toggleWarmupSet del store ---
     toggleWarmupSet: state.toggleWarmupSet,
     isWorkoutPaused: state.isWorkoutPaused,
     togglePauseWorkout: state.togglePauseWorkout,
@@ -64,6 +63,7 @@ const Workout = ({ timer, setView }) => {
     openRestModal: state.openRestModal,
     userProfile: state.userProfile,
     fetchInitialData: state.fetchInitialData,
+    incrementWorkouts: state.incrementWorkouts, // Mapeamos la acción
   }));
 
   // --- 2. Estado Local (Modales y Notas) ---
@@ -259,6 +259,10 @@ const Workout = ({ timer, setView }) => {
     const result = await logWorkout(workoutData);
     if (result.success) {
       addToast(result.message, 'success');
+
+      // --- NUEVO: Incrementamos el contador localmente (Optimistic Update) ---
+      incrementWorkouts();
+
       setShowCalorieModal(false);
       setShowWorkoutSummaryModal(true);
     } else {

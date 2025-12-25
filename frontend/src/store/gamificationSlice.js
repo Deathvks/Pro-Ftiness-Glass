@@ -31,10 +31,11 @@ export const createGamificationSlice = (set, get) => ({
         xp: 0,
         level: 1,
         streak: 0,
+        workoutsCount: 0, // Nuevo campo para contador de entrenos
         lastActivityDate: null,
         unlockedBadges: [],
         gamificationEvents: [],
-        isCheckingStreak: false, // Flag para evitar doble ejecución
+        isCheckingStreak: false,
     },
 
     badgesList: [
@@ -49,6 +50,16 @@ export const createGamificationSlice = (set, get) => ({
     clearGamificationEvents: () => {
         set(state => ({
             gamification: { ...state.gamification, gamificationEvents: [] }
+        }));
+    },
+
+    // Acción para incrementar entrenamientos manualmente (Optimistic UI)
+    incrementWorkouts: () => {
+        set((state) => ({
+            gamification: {
+                ...state.gamification,
+                workoutsCount: (state.gamification.workoutsCount || 0) + 1
+            }
         }));
     },
 
@@ -118,7 +129,6 @@ export const createGamificationSlice = (set, get) => ({
 
     checkStreak: async (todayDateString) => {
         const state = get();
-        // Evitar ejecución si ya se está comprobando
         if (state.gamification.isCheckingStreak) return;
 
         const last = normalizeDate(state.gamification.lastActivityDate);
@@ -126,7 +136,6 @@ export const createGamificationSlice = (set, get) => ({
 
         if (last === today) return;
 
-        // Bloquear futuras llamadas inmediatamente
         set(s => ({ gamification: { ...s.gamification, isCheckingStreak: true } }));
 
         try {
@@ -166,21 +175,20 @@ export const createGamificationSlice = (set, get) => ({
                             xp: serverData.xp,
                             level: serverData.level,
                             streak: serverData.streak,
+                            workoutsCount: serverData.workouts_count ?? state.gamification.workoutsCount, // Sincronizar si viene del back
                             lastActivityDate: normalizeDate(serverData.last_activity_date),
                             unlockedBadges: serverData.unlocked_badges || [],
                             gamificationEvents: newEvents,
-                            isCheckingStreak: false // Liberar bloqueo
+                            isCheckingStreak: false
                         }
                     };
                 });
             } else {
-                // Liberar bloqueo si no hay datos
                 set(s => ({ gamification: { ...s.gamification, isCheckingStreak: false } }));
             }
 
         } catch (error) {
             console.error("Error sincronizando Login Diario:", error);
-            // Liberar bloqueo y marcar como actualizado para no reintentar infinitamente hoy en caso de error
             set((state) => ({
                 gamification: {
                     ...state.gamification,
@@ -200,10 +208,11 @@ export const createGamificationSlice = (set, get) => ({
         if (!data) return;
         set((state) => ({
             gamification: {
-                ...state.gamification, // Mantiene isCheckingStreak y eventos existentes
+                ...state.gamification,
                 xp: data.xp || 0,
                 level: data.level || 1,
                 streak: data.streak || 0,
+                workoutsCount: data.workouts_count || data.workoutsCount || state.gamification.workoutsCount || 0,
                 lastActivityDate: normalizeDate(data.last_activity_date || data.lastActivityDate),
                 unlockedBadges: data.unlocked_badges || data.unlockedBadges || [],
                 gamificationEvents: state.gamification.gamificationEvents || []

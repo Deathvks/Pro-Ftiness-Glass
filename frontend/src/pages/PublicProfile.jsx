@@ -112,7 +112,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     const {
         fetchPublicProfile,
-        socialViewedProfile: profile,
+        socialViewedProfile: fetchedProfile,
         isSocialLoading,
         socialError,
         clearViewedProfile,
@@ -120,7 +120,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         socialRequests,
         sendFriendRequest,
         removeFriend,
-        userProfile: myProfile
+        userProfile: myProfile,
+        gamification // Obtenemos el estado local de gamificación
     } = useAppStore();
 
     // --- ESTADO PARA PAGINACIÓN DE INSIGNIAS ---
@@ -151,6 +152,23 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
         return 'none';
     }, [socialFriends, socialRequests, myProfile, userId]);
+
+    // --- CORRECCIÓN RACHA Y ENTRENOS: Usar datos locales si es mi propio perfil ---
+    const profile = useMemo(() => {
+        if (!fetchedProfile) return null;
+        if (relationshipStatus === 'me' && gamification) {
+            return {
+                ...fetchedProfile,
+                // Sobreescribimos con datos en vivo del store local
+                xp: gamification.xp ?? fetchedProfile.xp,
+                level: gamification.level ?? fetchedProfile.level,
+                streak: gamification.streak ?? fetchedProfile.streak,
+                workoutsCount: gamification.workoutsCount ?? fetchedProfile.workoutsCount, // Sincronización añadida
+            };
+        }
+        return fetchedProfile;
+    }, [fetchedProfile, relationshipStatus, gamification]);
+
 
     const handleSendRequest = async () => {
         const success = await sendFriendRequest(userId);
@@ -404,8 +422,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             {/* --- INSIGNIAS (PAGINADAS) --- */}
             {profile.show_badges && badges.length > 0 && (
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                    {/* MODIFICACIÓN: flex-wrap y gap para que sea responsive sin superponerse */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2 whitespace-nowrap">
                             <Medal size={20} className="text-accent-primary" />
                             Insignias Desbloqueadas
                         </h3>
