@@ -173,11 +173,12 @@
       }
 
       .app-splash-title span {
-        display: block;
+        display: inline-block;
         background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+        margin-left: 0.25rem;
       }
 
       @keyframes spin {
@@ -203,8 +204,7 @@
 
     <div class="app-splash-screen">
       <div class="app-splash-title">
-        PRO FITNESS
-        <span>GLASS</span>
+        PRO FITNESS <span>GLASS</span>
       </div>
       <div class="app-splash-spinner"></div>
     </div>
