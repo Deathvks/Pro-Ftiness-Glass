@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { ChevronLeft, Plus, Check, Repeat } from 'lucide-react';
 import { useAppTheme } from '../../../hooks/useAppTheme';
+// Importamos la función centralizada
+import { normalizeText } from '../../../utils/helpers';
 
-// Componente para la vista de detalle
 const ExerciseDetailView = ({
   exercise,
   onBack,
@@ -32,28 +33,47 @@ const ExerciseDetailView = ({
   });
 
   // 2. Traducir grupo muscular
-  const muscleGroup = exercise.category || exercise.muscle_group;
-  const translatedMuscle = t(muscleGroup, {
-    ns: 'exercise_muscles',
-    defaultValue: muscleGroup,
-  });
+  const rawMuscleGroup = exercise.muscle_group || exercise.category || 'Other';
+  const translatedMuscle = rawMuscleGroup
+    .split(',')
+    .map((m) => {
+      const trimmed = m.trim();
+      return t(trimmed, {
+        ns: 'exercise_muscles',
+        defaultValue: trimmed,
+      });
+    })
+    .join(', ');
 
   // 3. Traducir equipamiento
-  const equipment = exercise.equipment || 'None';
-  const equipmentKey = equipment.split(',')[0].trim();
-  const translatedEquipment = t(equipmentKey, {
-    ns: 'exercise_equipment',
-    defaultValue: equipment,
-  });
+  const rawEquipment = exercise.equipment || 'None';
+  const translatedEquipment = rawEquipment
+    .split(',')
+    .map((e) => {
+      const trimmed = e.trim();
+      return t(trimmed, {
+        ns: 'exercise_equipment',
+        defaultValue: trimmed,
+      });
+    })
+    .join(', ');
 
   // 4. Traducir la descripción
-  const descriptionKey = exercise.description;
   const defaultDescription = exercise.description || t('exercise_ui:no_description_available', 'No hay descripción disponible.');
 
+  // Usamos la función importada para generar la clave limpia
+  const descriptionKey = normalizeText(exercise.description);
+
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Añadimos nsSeparator: false y keySeparator: false para que los puntos y dos puntos
+  // en la descripción no rompan la búsqueda de la clave.
   const translatedDescription = t(descriptionKey, {
     ns: 'exercise_descriptions',
     defaultValue: defaultDescription,
+    nsSeparator: false,
+    keySeparator: false,
   });
+  // --- FIN DE LA MODIFICACIÓN ---
 
   // Lógica de contraste para OLED:
   const isOled = theme === 'oled';
@@ -61,7 +81,6 @@ const ExerciseDetailView = ({
   const mediaBgClass = (!hasVideo && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
 
   return (
-    // MODIFICACIÓN: Añadido overflow-hidden
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-glass-border">
@@ -129,11 +148,8 @@ const ExerciseDetailView = ({
         </div>
       </div>
 
-      {/* Footer (Formulario y Añadir) */}
-      {/* MODIFICACIÓN: Ajuste de padding inferior para móvil (pb-[calc(6rem+env...)]) */}
+      {/* Footer */}
       <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">
-
-        {/* 5. Ocultar inputs en modo reemplazo */}
         {!isReplacing && (
           <div className="flex gap-4 mb-4">
             <div>
@@ -166,9 +182,7 @@ const ExerciseDetailView = ({
           </div>
         )}
 
-        {/* 6. Lógica de botón dinámica */}
         {isReplacing ? (
-          // 7. Botón MODO REEMPLAZO
           <button
             onClick={handleAddClick}
             className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition bg-accent text-bg-secondary"
@@ -177,7 +191,6 @@ const ExerciseDetailView = ({
             {t('exercise_ui:replace_exercise', 'Reemplazar Ejercicio')}
           </button>
         ) : (
-          // 8. Botón MODO AÑADIR (Original)
           <button
             onClick={isStaged ? onBack : handleAddClick}
             disabled={false}
@@ -199,7 +212,6 @@ const ExerciseDetailView = ({
             )}
           </button>
         )}
-
       </div>
     </div>
   );

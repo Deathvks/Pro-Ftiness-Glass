@@ -7,6 +7,9 @@ import GlassCard from '../components/GlassCard';
 import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner'; // Importado de nuevo
 import useAppStore from '../store/useAppStore'; // Importado de nuevo
+// --- INICIO DE LA MODIFICACIÓN ---
+import { normalizeText } from '../utils/helpers';
+// --- FIN DE LA MODIFICACIÓN ---
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
@@ -77,21 +80,30 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
   /**
    * Lógica de descripción
-   * Lee del estado 'localDetails'
+   * Lee del estado 'localDetails' y usa normalizeText para la clave
    */
   const getTranslatedDescription = () => {
-    // 10. Leemos del estado local, que ya está fusionado y normalizado
-    const descKey = localDetails.description || localDetails.description_es;
-    if (!descKey) return null;
+    // 10. Leemos del estado local
+    const rawDesc = localDetails.description || localDetails.description_es;
+    if (!rawDesc) return null;
 
-    // Intenta traducir (si 'descKey' es una clave)
+    // --- INICIO DE LA MODIFICACIÓN ---
+    // Normalizamos la clave para que coincida con el JSON (sin saltos de línea extra)
+    const descKey = normalizeText(rawDesc);
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // Intenta traducir
     const translated = t(descKey, {
       ns: 'exercise_descriptions',
-      defaultValue: null
+      defaultValue: null,
+      // FIX CRUCIAL: Ignoramos separadores para que los puntos y dos puntos
+      // en la descripción no rompan la búsqueda de la clave.
+      nsSeparator: false,
+      keySeparator: false
     });
 
-    // Devuelve la traducción, o el 'descKey' (que es el texto completo)
-    return translated || descKey;
+    // Devuelve la traducción, o el texto original (rawDesc) si no hay traducción
+    return translated || rawDesc;
   };
 
   const description = getTranslatedDescription();
@@ -104,7 +116,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       onClick={onClose}
     >
       <GlassCard
-        className="relative w-full max-w-lg max-h-[90vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out]"
+        // MODIFICADO: Reducido max-h-[90vh] a max-h-[80vh] para evitar choque con navbar móvil
+        className="relative w-full max-w-lg max-h-[80vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <button

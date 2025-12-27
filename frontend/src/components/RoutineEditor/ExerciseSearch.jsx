@@ -4,7 +4,7 @@ import Spinner from '../Spinner';
 import { getExerciseList } from '../../services/exerciseService';
 import { useToast } from '../../hooks/useToast';
 import { useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid'; 
+import { v4 as uuidv4 } from 'uuid';
 
 // Importar los nuevos componentes modulares
 import ExerciseListView from './ExerciseSearch/ExerciseListView';
@@ -27,12 +27,12 @@ const ExerciseSearch = ({
   onAddCustomExercise, // Función para reemplazar con un ejercicio manual
   // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
 }) => {
-  
+
   // Obtenemos 'ready' del hook
   const { t, i18n, ready } = useTranslation(['exercise_descriptions', 'exercise_names', 'exercise_ui', 'exercise_muscles', 'exercise_equipment']);
 
   // --- STATE ---
-  const [view, setView] = useState('list'); 
+  const [view, setView] = useState('list');
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [allExercises, setAllExercises] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,12 +61,12 @@ const ExerciseSearch = ({
     // Si no hay borrador, el carrito empieza vacío
     return [];
   });
-  
+
   // Estado para saber si el borrador del carrito fue cargado
   const [draftLoaded, setDraftLoaded] = useState(() => {
     return !isReplacing && !!localStorage.getItem(CART_DRAFT_KEY);
   });
-  
+
   // El carrito se considera "inicializado" si cargamos un borrador
   const [cartInitialized, setCartInitialized] = useState(draftLoaded);
   // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
@@ -85,7 +85,7 @@ const ExerciseSearch = ({
     // Esta lógica es solo para la *primera vez* que se abre el modal,
     // para poblar el carrito con los ejercicios que ya están en la rutina.
     if (draftLoaded) {
-      return; 
+      return;
     }
     // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 
@@ -95,20 +95,20 @@ const ExerciseSearch = ({
       initialSelectedExercises.length > 0 &&
       !cartInitialized
     ) {
-      
+
       const initialStaged = initialSelectedExercises
         .map(routineExercise => {
-          
+
           const exerciseId = routineExercise.exercise_id || routineExercise.id;
           let fullExercise = allExercises.find(ex => ex.id === exerciseId);
 
           if (!fullExercise) {
-            const isManual = !routineExercise.exercise_id; 
+            const isManual = !routineExercise.exercise_id;
             fullExercise = {
               id: exerciseId,
               name: routineExercise.name,
-              category: routineExercise.category || 'other',
-              equipment: routineExercise.equipment || 'other',
+              category: routineExercise.category || 'Other',
+              equipment: routineExercise.equipment || 'Other',
               is_manual: isManual,
               image_url_start: routineExercise.image_url_start || null,
               image_url_end: routineExercise.image_url_end || null,
@@ -124,10 +124,10 @@ const ExerciseSearch = ({
             rest_seconds: routineExercise.rest_seconds || 60,
           };
         })
-        .filter(Boolean); 
+        .filter(Boolean);
 
       setStagedExercises(initialStaged);
-      setCartInitialized(true); 
+      setCartInitialized(true);
     }
   }, [allExercises, initialSelectedExercises, t, cartInitialized, isReplacing, draftLoaded]); // Añadido 'draftLoaded'
 
@@ -159,30 +159,42 @@ const ExerciseSearch = ({
   // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 
 
-  // --- LÓGICA DE FILTROS (Generación de Opciones) --- (sin cambios)
+  // --- LÓGICA DE FILTROS (Generación de Opciones) ---
   const { muscleOptions, equipmentOptions } = useMemo(() => {
     if (!ready) {
       return { muscleOptions: [], equipmentOptions: [] };
     }
     const muscleSet = new Set();
     const equipmentSet = new Set();
+
     allExercises.forEach(ex => {
-      const muscle = ex.category || 'other';
-      muscleSet.add(muscle);
+      // --- MODIFICACIÓN: Soporte para múltiples músculos (separados por coma) ---
+      if (ex.muscle_group) {
+        // Si viene "Cuádriceps, Femorales", separamos y añadimos ambos
+        ex.muscle_group.split(',').forEach(m => muscleSet.add(m.trim()));
+      } else if (ex.category) {
+        // Fallback a categoría si no hay muscle_group
+        muscleSet.add(ex.category);
+      } else {
+        muscleSet.add('Other');
+      }
+
       if (ex.equipment) {
         ex.equipment.split(',').forEach(eq => equipmentSet.add(eq.trim()));
       } else {
         equipmentSet.add('None');
       }
     });
+
     const sortedMuscles = Array.from(muscleSet).sort();
     const sortedEquipment = ['None', ...Array.from(equipmentSet).filter(e => e !== 'None').sort()];
-    
+
     const muscleOpts = sortedMuscles.map(group => ({
       value: group,
+      // Intentamos traducir usando el namespace 'exercise_muscles'.
       label: t(group, { ns: 'exercise_muscles', defaultValue: group }),
     }));
-    
+
     const equipmentOpts = sortedEquipment.map(eq => ({
       value: eq,
       label: t(eq, { ns: 'exercise_equipment', defaultValue: eq }),
@@ -193,24 +205,30 @@ const ExerciseSearch = ({
     };
   }, [allExercises, t, ready]);
 
-  // --- LÓGICA DE FILTROS (Filtrado de Ejercicios) --- (sin cambios)
+  // --- LÓGICA DE FILTROS (Filtrado de Ejercicios) ---
   const filteredExercises = useMemo(() => {
     if (!ready) {
       return [];
     }
     const query = searchQuery.toLowerCase();
-    
+
     return allExercises.filter(ex => {
       const originalName = ex.name.toLowerCase();
       const translatedName = t(ex.name, { ns: 'exercise_names', defaultValue: ex.name }).toLowerCase();
       const nameMatch = originalName.includes(query) || translatedName.includes(query);
 
-      const muscleMatch = filterMuscle.length === 0 || filterMuscle.includes(ex.category || 'other');
+      // --- MODIFICACIÓN: Comprobación contra lista de músculos ---
+      const exerciseMuscles = ex.muscle_group
+        ? ex.muscle_group.split(',').map(m => m.trim())
+        : [ex.category || 'Other'];
+
+      // Coincide si NO hay filtro o si ALGUNO de los músculos del ejercicio está en el filtro seleccionado
+      const muscleMatch = filterMuscle.length === 0 || filterMuscle.some(filter => exerciseMuscles.includes(filter));
 
       const exerciseEquipment = ex.equipment
         ? ex.equipment.split(',').map(e => e.trim())
         : ['None'];
-      
+
       const equipmentMatch = filterEquipment.length === 0 || filterEquipment.some(feq => exerciseEquipment.includes(feq));
 
       return nameMatch && muscleMatch && equipmentMatch;
@@ -228,14 +246,14 @@ const ExerciseSearch = ({
     if (stagedIds.has(exercise.id)) {
       return;
     }
-    
+
     const newItem = {
       exercise: exercise,
       sets: details.sets || 3,
       reps: details.reps || '8-12',
       rest_seconds: details.rest_seconds || 60,
     };
-    
+
     setStagedExercises(prev => [...prev, newItem]);
   };
 
@@ -257,7 +275,7 @@ const ExerciseSearch = ({
       addToast(t('exercise_ui:cart_empty_toast', 'El carrito está vacío.'), 'warning');
       return;
     }
-    onAddExercises(stagedExercises); 
+    onAddExercises(stagedExercises);
     addToast(
       t('exercise_ui:added_to_routine_toast', {
         count: stagedExercises.length,
@@ -265,13 +283,13 @@ const ExerciseSearch = ({
       }),
       'success'
     );
-    
+
     // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
     // Limpiamos el borrador del carrito al finalizar
     localStorage.removeItem(CART_DRAFT_KEY);
     // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-    
-    onClose(); 
+
+    onClose();
   };
 
 
@@ -307,24 +325,24 @@ const ExerciseSearch = ({
     } else {
       const manualExercise = {
         id: `manual_${uuidv4()}`,
-        name: exerciseName, 
-        category: 'other', 
-        equipment: 'other', 
+        name: exerciseName,
+        category: 'Other', // Por defecto mayúscula
+        equipment: 'other',
         is_manual: true,
-        image_url_start: null, 
+        image_url_start: null,
         image_url_end: null,
         description: t('exercise_ui:manual_exercise_desc', 'Ejercicio añadido manualmente.'),
-        muscle_group_image_url: '/muscle_groups/other.webp', 
+        muscle_group_image_url: '/muscle_groups/other.webp',
       };
-      
+
       handleStageExercise(manualExercise, {
         sets: 3,
-        reps: '10', 
+        reps: '10',
         rest_seconds: 60,
       });
-      
+
       setView('summary');
-      setSearchQuery(''); 
+      setSearchQuery('');
     }
   };
 
@@ -356,7 +374,7 @@ const ExerciseSearch = ({
         />
       );
     }
-    
+
     if (view === 'summary' && isReplacing) {
       setView('list');
     }

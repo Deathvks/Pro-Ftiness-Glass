@@ -1,6 +1,6 @@
 /* frontend/src/components/Workout/WorkoutHeader.jsx */
 import React from 'react';
-import { ChevronLeft, Play, Pause, Square, Calculator } from 'lucide-react';
+import { ChevronLeft, Play, Pause, Square, Calculator, Activity } from 'lucide-react';
 import GlassCard from '../GlassCard';
 
 // NOTA: Mantenemos esta función helper aquí por ahora para que 
@@ -24,7 +24,8 @@ const WorkoutHeader = ({
   onBackClick,
   onTogglePause,
   onFinishClick,
-  onShowCalculator, // <--- Nueva prop
+  onShowCalculator,
+  onShowHeatmap, // <--- Nueva prop
 }) => {
   return (
     <div className="w-full">
@@ -45,6 +46,16 @@ const WorkoutHeader = ({
             {formatTime(timer)}
           </div>
           <div className="flex gap-4">
+            {/* Botón para abrir el mapa de calor */}
+            <button
+              onClick={onShowHeatmap}
+              className="p-4 rounded-full bg-bg-secondary border border-glass-border text-text-primary transition hover:bg-white/10 active:scale-95"
+              aria-label="Mapa de Músculos"
+              title="Mapa de Músculos"
+            >
+              <Activity size={24} />
+            </button>
+
             {/* Botón para abrir la calculadora */}
             <button
               onClick={onShowCalculator}

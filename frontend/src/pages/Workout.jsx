@@ -14,6 +14,8 @@ import WorkoutExerciseDetailModal from './WorkoutExerciseDetailModal';
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
 // --- AÑADIDO: Import del Modal de Historial ---
 import ExerciseHistoryModal from './ExerciseHistoryModal';
+// --- AÑADIDO: Import del Modal de Heatmap ---
+import WorkoutHeatmapModal from '../components/Workout/WorkoutHeatmapModal';
 
 // --- IMPORTS DE COMPONENTES MODULARIZADOS ---
 import NoActiveWorkout from '../components/Workout/NoActiveWorkout';
@@ -77,6 +79,8 @@ const Workout = ({ timer, setView }) => {
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
   // --- AÑADIDO: Estado para el modal de Historial ---
   const [historyExercise, setHistoryExercise] = useState(null);
+  // --- AÑADIDO: Estado para el modal de Heatmap ---
+  const [showHeatmapModal, setShowHeatmapModal] = useState(false);
 
   // Efecto de limpieza: Si el usuario sale de la página (desmonta el componente)
   // y el entrenamiento NO se ha iniciado (workoutStartTime es null), lo cancelamos.
@@ -301,6 +305,8 @@ const Workout = ({ timer, setView }) => {
         onTogglePause={togglePauseWorkout}
         onFinishClick={handleFinishClick}
         onShowCalculator={() => setShowCalculatorModal(true)}
+        // AÑADIDO: Prop para mostrar el heatmap
+        onShowHeatmap={() => setShowHeatmapModal(true)}
       />
 
       {/* --- Componente: Lista de Ejercicios --- */}
@@ -400,6 +406,14 @@ const Workout = ({ timer, setView }) => {
         <ExerciseHistoryModal
           exercise={historyExercise}
           onClose={() => setHistoryExercise(null)}
+        />
+      )}
+
+      {/* AÑADIDO: Modal de Heatmap */}
+      {showHeatmapModal && (
+        <WorkoutHeatmapModal
+          exercises={activeWorkout?.exercises || []}
+          onClose={() => setShowHeatmapModal(false)}
         />
       )}
     </div>

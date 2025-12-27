@@ -16,7 +16,7 @@ const ExerciseList = sequelize.define(
       unique: true,
     },
     muscle_group: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(255), // Ampliado de 100 a 255 para soportar listas de músculos
       allowNull: false,
     },
     description: {
@@ -24,23 +24,20 @@ const ExerciseList = sequelize.define(
       allowNull: true,
     },
     video_url: {
-      type: DataTypes.STRING(255), // Ya lo tenías, ¡perfecto!
+      type: DataTypes.STRING(255),
       allowNull: true,
     },
-
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Nuevos campos para los datos de wger
     wger_id: {
       type: DataTypes.INTEGER,
-      allowNull: true, // Permitir nulos si creas ejercicios manualmente
+      allowNull: true,
       unique: true
     },
     category: {
-      type: DataTypes.STRING(100), // Ej: Fuerza, Cardio, Estiramiento
+      type: DataTypes.STRING(100),
       allowNull: true,
     },
     equipment: {
-      type: DataTypes.STRING(255), // Ej: Mancuerna, Barra, Ninguno
+      type: DataTypes.STRING(255),
       allowNull: true,
     },
     image_url_start: {
@@ -51,7 +48,6 @@ const ExerciseList = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     }
-    // --- FIN DE LA MODIFICACIÓN ---
   },
   {
     tableName: 'exercise_list',

@@ -27,11 +27,11 @@ export const getBestSet = (sets) => {
 
 // --- FUNCIÓN AÑADIDA ---
 export const isSameDay = (dateA, dateB) => {
-    const date1 = new Date(dateA);
-    const date2 = new Date(dateB);
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
+  const date1 = new Date(dateA);
+  const date2 = new Date(dateB);
+  return date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate();
 };
 
 // --- INICIO DE LA MODIFICACIÓN ---
@@ -70,3 +70,20 @@ export const reorder = (list, startIndex, endIndex) => {
   return result;
 };
 // --- FIN DE LA MODIFICACIÓN (FIX BUG) ---
+
+// --- INICIO DE LA MODIFICACIÓN (I18N FIX) ---
+/**
+ * Normaliza una cadena de texto para usarla como clave de traducción.
+ * Elimina saltos de línea, espacios múltiples y espacios al inicio/final.
+ * Esto es crucial para que las descripciones largas en DB coincidan con las claves JSON.
+ * @param {string} text - El texto a normalizar.
+ * @returns {string} El texto normalizado.
+ */
+export const normalizeText = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/[\r\n]+/g, ' ') // Reemplaza saltos de línea por espacios
+    .replace(/\s+/g, ' ')     // Colapsa múltiples espacios en uno
+    .trim();                  // Elimina espacios al inicio y final
+};
+// --- FIN DE LA MODIFICACIÓN (I18N FIX) ---

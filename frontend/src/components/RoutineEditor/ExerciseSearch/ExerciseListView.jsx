@@ -3,77 +3,78 @@ import React from 'react';
 import { X, Search, ShoppingCart, ListFilter, Plus } from 'lucide-react';
 import CustomSelect from '../../CustomSelect';
 import ExerciseListItem from './ExerciseListItem';
-import Spinner from '../../Spinner'; // <-- Añadido Spinner para 'isLoading'
+import Spinner from '../../Spinner';
 
-// Componente para la vista de lista (búsqueda y filtros)
 const ExerciseListView = ({
-  // --- Props de navegación y estado ---
   onClose,
   onViewSummary,
   stagedExercisesCount,
-  isLoading, // <-- Añadido prop de carga
-
-  // --- Props de búsqueda ---
+  isLoading,
   searchQuery,
   setSearchQuery,
-
-  // --- Props de filtros ---
   showFilters,
   setShowFilters,
-  filterMuscle, // <-- Ahora es un array: ['chest', 'shoulders']
+  filterMuscle,
   setFilterMuscle,
-  muscleOptions, // <-- Recibe las opciones pre-traducidas
-  filterEquipment, // <-- Ahora es un array: ['dumbbell']
+  muscleOptions,
+  filterEquipment,
   setFilterEquipment,
-  equipmentOptions, // <-- Recibe las opciones pre-traducidas
-
-  // --- Props de datos ---
-  filteredExercises, // <-- Recibe los ejercicios YA filtrados
-
-  // --- Props de acciones ---
+  equipmentOptions,
+  filteredExercises,
   onViewDetail,
   onAddExercise,
   stagedIds,
-  onAddManual, // <-- Prop para añadir manual
-
-  // --- Props de traducción ---
+  onAddManual,
   t,
 }) => {
 
-  // --- INICIO DE LA MODIFICACIÓN (MULTI-SELECT) ---
+  // --- LÓGICA MULTI-SELECT ---
 
-  // 1. FIX: Añadimos Array.isArray() para evitar el crash si el estado es incorrecto
-  const activeMuscleFilters = (Array.isArray(filterMuscle) ? filterMuscle : [])
+  // 1. Asegurar que los filtros sean arrays para evitar errores
+  const currentMuscleFilters = Array.isArray(filterMuscle) ? filterMuscle : [];
+  const currentEquipmentFilters = Array.isArray(filterEquipment) ? filterEquipment : [];
+
+  // 2. Mapear valores a objetos completos para mostrar las "etiquetas" (pills) con su label traducido
+  const activeMuscleFilters = currentMuscleFilters
     .map(value => muscleOptions.find(opt => opt.value === value))
-    .filter(Boolean); // Filtra por si algún valor no se encuentra
+    .filter(Boolean);
 
-  const activeEquipmentFilters = (Array.isArray(filterEquipment) ? filterEquipment : [])
+  const activeEquipmentFilters = currentEquipmentFilters
     .map(value => equipmentOptions.find(opt => opt.value === value))
     .filter(Boolean);
 
-  // 2. Nuevos Handlers: Acumulan filtros en el array, evitando duplicados
+  // 3. Handlers para AÑADIR filtros (sin duplicados)
   const handleMuscleChange = (newValue) => {
-    if (!newValue) return; // Si el valor es null o undefined, no hacer nada
-    setFilterMuscle(prev =>
-      (Array.isArray(prev) ? prev : []).includes(newValue)
-        ? prev // Si ya está, no hacer nada
-        : [...(Array.isArray(prev) ? prev : []), newValue] // Si no está, añadirlo
-    );
+    if (!newValue) return;
+    if (!currentMuscleFilters.includes(newValue)) {
+      setFilterMuscle([...currentMuscleFilters, newValue]);
+    }
   };
 
   const handleEquipmentChange = (newValue) => {
     if (!newValue) return;
-    setFilterEquipment(prev =>
-      (Array.isArray(prev) ? prev : []).includes(newValue)
-        ? prev
-        : [...(Array.isArray(prev) ? prev : []), newValue]
-    );
+    if (!currentEquipmentFilters.includes(newValue)) {
+      setFilterEquipment([...currentEquipmentFilters, newValue]);
+    }
   };
-  // --- FIN DE LA MODIFICACIÓN (MULTI-SELECT) ---
+
+  // 4. Handlers para REMOVER filtros
+  const removeMuscleFilter = (valueToRemove) => {
+    setFilterMuscle(currentMuscleFilters.filter(val => val !== valueToRemove));
+  };
+
+  const removeEquipmentFilter = (valueToRemove) => {
+    setFilterEquipment(currentEquipmentFilters.filter(val => val !== valueToRemove));
+  };
+
+  // 5. Filtrar las opciones del Select para NO mostrar las que ya están seleccionadas (Mejora UX)
+  const availableMuscleOptions = muscleOptions.filter(opt => !currentMuscleFilters.includes(opt.value));
+  const availableEquipmentOptions = equipmentOptions.filter(opt => !currentEquipmentFilters.includes(opt.value));
+
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header (Cerrar y Carrito) (SIN CAMBIOS) */}
+      {/* Header (Cerrar y Carrito) */}
       <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-glass-border">
         <h2 className="text-xl font-bold">{t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}</h2>
         <div className="flex items-center gap-2">
@@ -95,8 +96,9 @@ const ExerciseListView = ({
         </div>
       </div>
 
-      {/* Búsqueda y Filtros */}
+      {/* Barra de Búsqueda y Zona de Filtros */}
       <div className="flex-shrink-0 p-4 space-y-4 border-b border-glass-border">
+        {/* Input Buscador */}
         <div className="relative">
           <input
             type="text"
@@ -107,6 +109,8 @@ const ExerciseListView = ({
           />
           <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
         </div>
+
+        {/* Botón Toggle Filtros */}
         <button
           onClick={() => setShowFilters(prev => !prev)}
           className="flex items-center gap-2 text-sm text-text-secondary font-medium"
@@ -115,75 +119,68 @@ const ExerciseListView = ({
           <span>{showFilters ? t('exercise_ui:hide_filters', 'Ocultar Filtros') : t('exercise_ui:show_filters', 'Mostrar Filtros')}</span>
         </button>
 
-        {/* --- INICIO DE LA MODIFICACIÓN (MULTI-SELECT) --- */}
-        {/* Contenedor de "Pills" de filtros activos (Lógica sin cambios, ahora itera sobre más de uno) */}
-        <div className="flex flex-wrap gap-2">
-          {/* Itera sobre los filtros de músculo activos */}
-          {activeMuscleFilters.map(filter => (
-            <button
-              key={filter.value}
-              onClick={() => setFilterMuscle(prev => prev.filter(val => val !== filter.value))}
-              className="flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-accent-transparent text-accent text-sm font-medium border border-accent-border transition hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50"
-              title={t('exercise_ui:remove_filter', 'Quitar filtro')}
-            >
-              <span>{filter.label}</span>
-              <X size={14} />
-            </button>
-          ))}
-          {/* Itera sobre los filtros de equipamiento activos */}
-          {activeEquipmentFilters.map(filter => (
-            <button
-              key={filter.value}
-              onClick={() => setFilterEquipment(prev => prev.filter(val => val !== filter.value))}
-              className="flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-accent-transparent text-accent text-sm font-medium border border-accent-border transition hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50"
-              title={t('exercise_ui:remove_filter', 'Quitar filtro')}
-            >
-              <span>{filter.label}</span>
-              <X size={14} />
-            </button>
-          ))}
-        </div>
-        {/* --- FIN DE LA MODIFICACIÓN (MULTI-SELECT) --- */}
+        {/* Zona de Etiquetas (Pills) de filtros activos */}
+        {(activeMuscleFilters.length > 0 || activeEquipmentFilters.length > 0) && (
+          <div className="flex flex-wrap gap-2 animate-[fade-in_0.2s_ease-out]">
+            {activeMuscleFilters.map(filter => (
+              <button
+                key={filter.value}
+                onClick={() => removeMuscleFilter(filter.value)}
+                className="flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-accent-transparent text-accent text-sm font-medium border border-accent-border transition hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50"
+                title={t('exercise_ui:remove_filter', 'Quitar filtro')}
+              >
+                <span>{filter.label}</span>
+                <X size={14} />
+              </button>
+            ))}
+            {activeEquipmentFilters.map(filter => (
+              <button
+                key={filter.value}
+                onClick={() => removeEquipmentFilter(filter.value)}
+                className="flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-accent-transparent text-accent text-sm font-medium border border-accent-border transition hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50"
+                title={t('exercise_ui:remove_filter', 'Quitar filtro')}
+              >
+                <span>{filter.label}</span>
+                <X size={14} />
+              </button>
+            ))}
+          </div>
+        )}
 
+        {/* Dropdowns de Selección (Solo visibles si showFilters es true) */}
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-[slide-down_0.2s_ease-out]">
             <div>
               <label className="text-xs text-text-muted block mb-1">{t('exercise_ui:filter_muscle', 'Grupo Muscular')}</label>
-              {/* --- INICIO DE LA MODIFICACIÓN (MULTI-SELECT) --- */}
               <CustomSelect
-                // isMulti={true} // Eliminado
-                options={muscleOptions}
-                value={null} // 3. El select siempre muestra el placeholder
-                onChange={handleMuscleChange} // 4. Usamos el nuevo handler que AÑADE al array
+                options={availableMuscleOptions} // Usamos las opciones filtradas
+                value={null} // Siempre null para que actúe como un "añadidor"
+                onChange={handleMuscleChange}
                 placeholder={t('exercise_ui:select_muscles', 'Seleccionar músculos...')}
                 className="w-full capitalize"
               />
-              {/* --- FIN DE LA MODIFICACIÓN (MULTI-SELECT) --- */}
             </div>
             <div>
               <label className="text-xs text-text-muted block mb-1">{t('exercise_ui:filter_equipment', 'Equipamiento')}</label>
-              {/* --- INICIO DE LA MODIFICACIÓN (MULTI-SELECT) --- */}
               <CustomSelect
-                // isMulti={true} // Eliminado
-                options={equipmentOptions}
-                value={null} // 3. El select siempre muestra el placeholder
-                onChange={handleEquipmentChange} // 4. Usamos el nuevo handler que AÑADE al array
+                options={availableEquipmentOptions} // Usamos las opciones filtradas
+                value={null}
+                onChange={handleEquipmentChange}
                 placeholder={t('exercise_ui:select_equipment', 'Seleccionar equipamiento...')}
                 className="w-full capitalize"
               />
-              {/* --- FIN DE LA MODIFICACIÓN (MULTI-SELECT) --- */}
             </div>
           </div>
         )}
       </div>
 
-      {/* Lista de Ejercicios */}
+      {/* Lista de Resultados */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {isLoading ? (
           <div className="flex justify-center py-10"><Spinner /></div>
         ) : (
           <>
-            {/* 1. Renderizar los resultados de la búsqueda */}
+            {/* Renderizar ejercicios filtrados */}
             {filteredExercises.map(exercise => (
               <ExerciseListItem
                 key={exercise.id}
@@ -195,9 +192,9 @@ const ExerciseListView = ({
               />
             ))}
 
-            {/* 2. Botón para añadir ejercicio manual (siempre visible si no está cargando) */}
+            {/* Botón de añadir manual siempre al final */}
             <button
-              onClick={onAddManual} // <-- Conectar la prop
+              onClick={onAddManual}
               className="w-full flex items-center gap-4 p-3 rounded-lg bg-bg-secondary hover:bg-accent-transparent border border-glass-border transition-colors group"
             >
               <div className="w-14 h-14 rounded-md bg-bg-primary border border-glass-border flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent-border transition-colors">
@@ -213,11 +210,10 @@ const ExerciseListView = ({
               </div>
             </button>
 
-            {/* 3. Mensaje de "No resultados" (solo si la búsqueda no arrojó nada) */}
+            {/* Mensaje si no hay resultados */}
             {filteredExercises.length === 0 && (
               <p className="text-center text-text-muted pt-10">{t('exercise_ui:no_exercises_found', 'No se encontraron ejercicios.')}</p>
             )}
-
           </>
         )}
       </div>

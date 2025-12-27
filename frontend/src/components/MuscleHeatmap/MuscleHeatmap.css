@@ -1,0 +1,72 @@
+/* src/components/MuscleHeatmap/MuscleHeatmap.css */
+
+:root {
+    /* Paleta de calor futurista - se mantiene igual en ambos modos para consistencia de datos */
+    --heatmap-cold: #2a2a2a;
+    --heatmap-low: #00f2ff;
+    --heatmap-medium: #00ff88;
+    --heatmap-high: #ffea00;
+    --heatmap-extreme: #ff0055;
+
+    --muscle-transition: fill 0.5s ease, filter 0.5s ease;
+}
+
+/* --- MODO OSCURO (Default) --- */
+.heatmap-container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 400px;
+    margin: 0 auto;
+    transition: all 0.3s ease;
+}
+
+.heatmap-title {
+    color: rgba(255, 255, 255, 0.9);
+    font-family: 'Arial', sans-serif;
+    font-weight: 300;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* --- MODO CLARO --- */
+.heatmap-container.light-mode {
+    background: rgba(255, 255, 255, 0.6);
+    /* Fondo más opaco y claro */
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    /* Borde sutil oscuro */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    /* Sombra suave */
+}
+
+.heatmap-container.light-mode .heatmap-title {
+    color: #333333;
+    /* Texto oscuro */
+    text-shadow: none;
+    font-weight: 600;
+    /* Un poco más grueso para legibilidad */
+}
+
+.heatmap-container.light-mode:hover {
+    border-color: rgba(0, 168, 255, 0.3);
+    /* Color de hover ajustado */
+}
+
+/* Estilos comunes */
+.muscle-svg {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+}
+
+/* El componente SVG maneja sus propios estilos internos, 
+   pero aquí controlamos el contenedor */

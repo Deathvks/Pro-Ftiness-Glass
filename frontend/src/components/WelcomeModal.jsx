@@ -63,7 +63,7 @@ const WelcomeModal = ({ onClose }) => {
                   v4
                 </span>
               </div>
-              {/* Badge "New" - MODIFICADO: Posición más pegada (-top-1 -right-1 en vez de -2) */}
+              {/* Badge "New" */}
               <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-bounce">
                 NUEVO
               </div>
@@ -79,9 +79,8 @@ const WelcomeModal = ({ onClose }) => {
 
           <div className="space-y-6 mb-8">
 
-            {/* --- BLOQUE 1: EXPERIENCIA Y NIVELES (Dashboard Animado) --- */}
+            {/* --- BLOQUE 1: EXPERIENCIA Y NIVELES --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
-              {/* Título cambiado a "Experiencia y Niveles" */}
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Trophy size={16} className="text-accent" /> Experiencia y Niveles
               </h2>
@@ -136,7 +135,55 @@ const WelcomeModal = ({ onClose }) => {
               </p>
             </div>
 
-            {/* --- BLOQUE 2: LO SOCIAL (Nueva Animación sin morados) --- */}
+            {/* --- BLOQUE 2: MAPA DE CALOR (NUEVO) --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Flame size={16} className="text-orange-500" /> Mapa de Calor Muscular
+              </h2>
+
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500 gap-6">
+
+                  {/* Silueta Abstracta */}
+                  <div className="relative w-12 h-20 opacity-90">
+                    {/* Cabeza */}
+                    <div className="mx-auto w-3 h-3 bg-white/20 rounded-full mb-0.5"></div>
+                    {/* Torso (Pulsando en rojo - Máximo) */}
+                    <div className="mx-auto w-6 h-8 bg-red-500/80 rounded-sm mb-0.5 animate-[pulse_3s_infinite] shadow-[0_0_12px_rgba(239,68,68,0.4)]"></div>
+                    {/* Piernas (Amarillo - Alto) */}
+                    <div className="flex justify-center gap-0.5">
+                      <div className="w-2.5 h-7 bg-yellow-400/80 rounded-sm shadow-[0_0_8px_rgba(250,204,21,0.3)]"></div>
+                      <div className="w-2.5 h-7 bg-yellow-400/80 rounded-sm shadow-[0_0_8px_rgba(250,204,21,0.3)]"></div>
+                    </div>
+                    {/* Brazos (Cyan - Bajo) */}
+                    <div className="absolute top-4 left-0 w-2 h-7 bg-cyan-400/60 rounded-sm -rotate-12"></div>
+                    <div className="absolute top-4 right-0 w-2 h-7 bg-cyan-400/60 rounded-sm rotate-12"></div>
+                  </div>
+
+                  {/* Leyenda Mini */}
+                  <div className="flex flex-col justify-center gap-2 text-[10px] text-text-secondary">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_5px_red]"></div>
+                      <span>Intensidad Máx</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                      <span>Alta</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                      <span>Baja</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Detecta automáticamente qué músculos entrenas y dónde necesitas mejorar.
+              </p>
+            </div>
+
+            {/* --- BLOQUE 3: LO SOCIAL --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Users size={16} className="text-accent" /> Modo Social
@@ -154,7 +201,7 @@ const WelcomeModal = ({ onClose }) => {
                     </div>
                   </div>
 
-                  {/* Línea de Conexión Animada (Usando Accent en lugar de Morado) */}
+                  {/* Línea de Conexión Animada */}
                   <div className="flex-1 h-[2px] bg-white/5 mx-2 relative overflow-hidden rounded-full">
                     {socialState >= 1 && (
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent to-transparent w-1/2 animate-[shimmer_1.5s_infinite_linear]"></div>
@@ -164,7 +211,7 @@ const WelcomeModal = ({ onClose }) => {
                     )}
                   </div>
 
-                  {/* Avatar AMIGO (Estado variable) */}
+                  {/* Avatar AMIGO */}
                   <div className="relative z-10 flex flex-col items-center gap-1">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${socialState === 2
                       ? 'border-green-500 bg-green-500/10 text-green-500 scale-110'
