@@ -17,6 +17,8 @@ const {
   FavoriteMeal,
   PersonalRecord,
   CreatinaLog,
+  WorkoutLogDetail,
+  WorkoutLogSet
 } = models;
 
 /**
@@ -94,6 +96,108 @@ export const getMyProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+// --- INICIO DE LA MODIFICACIÓN: Función de Exportación Corregida ---
+export const exportMyData = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const format = req.query.format || 'json';
+
+    // 1. Obtener Datos
+    const user = await User.findByPk(userId, { attributes: { exclude: ['password_hash'] } });
+
+    const bodyWeightLogs = await BodyWeightLog.findAll({
+      where: { user_id: userId },
+      order: [['log_date', 'DESC']]
+    });
+
+    // CORRECCIÓN: 'date' -> 'log_date'
+    const nutritionLogs = await NutritionLog.findAll({
+      where: { user_id: userId },
+      order: [['log_date', 'DESC']]
+    });
+
+    // Para los logs de entrenamiento, incluimos la jerarquía completa
+    // CORRECCIÓN: 'date' -> 'workout_date'
+    const workoutLogs = await WorkoutLog.findAll({
+      where: { user_id: userId },
+      include: [
+        {
+          model: Routine,
+          as: 'routine',
+          attributes: ['name']
+        },
+        {
+          model: WorkoutLogDetail,
+          as: 'WorkoutLogDetails',
+          include: [{
+            model: WorkoutLogSet,
+            as: 'WorkoutLogSets'
+          }]
+        }
+      ],
+      order: [['workout_date', 'DESC']]
+    });
+
+    const personalRecords = await PersonalRecord.findAll({
+      where: { user_id: userId }
+    });
+
+    // 2. Formatear y Enviar
+    if (format === 'json') {
+      const data = {
+        profile: user,
+        bodyWeight: bodyWeightLogs,
+        nutrition: nutritionLogs,
+        personalRecords: personalRecords,
+        workouts: workoutLogs
+      };
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="pro-fitness-data-${userId}.json"`);
+      return res.send(JSON.stringify(data, null, 2));
+
+    } else if (format === 'csv') {
+      // Para CSV, priorizamos los registros de entrenamiento aplanados, que es lo más útil para Excel.
+      // Date, Routine, Exercise, Set, Weight, Reps, RPE, Type
+      let csv = 'Date,Routine,Exercise,Set,Weight(kg),Reps,RPE,Type\n';
+
+      workoutLogs.forEach(log => {
+        // CORRECCIÓN: log.date -> log.workout_date
+        const dateObj = new Date(log.workout_date);
+        const date = !isNaN(dateObj) ? dateObj.toISOString().split('T')[0] : 'N/A';
+        const routineName = log.routine ? log.routine.name : 'N/A';
+
+        if (log.WorkoutLogDetails) {
+          log.WorkoutLogDetails.forEach(detail => {
+            const exerciseName = detail.exercise_name || 'Unknown Exercise';
+
+            if (detail.WorkoutLogSets) {
+              detail.WorkoutLogSets.forEach((set, index) => {
+                // Escapar comillas dobles en nombres
+                const safeRoutine = routineName.replace(/"/g, '""');
+                const safeExercise = exerciseName.replace(/"/g, '""');
+
+                csv += `"${date}","${safeRoutine}","${safeExercise}",${index + 1},${set.weight_kg || 0},${set.reps || 0},${set.rpe || ''},"${set.type || 'normal'}"\n`;
+              });
+            }
+          });
+        }
+      });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="workouts-${userId}.csv"`);
+      return res.send(csv);
+
+    } else {
+      return res.status(400).json({ error: 'Formato no soportado. Use json o csv.' });
+    }
+
+  } catch (error) {
+    next(error);
+  }
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Endpoint de Gamificación (Actualización manual/admin si fuese necesario)
 export const updateGamificationStats = async (req, res, next) => {
@@ -537,6 +641,7 @@ const userController = {
   clearMyData,
   deleteMyAccount,
   updateGamificationStats,
+  exportMyData
 };
 
 export default userController;

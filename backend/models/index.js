@@ -21,9 +21,7 @@ import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
 import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
-// --- INICIO DE LA MODIFICACIÓN ---
 import BugReport from './bugReportModel.js';
-// --- FIN DE LA MODIFICACIÓN ---
 
 // 2. Configuración de las asociaciones
 User.hasMany(Routine, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Routines' });
@@ -31,6 +29,11 @@ Routine.belongsTo(User, { foreignKey: 'user_id' });
 
 User.hasMany(WorkoutLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'WorkoutLogs' });
 WorkoutLog.belongsTo(User, { foreignKey: 'user_id' });
+
+// --- INICIO DE LA MODIFICACIÓN: Asociación WorkoutLog <-> Routine ---
+WorkoutLog.belongsTo(Routine, { foreignKey: 'routine_id', as: 'routine' });
+Routine.hasMany(WorkoutLog, { foreignKey: 'routine_id', as: 'workoutLogs' });
+// --- FIN DE LA MODIFICACIÓN ---
 
 User.hasMany(BodyWeightLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'BodyWeightLogs' });
 BodyWeightLog.belongsTo(User, { foreignKey: 'user_id' });
@@ -65,7 +68,6 @@ TemplateRoutineExercise.belongsTo(TemplateRoutine, { foreignKey: 'template_routi
 User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
 CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-// --- CORREGIDO: userId -> user_id ---
 User.hasMany(PushSubscription, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'PushSubscriptions' });
 PushSubscription.belongsTo(User, { foreignKey: 'user_id' });
 
@@ -80,11 +82,8 @@ User.hasMany(Friendship, { foreignKey: 'addressee_id', as: 'ReceivedRequests' })
 Friendship.belongsTo(User, { foreignKey: 'requester_id', as: 'Requester' });
 Friendship.belongsTo(User, { foreignKey: 'addressee_id', as: 'Addressee' });
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Relación User <-> BugReport
 User.hasMany(BugReport, { foreignKey: 'user_id', as: 'reports' });
 BugReport.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-// --- FIN DE LA MODIFICACIÓN ---
 
 const models = {
     sequelize,
@@ -107,9 +106,7 @@ const models = {
     Notification,
     UserSession,
     Friendship,
-    // --- INICIO DE LA MODIFICACIÓN ---
     BugReport
-    // --- FIN DE LA MODIFICACIÓN ---
 };
 
 export default models;

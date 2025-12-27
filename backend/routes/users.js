@@ -82,6 +82,11 @@ router.use(authenticateToken);
 // GET /api/users/me (Obtener perfil)
 router.get('/me', userController.getMyProfile);
 
+// --- INICIO DE LA MODIFICACIÓN: Ruta de Exportación ---
+// GET /api/users/me/export (Exportar datos en JSON o CSV)
+router.get('/me/export', userController.exportMyData);
+// --- FIN DE LA MODIFICACIÓN ---
+
 // POST /api/users/me/gamification (Actualizar progreso - Admin/Dev o uso interno)
 router.post(
     '/me/gamification',

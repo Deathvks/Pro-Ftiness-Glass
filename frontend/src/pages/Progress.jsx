@@ -1,6 +1,7 @@
 /* frontend/src/pages/Progress.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Lightbulb } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 
@@ -12,98 +13,13 @@ import NutritionView from '../components/progress/NutritionView';
 import RecordsView from '../components/progress/RecordsView';
 import MuscleHeatmap from '../components/MuscleHeatmap/MuscleHeatmap';
 
-// 1. Mapeo Robusto (Unificado con WorkoutHeatmapModal)
-const DB_TO_HEATMAP_MAP = {
-    // Torso - Pecho
-    'chest': ['chest'],
-    'pectorals': ['chest'],
-    'pectoralis major': ['chest'],
-    'pectoral mayor': ['chest'],
-    'pectoral': ['chest'],
-    'pecho': ['chest'],
-
-    // Torso - Espalda
-    'back': ['upper-back', 'lower-back'],
-    'espalda': ['upper-back', 'lower-back'],
-    'lats': ['upper-back'],
-    'latissimus dorsi': ['upper-back'],
-    'dorsales': ['upper-back'],
-    'dorsal ancho': ['upper-back'],
-    'traps': ['trapezius'],
-    'trapecios': ['trapezius'],
-    'trapezius': ['trapezius'],
-    'lower back': ['lower-back'],
-    'lumbares': ['lower-back'],
-    'upper back': ['upper-back'],
-
-    // Torso - Hombros
-    'shoulders': ['front-deltoids', 'back-deltoids'],
-    'hombros': ['front-deltoids', 'back-deltoids'],
-    'deltoids': ['front-deltoids', 'back-deltoids'],
-    'deltoides': ['front-deltoids', 'back-deltoids'],
-    'anterior deltoid': ['front-deltoids'],
-    'deltoides anterior': ['front-deltoids'],
-
-    // Torso - Abs
-    'abs': ['abs'],
-    'abdominales': ['abs'],
-    'abdominals': ['abs'],
-    'rectus abdominis': ['abs'],
-    'recto abdominal': ['abs'],
-    'obliques': ['obliques'],
-    'oblicuos': ['obliques'],
-    'obliquus externus abdominis': ['obliques'],
-    'core': ['abs', 'obliques'],
-
-    // Brazos
-    'arms': ['biceps', 'triceps'],
-    'brazos': ['biceps', 'triceps'],
-    'biceps': ['biceps'],
-    'bíceps': ['biceps'],
-    'biceps brachii': ['biceps'],
-    'biceps braquial': ['biceps'],
-    'triceps': ['triceps'],
-    'tríceps': ['triceps'],
-    'triceps brachii': ['triceps'],
-    'tríceps braquial': ['triceps'],
-    'forearms': ['forearm'],
-    'antebrazos': ['forearm'],
-    'forearm': ['forearm'],
-    'brachialis': ['biceps'],
-
-    // Piernas
-    'legs': ['quadriceps', 'hamstring', 'gluteal', 'calves'],
-    'piernas': ['quadriceps', 'hamstring', 'gluteal', 'calves'],
-    'quads': ['quadriceps'],
-    'cuádriceps': ['quadriceps'],
-    'quadriceps': ['quadriceps'],
-    'quadriceps femoris': ['quadriceps'],
-    'hamstrings': ['hamstring'],
-    'isquios': ['hamstring'],
-    'isquiotibiales': ['hamstring'],
-    'femorales': ['hamstring'],
-    'biceps femoris': ['hamstring'],
-    'glutes': ['gluteal'],
-    'glúteos': ['gluteal'],
-    'gluteal': ['gluteal'],
-    'gluteus maximus': ['gluteal'],
-    'calves': ['calves'],
-    'gemelos': ['calves'],
-    'pantorrillas': ['calves'],
-    'gastrocnemius': ['calves'],
-    'soleus': ['calves'],
-    'adductors': ['adductor'],
-    'aductores': ['adductor'],
-    'abductors': ['abductors'],
-    'abductores': ['abductors'],
-
-    // Otros
-    'cardio': [],
-    'full body': ['chest', 'upper-back', 'quadriceps', 'hamstring', 'abs', 'biceps', 'triceps', 'front-deltoids'],
-    'cuerpo completo': ['chest', 'upper-back', 'quadriceps', 'hamstring', 'abs', 'biceps', 'triceps', 'front-deltoids'],
-    'other': [],
-    'otro': []
-};
+// Importamos la utilidad de músculos para evitar duplicidad y centralizar lógica
+import {
+    DB_TO_HEATMAP_MAP,
+    guessMuscleFromText,
+    SUGGESTED_EXERCISES,
+    MUSCLE_NAMES_ES
+} from '../utils/muscleUtils';
 
 // Leyenda de intensidad
 const INTENSITY_LEVELS = [
@@ -112,39 +28,6 @@ const INTENSITY_LEVELS = [
     { label: 'Alto', color: '#ffea00' },   // Frecuencia 3
     { label: 'Máximo', color: '#ff0055' }  // Frecuencia 4
 ];
-
-// 2. Función de Adivinanza (Unificada)
-const guessMuscleFromText = (text) => {
-    if (!text) return [];
-    const t = text.toLowerCase();
-
-    // Pecho
-    if (t.includes('bench') || t.includes('banca') || t.includes('chest') || t.includes('pecho') || t.includes('pectoral') || t.includes('push-up') || t.includes('flexiones') || t.includes('pec deck') || t.includes('fly') || t.includes('aperturas') || t.includes('dips') || t.includes('fondos')) return ['chest'];
-
-    // Espalda
-    if (t.includes('row') || t.includes('remo') || t.includes('pull') || t.includes('jalon') || t.includes('jalón') || t.includes('dominada') || t.includes('chin') || t.includes('lat') || t.includes('dorsal') || t.includes('back') || t.includes('espalda')) return ['upper-back', 'lower-back'];
-    if (t.includes('deadlift') || t.includes('peso muerto') || t.includes('lumbar')) return ['lower-back', 'hamstring'];
-
-    // Hombros
-    if (t.includes('press') && (t.includes('shoulder') || t.includes('hombro') || t.includes('militar') || t.includes('military') || t.includes('overhead'))) return ['front-deltoids'];
-    if (t.includes('raise') || t.includes('elevacion') || t.includes('lateral') || t.includes('pajaros') || t.includes('face pull')) return ['back-deltoids', 'front-deltoids'];
-
-    // Brazos
-    if (t.includes('curl') || t.includes('bicep')) return ['biceps'];
-    if (t.includes('extension') || t.includes('tricep') || t.includes('skull') || t.includes('copa') || t.includes('patada') || t.includes('pushdown')) return ['triceps'];
-
-    // Piernas
-    if (t.includes('squat') || t.includes('sentadilla') || t.includes('leg press') || t.includes('prensa') || t.includes('lunge') || t.includes('zancada') || t.includes('step') || t.includes('extension')) return ['quadriceps', 'gluteal'];
-    if (t.includes('curl') && t.includes('leg')) return ['hamstring'];
-    if (t.includes('femoral') || t.includes('isko') || t.includes('isquio')) return ['hamstring'];
-    if (t.includes('glute') || t.includes('glúteo') || t.includes('hip') || t.includes('cadera') || t.includes('bridge') || t.includes('puente')) return ['gluteal'];
-    if (t.includes('calf') || t.includes('gemelo') || t.includes('pantorrilla')) return ['calves'];
-
-    // Abs
-    if (t.includes('abs') || t.includes('crunch') || t.includes('plank') || t.includes('plancha') || t.includes('abdominal') || t.includes('sit-up') || t.includes('leg raise')) return ['abs'];
-
-    return [];
-};
 
 const Progress = ({ darkMode }) => {
     // Extraemos allExercises del store
@@ -218,9 +101,9 @@ const Progress = ({ darkMode }) => {
         return progress;
     }, [workoutLog]);
 
-    // --- LÓGICA DE MAPA DE CALOR (CORREGIDA) ---
-    const muscleHeatmapData = useMemo(() => {
-        if (!workoutLog || workoutLog.length === 0) return {};
+    // --- LÓGICA DE MAPA DE CALOR Y RECOMENDADOR ---
+    const { muscleHeatmapData, weakPointSuggestions } = useMemo(() => {
+        if (!workoutLog || workoutLog.length === 0) return { muscleHeatmapData: {}, weakPointSuggestions: [] };
 
         const scores = {};
         const thirtyDaysAgo = new Date();
@@ -243,14 +126,14 @@ const Progress = ({ darkMode }) => {
                     const groups = exerciseData.muscle_group.split(',').map(g => g.trim().toLowerCase());
 
                     groups.forEach(g => {
-                        // Buscamos coincidencia exacta en el mapa (que ahora tiene claves en minúsculas)
+                        // Buscamos coincidencia exacta en el mapa importado
                         if (DB_TO_HEATMAP_MAP[g]) {
                             targetMuscles.push(...DB_TO_HEATMAP_MAP[g]);
                         }
                     });
                 }
 
-                // 2. Si falló la DB o no trajo músculos válidos, usamos la "adivinanza" mejorada
+                // 2. Si falló la DB o no trajo músculos válidos, usamos la "adivinanza" importada
                 if (targetMuscles.length === 0) {
                     targetMuscles = guessMuscleFromText(name);
                 }
@@ -262,7 +145,30 @@ const Progress = ({ darkMode }) => {
             });
         });
 
-        // Normalizamos
+        // --- DETECCIÓN DE PUNTOS DÉBILES (Múltiples) ---
+        // Consideramos candidatos solo los que tienen sugerencia definida
+        const candidates = Object.keys(SUGGESTED_EXERCISES).filter(k => SUGGESTED_EXERCISES[k]);
+
+        let minScore = Infinity;
+        // Buscamos el score mínimo
+        candidates.forEach(c => {
+            const s = scores[c] || 0;
+            if (s < minScore) minScore = s;
+        });
+
+        // Filtramos todos los músculos que comparten ese score mínimo
+        const weakMuscles = candidates.filter(c => (scores[c] || 0) === minScore);
+
+        // Seleccionamos hasta 3 recomendaciones aleatorias entre las más débiles
+        const suggestions = weakMuscles
+            .sort(() => 0.5 - Math.random()) // Mezclar para variedad
+            .slice(0, 3) // Limitar a 3
+            .map(muscleKey => ({
+                muscle: MUSCLE_NAMES_ES[muscleKey] || muscleKey,
+                exercise: SUGGESTED_EXERCISES[muscleKey]
+            }));
+
+        // --- NORMALIZACIÓN PARA HEATMAP ---
         const maxVal = Math.max(...Object.values(scores), 1);
         const normalized = {};
         Object.keys(scores).forEach(k => {
@@ -270,7 +176,7 @@ const Progress = ({ darkMode }) => {
             normalized[k] = Math.max(2, Math.round((scores[k] / maxVal) * 10));
         });
 
-        return normalized;
+        return { muscleHeatmapData: normalized, weakPointSuggestions: suggestions };
     }, [workoutLog, exercises]);
 
     const handleShowHistory = (exerciseName) => {
@@ -326,8 +232,41 @@ const Progress = ({ darkMode }) => {
                         ))}
                     </div>
 
+                    {/* Widgets de Recomendación (Múltiples) */}
+                    {weakPointSuggestions.length > 0 && (
+                        <div className="mt-6 w-full max-w-md space-y-3 animate-fade-in-up">
+                            {weakPointSuggestions.map((suggestion, idx) => (
+                                <div
+                                    key={idx}
+                                    className="rounded-xl p-4 flex items-start gap-4 shadow-sm backdrop-blur-sm transition-all hover:brightness-110"
+                                    style={{
+                                        // Usamos un gradiente con las variables de acento transparentes para asegurar visibilidad
+                                        background: 'linear-gradient(to bottom right, var(--color-accent-border), var(--color-accent-transparent))'
+                                    }}
+                                >
+                                    <div
+                                        className="p-2 rounded-full text-white shrink-0"
+                                        style={{ backgroundColor: 'var(--color-accent-border)' }}
+                                    >
+                                        <Lightbulb size={20} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-accent mb-1">
+                                            Punto a mejorar: {suggestion.muscle}
+                                        </h4>
+                                        <p className="text-xs text-text-secondary">
+                                            Tiene baja frecuencia en tus últimos entrenos.
+                                            <br />
+                                            Prueba añadir <strong className="text-text-primary">{suggestion.exercise}</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {/* --- EXPLICACIÓN DE INTENSIDAD --- */}
-                    <div className="text-xs text-text-secondary mt-4 text-center max-w-md bg-bg-secondary/50 p-4 rounded-xl border border-white/5 backdrop-blur-md space-y-2">
+                    <div className="text-xs text-text-secondary mt-8 text-center max-w-md bg-bg-secondary/50 p-4 rounded-xl border border-white/5 backdrop-blur-md space-y-2">
                         <p>
                             <strong>¿Cómo funciona?</strong> La intensidad es relativa a tu músculo más entrenado en los últimos 30 días (Referencia 100%).
                         </p>

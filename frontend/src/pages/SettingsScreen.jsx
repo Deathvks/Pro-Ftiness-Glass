@@ -5,7 +5,7 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug
+  Bug, Download
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -153,6 +153,26 @@ export default function SettingsScreen({
     currentColorPage * COLORS_PER_PAGE,
     (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
   );
+
+  // --- INICIO DE LA MODIFICACIÓN: Manejador de exportación ---
+  const handleExport = async (format) => {
+    try {
+      const blob = await userService.exportMyData(format);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pro-fitness-data-${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      addToast(`Datos exportados en ${format.toUpperCase()}`, 'success');
+    } catch (error) {
+      console.error(error);
+      addToast('Error al exportar datos', 'error');
+    }
+  };
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const handleToggleLoginEmail = async () => {
     if (!userProfile?.two_factor_enabled) return;
@@ -382,6 +402,30 @@ export default function SettingsScreen({
                   </div>
                 }
               />
+
+              {/* --- INICIO DE LA MODIFICACIÓN: Ítem de Exportar Datos --- */}
+              <SettingsItem
+                icon={Download}
+                title="Exportar Datos"
+                subtitle="Descarga tu historial"
+                action={
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleExport('json'); }}
+                      className="px-2 py-1 rounded-md bg-bg-secondary border border-[--glass-border] text-xs font-bold hover:bg-accent hover:text-white transition-colors"
+                    >
+                      JSON
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleExport('csv'); }}
+                      className="px-2 py-1 rounded-md bg-bg-secondary border border-[--glass-border] text-xs font-bold hover:bg-accent hover:text-white transition-colors"
+                    >
+                      CSV
+                    </button>
+                  </div>
+                }
+              />
+              {/* --- FIN DE LA MODIFICACIÓN --- */}
 
               <SettingsItem
                 icon={Cookie}

@@ -4,139 +4,16 @@ import { X } from 'lucide-react';
 import MuscleHeatmap from '../MuscleHeatmap/MuscleHeatmap';
 import GlassCard from '../GlassCard';
 
-// 1. Mapeo Robusto (Incluyendo nombres anatómicos técnicos)
-const DB_TO_HEATMAP_MAP = {
-    // Torso - Pecho
-    'chest': ['chest'],
-    'pectorals': ['chest'],
-    'pectoralis major': ['chest'], // Nombre anatómico común
-    'pectoral mayor': ['chest'],
-    'pectoral': ['chest'],
-    'pecho': ['chest'],
+// Importamos la utilidad centralizada para evitar duplicidad de código
+import { DB_TO_HEATMAP_MAP, guessMuscleFromText } from '../../utils/muscleUtils';
 
-    // Torso - Espalda
-    'back': ['upper-back', 'lower-back'],
-    'espalda': ['upper-back', 'lower-back'],
-    'lats': ['upper-back'],
-    'latissimus dorsi': ['upper-back'], // Nombre anatómico
-    'dorsales': ['upper-back'],
-    'dorsal ancho': ['upper-back'],
-    'traps': ['trapezius'],
-    'trapecios': ['trapezius'],
-    'trapezius': ['trapezius'], // Nombre anatómico
-    'lower back': ['lower-back'],
-    'lumbares': ['lower-back'],
-    'upper back': ['upper-back'],
-
-    // Torso - Hombros
-    'shoulders': ['front-deltoids', 'back-deltoids'],
-    'hombros': ['front-deltoids', 'back-deltoids'],
-    'deltoids': ['front-deltoids', 'back-deltoids'],
-    'deltoides': ['front-deltoids', 'back-deltoids'],
-    'anterior deltoid': ['front-deltoids'],
-    'deltoides anterior': ['front-deltoids'],
-
-    // Torso - Abs
-    'abs': ['abs'],
-    'abdominales': ['abs'],
-    'abdominals': ['abs'],
-    'rectus abdominis': ['abs'], // Nombre anatómico
-    'recto abdominal': ['abs'],
-    'obliques': ['obliques'],
-    'oblicuos': ['obliques'],
-    'obliquus externus abdominis': ['obliques'],
-    'core': ['abs', 'obliques'],
-
-    // Brazos
-    'arms': ['biceps', 'triceps'],
-    'brazos': ['biceps', 'triceps'],
-    'biceps': ['biceps'],
-    'bíceps': ['biceps'],
-    'biceps brachii': ['biceps'], // Nombre anatómico
-    'biceps braquial': ['biceps'],
-    'triceps': ['triceps'],
-    'tríceps': ['triceps'],
-    'triceps brachii': ['triceps'], // Nombre anatómico
-    'tríceps braquial': ['triceps'],
-    'forearms': ['forearm'],
-    'antebrazos': ['forearm'],
-    'forearm': ['forearm'],
-    'brachialis': ['biceps'], // Braquial suele agruparse visualmente cerca
-
-    // Piernas
-    'legs': ['quadriceps', 'hamstring', 'gluteal', 'calves'],
-    'piernas': ['quadriceps', 'hamstring', 'gluteal', 'calves'],
-    'quads': ['quadriceps'],
-    'cuádriceps': ['quadriceps'],
-    'quadriceps': ['quadriceps'],
-    'quadriceps femoris': ['quadriceps'], // Nombre anatómico
-    'hamstrings': ['hamstring'],
-    'isquios': ['hamstring'],
-    'isquiotibiales': ['hamstring'],
-    'femorales': ['hamstring'],
-    'biceps femoris': ['hamstring'], // Nombre anatómico
-    'glutes': ['gluteal'],
-    'glúteos': ['gluteal'],
-    'gluteal': ['gluteal'],
-    'gluteus maximus': ['gluteal'], // Nombre anatómico
-    'calves': ['calves'],
-    'gemelos': ['calves'],
-    'pantorrillas': ['calves'],
-    'gastrocnemius': ['calves'], // Nombre anatómico
-    'soleus': ['calves'], // Nombre anatómico
-    'adductors': ['adductor'],
-    'aductores': ['adductor'],
-    'abductors': ['abductors'],
-    'abductores': ['abductors'],
-
-    // Otros
-    'cardio': [],
-    'full body': ['chest', 'upper-back', 'quadriceps', 'hamstring', 'abs', 'biceps', 'triceps', 'front-deltoids'],
-    'cuerpo completo': ['chest', 'upper-back', 'quadriceps', 'hamstring', 'abs', 'biceps', 'triceps', 'front-deltoids'],
-    'other': [],
-    'otro': []
-};
-
-// Leyenda de intensidad
+// Leyenda de intensidad (Visual)
 const INTENSITY_LEVELS = [
     { label: 'Bajo', color: '#00f2ff' },
     { label: 'Medio', color: '#00ff88' },
     { label: 'Alto', color: '#ffea00' },
     { label: 'Máximo', color: '#ff0055' }
 ];
-
-// 2. Función de Adivinanza
-const guessMuscleFromText = (text) => {
-    if (!text) return [];
-    const t = text.toLowerCase();
-
-    // Pecho (Añadido 'pectoral')
-    if (t.includes('bench') || t.includes('banca') || t.includes('chest') || t.includes('pecho') || t.includes('pectoral') || t.includes('push-up') || t.includes('flexiones') || t.includes('pec deck') || t.includes('fly') || t.includes('aperturas') || t.includes('dips') || t.includes('fondos')) return ['chest'];
-
-    // Espalda
-    if (t.includes('row') || t.includes('remo') || t.includes('pull') || t.includes('jalon') || t.includes('jalón') || t.includes('dominada') || t.includes('chin') || t.includes('lat') || t.includes('dorsal') || t.includes('back') || t.includes('espalda')) return ['upper-back', 'lower-back'];
-    if (t.includes('deadlift') || t.includes('peso muerto') || t.includes('lumbar')) return ['lower-back', 'hamstring'];
-
-    // Hombros
-    if (t.includes('press') && (t.includes('shoulder') || t.includes('hombro') || t.includes('militar') || t.includes('military') || t.includes('overhead'))) return ['front-deltoids'];
-    if (t.includes('raise') || t.includes('elevacion') || t.includes('lateral') || t.includes('pajaros') || t.includes('face pull')) return ['back-deltoids', 'front-deltoids'];
-
-    // Brazos
-    if (t.includes('curl') || t.includes('bicep')) return ['biceps'];
-    if (t.includes('extension') || t.includes('tricep') || t.includes('skull') || t.includes('copa') || t.includes('patada') || t.includes('pushdown')) return ['triceps'];
-
-    // Piernas
-    if (t.includes('squat') || t.includes('sentadilla') || t.includes('leg press') || t.includes('prensa') || t.includes('lunge') || t.includes('zancada') || t.includes('step') || t.includes('extension')) return ['quadriceps', 'gluteal'];
-    if (t.includes('curl') && t.includes('leg')) return ['hamstring'];
-    if (t.includes('femoral') || t.includes('isko') || t.includes('isquio')) return ['hamstring'];
-    if (t.includes('glute') || t.includes('glúteo') || t.includes('hip') || t.includes('cadera') || t.includes('bridge') || t.includes('puente')) return ['gluteal'];
-    if (t.includes('calf') || t.includes('gemelo') || t.includes('pantorrilla')) return ['calves'];
-
-    // Abs
-    if (t.includes('abs') || t.includes('crunch') || t.includes('plank') || t.includes('plancha') || t.includes('abdominal') || t.includes('sit-up') || t.includes('leg raise')) return ['abs'];
-
-    return [];
-};
 
 const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
 
@@ -163,7 +40,7 @@ const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
                 });
             }
 
-            // 2. Fallback: Adivinar por nombre si no hay mapping válido
+            // 2. Fallback: Adivinar por nombre si no hay mapping válido usando la utilidad importada
             if (targetMuscles.length === 0) {
                 targetMuscles = guessMuscleFromText(ex.name);
             }
