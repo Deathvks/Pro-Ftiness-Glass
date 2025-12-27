@@ -260,7 +260,27 @@ const Workout = ({ timer, setView }) => {
 
     const result = await logWorkout(workoutData);
     if (result.success) {
-      addToast(result.message, 'success');
+      // --- INICIO MODIFICACIÓN: Manejo de Gamificación (XP/Warnings) ---
+      if (result.gamification) {
+        result.gamification.forEach(event => {
+          if (event.type === 'xp') {
+            addToast(`+${event.amount} XP: ${event.reason}`, 'success');
+          } else if (event.type === 'badge') {
+            addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+          } else if (event.type === 'warning') {
+            addToast(event.message, 'warning');
+          }
+        });
+      }
+      // --- FIN MODIFICACIÓN ---
+
+      // --- CAMBIO: Detectar mensaje de límite de XP para mostrar Warning ---
+      if (result.message && result.message.includes('Límite de XP')) {
+        addToast(result.message, 'warning');
+      } else {
+        addToast(result.message, 'success');
+      }
+
       setShowCalorieModal(false);
       setShowWorkoutSummaryModal(true);
     } else {

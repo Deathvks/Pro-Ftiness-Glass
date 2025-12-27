@@ -94,12 +94,15 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                 log_date: selectedDate
             });
 
+            // --- MANEJO DE GAMIFICACIÓN ---
             if (response && response.gamification) {
                 response.gamification.forEach(event => {
                     if (event.type === 'xp') {
                         addToast(`+${event.amount} XP: ${event.reason}`, 'success');
                     } else if (event.type === 'badge') {
                         addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+                    } else if (event.type === 'warning') { // NUEVO: Manejo de advertencias de límite
+                        addToast(event.message, 'warning');
                     }
                 });
             }

@@ -41,7 +41,7 @@ const ToastList = () => {
   };
 
   return (
-    // MODIFICACIÓN: z-[100] -> z-[9999] para asegurar que se vea sobre los modales
+    // Usamos z-[9999] para que aparezca sobre todos los modales
     <div className="fixed top-5 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-5 z-[9999] flex flex-col gap-3 w-full max-w-sm md:w-auto">
       {toasts.map(toast => (
         <Toast

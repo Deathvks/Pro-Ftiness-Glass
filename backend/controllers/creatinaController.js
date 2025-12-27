@@ -3,6 +3,9 @@ import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { addXp, checkStreak } from '../services/gamificationService.js';
+// --- INICIO MODIFICACIÓN: Importar createNotification ---
+import { createNotification } from '../services/notificationService.js';
+// --- FIN MODIFICACIÓN ---
 
 const { CreatinaLog } = models;
 
@@ -48,6 +51,17 @@ export const createCreatinaLog = async (req, res, next) => {
       if (xpResult.success) {
         gamificationEvents.push({ type: 'xp', amount: 5, reason: 'Creatina registrada' });
       }
+
+      // --- INICIO MODIFICACIÓN: Aviso de límite alcanzado en el 2º registro ---
+      if (count === 1) { // Si ya había 1, este es el 2º y último permitido
+        await createNotification(userId, {
+          type: 'warning',
+          title: 'Límite de XP alcanzado',
+          message: 'Has alcanzado el límite diario de registros de creatina (2/2).',
+          data: { type: 'xp_limit', reason: 'daily_creatina_limit' }
+        });
+      }
+      // --- FIN MODIFICACIÓN ---
 
       await checkStreak(userId, new Date().toISOString().split('T')[0]);
     } catch (err) {

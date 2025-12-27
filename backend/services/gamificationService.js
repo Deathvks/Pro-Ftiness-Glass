@@ -1,8 +1,10 @@
 /* backend/services/gamificationService.js */
+import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { createNotification } from './notificationService.js';
 
-const { User } = models;
+// Importamos Notification directamente para consultar el historial de pagos
+const { User, Notification } = models;
 
 export const DAILY_LOGIN_XP = 25;
 export const WEIGHT_UPDATE_XP = 10;
@@ -28,13 +30,12 @@ export const addXp = async (userId, amount, reason = 'Actividad completada') => 
         const user = await User.findByPk(userId);
         if (!user) throw new Error('Usuario no encontrado');
 
-        // Prevención de XP duplicada para Login Diario
         if (reason === 'Login Diario') {
             const today = new Date().toISOString().split('T')[0];
             const lastActivity = user.last_activity_date ? new Date(user.last_activity_date).toISOString().split('T')[0] : null;
 
             if (lastActivity === today) {
-                return { success: true, xp: user.xp, level: user.level, leveledUp: false, ignored: true };
+                return { success: true, xp: user.xp, level: user.level, leveledUp: false, ignored: true, xpAdded: 0 };
             }
             user.last_activity_date = today;
         }
@@ -56,7 +57,6 @@ export const addXp = async (userId, amount, reason = 'Actividad completada') => 
         }
 
         if (amount > 0) {
-            // CAMBIO: Añadimos 'data' con type: 'xp' y cambiamos el tipo visual a 'success'
             await createNotification(userId, {
                 type: 'success',
                 title: `+${amount} XP`,
@@ -66,10 +66,10 @@ export const addXp = async (userId, amount, reason = 'Actividad completada') => 
         }
 
         await user.save();
-        return { success: true, xp: user.xp, level: user.level, leveledUp };
+        return { success: true, xp: user.xp, level: user.level, leveledUp, xpAdded: amount };
     } catch (error) {
         console.error('Error en addXp:', error);
-        return { success: false, error: error.message };
+        return { success: false, error: error.message, xpAdded: 0 };
     }
 };
 
@@ -136,9 +136,7 @@ export const checkStreak = async (userId, todayDateStr) => {
                 user.streak = 1;
             }
 
-            // IMPORTANTE: Guardar la racha antes de llamar a addXp
             await user.save();
-
             await addXp(userId, DAILY_LOGIN_XP, 'Login Diario');
 
             return { success: true, streak: user.streak, updated: true, xpAwarded: DAILY_LOGIN_XP, reason: 'Login Diario' };
@@ -151,10 +149,65 @@ export const checkStreak = async (userId, todayDateStr) => {
     }
 };
 
+export const processWorkoutGamification = async (userId, workoutDate) => {
+    let xpResult = { xpAdded: 0 };
+    try {
+        const startOfDay = new Date(workoutDate);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(workoutDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // CAMBIO IMPORTANTE: Contamos NOTIFICACIONES DE XP de hoy en lugar de entrenamientos activos.
+        // Esto evita el truco de borrar y re-subir entrenamientos para ganar XP infinita.
+        const notificationsToday = await Notification.findAll({
+            where: {
+                user_id: userId,
+                created_at: {
+                    [Op.gte]: startOfDay,
+                    [Op.lte]: endOfDay
+                }
+            },
+            attributes: ['data'] // Solo traemos la data para filtrar en memoria (más seguro entre bases de datos)
+        });
+
+        // Filtramos las notificaciones que sean de tipo XP y motivo 'Entrenamiento completado'
+        const workoutsPaidTodayCount = notificationsToday.filter(n => {
+            let data = n.data;
+            if (typeof data === 'string') {
+                try { data = JSON.parse(data); } catch { return false; }
+            }
+            return data && data.type === 'xp' && data.reason === 'Entrenamiento completado';
+        }).length;
+
+        if (workoutsPaidTodayCount < 2) {
+            xpResult = await addXp(userId, WORKOUT_COMPLETION_XP, 'Entrenamiento completado');
+        } else {
+            // Si ya pagamos 2 veces o más, avisamos del límite
+            await createNotification(userId, {
+                type: 'warning',
+                title: 'Límite de XP alcanzado',
+                message: 'Has alcanzado el límite diario de XP por entrenamiento (2/2).',
+                data: { type: 'xp_limit', reason: 'daily_workout_limit' }
+            });
+        }
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        await checkStreak(userId, todayStr);
+        await unlockBadge(userId, 'first_workout');
+
+        return xpResult;
+    } catch (error) {
+        console.error('Error procesando gamificación de workout:', error);
+        return { xpAdded: 0, error: error.message };
+    }
+};
+
 export default {
     addXp,
     unlockBadge,
     checkStreak,
+    processWorkoutGamification,
     DAILY_LOGIN_XP,
     WEIGHT_UPDATE_XP,
     WORKOUT_COMPLETION_XP,

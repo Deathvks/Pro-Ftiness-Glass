@@ -2,6 +2,8 @@
   "Abs": "Abdominales",
   "Arms": "Brazos",
   "Back": "Espalda",
+  "Upper Back": "Espalda Alta",
+  "Lower Back": "Lumbares",
   "Biceps": "Bíceps",
   "Calves": "Gemelos",
   "Cardio": "Cardio",
@@ -32,5 +34,9 @@
   "Serratus anterior": "Serrato anterior",
   "Soleus": "Sóleo",
   "Trapezius": "Trapecio",
-  "Triceps brachii": "Tríceps"
+  "Triceps brachii": "Tríceps",
+  "Obliques": "Oblicuos",
+  "Adductors": "Aductores",
+  "Abductors": "Abductores",
+  "Neck": "Cuello"
 }

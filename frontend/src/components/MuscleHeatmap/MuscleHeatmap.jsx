@@ -4,6 +4,7 @@ import Model from 'react-body-highlighter';
 import './MuscleHeatmap.css';
 
 // Diccionario de traducción de IDs técnicos a Nombres Visuales
+// AJUSTADO: Coincide con tu exercise_muscles.json
 const MUSCLE_NAMES = {
     'chest': 'Pecho',
     'upper-back': 'Espalda Alta',
@@ -16,7 +17,7 @@ const MUSCLE_NAMES = {
     'triceps': 'Tríceps',
     'forearm': 'Antebrazos',
     'quadriceps': 'Cuádriceps',
-    'hamstring': 'Femorales',
+    'hamstring': 'Isquiotibiales', // Ajustado a tu JSON
     'gluteal': 'Glúteos',
     'calves': 'Gemelos',
     'trapezius': 'Trapecios',
@@ -55,14 +56,16 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
 
     // Manejador de clicks en músculos
     const handleMuscleClick = ({ muscle, data }) => {
-        // Marcamos que ha sido un click en músculo
         isMuscleClick.current = true;
 
-        // Reseteamos el flag en el siguiente ciclo para permitir futuros clicks de fondo
+        // Reseteamos el flag para permitir futuros clicks de fondo
         setTimeout(() => { isMuscleClick.current = false; }, 100);
 
+        // Usamos el nombre del mapa o el fallback
         const label = data?.name || MUSCLE_NAMES[muscle] || muscle;
         setSelectedMuscleLabel(label);
+
+        // Ocultar etiqueta a los 2 segundos
         setTimeout(() => setSelectedMuscleLabel(null), 2000);
     };
 
@@ -77,7 +80,7 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
     return (
         <div
             className={`heatmap-container relative group cursor-pointer transition-all duration-300 hover:border-cyan-500/30 select-none ${!darkMode ? 'light-mode' : ''}`}
-            onClick={handleContainerClick} // El click en el fondo gira el modelo
+            onClick={handleContainerClick}
             title="Haz click en un músculo para ver su nombre, o en el fondo para girar"
         >
             {/* Etiqueta flotante (Frente / Espalda) */}
@@ -93,7 +96,6 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
             {/* --- ETIQUETA POPUP DE MÚSCULO --- */}
             {selectedMuscleLabel && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none animate-[scale-in_0.1s_ease-out]">
-                    {/* AÑADIDO: 'whitespace-nowrap' para forzar 1 sola línea */}
                     <div className="bg-black/80 backdrop-blur-md text-white text-sm font-bold px-4 py-2 rounded-full border border-white/10 shadow-xl whitespace-nowrap">
                         {selectedMuscleLabel}
                     </div>
@@ -110,7 +112,7 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
                         contentStyle={{ paddingTop: '0.5rem' }}
                         bodyColor={darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(50, 50, 50, 0.1)"}
                         highlightedColors={colors}
-                        onClick={handleMuscleClick} // Detecta click en músculos
+                        onClick={handleMuscleClick}
                     />
                 </div>
             </div>

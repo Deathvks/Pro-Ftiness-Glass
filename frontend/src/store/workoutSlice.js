@@ -1,20 +1,18 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
 import { formatDateForQuery } from '../utils/dateUtils';
-import { v4 as uuidv4 } from 'uuid'; // --- AÑADIDO ---
+import { v4 as uuidv4 } from 'uuid';
 
 // --- HELPER: Buscar último rendimiento ---
 const findLastPerformance = (workoutLog, exerciseName) => {
   if (!workoutLog || !Array.isArray(workoutLog) || !exerciseName) return null;
 
-  // Filtramos los logs que contienen el ejercicio
   const relevantLogs = workoutLog.filter(log =>
     log.details?.some(d => d.exerciseName === exerciseName)
   );
 
   if (relevantLogs.length === 0) return null;
 
-  // Ordenamos por fecha descendente (el más reciente primero)
   relevantLogs.sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date));
 
   const lastLog = relevantLogs[0];
@@ -132,7 +130,6 @@ export const createWorkoutSlice = (set, get) => ({
   ...getWorkoutStateFromStorage(),
   ...getRestTimerStateFromStorage(),
 
-  // --- NUEVA ACCIÓN: Obtener rutinas completadas hoy ---
   fetchTodaysCompletedRoutines: async () => {
     try {
       const todayQuery = formatDateForQuery(new Date());
@@ -389,9 +386,7 @@ export const createWorkoutSlice = (set, get) => ({
         weight_kg: '',
         is_dropset: false,
       })),
-      // --- MODIFICACIÓN: Usamos un UUID temporal para evitar colisiones de keys en React ---
       id: uuidv4(),
-      // --- FIN MODIFICACIÓN ---
       exercise_list_id: newExercise.id,
       muscle_group: newExercise.muscle_group,
       last_performance: lastPerformance,
@@ -551,7 +546,10 @@ export const createWorkoutSlice = (set, get) => ({
         }
       }
 
-      if (get().addXp) get().addXp(50);
+      // 1. Actualizar XP global si se ganó algo
+      if (get().addXp && responseData.xpAdded > 0) {
+        get().addXp(responseData.xpAdded);
+      }
 
       const todayStr = formatDateForQuery(new Date());
       if (get().checkStreak) get().checkStreak(todayStr);
@@ -561,6 +559,15 @@ export const createWorkoutSlice = (set, get) => ({
         get().showPRNotification(responseData.newPRs);
         get()._showLocalPRNotification(responseData.newPRs);
       }
+
+      // 2. DETECTAR LÍMITE DE XP: Si xpAdded viene en la respuesta y es 0, enviamos el mensaje de advertencia.
+      if (responseData.xpAdded !== undefined && responseData.xpAdded === 0) {
+        return {
+          success: true,
+          message: 'Límite de XP alcanzado. Has alcanzado el límite diario de XP por entrenamiento (2/2).'
+        };
+      }
+
       return { success: true, message: 'Entrenamiento guardado.' };
     } catch (error) {
       return {

@@ -5,40 +5,37 @@ import { useToast } from '../../hooks/useToast';
 import i18n from '../../i18n';
 import CustomSelect from '../CustomSelect';
 
-// Esta lista de CLAVES (keys) está bien.
+// Lista de claves para el selector (coincide con el Heatmap)
 const MUSCLE_GROUP_KEYS = [
-  'Other',
-  'Abs',
-  'Arms',
-  'Back',
-  'Biceps',
-  'Calves',
-  'Cardio',
-  'Chest',
-  'Shoulders',
-  'Forearms',
-  'Glutes',
-  'Hamstrings',
-  'Lats',
-  'Legs',
-  'Quads',
-  'Traps',
-  'Triceps',
-  'Full Body',
+  'Chest',          // Pecho
+  'Back',           // Espalda (General)
+  'Upper Back',     // Espalda Alta
+  'Lower Back',     // Lumbares
+  'Lats',           // Dorsales
+  'Traps',          // Trapecios
+  'Shoulders',      // Hombros
+  'Abs',            // Abdominales
+  'Obliques',       // Oblicuos
+  'Biceps',         // Bíceps
+  'Triceps',        // Tríceps
+  'Forearms',       // Antebrazos
+  'Quads',          // Cuádriceps
+  'Hamstrings',     // Femorales/Isquios
+  'Glutes',         // Glúteos
+  'Calves',         // Gemelos
+  'Adductors',      // Aductores
+  'Abductors',      // Abductores
+  'Neck',           // Cuello
+  'Cardio',         // Cardio
+  'Full Body',      // Cuerpo completo
+  'Other',          // Otro
 ];
 
-/**
- * Un componente que muestra el grupo muscular.
- * Si 'isManual' es true, muestra un CustomSelect para editarlo.
- * Si 'isManual' es false, muestra un <p> estático.
- */
 const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
-  // Pedimos los namespaces (esto estaba bien)
   const { t } = useTranslation(['exercise_muscles', 'exercise_ui']);
   const { addToast } = useToast();
 
   const handleSelectChange = (newValue) => {
-    // 'newValue' será el 'value' de la opción (la CLAVE, ej: "Other")
     onSave(newValue);
     addToast(
       i18n.t(
@@ -52,32 +49,37 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
   const commonStyles = 'w-full capitalize text-center sm:text-left';
   const wrapperStyles = 'mt-1 w-full';
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Mapeamos los valores "antiguos" o "incorrectos" (como 'Otro', 'other', o 'N/A')
-  // de vuelta al 'key' canónico ('Other') para que el <select> lo reconozca.
-  let currentValue;
-  if (
-    initialValue === 'Otro' ||
-    initialValue === 'other' ||
-    initialValue === 'N/A'
-  ) {
-    currentValue = 'Other';
-  } else {
-    currentValue = initialValue; // Asume que es un key válido (ej: 'Chest', 'Back', 'Other')
+  // --- LÓGICA DE NORMALIZACIÓN MEJORADA ---
+  // Convertimos nombres técnicos o antiguos a las claves del selector
+  let currentValue = initialValue;
+
+  if (initialValue) {
+    const valLower = initialValue.toLowerCase();
+
+    // Mapeo de nombres técnicos a grupos generales
+    if (valLower === 'pectoralis major' || valLower === 'pectoral mayor') currentValue = 'Chest';
+    else if (valLower === 'biceps brachii' || valLower === 'bíceps braquial') currentValue = 'Biceps';
+    else if (valLower === 'triceps brachii' || valLower === 'tríceps braquial') currentValue = 'Triceps';
+    else if (valLower === 'latissimus dorsi' || valLower === 'dorsal ancho') currentValue = 'Lats';
+    else if (valLower === 'trapezius' || valLower === 'trapecio') currentValue = 'Traps';
+    else if (valLower === 'quadriceps femoris' || valLower === 'cuádriceps') currentValue = 'Quads';
+    else if (valLower === 'rectus abdominis' || valLower === 'recto abdominal') currentValue = 'Abs';
+    else if (valLower === 'gluteus maximus' || valLower === 'glúteo mayor') currentValue = 'Glutes';
+    else if (valLower === 'biceps femoris' || valLower === 'femoral') currentValue = 'Hamstrings';
+    // Mapeo de valores antiguos
+    else if (valLower === 'otro' || valLower === 'other' || valLower === 'n/a') currentValue = 'Other';
   }
-  // --- FIN DE LA MODIFICACIÓN ---
 
   if (isManual) {
     return (
       <div className={wrapperStyles}>
         <CustomSelect
-          // Usamos el 'currentValue' corregido (ahora será "Other")
           value={currentValue}
           onChange={handleSelectChange}
-          // Ahora 'key' (ej: "Chest") coincide con el JSON
           options={MUSCLE_GROUP_KEYS.map((key) => ({
-            value: key, // El valor es el key (ej: "Other")
-            label: t(key, { ns: 'exercise_muscles', defaultValue: key }), // La etiqueta es la traducción (ej: "Otro")
+            value: key,
+            // Traduce la clave (ej: "Lower Back" -> "Lumbares")
+            label: t(key, { ns: 'exercise_muscles', defaultValue: key }),
           }))}
           placeholder={t('muscle_group_placeholder', {
             ns: 'exercise_ui',
@@ -93,7 +95,6 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
   return (
     <div className={`${wrapperStyles} px-1 sm:px-0`}>
       <p className={`${commonStyles} truncate p-0 text-text-secondary`}>
-        {/* Usamos 'currentValue' aquí también por seguridad */}
         {t(currentValue, { ns: 'exercise_muscles', defaultValue: currentValue })}
       </p>
     </div>
