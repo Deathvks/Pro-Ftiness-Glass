@@ -1,14 +1,13 @@
 /* frontend/src/components/Workout/WorkoutExerciseList.jsx */
 import React from 'react';
-import { Link2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../GlassCard';
 import WorkoutExerciseCard from './WorkoutExerciseCard';
+import WorkoutSupersetCard from './WorkoutSupersetCard';
 
 /**
  * Componente que renderiza la lista de grupos de ejercicios (superseries).
- * Itera sobre los grupos y delega la renderización de cada ejercicio
- * a WorkoutExerciseCard.
+ * Decide si renderizar una tarjeta de superserie unificada o tarjetas individuales.
  */
 const WorkoutExerciseList = ({
   exerciseGroups,
@@ -19,13 +18,12 @@ const WorkoutExerciseList = ({
   // Nueva prop para pasar hacia abajo
   onShowHistory,
 
-  // --- Props para pasar a WorkoutExerciseCard ---
-  // Estas se pasarán "hacia abajo"
+  // --- Props para pasar a los hijos ---
   baseInputClasses,
   onUpdateSet,
   onAddDropset,
   onRemoveDropset,
-  onToggleWarmup, // <--- NUEVA PROP RECIBIDA
+  onToggleWarmup,
   onOpenRestModal,
   onDisabledInputClick,
   onDisabledButtonClick,
@@ -35,62 +33,73 @@ const WorkoutExerciseList = ({
 
   return (
     <div className="flex flex-col gap-6">
-      {exerciseGroups.map((group, groupIndex) => (
-        <GlassCard
-          key={groupIndex}
-          className={`p-1 rounded-lg ${group.length > 1 ? 'bg-accent/10 border border-accent/20' : ''
-            }`}
-        >
-          {group.length > 1 && (
-            <div className="flex items-center gap-2 p-3 text-accent font-semibold">
-              <Link2 size={16} />
-              <span>Superserie</span>
-            </div>
-          )}
-          <div className="flex flex-col gap-4">
-            {group.map((exercise) => {
-              // BUGFIX: Usar 'exercise.id' (que es el routine_exercise_id)
-              // para encontrar el índice real en la lista plana del store.
-              const actualExIndex = activeWorkoutExercises.findIndex(
-                (ex) => ex.id === exercise.id
-              );
+      {exerciseGroups.map((group, groupIndex) => {
+        // --- CASO SUPERSERIE (Más de 1 ejercicio) ---
+        if (group.length > 1) {
+          return (
+            <WorkoutSupersetCard
+              key={`group-${groupIndex}`}
+              group={group}
+              allExercises={activeWorkoutExercises}
+              t={t}
+              hasWorkoutStarted={hasWorkoutStarted}
+              onSetSelectedExercise={onSetSelectedExercise}
+              onSetExerciseToReplace={onSetExerciseToReplace}
+              onUpdateSet={onUpdateSet}
+              onAddDropset={onAddDropset}
+              onRemoveDropset={onRemoveDropset}
+              onToggleWarmup={onToggleWarmup}
+              onOpenRestModal={onOpenRestModal}
+              onDisabledInputClick={onDisabledInputClick}
+              onDisabledButtonClick={onDisabledButtonClick}
+              baseInputClasses={baseInputClasses}
+              onShowHistory={onShowHistory}
+            />
+          );
+        }
 
-              // Fallback
-              if (actualExIndex === -1) {
-                console.error(
-                  'Error: No se encontró el ejercicio en activeWorkout',
-                  exercise
-                );
-                return null;
-              }
+        // --- CASO EJERCICIO INDIVIDUAL ---
+        // Si el grupo solo tiene 1, extraemos ese ejercicio
+        const exercise = group[0];
 
-              return (
-                <WorkoutExerciseCard
-                  key={actualExIndex}
-                  t={t}
-                  exercise={exercise}
-                  actualExIndex={actualExIndex}
-                  hasWorkoutStarted={hasWorkoutStarted}
-                  onSetSelectedExercise={onSetSelectedExercise}
-                  onSetExerciseToReplace={onSetExerciseToReplace}
-                  onShowHistory={onShowHistory} // Pasamos la función
+        // Buscamos el índice real en la lista plana para las actualizaciones del store
+        const actualExIndex = activeWorkoutExercises.findIndex(
+          (ex) => ex.id === exercise.id
+        );
 
-                  // Props para el grid (prop-drilling)
-                  baseInputClasses={baseInputClasses}
-                  onUpdateSet={onUpdateSet}
-                  onAddDropset={onAddDropset}
-                  onRemoveDropset={onRemoveDropset}
-                  onToggleWarmup={onToggleWarmup} // <--- SE PASA AL CARD
-                  onOpenRestModal={onOpenRestModal}
-                  onDisabledInputClick={onDisabledInputClick}
-                  onDisabledButtonClick={onDisabledButtonClick}
-                  normalizeDecimalInput={normalizeDecimalInput}
-                />
-              );
-            })}
-          </div>
-        </GlassCard>
-      ))}
+        // Fallback de seguridad
+        if (actualExIndex === -1) {
+          console.error(
+            'Error: No se encontró el ejercicio en activeWorkout',
+            exercise
+          );
+          return null;
+        }
+
+        return (
+          <GlassCard key={actualExIndex} className="p-1 rounded-lg">
+            <WorkoutExerciseCard
+              t={t}
+              exercise={exercise}
+              actualExIndex={actualExIndex}
+              hasWorkoutStarted={hasWorkoutStarted}
+              onSetSelectedExercise={onSetSelectedExercise}
+              onSetExerciseToReplace={onSetExerciseToReplace}
+              onShowHistory={onShowHistory}
+              // Props para el grid (prop-drilling)
+              baseInputClasses={baseInputClasses}
+              onUpdateSet={onUpdateSet}
+              onAddDropset={onAddDropset}
+              onRemoveDropset={onRemoveDropset}
+              onToggleWarmup={onToggleWarmup}
+              onOpenRestModal={onOpenRestModal}
+              onDisabledInputClick={onDisabledInputClick}
+              onDisabledButtonClick={onDisabledButtonClick}
+              normalizeDecimalInput={normalizeDecimalInput}
+            />
+          </GlassCard>
+        );
+      })}
     </div>
   );
 };

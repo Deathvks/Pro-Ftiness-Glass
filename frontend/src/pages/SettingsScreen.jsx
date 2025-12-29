@@ -5,7 +5,7 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download
+  Bug, Download, Vibrate
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -112,10 +112,18 @@ export default function SettingsScreen({
   setView,
   onLogoutClick
 }) {
-  const { userProfile, resetCookieConsent, setUserProfile } = useAppStore(state => ({
+  const {
+    userProfile,
+    resetCookieConsent,
+    setUserProfile,
+    hapticsEnabled,
+    setHapticsEnabled
+  } = useAppStore(state => ({
     userProfile: state.userProfile,
     resetCookieConsent: state.resetCookieConsent,
-    setUserProfile: state.setUserProfile
+    setUserProfile: state.setUserProfile,
+    hapticsEnabled: state.hapticsEnabled,
+    setHapticsEnabled: state.setHapticsEnabled
   }));
 
   const { addToast } = useToast();
@@ -123,15 +131,11 @@ export default function SettingsScreen({
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
 
-  // MODIFICACIÓN: Detecta si existe la bandera 'hasContent' en el borrador de localStorage
-  // Si existe, abrimos el modal automáticamente. El contenido real se cargará desde IndexedDB dentro del modal.
   const [showBugModal, setShowBugModal] = useState(() => {
     try {
       const draftStr = localStorage.getItem('bug_report_draft');
       if (!draftStr) return false;
       const draft = JSON.parse(draftStr);
-      // La nueva estructura guarda { hasContent: true, ... }
-      // Mantenemos compatibilidad con la estructura vieja por si acaso
       return !!(draft.hasContent || draft.category || draft.subject?.trim() || draft.description?.trim());
     } catch {
       return false;
@@ -154,7 +158,6 @@ export default function SettingsScreen({
     (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
   );
 
-  // --- INICIO DE LA MODIFICACIÓN: Manejador de exportación ---
   const handleExport = async (format) => {
     try {
       const blob = await userService.exportMyData(format);
@@ -172,7 +175,6 @@ export default function SettingsScreen({
       addToast('Error al exportar datos', 'error');
     }
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const handleToggleLoginEmail = async () => {
     if (!userProfile?.two_factor_enabled) return;
@@ -197,7 +199,6 @@ export default function SettingsScreen({
     setIsUpdatingPrivacy(true);
     const newValue = !userProfile?.[key];
 
-    // Optimistic Update
     const prevValue = userProfile?.[key];
     setUserProfile({ ...userProfile, [key]: newValue });
 
@@ -304,6 +305,22 @@ export default function SettingsScreen({
                 ))}
               </div>
             </div>
+
+            {/* --- Switch Vibración con Toast --- */}
+            <div className="mt-6 pt-4 border-t border-[--glass-border]">
+              <SwitchItem
+                icon={Vibrate}
+                title="Vibración"
+                subtitle="Feedback táctil en acciones"
+                checked={hapticsEnabled}
+                onChange={() => {
+                  const newValue = !hapticsEnabled;
+                  setHapticsEnabled(newValue);
+                  addToast(newValue ? 'Vibración activada' : 'Vibración desactivada', 'success');
+                }}
+              />
+            </div>
+
           </SettingsCard>
 
           <SettingsCard>
@@ -403,7 +420,6 @@ export default function SettingsScreen({
                 }
               />
 
-              {/* --- INICIO DE LA MODIFICACIÓN: Ítem de Exportar Datos --- */}
               <SettingsItem
                 icon={Download}
                 title="Exportar Datos"
@@ -425,7 +441,6 @@ export default function SettingsScreen({
                   </div>
                 }
               />
-              {/* --- FIN DE LA MODIFICACIÓN --- */}
 
               <SettingsItem
                 icon={Cookie}

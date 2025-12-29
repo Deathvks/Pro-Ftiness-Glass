@@ -65,7 +65,7 @@ const XPGuideModal = ({ onClose }) => {
                                         <span className="text-xs text-text-muted">Finaliza una rutina completa</span>
                                     </div>
                                 </div>
-                                <span className={dailyXpClass}>+50 XP</span>
+                                <span className={dailyXpClass}>+50 XP (Máx 2/día)</span>
                             </div>
 
                             <div className={dailyCardClass}>
@@ -78,7 +78,7 @@ const XPGuideModal = ({ onClose }) => {
                                         <span className="text-xs text-text-muted">Diseña un nuevo plan personalizado</span>
                                     </div>
                                 </div>
-                                <span className={dailyXpClass}>+20 XP</span>
+                                <span className={dailyXpClass}>+20 XP (1/día)</span>
                             </div>
 
                             <div className={dailyCardClass}>
@@ -91,7 +91,7 @@ const XPGuideModal = ({ onClose }) => {
                                         <span className="text-xs text-text-muted">Actualiza tu peso corporal</span>
                                     </div>
                                 </div>
-                                <span className={dailyXpClass}>+10 XP</span>
+                                <span className={dailyXpClass}>+10 XP (1/día)</span>
                             </div>
 
                             <div className={dailyCardClass}>
@@ -104,7 +104,7 @@ const XPGuideModal = ({ onClose }) => {
                                         <span className="text-xs text-text-muted">Registra cualquier alimento</span>
                                     </div>
                                 </div>
-                                <span className={dailyXpClass}>+5 XP</span>
+                                <span className={dailyXpClass}>+5 XP (Máx 5/día)</span>
                             </div>
 
                             <div className={dailyCardClass}>
@@ -117,7 +117,7 @@ const XPGuideModal = ({ onClose }) => {
                                         <span className="text-xs text-text-muted">Alcanza tu objetivo diario</span>
                                     </div>
                                 </div>
-                                <span className={dailyXpClass}>+30 XP</span>
+                                <span className={dailyXpClass}>+30 XP (1/día)</span>
                             </div>
 
                             <div className={dailyCardClass}>
@@ -146,7 +146,7 @@ const XPGuideModal = ({ onClose }) => {
                                         <span className="text-xs text-text-muted">Marca tu toma diaria</span>
                                     </div>
                                 </div>
-                                <span className={dailyXpClass}>+5 XP</span>
+                                <span className={dailyXpClass}>+5 XP (1/día)</span>
                             </div>
                         </div>
                     </section>

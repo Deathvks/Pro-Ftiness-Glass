@@ -1,6 +1,7 @@
 /* frontend/src/components/Workout/WorkoutSetGrid.jsx */
 import React from 'react';
 import { CornerDownRight, X, Clock, Flame } from 'lucide-react';
+import { triggerHaptic, HapticType } from '../../utils/haptics'; // Importamos la utilidad
 
 /**
  * Normaliza el valor de un input para que sea un decimal válido.
@@ -46,7 +47,7 @@ const WorkoutSetGrid = ({
   onUpdateSet,
   onAddDropset,
   onRemoveDropset,
-  onToggleWarmup, // <--- NUEVA PROP: Para manejar el click en calentamiento
+  onToggleWarmup,
   onOpenRestModal,
   onDisabledInputClick,
   onDisabledButtonClick,
@@ -73,11 +74,14 @@ const WorkoutSetGrid = ({
       {/* --- Filas de Series --- */}
       {setsDone.map((set, setIndex) => (
         <div key={setIndex} className="contents">
-          {/* --- CAMBIO: Ahora es interactivo (onClick) --- */}
+          {/* --- Toggle Calentamiento --- */}
           <span
             onClick={
               hasWorkoutStarted
-                ? () => onToggleWarmup && onToggleWarmup(actualExIndex, setIndex)
+                ? () => {
+                  triggerHaptic(HapticType.selection);
+                  if (onToggleWarmup) onToggleWarmup(actualExIndex, setIndex);
+                }
                 : onDisabledButtonClick
             }
             className={`
@@ -142,7 +146,10 @@ const WorkoutSetGrid = ({
             <button
               onClick={
                 hasWorkoutStarted
-                  ? () => onRemoveDropset(actualExIndex, setIndex)
+                  ? () => {
+                    triggerHaptic(HapticType.selection);
+                    onRemoveDropset(actualExIndex, setIndex);
+                  }
                   : onDisabledButtonClick
               }
               className={`p-3 rounded-md border transition h-full flex items-center justify-center ${hasWorkoutStarted
@@ -162,7 +169,10 @@ const WorkoutSetGrid = ({
             <button
               onClick={
                 hasWorkoutStarted
-                  ? () => onAddDropset(actualExIndex, setIndex)
+                  ? () => {
+                    triggerHaptic(HapticType.selection);
+                    onAddDropset(actualExIndex, setIndex);
+                  }
                   : onDisabledButtonClick
               }
               className={`p-3 rounded-md border transition h-full flex items-center justify-center ${hasWorkoutStarted
@@ -184,7 +194,10 @@ const WorkoutSetGrid = ({
           <button
             onClick={
               hasWorkoutStarted
-                ? () => onOpenRestModal(restSeconds)
+                ? () => {
+                  triggerHaptic(HapticType.selection);
+                  onOpenRestModal(restSeconds);
+                }
                 : onDisabledButtonClick
             }
             className={`p-3 rounded-md border transition h-full flex items-center justify-center ${hasWorkoutStarted

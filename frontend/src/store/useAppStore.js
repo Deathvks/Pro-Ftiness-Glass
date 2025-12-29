@@ -6,9 +6,7 @@ import { createWorkoutSlice } from './workoutSlice';
 import { createNotificationSlice } from './notificationSlice';
 import { createGamificationSlice } from './gamificationSlice';
 import { createSocialSlice } from './socialSlice';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { createSyncSlice } from './syncSlice';
-// --- FIN DE LA MODIFICACIÓN ---
 
 const useAppStore = create((set, get) => ({
     ...createAuthSlice(set, get),
@@ -17,9 +15,28 @@ const useAppStore = create((set, get) => ({
     ...createNotificationSlice(set, get),
     ...createGamificationSlice(set, get),
     ...createSocialSlice(set, get),
-    // --- INICIO DE LA MODIFICACIÓN ---
     ...createSyncSlice(set, get),
-    // --- FIN DE LA MODIFICACIÓN ---
+
+    // --- Configuración Global: Vibración (Haptics) ---
+    // Inicializamos leyendo de localStorage (por defecto true)
+    hapticsEnabled: (() => {
+        try {
+            const stored = localStorage.getItem('hapticsEnabled');
+            return stored === null ? true : JSON.parse(stored);
+        } catch (e) {
+            return true;
+        }
+    })(),
+
+    // Acción para cambiar el estado y persistirlo
+    setHapticsEnabled: (enabled) => {
+        try {
+            localStorage.setItem('hapticsEnabled', JSON.stringify(enabled));
+        } catch (e) {
+            console.warn('Error saving haptics preference', e);
+        }
+        set({ hapticsEnabled: enabled });
+    },
 }));
 
 export default useAppStore;

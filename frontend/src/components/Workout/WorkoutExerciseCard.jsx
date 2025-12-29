@@ -5,10 +5,6 @@ import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
 import useAppStore from '../../store/useAppStore';
 
-/**
- * Muestra la tarjeta para un único ejercicio dentro del entrenamiento.
- * Incluye la cabecera (media, título, historial) y la cuadrícula de series.
- */
 const WorkoutExerciseCard = ({
   t,
   exercise,
@@ -40,7 +36,6 @@ const WorkoutExerciseCard = ({
     setWorkingWeight('');
   };
 
-  // Helper para formatear el historial
   const formatLastPerformance = (perf) => {
     if (!perf || !perf.sets || perf.sets.length === 0) return 'Sin datos';
     const validSets = perf.sets.filter(s => s.weight_kg > 0 && s.reps > 0);
@@ -50,7 +45,6 @@ const WorkoutExerciseCard = ({
 
   return (
     <div className="p-4 relative">
-      {/* Media del Ejercicio */}
       <button
         onClick={() => onSetSelectedExercise(exercise)}
         className="w-full text-left transition-transform active:scale-[0.99] group"
@@ -58,12 +52,10 @@ const WorkoutExerciseCard = ({
       >
         <ExerciseMedia
           details={exercise.exercise_details}
-          // Añadido 'border border-glass-border' para delimitar el media en fondos oscuros (OLED)
           className="w-full lg:max-w-lg mx-auto mb-4 transition rounded-xl overflow-hidden relative shadow-sm border border-glass-border"
         />
       </button>
 
-      {/* --- NUEVA ESTRUCTURA: Título Arriba (Ancho Completo) --- */}
       <button
         onClick={() => onSetSelectedExercise(exercise)}
         className="w-full text-left mb-2 group"
@@ -73,10 +65,7 @@ const WorkoutExerciseCard = ({
         </h3>
       </button>
 
-      {/* --- Fila Inferior: Info (Izq) y Botones (Der) --- */}
       <div className="flex items-end justify-between gap-3 mb-4">
-
-        {/* Info del Ejercicio + Historial */}
         <button
           onClick={() => onSetSelectedExercise(exercise)}
           className="flex-1 min-w-0 text-left group flex flex-col gap-1"
@@ -86,7 +75,6 @@ const WorkoutExerciseCard = ({
             {exercise.sets} series × {exercise.reps} reps
           </span>
 
-          {/* Visualización del Historial "En Vivo" */}
           {exercise.last_performance && (
             <div className="flex items-center gap-1.5 text-xs text-text-muted/80 animate-fade-in">
               <History size={12} className="text-accent/70 shrink-0" />
@@ -100,9 +88,7 @@ const WorkoutExerciseCard = ({
           )}
         </button>
 
-        {/* Botones de Acción */}
         <div className="flex gap-2 items-center shrink-0">
-          {/* Botón de Historial */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -116,7 +102,6 @@ const WorkoutExerciseCard = ({
             <History size={18} />
           </button>
 
-          {/* Generador de Calentamiento */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -132,7 +117,6 @@ const WorkoutExerciseCard = ({
             <Flame size={18} />
           </button>
 
-          {/* Reemplazar Ejercicio */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -150,7 +134,6 @@ const WorkoutExerciseCard = ({
         </div>
       </div>
 
-      {/* Modal Inline: Input de Calentamiento */}
       {showWarmupInput && (
         <div
           className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm rounded-xl animate-fade-in"

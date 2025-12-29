@@ -4,15 +4,16 @@ import { Helmet } from 'react-helmet-async';
 import {
     Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
     Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle,
-    ArrowUp, ArrowDown, Minus, ChevronRight, Trophy, Check, Crown,
-    Info
+    ArrowUp, ArrowDown, Minus, ChevronRight, Trophy, Crown,
+    Info, Check
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
 import { isSameDay } from '../utils/helpers';
 import useAppStore from '../store/useAppStore';
-import { getXpRequiredForLevel } from '../store/gamificationSlice';
+// --- MODIFICACIÓN: Importamos getLevelProgress ---
+import { getXpRequiredForLevel, getLevelProgress } from '../store/gamificationSlice';
 import CircularProgress from '../components/CircularProgress';
 import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
@@ -92,22 +93,21 @@ const Dashboard = ({ setView }) => {
         }
     }, [checkStreak]);
 
-    // --- Gamificación ---
+    // --- Gamificación (Lógica Actualizada) ---
     const levelData = useMemo(() => {
         const level = gamification?.level || 1;
         const xp = gamification?.xp || 0;
         const streak = gamification?.streak || 0;
-        const currentStart = getXpRequiredForLevel(level);
-        const nextStart = getXpRequiredForLevel(level + 1);
-        const needed = nextStart - currentStart;
-        const progress = xp - currentStart;
+
+        // Usamos el nuevo helper para obtener totales absolutos
+        const { currentXp, nextLevelXp, progressPercent } = getLevelProgress(xp, level);
 
         return {
             level,
             streak,
-            percentage: Math.min(100, Math.max(0, (progress / needed) * 100)),
-            progress,
-            needed
+            percentage: progressPercent, // Porcentaje calculado sobre el total del nivel siguiente
+            progress: currentXp,         // XP Total (ej: 1250)
+            needed: nextLevelXp          // Meta Total (ej: 2000)
         };
     }, [gamification]);
 
@@ -216,10 +216,8 @@ const Dashboard = ({ setView }) => {
                 </div>
 
                 {/* Gamification Card */}
-                {/* w-auto y self-start para alineación izquierda sin estirar. Padding p-3 sm:p-4 */}
                 <GlassCard className="w-auto self-start flex-shrink-0 p-3 sm:p-4 flex items-center gap-3 sm:gap-4 bg-gradient-to-br from-bg-secondary/80 to-accent/5 border-accent/20 overflow-hidden">
                     <div className="relative flex-shrink-0">
-                        {/* Tamaño estándar restaurado */}
                         <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-accent/20 flex items-center justify-center border-2 border-accent text-accent font-black text-lg md:text-2xl shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]">
                             {levelData.level}
                         </div>
@@ -240,7 +238,6 @@ const Dashboard = ({ setView }) => {
                                 {levelData.progress} / {levelData.needed} XP
                             </span>
                         </div>
-                        {/* Barra un poco más larga: w-28 en móvil, w-40 en tablet, w-48 en escritorio */}
                         <div className="h-1.5 md:h-2 w-28 sm:w-40 md:w-48 bg-bg-primary rounded-full overflow-hidden border border-glass-border/50">
                             <div className="h-full bg-gradient-to-r from-accent to-accent-light transition-all duration-1000 ease-out" style={{ width: `${levelData.percentage}%` }} />
                         </div>

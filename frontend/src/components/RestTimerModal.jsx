@@ -1,11 +1,9 @@
 /* frontend/src/components/RestTimerModal.jsx */
 import React, { useState, useEffect } from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importamos Play y Pause
 import { X, ArrowLeft, Plus, Minus, Minimize2, Play, Pause } from 'lucide-react';
-// --- FIN DE LA MODIFICACIÓN ---
 import GlassCard from './GlassCard';
 import useAppStore from '../store/useAppStore';
+import { triggerHaptic, HapticType } from '../utils/haptics'; // Importamos la utilidad
 
 const RestTimerModal = () => {
   const {
@@ -17,11 +15,9 @@ const RestTimerModal = () => {
     resetRestTimer,
     plannedRestTime,
     setRestTimerMode,
-    // --- INICIO DE LA MODIFICACIÓN ---
     togglePauseRestTimer,
     isRestTimerPaused,
     restTimerRemaining,
-    // --- FIN DE LA MODIFICACIÓN ---
   } = useAppStore(state => ({
     restTimerEndTime: state.restTimerEndTime,
     restTimerInitialDuration: state.restTimerInitialDuration,
@@ -31,47 +27,43 @@ const RestTimerModal = () => {
     resetRestTimer: state.resetRestTimer,
     plannedRestTime: state.plannedRestTime,
     setRestTimerMode: state.setRestTimerMode,
-    // --- INICIO DE LA MODIFICACIÓN ---
     togglePauseRestTimer: state.togglePauseRestTimer,
     isRestTimerPaused: state.isRestTimerPaused,
     restTimerRemaining: state.restTimerRemaining,
-    // --- FIN DE LA MODIFICACIÓN ---
   }));
 
   const [timeLeft, setTimeLeft] = useState(0);
-  // Aseguramos que si está pausado también se muestre la vista de timer
   const [view, setView] = useState((restTimerEndTime || isRestTimerPaused) ? 'timer' : 'select');
   const [customDuration, setCustomDuration] = useState('');
 
   useEffect(() => {
-    // Si no hay tiempo definido y no está pausado, 0.
     if (!restTimerEndTime && !isRestTimerPaused) {
       setTimeLeft(0);
       return;
     }
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Lógica de actualización que respeta la pausa
     const updateTimer = () => {
       let remaining = 0;
 
       if (isRestTimerPaused && restTimerRemaining !== null) {
-        // Si está pausado, usamos el tiempo congelado
         remaining = Math.ceil(restTimerRemaining / 1000);
       } else if (restTimerEndTime) {
-        // Si corre, calculamos la diferencia con ahora
         remaining = Math.round((restTimerEndTime - Date.now()) / 1000);
       }
 
       const newTimeLeft = Math.max(0, remaining);
-      setTimeLeft(newTimeLeft);
 
-      // Aquí se podrían gestionar notificaciones al llegar a 0
+      // Usamos el callback del estado para detectar la transición exacta a 0 y vibrar
+      setTimeLeft(prevTimeLeft => {
+        if (prevTimeLeft > 0 && newTimeLeft === 0) {
+          triggerHaptic(HapticType.timer); // Vibración larga al terminar
+        }
+        return newTimeLeft;
+      });
     };
 
-    updateTimer(); // Ejecución inicial
-    const intervalId = setInterval(updateTimer, 100); // Intervalo rápido para fluidez
-    // --- FIN DE LA MODIFICACIÓN ---
+    updateTimer();
+    const intervalId = setInterval(updateTimer, 100);
 
     return () => clearInterval(intervalId);
   }, [restTimerEndTime, isRestTimerPaused, restTimerRemaining]);
@@ -93,6 +85,7 @@ const RestTimerModal = () => {
   const handleStartCustom = () => {
     const durationInSeconds = parseTimeToSeconds(customDuration);
     if (durationInSeconds > 0) {
+      triggerHaptic(HapticType.success);
       startRestTimer(durationInSeconds);
       setTimeLeft(durationInSeconds);
       setView('timer');
@@ -108,6 +101,7 @@ const RestTimerModal = () => {
 
   const handleStartPreset = (duration) => {
     if (duration > 0) {
+      triggerHaptic(HapticType.success);
       startRestTimer(duration);
       setTimeLeft(duration);
       setView('timer');
@@ -115,8 +109,29 @@ const RestTimerModal = () => {
   };
 
   const goBackToSelect = () => {
+    triggerHaptic(HapticType.selection);
     resetRestTimer();
     setView('select');
+  };
+
+  const handleClose = () => {
+    triggerHaptic(HapticType.selection);
+    stopRestTimer();
+  };
+
+  const handleMinimize = () => {
+    triggerHaptic(HapticType.selection);
+    setRestTimerMode('minimized');
+  };
+
+  const handlePauseToggle = () => {
+    triggerHaptic(HapticType.selection);
+    togglePauseRestTimer();
+  };
+
+  const handleAddTime = (seconds) => {
+    triggerHaptic(HapticType.selection);
+    addRestTime(seconds);
   };
 
   const formatTime = (seconds) => {
@@ -138,7 +153,7 @@ const RestTimerModal = () => {
         className="relative p-8 m-4 w-full max-w-sm text-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={stopRestTimer} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"><X size={20} /></button>
+        <button onClick={handleClose} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"><X size={20} /></button>
 
         {view === 'select' && (
           <div>
@@ -208,7 +223,7 @@ const RestTimerModal = () => {
             <button onClick={goBackToSelect} className="absolute top-4 left-4 text-text-secondary hover:text-text-primary"><ArrowLeft size={20} /></button>
 
             <button
-              onClick={() => setRestTimerMode('minimized')}
+              onClick={handleMinimize}
               className="absolute top-4 right-14 text-text-secondary hover:text-accent transition-colors"
               title="Minimizar a Isla Dinámica"
             >
@@ -238,12 +253,10 @@ const RestTimerModal = () => {
               </div>
             </div>
 
-            {/* --- INICIO DE LA MODIFICACIÓN: Controles de Pausa y Tiempo --- */}
             <div className="flex flex-col gap-4 mt-6">
-              {/* Botón Central de Play/Pausa */}
               <div className="flex justify-center">
                 <button
-                  onClick={togglePauseRestTimer}
+                  onClick={handlePauseToggle}
                   className={`
                             p-4 rounded-full transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center justify-center
                             ${isRestTimerPaused
@@ -254,7 +267,7 @@ const RestTimerModal = () => {
                   title={isRestTimerPaused ? "Reanudar" : "Pausar"}
                 >
                   {isRestTimerPaused
-                    ? <Play size={32} fill="currentColor" className="ml-1" /> // Ajuste visual para el icono play
+                    ? <Play size={32} fill="currentColor" className="ml-1" />
                     : <Pause size={32} fill="currentColor" />
                   }
                 </button>
@@ -262,18 +275,18 @@ const RestTimerModal = () => {
 
               <div className="flex justify-center items-center gap-4">
                 <button
-                  onClick={() => addRestTime(-10)}
+                  onClick={() => handleAddTime(-10)}
                   disabled={timeLeft === 0}
                   className={`px-5 py-3 flex items-center justify-center gap-2 rounded-full border transition ${timeLeft === 0
-                      ? 'bg-gray-600 border-gray-500 text-gray-400 cursor-not-allowed opacity-50'
-                      : 'bg-bg-secondary border-glass-border hover:border-accent'
+                    ? 'bg-gray-600 border-gray-500 text-gray-400 cursor-not-allowed opacity-50'
+                    : 'bg-bg-secondary border-glass-border hover:border-accent'
                     }`}
                 >
                   <Minus size={18} />
                   <span className="font-semibold text-sm">-10 seg</span>
                 </button>
                 <button
-                  onClick={() => addRestTime(10)}
+                  onClick={() => handleAddTime(10)}
                   className="px-5 py-3 flex items-center justify-center gap-2 rounded-full bg-bg-secondary border border-glass-border hover:border-accent transition"
                 >
                   <Plus size={18} />
@@ -281,8 +294,6 @@ const RestTimerModal = () => {
                 </button>
               </div>
             </div>
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
-
           </div>
         )}
       </GlassCard>
