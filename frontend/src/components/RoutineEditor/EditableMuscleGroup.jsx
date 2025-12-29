@@ -62,9 +62,9 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
 
   if (isManual) {
     return (
-      // FIX: Agregado overflow-hidden, rounded y background para definir bien los límites
-      // Esto evita el scroll horizontal indeseado y asegura que el área táctil sea sólida.
-      <div className={`${wrapperStyles} h-10 relative flex items-center rounded-md overflow-hidden bg-bg-secondary/30 border border-transparent focus-within:border-accent/50 transition-colors`}>
+      // FIX: Eliminados bg y border extras para volver al diseño limpio.
+      // Se añade 'min-w-0' para evitar que el flex item fuerce un ancho mayor a la pantalla en móviles.
+      <div className={`${wrapperStyles} h-10 relative flex items-center min-w-0`}>
         <CustomSelect
           value={currentValue}
           onChange={handleSelectChange}
@@ -73,8 +73,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
             ns: 'exercise_ui',
             defaultValue: 'Selecciona grupo...',
           })}
-          // Forzamos w-full h-full y quitamos bordes internos para que use los del contenedor
-          className="w-full h-full bg-transparent text-sm border-none outline-none focus:ring-0"
+          className="w-full min-w-0" // min-w-0 aquí también asegura que el select respete el ancho del padre
         />
       </div>
     );
