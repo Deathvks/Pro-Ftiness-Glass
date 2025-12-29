@@ -11,21 +11,16 @@ import ExerciseListView from './ExerciseSearch/ExerciseListView';
 import ExerciseDetailView from './ExerciseSearch/ExerciseDetailView';
 import ExerciseSummaryView from './ExerciseSearch/ExerciseSummaryView';
 
-// --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 const CART_DRAFT_KEY = 'exerciseSearchCartDraft';
-// --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-
 
 // --- Componente Principal (Contenedor) ---
 const ExerciseSearch = ({
   onClose,
   onAddExercises,
   initialSelectedExercises = [],
-  // --- INICIO DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
   isReplacing = false, // Por defecto, estamos en modo "Añadir"
   onExerciseSelectForReplace, // Función para reemplazar un ejercicio de la biblioteca
   onAddCustomExercise, // Función para reemplazar con un ejercicio manual
-  // --- FIN DE LA MODIFICACIÓN (FIX REEMPLAZO) ---
 }) => {
 
   // Obtenemos 'ready' del hook
@@ -42,7 +37,7 @@ const ExerciseSearch = ({
   const [filterMuscle, setFilterMuscle] = useState([]); // Ahora es un array
   const [filterEquipment, setFilterEquipment] = useState([]); // Ahora es un array
 
-  // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
+  // Persistencia del Carrito
   const [stagedExercises, setStagedExercises] = useState(() => {
     // El modo "Reemplazar" nunca usa un borrador, siempre empieza vacío
     if (isReplacing) {
@@ -54,11 +49,9 @@ const ExerciseSearch = ({
       try {
         return JSON.parse(savedCart);
       } catch (e) {
-        // Si el borrador está corrupto, lo limpiamos
         localStorage.removeItem(CART_DRAFT_KEY);
       }
     }
-    // Si no hay borrador, el carrito empieza vacío
     return [];
   });
 
@@ -69,25 +62,17 @@ const ExerciseSearch = ({
 
   // El carrito se considera "inicializado" si cargamos un borrador
   const [cartInitialized, setCartInitialized] = useState(draftLoaded);
-  // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 
-
-  // useEffect de INICIALIZACIÓN (ahora respeta el borrador del carrito)
+  // useEffect de INICIALIZACIÓN
   useEffect(() => {
-    // No inicializar el carrito si estamos en modo reemplazo
     if (isReplacing) {
-      setCartInitialized(true); // Marcamos como "inicializado" para que no se ejecute
+      setCartInitialized(true);
       return;
     }
 
-    // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-    // Si ya cargamos ejercicios desde un borrador, no ejecutamos esta lógica.
-    // Esta lógica es solo para la *primera vez* que se abre el modal,
-    // para poblar el carrito con los ejercicios que ya están en la rutina.
     if (draftLoaded) {
       return;
     }
-    // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 
     if (
       allExercises.length > 0 &&
@@ -129,10 +114,10 @@ const ExerciseSearch = ({
       setStagedExercises(initialStaged);
       setCartInitialized(true);
     }
-  }, [allExercises, initialSelectedExercises, t, cartInitialized, isReplacing, draftLoaded]); // Añadido 'draftLoaded'
+  }, [allExercises, initialSelectedExercises, t, cartInitialized, isReplacing, draftLoaded]);
 
 
-  // useEffect de CARGA DE DATOS (sin cambios)
+  // useEffect de CARGA DE DATOS
   useEffect(() => {
     const fetchExercises = async () => {
       try {
@@ -146,90 +131,127 @@ const ExerciseSearch = ({
       }
     };
     fetchExercises();
-  }, []); // Dependencia vacía (correcto)
+  }, []);
 
-  // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-  // useEffect para GUARDAR el carrito en localStorage en cada cambio
+  // useEffect para GUARDAR el carrito
   useEffect(() => {
-    // No guardar el carrito si estamos en modo "Reemplazar"
     if (!isReplacing) {
       localStorage.setItem(CART_DRAFT_KEY, JSON.stringify(stagedExercises));
     }
   }, [stagedExercises, isReplacing]);
-  // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 
 
-  // --- LÓGICA DE FILTROS (Generación de Opciones) ---
+  // --- LÓGICA DE FILTROS (Generación de Opciones Unificadas) ---
   const { muscleOptions, equipmentOptions } = useMemo(() => {
     if (!ready) {
       return { muscleOptions: [], equipmentOptions: [] };
     }
-    const muscleSet = new Set();
-    const equipmentSet = new Set();
+
+    // Sets para guardar nombres ya TRADUCIDOS y evitar duplicados en el selector
+    const muscleLabelSet = new Set();
+    const equipmentLabelSet = new Set();
 
     allExercises.forEach(ex => {
-      // --- MODIFICACIÓN: Soporte para múltiples músculos (separados por coma) ---
-      if (ex.muscle_group) {
-        // Si viene "Cuádriceps, Femorales", separamos y añadimos ambos
-        ex.muscle_group.split(',').forEach(m => muscleSet.add(m.trim()));
-      } else if (ex.category) {
-        // Fallback a categoría si no hay muscle_group
-        muscleSet.add(ex.category);
-      } else {
-        muscleSet.add('Other');
-      }
+      // --- Músculos ---
+      const rawMuscles = ex.muscle_group
+        ? ex.muscle_group.split(',')
+        : [ex.category || 'Other'];
 
-      if (ex.equipment) {
-        ex.equipment.split(',').forEach(eq => equipmentSet.add(eq.trim()));
-      } else {
-        equipmentSet.add('None');
-      }
+      rawMuscles.forEach(m => {
+        // Obtenemos la traducción (ej: "Chest" -> "Pecho", "Pectoralis major" -> "Pecho")
+        const label = t(m.trim(), { ns: 'exercise_muscles', defaultValue: m.trim() });
+        muscleLabelSet.add(label);
+      });
+
+      // --- Equipamiento ---
+      const rawEquipment = ex.equipment
+        ? ex.equipment.split(',')
+        : ['None'];
+
+      rawEquipment.forEach(e => {
+        const label = t(e.trim(), { ns: 'exercise_equipment', defaultValue: e.trim() });
+        equipmentLabelSet.add(label);
+      });
     });
 
-    const sortedMuscles = Array.from(muscleSet).sort();
-    const sortedEquipment = ['None', ...Array.from(equipmentSet).filter(e => e !== 'None').sort()];
+    const sortedMuscleLabels = Array.from(muscleLabelSet).sort();
+    const sortedEquipmentLabels = Array.from(equipmentLabelSet).sort();
 
-    const muscleOpts = sortedMuscles.map(group => ({
-      value: group,
-      // Intentamos traducir usando el namespace 'exercise_muscles'.
-      label: t(group, { ns: 'exercise_muscles', defaultValue: group }),
+    // Construimos las opciones usando el Label traducido como valor
+    const muscleOpts = sortedMuscleLabels.map(label => ({
+      value: label,
+      label: label,
     }));
 
-    const equipmentOpts = sortedEquipment.map(eq => ({
-      value: eq,
-      label: t(eq, { ns: 'exercise_equipment', defaultValue: eq }),
+    const equipmentOpts = sortedEquipmentLabels.map(label => ({
+      value: label,
+      label: label,
     }));
+
     return {
       muscleOptions: muscleOpts,
       equipmentOptions: equipmentOpts,
     };
   }, [allExercises, t, ready]);
 
-  // --- LÓGICA DE FILTROS (Filtrado de Ejercicios) ---
+  // --- LÓGICA DE FILTROS (Filtrado de Ejercicios por Label) ---
   const filteredExercises = useMemo(() => {
     if (!ready) {
       return [];
     }
     const query = searchQuery.toLowerCase();
 
+    // Obtenemos las etiquetas traducidas para la lógica especial de Biceps/Triceps
+    const armsLabel = t('Arms', { ns: 'exercise_muscles', defaultValue: 'Arms' });
+    const bicepsLabel = t('Biceps', { ns: 'exercise_muscles', defaultValue: 'Biceps' });
+    const tricepsLabel = t('Triceps', { ns: 'exercise_muscles', defaultValue: 'Triceps' });
+
     return allExercises.filter(ex => {
+      // 1. Filtro Texto (Nombre)
       const originalName = ex.name.toLowerCase();
       const translatedName = t(ex.name, { ns: 'exercise_names', defaultValue: ex.name }).toLowerCase();
       const nameMatch = originalName.includes(query) || translatedName.includes(query);
 
-      // --- MODIFICACIÓN: Comprobación contra lista de músculos ---
-      const exerciseMuscles = ex.muscle_group
+      // 2. Filtro Músculo (Comparando Labels Traducidos)
+      const rawMuscles = ex.muscle_group
         ? ex.muscle_group.split(',').map(m => m.trim())
         : [ex.category || 'Other'];
 
-      // Coincide si NO hay filtro o si ALGUNO de los músculos del ejercicio está en el filtro seleccionado
-      const muscleMatch = filterMuscle.length === 0 || filterMuscle.some(filter => exerciseMuscles.includes(filter));
+      // Traducimos los músculos del ejercicio actual
+      const translatedMuscles = rawMuscles.map(m =>
+        t(m, { ns: 'exercise_muscles', defaultValue: m })
+      );
 
-      const exerciseEquipment = ex.equipment
+      // Coincide si NO hay filtro activo O si alguno de los músculos traducidos está en la lista de filtros seleccionados
+      // --- INICIO DE LA MODIFICACIÓN (Lógica especial Brazos) ---
+      const muscleMatch = filterMuscle.length === 0 || filterMuscle.some(filterLabel => {
+        // Coincidencia exacta
+        if (translatedMuscles.includes(filterLabel)) return true;
+
+        // Lógica especial 1: Si filtro por Bíceps o Tríceps, mostrar también ejercicios de "Brazos"
+        if ((filterLabel === bicepsLabel || filterLabel === tricepsLabel) && translatedMuscles.includes(armsLabel)) {
+          return true;
+        }
+
+        // Lógica especial 2: Si filtro por "Brazos", mostrar también ejercicios de "Bíceps" o "Tríceps"
+        if (filterLabel === armsLabel && (translatedMuscles.includes(bicepsLabel) || translatedMuscles.includes(tricepsLabel))) {
+          return true;
+        }
+
+        return false;
+      });
+      // --- FIN DE LA MODIFICACIÓN ---
+
+      // 3. Filtro Equipamiento (Comparando Labels Traducidos)
+      const rawEquipment = ex.equipment
         ? ex.equipment.split(',').map(e => e.trim())
         : ['None'];
 
-      const equipmentMatch = filterEquipment.length === 0 || filterEquipment.some(feq => exerciseEquipment.includes(feq));
+      const translatedEquipment = rawEquipment.map(e =>
+        t(e, { ns: 'exercise_equipment', defaultValue: e })
+      );
+
+      const equipmentMatch = filterEquipment.length === 0 || filterEquipment.some(filterLabel => translatedEquipment.includes(filterLabel));
 
       return nameMatch && muscleMatch && equipmentMatch;
     });
@@ -241,7 +263,7 @@ const ExerciseSearch = ({
     [stagedExercises, isReplacing]
   );
 
-  // --- HANDLERS DEL CARRITO (Sin cambios) ---
+  // --- HANDLERS DEL CARRITO ---
   const handleStageExercise = (exercise, details = {}) => {
     if (stagedIds.has(exercise.id)) {
       return;
@@ -269,7 +291,6 @@ const ExerciseSearch = ({
     );
   };
 
-  // handleFinalize
   const handleFinalize = () => {
     if (stagedExercises.length === 0) {
       addToast(t('exercise_ui:cart_empty_toast', 'El carrito está vacío.'), 'warning');
@@ -284,16 +305,12 @@ const ExerciseSearch = ({
       'success'
     );
 
-    // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-    // Limpiamos el borrador del carrito al finalizar
     localStorage.removeItem(CART_DRAFT_KEY);
-    // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-
     onClose();
   };
 
 
-  // --- HANDLERS DE NAVEGACIÓN (Sin cambios) ---
+  // --- HANDLERS DE NAVEGACIÓN ---
   const handleViewDetail = (exercise) => {
     setSelectedExercise(exercise);
     setView('detail');
@@ -309,7 +326,7 @@ const ExerciseSearch = ({
     setView('summary');
   };
 
-  // --- FUNCIÓN MANUAL (Sin cambios) ---
+  // --- FUNCIÓN MANUAL ---
   const handleAddManualExercise = () => {
     const exerciseName = searchQuery.trim();
 
@@ -326,7 +343,7 @@ const ExerciseSearch = ({
       const manualExercise = {
         id: `manual_${uuidv4()}`,
         name: exerciseName,
-        category: 'Other', // Por defecto mayúscula
+        category: 'Other',
         equipment: 'other',
         is_manual: true,
         image_url_start: null,
@@ -347,7 +364,7 @@ const ExerciseSearch = ({
   };
 
 
-  // --- RENDERIZADO (Sin cambios) ---
+  // --- RENDERIZADO ---
   const renderContent = () => {
     if (view === 'detail' && selectedExercise) {
       return (

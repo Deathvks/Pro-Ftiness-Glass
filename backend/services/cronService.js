@@ -4,7 +4,7 @@ import { Op, literal, fn, col } from 'sequelize';
 import db from '../models/index.js';
 import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
-import { cleanOrphanedImages } from './imageService.js'; // --- AÑADIDO ---
+import { cleanOrphanedImages } from './imageService.js';
 
 /**
  * Envía notificaciones a un usuario específico (Push + Interna).
@@ -123,7 +123,8 @@ const checkTrainingReminder = () => {
     console.log('[Cron] Ejecutando tarea: Recordatorio de Entrenamiento...');
     try {
       const usersWithSubscriptions = await db.PushSubscription.findAll({
-        attributes: [[fn('DISTINCT', col('userId')), 'userId']],
+        // CORRECCIÓN: Usar 'user_id' (nombre de la columna en DB) en lugar de 'userId'
+        attributes: [[fn('DISTINCT', col('user_id')), 'userId']],
       });
 
       const payload = {
@@ -210,6 +211,6 @@ export const startCronJobs = () => {
   checkNutritionGoals();
   checkTrainingReminder();
   checkWeightLogReminder();
-  scheduleImageCleanup(); // --- AÑADIDO ---
+  scheduleImageCleanup();
   console.log('[Cron] Tareas programadas iniciadas.');
 };

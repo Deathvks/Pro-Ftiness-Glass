@@ -74,24 +74,26 @@ const ExerciseListView = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header (Cerrar y Carrito) */}
-      <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-glass-border">
-        <h2 className="text-xl font-bold">{t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}</h2>
-        <div className="flex items-center gap-2">
+      {/* Header (Cerrar y Carrito) - Responsive Ajustado */}
+      <div className="flex-shrink-0 flex items-center justify-between p-3 md:p-4 border-b border-glass-border gap-2">
+        <h2 className="text-lg md:text-xl font-bold truncate min-w-0">
+          {t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
+        </h2>
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={onViewSummary}
-            className="relative flex items-center gap-2 px-4 py-2 rounded-full bg-accent text-bg-secondary font-semibold"
+            className="relative flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-accent text-bg-secondary font-semibold text-sm md:text-base whitespace-nowrap transition-transform active:scale-95"
           >
-            <ShoppingCart size={18} />
+            <ShoppingCart size={16} className="md:w-[18px] md:h-[18px]" />
             <span>{t('exercise_ui:view_cart', 'Ver Carrito')}</span>
             {stagedExercisesCount > 0 && (
-              <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red text-white text-xs font-bold flex items-center justify-center border-2 border-bg-primary">
+              <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 w-5 h-5 md:w-6 md:h-6 rounded-full bg-red text-white text-[10px] md:text-xs font-bold flex items-center justify-center border-2 border-bg-primary">
                 {stagedExercisesCount}
               </span>
             )}
           </button>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10">
-            <X size={24} />
+          <button onClick={onClose} className="p-1.5 md:p-2 rounded-full hover:bg-white/10 transition-colors">
+            <X size={20} className="md:w-6 md:h-6" />
           </button>
         </div>
       </div>
@@ -110,14 +112,23 @@ const ExerciseListView = ({
           <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
         </div>
 
-        {/* Botón Toggle Filtros */}
-        <button
-          onClick={() => setShowFilters(prev => !prev)}
-          className="flex items-center gap-2 text-sm text-text-secondary font-medium"
-        >
-          <ListFilter size={16} />
-          <span>{showFilters ? t('exercise_ui:hide_filters', 'Ocultar Filtros') : t('exercise_ui:show_filters', 'Mostrar Filtros')}</span>
-        </button>
+        {/* Botón Toggle Filtros Y Contador de Resultados */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setShowFilters(prev => !prev)}
+            className="flex items-center gap-2 text-sm text-text-secondary font-medium hover:text-accent transition-colors"
+          >
+            <ListFilter size={16} />
+            <span>{showFilters ? t('exercise_ui:hide_filters', 'Ocultar Filtros') : t('exercise_ui:show_filters', 'Mostrar Filtros')}</span>
+          </button>
+
+          {/* Contador de ejercicios */}
+          <span className="text-xs font-medium text-text-muted animate-[fade-in_0.3s_ease-out]">
+            {filteredExercises.length} {filteredExercises.length === 1
+              ? t('exercise_ui:exercise_count_single', 'ejercicio encontrado')
+              : t('exercise_ui:exercise_count_plural', 'ejercicios encontrados')}
+          </span>
+        </div>
 
         {/* Zona de Etiquetas (Pills) de filtros activos */}
         {(activeMuscleFilters.length > 0 || activeEquipmentFilters.length > 0) && (

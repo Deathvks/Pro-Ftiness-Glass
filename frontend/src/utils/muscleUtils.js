@@ -7,6 +7,8 @@ export const DB_TO_HEATMAP_MAP = {
     'pectoral mayor': ['chest'],
     'pectoral': ['chest'],
     'pecho': ['chest'],
+    'serratus anterior': ['chest', 'obliques'],
+    'serrato anterior': ['chest', 'obliques'],
 
     // Torso - Espalda
     'back': ['upper-back', 'lower-back'],
@@ -39,6 +41,7 @@ export const DB_TO_HEATMAP_MAP = {
     'obliques': ['obliques'],
     'oblicuos': ['obliques'],
     'obliquus externus abdominis': ['obliques'],
+    'oblicuos externos': ['obliques'],
     'core': ['abs', 'obliques'],
 
     // Brazos
@@ -56,6 +59,9 @@ export const DB_TO_HEATMAP_MAP = {
     'antebrazos': ['forearm'],
     'forearm': ['forearm'],
     'brachialis': ['biceps'],
+    'braquial': ['biceps'],
+    'antecubital space': ['biceps', 'forearm'],
+    'fosa antecubital': ['biceps', 'forearm'],
 
     // Piernas
     'legs': ['quadriceps', 'hamstring', 'gluteal', 'calves'],
@@ -88,7 +94,11 @@ export const DB_TO_HEATMAP_MAP = {
     'full body': ['chest', 'upper-back', 'quadriceps', 'hamstring', 'abs', 'biceps', 'triceps', 'front-deltoids'],
     'cuerpo completo': ['chest', 'upper-back', 'quadriceps', 'hamstring', 'abs', 'biceps', 'triceps', 'front-deltoids'],
     'other': [],
-    'otro': []
+    'otro': [],
+    'neck': ['neck'],
+    'cuello': ['neck'],
+    'head': ['head'],
+    'cabeza': ['head']
 };
 
 export const guessMuscleFromText = (text) => {
@@ -139,12 +149,13 @@ export const SUGGESTED_EXERCISES = {
     'gluteal': 'Hip Thrust',
     'calves': 'Elevación de Talones',
     'trapezius': 'Encogimientos',
-    'adductor': 'Copenhagen Plank',
-    'abductors': 'Monster Walk',
-    'neck': 'Neck Curl',
+    'adductor': 'Plancha Copenhague',
+    'abductors': 'Caminata Monstruo',
+    'neck': 'Curl de Cuello',
     'head': null
 };
 
+// Actualizado para incluir claves faltantes como 'lats', 'serratus', etc.
 export const MUSCLE_NAMES_ES = {
     'chest': 'Pecho',
     'upper-back': 'Espalda Alta',
@@ -164,5 +175,18 @@ export const MUSCLE_NAMES_ES = {
     'adductor': 'Aductores',
     'abductors': 'Abductores',
     'neck': 'Cuello',
-    'head': 'Cabeza'
+    'head': 'Cabeza',
+
+    // Claves adicionales para coherencia completa
+    'lats': 'Dorsales',
+    'latissimus dorsi': 'Dorsal ancho',
+    'serratus anterior': 'Serrato anterior',
+    'soleus': 'Sóleo',
+    'gastrocnemius': 'Gastrocnemio',
+    'brachialis': 'Braquial',
+    'biceps femoris': 'Femoral',
+    'rectus abdominis': 'Abdominales',
+    'pectoralis major': 'Pecho',
+    'quadriceps femoris': 'Cuádriceps',
+    'triceps brachii': 'Tríceps'
 };

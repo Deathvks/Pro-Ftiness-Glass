@@ -74,20 +74,25 @@ export const useRoutineExerciseActions = ({
       const newExercises = prev.map(ex =>
         ex.tempId === tempId
           ? {
-              ...ex, // Mantiene sets, reps, rest_seconds
-              id: selectedExercise.id,
-              name: selectedExercise.name,
-              muscle_group: selectedExercise.category || selectedExercise.muscle_group,
-              image_url_start: selectedExercise.image_url_start,
-              image_url_end: selectedExercise.image_url_end,
-              video_url: selectedExercise.video_url,
-              is_manual: selectedExercise.is_manual || false,
-            }
+            ...ex, // Mantiene sets, reps, rest_seconds
+            id: selectedExercise.id,
+            name: selectedExercise.name,
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Priorizamos muscle_group sobre category.
+            // Antes estaba al revés (category || muscle_group), lo que hacía que
+            // se guardara la categoría general (ej. "Espalda") en lugar del músculo específico (ej. "Dorsal Ancho").
+            muscle_group: selectedExercise.muscle_group || selectedExercise.category,
+            // --- FIN DE LA MODIFICACIÓN ---
+            image_url_start: selectedExercise.image_url_start,
+            image_url_end: selectedExercise.image_url_end,
+            video_url: selectedExercise.video_url,
+            is_manual: selectedExercise.is_manual || false,
+          }
           : ex
       );
       return newExercises;
     });
-    
+
     // Cierra el dropdown (si se llamó desde el dropdown de la tarjeta)
     setActiveDropdownTempId(null);
   };
@@ -147,32 +152,29 @@ export const useRoutineExerciseActions = ({
    * También maneja el reemplazo si 'replacingExerciseTempId' está seteado.
    */
   const handleAddExercisesFromSearch = (stagedExercises) => {
-    
-    // CASO 1: Reemplazar ejercicio (Esto sigue igual)
+
+    // CASO 1: Reemplazar ejercicio
     if (replacingExerciseTempId !== null) {
       if (stagedExercises.length === 0) {
         handleSearchModalClose(); // No se seleccionó nada, solo cerrar
         return;
       }
       const selectedExercise = stagedExercises[0].exercise;
-      
+
       // Reutilizamos la lógica de 'link' pero para reemplazar
       linkExerciseFromList(replacingExerciseTempId, selectedExercise);
       handleSearchModalClose();
       return;
     }
 
-    // --- INICIO DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
-
     // CASO 2: Añadir/Actualizar ejercicios del carrito
     // La lista 'stagedExercises' es la NUEVA lista completa de ejercicios.
-    // Necesitamos mapearla y REEMPLAZAR la lista anterior, no añadirla.
-    
+
     let newExerciseList = [];
     try {
       newExerciseList = stagedExercises.map((item, index) => {
         if (!item || !item.exercise) {
-            return null;
+          return null;
         }
 
         // Respetamos el 'rest_seconds' del carrito (0, "99", o "" = 60)
@@ -186,8 +188,7 @@ export const useRoutineExerciseActions = ({
           reps: item.reps,
           rest_seconds: rest,
           superset_group_id: null, // Las superseries se rompen al importar (de momento)
-          // 1. FIX: El 'exercise_order' es el índice del carrito
-          exercise_order: index 
+          exercise_order: index
         };
       }).filter(Boolean); // Filtramos nulos si los hubiera
 
@@ -196,12 +197,8 @@ export const useRoutineExerciseActions = ({
       return;
     }
 
-    // 2. FIX: Reemplazamos el estado, no lo añadimos
-    // setExercises(prev => [...prev, ...newExercises]); // <- BUG ANTIGUO
-    setExercises(newExerciseList); // <- SOLUCIÓN
+    setExercises(newExerciseList);
 
-    // --- FIN DE LA MODIFICACIÓN (FIX BUG "CARRITO") ---
-    
     // Cerramos el modal de búsqueda después de añadir
     handleSearchModalClose();
   };
@@ -231,7 +228,7 @@ export const useRoutineExerciseActions = ({
     };
 
     setExercises(prev => [...prev, newExercise]);
-    
+
     handleSearchModalClose(); // Cerramos el modal de búsqueda
     addToast(i18n.t('routine_editor:toast_custom_exercise_added', 'Ejercicio manual añadido: {{name}}', { name: newExercise.name }), 'success');
   };

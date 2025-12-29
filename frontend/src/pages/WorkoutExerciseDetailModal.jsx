@@ -1,29 +1,25 @@
 /* frontend/src/pages/WorkoutExerciseDetailModal.jsx */
 // 1. Volvemos a importar useState, useEffect y Spinner
 import React, { useEffect, useState } from 'react';
-import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon } from 'lucide-react';
+import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../components/GlassCard';
 import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner'; // Importado de nuevo
 import useAppStore from '../store/useAppStore'; // Importado de nuevo
-// --- INICIO DE LA MODIFICACIÓN ---
 import { normalizeText } from '../utils/helpers';
-// --- FIN DE LA MODIFICACIÓN ---
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
-  const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions']);
+  const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions', 'exercise_muscles']);
 
   // 2. Volvemos a usar el store, SÓLO para buscar datos
   const { getOrFetchAllExercises } = useAppStore(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
-    // YA NO usamos 'updateActiveExerciseDetails' para evitar bucles
   }));
 
   // --- INICIO DE LA MODIFICACIÓN ---
 
   // 3. ESTADO LOCAL: Mantenemos un estado local para los detalles.
-  // Se inicializa UNA VEZ con los props (posiblemente incompletos).
   const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
 
   // 4. ESTADO DE CARGA: Derivado de los 'localDetails'.
@@ -34,12 +30,10 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     return (missingDescription || missingMedia) && nameKey;
   };
 
-  // Se inicializa con el estado actual de los 'localDetails'
   const [localIsLoading, setLocalIsLoading] = useState(isDataMissing(localDetails));
 
-  // 5. HOOK AUTOCORRECTOR: Se ejecuta si 'localIsLoading' es true.
+  // 5. HOOK AUTOCORRECTOR
   useEffect(() => {
-    // Si no falta nada, no hagas nada.
     if (!localIsLoading) return;
 
     const fetchMissingDetails = async () => {
@@ -48,31 +42,22 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
         if (fullDetails) {
-          // 6. FUSIONAMOS: Mantenemos la media de la rutina (ej. 'ex.image_url_start')
-          //    y la rellenamos con los datos de la DB (ej. 'fullDetails.description_es')
           const mergedDetails = {
-            ...fullDetails, // Base (descripción, etc.)
-            ...localDetails, // Sobrescribe con datos de la rutina (media)
+            ...fullDetails,
+            ...localDetails,
             name: nameKey,
-            // Aseguramos la descripción usando el campo de la DB
             description: fullDetails.description_es || fullDetails.description || localDetails.description,
           };
-
-          // 7. ACTUALIZAMOS EL ESTADO LOCAL.
-          // Esto dispara UN solo re-renderizado con los datos completos.
           setLocalDetails(mergedDetails);
         }
       } catch (error) {
         console.error("Error al auto-corregir detalles:", error);
       } finally {
-        // 8. Pase lo que pase, dejamos de cargar.
         setLocalIsLoading(false);
       }
     };
 
     fetchMissingDetails();
-
-    // 9. Depende de 'localIsLoading' y 'nameKey'.
   }, [localIsLoading, nameKey, getOrFetchAllExercises]);
 
   // --- FIN DE LA MODIFICACIÓN ---
@@ -80,35 +65,35 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
   /**
    * Lógica de descripción
-   * Lee del estado 'localDetails' y usa normalizeText para la clave
    */
   const getTranslatedDescription = () => {
-    // 10. Leemos del estado local
     const rawDesc = localDetails.description || localDetails.description_es;
     if (!rawDesc) return null;
 
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Normalizamos la clave para que coincida con el JSON (sin saltos de línea extra)
     const descKey = normalizeText(rawDesc);
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // Intenta traducir
     const translated = t(descKey, {
       ns: 'exercise_descriptions',
       defaultValue: null,
-      // FIX CRUCIAL: Ignoramos separadores para que los puntos y dos puntos
-      // en la descripción no rompan la búsqueda de la clave.
       nsSeparator: false,
       keySeparator: false
     });
 
-    // Devuelve la traducción, o el texto original (rawDesc) si no hay traducción
     return translated || rawDesc;
   };
 
   const description = getTranslatedDescription();
-  // El título SÍ puede venir de 'exercise' (prop) porque 'name' siempre está
   const titleKey = localDetails.name || exercise.name;
+
+  // --- INICIO MODIFICACIÓN: Obtener grupo muscular ---
+  // Priorizamos localDetails (que viene de la BD completa) y luego exercise (de la rutina)
+  const rawMuscleGroup = localDetails.muscle_group || localDetails.category || exercise.muscle_group;
+  // Intentamos traducirlo (asumiendo que puede venir como "Chest" o "Pecho")
+  const muscleGroupLabel = rawMuscleGroup
+    ? t(rawMuscleGroup, { ns: 'exercise_muscles', defaultValue: rawMuscleGroup })
+    : t('unknown', { ns: 'exercise_muscles', defaultValue: 'N/A' });
+  // --- FIN MODIFICACIÓN ---
+
 
   return (
     <div
@@ -116,8 +101,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       onClick={onClose}
     >
       <GlassCard
-        // MODIFICADO: Reducido max-h-[90vh] a max-h-[80vh] para evitar choque con navbar móvil
-        className="relative w-full max-w-lg max-h-[80vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out]"
+        // MODIFICADO: Cambiado max-h-[80vh] a max-h-[70vh] md:max-h-[85vh] para móviles
+        className="relative w-full max-w-lg max-h-[70vh] md:max-h-[85vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -132,11 +117,9 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         </h2>
 
         {/* --- Renderizado condicional (Media) --- */}
-        {/* Lee de 'localDetails', pero comprueba 'localIsLoading' */}
         {(localDetails.image_url || localDetails.video_url) ? (
           <ExerciseMedia
             details={localDetails}
-            // MODIFICADO: Añadido 'border border-glass-border' y 'rounded-xl'
             className="w-full mx-auto mb-4 border border-glass-border rounded-xl"
           />
         ) : localIsLoading ? (
@@ -149,12 +132,21 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </div>
         )}
 
-
-        {/* Datos del plan (sin cambios, lee de 'exercise' (prop)) */}
+        {/* Datos del plan */}
         <div className="space-y-3 mb-6">
           <h3 className="text-lg font-semibold text-text-secondary">
-            {t('today_s_plan', { ns: 'exercise_ui' })}
+            {t('details', { ns: 'exercise_ui', defaultValue: 'Detalles' })}
           </h3>
+
+          {/* --- INICIO MODIFICACIÓN: Grupo Muscular --- */}
+          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
+            <Target size={20} className="text-accent" />
+            <span className="font-medium capitalize">
+              {muscleGroupLabel}
+            </span>
+          </div>
+          {/* --- FIN MODIFICACIÓN --- */}
+
           <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
             <Dumbbell size={20} className="text-accent" />
             <span className="font-medium">
@@ -176,7 +168,6 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         </div>
 
         {/* --- Renderizado condicional (Descripción) --- */}
-        {/* Lee de 'description', pero comprueba 'localIsLoading' */}
         <div className="space-y-3">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
             <FileText size={20} className="text-accent" />

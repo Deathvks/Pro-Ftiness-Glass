@@ -64,6 +64,18 @@ User.init({
     allowNull: true
   },
 
+  // --- Metas Nutricionales (NUEVO) ---
+  target_calories: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: true
+  },
+  target_protein: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: true
+  },
+
   // --- Verificación y Seguridad ---
   is_verified: {
     type: DataTypes.BOOLEAN,

@@ -1,7 +1,8 @@
 /* frontend/src/pages/Progress.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react'; // Importamos iconos de flechas
+import { useTranslation } from 'react-i18next'; // Importamos hook de traducción
 import useAppStore from '../store/useAppStore';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 
@@ -30,6 +31,9 @@ const INTENSITY_LEVELS = [
 ];
 
 const Progress = ({ darkMode }) => {
+    // Hook de traducción
+    const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_muscles']);
+
     // Extraemos allExercises del store
     const { workoutLog, bodyWeightLog, exercises, getOrFetchAllExercises } = useAppStore(state => ({
         workoutLog: state.workoutLog,
@@ -42,6 +46,10 @@ const Progress = ({ darkMode }) => {
     const [detailedLog, setDetailedLog] = useState(null);
     const [exerciseForHistory, setExerciseForHistory] = useState('');
     const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+    // Estado para paginación de sugerencias
+    const [suggestionsPage, setSuggestionsPage] = useState(0);
+    const SUGGESTIONS_PER_PAGE = 3;
 
     // Cargar ejercicios al montar
     useEffect(() => {
@@ -63,8 +71,8 @@ const Progress = ({ darkMode }) => {
             .sort((a, b) => a.timestamp - b.timestamp);
     }, [bodyWeightLog]);
 
-    // Lista única
-    const allExercises = useMemo(() => {
+    // Lista única de ejercicios realizados
+    const executedExercisesList = useMemo(() => {
         const exerciseSet = new Set(
             workoutLog.flatMap(log => log.WorkoutLogDetails?.map(d => d.exercise_name) || [])
         );
@@ -146,8 +154,7 @@ const Progress = ({ darkMode }) => {
         });
 
         // --- DETECCIÓN DE PUNTOS DÉBILES (Múltiples) ---
-        // Consideramos candidatos solo los que tienen sugerencia definida
-        const candidates = Object.keys(SUGGESTED_EXERCISES).filter(k => SUGGESTED_EXERCISES[k]);
+        const candidates = Object.keys(MUSCLE_NAMES_ES);
 
         let minScore = Infinity;
         // Buscamos el score mínimo
@@ -159,25 +166,70 @@ const Progress = ({ darkMode }) => {
         // Filtramos todos los músculos que comparten ese score mínimo
         const weakMuscles = candidates.filter(c => (scores[c] || 0) === minScore);
 
-        // Seleccionamos hasta 3 recomendaciones aleatorias entre las más débiles
+        // Seleccionamos las recomendaciones aleatorias entre las más débiles
         const suggestions = weakMuscles
             .sort(() => 0.5 - Math.random()) // Mezclar para variedad
-            .slice(0, 3) // Limitar a 3
-            .map(muscleKey => ({
-                muscle: MUSCLE_NAMES_ES[muscleKey] || muscleKey,
-                exercise: SUGGESTED_EXERCISES[muscleKey]
-            }));
+            .map(muscleKey => {
+                // Filtramos la lista 'exercises' para encontrar ejercicios que ataquen este músculo
+                const possibleExercises = exercises.filter(ex => {
+                    if (!ex.muscle_group) return false;
+
+                    const groups = ex.muscle_group.split(',').map(g => g.trim().toLowerCase());
+
+                    return groups.some(g => {
+                        const mapped = DB_TO_HEATMAP_MAP[g];
+                        return mapped && mapped.includes(muscleKey);
+                    });
+                });
+
+                let selectedExerciseName = null;
+
+                if (possibleExercises.length > 0) {
+                    const randomEx = possibleExercises[Math.floor(Math.random() * possibleExercises.length)];
+                    selectedExerciseName = randomEx.name;
+                } else {
+                    selectedExerciseName = SUGGESTED_EXERCISES[muscleKey];
+                }
+
+                if (!selectedExerciseName) return null;
+
+                return {
+                    muscle: MUSCLE_NAMES_ES[muscleKey] || muscleKey,
+                    exercise: selectedExerciseName
+                };
+            })
+            .filter(Boolean);
 
         // --- NORMALIZACIÓN PARA HEATMAP ---
         const maxVal = Math.max(...Object.values(scores), 1);
         const normalized = {};
         Object.keys(scores).forEach(k => {
-            // Intensidad mínima visual de 2 para que se note si has entrenado
             normalized[k] = Math.max(2, Math.round((scores[k] / maxVal) * 10));
         });
 
         return { muscleHeatmapData: normalized, weakPointSuggestions: suggestions };
     }, [workoutLog, exercises]);
+
+    // Reseteamos la página si cambian las sugerencias
+    useEffect(() => {
+        setSuggestionsPage(0);
+    }, [weakPointSuggestions.length]);
+
+    // Lógica de Paginación
+    const totalPages = Math.ceil(weakPointSuggestions.length / SUGGESTIONS_PER_PAGE);
+    const displayedSuggestions = weakPointSuggestions.slice(
+        suggestionsPage * SUGGESTIONS_PER_PAGE,
+        (suggestionsPage + 1) * SUGGESTIONS_PER_PAGE
+    );
+
+    const handleNextPage = () => {
+        setSuggestionsPage(prev => Math.min(prev + 1, totalPages - 1));
+    };
+
+    const handlePrevPage = () => {
+        setSuggestionsPage(prev => Math.max(prev - 1, 0));
+    };
+
 
     const handleShowHistory = (exerciseName) => {
         setExerciseForHistory(exerciseName);
@@ -232,36 +284,65 @@ const Progress = ({ darkMode }) => {
                         ))}
                     </div>
 
-                    {/* Widgets de Recomendación (Múltiples) */}
+                    {/* Widgets de Recomendación (Paginados) */}
                     {weakPointSuggestions.length > 0 && (
-                        <div className="mt-6 w-full max-w-md space-y-3 animate-fade-in-up">
-                            {weakPointSuggestions.map((suggestion, idx) => (
-                                <div
-                                    key={idx}
-                                    className="rounded-xl p-4 flex items-start gap-4 shadow-sm backdrop-blur-sm transition-all hover:brightness-110"
-                                    style={{
-                                        // Usamos un gradiente con las variables de acento transparentes para asegurar visibilidad
-                                        background: 'linear-gradient(to bottom right, var(--color-accent-border), var(--color-accent-transparent))'
-                                    }}
-                                >
+                        <div className="mt-6 w-full max-w-md animate-fade-in-up">
+                            <div className="space-y-3 min-h-[100px]">
+                                {displayedSuggestions.map((suggestion, idx) => (
                                     <div
-                                        className="p-2 rounded-full text-white shrink-0"
-                                        style={{ backgroundColor: 'var(--color-accent-border)' }}
+                                        key={idx}
+                                        className="rounded-xl p-4 flex items-start gap-4 shadow-sm backdrop-blur-sm transition-all hover:brightness-110"
+                                        style={{
+                                            background: 'linear-gradient(to bottom right, var(--color-accent-border), var(--color-accent-transparent))'
+                                        }}
                                     >
-                                        <Lightbulb size={20} />
+                                        <div
+                                            className="p-2 rounded-full text-white shrink-0"
+                                            style={{ backgroundColor: 'var(--color-accent-border)' }}
+                                        >
+                                            <Lightbulb size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-accent mb-1">
+                                                Punto a mejorar: {suggestion.muscle}
+                                            </h4>
+                                            <p className="text-xs text-text-secondary">
+                                                Tiene baja frecuencia en tus últimos entrenos.
+                                                <br />
+                                                Prueba añadir <strong className="text-text-primary">
+                                                    {/* FIX: Traducción del ejercicio */}
+                                                    {t(suggestion.exercise, { ns: 'exercise_names', defaultValue: suggestion.exercise })}
+                                                </strong>.
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 className="text-sm font-bold text-accent mb-1">
-                                            Punto a mejorar: {suggestion.muscle}
-                                        </h4>
-                                        <p className="text-xs text-text-secondary">
-                                            Tiene baja frecuencia en tus últimos entrenos.
-                                            <br />
-                                            Prueba añadir <strong className="text-text-primary">{suggestion.exercise}</strong>.
-                                        </p>
-                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Controles de Paginación (Solo si hay más de 1 página) */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-between mt-4 px-2">
+                                    <button
+                                        onClick={handlePrevPage}
+                                        disabled={suggestionsPage === 0}
+                                        className="p-2 rounded-full hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-text-secondary"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+
+                                    <span className="text-xs text-text-secondary font-medium">
+                                        {suggestionsPage + 1} / {totalPages}
+                                    </span>
+
+                                    <button
+                                        onClick={handleNextPage}
+                                        disabled={suggestionsPage === totalPages - 1}
+                                        className="p-2 rounded-full hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-text-secondary"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     )}
 
@@ -283,7 +364,7 @@ const Progress = ({ darkMode }) => {
                 </div>
             )}
 
-            {viewType === 'exercise' && <ExerciseView allExercises={allExercises} exerciseProgressData={exerciseProgressData} axisColor={axisColor} onShowHistory={handleShowHistory} />}
+            {viewType === 'exercise' && <ExerciseView allExercises={executedExercisesList} exerciseProgressData={exerciseProgressData} axisColor={axisColor} onShowHistory={handleShowHistory} />}
             {viewType === 'nutrition' && <NutritionView axisColor={axisColor} />}
             {viewType === 'records' && <RecordsView />}
             {viewType === 'bodyWeight' && <BodyWeightChart data={bodyWeightChartData} axisColor={axisColor} />}
