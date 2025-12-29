@@ -62,8 +62,9 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
 
   if (isManual) {
     return (
-      // Contenedor ajustado a h-10 (altura estándar) y width controlado para evitar scroll horizontal
-      <div className={`${wrapperStyles} h-10 relative flex items-center`}>
+      // FIX: Agregado overflow-hidden, rounded y background para definir bien los límites
+      // Esto evita el scroll horizontal indeseado y asegura que el área táctil sea sólida.
+      <div className={`${wrapperStyles} h-10 relative flex items-center rounded-md overflow-hidden bg-bg-secondary/30 border border-transparent focus-within:border-accent/50 transition-colors`}>
         <CustomSelect
           value={currentValue}
           onChange={handleSelectChange}
@@ -72,7 +73,8 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
             ns: 'exercise_ui',
             defaultValue: 'Selecciona grupo...',
           })}
-          className="w-full"
+          // Forzamos w-full h-full y quitamos bordes internos para que use los del contenedor
+          className="w-full h-full bg-transparent text-sm border-none outline-none focus:ring-0"
         />
       </div>
     );
