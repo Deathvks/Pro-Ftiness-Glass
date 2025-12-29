@@ -104,7 +104,9 @@ const ExerciseListView = ({
         <div className="relative">
           <input
             type="text"
-            placeholder={t('exercise_ui:search_placeholder', 'Buscar ejercicio...')}
+            // --- INICIO MODIFICACIÓN: Placeholder actualizado ---
+            placeholder={t('exercise_ui:search_placeholder_extended', 'Buscar ejercicio o grupo muscular...')}
+            // --- FIN MODIFICACIÓN ---
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent"

@@ -1,34 +1,34 @@
 /* frontend/src/components/RoutineEditor/EditableMuscleGroup.jsx */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../hooks/useToast';
 import i18n from '../../i18n';
 import CustomSelect from '../CustomSelect';
 
-// Lista de claves para el selector (coincide con el Heatmap)
+// Lista de claves disponibles
 const MUSCLE_GROUP_KEYS = [
-  'Chest',          // Pecho
+  'Abs',            // Abdominales
+  'Abductors',      // Abductores
+  'Adductors',      // Aductores
+  'Forearms',       // Antebrazos
+  'Biceps',         // Bíceps
+  'Cardio',         // Cardio
+  'Quads',          // Cuádriceps
+  'Neck',           // Cuello
+  'Full Body',      // Cuerpo completo
+  'Lats',           // Dorsales
   'Back',           // Espalda (General)
   'Upper Back',     // Espalda Alta
-  'Lower Back',     // Lumbares
-  'Lats',           // Dorsales
-  'Traps',          // Trapecios
-  'Shoulders',      // Hombros
-  'Abs',            // Abdominales
-  'Obliques',       // Oblicuos
-  'Biceps',         // Bíceps
-  'Triceps',        // Tríceps
-  'Forearms',       // Antebrazos
-  'Quads',          // Cuádriceps
   'Hamstrings',     // Femorales/Isquios
-  'Glutes',         // Glúteos
   'Calves',         // Gemelos
-  'Adductors',      // Aductores
-  'Abductors',      // Abductores
-  'Neck',           // Cuello
-  'Cardio',         // Cardio
-  'Full Body',      // Cuerpo completo
+  'Glutes',         // Glúteos
+  'Shoulders',      // Hombros
+  'Lower Back',     // Lumbares
+  'Obliques',       // Oblicuos
   'Other',          // Otro
+  'Chest',          // Pecho
+  'Traps',          // Trapecios
+  'Triceps',        // Tríceps
 ];
 
 const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
@@ -49,14 +49,12 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
   const commonStyles = 'w-full capitalize text-center sm:text-left';
   const wrapperStyles = 'mt-1 w-full';
 
-  // --- LÓGICA DE NORMALIZACIÓN MEJORADA ---
-  // Convertimos nombres técnicos o antiguos a las claves del selector
+  // --- LÓGICA DE NORMALIZACIÓN ---
   let currentValue = initialValue;
 
   if (initialValue) {
     const valLower = initialValue.toLowerCase();
-
-    // Mapeo de nombres técnicos a grupos generales
+    // Mapeos de compatibilidad
     if (valLower === 'pectoralis major' || valLower === 'pectoral mayor') currentValue = 'Chest';
     else if (valLower === 'biceps brachii' || valLower === 'bíceps braquial') currentValue = 'Biceps';
     else if (valLower === 'triceps brachii' || valLower === 'tríceps braquial') currentValue = 'Triceps';
@@ -66,9 +64,18 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
     else if (valLower === 'rectus abdominis' || valLower === 'recto abdominal') currentValue = 'Abs';
     else if (valLower === 'gluteus maximus' || valLower === 'glúteo mayor') currentValue = 'Glutes';
     else if (valLower === 'biceps femoris' || valLower === 'femoral') currentValue = 'Hamstrings';
-    // Mapeo de valores antiguos
     else if (valLower === 'otro' || valLower === 'other' || valLower === 'n/a') currentValue = 'Other';
   }
+
+  // Generamos y ordenamos las opciones alfabéticamente según la traducción
+  const sortedOptions = useMemo(() => {
+    const options = MUSCLE_GROUP_KEYS.map((key) => ({
+      value: key,
+      label: t(key, { ns: 'exercise_muscles', defaultValue: key }),
+    }));
+
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [t]);
 
   if (isManual) {
     return (
@@ -76,11 +83,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
         <CustomSelect
           value={currentValue}
           onChange={handleSelectChange}
-          options={MUSCLE_GROUP_KEYS.map((key) => ({
-            value: key,
-            // Traduce la clave (ej: "Lower Back" -> "Lumbares")
-            label: t(key, { ns: 'exercise_muscles', defaultValue: key }),
-          }))}
+          options={sortedOptions}
           placeholder={t('muscle_group_placeholder', {
             ns: 'exercise_ui',
             defaultValue: 'Selecciona grupo...',

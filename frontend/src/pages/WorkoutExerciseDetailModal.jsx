@@ -101,8 +101,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       onClick={onClose}
     >
       <GlassCard
-        // MODIFICADO: Cambiado max-h-[80vh] a max-h-[70vh] md:max-h-[85vh] para móviles
-        className="relative w-full max-w-lg max-h-[70vh] md:max-h-[85vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out]"
+        // MODIFICADO: Cambiado a max-h-[60vh] para asegurar que el navbar no lo cubra en móviles
+        className="relative w-full max-w-lg max-h-[60vh] md:max-h-[85vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <button

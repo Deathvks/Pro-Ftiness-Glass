@@ -116,6 +116,9 @@ export const guessMuscleFromText = (text) => {
     if (t.includes('press') && (t.includes('shoulder') || t.includes('hombro') || t.includes('militar') || t.includes('military') || t.includes('overhead'))) return ['front-deltoids'];
     if (t.includes('raise') || t.includes('elevacion') || t.includes('lateral') || t.includes('pajaros') || t.includes('face pull')) return ['back-deltoids', 'front-deltoids'];
 
+    // Antebrazos (Nuevo - Antes de "Brazos" para capturar variaciones específicas)
+    if (t.includes('wrist') || t.includes('muñeca') || t.includes('forearm') || t.includes('antebrazo') || t.includes('reverse curl') || t.includes('curl invertido') || t.includes('brachioradialis') || t.includes('braquiorradial')) return ['forearm'];
+
     // Brazos
     if (t.includes('curl') || t.includes('bicep')) return ['biceps'];
     if (t.includes('extension') || t.includes('tricep') || t.includes('skull') || t.includes('copa') || t.includes('patada') || t.includes('pushdown')) return ['triceps'];

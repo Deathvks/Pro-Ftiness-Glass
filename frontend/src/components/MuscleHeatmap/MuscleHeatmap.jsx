@@ -1,7 +1,7 @@
 /* frontend/src/components/MuscleHeatmap/MuscleHeatmap.jsx */
 import React, { useState, useMemo, useRef } from 'react';
 import Model from 'react-body-highlighter';
-import { MUSCLE_NAMES_ES } from '../../utils/muscleUtils'; // Importamos el diccionario centralizado
+import { MUSCLE_NAMES_ES, DB_TO_HEATMAP_MAP } from '../../utils/muscleUtils';
 import './MuscleHeatmap.css';
 
 const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
@@ -15,18 +15,41 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
     const formattedData = useMemo(() => {
         if (!muscleData || Object.keys(muscleData).length === 0) return [];
 
-        return Object.entries(muscleData).map(([name, value]) => {
+        // 1. Detectamos si hay músculos específicos de brazo en los datos actuales
+        const dataKeys = Object.keys(muscleData).map(k => k.toLowerCase());
+        const specificArmKeywords = ['biceps', 'bíceps', 'triceps', 'tríceps', 'forearm', 'antebrazo', 'brachial', 'braquial'];
+
+        const hasSpecificArmMuscle = dataKeys.some(key =>
+            specificArmKeywords.some(keyword => key.includes(keyword))
+        );
+
+        return Object.entries(muscleData).reduce((acc, [name, value]) => {
+            const lowerName = name.toLowerCase();
+
+            // 2. FILTRO INTELIGENTE:
+            // Si detectamos músculos específicos (ej: antebrazo), ignoramos la categoría genérica "Brazos/Arms"
+            // para evitar que se iluminen erróneamente bíceps y tríceps por defecto.
+            if (hasSpecificArmMuscle && (lowerName === 'arms' || lowerName === 'brazos')) {
+                return acc;
+            }
+
             let frequency = Math.ceil((value / 10) * colors.length);
             if (frequency < 1) frequency = 1;
             if (frequency > colors.length) frequency = colors.length;
 
-            return {
-                // Usamos el diccionario importado
-                name: MUSCLE_NAMES_ES[name] || name,
-                muscles: [name],
+            // Mapeo correcto de DB a Heatmap
+            // Obtenemos los IDs internos que usa la librería (ej: 'forearms' -> ['forearm'])
+            // Si no existe en el mapa, usamos el nombre tal cual como fallback
+            const targetMuscles = DB_TO_HEATMAP_MAP[lowerName] || [name];
+
+            acc.push({
+                name: MUSCLE_NAMES_ES[lowerName] || name, // Traducimos el nombre para el tooltip
+                muscles: targetMuscles, // Pasamos el array correcto a la librería
                 frequency: frequency
-            };
-        });
+            });
+
+            return acc;
+        }, []);
     }, [muscleData]);
 
     const handleMuscleClick = ({ muscle, data }) => {

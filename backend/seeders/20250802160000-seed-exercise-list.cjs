@@ -112,7 +112,6 @@ module.exports = {
                 }
             });
 
-
             console.log(` -> Maps created (Categories: ${categoryMap.size}, Equipment: ${equipmentMap.size}, Muscles: ${muscleMap.size}, Main Images: ${mainImageMap.size}, End Images: ${endImageMap.size})`);
             console.log('\nFormatting exercises, removing duplicates, using Name/Desc: ES > EN > API Default fallback...');
             const formattedExercises = [];
@@ -232,6 +231,28 @@ module.exports = {
                         }
                     }
 
+                    // --- MEJORA PARA ANTEBRAZOS (FOREARMS) ---
+                    // Detectar si el ejercicio es de antebrazo basándose en el nombre o músculos específicos
+                    const lowerName = exerciseName.toLowerCase();
+                    const lowerMuscleGroup = muscleGroupName.toLowerCase();
+
+                    const forearmKeywords = [
+                        'wrist', 'muñeca',
+                        'forearm', 'antebrazo',
+                        'brachioradialis', 'braquiorradial',
+                        'reverse curl', 'curl invertido',
+                        'pronator', 'pronación',
+                        'supinator', 'supinación'
+                    ];
+
+                    const isForearm = forearmKeywords.some(kw => lowerName.includes(kw) || lowerMuscleGroup.includes(kw));
+
+                    // Si se detecta contexto de antebrazo y no está explícito en el grupo, lo añadimos
+                    if (isForearm && !lowerMuscleGroup.includes('forearms')) {
+                        muscleGroupName += ', Forearms';
+                    }
+                    // ------------------------------------------
+
                     const equipmentNames = exInfo.equipment?.length > 0
                         ? exInfo.equipment.map(eq => equipmentMap.get(eq.id) || `Equipment ${eq.id}`).join(', ')
                         : 'Bodyweight';
@@ -263,7 +284,6 @@ module.exports = {
                 }
             });
             console.log(` -> Formatting complete. ${formattedExercises.length} unique exercises ready for insertion.`);
-
             // Stats logging...
             if (missingNameCount > 0) console.warn(` -> ${missingNameCount} skipped (no name).`);
             if (usedSpanishNameCount > 0) console.log(` -> ES Names: ${usedSpanishNameCount}`);
@@ -282,7 +302,7 @@ module.exports = {
                     console.log(` -> Inserting chunk ${Math.floor(i / chunkSize) + 1}/${Math.ceil(formattedExercises.length / chunkSize)}`);
                     await queryInterface.bulkInsert('exercise_list', chunk, { timeout: 60000 });
                 }
-                console.log('✅ Successfully seeded exercise_list from wger API (Specific muscles fixed).');
+                console.log('✅ Successfully seeded exercise_list from wger API (Specific muscles + Forearms fix).');
             } else {
                 console.warn('⚠️ No exercises were formatted after filtering. Seeding skipped.');
             }

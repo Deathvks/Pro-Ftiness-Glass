@@ -205,14 +205,10 @@ const ExerciseSearch = ({
     const armsLabel = t('Arms', { ns: 'exercise_muscles', defaultValue: 'Arms' });
     const bicepsLabel = t('Biceps', { ns: 'exercise_muscles', defaultValue: 'Biceps' });
     const tricepsLabel = t('Triceps', { ns: 'exercise_muscles', defaultValue: 'Triceps' });
+    const forearmsLabel = t('Forearms', { ns: 'exercise_muscles', defaultValue: 'Forearms' });
 
     return allExercises.filter(ex => {
-      // 1. Filtro Texto (Nombre)
-      const originalName = ex.name.toLowerCase();
-      const translatedName = t(ex.name, { ns: 'exercise_names', defaultValue: ex.name }).toLowerCase();
-      const nameMatch = originalName.includes(query) || translatedName.includes(query);
-
-      // 2. Filtro Músculo (Comparando Labels Traducidos)
+      // Preparación de datos (Músculos)
       const rawMuscles = ex.muscle_group
         ? ex.muscle_group.split(',').map(m => m.trim())
         : [ex.category || 'Other'];
@@ -222,25 +218,37 @@ const ExerciseSearch = ({
         t(m, { ns: 'exercise_muscles', defaultValue: m })
       );
 
-      // Coincide si NO hay filtro activo O si alguno de los músculos traducidos está en la lista de filtros seleccionados
-      // --- INICIO DE LA MODIFICACIÓN (Lógica especial Brazos) ---
-      const muscleMatch = filterMuscle.length === 0 || filterMuscle.some(filterLabel => {
+      // 1. Filtro Texto: Nombre O Grupo Muscular
+      const originalName = ex.name.toLowerCase();
+      const translatedName = t(ex.name, { ns: 'exercise_names', defaultValue: ex.name }).toLowerCase();
+
+      const nameMatch = originalName.includes(query) || translatedName.includes(query);
+
+      // --- INICIO MODIFICACIÓN: Búsqueda por texto en grupo muscular ---
+      // Comprobamos si el texto buscado está incluido en alguno de los grupos musculares traducidos
+      const muscleTextMatch = translatedMuscles.some(m => m.toLowerCase().includes(query));
+
+      const textMatch = nameMatch || muscleTextMatch;
+      // --- FIN MODIFICACIÓN ---
+
+
+      // 2. Filtro Selector Músculo (Comparando Labels Traducidos)
+      const muscleFilterMatch = filterMuscle.length === 0 || filterMuscle.some(filterLabel => {
         // Coincidencia exacta
         if (translatedMuscles.includes(filterLabel)) return true;
 
-        // Lógica especial 1: Si filtro por Bíceps o Tríceps, mostrar también ejercicios de "Brazos"
-        if ((filterLabel === bicepsLabel || filterLabel === tricepsLabel) && translatedMuscles.includes(armsLabel)) {
+        // Lógica especial 1: Si filtro por Bíceps, Tríceps o Antebrazos, mostrar también ejercicios de "Brazos"
+        if ((filterLabel === bicepsLabel || filterLabel === tricepsLabel || filterLabel === forearmsLabel) && translatedMuscles.includes(armsLabel)) {
           return true;
         }
 
-        // Lógica especial 2: Si filtro por "Brazos", mostrar también ejercicios de "Bíceps" o "Tríceps"
-        if (filterLabel === armsLabel && (translatedMuscles.includes(bicepsLabel) || translatedMuscles.includes(tricepsLabel))) {
+        // Lógica especial 2: Si filtro por "Brazos", mostrar también ejercicios de "Bíceps", "Tríceps" o "Antebrazos"
+        if (filterLabel === armsLabel && (translatedMuscles.includes(bicepsLabel) || translatedMuscles.includes(tricepsLabel) || translatedMuscles.includes(forearmsLabel))) {
           return true;
         }
 
         return false;
       });
-      // --- FIN DE LA MODIFICACIÓN ---
 
       // 3. Filtro Equipamiento (Comparando Labels Traducidos)
       const rawEquipment = ex.equipment
@@ -253,7 +261,7 @@ const ExerciseSearch = ({
 
       const equipmentMatch = filterEquipment.length === 0 || filterEquipment.some(filterLabel => translatedEquipment.includes(filterLabel));
 
-      return nameMatch && muscleMatch && equipmentMatch;
+      return textMatch && muscleFilterMatch && equipmentMatch;
     });
   }, [allExercises, searchQuery, filterMuscle, filterEquipment, t, ready]);
 

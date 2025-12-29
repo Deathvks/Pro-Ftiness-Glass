@@ -27,11 +27,31 @@ const ExerciseCard = ({
 }) => {
 
   const { t: tName } = useTranslation('exercise_names');
-  // 2. Eliminamos 'tMuscle' y 'translatedMuscle' ya que no se usan más.
+  // --- INICIO MODIFICACIÓN: Importamos traducción de músculos ---
+  const { t: tMuscles } = useTranslation('exercise_muscles');
+  // --- FIN MODIFICACIÓN ---
   const { t: tCommon } = useTranslation('translation');
   const { theme } = useAppTheme();
 
   const translatedName = tName(exercise.name, { defaultValue: exercise.name });
+
+  // --- INICIO DE LA MODIFICACIÓN (Traducción de Músculos Múltiples) ---
+  // Si el ejercicio no es manual (viene de la BD), puede tener múltiples músculos (ej: "Arms, Forearms").
+  // Los separamos y traducimos individualmente para evitar que salga "Arms, Forearms" sin traducir.
+  const displayMuscleGroup = React.useMemo(() => {
+    if (exercise.is_manual) return exercise.muscle_group; // Si es manual, se usa la clave tal cual
+    if (!exercise.muscle_group) return '';
+
+    return exercise.muscle_group
+      .split(',')
+      .map(m => {
+        const key = m.trim();
+        // Traducimos cada parte individualmente
+        return tMuscles(key, { defaultValue: key });
+      })
+      .join(', ');
+  }, [exercise.muscle_group, exercise.is_manual, tMuscles]);
+  // --- FIN DE LA MODIFICACIÓN ---
 
   const handleExerciseSelected = (selectedExercise) => {
     onExerciseSelect(exercise.tempId, selectedExercise);
@@ -42,8 +62,6 @@ const ExerciseCard = ({
   const mediaUrl = videoUrl || imageUrl;
 
   // Lógica de contraste para OLED:
-  // Si es imagen (no vídeo) y el tema es OLED, usamos fondo claro.
-  // De lo contrario, usamos el fondo primario estándar del componente.
   const isOled = theme === 'oled';
   const isVideo = mediaUrl && (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm'));
   const containerBgClass = (!isVideo && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
@@ -62,11 +80,8 @@ const ExerciseCard = ({
           </div>
         )}
 
-        {/* --- INICIO DE LA MODIFICACIÓN (IMAGE BLOCK) --- */}
         {/* Bloque de Imagen/Video */}
-        {/* Aplicamos 'containerBgClass' en lugar de 'bg-bg-primary' fijo */}
         <div className={`flex-shrink-0 w-full h-40 sm:w-2/5 sm:h-40 rounded-md overflow-hidden ${containerBgClass} border border-glass-border mb-3 sm:mb-0`}>
-          {/* --- FIN DE LA MODIFICACIÓN (IMAGE BLOCK) --- */}
           {mediaUrl ? (
             (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm')) ? (
               <video
@@ -75,19 +90,13 @@ const ExerciseCard = ({
                 loop
                 muted
                 playsInline
-                /* --- INICIO DE LA MODIFICACIÓN (Image fit) --- */
-                // Cambiamos 'object-cover' a 'object-contain'
                 className="w-full h-full object-contain"
-              /* --- FIN DE LA MODIFICACIÓN (Image fit) --- */
               />
             ) : (
               <img
                 src={mediaUrl}
                 alt={`Vista previa de ${translatedName}`}
-                /* --- INICIO DE LA MODIFICACIÓN (Image fit) --- */
-                // Cambiamos 'object-cover' a 'object-contain'
                 className="w-full h-full object-contain"
-                /* --- FIN DE la MODIFICACIÓN (Image fit) --- */
                 loading="lazy"
               />
             )
@@ -100,32 +109,28 @@ const ExerciseCard = ({
         </div>
 
         {/* Columna de Información (Nombre, Músculo, Inputs) */}
-        {/* Hacemos que este contenedor use flex-col y centre sus items en móvil,
-            y que se estire (comportamiento normal) en 'sm' y más grande */}
-        {/* Añadimos 'sm:w-3/5' para que ocupe el 60% restante en desktop */}
         <div className="flex-grow min-w-0 w-full sm:w-3/5 flex flex-col items-center sm:items-stretch">
 
-          {/* Input de Búsqueda (sin cambios) */}
+          {/* Input de Búsqueda */}
           <ExerciseSearchInput
             initialQuery={translatedName}
             onExerciseSelect={handleExerciseSelected}
-            className="w-full" // Añadido para asegurar el stretch en desktop
+            className="w-full"
           />
 
-          {/* --- INICIO DE LA MODIFICACIÓN --- */}
-          {/* Añadimos 'mt-2' para separación superior */}
+          {/* Grupo Muscular */}
           <div className="mt-2">
-            {/* Cambiamos 'text-center' (de baseLabelClasses) a 'text-left' */}
             <label className="block text-xs font-medium text-text-muted mb-1 text-left">
               {tCommon('Grupo Muscular', { defaultValue: 'Grupo Muscular' })}
             </label>
             <EditableMuscleGroup
-              initialValue={exercise.muscle_group || ''}
+              // --- INICIO MODIFICACIÓN: Pasamos el string ya traducido ---
+              initialValue={displayMuscleGroup || ''}
+              // --- FIN MODIFICACIÓN ---
               onSave={(newValue) => onFieldChange(exercise.tempId, 'muscle_group', newValue)}
               isManual={exercise.is_manual}
             />
           </div>
-          {/* --- FIN DE LA MODIFICACIÓN --- */}
 
           {/* Inputs (Series, Reps Y Descanso) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 w-full">
@@ -137,9 +142,7 @@ const ExerciseCard = ({
               </label>
               <input
                 type="number"
-                // --- INICIO DE LA MODIFICACIÓN (Validación UI) ---
-                min="1" // No permite 0 o negativos
-                // --- FIN DE LA MODIFICACIÓN (Validación UI) ---
+                min="1"
                 placeholder="3"
                 value={exercise.sets || ''}
                 onChange={(e) => onFieldChange(exercise.tempId, 'sets', e.target.value)}
@@ -154,7 +157,7 @@ const ExerciseCard = ({
                 {tCommon('Reps', { defaultValue: 'Reps' })}
               </label>
               <input
-                type="text" // (Se mantiene en texto para rangos como '8-12')
+                type="text"
                 placeholder="8-12"
                 value={exercise.reps || ''}
                 onChange={(e) => onFieldChange(exercise.tempId, 'reps', e.target.value)}
@@ -170,9 +173,7 @@ const ExerciseCard = ({
               </label>
               <input
                 type="number"
-                // --- INICIO DE LA MODIFICACIÓN (Validación UI) ---
-                min="0" // No permite negativos
-                // --- FIN DE LA MODIFICACIÓN (Validación UI) ---
+                min="0"
                 placeholder="60"
                 value={exercise.rest_seconds || ''}
                 onChange={(e) => onFieldChange(exercise.tempId, 'rest_seconds', e.target.value)}
@@ -183,13 +184,10 @@ const ExerciseCard = ({
           </div>
         </div>
 
-        {/* Columna de Acciones (Reemplazar, Eliminar) (sin cambios) */}
+        {/* Columna de Acciones (Reemplazar, Eliminar) */}
         <div className="absolute top-3 right-3 sm:static flex sm:flex-col justify-end sm:justify-center gap-1 sm:gap-2">
           <button
-            // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
-            // 2. Pasamos el 'tempId' (string) en lugar del 'exIndex' (number)
             onClick={() => onReplaceClick(exercise.tempId)}
-            // --- FIN DE LA MODIFICACIÓN ---
             className="p-1 sm:p-2 rounded-md text-text-muted hover:bg-accent/20 hover:text-accent transition"
             title="Reemplazar ejercicio"
           >
