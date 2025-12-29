@@ -31,55 +31,25 @@ const ExerciseListView = ({
   const listRef = useRef(null);
   const SCROLL_KEY = 'exerciseListScrollPos';
 
-  // --- LÓGICA DE SCROLL MEJORADA ---
+  // --- LÓGICA DE SCROLL ---
 
-  // 1. Restaurar scroll de forma robusta
-  // Usamos useLayoutEffect para evitar parpadeos visuales si es posible,
-  // y dependemos de 'filteredExercises' para asegurar que el contenido existe.
   useLayoutEffect(() => {
     const savedPos = sessionStorage.getItem(SCROLL_KEY);
-
-    // Solo intentamos restaurar si no estamos cargando, hay ejercicios y hay una posición guardada
     if (listRef.current && savedPos && !isLoading && filteredExercises.length > 0) {
-      // Intentamos restaurar inmediatamente
       listRef.current.scrollTop = Number(savedPos);
-
-      // DOBLE CHECK: A veces el navegador necesita un "tick" extra si hay imágenes o renderizado pesado
       requestAnimationFrame(() => {
         if (listRef.current) {
           listRef.current.scrollTop = Number(savedPos);
         }
       });
     }
-  }, [isLoading, filteredExercises.length]); // Dependencia clave: longitud de la lista
+  }, [isLoading, filteredExercises.length]);
 
-  // 2. Resetear scroll explícitamente si el usuario cambia los filtros o busca
-  // Esto es para que no se quede "abajo" si busca algo nuevo.
   useEffect(() => {
-    // Solo reseteamos si la búsqueda/filtros cambian intencionalmente
-    // No queremos resetear al volver de la vista de detalle (donde searchQuery es el mismo)
-    const handleFilterChange = () => {
-      if (listRef.current) {
-        // Si el usuario está escribiendo o filtrando, queremos ir arriba
-        // Pero tenemos que distinguir esto de "montar el componente con filtros ya puestos"
-        // La forma más simple es: si guardamos la posición antes, y ahora cambian filtros, reseteamos.
-        // Pero como searchQuery viene del padre, al volver del detalle sigue igual.
-        // Solución: Guardamos scroll en onScroll. Si cambian props, React no resetea scroll
-        // del div automáticamente a menos que cambie el contenido drásticamente.
-        // Para UX correcta: Si cambia query, forzamos top 0.
-        // Verificamos si la posición guardada coincide con la actual para no resetear innecesariamente
-        // al montar.
-
-        // Estrategia simplificada: Confiamos en el usuario. Si busca, el scroll suele
-        // ajustarse solo al cambiar la altura, pero forzamos 0 por si acaso.
-        // NOTA: Comentado para evitar conflictos con la restauración al montar.
-        // listRef.current.scrollTop = 0; 
-      }
-    };
-    handleFilterChange();
+    // Resetear scroll si cambia la búsqueda (opcional, mejora UX)
+    // De momento confiamos en el comportamiento nativo o manual
   }, [searchQuery, filterMuscle, filterEquipment]);
 
-  // 3. Guardar scroll dinámicamente
   const handleScroll = () => {
     if (listRef.current) {
       sessionStorage.setItem(SCROLL_KEY, listRef.current.scrollTop);
@@ -103,7 +73,6 @@ const ExerciseListView = ({
     if (!newValue) return;
     if (!currentMuscleFilters.includes(newValue)) {
       setFilterMuscle([...currentMuscleFilters, newValue]);
-      // Al cambiar filtro, reseteamos scroll guardado para empezar desde arriba en la nueva lista
       sessionStorage.setItem(SCROLL_KEY, 0);
       if (listRef.current) listRef.current.scrollTop = 0;
     }
@@ -128,10 +97,8 @@ const ExerciseListView = ({
     sessionStorage.setItem(SCROLL_KEY, 0);
   };
 
-  // Handler especial para el input de búsqueda para resetear scroll al escribir
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    // Si escribe, reseteamos scroll
     if (listRef.current) listRef.current.scrollTop = 0;
     sessionStorage.setItem(SCROLL_KEY, 0);
   };
@@ -141,9 +108,9 @@ const ExerciseListView = ({
 
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       {/* Header (Cerrar y Carrito) */}
-      <div className="flex-shrink-0 flex items-center justify-between p-3 md:p-4 border-b border-glass-border gap-2">
+      <div className="flex-shrink-0 flex items-center justify-between p-3 md:p-4 border-b border-glass-border gap-2 bg-bg-primary z-10">
         <h2 className="text-lg md:text-xl font-bold truncate min-w-0">
           {t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
         </h2>
@@ -167,14 +134,14 @@ const ExerciseListView = ({
       </div>
 
       {/* Barra de Búsqueda y Zona de Filtros */}
-      <div className="flex-shrink-0 p-4 space-y-4 border-b border-glass-border">
+      <div className="flex-shrink-0 p-4 space-y-4 border-b border-glass-border bg-bg-primary z-10">
         {/* Input Buscador */}
         <div className="relative">
           <input
             type="text"
             placeholder={t('exercise_ui:search_placeholder_extended', 'Buscar ejercicio o grupo muscular...')}
             value={searchQuery}
-            onChange={handleSearchChange} // Usamos el handler nuevo
+            onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent"
           />
           <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -190,7 +157,6 @@ const ExerciseListView = ({
             <span>{showFilters ? t('exercise_ui:hide_filters', 'Ocultar Filtros') : t('exercise_ui:show_filters', 'Mostrar Filtros')}</span>
           </button>
 
-          {/* Contador de ejercicios */}
           <span className="text-xs font-medium text-text-muted animate-[fade-in_0.3s_ease-out]">
             {filteredExercises.length} {filteredExercises.length === 1
               ? t('exercise_ui:exercise_count_single', 'ejercicio encontrado')
@@ -253,11 +219,11 @@ const ExerciseListView = ({
         )}
       </div>
 
-      {/* Lista de Resultados con Scroll Controlado */}
+      {/* Lista de Resultados con Scroll Controlado y Padding Inferior Extra */}
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-3"
+        className="flex-1 overflow-y-auto p-4 space-y-3 pb-32 md:pb-4"
       >
         {isLoading ? (
           <div className="flex justify-center py-10"><Spinner /></div>

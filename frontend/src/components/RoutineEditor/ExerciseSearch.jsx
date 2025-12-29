@@ -450,7 +450,7 @@ const ExerciseSearch = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-bg-primary flex justify-center items-center animate-[fade-in_0.2s_ease_out]">
+    <div className="fixed top-0 left-0 w-full h-[100dvh] z-50 bg-bg-primary flex justify-center items-center animate-[fade-in_0.2s_ease_out]">
       <div className="relative w-full h-full md:max-w-2xl md:max-h-[90vh] md:rounded-lg overflow-hidden bg-bg-primary md:border md:border-glass-border md:shadow-2xl">
         {renderContent()}
       </div>

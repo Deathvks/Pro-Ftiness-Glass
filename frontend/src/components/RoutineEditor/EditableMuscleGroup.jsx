@@ -7,28 +7,10 @@ import CustomSelect from '../CustomSelect';
 
 // Lista de claves disponibles
 const MUSCLE_GROUP_KEYS = [
-  'Abs',            // Abdominales
-  'Abductors',      // Abductores
-  'Adductors',      // Aductores
-  'Forearms',       // Antebrazos
-  'Biceps',         // Bíceps
-  'Cardio',         // Cardio
-  'Quads',          // Cuádriceps
-  'Neck',           // Cuello
-  'Full Body',      // Cuerpo completo
-  'Lats',           // Dorsales
-  'Back',           // Espalda (General)
-  'Upper Back',     // Espalda Alta
-  'Hamstrings',     // Femorales/Isquios
-  'Calves',         // Gemelos
-  'Glutes',         // Glúteos
-  'Shoulders',      // Hombros
-  'Lower Back',     // Lumbares
-  'Obliques',       // Oblicuos
-  'Other',          // Otro
-  'Chest',          // Pecho
-  'Traps',          // Trapecios
-  'Triceps',        // Tríceps
+  'Abs', 'Abductors', 'Adductors', 'Forearms', 'Biceps', 'Cardio',
+  'Quads', 'Neck', 'Full Body', 'Lats', 'Back', 'Upper Back',
+  'Hamstrings', 'Calves', 'Glutes', 'Shoulders', 'Lower Back',
+  'Obliques', 'Other', 'Chest', 'Traps', 'Triceps',
 ];
 
 const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
@@ -65,7 +47,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
   };
 
   const commonStyles = 'w-full capitalize text-center sm:text-left';
-  // Añadimos h-12 para altura fija y max-w-full para evitar desbordamiento
+  // Ajuste: w-full con max-w-full para seguridad.
   const wrapperStyles = 'mt-1 w-full max-w-full';
 
   // Generamos y ordenamos las opciones alfabéticamente según la traducción
@@ -80,8 +62,8 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
 
   if (isManual) {
     return (
-      // Contenedor con altura fija para evitar saltos de layout
-      <div className={`${wrapperStyles} h-12 relative flex items-center`}>
+      // Contenedor ajustado a h-10 (altura estándar) y width controlado para evitar scroll horizontal
+      <div className={`${wrapperStyles} h-10 relative flex items-center`}>
         <CustomSelect
           value={currentValue}
           onChange={handleSelectChange}
@@ -90,7 +72,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
             ns: 'exercise_ui',
             defaultValue: 'Selecciona grupo...',
           })}
-          className="w-full h-full"
+          className="w-full"
         />
       </div>
     );
