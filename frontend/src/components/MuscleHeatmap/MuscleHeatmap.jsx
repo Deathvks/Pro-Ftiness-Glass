@@ -4,6 +4,15 @@ import Model from 'react-body-highlighter';
 import { MUSCLE_NAMES_ES, DB_TO_HEATMAP_MAP } from '../../utils/muscleUtils';
 import './MuscleHeatmap.css';
 
+// Función auxiliar para normalizar texto (quitar tildes y minúsculas)
+const normalizeKey = (text) => {
+    return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+};
+
 const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
     const [modelType, setModelType] = useState('anterior');
     const [selectedMuscleLabel, setSelectedMuscleLabel] = useState(null);
@@ -15,21 +24,35 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
     const formattedData = useMemo(() => {
         if (!muscleData || Object.keys(muscleData).length === 0) return [];
 
-        // 1. Detectamos si hay músculos específicos de brazo en los datos actuales
-        const dataKeys = Object.keys(muscleData).map(k => k.toLowerCase());
-        const specificArmKeywords = ['biceps', 'bíceps', 'triceps', 'tríceps', 'forearm', 'antebrazo', 'brachial', 'braquial'];
+        // --- PASO 1: PRE-PROCESAMIENTO ---
+        const cleanCounts = {};
 
-        const hasSpecificArmMuscle = dataKeys.some(key =>
-            specificArmKeywords.some(keyword => key.includes(keyword))
+        Object.entries(muscleData).forEach(([rawName, value]) => {
+            if (!rawName) return;
+            // Separamos por comas y normalizamos
+            const parts = rawName.split(',');
+            parts.forEach(part => {
+                const key = normalizeKey(part);
+                if (key) {
+                    cleanCounts[key] = (cleanCounts[key] || 0) + value;
+                }
+            });
+        });
+
+        const cleanKeys = Object.keys(cleanCounts);
+
+        // --- PASO 2: DETECCIÓN DE MÚSCULOS ESPECÍFICOS ---
+        const armSpecifics = ['biceps', 'triceps', 'forearm', 'antebrazo', 'brachial', 'braquial'];
+        const hasSpecificArm = cleanKeys.some(key =>
+            armSpecifics.some(spec => key.includes(spec))
         );
 
-        return Object.entries(muscleData).reduce((acc, [name, value]) => {
-            const lowerName = name.toLowerCase();
+        // --- PASO 3: CONSTRUCCIÓN INICIAL ---
+        let result = cleanKeys.reduce((acc, key) => {
+            const value = cleanCounts[key];
 
-            // 2. FILTRO INTELIGENTE:
-            // Si detectamos músculos específicos (ej: antebrazo), ignoramos la categoría genérica "Brazos/Arms"
-            // para evitar que se iluminen erróneamente bíceps y tríceps por defecto.
-            if (hasSpecificArmMuscle && (lowerName === 'arms' || lowerName === 'brazos')) {
+            // Filtro de "Brazos" genérico si hay específicos
+            if (hasSpecificArm && (key === 'arms' || key === 'brazos' || key === 'brazo')) {
                 return acc;
             }
 
@@ -37,26 +60,49 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
             if (frequency < 1) frequency = 1;
             if (frequency > colors.length) frequency = colors.length;
 
-            // Mapeo correcto de DB a Heatmap
-            // Obtenemos los IDs internos que usa la librería (ej: 'forearms' -> ['forearm'])
-            // Si no existe en el mapa, usamos el nombre tal cual como fallback
-            const targetMuscles = DB_TO_HEATMAP_MAP[lowerName] || [name];
+            // Mapeo de DB a Heatmap (o fallback a la clave misma)
+            let targetMuscles = DB_TO_HEATMAP_MAP[key] ||
+                DB_TO_HEATMAP_MAP[key.replace('biceps', 'bíceps')] ||
+                [key];
+
+            // Nombre visual
+            const displayName = MUSCLE_NAMES_ES[key] ||
+                (key.charAt(0).toUpperCase() + key.slice(1));
 
             acc.push({
-                name: MUSCLE_NAMES_ES[lowerName] || name, // Traducimos el nombre para el tooltip
-                muscles: targetMuscles, // Pasamos el array correcto a la librería
+                name: displayName,
+                muscles: targetMuscles,
                 frequency: frequency
             });
 
             return acc;
         }, []);
+
+        // --- PASO 4: LIMPIEZA QUIRÚRGICA DE TRÍCEPS ---
+        // Si hay bíceps o antebrazos explícitos, pero NO tríceps explícito,
+        // eliminamos cualquier iluminación "accidental" de tríceps (ej: heredada de 'brazos' si se coló).
+        const hasExplicitTriceps = cleanKeys.some(k => k.includes('triceps') || k.includes('tríceps'));
+        const hasExplicitBicepsOrForearm = cleanKeys.some(k =>
+            k.includes('biceps') || k.includes('antebrazo') || k.includes('forearm')
+        );
+
+        if (!hasExplicitTriceps && hasExplicitBicepsOrForearm) {
+            result = result.map(item => {
+                if (item.muscles.includes('triceps')) {
+                    const newMuscles = item.muscles.filter(m => m !== 'triceps');
+                    return { ...item, muscles: newMuscles };
+                }
+                return item;
+            });
+        }
+
+        return result;
     }, [muscleData]);
 
     const handleMuscleClick = ({ muscle, data }) => {
         isMuscleClick.current = true;
         setTimeout(() => { isMuscleClick.current = false; }, 100);
 
-        // Usamos el nombre del mapa o el fallback
         const label = data?.name || MUSCLE_NAMES_ES[muscle] || muscle;
         setSelectedMuscleLabel(label);
 
@@ -75,7 +121,6 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
             onClick={handleContainerClick}
             title="Haz click en un músculo para ver su nombre, o en el fondo para girar"
         >
-            {/* Etiqueta flotante */}
             <div className="absolute top-4 right-4 z-10 pointer-events-none">
                 <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full backdrop-blur-sm transition-colors border ${darkMode
                     ? 'text-cyan-400/50 border-cyan-400/20 bg-black/20 group-hover:text-cyan-400 group-hover:border-cyan-400/50'
@@ -85,7 +130,6 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
                 </span>
             </div>
 
-            {/* Popup Nombre Músculo */}
             {selectedMuscleLabel && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none animate-[scale-in_0.1s_ease-out]">
                     <div className="bg-black/80 backdrop-blur-md text-white text-sm font-bold px-4 py-2 rounded-full border border-white/10 shadow-xl whitespace-nowrap">
@@ -94,7 +138,6 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
                 </div>
             )}
 
-            {/* SVG Modelo */}
             <div className="w-full h-full flex justify-center items-center py-2">
                 <div style={{ width: '100%', maxWidth: '200px', height: '350px' }}>
                     <Model

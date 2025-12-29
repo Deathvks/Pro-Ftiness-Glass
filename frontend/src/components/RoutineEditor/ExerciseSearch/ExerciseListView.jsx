@@ -1,5 +1,5 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseListView.jsx */
-import React from 'react';
+import React, { useRef, useLayoutEffect, useEffect } from 'react';
 import { X, Search, ShoppingCart, ListFilter, Plus } from 'lucide-react';
 import CustomSelect from '../../CustomSelect';
 import ExerciseListItem from './ExerciseListItem';
@@ -27,14 +27,70 @@ const ExerciseListView = ({
   onAddManual,
   t,
 }) => {
+  // Referencia al contenedor de la lista para controlar el scroll
+  const listRef = useRef(null);
+  const SCROLL_KEY = 'exerciseListScrollPos';
+
+  // --- LÓGICA DE SCROLL MEJORADA ---
+
+  // 1. Restaurar scroll de forma robusta
+  // Usamos useLayoutEffect para evitar parpadeos visuales si es posible,
+  // y dependemos de 'filteredExercises' para asegurar que el contenido existe.
+  useLayoutEffect(() => {
+    const savedPos = sessionStorage.getItem(SCROLL_KEY);
+
+    // Solo intentamos restaurar si no estamos cargando, hay ejercicios y hay una posición guardada
+    if (listRef.current && savedPos && !isLoading && filteredExercises.length > 0) {
+      // Intentamos restaurar inmediatamente
+      listRef.current.scrollTop = Number(savedPos);
+
+      // DOBLE CHECK: A veces el navegador necesita un "tick" extra si hay imágenes o renderizado pesado
+      requestAnimationFrame(() => {
+        if (listRef.current) {
+          listRef.current.scrollTop = Number(savedPos);
+        }
+      });
+    }
+  }, [isLoading, filteredExercises.length]); // Dependencia clave: longitud de la lista
+
+  // 2. Resetear scroll explícitamente si el usuario cambia los filtros o busca
+  // Esto es para que no se quede "abajo" si busca algo nuevo.
+  useEffect(() => {
+    // Solo reseteamos si la búsqueda/filtros cambian intencionalmente
+    // No queremos resetear al volver de la vista de detalle (donde searchQuery es el mismo)
+    const handleFilterChange = () => {
+      if (listRef.current) {
+        // Si el usuario está escribiendo o filtrando, queremos ir arriba
+        // Pero tenemos que distinguir esto de "montar el componente con filtros ya puestos"
+        // La forma más simple es: si guardamos la posición antes, y ahora cambian filtros, reseteamos.
+        // Pero como searchQuery viene del padre, al volver del detalle sigue igual.
+        // Solución: Guardamos scroll en onScroll. Si cambian props, React no resetea scroll
+        // del div automáticamente a menos que cambie el contenido drásticamente.
+        // Para UX correcta: Si cambia query, forzamos top 0.
+        // Verificamos si la posición guardada coincide con la actual para no resetear innecesariamente
+        // al montar.
+
+        // Estrategia simplificada: Confiamos en el usuario. Si busca, el scroll suele
+        // ajustarse solo al cambiar la altura, pero forzamos 0 por si acaso.
+        // NOTA: Comentado para evitar conflictos con la restauración al montar.
+        // listRef.current.scrollTop = 0; 
+      }
+    };
+    handleFilterChange();
+  }, [searchQuery, filterMuscle, filterEquipment]);
+
+  // 3. Guardar scroll dinámicamente
+  const handleScroll = () => {
+    if (listRef.current) {
+      sessionStorage.setItem(SCROLL_KEY, listRef.current.scrollTop);
+    }
+  };
 
   // --- LÓGICA MULTI-SELECT ---
 
-  // 1. Asegurar que los filtros sean arrays para evitar errores
   const currentMuscleFilters = Array.isArray(filterMuscle) ? filterMuscle : [];
   const currentEquipmentFilters = Array.isArray(filterEquipment) ? filterEquipment : [];
 
-  // 2. Mapear valores a objetos completos para mostrar las "etiquetas" (pills) con su label traducido
   const activeMuscleFilters = currentMuscleFilters
     .map(value => muscleOptions.find(opt => opt.value === value))
     .filter(Boolean);
@@ -43,11 +99,13 @@ const ExerciseListView = ({
     .map(value => equipmentOptions.find(opt => opt.value === value))
     .filter(Boolean);
 
-  // 3. Handlers para AÑADIR filtros (sin duplicados)
   const handleMuscleChange = (newValue) => {
     if (!newValue) return;
     if (!currentMuscleFilters.includes(newValue)) {
       setFilterMuscle([...currentMuscleFilters, newValue]);
+      // Al cambiar filtro, reseteamos scroll guardado para empezar desde arriba en la nueva lista
+      sessionStorage.setItem(SCROLL_KEY, 0);
+      if (listRef.current) listRef.current.scrollTop = 0;
     }
   };
 
@@ -55,26 +113,36 @@ const ExerciseListView = ({
     if (!newValue) return;
     if (!currentEquipmentFilters.includes(newValue)) {
       setFilterEquipment([...currentEquipmentFilters, newValue]);
+      sessionStorage.setItem(SCROLL_KEY, 0);
+      if (listRef.current) listRef.current.scrollTop = 0;
     }
   };
 
-  // 4. Handlers para REMOVER filtros
   const removeMuscleFilter = (valueToRemove) => {
     setFilterMuscle(currentMuscleFilters.filter(val => val !== valueToRemove));
+    sessionStorage.setItem(SCROLL_KEY, 0);
   };
 
   const removeEquipmentFilter = (valueToRemove) => {
     setFilterEquipment(currentEquipmentFilters.filter(val => val !== valueToRemove));
+    sessionStorage.setItem(SCROLL_KEY, 0);
   };
 
-  // 5. Filtrar las opciones del Select para NO mostrar las que ya están seleccionadas (Mejora UX)
+  // Handler especial para el input de búsqueda para resetear scroll al escribir
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    // Si escribe, reseteamos scroll
+    if (listRef.current) listRef.current.scrollTop = 0;
+    sessionStorage.setItem(SCROLL_KEY, 0);
+  };
+
   const availableMuscleOptions = muscleOptions.filter(opt => !currentMuscleFilters.includes(opt.value));
   const availableEquipmentOptions = equipmentOptions.filter(opt => !currentEquipmentFilters.includes(opt.value));
 
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header (Cerrar y Carrito) - Responsive Ajustado */}
+      {/* Header (Cerrar y Carrito) */}
       <div className="flex-shrink-0 flex items-center justify-between p-3 md:p-4 border-b border-glass-border gap-2">
         <h2 className="text-lg md:text-xl font-bold truncate min-w-0">
           {t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
@@ -104,11 +172,9 @@ const ExerciseListView = ({
         <div className="relative">
           <input
             type="text"
-            // --- INICIO MODIFICACIÓN: Placeholder actualizado ---
             placeholder={t('exercise_ui:search_placeholder_extended', 'Buscar ejercicio o grupo muscular...')}
-            // --- FIN MODIFICACIÓN ---
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange} // Usamos el handler nuevo
             className="w-full pl-10 pr-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent"
           />
           <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -160,14 +226,14 @@ const ExerciseListView = ({
           </div>
         )}
 
-        {/* Dropdowns de Selección (Solo visibles si showFilters es true) */}
+        {/* Dropdowns de Selección */}
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-[slide-down_0.2s_ease-out]">
             <div>
               <label className="text-xs text-text-muted block mb-1">{t('exercise_ui:filter_muscle', 'Grupo Muscular')}</label>
               <CustomSelect
-                options={availableMuscleOptions} // Usamos las opciones filtradas
-                value={null} // Siempre null para que actúe como un "añadidor"
+                options={availableMuscleOptions}
+                value={null}
                 onChange={handleMuscleChange}
                 placeholder={t('exercise_ui:select_muscles', 'Seleccionar músculos...')}
                 className="w-full capitalize"
@@ -176,7 +242,7 @@ const ExerciseListView = ({
             <div>
               <label className="text-xs text-text-muted block mb-1">{t('exercise_ui:filter_equipment', 'Equipamiento')}</label>
               <CustomSelect
-                options={availableEquipmentOptions} // Usamos las opciones filtradas
+                options={availableEquipmentOptions}
                 value={null}
                 onChange={handleEquipmentChange}
                 placeholder={t('exercise_ui:select_equipment', 'Seleccionar equipamiento...')}
@@ -187,13 +253,16 @@ const ExerciseListView = ({
         )}
       </div>
 
-      {/* Lista de Resultados */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* Lista de Resultados con Scroll Controlado */}
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-3"
+      >
         {isLoading ? (
           <div className="flex justify-center py-10"><Spinner /></div>
         ) : (
           <>
-            {/* Renderizar ejercicios filtrados */}
             {filteredExercises.map(exercise => (
               <ExerciseListItem
                 key={exercise.id}
@@ -205,7 +274,6 @@ const ExerciseListView = ({
               />
             ))}
 
-            {/* Botón de añadir manual siempre al final */}
             <button
               onClick={onAddManual}
               className="w-full flex items-center gap-4 p-3 rounded-lg bg-bg-secondary hover:bg-accent-transparent border border-glass-border transition-colors group"
@@ -223,7 +291,6 @@ const ExerciseListView = ({
               </div>
             </button>
 
-            {/* Mensaje si no hay resultados */}
             {filteredExercises.length === 0 && (
               <p className="text-center text-text-muted pt-10">{t('exercise_ui:no_exercises_found', 'No se encontraron ejercicios.')}</p>
             )}

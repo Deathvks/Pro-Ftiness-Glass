@@ -1,6 +1,6 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseDetailView.jsx */
 import React, { useState } from 'react';
-import { ChevronLeft, Plus, Check, Repeat } from 'lucide-react';
+import { ChevronLeft, Plus, Check, Repeat, Dumbbell } from 'lucide-react';
 import { useAppTheme } from '../../../hooks/useAppTheme';
 // Importamos la función centralizada
 import { normalizeText } from '../../../utils/helpers';
@@ -33,7 +33,8 @@ const ExerciseDetailView = ({
   });
 
   // 2. Traducir grupo muscular
-  const rawMuscleGroup = exercise.muscle_group || exercise.category || 'Other';
+  // --- CORRECCIÓN 1: Detección ampliada para ejercicios manuales ---
+  const rawMuscleGroup = exercise.muscle_group || exercise.muscles || exercise.target || exercise.category || 'Other';
   const translatedMuscle = rawMuscleGroup
     .split(',')
     .map((m) => {
@@ -64,7 +65,6 @@ const ExerciseDetailView = ({
   // Usamos la función importada para generar la clave limpia
   const descriptionKey = normalizeText(exercise.description);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Añadimos nsSeparator: false y keySeparator: false para que los puntos y dos puntos
   // en la descripción no rompan la búsqueda de la clave.
   const translatedDescription = t(descriptionKey, {
@@ -73,12 +73,12 @@ const ExerciseDetailView = ({
     nsSeparator: false,
     keySeparator: false,
   });
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // Lógica de contraste para OLED:
   const isOled = theme === 'oled';
   const hasVideo = !!exercise.video_url;
-  const mediaBgClass = (!hasVideo && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
+  const hasImages = !!exercise.image_url_start;
+  const mediaBgClass = (!hasVideo && !hasImages && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -107,18 +107,23 @@ const ExerciseDetailView = ({
               playsInline
               className="w-full h-full object-contain"
             />
-          ) : (
+          ) : hasImages ? (
             <div className="flex gap-4 w-full h-full p-4">
               <img
-                src={exercise.image_url_start || '/logo.webp'}
+                src={exercise.image_url_start}
                 alt={`Inicio de ${translatedName}`}
                 className="w-1/2 h-full object-contain"
               />
               <img
-                src={exercise.image_url_end || exercise.image_url_start || '/logo.webp'}
+                src={exercise.image_url_end || exercise.image_url_start}
                 alt={`Fin de ${translatedName}`}
                 className="w-1/2 h-full object-contain"
               />
+            </div>
+          ) : (
+            // --- CORRECCIÓN 2: Mostrar icono si no hay medios ---
+            <div className="flex items-center justify-center text-text-muted">
+              <Dumbbell size={64} opacity={0.5} />
             </div>
           )}
         </div>

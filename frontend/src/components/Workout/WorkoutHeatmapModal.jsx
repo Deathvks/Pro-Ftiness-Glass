@@ -5,7 +5,7 @@ import MuscleHeatmap from '../MuscleHeatmap/MuscleHeatmap';
 import GlassCard from '../GlassCard';
 
 // Importamos la utilidad centralizada para evitar duplicidad de código
-import { DB_TO_HEATMAP_MAP, guessMuscleFromText } from '../../utils/muscleUtils';
+import { guessMuscleFromText } from '../../utils/muscleUtils';
 
 // Leyenda de intensidad (Visual)
 const INTENSITY_LEVELS = [
@@ -27,30 +27,28 @@ const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
             // 1. Obtener nombre del músculo (prioridad: muscle_group directo > exercise_details)
             const rawMuscle = ex.muscle_group || ex.exercise_details?.muscle_group;
 
-            let targetMuscles = [];
+            let keysToCount = [];
 
             if (rawMuscle) {
-                // Soportamos listas separadas por comas
-                const groups = rawMuscle.split(',').map(g => g.trim().toLowerCase());
-
-                groups.forEach(g => {
-                    if (DB_TO_HEATMAP_MAP[g]) {
-                        targetMuscles.push(...DB_TO_HEATMAP_MAP[g]);
-                    }
-                });
+                // --- CORRECCIÓN ---
+                // NO resolvemos el mapeo aquí. Pasamos las claves crudas (ej: 'brazos')
+                // para que MuscleHeatmap pueda aplicar el "Filtro Inteligente".
+                keysToCount = rawMuscle.split(',').map(g => g.trim().toLowerCase());
             }
 
-            // 2. Fallback: Adivinar por nombre si no hay mapping válido usando la utilidad importada
-            if (targetMuscles.length === 0) {
-                targetMuscles = guessMuscleFromText(ex.name);
+            // 2. Fallback: Adivinar por nombre si no hay grupo muscular
+            if (keysToCount.length === 0) {
+                keysToCount = guessMuscleFromText(ex.name);
             }
 
             // 3. Determinar volumen (series)
             const sets = Array.isArray(ex.sets) ? ex.sets.length : (parseInt(ex.sets) || 3);
 
-            // 4. Acumular
-            targetMuscles.forEach(m => {
-                scores[m] = (scores[m] || 0) + sets;
+            // 4. Acumular (usando la clave cruda)
+            keysToCount.forEach(key => {
+                if (key) {
+                    scores[key] = (scores[key] || 0) + sets;
+                }
             });
         });
 

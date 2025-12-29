@@ -1,6 +1,6 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseSummaryView.jsx */
 import React, { useMemo } from 'react';
-import { ChevronLeft, Trash2, Check } from 'lucide-react';
+import { ChevronLeft, Trash2, Check, Dumbbell } from 'lucide-react';
 
 // Componente para la vista de Resumen/Carrito
 const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFinalize, t }) => {
@@ -55,19 +55,40 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
               ns: 'exercise_names',
               defaultValue: item.exercise.name,
             });
-            const muscleGroup = item.exercise.category || item.exercise.muscle_group;
-            const translatedMuscle = t(`exercise_muscles:${muscleGroup}`, {
-              defaultValue: muscleGroup,
-            });
+
+            // Prioridad: 1. muscle_group, 2. muscles, 3. target, 4. category, 5. 'Other'
+            const rawMuscleGroup = item.exercise.muscle_group || item.exercise.muscles || item.exercise.target || item.exercise.category || 'Other';
+
+            const translatedMuscle = rawMuscleGroup
+              .split(',')
+              .map((m) => {
+                const trimmed = m.trim();
+                return t(trimmed, {
+                  ns: 'exercise_muscles',
+                  defaultValue: trimmed,
+                });
+              })
+              .join(', ');
+
+            // Lógica de imagen/icono
+            const displayImage = item.exercise.image_url_start;
 
             return (
               <div key={item.exercise.id} className="bg-bg-secondary rounded-xl border border-glass-border p-4">
                 <div className="flex items-start gap-4">
-                  <img
-                    src={item.exercise.image_url_start || '/logo.webp'}
-                    alt={`Imagen de ${translatedName}`}
-                    className="w-12 h-12 rounded-md object-cover border border-glass-border"
-                  />
+                  {/* Si hay imagen la mostramos, si no, mostramos el icono Dumbbell */}
+                  {displayImage ? (
+                    <img
+                      src={displayImage}
+                      alt={`Imagen de ${translatedName}`}
+                      className="w-12 h-12 rounded-md object-contain border border-glass-border bg-bg-primary"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-md border border-glass-border bg-bg-primary flex items-center justify-center text-text-muted">
+                      <Dumbbell size={24} />
+                    </div>
+                  )}
+
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{translatedName}</p>
                     <p className="text-sm text-text-muted capitalize">
@@ -119,10 +140,6 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
       </div>
 
       {/* Footer (Finalizar) */}
-      {/* MODIFICACIÓN: Aumentado pb a 'calc(6rem + safe-area)' (~24 tailwind units + safe area) 
-          Esto asegura que el botón flote POR ENCIMA de la barra de navegación (que mide 5rem/h-20).
-          En desktop (md) volvemos a un padding normal (pb-6).
-      */}
       <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">
         <button
           onClick={onFinalize}

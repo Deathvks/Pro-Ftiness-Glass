@@ -35,20 +35,6 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
   const { t } = useTranslation(['exercise_muscles', 'exercise_ui']);
   const { addToast } = useToast();
 
-  const handleSelectChange = (newValue) => {
-    onSave(newValue);
-    addToast(
-      i18n.t(
-        'exercise_ui:toast_muscle_group_updated',
-        'Grupo muscular actualizado (se guardará con la rutina).',
-      ),
-      'success',
-    );
-  };
-
-  const commonStyles = 'w-full capitalize text-center sm:text-left';
-  const wrapperStyles = 'mt-1 w-full';
-
   // --- LÓGICA DE NORMALIZACIÓN ---
   let currentValue = initialValue;
 
@@ -67,6 +53,21 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
     else if (valLower === 'otro' || valLower === 'other' || valLower === 'n/a') currentValue = 'Other';
   }
 
+  const handleSelectChange = (newValue) => {
+    onSave(newValue);
+    addToast(
+      i18n.t(
+        'exercise_ui:toast_muscle_group_updated',
+        'Grupo muscular actualizado (se guardará con la rutina).',
+      ),
+      'success',
+    );
+  };
+
+  const commonStyles = 'w-full capitalize text-center sm:text-left';
+  // Añadimos h-12 para altura fija y max-w-full para evitar desbordamiento
+  const wrapperStyles = 'mt-1 w-full max-w-full';
+
   // Generamos y ordenamos las opciones alfabéticamente según la traducción
   const sortedOptions = useMemo(() => {
     const options = MUSCLE_GROUP_KEYS.map((key) => ({
@@ -79,7 +80,8 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
 
   if (isManual) {
     return (
-      <div className={wrapperStyles}>
+      // Contenedor con altura fija para evitar saltos de layout
+      <div className={`${wrapperStyles} h-12 relative flex items-center`}>
         <CustomSelect
           value={currentValue}
           onChange={handleSelectChange}
@@ -88,7 +90,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
             ns: 'exercise_ui',
             defaultValue: 'Selecciona grupo...',
           })}
-          className="w-full"
+          className="w-full h-full"
         />
       </div>
     );

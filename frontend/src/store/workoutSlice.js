@@ -209,7 +209,8 @@ export const createWorkoutSlice = (set, get) => ({
           is_dropset: false,
         })),
         exercise_list_id: fullDetails?.id || null,
-        muscle_group: fullDetails?.muscle_group || null,
+        // --- CORRECCIÓN: Prioridad a ex.muscle_group para ejercicios manuales ---
+        muscle_group: ex.muscle_group || fullDetails?.muscle_group || null,
         last_performance: lastPerformance,
       };
     });

@@ -1,6 +1,6 @@
 /* frontend/src/components/Workout/WorkoutHeader.jsx */
 import React from 'react';
-import { ChevronLeft, Play, Pause, Square, Calculator, Activity } from 'lucide-react';
+import { ChevronLeft, Play, Pause, Square, Calculator, Activity, Timer } from 'lucide-react';
 import GlassCard from '../GlassCard';
 
 // NOTA: Mantenemos esta función helper aquí por ahora para que 
@@ -25,7 +25,7 @@ const WorkoutHeader = ({
   onTogglePause,
   onFinishClick,
   onShowCalculator,
-  onShowHeatmap, // <--- Nueva prop
+  onShowHeatmap,
 }) => {
   return (
     <div className="w-full">
@@ -83,9 +83,11 @@ const WorkoutHeader = ({
           </div>
         </div>
         {!hasWorkoutStarted && (
-          <div className="mt-4 p-3 bg-accent-transparent border border-accent-border rounded-md text-center">
-            <p className="text-accent font-medium">
-              ⏱️ Inicia el cronómetro para comenzar a registrar datos
+          // --- CORRECCIÓN: shrink-0 en icono y text-center en el párrafo ---
+          <div className="mt-4 p-3 bg-accent-transparent border border-accent-border rounded-md flex items-center justify-center gap-2">
+            <Timer size={20} className="text-accent shrink-0" />
+            <p className="text-accent font-medium text-center">
+              Inicia el cronómetro para comenzar a registrar datos
             </p>
           </div>
         )}

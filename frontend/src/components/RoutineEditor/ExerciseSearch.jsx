@@ -12,6 +12,7 @@ import ExerciseDetailView from './ExerciseSearch/ExerciseDetailView';
 import ExerciseSummaryView from './ExerciseSearch/ExerciseSummaryView';
 
 const CART_DRAFT_KEY = 'exerciseSearchCartDraft';
+const VIEW_STORAGE_KEY = 'exerciseSearchViewState'; // Nueva clave para persistencia
 
 // --- Componente Principal (Contenedor) ---
 const ExerciseSearch = ({
@@ -27,7 +28,14 @@ const ExerciseSearch = ({
   const { t, i18n, ready } = useTranslation(['exercise_descriptions', 'exercise_names', 'exercise_ui', 'exercise_muscles', 'exercise_equipment']);
 
   // --- STATE ---
-  const [view, setView] = useState('list');
+  // Modificado: Inicialización lazy para recuperar la vista guardada
+  const [view, setView] = useState(() => {
+    if (isReplacing) return 'list';
+    // Recuperamos la vista guardada en la sesión (por si recarga la página)
+    const savedView = sessionStorage.getItem(VIEW_STORAGE_KEY);
+    return savedView === 'summary' ? 'summary' : 'list';
+  });
+
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [allExercises, setAllExercises] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,6 +70,17 @@ const ExerciseSearch = ({
 
   // El carrito se considera "inicializado" si cargamos un borrador
   const [cartInitialized, setCartInitialized] = useState(draftLoaded);
+
+  // --- NUEVO EFECTO: Persistir la vista actual ---
+  useEffect(() => {
+    if (!isReplacing) {
+      // Solo guardamos si es 'list' o 'summary'. 
+      // Si es 'detail', no lo guardamos para que al recargar vuelva a la lista (ya que se pierde el ejercicio seleccionado).
+      if (view === 'list' || view === 'summary') {
+        sessionStorage.setItem(VIEW_STORAGE_KEY, view);
+      }
+    }
+  }, [view, isReplacing]);
 
   // useEffect de INICIALIZACIÓN
   useEffect(() => {
@@ -224,12 +243,10 @@ const ExerciseSearch = ({
 
       const nameMatch = originalName.includes(query) || translatedName.includes(query);
 
-      // --- INICIO MODIFICACIÓN: Búsqueda por texto en grupo muscular ---
-      // Comprobamos si el texto buscado está incluido en alguno de los grupos musculares traducidos
+      // Búsqueda por texto en grupo muscular
       const muscleTextMatch = translatedMuscles.some(m => m.toLowerCase().includes(query));
 
       const textMatch = nameMatch || muscleTextMatch;
-      // --- FIN MODIFICACIÓN ---
 
 
       // 2. Filtro Selector Músculo (Comparando Labels Traducidos)
@@ -314,6 +331,7 @@ const ExerciseSearch = ({
     );
 
     localStorage.removeItem(CART_DRAFT_KEY);
+    sessionStorage.removeItem(VIEW_STORAGE_KEY); // Limpiamos la vista guardada
     onClose();
   };
 
