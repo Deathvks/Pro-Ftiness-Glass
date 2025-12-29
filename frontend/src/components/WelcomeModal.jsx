@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
-  Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell
+  Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
+  Link, Smartphone // Nuevos iconos importados
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -135,7 +136,7 @@ const WelcomeModal = ({ onClose }) => {
               </p>
             </div>
 
-            {/* --- BLOQUE 2: MAPA DE CALOR (NUEVO) --- */}
+            {/* --- BLOQUE 2: MAPA DE CALOR --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Flame size={16} className="text-orange-500" /> Mapa de Calor Muscular
@@ -146,16 +147,12 @@ const WelcomeModal = ({ onClose }) => {
 
                   {/* Silueta Abstracta */}
                   <div className="relative w-12 h-20 opacity-90">
-                    {/* Cabeza */}
                     <div className="mx-auto w-3 h-3 bg-white/20 rounded-full mb-0.5"></div>
-                    {/* Torso (Pulsando en rojo - Máximo) */}
                     <div className="mx-auto w-6 h-8 bg-red-500/80 rounded-sm mb-0.5 animate-[pulse_3s_infinite] shadow-[0_0_12px_rgba(239,68,68,0.4)]"></div>
-                    {/* Piernas (Amarillo - Alto) */}
                     <div className="flex justify-center gap-0.5">
                       <div className="w-2.5 h-7 bg-yellow-400/80 rounded-sm shadow-[0_0_8px_rgba(250,204,21,0.3)]"></div>
                       <div className="w-2.5 h-7 bg-yellow-400/80 rounded-sm shadow-[0_0_8px_rgba(250,204,21,0.3)]"></div>
                     </div>
-                    {/* Brazos (Cyan - Bajo) */}
                     <div className="absolute top-4 left-0 w-2 h-7 bg-cyan-400/60 rounded-sm -rotate-12"></div>
                     <div className="absolute top-4 right-0 w-2 h-7 bg-cyan-400/60 rounded-sm rotate-12"></div>
                   </div>
@@ -235,6 +232,51 @@ const WelcomeModal = ({ onClose }) => {
               </div>
               <p className="mt-3 text-xs text-text-muted text-center">
                 Encuentra compañeros, comparte rutinas y compite.
+              </p>
+            </div>
+
+            {/* --- BLOQUE 4: SUPERSERIES (NUEVO) --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Link size={16} className="text-blue-400" /> Superseries Pro
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                  <div className="flex gap-2 items-center">
+                    <div className="bg-bg-secondary/30 p-2 rounded-lg border border-glass-border flex flex-col items-center w-16">
+                      <div className="w-8 h-8 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs mb-1">A1</div>
+                      <div className="h-1 w-8 bg-white/10 rounded"></div>
+                    </div>
+                    <div className="h-0.5 w-6 bg-blue-500/50"></div>
+                    <div className="bg-bg-secondary/30 p-2 rounded-lg border border-glass-border flex flex-col items-center w-16">
+                      <div className="w-8 h-8 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs mb-1">A2</div>
+                      <div className="h-1 w-8 bg-white/10 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Agrupa ejercicios y gestiona tus circuitos con una nueva interfaz unificada.
+              </p>
+            </div>
+
+            {/* --- BLOQUE 5: VIBRACIÓN (NUEVO) --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Smartphone size={16} className="text-pink-500" /> Feedback Háptico
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                  <div className="relative">
+                    <Smartphone size={32} className="text-text-primary relative z-10" />
+                    <div className="absolute inset-0 bg-pink-500/20 rounded-full animate-ping blur-sm"></div>
+                    <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-4 bg-pink-500 rounded-full animate-[pulse_0.5s_ease-in-out_infinite]"></div>
+                    <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-1 h-4 bg-pink-500 rounded-full animate-[pulse_0.5s_ease-in-out_infinite_0.1s]"></div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Siente cada repetición, descanso y logro con la nueva respuesta táctil.
               </p>
             </div>
 
