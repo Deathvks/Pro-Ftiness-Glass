@@ -238,18 +238,18 @@ const WelcomeModal = ({ onClose }) => {
             {/* --- BLOQUE 4: SUPERSERIES (NUEVO) --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
-                <Link size={16} className="text-blue-400" /> Superseries Pro
+                <Link size={16} className="text-accent" /> Superseries Pro
               </h2>
               <div className="flex justify-center">
                 <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
                   <div className="flex gap-2 items-center">
                     <div className="bg-bg-secondary/30 p-2 rounded-lg border border-glass-border flex flex-col items-center w-16">
-                      <div className="w-8 h-8 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs mb-1">A1</div>
+                      <div className="w-8 h-8 rounded bg-accent/20 text-accent flex items-center justify-center font-bold text-xs mb-1">A1</div>
                       <div className="h-1 w-8 bg-white/10 rounded"></div>
                     </div>
-                    <div className="h-0.5 w-6 bg-blue-500/50"></div>
+                    <div className="h-0.5 w-6 bg-accent/50"></div>
                     <div className="bg-bg-secondary/30 p-2 rounded-lg border border-glass-border flex flex-col items-center w-16">
-                      <div className="w-8 h-8 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs mb-1">A2</div>
+                      <div className="w-8 h-8 rounded bg-accent/20 text-accent flex items-center justify-center font-bold text-xs mb-1">A2</div>
                       <div className="h-1 w-8 bg-white/10 rounded"></div>
                     </div>
                   </div>
@@ -263,15 +263,15 @@ const WelcomeModal = ({ onClose }) => {
             {/* --- BLOQUE 5: VIBRACIÓN (NUEVO) --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
-                <Smartphone size={16} className="text-pink-500" /> Feedback Háptico
+                <Smartphone size={16} className="text-accent" /> Feedback Háptico
               </h2>
               <div className="flex justify-center">
                 <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
                   <div className="relative">
                     <Smartphone size={32} className="text-text-primary relative z-10" />
-                    <div className="absolute inset-0 bg-pink-500/20 rounded-full animate-ping blur-sm"></div>
-                    <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-4 bg-pink-500 rounded-full animate-[pulse_0.5s_ease-in-out_infinite]"></div>
-                    <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-1 h-4 bg-pink-500 rounded-full animate-[pulse_0.5s_ease-in-out_infinite_0.1s]"></div>
+                    <div className="absolute inset-0 bg-accent/20 rounded-full animate-ping blur-sm"></div>
+                    <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-4 bg-accent rounded-full animate-[pulse_0.5s_ease-in-out_infinite]"></div>
+                    <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-1 h-4 bg-accent rounded-full animate-[pulse_0.5s_ease-in-out_infinite_0.1s]"></div>
                   </div>
                 </div>
               </div>
