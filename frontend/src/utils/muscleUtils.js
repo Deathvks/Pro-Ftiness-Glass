@@ -205,7 +205,7 @@ export const MUSCLE_NAMES_ES = {
     'triceps': 'Tríceps',
     'forearm': 'Antebrazos',
     'quadriceps': 'Cuádriceps',
-    'hamstring': 'Isquiotibiales',
+    'hamstring': 'Femoral', // CAMBIADO: Antes Isquiotibiales
     'gluteal': 'Glúteos',
     'calves': 'Gemelos',
     'trapezius': 'Trapecios',
@@ -220,8 +220,8 @@ export const MUSCLE_NAMES_ES = {
     'dorsal ancho': 'Dorsal',
 
     'serratus anterior': 'Serrato anterior',
-    'soleus': 'Sóleo',
-    'gastrocnemius': 'Gastrocnemio',
+    'soleus': 'Gemelos', // CAMBIADO: Antes Sóleo
+    'gastrocnemius': 'Gemelos', // CAMBIADO: Antes Gastrocnemio
     'brachialis': 'Braquial',
     'biceps femoris': 'Femoral',
     'rectus abdominis': 'Abdominales',

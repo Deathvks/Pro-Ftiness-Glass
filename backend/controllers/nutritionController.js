@@ -8,9 +8,7 @@ import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import { deleteFile } from '../services/imageService.js';
 import { addXp, checkStreak, unlockBadge, FOOD_LOG_XP } from '../services/gamificationService.js';
-// --- INICIO MODIFICACIÓN: Importar createNotification ---
 import { createNotification } from '../services/notificationService.js';
-// --- FIN MODIFICACIÓN ---
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -279,6 +277,12 @@ const addFoodLog = async (req, res, next) => {
       ? req.file.processedPath
       : sanitizedImageUrl;
 
+    // --- CORRECCIÓN: Contamos ANTES de crear ---
+    // Esto asegura que sabemos exactamente cuántas había antes de esta inserción
+    const existingLogsCount = await NutritionLog.count({
+      where: { user_id: userId, log_date: log_date }
+    });
+
     const foodData = {
       user_id: userId,
       log_date,
@@ -303,17 +307,16 @@ const addFoodLog = async (req, res, next) => {
     try {
       const todayStr = new Date().toISOString().split('T')[0];
 
-      const logsCount = await NutritionLog.count({
-        where: { user_id: userId, log_date: log_date }
-      });
-
-      // --- CAMBIO: Lógica de límite de XP con notificación ---
-      if (logsCount <= MAX_DAILY_FOOD_XP_COUNT) {
+      // --- CAMBIO: Lógica basada en el conteo previo ---
+      // Si había menos de 5 (ej: 0, 1, 2, 3, 4), esta es válida (1ª, 2ª, 3ª, 4ª, 5ª)
+      if (existingLogsCount < MAX_DAILY_FOOD_XP_COUNT) {
         const xpResult = await addXp(userId, FOOD_LOG_XP, 'Comida registrada');
         if (xpResult.success) {
           gamificationEvents.push({ type: 'xp', amount: FOOD_LOG_XP, reason: 'Comida registrada' });
         }
-      } else if (logsCount === MAX_DAILY_FOOD_XP_COUNT + 1) {
+      }
+      // Si había exactamente 5, esta es la 6ª -> Enviamos WARNING
+      else if (existingLogsCount === MAX_DAILY_FOOD_XP_COUNT) {
         // Notificar al usuario que ha alcanzado el límite (solo la primera vez que se excede)
         await createNotification(userId, {
           type: 'warning',
@@ -322,7 +325,7 @@ const addFoodLog = async (req, res, next) => {
           data: { type: 'xp_limit', reason: 'daily_food_limit' }
         });
       }
-      // --- FIN CAMBIO ---
+      // Si había más de 5 (ej: 6), esta es la 7ª -> No hacemos nada
 
       const totalCount = await NutritionLog.count({ where: { user_id: userId } });
       if (totalCount >= 5) {
@@ -521,7 +524,7 @@ const upsertWaterLog = async (req, res, next) => {
       const waterNotifications = await Notification.findAll({
         where: {
           user_id: userId,
-          message: { [Op.like]: '%Hidratación:%' }, // Buscamos mensajes que contengan "Hidratación:"
+          message: { [Op.like]: `%Hidratación:%` }, // Buscamos mensajes que contengan "Hidratación:"
           created_at: { [Op.between]: [startOfDay, endOfDay] }
         }
       });

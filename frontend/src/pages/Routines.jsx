@@ -574,7 +574,7 @@ const Routines = ({ setView }) => {
       {showDeleteModal && (
         <ConfirmationModal
           isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
+          onCancel={() => setShowDeleteModal(false)} // --- CORRECCIÓN: cambiado onClose a onCancel
           message="¿Estás seguro de que quieres borrar esta rutina?"
           onConfirm={confirmDelete}
           isLoading={isLoading}
