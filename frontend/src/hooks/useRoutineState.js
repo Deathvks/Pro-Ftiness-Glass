@@ -11,22 +11,23 @@ const DRAFT_KEY = 'routineEditorDraft';
  */
 const getInitialState = (initialRoutine) => {
   const savedDraft = localStorage.getItem(DRAFT_KEY);
-  
+
   if (savedDraft) {
     try {
       const draft = JSON.parse(savedDraft);
       const draftId = draft.id || null;
       const routineId = initialRoutine?.id || null;
-      
+
       // Si el ID del borrador coincide con el de la rutina, o si ambos son 'null' (Nueva Rutina)
       if (draftId === routineId) {
         // Cargar el borrador guardado
         return {
           ...draft,
           // Asegurarnos de que los estados de carga no se queden "atascados"
-          isLoading: false, 
+          isLoading: false,
           isSaving: false,
           isDeleting: false,
+          isUploadingImage: false, // Asegurar que empieza en false
         };
       }
     } catch (e) {
@@ -40,10 +41,13 @@ const getInitialState = (initialRoutine) => {
     id: initialRoutine?.id || null, // Guardar el ID de lo que estamos editando
     routineName: initialRoutine?.name || '',
     description: initialRoutine?.description || '',
+    // Nota: El backend usa snake_case (image_url), aquí normalizamos a camelCase para el estado
+    imageUrl: initialRoutine?.image_url || null,
     exercises: [], // Empezar vacío. useRoutineLoader lo llenará si no hay borrador
     isLoading: false,
     isSaving: false,
     isDeleting: false,
+    isUploadingImage: false,
     showDeleteConfirm: false,
     validationError: null,
     showExerciseSearch: false,
@@ -54,12 +58,12 @@ const getInitialState = (initialRoutine) => {
 // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
 
 /**
- * Hook para gestionar el estado base del editor de rutinas.
- * Contiene todos los useState.
- */
+ * Hook para gestionar el estado base del editor de rutinas.
+ * Contiene todos los useState.
+ */
 export const useRoutineState = (initialRoutine) => {
   // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
-  
+
   // 1. Obtener el estado inicial (desde el borrador o la rutina)
   // Usamos useState con una función para que getInitialState solo se ejecute una vez
   const [initialState] = useState(() => getInitialState(initialRoutine));
@@ -67,12 +71,14 @@ export const useRoutineState = (initialRoutine) => {
   // 2. Inicializar todos los estados desde initialState
   const [routineName, setRoutineName] = useState(initialState.routineName);
   const [description, setDescription] = useState(initialState.description);
+  const [imageUrl, setImageUrl] = useState(initialState.imageUrl); // <-- Nueva imagen
   const [exercises, setExercises] = useState(initialState.exercises); // <-- Se carga desde el borrador
 
   // Estados de carga y guardado
   const [isLoading, setIsLoading] = useState(initialState.isLoading);
   const [isSaving, setIsSaving] = useState(initialState.isSaving);
   const [isDeleting, setIsDeleting] = useState(initialState.isDeleting);
+  const [isUploadingImage, setIsUploadingImage] = useState(initialState.isUploadingImage); // <-- Estado de carga de imagen
 
   // Estados de UI (modales, validación)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(initialState.showDeleteConfirm);
@@ -89,6 +95,7 @@ export const useRoutineState = (initialRoutine) => {
       id: initialRoutine?.id || null,
       routineName,
       description,
+      imageUrl, // Guardamos la URL de la imagen en el borrador
       exercises,
       showDeleteConfirm,
       validationError,
@@ -99,12 +106,14 @@ export const useRoutineState = (initialRoutine) => {
       isLoading: false,
       isSaving: false,
       isDeleting: false,
+      isUploadingImage: false,
     };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draftState));
   }, [
     initialRoutine?.id,
     routineName,
     description,
+    imageUrl, // Añadido a dependencias
     exercises,
     showDeleteConfirm,
     validationError,
@@ -114,20 +123,22 @@ export const useRoutineState = (initialRoutine) => {
   ]);
   // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
 
-  return {
-    // Estado y setters de la rutina
-    routineName, setRoutineName,
-    description, setDescription,
-    exercises, setExercises,
-    // Estado y setters de carga
-    isLoading, setIsLoading,
-    isSaving, setIsSaving,
-    isDeleting, setIsDeleting,
-    // Estado y setters de UI
-    showDeleteConfirm, setShowDeleteConfirm,
-    validationError, setValidationError,
-    showExerciseSearch, setShowExerciseSearch,
-    activeDropdownTempId, setActiveDropdownTempId,
-    replacingExerciseTempId, setReplacingExerciseTempId,
-  };
+  return {
+    // Estado y setters de la rutina
+    routineName, setRoutineName,
+    description, setDescription,
+    imageUrl, setImageUrl,
+    exercises, setExercises,
+    // Estado y setters de carga
+    isLoading, setIsLoading,
+    isSaving, setIsSaving,
+    isDeleting, setIsDeleting,
+    isUploadingImage, setIsUploadingImage,
+    // Estado y setters de UI
+    showDeleteConfirm, setShowDeleteConfirm,
+    validationError, setValidationError,
+    showExerciseSearch, setShowExerciseSearch,
+    activeDropdownTempId, setActiveDropdownTempId,
+    replacingExerciseTempId, setReplacingExerciseTempId,
+  };
 };

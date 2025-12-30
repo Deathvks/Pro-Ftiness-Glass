@@ -18,6 +18,7 @@ import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
+import ConfirmationModal from '../components/ConfirmationModal'; // IMPORTADO
 
 // --- AÑADIDO: Constantes para construir la URL correcta ---
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -46,6 +47,10 @@ export default function Social({ setView }) {
 
     const [highlightedId, setHighlightedId] = useState(null);
     const ITEMS_PER_PAGE = 10;
+
+    // --- NUEVO: Estado para el modal de confirmación ---
+    const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, friendId: null });
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const { showToast } = useToast();
 
@@ -128,12 +133,22 @@ export default function Social({ setView }) {
         showToast(action === 'accept' ? 'Solicitud aceptada' : 'Solicitud rechazada', 'success');
     };
 
-    const handleRemoveFriend = async (e, friendId) => {
+    // --- MODIFICADO: Solo abre el modal, no borra directamente ---
+    const handleRemoveFriend = (e, friendId) => {
         e.stopPropagation();
-        if (window.confirm('¿Seguro que quieres eliminar a este amigo?')) {
-            await removeFriend(friendId);
-            showToast('Amigo eliminado', 'success');
-        }
+        setDeleteConfirmation({ isOpen: true, friendId });
+    };
+
+    // --- NUEVO: Ejecuta el borrado real ---
+    const confirmDeleteFriend = async () => {
+        if (!deleteConfirmation.friendId) return;
+
+        setIsDeleting(true);
+        await removeFriend(deleteConfirmation.friendId);
+        showToast('Amigo eliminado', 'success');
+        setIsDeleting(false);
+
+        setDeleteConfirmation({ isOpen: false, friendId: null });
     };
 
     const goToProfile = (userId) => {
@@ -150,7 +165,7 @@ export default function Social({ setView }) {
         <button
             onClick={() => changeTab(id)} // Usamos changeTab en lugar de setActiveTab directo
             className={`flex-1 flex md:flex-row flex-col items-center md:justify-start justify-center py-3 md:px-4 md:gap-3 gap-1 text-xs md:text-sm font-medium transition-colors relative md:rounded-xl
-                ${activeTab === id
+        ${activeTab === id
                     ? 'text-accent-primary border-b-2 md:border-b-0 border-accent-primary md:bg-accent-primary/10'
                     : 'text-text-secondary hover:text-text-primary md:hover:bg-white/5'
                 }`}
@@ -174,7 +189,7 @@ export default function Social({ setView }) {
             <div
                 onClick={() => goToProfile(user.id)}
                 className={`flex items-center justify-between p-3 border-b border-white/10 last:border-0 transition-all duration-500 cursor-pointer group
-                    ${isHighlighted
+          ${isHighlighted
                         ? 'bg-accent-primary/10 border-l-2 border-l-accent-primary shadow-[inset_0_0_20px_rgba(var(--accent-primary-rgb),0.1)]'
                         : 'hover:bg-white/5'
                     }`}
@@ -469,7 +484,7 @@ export default function Social({ setView }) {
                             key={user.id}
                             onClick={() => goToProfile(user.id)}
                             className={`flex items-center p-3 border-b border-white/5 last:border-0 cursor-pointer transition-colors hover:bg-white/10 
-                                ${isMe ? 'bg-accent-primary/10 border-l-4 border-l-accent-primary pl-2' : ''}`}
+                ${isMe ? 'bg-accent-primary/10 border-l-4 border-l-accent-primary pl-2' : ''}`}
                         >
                             <div className="w-10 flex justify-center font-bold text-text-secondary text-lg">
                                 {rankIcon || <span className="text-sm opacity-60">#{rank}</span>}
@@ -509,6 +524,18 @@ export default function Social({ setView }) {
                 </div>
                 <p className="text-text-tertiary text-sm mt-1">Conecta y compite con otros atletas</p>
             </header>
+
+            {/* MODAL DE CONFIRMACIÓN DE BORRADO */}
+            {deleteConfirmation.isOpen && (
+                <ConfirmationModal
+                    message="¿Seguro que quieres eliminar a este amigo de tu lista?"
+                    onConfirm={confirmDeleteFriend}
+                    onCancel={() => setDeleteConfirmation({ isOpen: false, friendId: null })}
+                    confirmText="Eliminar amigo"
+                    cancelText="Cancelar"
+                    isLoading={isDeleting}
+                />
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
 

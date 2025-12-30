@@ -140,10 +140,13 @@ const Nutrition = ({ setView }) => {
     const processGamificationEvents = (events) => {
         if (!events || !Array.isArray(events)) return;
         events.forEach(event => {
-            if (event.type === 'xp') {
+            if (event.type === 'xp' && event.amount > 0) {
                 addToast(`+${event.amount} XP: ${event.reason}`, 'success');
             } else if (event.type === 'badge') {
                 addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+            } else if (event.type === 'info') {
+                // Muestra mensajes informativos (como límites alcanzados)
+                addToast(event.message, 'info');
             }
         });
     };
@@ -619,6 +622,8 @@ const Nutrition = ({ setView }) => {
                     onSave={handleSaveFood}
                     mealType={modal.data?.mealType}
                     logToEdit={modal.data?.id ? modal.data : null}
+                    // CORRECCIÓN: Pasar isLoading para bloquear doble click
+                    isLoading={isSubmitting}
                 />
             )}
 

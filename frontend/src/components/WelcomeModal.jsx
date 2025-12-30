@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
   Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
-  Link, Smartphone // Nuevos iconos importados
+  Link, Smartphone, Image, Globe, Clock // Añadido Globe
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -260,7 +260,32 @@ const WelcomeModal = ({ onClose }) => {
               </p>
             </div>
 
-            {/* --- BLOQUE 5: VIBRACIÓN (NUEVO) --- */}
+            {/* --- BLOQUE 5: IMÁGENES (NUEVO) --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Image size={16} className="text-accent" /> Portadas de Rutina
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-glass-border rounded-xl overflow-hidden shadow-lg group-hover:scale-[1.02] transition-transform duration-500">
+                  {/* Background simula imagen */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent/40 via-purple-500/40 to-blue-500/40 opacity-80"></div>
+                  {/* Contenido simula tarjeta de rutina */}
+                  <div className="absolute inset-0 p-3 flex flex-col justify-end bg-gradient-to-t from-black/80 to-transparent">
+                    <div className="w-2/3 h-2 bg-white/90 rounded-full mb-1"></div>
+                    <div className="w-1/3 h-1.5 bg-white/60 rounded-full"></div>
+                  </div>
+                  {/* Icono flotante */}
+                  <div className="absolute top-2 right-2 p-1.5 bg-black/40 backdrop-blur-sm rounded-full">
+                    <Image size={12} className="text-white" />
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Dale vida a tus entrenamientos personalizando la portada de tus rutinas.
+              </p>
+            </div>
+
+            {/* --- BLOQUE 6: VIBRACIÓN (NUEVO) --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Smartphone size={16} className="text-accent" /> Feedback Háptico
@@ -277,6 +302,28 @@ const WelcomeModal = ({ onClose }) => {
               </div>
               <p className="mt-3 text-xs text-text-muted text-center">
                 Siente cada repetición, descanso y logro con la nueva respuesta táctil.
+              </p>
+            </div>
+
+            {/* --- BLOQUE 7: ZONA HORARIA (NUEVO AÑADIDO) --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Globe size={16} className="text-accent" /> Zona Horaria
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                  <div className="relative flex items-center justify-center">
+                    {/* Globo Girando Lento */}
+                    <Globe size={40} className="text-text-primary/20 animate-[spin_10s_linear_infinite]" />
+                    {/* Reloj Central */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Clock size={20} className="text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Configura tu región para que tus registros y notificaciones estén siempre sincronizados.
               </p>
             </div>
 

@@ -41,6 +41,11 @@ User.init({
     type: DataTypes.STRING,
     defaultValue: 'user'
   },
+  timezone: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'Europe/Madrid'
+  },
 
   // --- Datos físicos y demográficos ---
   goal: {
@@ -181,6 +186,12 @@ User.init({
     type: DataTypes.TEXT,
     allowNull: true,
     defaultValue: '[]'
+  },
+  // NUEVO CAMPO: Estado diario de gamificación (para evitar exploit de borrar logs)
+  daily_gamification_state: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: {}
   }
 
 }, {

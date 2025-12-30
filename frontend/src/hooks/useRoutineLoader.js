@@ -7,17 +7,18 @@ import { getExerciseList } from '../services/exerciseService';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Hook para manejar la carga (hidratación) inicial de la rutina
- * cuando se proporciona un 'id'.
- *
- * @param {Object} params
- * @param {string} params.id - El ID de la rutina a cargar (si existe).
- * @param {function} params.addToast - Función para mostrar notificaciones.
- * @param {function} params.onCancel - Función a llamar si la carga falla.
- * @param {function} params.setIsLoading - Setter para el estado de carga.
- * @param {function} params.setRoutineName - Setter para el nombre de la rutina.
- * @param {function} params.setDescription - Setter para la descripción.
- * @param {function} params.setExercises - Setter para la lista de ejercicios.
+ * Hook para manejar la carga (hidratación) inicial de la rutina
+ * cuando se proporciona un 'id'.
+ *
+ * @param {Object} params
+ * @param {string} params.id - El ID de la rutina a cargar (si existe).
+ * @param {function} params.addToast - Función para mostrar notificaciones.
+ * @param {function} params.onCancel - Función a llamar si la carga falla.
+ * @param {function} params.setIsLoading - Setter para el estado de carga.
+ * @param {function} params.setRoutineName - Setter para el nombre de la rutina.
+ * @param {function} params.setDescription - Setter para la descripción.
+  * @param {function} params.setImageUrl - Setter para la imagen de portada.
+ * @param {function} params.setExercises - Setter para la lista de ejercicios.
  */
 export const useRoutineLoader = ({
   id,
@@ -26,6 +27,7 @@ export const useRoutineLoader = ({
   setIsLoading,
   setRoutineName,
   setDescription,
+  setImageUrl, // <-- Nuevo parámetro
   setExercises,
   // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
   exercises, // 1. Recibimos el array de ejercicios (posiblemente del borrador)
@@ -54,9 +56,11 @@ export const useRoutineLoader = ({
         const allExercisesData = await getExerciseList();
         const routine = await getRoutineById(id);
 
-        // 2. Actualizamos el estado simple (nombre, descripción)
+        // 2. Actualizamos el estado simple (nombre, descripción, imagen)
         setRoutineName(routine.name);
         setDescription(routine.description);
+        // Nota: El backend envía 'image_url' (snake_case)
+        setImageUrl(routine.image_url || null);
 
         // 3. Formateamos los ejercicios de la rutina
         const exercisesToFormat = routine.RoutineExercises || routine.exercises || [];
@@ -69,18 +73,18 @@ export const useRoutineLoader = ({
           if (!fullExercise && ex.name) {
             fullExercise = allExercisesData.find(e => e.name === ex.name);
           }
-          
+
           if (!fullExercise) {
             // Caso 1: Ejercicio manual o no encontrado en la BD
             // (Este caso ya era correcto, coge ex.muscle_group)
             return {
               tempId: uuidv4(), // ID temporal para el UI
-              id: ex.exercise_list_id, 
+              id: ex.exercise_list_id,
               name: ex.name,
               muscle_group: ex.muscle_group, // <-- Correcto
               sets: ex.sets,
               reps: ex.reps,
-              rest_seconds: ex.rest_seconds ?? ex.rest_time ?? 60, 
+              rest_seconds: ex.rest_seconds ?? ex.rest_time ?? 60,
               superset_group_id: ex.superset_group_id,
               exercise_order: ex.exercise_order,
               is_manual: true,
@@ -94,14 +98,14 @@ export const useRoutineLoader = ({
             ...fullExercise, // Traemos los datos del template (imágenes, etc.)
             tempId: uuidv4(),
             id: fullExercise.id, // Aseguramos el ID correcto
-            name: ex.name, 
-            
+            name: ex.name,
+
             // --- INICIO DE LA MODIFICACIÓN (EL BUG ESTABA AQUÍ) ---
             // Priorizamos el 'muscle_group' guardado en la rutina (ej: "Pechito")
             // Si no existe, usamos el del template (ej: "chest")
-            muscle_group: ex.muscle_group || fullExercise.category || fullExercise.muscle_group, 
+            muscle_group: ex.muscle_group || fullExercise.category || fullExercise.muscle_group,
             // --- FIN DE LA MODIFICACIÓN ---
-            
+
             sets: ex.sets, // Usamos los datos guardados en la rutina
             reps: ex.reps, // Usamos los datos guardados en la rutina
             // (FIX: Mantiene el valor 'rest_seconds' guardado en la rutina,
@@ -114,7 +118,7 @@ export const useRoutineLoader = ({
             video_url: fullExercise.video_url,
           };
         });
-        
+
         // 4. Actualizamos el estado de los ejercicios
         setExercises(formattedExercises);
 
@@ -125,12 +129,12 @@ export const useRoutineLoader = ({
         setIsLoading(false);
       }
     };
-    
+
     // Ejecutamos la carga
     loadRoutine();
-    
+
     // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
-    // 3. Añadimos 'exercises' al array de dependencias.
-  }, [id, addToast, onCancel, setIsLoading, setRoutineName, setDescription, setExercises, exercises]);
+    // 3. Añadimos dependencias
+  }, [id, addToast, onCancel, setIsLoading, setRoutineName, setDescription, setImageUrl, setExercises, exercises]);
   // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
 };

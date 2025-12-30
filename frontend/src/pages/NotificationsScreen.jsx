@@ -3,8 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import Spinner from '../components/Spinner';
-import { format, isToday, isYesterday } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { isToday, isYesterday, parseISO } from 'date-fns';
 import {
   Bell, CheckCheck, Trash2, X, Info, AlertTriangle, CheckCircle, AlertCircle,
   Filter, ChevronDown, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
@@ -15,12 +14,82 @@ import {
 import DeleteNotificationModal from '../components/DeleteNotificationModal';
 import DeleteAllNotificationsModal from '../components/DeleteAllNotificationsModal';
 
+// --- Utilidad para fechas Robustecida ---
+const parseDateSafe = (dateStr) => {
+  if (!dateStr) return new Date();
+  // Si ya es un objeto Date, devolverlo
+  if (typeof dateStr !== 'string') return dateStr;
+
+  // 1. Normalizar separador de fecha/hora si viene con espacio (común en SQL)
+  let normalized = dateStr.replace(' ', 'T');
+
+  // 2. Detectar si ya tiene información de zona horaria (Z al final o offset +/-)
+  // Regex: Busca 'Z' al final, O un '+' o '-' seguido de 2 dígitos (horas), opcionalmente ':' y 2 dígitos (minutos) al final.
+  const hasTimeZone = /Z$|[+-]\d{2}(:?\d{2})?$/.test(normalized);
+
+  // 3. Si NO tiene zona horaria, asumimos que es UTC (append Z)
+  // Esto evita que el navegador la interprete como local y le reste/sume horas incorrectamente.
+  if (!hasTimeZone) {
+    normalized += 'Z';
+  }
+
+  return parseISO(normalized);
+};
+
+// --- Helpers de Formato Dinámico ---
+const formatTimeWithZone = (date, timeZone) => {
+  try {
+    return new Intl.DateTimeFormat('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: timeZone
+    }).format(date);
+  } catch (e) {
+    console.warn('Invalid timezone:', timeZone);
+    return new Intl.DateTimeFormat('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  }
+};
+
+const formatDateFullWithZone = (date, timeZone) => {
+  try {
+    return new Intl.DateTimeFormat('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: timeZone
+    }).format(date);
+  } catch (e) {
+    return date.toLocaleString('es-ES');
+  }
+};
+
+const formatDateShortWithZone = (date, timeZone) => {
+  try {
+    return new Intl.DateTimeFormat('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      timeZone: timeZone
+    }).format(date);
+  } catch (e) {
+    return new Intl.DateTimeFormat('es-ES', {
+      day: 'numeric',
+      month: 'short'
+    }).format(date);
+  }
+};
+
 // --- Sub-componente: Modal de Detalles de Login ---
-const LoginDetailsModal = ({ notification, onClose }) => {
+const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
   if (!notification || !notification.data) return null;
 
   const { ip, userAgent, date } = notification.data;
-  const loginDate = date ? new Date(date) : new Date(notification.created_at);
+  const loginDate = date ? parseDateSafe(date) : parseDateSafe(notification.created_at);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
@@ -78,7 +147,10 @@ const LoginDetailsModal = ({ notification, onClose }) => {
             <div>
               <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Fecha y Hora</p>
               <p className="text-sm text-text-primary mt-0.5">
-                {format(loginDate, "d 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es })}
+                {formatDateFullWithZone(loginDate, timeZone)}
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                Zona: {timeZone}
               </p>
             </div>
           </div>
@@ -107,7 +179,8 @@ const NotificationsScreen = ({ setView }) => {
     markNotificationAsRead,
     markAllNotificationsAsRead,
     removeNotification,
-    clearAllNotifications
+    clearAllNotifications,
+    userProfile
   } = useAppStore();
 
   const [activeFilter, setActiveFilter] = useState('all');
@@ -117,6 +190,16 @@ const NotificationsScreen = ({ setView }) => {
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [deleteAction, setDeleteAction] = useState(null);
 
+  // Determinar zona horaria del usuario con fallback seguro
+  const userTimezone = useMemo(() => {
+    if (userProfile?.timezone) return userProfile.timezone;
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid';
+    } catch {
+      return 'Europe/Madrid';
+    }
+  }, [userProfile]);
+
   // Carga inicial
   useEffect(() => {
     fetchNotifications(1);
@@ -125,13 +208,11 @@ const NotificationsScreen = ({ setView }) => {
   const handleNotificationClick = (notification) => {
     if (!notification.is_read) markNotificationAsRead(notification.id);
 
-    // Si tiene datos de login, abrir modal
     if (notification.data && (notification.data.ip || notification.data.userAgent)) {
       setSelectedNotification(notification);
       return;
     }
 
-    // Navegación inteligente
     if (notification.data?.url) {
       const targetUrl = notification.data.url;
       navigate(targetUrl);
@@ -170,7 +251,7 @@ const NotificationsScreen = ({ setView }) => {
     setDeleteAction(null);
   };
 
-  // Filtros y Agrupación
+  // Filtros
   const filters = [
     { id: 'all', label: 'Todas' },
     { id: 'unread', label: 'No leídas' },
@@ -184,14 +265,11 @@ const NotificationsScreen = ({ setView }) => {
     return notifications.filter(n => {
       if (activeFilter === 'all') return true;
       if (activeFilter === 'unread') return !n.is_read;
-
-      // Lógica filtro XP
       if (activeFilter === 'xp') {
         const title = n.title?.toLowerCase() || '';
         const message = n.message?.toLowerCase() || '';
         return title.includes('xp') || message.includes('xp') || n.data?.type === 'xp';
       }
-
       if (activeFilter === 'success') return n.type === 'success';
       if (activeFilter === 'alert') return ['warning', 'alert'].includes(n.type);
       if (activeFilter === 'info') return !['success', 'warning', 'alert'].includes(n.type);
@@ -199,10 +277,17 @@ const NotificationsScreen = ({ setView }) => {
     });
   }, [notifications, activeFilter]);
 
+  // Agrupación de fechas
   const groupedNotifications = useMemo(() => {
     const groups = { hoy: [], ayer: [], anterior: [] };
+
+    // Obtenemos la fecha actual en la zona horaria del usuario para comparar correctamente 'Hoy' y 'Ayer'
+    // Nota: isToday de date-fns usa la hora local del sistema. Para ser estricto con la TZ del usuario
+    // tendríamos que comparar strings de fecha (YYYY-MM-DD) generados con la TZ.
+    // Por simplicidad y rendimiento, usamos la aproximación estándar, pero parseando bien la fecha origen.
+
     filteredList.forEach(n => {
-      const date = new Date(n.created_at);
+      const date = parseDateSafe(n.created_at);
       if (isToday(date)) groups.hoy.push(n);
       else if (isYesterday(date)) groups.ayer.push(n);
       else groups.anterior.push(n);
@@ -211,12 +296,9 @@ const NotificationsScreen = ({ setView }) => {
   }, [filteredList]);
 
   const getIcon = (n) => {
-    // Iconos específicos
     const subType = n.data?.type || n.type;
-
     if (subType === 'friend_request') return <UserPlus className="text-accent" size={24} />;
     if (subType === 'friend_accept') return <Users className="text-green-500" size={24} />;
-    // --- NUEVO: Iconos para Gamificación ---
     if (subType === 'xp' || subType === 'level_up') return <Zap className="text-amber-400" size={24} fill="currentColor" fillOpacity={0.2} />;
     if (subType === 'badge') return <Award className="text-amber-500" size={24} />;
 
@@ -229,9 +311,11 @@ const NotificationsScreen = ({ setView }) => {
   };
 
   const getTimeDisplay = (dateStr) => {
-    const date = new Date(dateStr);
-    if (isToday(date) || isYesterday(date)) return format(date, 'HH:mm');
-    return format(date, 'd MMM', { locale: es });
+    const date = parseDateSafe(dateStr);
+    if (isToday(date) || isYesterday(date)) {
+      return formatTimeWithZone(date, userTimezone);
+    }
+    return formatDateShortWithZone(date, userTimezone);
   };
 
   if (notificationsLoading && notifications.length === 0) {
@@ -243,7 +327,6 @@ const NotificationsScreen = ({ setView }) => {
   const canLoadMore = notificationPage < notificationTotalPages && activeFilter === 'all';
 
   return (
-    // MODIFICACIÓN: pb-24 -> pb-6 para igualar con el resto de páginas (el layout ya tiene padding)
     <div className="pb-6 pt-6 px-4 max-w-2xl mx-auto min-h-full relative">
 
       {/* Modales */}
@@ -251,6 +334,7 @@ const NotificationsScreen = ({ setView }) => {
         <LoginDetailsModal
           notification={selectedNotification}
           onClose={() => setSelectedNotification(null)}
+          timeZone={userTimezone}
         />
       )}
 

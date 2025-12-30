@@ -2,14 +2,13 @@
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 import { Op } from 'sequelize';
-// --- INICIO MODIFICACIÓN ---
 import { addXp, checkStreak } from '../services/gamificationService.js';
-// --- FIN MODIFICACIÓN ---
+import { deleteFile } from '../services/imageService.js';
 
 const {
   sequelize,
   ExerciseList,
-  User // Traemos el modelo User para mostrar el autor en rutinas públicas
+  User
 } = models;
 
 // OBTENER TODAS LAS RUTINAS (Personales del usuario)
@@ -42,7 +41,6 @@ export const getRoutineById = async (req, res, next) => {
     const routine = await sequelize.models.Routine.findOne({
       where: {
         id: req.params.id,
-        // Permitimos verla si es mía O si es pública
         [Op.or]: [
           { user_id: req.user.userId },
           { is_public: true }
@@ -53,7 +51,6 @@ export const getRoutineById = async (req, res, next) => {
           model: sequelize.models.RoutineExercise,
           as: 'RoutineExercises',
         },
-        // Si no es mía, quiero ver quién la creó
         {
           model: User,
           attributes: ['id', 'username']
@@ -111,9 +108,8 @@ const processAndSaveExercises = async (
           console.error(`Error buscando ExerciseList ID ${exerciseListId}:`, findError);
         }
       } else {
-        // Si viene sin ID y no está marcado explícitamente como manual, pero tiene nombre, lo tratamos como manual
         exerciseListId = null;
-        if (!exerciseName) { // Fallback final
+        if (!exerciseName) {
           exerciseName = "Ejercicio Manual";
           muscleGroup = "Varios";
         }
@@ -147,7 +143,7 @@ export const createRoutine = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, description, is_public = false, exercises = [] } = req.body;
+  const { name, description, is_public = false, exercises = [], image_url } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -167,8 +163,9 @@ export const createRoutine = async (req, res, next) => {
         name,
         description,
         user_id: userId,
-        is_public, // Guardamos el estado público/privado
-        downloads_count: 0
+        is_public,
+        downloads_count: 0,
+        image_url: image_url || null
       },
       { transaction: t }
     );
@@ -177,7 +174,6 @@ export const createRoutine = async (req, res, next) => {
 
     await t.commit();
 
-    // --- Gamificación ---
     try {
       const todayStr = new Date().toISOString().split('T')[0];
       await addXp(userId, 20, 'Rutina creada');
@@ -185,7 +181,6 @@ export const createRoutine = async (req, res, next) => {
     } catch (gError) {
       console.error('Error gamificación en createRoutine:', gError);
     }
-    // --------------------
 
     const result = await sequelize.models.Routine.findByPk(newRoutine.id, {
       include: [{ model: sequelize.models.RoutineExercise, as: 'RoutineExercises' }],
@@ -210,7 +205,7 @@ export const updateRoutine = async (req, res, next) => {
   }
 
   const { id } = req.params;
-  const { name, description, is_public, exercises = [] } = req.body;
+  const { name, description, is_public, exercises = [], image_url } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -240,7 +235,24 @@ export const updateRoutine = async (req, res, next) => {
       return res.status(404).json({ error: 'Rutina no encontrada' });
     }
 
-    // Actualización de ejercicios y nombres (lógica existente mantenida)
+    // Manejo de eliminación de imagen antigua si cambia
+    const oldImageUrl = routine.image_url;
+
+    // Actualizamos campos
+    const updateData = { name, description };
+    if (typeof is_public !== 'undefined') updateData.is_public = is_public;
+    if (typeof image_url !== 'undefined') updateData.image_url = image_url;
+
+    await routine.update(updateData, { transaction: t });
+
+    // Si la imagen ha cambiado y la antigua era una subida (no predefinida), borrarla
+    if (image_url !== undefined && oldImageUrl && oldImageUrl !== image_url) {
+      if (oldImageUrl.includes('/uploads/')) {
+        deleteFile(oldImageUrl);
+      }
+    }
+
+    // Actualización de ejercicios
     const oldExercises = routine.RoutineExercises;
     const renamedExercises = [];
     exercises.forEach((newEx) => {
@@ -252,15 +264,10 @@ export const updateRoutine = async (req, res, next) => {
       }
     });
 
-    // Actualizamos campos básicos e is_public si viene definido
-    const updateData = { name, description };
-    if (typeof is_public !== 'undefined') updateData.is_public = is_public;
-
-    await routine.update(updateData, { transaction: t });
     await sequelize.models.RoutineExercise.destroy({ where: { routine_id: id }, transaction: t });
-
     await processAndSaveExercises(exercises, id, userId, t);
 
+    // Actualizar nombres en Logs y PRs
     if (renamedExercises.length > 0) {
       for (const rename of renamedExercises) {
         const workoutLogsForRoutine = await sequelize.models.WorkoutLog.findAll({
@@ -326,6 +333,8 @@ export const deleteRoutine = async (req, res, next) => {
       return res.status(404).json({ error: 'Rutina no encontrada' });
     }
 
+    const imageUrl = routine.image_url;
+
     const logsToDelete = await sequelize.models.WorkoutLog.findAll({
       where: { routine_id: id, user_id: userId },
       include: [{ model: sequelize.models.WorkoutLogDetail, as: 'WorkoutLogDetails' }],
@@ -338,7 +347,12 @@ export const deleteRoutine = async (req, res, next) => {
 
     await routine.destroy({ transaction: t });
 
-    // Recálculo de PRs (lógica existente mantenida)
+    // Eliminar imagen si era una subida
+    if (imageUrl && imageUrl.includes('/uploads/')) {
+      deleteFile(imageUrl);
+    }
+
+    // Recálculo de PRs
     for (const exerciseName of affectedExercises) {
       const currentPR = await sequelize.models.PersonalRecord.findOne({
         where: { user_id: userId, exercise_name: exerciseName },
@@ -431,11 +445,11 @@ export const getPublicRoutines = async (req, res, next) => {
         {
           model: sequelize.models.RoutineExercise,
           as: 'RoutineExercises',
-          attributes: ['name', 'muscle_group'] // Solo info básica para previsualizar
+          attributes: ['name', 'muscle_group']
         }
       ],
       order,
-      limit: 50 // Límite por seguridad
+      limit: 50
     });
     res.json(routines);
   } catch (error) {
@@ -445,7 +459,7 @@ export const getPublicRoutines = async (req, res, next) => {
 
 // DESCARGAR (COPIAR) RUTINA DE OTRO USUARIO
 export const downloadRoutine = async (req, res, next) => {
-  const { id } = req.params; // ID de la rutina pública
+  const { id } = req.params;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -460,22 +474,21 @@ export const downloadRoutine = async (req, res, next) => {
       return res.status(404).json({ error: 'Rutina original no encontrada' });
     }
 
-    // Solo permitir copiar si es pública o si es mía (duplicar mi propia rutina)
     if (!sourceRoutine.is_public && sourceRoutine.user_id !== userId) {
       await t.rollback();
       return res.status(403).json({ error: 'Esta rutina es privada' });
     }
 
-    // Crear la copia
+    // Crear la copia (Nota: No copiamos la imagen por defecto para evitar enlaces rotos si el dueño la borra)
     const newRoutine = await sequelize.models.Routine.create({
       name: `${sourceRoutine.name} (Copia)`,
       description: sourceRoutine.description,
       user_id: userId,
-      is_public: false, // La copia nace privada
-      downloads_count: 0
+      is_public: false,
+      downloads_count: 0,
+      image_url: null // Iniciamos sin imagen
     }, { transaction: t });
 
-    // Preparar ejercicios para la copia
     const exercisesToCopy = sourceRoutine.RoutineExercises.map(ex => ({
       exercise_list_id: ex.exercise_list_id,
       name: ex.name,
@@ -492,12 +505,8 @@ export const downloadRoutine = async (req, res, next) => {
 
     await processAndSaveExercises(exercisesToCopy, newRoutine.id, userId, t);
 
-    // Incrementar contador de descargas si no es mi propia rutina
     if (sourceRoutine.user_id !== userId) {
       await sourceRoutine.increment('downloads_count', { transaction: t });
-
-      // --- Gamificación para el AUTOR original (Opcional) ---
-      // Podríamos dar XP al autor original por cada descarga
       try {
         await addXp(sourceRoutine.user_id, 5, `Tu rutina "${sourceRoutine.name}" fue descargada`);
       } catch (ignore) { }

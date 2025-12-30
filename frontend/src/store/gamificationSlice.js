@@ -16,26 +16,19 @@ const normalizeDate = (dateInput) => {
 };
 
 // --- LÓGICA DE NIVELES PROGRESIVA ---
-// Fórmula cuadrática: hace que cada nivel cueste más que el anterior.
 const calculateLevel = (xp) => {
-    // Inversa de la fórmula de getXpRequiredForLevel
     const level = Math.floor((-350 + Math.sqrt(202500 + 200 * xp)) / 100);
     return Math.max(1, level);
 };
 
 export const getXpRequiredForLevel = (level) => {
     if (level <= 1) return 0;
-    // Fórmula: 50x² + 350x - 400
-    // L1=0, L2=500, L3=1100, L4=1800... (Gaps: 500, 600, 700...)
     return 50 * Math.pow(level, 2) + 350 * level - 400;
 };
 
 // --- NUEVO HELPER PARA LA UI (TOTAL XP) ---
-// Usar esto en los componentes para mostrar "1500 / 2000" en lugar de "0 / 500"
 export const getLevelProgress = (currentXp, currentLevel) => {
     const nextLevelTotalXp = getXpRequiredForLevel(currentLevel + 1);
-
-    // Si queremos que la barra represente el total absoluto (nunca baja a 0 visualmente, solo retrocede un poco al subir de nivel)
     const progressPercent = Math.min(100, Math.max(0, (currentXp / nextLevelTotalXp) * 100));
 
     return {
@@ -72,34 +65,25 @@ export const createGamificationSlice = (set, get) => ({
         }));
     },
 
+    // --- CORRECCIÓN: Eliminada lógica optimista ---
+    // Esta función ahora solo sirve para efectos visuales locales (Toasts) si es necesario,
+    // pero NO altera la XP real del usuario. La XP real viene del backend.
     addXp: async (amount, reason = 'Actividad completada') => {
-        console.log(`[Gamification] Añadiendo XP: ${amount} por ${reason}`);
-        set((state) => {
-            const currentXp = (state.gamification.xp || 0) + amount;
-            const newLevel = calculateLevel(currentXp);
-            const currentEvents = state.gamification.gamificationEvents || [];
+        console.log(`[Gamification Slice] Evento visual de XP: ${amount} por ${reason}`);
 
-            return {
+        if (amount > 0) {
+            set((state) => ({
                 gamification: {
                     ...state.gamification,
-                    xp: currentXp,
-                    level: newLevel,
+                    // Solo añadimos el evento para que salte la notificación, no sumamos XP al total
                     gamificationEvents: [
-                        ...currentEvents,
+                        ...(state.gamification.gamificationEvents || []),
                         { id: Date.now() + Math.random(), type: 'xp', amount, reason }
                     ]
-                },
-            };
-        });
-
-        try {
-            const { xp, level } = get().gamification;
-            await apiClient('/users/me/gamification', {
-                body: { xp, level, reason }
-            });
-        } catch (error) {
-            console.error("Error guardando XP:", error);
+                }
+            }));
         }
+        // Eliminada la llamada a la API que sobrescribía la XP.
     },
 
     unlockBadge: async (badgeId) => {
@@ -111,14 +95,14 @@ export const createGamificationSlice = (set, get) => ({
         if (!badge) return;
 
         const newBadges = [...unlockedBadges, badgeId];
-        const currentEvents = state.gamification.gamificationEvents || [];
 
+        // Actualizamos estado local de insignias (esto es seguro porque las insignias son únicas)
         set((state) => ({
             gamification: {
                 ...state.gamification,
                 unlockedBadges: newBadges,
                 gamificationEvents: [
-                    ...currentEvents,
+                    ...(state.gamification.gamificationEvents || []),
                     { id: Date.now() + Math.random(), type: 'badge', badge }
                 ]
             }
@@ -131,9 +115,6 @@ export const createGamificationSlice = (set, get) => ({
         } catch (error) {
             console.error("Error guardando insignia:", error);
         }
-
-        get().addXp(badge.xp, `Insignia: ${badge.name}`);
-        return badge;
     },
 
     checkStreak: async (todayDateString) => {
@@ -148,14 +129,9 @@ export const createGamificationSlice = (set, get) => ({
         set(s => ({ gamification: { ...s.gamification, isCheckingStreak: true } }));
 
         try {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const isConsecutive = last === yesterday.toISOString().split('T')[0];
-            const newStreak = isConsecutive ? (state.gamification.streak || 0) + 1 : 1;
-
+            // Notificamos actividad. El backend decidirá si suma racha o XP.
             const response = await apiClient('/users/me/gamification', {
                 body: {
-                    streak: newStreak,
                     last_activity_date: today,
                     reason: 'Login Diario'
                 }
@@ -169,6 +145,7 @@ export const createGamificationSlice = (set, get) => ({
                     const currentEvents = state.gamification.gamificationEvents || [];
                     const newEvents = [...currentEvents];
 
+                    // Si el servidor dice que tenemos más XP que antes, generamos evento
                     if (serverData.xp > previousXp) {
                         newEvents.push({
                             id: Date.now() + Math.random(),
@@ -206,11 +183,6 @@ export const createGamificationSlice = (set, get) => ({
                 }
             }));
         }
-
-        const currentStreak = get().gamification.streak;
-        if (currentStreak >= 3) get().unlockBadge('streak_3');
-        if (currentStreak >= 7) get().unlockBadge('streak_7');
-        if (currentStreak >= 30) get().unlockBadge('streak_30');
     },
 
     setGamificationData: (data) => {

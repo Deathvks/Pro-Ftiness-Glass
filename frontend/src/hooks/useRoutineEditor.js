@@ -9,6 +9,7 @@ import { useRoutineGrouping } from './useRoutineGrouping';
 
 // Importamos los hooks de utilidades
 import { useToast } from '../hooks/useToast';
+import { uploadRoutineImage } from '../services/routineService';
 
 // Claves de borrador (deben coincidir)
 const DRAFT_KEY = 'routineEditorDraft'; // Borrador de la rutina
@@ -35,15 +36,17 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   const {
     routineName, setRoutineName,
     description, setDescription,
-    exercises, setExercises, // <-- 'exercises' ahora puede venir del borrador
+    imageUrl, setImageUrl, // <-- Estado de la imagen
+    exercises, setExercises,
     isLoading, setIsLoading,
     isSaving, setIsSaving,
     isDeleting, setIsDeleting,
+    isUploadingImage, setIsUploadingImage, // <-- Estado de carga de subida
     showDeleteConfirm, setShowDeleteConfirm,
     validationError, setValidationError,
     showExerciseSearch, setShowExerciseSearch,
     activeDropdownTempId, setActiveDropdownTempId,
-    replacingExerciseTempId, setReplacingExerciseTempId, // <-- El estado clave
+    replacingExerciseTempId, setReplacingExerciseTempId,
   } = useRoutineState(initialRoutine);
 
   // 2. Hook de Carga (useEffect)
@@ -54,9 +57,8 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     setIsLoading,
     setRoutineName,
     setDescription,
+    setImageUrl, // <-- Pasamos el setter para cargar la imagen existente
     setExercises,
-    // Le pasamos el array de ejercicios. Si tiene > 0 (del borrador),
-    // el loader sabrá que no debe fetchear la rutina.
     exercises,
   });
 
@@ -64,26 +66,25 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   const {
     handleOpenSearchForAdd,
     handleReplaceClick,
-    handleSearchModalClose: originalHandleSearchModalClose, // <-- Renombramos el original
+    handleSearchModalClose: originalHandleSearchModalClose,
   } = useRoutineModalActions({
     setShowExerciseSearch,
     setReplacingExerciseTempId,
   });
 
   // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-  // Envolvemos 'handleSearchModalClose' para limpiar también el borrador del carrito
   const handleSearchModalClose = () => {
     localStorage.removeItem(CART_DRAFT_KEY);
-    originalHandleSearchModalClose(); // Llamar a la función original
+    originalHandleSearchModalClose();
   };
   // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 
   // 4. Hook de Guardado/Borrado (Zustand, Validación)
-  // (Este hook ya limpia el DRAFT_KEY de la rutina al guardar/borrar)
   const { handleSave, handleDelete } = useRoutineSaver({
     id,
     routineName,
     description,
+    imageUrl, // <-- Pasamos la URL de la imagen para guardar
     exercises,
     addToast,
     handleSaveProp,
@@ -99,7 +100,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     addExercise,
     removeExercise,
     updateExerciseField,
-    linkExerciseFromList, // <-- La función que queremos llamar
+    linkExerciseFromList,
     createSuperset,
     unlinkGroup,
     onDragEnd,
@@ -108,24 +109,23 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   } = useRoutineExerciseActions({
     exercises,
     setExercises,
-    replacingExerciseTempId, // Usado en handleAddExercisesFromSearch
+    replacingExerciseTempId,
     addToast,
-    handleSearchModalClose,  // Usado en add/replace
-    setActiveDropdownTempId,  // Usado en linkExerciseFromList
+    handleSearchModalClose,
+    setActiveDropdownTempId,
   });
 
   // 6. Hook de Estado Derivado (Agrupación de ejercicios)
   const groupedExercises = useRoutineGrouping(exercises);
 
-  // 7. Funciones "wrapper"
-  // (Wrappers para el fix de "stale state" de reemplazo)
+  // 7. Funciones auxiliares
   const handleSelectExerciseForReplace = (selectedExercise) => {
     if (replacingExerciseTempId) {
       linkExerciseFromList(replacingExerciseTempId, selectedExercise);
     } else {
       console.error('ERROR: Se intentó reemplazar, ¡pero replacingExerciseTempId era null!');
     }
-    handleSearchModalClose(); // Cierra el modal (y limpia el borrador del carrito)
+    handleSearchModalClose();
   };
 
   const handleAddCustomExerciseForReplace = (exerciseName) => {
@@ -137,18 +137,31 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
       };
       linkExerciseFromList(replacingExerciseTempId, manualExercise);
     } else {
-        console.error('ERROR: Se intentó reemplazar (manual), ¡pero replacingExerciseTempId era null o el nombre estaba vacío!');
+      console.error('ERROR: Se intentó reemplazar (manual), ¡pero replacingExerciseTempId era null o el nombre estaba vacío!');
     }
-    handleSearchModalClose(); // Cierra el modal (y limpia el borrador del carrito)
+    handleSearchModalClose();
   };
-  
-  // Wrapper para 'onCancel' (de la tarea anterior)
+
   const handleCancelWrapper = () => {
-    localStorage.removeItem(DRAFT_KEY); // Limpiar borrador de rutina
-    // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-    localStorage.removeItem(CART_DRAFT_KEY); // Limpiar también el borrador del carrito
-    // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
-    onCancel(); // Llama a la función original (ej: setEditingRoutine(null))
+    localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(CART_DRAFT_KEY);
+    onCancel();
+  };
+
+  // --- NUEVA FUNCIÓN: Manejo de subida de imagen ---
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    setIsUploadingImage(true);
+    try {
+      const response = await uploadRoutineImage(file);
+      setImageUrl(response.imageUrl); // Guardamos la ruta relativa devuelta por el backend
+      addToast('Imagen subida correctamente', 'success');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      addToast('Error al subir la imagen', 'error');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
 
@@ -158,22 +171,25 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     // Estados y Setters
     routineName, setRoutineName,
     description, setDescription,
+    imageUrl, setImageUrl, // <-- Exportamos estado de imagen
     exercises,
     isLoading,
     isSaving,
     isDeleting,
+    isUploadingImage, // <-- Exportamos estado de subida
     showDeleteConfirm, setShowDeleteConfirm,
     validationError,
     showExerciseSearch, setShowExerciseSearch,
-    activeDropdownTempId, 
+    activeDropdownTempId,
     setActiveDropdownTempId,
     replacingExerciseTempId,
-    
-    // Funciones de Guardado/Borrado
+
+    // Funciones
     handleSave,
     handleDelete,
-    handleCancel: handleCancelWrapper, // Devolvemos el wrapper de cancelar
-    
+    handleCancel: handleCancelWrapper,
+    handleImageUpload, // <-- Exportamos función de subida
+
     // Acciones de Ejercicios
     addExercise,
     updateExerciseField,
@@ -183,15 +199,15 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     unlinkGroup,
     onDragEnd,
     handleAddExercisesFromSearch,
-    addCustomExercise, 
-    
+    addCustomExercise,
+
     // Estado Derivado
     groupedExercises,
-    
+
     // Acciones de Modal
     handleOpenSearchForAdd,
     handleReplaceClick,
-    handleSearchModalClose, // Devolvemos el wrapper de cerrar modal
+    handleSearchModalClose,
 
     // Wrappers de reemplazo
     handleSelectExerciseForReplace,

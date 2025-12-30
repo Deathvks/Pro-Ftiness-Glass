@@ -366,7 +366,7 @@ export const updateMyProfile = async (req, res, next) => {
     const { userId } = req.user;
     const {
       gender, age, height, activityLevel, goal, weight, login_email_notifications,
-      is_public_profile, show_level_xp, show_badges
+      is_public_profile, show_level_xp, show_badges, timezone // <--- AÑADIDO: timezone
     } = req.body;
 
     const user = await User.findByPk(userId);
@@ -378,6 +378,7 @@ export const updateMyProfile = async (req, res, next) => {
       gender, age, height, activity_level: activityLevel, goal, login_email_notifications
     };
 
+    if (timezone) updateData.timezone = timezone; // <--- AÑADIDO: Guardar timezone
     if (typeof is_public_profile !== 'undefined') updateData.is_public_profile = is_public_profile;
     if (typeof show_level_xp !== 'undefined') updateData.show_level_xp = show_level_xp;
     if (typeof show_badges !== 'undefined') updateData.show_badges = show_badges;

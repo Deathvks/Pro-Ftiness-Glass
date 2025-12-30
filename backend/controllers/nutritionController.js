@@ -7,7 +7,7 @@ import fs from 'fs/promises';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import { deleteFile } from '../services/imageService.js';
-import { addXp, checkStreak, unlockBadge, FOOD_LOG_XP } from '../services/gamificationService.js';
+import { addXp, checkStreak, processFoodGamification, CALORIE_TARGET_XP } from '../services/gamificationService.js';
 import { createNotification } from '../services/notificationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,11 +18,8 @@ const FOOD_IMAGES_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 const { NutritionLog, WaterLog, FavoriteMeal, User, Notification, BodyWeightLog, sequelize } = db;
 
 // --- CONFIGURACIÓN ---
-const MAX_DAILY_FOOD_XP_COUNT = 5; // Máximo de comidas que dan XP por día
-const CALORIE_TARGET_XP = 50; // XP por cumplir el objetivo calórico
-const MAX_DAILY_WATER_XP = 50; // Límite diario de XP por hidratación
+const MAX_DAILY_WATER_XP = 50;
 
-// Helper para asegurar que el directorio de subida existe
 const ensureUploadDirExists = async (dirPath) => {
   try {
     await fs.access(dirPath);
@@ -31,63 +28,34 @@ const ensureUploadDirExists = async (dirPath) => {
   }
 };
 
-/**
- * Descarga una imagen desde una URL, la convierte a WebP y la guarda localmente.
- */
 const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
   if (!imageUrl) return null;
-
   try {
     await ensureUploadDirExists(outputDir);
-
-    const response = await axios({
-      url: imageUrl,
-      responseType: 'arraybuffer'
-    });
+    const response = await axios({ url: imageUrl, responseType: 'arraybuffer' });
     const imageBuffer = Buffer.from(response.data);
-
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const webpFilename = `barcode-${uniqueSuffix}.webp`;
     const outputPath = path.join(outputDir, webpFilename);
-
-    await sharp(imageBuffer)
-      .rotate()
-      .resize(800, 800, {
-        fit: sharp.fit.inside,
-        withoutEnlargement: true
-      })
-      .webp({ quality: 75 })
-      .toFile(outputPath);
-
+    await sharp(imageBuffer).rotate().resize(800, 800, { fit: sharp.fit.inside, withoutEnlargement: true }).webp({ quality: 75 }).toFile(outputPath);
     return `/images/food/${webpFilename}`;
-
   } catch (error) {
     console.error(`Error al descargar o convertir la imagen ${imageUrl}:`, error.message);
     return null;
   }
 };
 
-/**
- * Helper para verificar si una imagen está siendo usada por otros registros.
- */
 const isImageInUse = async (imageUrl, excludeLogId = null) => {
   if (!imageUrl) return false;
-
   const whereClause = { image_url: imageUrl };
-  if (excludeLogId) {
-    whereClause.id = { [Op.ne]: excludeLogId };
-  }
-
+  if (excludeLogId) whereClause.id = { [Op.ne]: excludeLogId };
   const logsCount = await NutritionLog.count({ where: whereClause });
   if (logsCount > 0) return true;
-
   const favsCount = await FavoriteMeal.count({ where: { image_url: imageUrl } });
   if (favsCount > 0) return true;
-
   return false;
 };
 
-// --- HELPER: Verificar Objetivo de Calorías (Devuelve el resultado de XP) ---
 const checkCalorieTargetReward = async (userId, logDate) => {
   try {
     const startOfDay = new Date();
@@ -95,25 +63,18 @@ const checkCalorieTargetReward = async (userId, logDate) => {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    // CORRECCIÓN: Verificación robusta de si ya se otorgó la recompensa hoy
-    // Buscamos todas las notificaciones del día para evitar problemas con Op.like simple
     const todayNotifications = await Notification.findAll({
       where: {
         user_id: userId,
         created_at: { [Op.between]: [startOfDay, endOfDay] }
-      }
+      },
+      attributes: ['data', 'message']
     });
 
     const alreadyAwarded = todayNotifications.some(n => {
       let data = n.data;
-      if (typeof data === 'string') {
-        try { data = JSON.parse(data); } catch (e) { }
-      }
-
-      // 1. Verificación precisa usando el campo 'reason' en data (si existe)
+      if (typeof data === 'string') { try { data = JSON.parse(data); } catch (e) { } }
       if (data && data.reason === 'Objetivo de calorías cumplido') return true;
-
-      // 2. Verificación de respaldo usando el mensaje
       return n.message && n.message.includes('Objetivo de calorías cumplido');
     });
 
@@ -122,39 +83,24 @@ const checkCalorieTargetReward = async (userId, logDate) => {
     const user = await User.findByPk(userId);
     if (!user) return null;
 
-    const lastWeightLog = await BodyWeightLog.findOne({
-      where: { user_id: userId },
-      order: [['log_date', 'DESC']]
-    });
+    const lastWeightLog = await BodyWeightLog.findOne({ where: { user_id: userId }, order: [['log_date', 'DESC']] });
     const weight = lastWeightLog ? parseFloat(lastWeightLog.weight_kg) : 70;
-
     const { gender, age, height, activity_level, goal } = user;
     const userHeight = height || 170;
     const userAge = age || 30;
     const userActivity = activity_level || 1.2;
     const userGender = gender || 'male';
 
-    let bmr = userGender === 'male'
-      ? 10 * weight + 6.25 * userHeight - 5 * userAge + 5
-      : 10 * weight + 6.25 * userHeight - 5 * userAge - 161;
-
+    let bmr = userGender === 'male' ? 10 * weight + 6.25 * userHeight - 5 * userAge + 5 : 10 * weight + 6.25 * userHeight - 5 * userAge - 161;
     let target = bmr * userActivity;
-    if (goal === 'lose') target -= 500;
-    else if (goal === 'gain') target += 500;
-
+    if (goal === 'lose') target -= 500; else if (goal === 'gain') target += 500;
     target = Math.round(target);
 
-    const totalCalories = await NutritionLog.sum('calories', {
-      where: {
-        user_id: userId,
-        log_date: logDate
-      }
-    }) || 0;
+    const totalCalories = await NutritionLog.sum('calories', { where: { user_id: userId, log_date: logDate } }) || 0;
 
     if (totalCalories >= target) {
       return await addXp(userId, CALORIE_TARGET_XP, 'Objetivo de calorías cumplido');
     }
-
     return null;
   } catch (error) {
     console.error('Error verificando recompensa de calorías:', error);
@@ -162,25 +108,14 @@ const checkCalorieTargetReward = async (userId, logDate) => {
   }
 };
 
-
 // --- GETTERS ---
-
 const getNutritionLogsByDate = async (req, res, next) => {
   try {
     const { date } = req.query;
     const { userId } = req.user;
-
     if (!date) return res.status(400).json({ error: 'La fecha es requerida.' });
-
-    const nutritionLogs = await NutritionLog.findAll({
-      where: { user_id: userId, log_date: date },
-      order: [['meal_type', 'ASC'], ['id', 'ASC']],
-    });
-
-    const waterLog = await WaterLog.findOne({
-      where: { user_id: userId, log_date: date },
-    });
-
+    const nutritionLogs = await NutritionLog.findAll({ where: { user_id: userId, log_date: date }, order: [['meal_type', 'ASC'], ['id', 'ASC']] });
+    const waterLog = await WaterLog.findOne({ where: { user_id: userId, log_date: date } });
     res.json({ nutrition: nutritionLogs, water: waterLog });
   } catch (error) {
     next(error);
@@ -190,15 +125,7 @@ const getNutritionLogsByDate = async (req, res, next) => {
 const getRecentMeals = async (req, res, next) => {
   try {
     const { userId } = req.user;
-    const recentLogs = await NutritionLog.findAll({
-      where: { user_id: userId },
-      limit: 50,
-      order: [['id', 'DESC']],
-      attributes: [
-        'id', 'description', 'calories', 'protein_g', 'carbs_g', 'fats_g',
-        'weight_g', 'image_url', 'micronutrients',
-      ],
-    });
+    const recentLogs = await NutritionLog.findAll({ where: { user_id: userId }, limit: 50, order: [['id', 'DESC']], attributes: ['id', 'description', 'calories', 'protein_g', 'carbs_g', 'fats_g', 'weight_g', 'image_url', 'micronutrients'] });
     const uniqueMeals = [];
     const descriptionsSeen = new Set();
     for (const log of recentLogs) {
@@ -219,37 +146,11 @@ const getNutritionSummary = async (req, res, next) => {
   try {
     const { userId } = req.user;
     const { month, year } = req.query;
-
     if (!month || !year) return res.status(400).json({ error: 'El mes y el año son requeridos.' });
-
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
-
-    const nutritionSummary = await NutritionLog.findAll({
-      where: {
-        user_id: userId,
-        log_date: { [Op.between]: [startDate, endDate] },
-      },
-      attributes: [
-        ['log_date', 'date'],
-        [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'],
-        [sequelize.fn('sum', sequelize.col('protein_g')), 'total_protein'],
-        [sequelize.fn('sum', sequelize.col('carbs_g')), 'total_carbs'],
-        [sequelize.fn('sum', sequelize.col('fats_g')), 'total_fats'],
-      ],
-      group: ['log_date'],
-      order: [['log_date', 'ASC']],
-    });
-
-    const waterSummary = await WaterLog.findAll({
-      where: {
-        user_id: userId,
-        log_date: { [Op.between]: [startDate, endDate] },
-      },
-      attributes: ['log_date', 'quantity_ml'],
-      order: [['log_date', 'ASC']],
-    });
-
+    const nutritionSummary = await NutritionLog.findAll({ where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } }, attributes: [['log_date', 'date'], [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'], [sequelize.fn('sum', sequelize.col('protein_g')), 'total_protein'], [sequelize.fn('sum', sequelize.col('carbs_g')), 'total_carbs'], [sequelize.fn('sum', sequelize.col('fats_g')), 'total_fats']], group: ['log_date'], order: [['log_date', 'ASC']] });
+    const waterSummary = await WaterLog.findAll({ where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } }, attributes: ['log_date', 'quantity_ml'], order: [['log_date', 'ASC']] });
     res.json({ nutritionSummary, waterSummary });
   } catch (error) {
     next(error);
@@ -262,459 +163,182 @@ const getNutritionSummary = async (req, res, next) => {
 const addFoodLog = async (req, res, next) => {
   try {
     const { userId } = req.user;
-    const {
-      log_date, meal_type, description, calories, protein_g, carbs_g, fats_g,
-      weight_g, image_url, micronutrients,
-      calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g
-    } = req.body;
+    const { log_date, meal_type, description, calories, protein_g, carbs_g, fats_g, weight_g, image_url, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g } = req.body;
 
     let sanitizedImageUrl = image_url;
-    if (sanitizedImageUrl === 'null' || sanitizedImageUrl === 'undefined' || sanitizedImageUrl === '') {
-      sanitizedImageUrl = null;
-    }
+    if (sanitizedImageUrl === 'null' || sanitizedImageUrl === 'undefined' || sanitizedImageUrl === '') sanitizedImageUrl = null;
+    const finalImageUrl = (req.file && req.file.processedPath) ? req.file.processedPath : sanitizedImageUrl;
 
-    const finalImageUrl = (req.file && req.file.processedPath)
-      ? req.file.processedPath
-      : sanitizedImageUrl;
-
-    // --- CORRECCIÓN: Contamos ANTES de crear ---
-    // Esto asegura que sabemos exactamente cuántas había antes de esta inserción
-    const existingLogsCount = await NutritionLog.count({
-      where: { user_id: userId, log_date: log_date }
-    });
-
-    const foodData = {
-      user_id: userId,
-      log_date,
-      meal_type,
-      description,
-      calories: calories || 0,
-      protein_g: protein_g || null,
-      carbs_g: carbs_g || null,
-      fats_g: fats_g || null,
-      weight_g: weight_g || null,
-      image_url: finalImageUrl,
-      micronutrients: micronutrients || null,
-      calories_per_100g: calories_per_100g || null,
-      protein_per_100g: protein_per_100g || null,
-      carbs_per_100g: carbs_per_100g || null,
-      fat_per_100g: fat_per_100g || null,
-    };
+    const foodData = { user_id: userId, log_date, meal_type, description, calories: calories || 0, protein_g: protein_g || null, carbs_g: carbs_g || null, fats_g: fats_g || null, weight_g: weight_g || null, image_url: finalImageUrl, micronutrients: micronutrients || null, calories_per_100g: calories_per_100g || null, protein_per_100g: protein_per_100g || null, carbs_per_100g: carbs_per_100g || null, fat_per_100g: fat_per_100g || null };
 
     const newLog = await NutritionLog.create(foodData);
-
     const gamificationEvents = [];
-    try {
-      const todayStr = new Date().toISOString().split('T')[0];
 
-      // --- CAMBIO: Lógica basada en el conteo previo ---
-      // Si había menos de 5 (ej: 0, 1, 2, 3, 4), esta es válida (1ª, 2ª, 3ª, 4ª, 5ª)
-      if (existingLogsCount < MAX_DAILY_FOOD_XP_COUNT) {
-        const xpResult = await addXp(userId, FOOD_LOG_XP, 'Comida registrada');
-        if (xpResult.success) {
-          gamificationEvents.push({ type: 'xp', amount: FOOD_LOG_XP, reason: 'Comida registrada' });
-        }
-      }
-      // Si había exactamente 5, esta es la 6ª -> Enviamos WARNING
-      else if (existingLogsCount === MAX_DAILY_FOOD_XP_COUNT) {
-        // Notificar al usuario que ha alcanzado el límite (solo la primera vez que se excede)
-        await createNotification(userId, {
-          type: 'warning',
-          title: 'Límite de XP alcanzado',
-          message: 'Has alcanzado el límite diario de XP por registrar comidas (5/5).',
-          data: { type: 'xp_limit', reason: 'daily_food_limit' }
+    try {
+      console.log(`[XP AUDIT] Iniciando AddFoodLog. Usuario: ${userId}. Fecha enviada: ${log_date}`);
+
+      const gamificationResult = await processFoodGamification(userId, log_date);
+
+      console.log(`[XP AUDIT] Resultado Gamificación:`, gamificationResult);
+
+      if (gamificationResult.xpAdded > 0) {
+        gamificationEvents.push({ type: 'xp', amount: gamificationResult.xpAdded, reason: 'Comida registrada' });
+      } else if (gamificationResult.reason === 'daily_limit_reached') {
+        // --- CAMBIO: Avisar al frontend de que se alcanzó el límite ---
+        gamificationEvents.push({
+          type: 'info',
+          message: 'Límite diario de experiencia por registrar comidas alcanzado (5/5).'
         });
       }
-      // Si había más de 5 (ej: 6), esta es la 7ª -> No hacemos nada
-
-      const totalCount = await NutritionLog.count({ where: { user_id: userId } });
-      if (totalCount >= 5) {
-        const badgeResult = await unlockBadge(userId, 'nutrition_master');
-        if (badgeResult.success && badgeResult.unlocked) {
-          gamificationEvents.push({ type: 'badge', badge: badgeResult.badge });
-        }
-      }
-
-      await checkStreak(userId, todayStr);
 
       const calorieResult = await checkCalorieTargetReward(userId, log_date);
       if (calorieResult && calorieResult.success) {
         gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
       }
-
     } catch (gError) {
       console.error('Error gamificación en addFoodLog:', gError);
     }
 
     res.status(201).json({ ...newLog.toJSON(), gamification: gamificationEvents });
-
   } catch (error) {
-    if (req.file && req.file.processedPath) {
-      deleteFile(req.file.processedPath);
-    }
+    if (req.file && req.file.processedPath) deleteFile(req.file.processedPath);
     next(error);
   }
 };
 
-/**
- * Actualiza un registro de comida existente.
- */
 const updateFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
     const { userId } = req.user;
-
     const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
     if (!log) {
       if (req.file && req.file.processedPath) deleteFile(req.file.processedPath);
       return res.status(404).json({ error: 'Registro de comida no encontrado.' });
     }
-
-    const {
-      description, calories, protein_g, carbs_g, fats_g, weight_g, image_url,
-      meal_type, log_date, micronutrients,
-      calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g
-    } = req.body;
-
+    const { description, calories, protein_g, carbs_g, fats_g, weight_g, image_url, meal_type, log_date, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g } = req.body;
     const oldImageUrl = log.image_url;
     let newImageUrl;
+    if (req.file && req.file.processedPath) newImageUrl = req.file.processedPath;
+    else if (image_url !== undefined) newImageUrl = (image_url === 'null' || image_url === 'undefined' || image_url === '') ? null : image_url;
+    else newImageUrl = oldImageUrl;
 
-    if (req.file && req.file.processedPath) {
-      newImageUrl = req.file.processedPath;
-    } else if (image_url !== undefined) {
-      if (image_url === 'null' || image_url === 'undefined' || image_url === '') {
-        newImageUrl = null;
-      } else {
-        newImageUrl = image_url;
-      }
-    } else {
-      newImageUrl = oldImageUrl;
-    }
-
-    const foodData = {
-      description: description !== undefined ? description : log.description,
-      calories: calories !== undefined ? calories : log.calories,
-      protein_g: protein_g !== undefined ? protein_g : log.protein_g,
-      carbs_g: carbs_g !== undefined ? carbs_g : log.carbs_g,
-      fats_g: fats_g !== undefined ? fats_g : log.fats_g,
-      weight_g: weight_g !== undefined ? weight_g : log.weight_g,
-      image_url: newImageUrl,
-      meal_type: meal_type !== undefined ? meal_type : log.meal_type,
-      log_date: log_date !== undefined ? log_date : log.log_date,
-      micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients,
-      calories_per_100g: calories_per_100g !== undefined ? calories_per_100g : log.calories_per_100g,
-      protein_per_100g: protein_per_100g !== undefined ? protein_per_100g : log.protein_per_100g,
-      carbs_per_100g: carbs_per_100g !== undefined ? carbs_per_100g : log.carbs_per_100g,
-      fat_per_100g: fat_per_100g !== undefined ? fat_per_100g : log.fat_per_100g,
-    };
+    const foodData = { description: description !== undefined ? description : log.description, calories: calories !== undefined ? calories : log.calories, protein_g: protein_g !== undefined ? protein_g : log.protein_g, carbs_g: carbs_g !== undefined ? carbs_g : log.carbs_g, fats_g: fats_g !== undefined ? fats_g : log.fats_g, weight_g: weight_g !== undefined ? weight_g : log.weight_g, image_url: newImageUrl, meal_type: meal_type !== undefined ? meal_type : log.meal_type, log_date: log_date !== undefined ? log_date : log.log_date, micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients, calories_per_100g: calories_per_100g !== undefined ? calories_per_100g : log.calories_per_100g, protein_per_100g: protein_per_100g !== undefined ? protein_per_100g : log.protein_per_100g, carbs_per_100g: carbs_per_100g !== undefined ? carbs_per_100g : log.carbs_per_100g, fat_per_100g: fat_per_100g !== undefined ? fat_per_100g : log.fat_per_100g };
 
     await log.update(foodData);
-
     const favorite = await FavoriteMeal.findOne({ where: { user_id: userId, name: foodData.description } });
-    if (favorite) {
-      await favorite.update({
-        calories: foodData.calories,
-        protein_g: foodData.protein_g,
-        carbs_g: foodData.carbs_g,
-        fats_g: foodData.fats_g,
-        weight_g: foodData.weight_g,
-        image_url: foodData.image_url,
-        micronutrients: foodData.micronutrients,
-      });
-    }
-
+    if (favorite) await favorite.update({ calories: foodData.calories, protein_g: foodData.protein_g, carbs_g: foodData.carbs_g, fats_g: foodData.fats_g, weight_g: foodData.weight_g, image_url: foodData.image_url, micronutrients: foodData.micronutrients });
     if (oldImageUrl && oldImageUrl !== newImageUrl) {
       const inUse = await isImageInUse(oldImageUrl, logId);
-      if (!inUse) {
-        deleteFile(oldImageUrl);
-      }
+      if (!inUse) deleteFile(oldImageUrl);
     }
-
     const gamificationEvents = [];
     try {
       const calorieResult = await checkCalorieTargetReward(userId, foodData.log_date);
-      if (calorieResult && calorieResult.success) {
-        gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
-      }
-    } catch (gError) {
-      console.error('Error verificando objetivo en updateFoodLog:', gError);
-    }
-
+      if (calorieResult && calorieResult.success) gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
+    } catch (gError) { console.error('Error verificando objetivo en updateFoodLog:', gError); }
     res.json({ ...log.toJSON(), gamification: gamificationEvents });
-
   } catch (error) {
-    if (req.file && req.file.processedPath) {
-      deleteFile(req.file.processedPath);
-    }
+    if (req.file && req.file.processedPath) deleteFile(req.file.processedPath);
     next(error);
   }
 };
 
-/**
- * Elimina un registro de comida.
- */
 const deleteFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
     const { userId } = req.user;
-
     const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
-    if (!log) {
-      return res.status(404).json({ error: 'Registro de comida no encontrado.' });
-    }
-
+    if (!log) return res.status(404).json({ error: 'Registro de comida no encontrado.' });
     const imageUrl = log.image_url;
-
     await log.destroy();
-
     if (imageUrl) {
       const inUse = await isImageInUse(imageUrl);
-      if (!inUse) {
-        deleteFile(imageUrl);
-      }
+      if (!inUse) deleteFile(imageUrl);
     }
-
     res.status(204).send();
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Añade o actualiza la cantidad de agua con control de XP estricto.
- */
 const upsertWaterLog = async (req, res, next) => {
   try {
     const { userId } = req.user;
     const { log_date, quantity_ml } = req.body;
-
-    if (!log_date || quantity_ml === undefined) {
-      return res.status(400).json({ error: 'Fecha y cantidad son requeridas.' });
-    }
+    if (!log_date || quantity_ml === undefined) return res.status(400).json({ error: 'Fecha y cantidad son requeridas.' });
 
     const user = await User.findByPk(userId);
     const lastWeightLog = await BodyWeightLog.findOne({ where: { user_id: userId }, order: [['log_date', 'DESC']] });
     const weight = lastWeightLog ? parseFloat(lastWeightLog.weight_kg) : 70;
     const waterTarget = weight > 0 ? weight * 35 : 2500;
-
-    const [waterLog, created] = await WaterLog.findOrCreate({
-      where: { user_id: userId, log_date },
-      defaults: { quantity_ml }
-    });
-
+    const [waterLog, created] = await WaterLog.findOrCreate({ where: { user_id: userId, log_date }, defaults: { quantity_ml } });
     const previousQty = created ? 0 : waterLog.quantity_ml;
+    if (!created) { waterLog.quantity_ml = quantity_ml; await waterLog.save(); }
 
-    if (!created) {
-      waterLog.quantity_ml = quantity_ml;
-      await waterLog.save();
-    }
-
-    // --- GAMIFICACIÓN ---
     const gamificationEvents = [];
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
-
-      // 1. Calcular cuánta XP de hidratación YA se ha ganado hoy
-      // Consultamos la tabla de notificaciones para encontrar eventos de 'Hidratación' del día actual
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-
-      const waterNotifications = await Notification.findAll({
-        where: {
-          user_id: userId,
-          message: { [Op.like]: `%Hidratación:%` }, // Buscamos mensajes que contengan "Hidratación:"
-          created_at: { [Op.between]: [startOfDay, endOfDay] }
-        }
-      });
-
-      // Sumamos la XP extraída de las notificaciones
-      let xpEarnedToday = 0;
-      waterNotifications.forEach(notif => {
-        if (notif.data && notif.data.amount) {
-          xpEarnedToday += parseInt(notif.data.amount, 10);
-        }
-      });
-
-      // 2. Calcular XP potencial basada en progreso
+      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
+      const waterNotifications = await Notification.findAll({ where: { user_id: userId, message: { [Op.like]: `%Hidratación:%` }, created_at: { [Op.between]: [startOfDay, endOfDay] } } });
+      let xpEarnedToday = 0; waterNotifications.forEach(notif => { if (notif.data && notif.data.amount) xpEarnedToday += parseInt(notif.data.amount, 10); });
       const prevProgress = Math.min(previousQty / waterTarget, 1);
       const currentProgress = Math.min(quantity_ml / waterTarget, 1);
-
       let xpToAward = 0;
-      if (currentProgress > prevProgress) {
-        xpToAward = Math.round((currentProgress - prevProgress) * MAX_DAILY_WATER_XP);
-      }
-
-      // 3. Aplicar límite diario restante
+      if (currentProgress > prevProgress) xpToAward = Math.round((currentProgress - prevProgress) * MAX_DAILY_WATER_XP);
       const xpRemainingToday = Math.max(0, MAX_DAILY_WATER_XP - xpEarnedToday);
       xpToAward = Math.min(xpToAward, xpRemainingToday);
-
       if (xpToAward > 0) {
         const xpResult = await addXp(userId, xpToAward, `Hidratación: ${Math.round(currentProgress * 100)}% del objetivo`);
-        if (xpResult.success) {
-          gamificationEvents.push({ type: 'xp', amount: xpToAward, reason: `Hidratación: ${Math.round(currentProgress * 100)}%` });
-        }
+        if (xpResult.success) gamificationEvents.push({ type: 'xp', amount: xpToAward, reason: `Hidratación: ${Math.round(currentProgress * 100)}%` });
       }
-
-      // --- CAMBIO: Comprobación de límite de agua y envío de advertencia ---
-      // Verificamos si se alcanzó el límite hoy y si ya se notificó
       if ((xpEarnedToday + xpToAward) >= MAX_DAILY_WATER_XP) {
-        // Buscamos si ya existe una notificación de warning para el límite de agua hoy
-        const warningNotifications = await Notification.findAll({
-          where: {
-            user_id: userId,
-            type: 'warning',
-            created_at: { [Op.between]: [startOfDay, endOfDay] }
-          }
-        });
-
-        const waterWarningSent = warningNotifications.some(n => {
-          let d = n.data;
-          if (typeof d === 'string') {
-            try { d = JSON.parse(d); } catch (e) { }
-          }
-          return d && d.reason === 'daily_water_limit';
-        });
-
-        if (!waterWarningSent) {
-          await createNotification(userId, {
-            type: 'warning',
-            title: 'Límite de XP alcanzado',
-            message: 'Has completado el límite diario de XP por hidratación.',
-            data: { type: 'xp_limit', reason: 'daily_water_limit' }
-          });
-        }
+        const warningNotifications = await Notification.findAll({ where: { user_id: userId, type: 'warning', created_at: { [Op.between]: [startOfDay, endOfDay] } } });
+        const waterWarningSent = warningNotifications.some(n => { let d = n.data; if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { } } return d && d.reason === 'daily_water_limit'; });
+        if (!waterWarningSent) await createNotification(userId, { type: 'warning', title: 'Límite de XP alcanzado', message: 'Has completado el límite diario de XP por hidratación.', data: { type: 'xp_limit', reason: 'daily_water_limit' } });
       }
-      // --- FIN CAMBIO ---
-
+      const todayStr = new Date().toISOString().split('T')[0];
       await checkStreak(userId, todayStr);
-    } catch (gError) {
-      console.error('Error gamificación en upsertWaterLog:', gError);
-    }
-
+    } catch (gError) { console.error('Error gamificación en upsertWaterLog:', gError); }
     res.json({ ...waterLog.toJSON(), gamification: gamificationEvents });
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 const searchByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
     console.log(`[BACKEND] Buscando código de barras: ${barcode}`);
-
     const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
-
     const response = await axios.get(apiUrl);
-
-    if (!response.data || response.data.status === 0 || !response.data.product) {
-      return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
-    }
-
+    if (!response.data || response.data.status === 0 || !response.data.product) return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
     const product = response.data.product;
     const nutriments = product.nutriments || {};
-
     const originalImageUrl = product.image_url || product.image_front_url || null;
     let localImageUrl = null;
-    if (originalImageUrl) {
-      localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
-    }
-
-    const foodData = {
-      product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
-      nutriments: nutriments,
-      image_url: localImageUrl,
-      serving_quantity: product.serving_quantity || null
-    };
-
+    if (originalImageUrl) localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
+    const foodData = { product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado', nutriments: nutriments, image_url: localImageUrl, serving_quantity: product.serving_quantity || null };
     res.json({ product: foodData });
-
   } catch (error) {
     console.error(`[BACKEND] Error en searchByBarcode para ${req.params.barcode}:`, error.message);
-    if (error.response && error.response.status === 404) {
-      return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
-    }
+    if (error.response && error.response.status === 404) return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null, serving_quantity: null } });
     next(error);
   }
 };
 
-const uploadFoodImage = async (req, res, next) => {
-  if (req.imageUrl) {
-    res.status(201).json({ imageUrl: req.imageUrl });
-  } else {
-    res.status(400).json({ error: "No se procesó ninguna imagen." });
-  }
-};
+const uploadFoodImage = async (req, res, next) => { if (req.imageUrl) res.status(201).json({ imageUrl: req.imageUrl }); else res.status(400).json({ error: "No se procesó ninguna imagen." }); };
 
 const searchFoods = async (req, res, next) => {
   try {
     const { userId } = req.user;
     const { q } = req.query;
-
     console.log(`[BACKEND] Buscando alimentos: "${q}"`);
-
-    const favoriteResultsPromise = FavoriteMeal.findAll({
-      where: {
-        user_id: userId,
-        name: { [Op.like]: `%${q}%` }
-      },
-      limit: 10
-    });
-
+    const favoriteResultsPromise = FavoriteMeal.findAll({ where: { user_id: userId, name: { [Op.like]: `%${q}%` } }, limit: 10 });
     const offSearchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_es,nutriments,image_url,image_small_url`;
-
-    const offResultsPromise = axios.get(offSearchUrl)
-      .then(response => {
-        if (response.data && response.data.products) {
-          return response.data.products.map(p => ({
-            id: `off-${p.code}`,
-            name: p.product_name_es || p.product_name || 'Sin nombre',
-            calories: p.nutriments?.['energy-kcal_100g'] || 0,
-            protein_g: p.nutriments?.proteins_100g || 0,
-            carbs_g: p.nutriments?.carbohydrates_100g || 0,
-            fats_g: p.nutriments?.fat_100g || 0,
-            calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
-            protein_per_100g: p.nutriments?.proteins_100g || 0,
-            carbs_per_100g: p.nutriments?.carbohydrates_100g || 0,
-            fat_per_100g: p.nutriments?.fat_100g || 0,
-            image_url: p.image_small_url || p.image_url || null,
-            source: 'global',
-            weight_g: 100,
-          }));
-        }
-        return [];
-      })
-      .catch(err => {
-        console.error("Error buscando en Open Food Facts:", err.message);
-        return [];
-      });
-
+    const offResultsPromise = axios.get(offSearchUrl).then(response => { if (response.data && response.data.products) { return response.data.products.map(p => ({ id: `off-${p.code}`, name: p.product_name_es || p.product_name || 'Sin nombre', calories: p.nutriments?.['energy-kcal_100g'] || 0, protein_g: p.nutriments?.proteins_100g || 0, carbs_g: p.nutriments?.carbohydrates_100g || 0, fats_g: p.nutriments?.fat_100g || 0, calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0, protein_per_100g: p.nutriments?.proteins_100g || 0, carbs_per_100g: p.nutriments?.carbohydrates_100g || 0, fat_per_100g: p.nutriments?.fat_100g || 0, image_url: p.image_small_url || p.image_url || null, source: 'global', weight_g: 100 })); } return []; }).catch(err => { console.error("Error buscando en Open Food Facts:", err.message); return []; });
     const [favoriteResults, offResults] = await Promise.all([favoriteResultsPromise, offResultsPromise]);
-
-    const formattedFavorites = favoriteResults.map(f => ({
-      ...f.toJSON(),
-      source: 'local',
-      calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0,
-    }));
-
+    const formattedFavorites = favoriteResults.map(f => ({ ...f.toJSON(), source: 'local', calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0 }));
     const combinedResults = [...formattedFavorites, ...offResults];
     res.json(combinedResults);
-
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
-export default {
-  getNutritionLogsByDate,
-  getRecentMeals,
-  getNutritionSummary,
-  addFoodLog,
-  updateFoodLog,
-  deleteFoodLog,
-  upsertWaterLog,
-  searchByBarcode,
-  uploadFoodImage,
-  searchFoods,
-};
+export default { getNutritionLogsByDate, getRecentMeals, getNutritionSummary, addFoodLog, updateFoodLog, deleteFoodLog, upsertWaterLog, searchByBarcode, uploadFoodImage, searchFoods };

@@ -1,3 +1,4 @@
+/* frontend/src/services/routineService.js */
 import apiClient from './apiClient';
 
 /**
@@ -24,11 +25,11 @@ export const getRoutineById = (routineId) => {
  */
 export const createRoutine = (routineData) => {
     // Aseguramos que no se envíe un 'id' en el body de un POST
-    const { id, ...data } = routineData; 
-    
-    return apiClient('/routines', { 
-        body: data, 
-        method: 'POST' 
+    const { id, ...data } = routineData;
+
+    return apiClient('/routines', {
+        body: data,
+        method: 'POST'
     });
     // apiClient devuelve la respuesta JSON del backend (la nueva rutina)
 };
@@ -43,13 +44,29 @@ export const updateRoutine = (routineId, routineData) => {
     // Quitamos el 'id' del body para evitar conflictos, usamos el de la URL
     const { id, ...data } = routineData;
 
-    return apiClient(`/routines/${routineId}`, { 
-        body: data, 
-        method: 'PUT' 
+    return apiClient(`/routines/${routineId}`, {
+        body: data,
+        method: 'PUT'
     });
     // apiClient devuelve la respuesta JSON del backend (la rutina actualizada)
 };
 
+/**
+ * Sube una imagen para la rutina.
+ * @param {File} file - El archivo de imagen a subir.
+ * @returns {Promise<{imageUrl: string}>} - La URL relativa de la imagen subida.
+ */
+export const uploadRoutineImage = (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    // Nota: Al pasar FormData, el navegador suele establecer automáticamente
+    // el header 'Content-Type' con el boundary correcto.
+    return apiClient('/routines/upload-image', {
+        method: 'POST',
+        body: formData,
+    });
+};
 
 /**
  * Elimina una rutina por su ID.
@@ -58,9 +75,5 @@ export const updateRoutine = (routineId, routineData) => {
 export const deleteRoutine = (routineId) => {
     return apiClient(`/routines/${routineId}`, { method: 'DELETE' });
 };
-
-// La función 'saveRoutine' original ha sido reemplazada por 
-// 'createRoutine' y 'updateRoutine' para ser más explícitas 
-// y alinearse con 'dataSlice.js'.
 
 // --- FIN DE LA MODIFICACIÓN ---

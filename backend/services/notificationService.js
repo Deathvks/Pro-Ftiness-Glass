@@ -4,20 +4,22 @@ import pushService from './pushService.js';
 
 const { Notification, PushSubscription } = models;
 
-/**
- * Crea una notificación persistente y envía una alerta Push.
- */
 export const createNotification = async (userId, { type = 'info', title, message, data = null }) => {
   try {
     // 1. Guardar en Base de Datos
     if (!Notification) throw new Error('Modelo Notification no cargado correctamente.');
+
+    // FIX: Generamos la fecha explícitamente en la app para asegurar UTC y evitar desfases de la BD
+    const now = new Date();
 
     await Notification.create({
       user_id: userId,
       type,
       title,
       message,
-      data
+      data,
+      created_at: now,
+      updated_at: now
     });
 
     // 2. Enviar Push (si hay suscripciones)

@@ -7,13 +7,47 @@ import { createNotification } from './notificationService.js';
 import { cleanOrphanedImages } from './imageService.js';
 
 /**
+ * Obtiene la hora y fecha local para una zona horaria dada.
+ * @param {string} timezone - Ejemplo: 'Europe/Madrid', 'Atlantic/Canary'
+ */
+const getLocalTime = (timezone) => {
+  try {
+    // Validar timezone o usar default
+    const tz = timezone || 'Europe/Madrid';
+    const now = new Date();
+
+    // Hora (0-23)
+    const hourStr = now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: 'numeric' });
+
+    // Día del mes (1-31)
+    const dayStr = now.toLocaleDateString('en-US', { timeZone: tz, day: 'numeric' });
+
+    // Fecha completa YYYY-MM-DD (Formato sueco es ISO-friendly)
+    const dateStr = now.toLocaleDateString('sv-SE', { timeZone: tz });
+
+    return {
+      hour: parseInt(hourStr, 10),
+      day: parseInt(dayStr, 10),
+      date: dateStr
+    };
+  } catch (error) {
+    console.error(`[Cron] Error zona horaria inválida (${timezone}):`, error.message);
+    // Fallback seguro a UTC si falla
+    const now = new Date();
+    return {
+      hour: now.getUTCHours(),
+      day: now.getUTCDate(),
+      date: now.toISOString().split('T')[0]
+    };
+  }
+};
+
+/**
  * Envía notificaciones a un usuario específico (Push + Interna).
- * @param {string} userId - ID del usuario
- * @param {object} payload - { title, body, url }
  */
 const notifyUser = async (userId, payload) => {
   try {
-    // 1. Crear notificación interna (Persistencia en la App)
+    // 1. Crear notificación interna
     await createNotification(userId, {
       type: 'info',
       title: payload.title,
@@ -21,12 +55,11 @@ const notifyUser = async (userId, payload) => {
       data: { url: payload.url }
     });
 
-    // 2. Enviar notificación Push (al móvil/navegador)
+    // 2. Enviar Push
     const subscriptions = await db.PushSubscription.findAll({ where: { user_id: userId } });
-
     if (subscriptions.length === 0) return;
 
-    console.log(`[Cron] Enviando Push "${payload.title}" a usuario ${userId}...`);
+    // console.log(`[Cron] Enviando Push a usuario ${userId}...`);
 
     const notifications = subscriptions.map(sub => {
       const subscriptionObject = {
@@ -40,7 +73,7 @@ const notifyUser = async (userId, payload) => {
       return pushService.sendNotification(subscriptionObject, payload)
         .catch(error => {
           if (error.statusCode === 410 || error.statusCode === 404) {
-            console.log(`[Cron] Eliminando suscripción caducada: ${sub.endpoint.substring(0, 20)}...`);
+            // console.log(`[Cron] Eliminando suscripción caducada.`);
             return sub.destroy();
           }
           console.error(`[Cron] Error enviando push: ${error.message}`);
@@ -54,14 +87,14 @@ const notifyUser = async (userId, payload) => {
 };
 
 /**
- * TAREA 1: Recordatorio de Nutrición (Diario a las 8 PM)
+ * TAREA 1: Recordatorio de Nutrición
+ * Se ejecuta CADA HORA, pero solo notifica si en la zona horaria del usuario son las 20:00 (8 PM).
  */
 const checkNutritionGoals = () => {
-  cron.schedule('0 20 * * *', async () => {
-    console.log('[Cron] Ejecutando tarea: Recordatorio de Nutrición...');
+  cron.schedule('0 * * * *', async () => {
+    console.log('[Cron] Verificando Metas Nutricionales (Hora actual)...');
     try {
-      const today = new Date().toISOString().split('T')[0];
-
+      // 1. Buscar usuarios con metas definidas
       const users = await db.User.findAll({
         where: {
           [Op.or]: [
@@ -69,128 +102,145 @@ const checkNutritionGoals = () => {
             { target_protein: { [Op.gt]: 0 } },
           ],
         },
-        include: [{
-          model: db.NutritionLog,
-          as: 'NutritionLogs',
-          where: { log_date: today },
-          attributes: [],
-          required: false,
-        }],
-        attributes: [
-          'id',
-          'target_calories',
-          'target_protein',
-          [fn('SUM', col('NutritionLogs.calories')), 'totalCalories'],
-          [fn('SUM', col('NutritionLogs.protein_g')), 'totalProtein'],
-        ],
-        group: ['User.id'],
+        attributes: ['id', 'target_calories', 'target_protein', 'timezone']
       });
 
-      const usersToNotify = users.filter(user => {
-        const currentCals = parseFloat(user.dataValues.totalCalories || 0);
-        const currentProt = parseFloat(user.dataValues.totalProtein || 0);
-
-        const caloriesMet = user.target_calories > 0 && currentCals >= user.target_calories;
-        const proteinMet = user.target_protein > 0 && currentProt >= user.target_protein;
-
-        return (user.target_calories > 0 && !caloriesMet) || (user.target_protein > 0 && !proteinMet);
+      // 2. Filtrar usuarios donde sean las 20:00
+      const targetUsers = users.filter(user => {
+        const { hour } = getLocalTime(user.timezone);
+        return hour === 20;
       });
 
-      console.log(`[Cron] ${usersToNotify.length} usuarios no han cumplido metas nutricionales.`);
+      if (targetUsers.length === 0) return;
 
-      usersToNotify.forEach(user => {
-        const payload = {
-          title: '¡No olvides tus metas!',
-          body: 'Aún no has completado tus objetivos de calorías o proteínas del día. ¡Tú puedes!',
-          url: '/nutrition',
-        };
-        notifyUser(user.id, payload);
-      });
+      console.log(`[Cron] Analizando nutrición para ${targetUsers.length} usuarios (son las 20:00 local).`);
 
+      // 3. Verificar progreso individualmente
+      for (const user of targetUsers) {
+        const { date: localDate } = getLocalTime(user.timezone);
+
+        // Sumar logs de ESE día local
+        const logs = await db.NutritionLog.findAll({
+          where: { user_id: user.id, log_date: localDate },
+          attributes: ['calories', 'protein_g']
+        });
+
+        const totalCals = logs.reduce((sum, log) => sum + (parseFloat(log.calories) || 0), 0);
+        const totalProt = logs.reduce((sum, log) => sum + (parseFloat(log.protein_g) || 0), 0);
+
+        const caloriesMet = user.target_calories > 0 && totalCals >= user.target_calories;
+        const proteinMet = user.target_protein > 0 && totalProt >= user.target_protein;
+
+        if ((user.target_calories > 0 && !caloriesMet) || (user.target_protein > 0 && !proteinMet)) {
+          notifyUser(user.id, {
+            title: '¡No olvides tus metas!',
+            body: 'Aún no has completado tus objetivos de hoy. ¡Tú puedes!',
+            url: '/nutrition',
+          });
+        }
+      }
     } catch (error) {
       console.error('[Cron] Error en la tarea de nutrición:', error);
     }
-  }, {
-    timezone: "Europe/Madrid"
-  });
+  }); // Sin timezone global, usa la hora del sistema para dispararse cada hora
 };
 
 /**
- * TAREA 2: Recordatorio de Entrenamiento (Diario a las 10 AM)
+ * TAREA 2: Recordatorio de Entrenamiento
+ * Se ejecuta CADA HORA, notifica si son las 10:00 (10 AM).
  */
 const checkTrainingReminder = () => {
-  cron.schedule('0 10 * * *', async () => {
-    console.log('[Cron] Ejecutando tarea: Recordatorio de Entrenamiento...');
+  cron.schedule('0 * * * *', async () => {
+    console.log('[Cron] Verificando Recordatorio Entrenamiento...');
     try {
-      const usersWithSubscriptions = await db.PushSubscription.findAll({
-        // CORRECCIÓN: Usar 'user_id' (nombre de la columna en DB) en lugar de 'userId'
-        attributes: [[fn('DISTINCT', col('user_id')), 'userId']],
+      // Obtener usuarios con suscripciones y hacer join con User para sacar timezone
+      const subscriptions = await db.PushSubscription.findAll({
+        include: [{
+          model: db.User,
+          as: 'user', // Asegúrate de que la relación existe en tus modelos, si no, usa el método siguiente
+          attributes: ['id', 'timezone']
+        }]
       });
 
-      const payload = {
-        title: '¡Es hora de moverse!',
-        body: '¿Listo para tu entrenamiento de hoy? ¡Vamos a por ello!',
-        url: '/routines',
-      };
-
-      usersWithSubscriptions.forEach(sub => {
-        notifyUser(sub.userId, payload);
+      // Si la relación no está definida directamente en el modelo PushSubscription,
+      // iteramos IDs únicos y buscamos los usuarios.
+      const userIds = [...new Set(subscriptions.map(s => s.user_id))];
+      const users = await db.User.findAll({
+        where: { id: userIds },
+        attributes: ['id', 'timezone']
       });
+
+      const targetUsers = users.filter(user => {
+        const { hour } = getLocalTime(user.timezone);
+        return hour === 10;
+      });
+
+      if (targetUsers.length > 0) {
+        console.log(`[Cron] Enviando recordatorio entrenamiento a ${targetUsers.length} usuarios.`);
+        targetUsers.forEach(user => {
+          notifyUser(user.id, {
+            title: '¡Es hora de moverse!',
+            body: '¿Listo para tu entrenamiento de hoy? ¡Vamos a por ello!',
+            url: '/routines',
+          });
+        });
+      }
 
     } catch (error) {
       console.error('[Cron] Error en la tarea de entrenamiento:', error);
     }
-  }, {
-    timezone: "Europe/Madrid"
   });
 };
 
 /**
- * TAREA 3: Recordatorio de Peso (Mensual, día 1 a las 9 AM)
+ * TAREA 3: Recordatorio de Peso (Día 1 del mes, 09:00 AM)
  */
 const checkWeightLogReminder = () => {
-  cron.schedule('0 9 1 * *', async () => {
-    console.log('[Cron] Ejecutando tarea: Recordatorio de Peso Mensual...');
+  cron.schedule('0 * * * *', async () => {
+    console.log('[Cron] Verificando Recordatorio Peso...');
     try {
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const allUsers = await db.User.findAll({ attributes: ['id', 'timezone'] });
 
-      const usersToNotify = await db.User.findAll({
-        attributes: ['id'],
-        include: [{
-          model: db.BodyWeightLog,
-          as: 'BodyWeightLogs',
-          attributes: [],
-          required: false,
-        }],
-        group: ['User.id'],
-        having: literal(`COUNT(\`BodyWeightLogs\`.\`id\`) = 0 OR MAX(\`BodyWeightLogs\`.\`log_date\`) < '${thirtyDaysAgo.toISOString().split('T')[0]}'`)
+      const targetUsers = allUsers.filter(user => {
+        const { hour, day } = getLocalTime(user.timezone);
+        return day === 1 && hour === 9;
       });
 
-      console.log(`[Cron] ${usersToNotify.length} usuarios deben registrar su peso.`);
+      if (targetUsers.length === 0) return;
 
-      const payload = {
-        title: 'Registro de Progreso Mensual',
-        body: '¡Hola! Ha pasado un tiempo. No olvides registrar tu peso para seguir tu progreso.',
-        url: '/progress',
-      };
+      console.log(`[Cron] Analizando peso para ${targetUsers.length} usuarios.`);
 
-      usersToNotify.forEach(user => {
-        notifyUser(user.id, payload);
-      });
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Aprox
+
+      for (const user of targetUsers) {
+        // Verificar último log
+        const lastLog = await db.BodyWeightLog.findOne({
+          where: { user_id: user.id },
+          order: [['log_date', 'DESC']],
+        });
+
+        const needsLog = !lastLog || new Date(lastLog.log_date) < thirtyDaysAgo;
+
+        if (needsLog) {
+          notifyUser(user.id, {
+            title: 'Registro de Progreso Mensual',
+            body: '¡Hola! Ha pasado un tiempo. No olvides registrar tu peso.',
+            url: '/progress',
+          });
+        }
+      }
 
     } catch (error) {
       console.error('[Cron] Error en la tarea de peso:', error);
     }
-  }, {
-    timezone: "Europe/Madrid"
   });
 };
 
 /**
- * TAREA 4: Limpieza de imágenes huérfanas (Semanal, Domingos a las 04:00 AM)
+ * TAREA 4: Limpieza de imágenes huérfanas
+ * (Semanal, Domingos 04:00 AM hora del servidor - Mantenimiento del sistema)
  */
 const scheduleImageCleanup = () => {
-  // 0 4 * * 0 = A las 04:00 AM del Domingo (0)
   cron.schedule('0 4 * * 0', async () => {
     console.log('[Cron] Ejecutando tarea: Limpieza de imágenes huérfanas...');
     try {
@@ -198,8 +248,6 @@ const scheduleImageCleanup = () => {
     } catch (error) {
       console.error('[Cron] Error en la limpieza de imágenes:', error);
     }
-  }, {
-    timezone: "Europe/Madrid"
   });
 };
 
@@ -207,10 +255,10 @@ const scheduleImageCleanup = () => {
  * Inicializa todas las tareas programadas.
  */
 export const startCronJobs = () => {
-  console.log('[Cron] Inicializando tareas programadas...');
+  console.log('[Cron] Inicializando tareas programadas (Multizona)...');
   checkNutritionGoals();
   checkTrainingReminder();
   checkWeightLogReminder();
   scheduleImageCleanup();
-  console.log('[Cron] Tareas programadas iniciadas.');
+  console.log('[Cron] Tareas iniciadas.');
 };

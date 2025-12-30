@@ -26,6 +26,11 @@ const Routine = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    image_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: null
+    },
     // --- NUEVOS CAMPOS SOCIALES ---
     is_public: {
       type: DataTypes.BOOLEAN,

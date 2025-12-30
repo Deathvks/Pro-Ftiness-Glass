@@ -62,9 +62,9 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
 
   if (isManual) {
     return (
-      // FIX: Eliminados bg y border extras para volver al diseño limpio.
-      // Se añade 'min-w-0' para evitar que el flex item fuerce un ancho mayor a la pantalla en móviles.
-      <div className={`${wrapperStyles} h-10 relative flex items-center min-w-0`}>
+      // FIX: Añadido min-w-[150px] para asegurar un ancho mínimo constante
+      // independientemente de la longitud de la palabra seleccionada.
+      <div className={`${wrapperStyles} h-10 relative flex items-center min-w-[150px]`}>
         <CustomSelect
           value={currentValue}
           onChange={handleSelectChange}
@@ -73,7 +73,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
             ns: 'exercise_ui',
             defaultValue: 'Selecciona grupo...',
           })}
-          className="w-full min-w-0" // min-w-0 aquí también asegura que el select respete el ancho del padre
+          className="w-full" // Quitamos min-w-0 para que llene el contenedor padre
         />
       </div>
     );

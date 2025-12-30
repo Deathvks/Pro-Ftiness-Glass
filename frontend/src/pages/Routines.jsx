@@ -27,6 +27,7 @@ import TemplateRoutines from './TemplateRoutines';
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
   const { t } = useTranslation('exercise_names');
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   const {
     routines,
@@ -78,9 +79,20 @@ const Routines = ({ setView }) => {
     return localStorage.getItem('routinesActiveTab') || 'myRoutines';
   });
 
-  // --- EFECTOS ---
+  // --- Helpers para Imagen ---
+  const isCssBackground = (value) => {
+    return value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
+  };
 
-  // Cargar rutinas completadas hoy al montar el componente
+  const getDisplayImageUrl = (path) => {
+    if (!path) return null;
+    if (isCssBackground(path)) return null;
+    if (path.startsWith('http') || path.startsWith('blob:')) return path;
+    if (path.startsWith('/uploads')) return `${API_URL}${path}`;
+    return path;
+  };
+
+  // --- EFECTOS ---
   useEffect(() => {
     fetchTodaysCompletedRoutines();
   }, [fetchTodaysCompletedRoutines]);
@@ -101,7 +113,6 @@ const Routines = ({ setView }) => {
   }, [editingRoutine]);
 
   // --- MEMOS ---
-
   const lastUsedMap = useMemo(() => {
     const map = new Map();
     (workoutLog || []).forEach((log) => {
@@ -225,9 +236,7 @@ const Routines = ({ setView }) => {
     }
   };
 
-  // --- LÓGICA DE INICIO ROBUSTO ---
   const handleStartWorkout = async (routine) => {
-    // Si ya hay uno activo de esta rutina, navegar directamente
     if (activeWorkout && activeWorkout.routineId === routine.id) {
       setView('workout');
       return;
@@ -235,43 +244,33 @@ const Routines = ({ setView }) => {
 
     setIsLoading(true);
     try {
-      // 1. Iniciar la acción asíncrona y capturar resultado
       const result = await startWorkout(routine);
 
-      // Si falló (ej: ya completado hoy), mostrar error y salir
       if (result && result.success === false) {
         addToast(result.message, 'error');
         setIsLoading(false);
         return;
       }
 
-      // 2. Función de verificación con reintentos (Polling corto)
-      // Esto asegura que el store se ha actualizado antes de cambiar la vista
       let attempts = 0;
-      const maxAttempts = 10; // 10 * 50ms = 500ms máximo
+      const maxAttempts = 10;
 
       const checkAndNavigate = () => {
-        // Usamos getState() para obtener el valor más fresco, saltando closures
         const currentActive = useAppStore.getState().activeWorkout;
 
         if (currentActive) {
-          // ¡Éxito! El estado está listo.
           setIsLoading(false);
           setView('workout');
         } else if (attempts < maxAttempts) {
-          // Aún no está listo, esperamos 50ms y reintentamos
           attempts++;
           setTimeout(checkAndNavigate, 50);
         } else {
-          // Timeout: Navegamos igual como fallback, o mostramos error
-          // (Normalmente ya debería estar, si no, es un error de API)
           setIsLoading(false);
           console.warn("Timeout esperando activeWorkout, navegando de todas formas...");
           setView('workout');
         }
       };
 
-      // Iniciar verificación
       checkAndNavigate();
 
     } catch (error) {
@@ -397,12 +396,12 @@ const Routines = ({ setView }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* --- AQUÍ ESTÁ EL CAMBIO: items-start añadido para independencia de altura --- */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map((routine) => {
                 if (!routine) return null;
 
-                // Verificamos si el ID está en la lista de completadas hoy
                 const isCompleted = completedRoutineIdsToday.includes(routine.id);
                 const isActive =
                   activeWorkout && activeWorkout.routineId === routine.id;
@@ -413,140 +412,163 @@ const Routines = ({ setView }) => {
                 const lastUsed = lastUsedMap.get(routine.id);
                 const totalExercises = exercisesToGroup.length;
 
+                const imageSrc = routine.imageUrl || routine.image_url;
+
                 return (
-                  <GlassCard key={routine.id} className="p-5 md:p-6">
-                    <div className="flex items-center justify-between gap-4 mb-3">
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary min-w-0">
-                        {isCompleted && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold">
-                            <CheckCircle size={14} /> Completada hoy
-                          </span>
+                  <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group">
+
+                    {/* --- IMAGEN: Encima de todo el contenido --- */}
+                    {imageSrc && (
+                      <div className="h-32 sm:h-40 w-full relative shrink-0 overflow-hidden bg-bg-secondary">
+                        {isCssBackground(imageSrc) ? (
+                          <div
+                            className="w-full h-full transition-transform duration-500 group-hover:scale-105"
+                            style={{ background: imageSrc }}
+                          />
+                        ) : (
+                          <img
+                            src={getDisplayImageUrl(imageSrc)}
+                            alt={routine.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
                         )}
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
-                          <Dumbbell size={14} /> {totalExercises} ejercicio
-                          {totalExercises !== 1 ? 's' : ''}
-                        </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
-                          <CalendarClock size={14} />
-                          {lastUsed
-                            ? new Date(lastUsed).toLocaleDateString('es-ES')
-                            : 'Sin uso'}
-                        </span>
-                      </div>
-                      <div className="shrink-0 flex items-center gap-1">
-                        <button
-                          onClick={() => handleEditClick(routine)}
-                          className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => duplicateRoutine(routine)}
-                          className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent"
-                          title="Duplicar"
-                        >
-                          <Plus size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(routine.id)}
-                          className="p-2 rounded-full text-text-muted hover:bg-red/20 hover:text-red"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="pb-4 border-b border-[--glass-border]">
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-lg md:text-xl font-bold text-text-primary">
-                          {routine.name}
-                        </h2>
-                        {isActive && (
-                          <span className="px-2 py-0.5 rounded-full bg-accent-transparent text-accent text-xs font-semibold shrink-0">
-                            Activo
-                          </span>
-                        )}
-                      </div>
-
-                      {routine.description && (
-                        <p className="text-sm text-text-secondary mt-1 line-clamp-2">
-                          {routine.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {exerciseGroups.length > 0 && (
-                      <div className="mt-4">
-                        <h3 className="text-sm font-semibold text-text-secondary mb-2">
-                          Plan de ejercicios
-                        </h3>
-                        <div className="flex flex-col gap-3">
-                          {exerciseGroups.map((group, groupIndex) => (
-                            <div key={groupIndex}>
-                              {group.length > 1 && (
-                                <div className="mb-1 inline-flex items-center gap-2 text-accent text-xs font-semibold">
-                                  <Link2 size={14} />
-                                  Superserie
-                                </div>
-                              )}
-                              <ul
-                                className={`flex flex-col gap-2 ${group.length > 1 ? 'ml-4' : ''
-                                  }`}
-                              >
-                                {group.map((ex) => (
-                                  <li
-                                    key={ex.id || ex.tempId}
-                                    className="flex items-center gap-2 text-sm"
-                                  >
-                                    <span className="truncate font-semibold text-text-primary">
-                                      {t(ex.name)}
-                                    </span>
-                                    <span className="text-accent whitespace-nowrap font-medium">
-                                      {ex.sets}×{ex.reps}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary/90 to-transparent opacity-60" />
                       </div>
                     )}
 
-                    <div className="mt-5">
-                      <button
-                        // Usamos la nueva función handleStartWorkout
-                        onClick={() => handleStartWorkout(routine)}
-                        disabled={isCompleted || isActive || isLoading}
-                        className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition
-                          ${isCompleted || isActive
-                            ? 'bg-[--glass-bg] text-text-muted cursor-not-allowed'
-                            : 'bg-accent text-bg-secondary hover:scale-[1.01]'
-                          }
-                        `}
-                      >
-                        {/* Mostramos Spinner si está cargando ESTE botón (simplificado usando isLoading global por ahora) */}
-                        {isLoading && !isCompleted && !isActive ? (
-                          <Spinner size="small" />
-                        ) : isCompleted ? (
-                          <>
-                            <CheckCircle size={18} />
-                            Completada Hoy
-                          </>
-                        ) : isActive ? (
-                          <>
-                            <Clock size={18} />
-                            En Curso
-                          </>
-                        ) : (
-                          <>
-                            <Play size={18} />
-                            Empezar Entrenamiento
-                          </>
+                    <div className="p-5 md:p-6 flex-1 flex flex-col">
+                      <div className="flex items-center justify-between gap-4 mb-3">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary min-w-0">
+                          {isCompleted && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold">
+                              <CheckCircle size={14} /> Completada hoy
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
+                            <Dumbbell size={14} /> {totalExercises} ejercicio
+                            {totalExercises !== 1 ? 's' : ''}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
+                            <CalendarClock size={14} />
+                            {lastUsed
+                              ? new Date(lastUsed).toLocaleDateString('es-ES')
+                              : 'Sin uso'}
+                          </span>
+                        </div>
+                        <div className="shrink-0 flex items-center gap-1">
+                          <button
+                            onClick={() => handleEditClick(routine)}
+                            className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent"
+                            title="Editar"
+                          >
+                            <Edit size={18} />
+                          </button>
+                          <button
+                            onClick={() => duplicateRoutine(routine)}
+                            className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent"
+                            title="Duplicar"
+                          >
+                            <Plus size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(routine.id)}
+                            className="p-2 rounded-full text-text-muted hover:bg-red/20 hover:text-red"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="pb-4 border-b border-[--glass-border]">
+                        <div className="flex items-center gap-3">
+                          <h2 className="text-lg md:text-xl font-bold text-text-primary">
+                            {routine.name}
+                          </h2>
+                          {isActive && (
+                            <span className="px-2 py-0.5 rounded-full bg-accent-transparent text-accent text-xs font-semibold shrink-0">
+                              Activo
+                            </span>
+                          )}
+                        </div>
+
+                        {routine.description && (
+                          <p className="text-sm text-text-secondary mt-1 line-clamp-2">
+                            {routine.description}
+                          </p>
                         )}
-                      </button>
+                      </div>
+
+                      {exerciseGroups.length > 0 && (
+                        <div className="mt-4">
+                          <h3 className="text-sm font-semibold text-text-secondary mb-2">
+                            Plan de ejercicios
+                          </h3>
+                          <div className="flex flex-col gap-3">
+                            {exerciseGroups.map((group, groupIndex) => (
+                              <div key={groupIndex}>
+                                {group.length > 1 && (
+                                  <div className="mb-1 inline-flex items-center gap-2 text-accent text-xs font-semibold">
+                                    <Link2 size={14} />
+                                    Superserie
+                                  </div>
+                                )}
+                                <ul
+                                  className={`flex flex-col gap-2 ${group.length > 1 ? 'ml-4' : ''
+                                    }`}
+                                >
+                                  {group.map((ex) => (
+                                    <li
+                                      key={ex.id || ex.tempId}
+                                      className="flex items-center gap-2 text-sm"
+                                    >
+                                      <span className="truncate font-semibold text-text-primary">
+                                        {t(ex.name)}
+                                      </span>
+                                      <span className="text-accent whitespace-nowrap font-medium">
+                                        {ex.sets}×{ex.reps}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-5">
+                        <button
+                          onClick={() => handleStartWorkout(routine)}
+                          disabled={isCompleted || isActive || isLoading}
+                          className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition
+                          ${isCompleted || isActive
+                              ? 'bg-[--glass-bg] text-text-muted cursor-not-allowed'
+                              : 'bg-accent text-bg-secondary hover:scale-[1.01]'
+                            }
+                        `}
+                        >
+                          {isLoading && !isCompleted && !isActive ? (
+                            <Spinner size="small" />
+                          ) : isCompleted ? (
+                            <>
+                              <CheckCircle size={18} />
+                              Completada Hoy
+                            </>
+                          ) : isActive ? (
+                            <>
+                              <Clock size={18} />
+                              En Curso
+                            </>
+                          ) : (
+                            <>
+                              <Play size={18} />
+                              Empezar Entrenamiento
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </GlassCard>
                 );
@@ -574,7 +596,7 @@ const Routines = ({ setView }) => {
       {showDeleteModal && (
         <ConfirmationModal
           isOpen={showDeleteModal}
-          onCancel={() => setShowDeleteModal(false)} // --- CORRECCIÓN: cambiado onClose a onCancel
+          onCancel={() => setShowDeleteModal(false)}
           message="¿Estás seguro de que quieres borrar esta rutina?"
           onConfirm={confirmDelete}
           isLoading={isLoading}

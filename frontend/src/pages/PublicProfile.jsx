@@ -286,7 +286,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             </div>
 
             {/* --- HEADER NAVBAR (Móvil) --- */}
-            {/* Corrección: Eliminado 'relative z-50' para que no se superponga al header global */}
             <div className="md:hidden pt-4 flex items-center gap-4">
                 <button
                     type="button"
@@ -341,9 +340,10 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 {relationshipStatus !== 'me' && (
                     <div className="z-10 flex gap-3 mt-2">
                         {relationshipStatus === 'none' && (
+                            // MODIFICACIÓN: Añadido outline-none y focus:outline-none
                             <button
                                 onClick={handleSendRequest}
-                                className="flex items-center gap-2 px-6 py-2 bg-accent-primary text-bg-primary font-bold rounded-xl shadow-lg shadow-accent-primary/20 hover:scale-105 transition-transform active:scale-95"
+                                className="flex items-center gap-2 px-6 py-2 bg-accent-primary/10 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/20 transition-all active:scale-95 outline-none focus:outline-none"
                             >
                                 <UserPlus size={18} />
                                 Añadir Amigo
@@ -361,7 +361,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                 </button>
                                 <button
                                     onClick={handleRemoveFriend}
-                                    className="p-2 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition"
+                                    className="p-2 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition outline-none focus:outline-none"
                                     title="Eliminar amigo"
                                 >
                                     <UserX size={20} />
@@ -377,7 +377,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         )}
 
                         {relationshipStatus === 'pending_received' && (
-                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-2 bg-accent-primary/20 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/30">
+                            // MODIFICACIÓN: Añadido outline-none y focus:outline-none
+                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-2 bg-accent-primary/10 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/20 transition-all outline-none focus:outline-none">
                                 <UserCheck size={18} />
                                 Responder Solicitud
                             </button>

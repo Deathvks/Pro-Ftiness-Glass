@@ -204,6 +204,7 @@ const markAsRead = async (req, res, next) => {
     }
 
     notification.is_read = true;
+    notification.updated_at = new Date(); // MODIFICADO: Forzar fecha UTC
     await notification.save();
 
     res.json(notification);
@@ -218,7 +219,10 @@ const markAllAsRead = async (req, res, next) => {
     const { userId } = req.user;
 
     await Notification.update(
-      { is_read: true },
+      {
+        is_read: true,
+        updated_at: new Date() // MODIFICADO: Forzar fecha UTC
+      },
       { where: { user_id: userId, is_read: false } }
     );
 

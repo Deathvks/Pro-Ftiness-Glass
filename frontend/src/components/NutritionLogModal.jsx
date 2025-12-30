@@ -7,9 +7,6 @@ import ConfirmationModal from './ConfirmationModal';
 import { useNutritionModal } from '../hooks/useNutritionModal';
 import GlassCard from './GlassCard';
 import { searchFoods } from '../services/nutritionService';
-// --- AÑADIDO: Imports para Gamificación y Toasts ---
-import { useToast } from '../hooks/useToast';
-import useAppStore from '../store/useAppStore';
 
 import TabButton from './nutrition/logModal/TabButton';
 import ManualEntryForm from './nutrition/logModal/ManualEntryForm';
@@ -20,10 +17,8 @@ import SearchResultItem from './nutrition/logModal/SearchResultItem';
 
 import FoodDetailView from './nutrition/logModal/FoodDetailView';
 
-const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
-    // --- AÑADIDO: Hooks de feedback ---
-    const { addToast } = useToast();
-    const addXp = useAppStore(state => state.addXp);
+// CORRECCIÓN: Añadida prop isLoading para deshabilitar botón
+const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) => {
 
     const {
         isEditingLog, editingFavorite, searchTerm, setSearchTerm, activeTab, setActiveTab,
@@ -42,18 +37,6 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
     const [isSearching, setIsSearching] = useState(false);
 
     const [selectedDetailItem, setSelectedDetailItem] = useState(null);
-
-    // --- AÑADIDO: Wrapper para inyectar XP y Toast al guardar la lista ---
-    const handleSaveListWithFeedback = () => {
-        handleSaveList(); // Ejecuta la lógica original de guardado/cierre
-
-        // Añade XP y notificaciones si hay items
-        if (itemsToAdd.length > 0) {
-            const xpAmount = 15 * itemsToAdd.length;
-            if (addXp) addXp(xpAmount, 'Comidas registradas');
-            addToast(`Has guardado ${itemsToAdd.length} comida(s) correctamente`, 'success');
-        }
-    };
 
     useEffect(() => {
         if (activeTab !== 'search' || !searchTerm.trim()) {
@@ -178,7 +161,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                         onSaveSingle={handleSaveSingle}
                         onSaveEdit={handleSaveEdit}
                         onSaveListItem={handleSaveListItem}
-                        isLoading={false}
+                        isLoading={isLoading} // También pasamos isLoading aquí si es necesario
                         isEditing={isEditingLog || !!editingFavorite}
                         editingListItem={itemsToAdd.find(item => item.tempId === editingListItemId)}
                         showFavoriteToggle={!editingFavorite}
@@ -208,7 +191,6 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
 
     return (
         <>
-            {/* Contenedor principal: z-60 para estar sobre el navbar. Padding inferior externo reducido a pb-12 para equilibrio */}
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] p-4 sm:p-0 pb-12 md:pb-0">
                 <GlassCard className={`relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col h-full max-h-[85dvh] sm:h-auto sm:max-h-[90vh] ${!isDarkTheme ? '!bg-bg-secondary' : ''}`} onClick={(e) => e.stopPropagation()}>
                     <div className="p-5 flex items-center justify-between border-b border-glass-border flex-shrink-0">
@@ -262,7 +244,6 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                             </div>
                         )}
 
-                        {/* FIX: Reducido pb-24 a pb-5 para quitar el espacio excesivo interno */}
                         <div className="overflow-y-auto px-5 pb-5 flex-grow overscroll-contain">
                             {renderContent()}
                         </div>
@@ -278,10 +259,14 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit }) => {
                                     <SelectedItem key={item.tempId} item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />
                                 )}
                             </div>
-                            {/* --- MODIFICADO: Usamos handleSaveListWithFeedback en lugar de handleSaveList --- */}
-                            <button onClick={handleSaveListWithFeedback} disabled={false} className="w-full flex items-center justify-center py-3 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold hover:scale-[1.01] transition disabled:opacity-60">
-                                <Plus size={18} className="mr-2" />
-                                {`Añadir ${itemsToAdd.length} Alimento${itemsToAdd.length > 1 ? 's' : ''}`}
+                            {/* CORRECCIÓN: Botón deshabilitado si isLoading es true */}
+                            <button
+                                onClick={handleSaveList}
+                                disabled={isLoading}
+                                className={`w-full flex items-center justify-center py-3 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold hover:scale-[1.01] transition ${isLoading ? 'opacity-60 cursor-not-allowed' : 'disabled:opacity-60'}`}
+                            >
+                                {isLoading ? <Spinner size={20} className="mr-2" /> : <Plus size={18} className="mr-2" />}
+                                {isLoading ? 'Guardando...' : `Añadir ${itemsToAdd.length} Alimento${itemsToAdd.length > 1 ? 's' : ''}`}
                             </button>
                         </div>
                     )}
