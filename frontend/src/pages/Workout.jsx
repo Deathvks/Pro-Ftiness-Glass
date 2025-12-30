@@ -260,7 +260,7 @@ const Workout = ({ timer, setView }) => {
 
     const result = await logWorkout(workoutData);
     if (result.success) {
-      // --- INICIO MODIFICACIÓN: Manejo de Gamificación (XP/Warnings) ---
+      // --- INICIO MODIFICACIÓN: Manejo de Gamificación (XP/Warnings/Info) ---
       if (result.gamification) {
         result.gamification.forEach(event => {
           if (event.type === 'xp') {
@@ -269,6 +269,9 @@ const Workout = ({ timer, setView }) => {
             addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
           } else if (event.type === 'warning') {
             addToast(event.message, 'warning');
+          } else if (event.type === 'info') {
+            // AÑADIDO: Manejo de info (límite ya alcanzado)
+            addToast(event.message, 'info');
           }
         });
       }
@@ -318,6 +321,7 @@ const Workout = ({ timer, setView }) => {
       {/* --- Componente: Cabecera (Cronómetro y Controles) --- */}
       <WorkoutHeader
         routineName={activeWorkout.routineName}
+        routineImage={activeWorkout.image_url} // <--- MODIFICACIÓN AQUÍ
         timer={timer}
         isWorkoutPaused={isWorkoutPaused}
         hasWorkoutStarted={hasWorkoutStarted}

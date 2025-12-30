@@ -7,7 +7,14 @@ import fs from 'fs/promises';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import { deleteFile } from '../services/imageService.js';
-import { addXp, checkStreak, processFoodGamification, CALORIE_TARGET_XP } from '../services/gamificationService.js';
+import {
+  addXp,
+  checkStreak,
+  processFoodGamification,
+  CALORIE_TARGET_XP,
+  getWaterXpToday,
+  addWaterXpToday
+} from '../services/gamificationService.js';
 import { createNotification } from '../services/notificationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -108,7 +115,6 @@ const checkCalorieTargetReward = async (userId, logDate) => {
   }
 };
 
-// --- GETTERS ---
 const getNutritionLogsByDate = async (req, res, next) => {
   try {
     const { date } = req.query;
@@ -157,9 +163,6 @@ const getNutritionSummary = async (req, res, next) => {
   }
 };
 
-/**
- * Añade un nuevo registro de comida.
- */
 const addFoodLog = async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -184,10 +187,18 @@ const addFoodLog = async (req, res, next) => {
       if (gamificationResult.xpAdded > 0) {
         gamificationEvents.push({ type: 'xp', amount: gamificationResult.xpAdded, reason: 'Comida registrada' });
       } else if (gamificationResult.reason === 'daily_limit_reached') {
-        // --- CAMBIO: Avisar al frontend de que se alcanzó el límite ---
         gamificationEvents.push({
           type: 'info',
           message: 'Límite diario de experiencia por registrar comidas alcanzado (5/5).'
+        });
+      }
+
+      if (gamificationResult.limitReachedNow) {
+        await createNotification(userId, {
+          type: 'warning',
+          title: 'Límite de XP alcanzado',
+          message: 'Has alcanzado el límite diario de registros de comida (5/5).',
+          data: { type: 'xp_limit', reason: 'daily_food_limit' }
         });
       }
 
@@ -271,34 +282,54 @@ const upsertWaterLog = async (req, res, next) => {
     const lastWeightLog = await BodyWeightLog.findOne({ where: { user_id: userId }, order: [['log_date', 'DESC']] });
     const weight = lastWeightLog ? parseFloat(lastWeightLog.weight_kg) : 70;
     const waterTarget = weight > 0 ? weight * 35 : 2500;
-    const [waterLog, created] = await WaterLog.findOrCreate({ where: { user_id: userId, log_date }, defaults: { quantity_ml } });
-    const previousQty = created ? 0 : waterLog.quantity_ml;
+
+    // Obtener progreso ANTES de actualizar
+    const [waterLog, created] = await WaterLog.findOrCreate({ where: { user_id: userId, log_date }, defaults: { quantity_ml: 0 } });
+    const prevQuantity = created ? 0 : waterLog.quantity_ml;
+    const prevProgress = Math.min(prevQuantity / waterTarget, 1);
+
+    // Actualización de datos
     if (!created) { waterLog.quantity_ml = quantity_ml; await waterLog.save(); }
+    else { waterLog.quantity_ml = quantity_ml; await waterLog.save(); } // Ya creado con 0, actualizamos
 
     const gamificationEvents = [];
     try {
-      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
-      const waterNotifications = await Notification.findAll({ where: { user_id: userId, message: { [Op.like]: `%Hidratación:%` }, created_at: { [Op.between]: [startOfDay, endOfDay] } } });
-      let xpEarnedToday = 0; waterNotifications.forEach(notif => { if (notif.data && notif.data.amount) xpEarnedToday += parseInt(notif.data.amount, 10); });
-      const prevProgress = Math.min(previousQty / waterTarget, 1);
+      const xpEarnedToday = await getWaterXpToday(userId, log_date);
       const currentProgress = Math.min(quantity_ml / waterTarget, 1);
-      let xpToAward = 0;
-      if (currentProgress > prevProgress) xpToAward = Math.round((currentProgress - prevProgress) * MAX_DAILY_WATER_XP);
-      const xpRemainingToday = Math.max(0, MAX_DAILY_WATER_XP - xpEarnedToday);
-      xpToAward = Math.min(xpToAward, xpRemainingToday);
+      const totalXpDeserved = Math.floor(currentProgress * MAX_DAILY_WATER_XP);
+      const xpToAward = Math.max(0, totalXpDeserved - xpEarnedToday);
+
       if (xpToAward > 0) {
-        const xpResult = await addXp(userId, xpToAward, `Hidratación: ${Math.round(currentProgress * 100)}% del objetivo`);
-        if (xpResult.success) gamificationEvents.push({ type: 'xp', amount: xpToAward, reason: `Hidratación: ${Math.round(currentProgress * 100)}%` });
+        const success = await addWaterXpToday(userId, log_date, xpToAward);
+        if (success) {
+          const xpResult = await addXp(userId, xpToAward, `Hidratación: ${Math.round(currentProgress * 100)}% del objetivo`);
+          if (xpResult.success) {
+            gamificationEvents.push({ type: 'xp', amount: xpToAward, reason: `Hidratación: ${Math.round(currentProgress * 100)}%` });
+          }
+
+          if ((xpEarnedToday + xpToAward) >= MAX_DAILY_WATER_XP) {
+            await createNotification(userId, {
+              type: 'warning',
+              title: 'Límite de XP alcanzado',
+              message: 'Has completado el límite diario de XP por hidratación.',
+              data: { type: 'xp_limit', reason: 'daily_water_limit' }
+            });
+          }
+        }
+      } else {
+        // --- CAMBIO: Si intentamos ganar más pero ya estamos al límite y hemos progresado ---
+        if (currentProgress > prevProgress && xpEarnedToday >= MAX_DAILY_WATER_XP) {
+          gamificationEvents.push({
+            type: 'info',
+            message: 'Límite diario de experiencia por hidratación alcanzado.'
+          });
+        }
       }
-      if ((xpEarnedToday + xpToAward) >= MAX_DAILY_WATER_XP) {
-        const warningNotifications = await Notification.findAll({ where: { user_id: userId, type: 'warning', created_at: { [Op.between]: [startOfDay, endOfDay] } } });
-        const waterWarningSent = warningNotifications.some(n => { let d = n.data; if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { } } return d && d.reason === 'daily_water_limit'; });
-        if (!waterWarningSent) await createNotification(userId, { type: 'warning', title: 'Límite de XP alcanzado', message: 'Has completado el límite diario de XP por hidratación.', data: { type: 'xp_limit', reason: 'daily_water_limit' } });
-      }
+
       const todayStr = new Date().toISOString().split('T')[0];
       await checkStreak(userId, todayStr);
     } catch (gError) { console.error('Error gamificación en upsertWaterLog:', gError); }
+
     res.json({ ...waterLog.toJSON(), gamification: gamificationEvents });
   } catch (error) { next(error); }
 };

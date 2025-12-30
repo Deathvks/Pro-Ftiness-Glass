@@ -7,14 +7,16 @@ const { User, NutritionLog, sequelize } = models;
 export const DAILY_LOGIN_XP = 25;
 export const WEIGHT_UPDATE_XP = 10;
 export const WORKOUT_COMPLETION_XP = 50;
-export const FOOD_LOG_XP = 5; // AHORA ES 5
+export const FOOD_LOG_XP = 5;
 export const WATER_LOG_XP = 5;
 export const CALORIE_TARGET_XP = 50;
+export const CREATINA_LOG_XP = 5;
 
 // Configuración de límites diarios
 const LIMITS = {
     food_logs: 5,      // Máximo 5 comidas con XP
     workouts: 2,       // Máximo 2 entrenamientos con XP
+    creatina: 2,       // Máximo 2 registros de creatina con XP
     water_xp: 50       // Máximo 50 XP de agua
 };
 
@@ -45,15 +47,27 @@ const normalizeDate = (inputDate) => {
 // --- HELPER PRIVADO: GESTIÓN DE ESTADO ---
 const getDailyState = (user, rawDate) => {
     const dateKey = normalizeDate(rawDate);
+    // Aseguramos que daily_gamification_state sea un objeto
     let state = user.daily_gamification_state || {};
+    if (typeof state === 'string') {
+        try { state = JSON.parse(state); } catch (e) { state = {}; }
+    }
 
+    // Si cambia el día, reseteamos contadores
     if (state.date !== dateKey) {
         state = {
             date: dateKey,
             food_logs: 0,
             workouts: 0,
+            creatina: 0,
             water_xp: 0
         };
+    } else {
+        // Asegurar que existan las propiedades si el día es el mismo pero la estructura cambió
+        if (state.creatina === undefined) state.creatina = 0;
+        if (state.water_xp === undefined) state.water_xp = 0;
+        if (state.workouts === undefined) state.workouts = 0;
+        if (state.food_logs === undefined) state.food_logs = 0;
     }
     return state;
 };
@@ -125,7 +139,9 @@ export const unlockBadge = async (userId, badgeId, opts = {}) => {
 
         let currentBadges = [];
         try {
-            currentBadges = JSON.parse(user.unlocked_badges || '[]');
+            currentBadges = typeof user.unlocked_badges === 'string'
+                ? JSON.parse(user.unlocked_badges)
+                : (user.unlocked_badges || []);
         } catch { currentBadges = []; }
 
         if (currentBadges.includes(badgeId)) return { success: true, unlocked: false };
@@ -187,6 +203,7 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
     }
 };
 
+// --- MODIFICADO: WORKOUTS ---
 export const processWorkoutGamification = async (userId, workoutDate) => {
     const t = await sequelize.transaction();
     try {
@@ -203,6 +220,11 @@ export const processWorkoutGamification = async (userId, workoutDate) => {
 
             const result = await addXp(userId, WORKOUT_COMPLETION_XP, 'Entrenamiento completado', { transaction: t, userInstance: user });
 
+            // Detectar si acabamos de llegar al límite
+            if (state.workouts === LIMITS.workouts) {
+                result.limitReachedNow = true;
+            }
+
             await checkStreak(userId, workoutDate, { transaction: t, userInstance: user });
             await unlockBadge(userId, 'first_workout', { transaction: t, userInstance: user });
 
@@ -211,6 +233,7 @@ export const processWorkoutGamification = async (userId, workoutDate) => {
         }
 
         await t.commit();
+        // Devolvemos razón explícita para el frontend
         return { xpAdded: 0, reason: 'daily_limit_reached' };
 
     } catch (error) {
@@ -220,6 +243,7 @@ export const processWorkoutGamification = async (userId, workoutDate) => {
     }
 };
 
+// --- MODIFICADO: FOOD ---
 export const processFoodGamification = async (userId, logDate) => {
     const t = await sequelize.transaction();
     try {
@@ -227,8 +251,6 @@ export const processFoodGamification = async (userId, logDate) => {
         if (!user) throw new Error('Usuario no encontrado');
 
         const state = getDailyState(user, logDate);
-
-        console.log(`[XP STATE] Comidas hoy: ${state.food_logs}/${LIMITS.food_logs}. Fecha State: ${state.date}`);
 
         if (state.food_logs < LIMITS.food_logs) {
             state.food_logs++;
@@ -238,6 +260,11 @@ export const processFoodGamification = async (userId, logDate) => {
             await user.save({ transaction: t });
 
             const result = await addXp(userId, FOOD_LOG_XP, 'Comida registrada', { transaction: t, userInstance: user });
+
+            // Detectar límite
+            if (state.food_logs === LIMITS.food_logs) {
+                result.limitReachedNow = true;
+            }
 
             const totalCount = await NutritionLog.count({ where: { user_id: userId }, transaction: t });
             if (totalCount >= 5) {
@@ -250,7 +277,6 @@ export const processFoodGamification = async (userId, logDate) => {
             return result;
         }
 
-        console.log('[XP STATE] Límite alcanzado, no se da XP.');
         await t.commit();
         return { xpAdded: 0, reason: 'daily_limit_reached' };
 
@@ -261,16 +287,90 @@ export const processFoodGamification = async (userId, logDate) => {
     }
 };
 
+export const processCreatinaGamification = async (userId, logDate) => {
+    const t = await sequelize.transaction();
+    try {
+        const user = await User.findByPk(userId, { transaction: t, lock: true });
+        if (!user) throw new Error('Usuario no encontrado');
+
+        const state = getDailyState(user, logDate);
+
+        if (state.creatina < LIMITS.creatina) {
+            state.creatina++;
+            user.daily_gamification_state = state;
+            user.changed('daily_gamification_state', true);
+            await user.save({ transaction: t });
+
+            const result = await addXp(userId, CREATINA_LOG_XP, 'Creatina registrada', { transaction: t, userInstance: user });
+
+            if (state.creatina === LIMITS.creatina) {
+                result.limitReachedNow = true;
+            }
+
+            await checkStreak(userId, logDate, { transaction: t, userInstance: user });
+            await t.commit();
+            return result;
+        }
+
+        await t.commit();
+        return { xpAdded: 0, reason: 'daily_limit_reached' };
+
+    } catch (error) {
+        await t.rollback();
+        console.error('Error procesando creatina gamification:', error);
+        return { xpAdded: 0 };
+    }
+};
+
+export const getWaterXpToday = async (userId, logDate) => {
+    try {
+        const user = await User.findByPk(userId);
+        if (!user) return 0;
+        const state = getDailyState(user, logDate);
+        return state.water_xp || 0;
+    } catch (e) {
+        console.error('Error getWaterXpToday:', e);
+        return 0;
+    }
+};
+
+export const addWaterXpToday = async (userId, logDate, amount) => {
+    const t = await sequelize.transaction();
+    try {
+        const user = await User.findByPk(userId, { transaction: t, lock: true });
+        if (!user) throw new Error('Usuario no encontrado');
+
+        const state = getDailyState(user, logDate);
+        state.water_xp = (state.water_xp || 0) + amount;
+
+        user.daily_gamification_state = state;
+        user.changed('daily_gamification_state', true);
+        await user.save({ transaction: t });
+
+        await t.commit();
+        return true;
+    } catch (e) {
+        await t.rollback();
+        console.error('Error addWaterXpToday:', e);
+        return false;
+    }
+};
+
 export default {
     addXp,
     unlockBadge,
     checkStreak,
     processWorkoutGamification,
     processFoodGamification,
+    processCreatinaGamification,
+    getWaterXpToday,
+    addWaterXpToday,
     DAILY_LOGIN_XP,
     WEIGHT_UPDATE_XP,
     WORKOUT_COMPLETION_XP,
     FOOD_LOG_XP,
     WATER_LOG_XP,
-    CALORIE_TARGET_XP
+    CALORIE_TARGET_XP,
+    CREATINA_LOG_XP,
+    LIMITS
 };

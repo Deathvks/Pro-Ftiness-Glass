@@ -2,10 +2,8 @@
 import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import models from '../models/index.js';
-import { addXp, checkStreak } from '../services/gamificationService.js';
-// --- INICIO MODIFICACIÓN: Importar createNotification ---
+import { processCreatinaGamification } from '../services/gamificationService.js';
 import { createNotification } from '../services/notificationService.js';
-// --- FIN MODIFICACIÓN ---
 
 const { CreatinaLog } = models;
 
@@ -46,29 +44,32 @@ export const createCreatinaLog = async (req, res, next) => {
     // --- GAMIFICACIÓN ---
     const gamificationEvents = [];
     try {
-      // 5 XP por registro
-      const xpResult = await addXp(userId, 5, 'Creatina registrada');
-      if (xpResult.success) {
-        gamificationEvents.push({ type: 'xp', amount: 5, reason: 'Creatina registrada' });
+      const result = await processCreatinaGamification(userId, log_date);
+
+      if (result.xpAdded > 0) {
+        gamificationEvents.push({ type: 'xp', amount: result.xpAdded, reason: 'Creatina registrada' });
+      } else if (result.reason === 'daily_limit_reached') {
+        // --- CAMBIO: Toast informativo cuando ya se ha alcanzado el límite ---
+        gamificationEvents.push({
+          type: 'info',
+          message: 'Límite diario de experiencia por creatina alcanzado (2/2).'
+        });
       }
 
-      // --- INICIO MODIFICACIÓN: Aviso de límite alcanzado en el 2º registro ---
-      if (count === 1) { // Si ya había 1, este es el 2º y último permitido
+      // Notificación Persistente (Campanita) solo al llegar al límite
+      if (result.limitReachedNow) {
         await createNotification(userId, {
           type: 'warning',
           title: 'Límite de XP alcanzado',
-          message: 'Has alcanzado el límite diario de registros de creatina (2/2).',
+          message: 'Has completado el límite diario de XP por creatina (2/2).',
           data: { type: 'xp_limit', reason: 'daily_creatina_limit' }
         });
       }
-      // --- FIN MODIFICACIÓN ---
 
-      await checkStreak(userId, new Date().toISOString().split('T')[0]);
     } catch (err) {
       console.error('Error gamificación:', err);
     }
 
-    // Devolvemos log + eventos para que el frontend muestre el toast correcto
     res.status(201).json({ message: 'Registrado', log, gamification: gamificationEvents });
   } catch (error) {
     next(error);
@@ -111,7 +112,6 @@ export const getCreatinaStats = async (req, res, next) => {
 
     if (!logs.length) return res.json({ data: { totalDays: 0, currentStreak: 0, averageGrams: 0, thisWeekDays: 0 } });
 
-    // Agrupar por día para métricas
     const dailyMap = new Map();
     logs.forEach(l => dailyMap.set(l.log_date, (dailyMap.get(l.log_date) || 0) + parseFloat(l.grams)));
 
@@ -120,7 +120,6 @@ export const getCreatinaStats = async (req, res, next) => {
     const totalGrams = [...dailyMap.values()].reduce((a, b) => a + b, 0);
     const averageGrams = totalGrams / totalDays;
 
-    // Cálculo de Racha
     const today = new Date().toISOString().split('T')[0];
     const yesterday = new Date(Date.now() - 864e5).toISOString().split('T')[0];
     let currentStreak = 0;
@@ -128,16 +127,15 @@ export const getCreatinaStats = async (req, res, next) => {
     if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
       currentStreak = 1;
       for (let i = 0; i < uniqueDates.length - 1; i++) {
-        const diff = (new Date(uniqueDates[i]) - new Date(uniqueDates[i + 1])) / 864e5; // diff en días
+        const diff = (new Date(uniqueDates[i]) - new Date(uniqueDates[i + 1])) / 864e5;
         if (Math.round(diff) === 1) currentStreak++;
         else break;
       }
     }
 
-    // Días esta semana (Lunes a Domingo)
     const now = new Date();
     const day = now.getUTCDay() || 7;
-    now.setUTCDate(now.getUTCDate() - day + 1); // Retroceder al lunes
+    now.setUTCDate(now.getUTCDate() - day + 1);
     const mondayStr = now.toISOString().split('T')[0];
     const thisWeekDays = uniqueDates.filter(d => d >= mondayStr).length;
 

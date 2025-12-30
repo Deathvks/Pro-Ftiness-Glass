@@ -265,13 +265,14 @@ const Dashboard = ({ setView }) => {
                         <span className="text-2xl font-bold text-text-primary">{weeklySessions}</span>
                     </div>
 
-                    <div className="flex justify-between items-center">
+                    {/* --- INICIO MODIFICACIÓN: Scroll y ajuste responsivo --- */}
+                    <div className="flex justify-between items-center overflow-x-auto scrollbar-hide gap-2">
                         {weekDays.map((date, i) => {
                             const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
                             const isToday = isSameDay(date, new Date());
                             const hasWorkout = workoutLog.some(log => isSameDay(new Date(log.workout_date), date));
                             return (
-                                <div key={i} className="flex flex-col items-center gap-2">
+                                <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
                                     <span className={`text-xs font-semibold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/25' : 'bg-bg-secondary/50 text-transparent'}`}>
                                         {hasWorkout && <Check size={16} strokeWidth={3} />}
@@ -280,6 +281,7 @@ const Dashboard = ({ setView }) => {
                             );
                         })}
                     </div>
+                    {/* --- FIN MODIFICACIÓN --- */}
                 </GlassCard>
                 <StatCard icon={<Target size={24} />} title="Meta Calórica" value={targets.calories.toLocaleString()} unit="kcal" />
                 <StatCard icon={<Clock size={24} />} title="Tiempo Activo" value={weeklyTimeDisplay} unit="" />

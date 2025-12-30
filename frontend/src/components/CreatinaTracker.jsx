@@ -101,8 +101,11 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                         addToast(`+${event.amount} XP: ${event.reason}`, 'success');
                     } else if (event.type === 'badge') {
                         addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
-                    } else if (event.type === 'warning') { // NUEVO: Manejo de advertencias de límite
+                    } else if (event.type === 'warning') {
                         addToast(event.message, 'warning');
+                    } else if (event.type === 'info') {
+                        // AÑADIDO: Manejo de info (límite ya alcanzado previamente)
+                        addToast(event.message, 'info');
                     }
                 });
             }

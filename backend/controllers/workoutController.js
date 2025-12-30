@@ -3,6 +3,9 @@ import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { processWorkoutGamification } from '../services/gamificationService.js';
+// --- INICIO MODIFICACIÓN: Importar createNotification ---
+import { createNotification } from '../services/notificationService.js';
+// --- FIN MODIFICACIÓN ---
 
 // --- Función para calcular 1RM ---
 const calculate1RM = (weight, reps) => {
@@ -210,11 +213,38 @@ export const logWorkoutSession = async (req, res, next) => {
     // Lógica modular de gamificación (ahora capturamos el resultado)
     const gamificationResult = await processWorkoutGamification(userId, localDate);
 
+    // --- INICIO MODIFICACIÓN: Gestión de eventos y notificaciones ---
+    const gamificationEvents = [];
+
+    if (gamificationResult.xpAdded > 0) {
+      gamificationEvents.push({ type: 'xp', amount: gamificationResult.xpAdded, reason: 'Entrenamiento completado' });
+    }
+
+    // 1. Notificación Persistente (Campana) si se alcanza el límite justo ahora
+    if (gamificationResult.limitReachedNow) {
+      await createNotification(userId, {
+        type: 'warning',
+        title: 'Límite de XP alcanzado',
+        message: 'Has alcanzado el límite diario de XP por entrenamientos (2/2).',
+        data: { type: 'xp_limit', reason: 'daily_workout_limit' }
+      });
+    }
+
+    // 2. Feedback Inmediato (Toast) si ya se había alcanzado o se acaba de alcanzar
+    if (gamificationResult.reason === 'daily_limit_reached') {
+      gamificationEvents.push({
+        type: 'info',
+        message: 'Límite diario de experiencia por entrenamientos alcanzado (2/2).'
+      });
+    }
+    // --- FIN MODIFICACIÓN ---
+
     res.status(201).json({
       message: 'Entrenamiento guardado con éxito',
       workoutId: newWorkoutLog.id,
       newPRs: newPRs,
-      xpAdded: gamificationResult?.xpAdded || 0 // Enviamos la XP real ganada
+      xpAdded: gamificationResult?.xpAdded || 0,
+      gamification: gamificationEvents // Enviamos eventos al frontend
     });
   } catch (error) {
     await t.rollback();

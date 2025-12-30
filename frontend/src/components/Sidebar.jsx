@@ -6,7 +6,7 @@ import useAppStore from '../store/useAppStore';
 const SidebarItem = ({ label, icon, isActive, onClick, badgeCount, isRed }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-4 w-full px-6 py-4 rounded-lg text-base font-semibold transition-all duration-200 ${isRed
+    className={`flex items-center gap-4 w-full md:px-4 md:py-3 lg:px-6 lg:py-4 rounded-lg text-base font-semibold transition-all duration-200 ${isRed
       ? 'text-text-secondary hover:bg-red/20 hover:text-red'
       : isActive
         ? 'bg-accent text-bg-secondary'
@@ -42,15 +42,15 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL, hand
   };
 
   return (
-    <nav className="hidden md:flex flex-col gap-10 p-8 w-64 h-full border-r border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass">
+    <nav className="hidden md:flex flex-col md:gap-4 lg:gap-10 md:p-4 lg:p-8 md:w-56 lg:w-64 h-full border-r border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass overflow-y-auto scrollbar-hide">
       {/* Logo */}
-      <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 text-accent transition-transform hover:scale-105">
+      <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 text-accent transition-transform hover:scale-105 flex-shrink-0">
         <Dumbbell className="h-7 w-7 flex-shrink-0" />
         <h1 className="text-xl font-bold text-text-primary whitespace-nowrap">Pro Fitness Glass</h1>
       </button>
 
       {/* Navegación Principal */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 lg:gap-4 flex-shrink-0">
         {navItems.map(item => (
           <SidebarItem
             key={item.id}
@@ -64,7 +64,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL, hand
       </div>
 
       {/* Acciones Inferiores */}
-      <div className="mt-auto flex flex-col gap-2">
+      <div className="mt-auto flex flex-col gap-2 flex-shrink-0 pt-4">
         <SidebarItem
           label="Notificaciones"
           icon={<Bell size={24} />}
