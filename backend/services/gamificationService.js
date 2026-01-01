@@ -31,6 +31,7 @@ const BADGES_CONFIG = {
 
 const STREAK_THRESHOLDS = { 3: 'streak_3', 7: 'streak_7', 30: 'streak_30' };
 
+// Fórmula de Nivel
 const calculateLevel = (xp) => Math.max(1, Math.floor((-350 + Math.sqrt(202500 + 200 * xp)) / 100));
 
 // --- HELPER: Normalizar fecha ---
@@ -95,21 +96,29 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
 
         const oldLevel = user.level;
         user.xp += amount;
+
+        // --- CORRECCIÓN CRÍTICA ---
+        // Calculamos y asignamos el nivel ANTES de guardar en la DB.
         const newLevel = calculateLevel(user.xp);
         let leveledUp = false;
 
-        await user.save({ transaction });
-
-        if (newLevel > oldLevel) {
+        // Auto-reparación: Si el nivel calculado es diferente al almacenado, lo actualizamos.
+        // Esto arreglará tu cuenta la próxima vez que ganes cualquier cantidad de XP.
+        if (newLevel !== oldLevel) {
             user.level = newLevel;
-            leveledUp = true;
-            createNotification(userId, {
-                type: 'success',
-                title: '¡Subida de Nivel!',
-                message: `¡Felicidades! Has alcanzado el Nivel ${newLevel}.`,
-                data: { type: 'level_up', newLevel }
-            });
+            if (newLevel > oldLevel) {
+                leveledUp = true;
+                createNotification(userId, {
+                    type: 'success',
+                    title: '¡Subida de Nivel!',
+                    message: `¡Felicidades! Has alcanzado el Nivel ${newLevel}.`,
+                    data: { type: 'level_up', newLevel }
+                });
+            }
         }
+
+        // Ahora sí guardamos, con XP y Level actualizados simultáneamente
+        await user.save({ transaction });
 
         if (amount > 0) {
             createNotification(userId, {

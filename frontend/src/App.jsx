@@ -42,6 +42,13 @@ const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
 
+// Mapeo de colores HEX exactos según index.css para sincronizar Safari
+const THEME_COLORS = {
+  light: '#f7fafc',
+  dark: '#0c111b',
+  oled: '#000000',
+};
+
 export default function App() {
   const [authView, setAuthView] = useState('login');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -84,6 +91,16 @@ export default function App() {
     isResting: state.isResting,
     restTimerMode: state.restTimerMode,
   }));
+
+  // --- LÓGICA DE SINCRONIZACIÓN DE TEMA PARA SAFARI (iOS) ---
+  const currentThemeColor = useMemo(() => THEME_COLORS[theme] || THEME_COLORS.dark, [theme]);
+
+  useEffect(() => {
+    // Forzamos el background del body para que Safari detecte el cambio visual
+    // y actualice el tinte de la barra de estado/busqueda inmediatamente.
+    document.body.style.backgroundColor = currentThemeColor;
+  }, [currentThemeColor]);
+  // -----------------------------------------------------------
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
@@ -262,6 +279,8 @@ export default function App() {
         <meta property="og:site_name" content="Pro Fitness Glass" />
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
+        {/* Meta Theme Color Dinámico para Safari/iOS */}
+        <meta name="theme-color" content={currentThemeColor} />
       </Helmet>
 
       <VersionUpdater />

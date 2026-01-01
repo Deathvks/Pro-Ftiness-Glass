@@ -1,11 +1,11 @@
 /* frontend/src/pages/SettingsScreen.jsx */
-import React, { useState, useMemo, useEffect } from 'react'; // AÑADIDO: useEffect
+import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download, Vibrate, Globe, Clock, MapPin // AÑADIDO: MapPin
+  Bug, Download, Vibrate, Globe, Clock, MapPin
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -190,8 +190,6 @@ export default function SettingsScreen({
   }, [userProfile?.timezone]);
 
   // --- FUNCIÓN: Detectar Timezone (Modificada para soportar modo silencioso) ---
-  // Se mueve fuera del scope del render si es posible, o se usa useCallback, 
-  // pero aquí la dejamos simple dentro del componente.
   const detectAndUpdateTimezone = async (silent = false) => {
     if (isUpdatingTimezone) return;
 
@@ -232,7 +230,6 @@ export default function SettingsScreen({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoTimezone]);
-  // Nota: No incluimos userProfile para evitar bucles, solo queremos chequear cuando se activa la opción o se carga la screen.
 
   const handleTimezoneChange = async (newTimezone) => {
     if (isUpdatingTimezone) return;

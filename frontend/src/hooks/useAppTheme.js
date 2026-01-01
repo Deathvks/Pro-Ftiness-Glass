@@ -9,6 +9,7 @@ const THEME_COLORS = {
 };
 
 export const useAppTheme = () => {
+  // Asumimos que cookieConsent está disponible en el store
   const cookieConsent = useAppStore(state => state.cookieConsent);
 
   const [theme, setThemeState] = useState(() => {
@@ -39,7 +40,7 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // --- EFECTO PRINCIPAL ---
+  // --- EFECTO PRINCIPAL DE TEMA (Lógica iOS 26) ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
@@ -51,7 +52,7 @@ export const useAppTheme = () => {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
-      // 1. Determinar Color HEX
+      // 1. Determinar Color HEX exacto
       let color = THEME_COLORS.dark;
       if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
@@ -61,13 +62,15 @@ export const useAppTheme = () => {
         color = THEME_COLORS.light;
       }
 
-      // 2. TRUCO "iOS 26": Bloquear transiciones para evitar 'lag' en la UI del navegador
-      // Si hay transición, Safari a veces captura el color 'antiguo' para la barra de estado.
-      const originalTransition = body.style.transition;
+      // 2. FIX CRÍTICO: Bloquear transiciones temporalmente
+      // Evita que Safari capture el color 'intermedio' de la transición CSS en la barra de estado.
+      const originalTransitionBody = body.style.transition;
+      const originalTransitionRoot = root.style.transition;
+
       body.style.transition = 'none';
       root.style.transition = 'none';
 
-      // 3. Aplicar Clases y Colores
+      // 3. Aplicar Clases CSS al ROOT
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
       if (theme === 'system') {
         root.classList.add(effectiveTheme === 'dark' ? 'dark-theme' : 'light-theme');
@@ -75,19 +78,18 @@ export const useAppTheme = () => {
         root.classList.add(`${theme}-theme`);
       }
 
-      // Sincronización agresiva del fondo
+      // 4. Sincronización agresiva del fondo (Background)
       root.style.backgroundColor = color;
       body.style.backgroundColor = color;
 
-      // Forzar Reflow (Repintado) para que Safari note el cambio de 'none'
+      // Forzar Reflow (Repintado) para asegurar que el navegador procese el cambio 'sin transición'
       // eslint-disable-next-line no-unused-expressions
       body.offsetHeight;
 
-      // 4. META TAGS - ESTRATEGIA: DESTRUIR Y RECREAR
-      // En versiones recientes de iOS, actualizar el atributo a veces no despierta al UI controller.
-      // Reinsertar el nodo fuerza una re-evaluación.
+      // 5. GESTIÓN DE META TAGS (Estrategia de Destrucción/Recreación)
+      // Safari a veces ignora cambios simples de atributo. Recrear el nodo fuerza la actualización UI.
 
-      // A) theme-color
+      // A) theme-color (Color de la barra/isla)
       const metaName = "theme-color";
       let metaTheme = document.querySelector(`meta[name="${metaName}"]`);
       if (metaTheme) {
@@ -98,13 +100,14 @@ export const useAppTheme = () => {
       metaTheme.content = color;
       document.head.appendChild(metaTheme);
 
-      // B) apple-mobile-web-app-status-bar-style
-      // 'default' = negro (fondo claro) | 'black-translucent' = blanco (fondo oscuro)
+      // B) apple-mobile-web-app-status-bar-style (Texto Blanco/Negro)
+      // 'default' = texto negro (para fondos claros)
+      // 'black-translucent' = texto blanco sobre fondo (para oscuros/oled)
       const statusStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
       const metaStatusName = "apple-mobile-web-app-status-bar-style";
       let metaStatus = document.querySelector(`meta[name="${metaStatusName}"]`);
 
-      // Solo recreamos si cambia el valor para evitar parpadeos innecesarios en el contenido
+      // Solo recreamos si el valor cambia
       if (!metaStatus || metaStatus.getAttribute('content') !== statusStyle) {
         if (metaStatus) metaStatus.remove();
         metaStatus = document.createElement('meta');
@@ -113,9 +116,9 @@ export const useAppTheme = () => {
         document.head.appendChild(metaStatus);
       }
 
-      // 5. Restaurar transiciones (breve delay para asegurar que el UI del navegador ya 'pescó' el color)
+      // 6. Restaurar transiciones (breve delay)
       setTimeout(() => {
-        body.style.transition = '';
+        body.style.transition = ''; // Volver al CSS definido en index.css
         root.style.transition = '';
       }, 50);
     };
@@ -130,9 +133,10 @@ export const useAppTheme = () => {
     return () => mediaQuery.removeEventListener('change', handleSystemChange);
   }, [theme]);
 
-  // Efecto Acento
+  // --- EFECTO DE ACENTO ---
   useLayoutEffect(() => {
     const root = document.documentElement;
+    // Reemplaza cualquier clase accent-* existente
     const classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));
     root.className = classes.join(' ') + ` accent-${accent}`;
   }, [accent]);

@@ -21,6 +21,9 @@ const {
   WorkoutLogSet
 } = models;
 
+// --- HELPER: Cálculo de Nivel (Misma fórmula que en gamificationService) ---
+const calculateLevel = (xp) => Math.max(1, Math.floor((-350 + Math.sqrt(202500 + 200 * xp)) / 100));
+
 /**
  * Helper para encontrar y eliminar todos los ficheros de un usuario (perfil, comidas).
  * Usa el servicio centralizado deleteFile para la limpieza.
@@ -67,12 +70,22 @@ export const getMyProfile = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
+    // --- AUTO-REPARACIÓN: Sincronizar Nivel vs XP ---
+    // Si la XP acumulada corresponde a un nivel diferente al guardado, actualizamos.
+    // Esto corrige inconsistencias históricas sin necesidad de ganar nueva XP.
+    const correctLevel = calculateLevel(user.xp || 0);
+    if (user.level !== correctLevel) {
+      console.log(`[Auto-Repair] Corrigiendo nivel usuario ${user.id}: ${user.level} -> ${correctLevel}`);
+      user.level = correctLevel;
+      await user.save();
+    }
+    // -----------------------------------------------
+
     const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'] });
     const userData = user.toJSON();
     userData.hasPassword = !!userWithPass.password_hash;
 
-    // --- CORRECCIÓN: Normalizar fecha de última actividad ---
-    // Esto evita problemas de zona horaria donde la fecha retrocede un día al enviarse al frontend
+    // Normalizar fecha de última actividad
     if (userData.last_activity_date) {
       const d = new Date(userData.last_activity_date);
       if (!isNaN(d.getTime())) {
@@ -97,7 +110,6 @@ export const getMyProfile = async (req, res, next) => {
   }
 };
 
-// --- INICIO DE LA MODIFICACIÓN: Función de Exportación Corregida ---
 export const exportMyData = async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -111,14 +123,12 @@ export const exportMyData = async (req, res, next) => {
       order: [['log_date', 'DESC']]
     });
 
-    // CORRECCIÓN: 'date' -> 'log_date'
     const nutritionLogs = await NutritionLog.findAll({
       where: { user_id: userId },
       order: [['log_date', 'DESC']]
     });
 
     // Para los logs de entrenamiento, incluimos la jerarquía completa
-    // CORRECCIÓN: 'date' -> 'workout_date'
     const workoutLogs = await WorkoutLog.findAll({
       where: { user_id: userId },
       include: [
@@ -158,12 +168,11 @@ export const exportMyData = async (req, res, next) => {
       return res.send(JSON.stringify(data, null, 2));
 
     } else if (format === 'csv') {
-      // Para CSV, priorizamos los registros de entrenamiento aplanados, que es lo más útil para Excel.
+      // Para CSV, priorizamos los registros de entrenamiento aplanados
       // Date, Routine, Exercise, Set, Weight, Reps, RPE, Type
       let csv = 'Date,Routine,Exercise,Set,Weight(kg),Reps,RPE,Type\n';
 
       workoutLogs.forEach(log => {
-        // CORRECCIÓN: log.date -> log.workout_date
         const dateObj = new Date(log.workout_date);
         const date = !isNaN(dateObj) ? dateObj.toISOString().split('T')[0] : 'N/A';
         const routineName = log.routine ? log.routine.name : 'N/A';
@@ -197,7 +206,6 @@ export const exportMyData = async (req, res, next) => {
     next(error);
   }
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 // Endpoint de Gamificación (Actualización manual/admin si fuese necesario)
 export const updateGamificationStats = async (req, res, next) => {
@@ -215,19 +223,16 @@ export const updateGamificationStats = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // --- INICIO DE LA MODIFICACIÓN (FIX XP INFINITA) ---
-    // Si es "Login Diario", usamos checkStreak del servicio que tiene la protección de fecha.
+    // Si es "Login Diario", usamos checkStreak del servicio
     if (reason === 'Login Diario') {
       const todayStr = new Date().toISOString().split('T')[0];
 
-      // Llamamos al servicio (que ahora maneja la lógica de 'solo una vez al día' y valida mayúsculas/minúsculas)
       const result = await checkStreak(userId, todayStr);
 
       if (!result.success) {
         throw new Error(result.error || 'Error procesando racha');
       }
 
-      // Recargamos el usuario para tener los datos finales (XP sumada o no, nivel, etc.)
       await user.reload();
 
       let currentBadges = [];
@@ -237,7 +242,6 @@ export const updateGamificationStats = async (req, res, next) => {
           : user.unlocked_badges || [];
       } catch (e) { currentBadges = []; }
 
-      // Normalizar fecha para respuesta
       let returnDate = user.last_activity_date;
       if (returnDate) {
         returnDate = new Date(returnDate).toISOString().split('T')[0];
@@ -253,12 +257,11 @@ export const updateGamificationStats = async (req, res, next) => {
           last_activity_date: returnDate,
           unlocked_badges: currentBadges
         },
-        ignored: result.xpAwarded === 0 // Flag para que el frontend sepa si se sumó o no
+        ignored: result.xpAwarded === 0
       });
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // --- LÓGICA MANUAL (Para otras actualizaciones que no sean Login Diario) ---
+    // --- LÓGICA MANUAL (Para otras actualizaciones) ---
     const updates = {};
     const oldXp = user.xp;
     const oldLevel = user.level;
@@ -267,7 +270,6 @@ export const updateGamificationStats = async (req, res, next) => {
     if (level !== undefined) updates.level = level;
     if (streak !== undefined) updates.streak = streak;
 
-    // Prioridad a lo que hayamos forzado (req.body), luego snake_case, luego camelCase
     const finalDate = req.body.last_activity_date !== undefined
       ? req.body.last_activity_date
       : (last_activity_date !== undefined ? last_activity_date : lastActivityDate);
@@ -326,7 +328,6 @@ export const updateGamificationStats = async (req, res, next) => {
 
     await user.update(updates);
 
-    // Preparar respuesta con datos normalizados
     let returnDate = updates.last_activity_date || user.last_activity_date;
     if (returnDate) {
       returnDate = new Date(returnDate).toISOString().split('T')[0];
@@ -337,7 +338,6 @@ export const updateGamificationStats = async (req, res, next) => {
       try { returnBadges = JSON.parse(returnBadges); } catch (e) { returnBadges = []; }
     }
 
-    // Devolvemos SIEMPRE el objeto 'data' con el estado final
     res.json({
       message: 'Progreso guardado',
       success: true,
@@ -366,7 +366,7 @@ export const updateMyProfile = async (req, res, next) => {
     const { userId } = req.user;
     const {
       gender, age, height, activityLevel, goal, weight, login_email_notifications,
-      is_public_profile, show_level_xp, show_badges, timezone // <--- AÑADIDO: timezone
+      is_public_profile, show_level_xp, show_badges, timezone
     } = req.body;
 
     const user = await User.findByPk(userId);
@@ -378,7 +378,7 @@ export const updateMyProfile = async (req, res, next) => {
       gender, age, height, activity_level: activityLevel, goal, login_email_notifications
     };
 
-    if (timezone) updateData.timezone = timezone; // <--- AÑADIDO: Guardar timezone
+    if (timezone) updateData.timezone = timezone;
     if (typeof is_public_profile !== 'undefined') updateData.is_public_profile = is_public_profile;
     if (typeof show_level_xp !== 'undefined') updateData.show_level_xp = show_level_xp;
     if (typeof show_badges !== 'undefined') updateData.show_badges = show_badges;
