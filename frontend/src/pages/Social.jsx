@@ -18,25 +18,78 @@ import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
-import ConfirmationModal from '../components/ConfirmationModal'; // IMPORTADO
+import ConfirmationModal from '../components/ConfirmationModal';
 
-// --- AÑADIDO: Constantes para construir la URL correcta ---
+// --- Constantes y Helpers (Fuera del componente) ---
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
-// --- AÑADIDO: Helper para procesar la imagen ---
 const getProfileImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('http') || url.startsWith('blob:')) return url;
-    // Si es relativa, le pegamos el dominio del backend
     return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
-export default function Social({ setView }) {
-    // Usamos useSearchParams para mantener la pestaña en la URL (persistencia al recargar)
-    const [searchParams, setSearchParams] = useSearchParams();
+// --- Componentes Extraídos para evitar Re-montaje y Parpadeo ---
 
-    // El estado inicial sale de la URL, o por defecto 'friends'
+const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
+    <button
+        onClick={() => onClick(id)}
+        className={`flex-1 flex md:flex-row flex-col items-center md:justify-start justify-center py-3 md:px-4 md:gap-3 gap-1 text-xs md:text-sm font-medium transition-colors relative md:rounded-xl
+        ${isActive
+                ? 'text-accent-primary border-b-2 md:border-b-0 border-accent-primary md:bg-accent-primary/10'
+                : 'text-text-secondary hover:text-text-primary md:hover:bg-white/5'
+            }`}
+    >
+        <Icon size={20} className="md:w-5 md:h-5" />
+        <span>{label}</span>
+        {badge > 0 && (
+            <span className="absolute top-2 right-2 md:static md:ml-auto bg-red-500 text-white text-[10px] md:text-xs font-bold w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-full shadow-sm">
+                {badge}
+            </span>
+        )}
+    </button>
+);
+
+const UserListItem = ({ user, action, subtext, isHighlighted, onNavigate }) => {
+    const imgSrc = getProfileImageUrl(user.profile_image_url);
+
+    return (
+        <div
+            onClick={() => onNavigate(user.id)}
+            className={`flex items-center justify-between p-3 border-b border-white/10 last:border-0 transition-all duration-500 cursor-pointer group
+          ${isHighlighted
+                    ? 'bg-accent-primary/10 border-l-2 border-l-accent-primary shadow-[inset_0_0_20px_rgba(var(--accent-primary-rgb),0.1)]'
+                    : 'hover:bg-white/5'
+                }`}
+        >
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-bg-secondary flex items-center justify-center overflow-hidden border border-white/10 relative flex-shrink-0">
+                    {imgSrc ? (
+                        <img src={imgSrc} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                        <Users size={18} className="text-text-tertiary" />
+                    )}
+                </div>
+                <div>
+                    <p className={`font-semibold transition-colors line-clamp-1 ${isHighlighted ? 'text-accent-primary' : 'text-text-primary group-hover:text-accent-primary'}`}>
+                        {user.username || user.name || 'Usuario'}
+                    </p>
+                    <p className="text-xs text-text-tertiary line-clamp-1">
+                        {subtext || `Nivel ${user.level || 1} • ${user.xp || 0} XP`}
+                    </p>
+                </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+                {action}
+                {!action && <ChevronRight size={16} className="text-white/20" />}
+            </div>
+        </div>
+    );
+};
+
+export default function Social({ setView }) {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'friends');
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +101,6 @@ export default function Social({ setView }) {
     const [highlightedId, setHighlightedId] = useState(null);
     const ITEMS_PER_PAGE = 10;
 
-    // --- NUEVO: Estado para el modal de confirmación ---
     const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, friendId: null });
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -76,7 +128,6 @@ export default function Social({ setView }) {
         fetchLeaderboard();
     }, [fetchFriends, fetchFriendRequests, fetchLeaderboard]);
 
-    // Sincronizar URL -> Estado y manejar Highlight
     useEffect(() => {
         const tab = searchParams.get('tab');
         const highlight = searchParams.get('highlight');
@@ -92,10 +143,9 @@ export default function Social({ setView }) {
         }
     }, [searchParams]);
 
-    // Función para cambiar pestaña y actualizar URL
     const changeTab = (newTab) => {
         setActiveTab(newTab);
-        setSearchParams({ tab: newTab }); // Esto actualiza la URL
+        setSearchParams({ tab: newTab });
     };
 
     useEffect(() => {
@@ -133,13 +183,11 @@ export default function Social({ setView }) {
         showToast(action === 'accept' ? 'Solicitud aceptada' : 'Solicitud rechazada', 'success');
     };
 
-    // --- MODIFICADO: Solo abre el modal, no borra directamente ---
     const handleRemoveFriend = (e, friendId) => {
         e.stopPropagation();
         setDeleteConfirmation({ isOpen: true, friendId });
     };
 
-    // --- NUEVO: Ejecuta el borrado real ---
     const confirmDeleteFriend = async () => {
         if (!deleteConfirmation.friendId) return;
 
@@ -147,7 +195,6 @@ export default function Social({ setView }) {
         await removeFriend(deleteConfirmation.friendId);
         showToast('Amigo eliminado', 'success');
         setIsDeleting(false);
-
         setDeleteConfirmation({ isOpen: false, friendId: null });
     };
 
@@ -157,66 +204,6 @@ export default function Social({ setView }) {
         } else {
             setView('publicProfile', { userId });
         }
-    };
-
-    // --- Render Components ---
-
-    const TabButton = ({ id, icon: Icon, label, badge }) => (
-        <button
-            onClick={() => changeTab(id)} // Usamos changeTab en lugar de setActiveTab directo
-            className={`flex-1 flex md:flex-row flex-col items-center md:justify-start justify-center py-3 md:px-4 md:gap-3 gap-1 text-xs md:text-sm font-medium transition-colors relative md:rounded-xl
-        ${activeTab === id
-                    ? 'text-accent-primary border-b-2 md:border-b-0 border-accent-primary md:bg-accent-primary/10'
-                    : 'text-text-secondary hover:text-text-primary md:hover:bg-white/5'
-                }`}
-        >
-            <Icon size={20} className="md:w-5 md:h-5" />
-            <span>{label}</span>
-            {badge > 0 && (
-                <span className="absolute top-2 right-2 md:static md:ml-auto bg-red-500 text-white text-[10px] md:text-xs font-bold w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-full shadow-sm">
-                    {badge}
-                </span>
-            )}
-        </button>
-    );
-
-    const UserListItem = ({ user, action, subtext }) => {
-        const isHighlighted = highlightedId && user.id === highlightedId;
-        // --- MODIFICACIÓN: Usar helper para la imagen ---
-        const imgSrc = getProfileImageUrl(user.profile_image_url);
-
-        return (
-            <div
-                onClick={() => goToProfile(user.id)}
-                className={`flex items-center justify-between p-3 border-b border-white/10 last:border-0 transition-all duration-500 cursor-pointer group
-          ${isHighlighted
-                        ? 'bg-accent-primary/10 border-l-2 border-l-accent-primary shadow-[inset_0_0_20px_rgba(var(--accent-primary-rgb),0.1)]'
-                        : 'hover:bg-white/5'
-                    }`}
-            >
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-bg-secondary flex items-center justify-center overflow-hidden border border-white/10 relative flex-shrink-0">
-                        {imgSrc ? (
-                            <img src={imgSrc} alt={user.username} className="w-full h-full object-cover" />
-                        ) : (
-                            <Users size={18} className="text-text-tertiary" />
-                        )}
-                    </div>
-                    <div>
-                        <p className={`font-semibold transition-colors line-clamp-1 ${isHighlighted ? 'text-accent-primary' : 'text-text-primary group-hover:text-accent-primary'}`}>
-                            {user.username || user.name || 'Usuario'}
-                        </p>
-                        <p className="text-xs text-text-tertiary line-clamp-1">
-                            {subtext || `Nivel ${user.level || 1} • ${user.xp || 0} XP`}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    {action}
-                    {!action && <ChevronRight size={16} className="text-white/20" />}
-                </div>
-            </div>
-        );
     };
 
     const renderFriends = () => {
@@ -247,6 +234,8 @@ export default function Social({ setView }) {
                             <UserListItem
                                 key={friend.id}
                                 user={friend}
+                                isHighlighted={highlightedId === friend.id}
+                                onNavigate={goToProfile}
                                 action={
                                     <button
                                         onClick={(e) => handleRemoveFriend(e, friend.id)}
@@ -305,6 +294,8 @@ export default function Social({ setView }) {
                                 <UserListItem
                                     key={req.id}
                                     user={req.Requester}
+                                    isHighlighted={highlightedId === req.Requester.id}
+                                    onNavigate={goToProfile}
                                     subtext="Quiere ser tu amigo"
                                     action={
                                         <div className="flex gap-2 z-10">
@@ -338,6 +329,8 @@ export default function Social({ setView }) {
                                 <UserListItem
                                     key={req.id}
                                     user={req.Addressee}
+                                    isHighlighted={highlightedId === req.Addressee.id}
+                                    onNavigate={goToProfile}
                                     subtext="Solicitud pendiente"
                                     action={
                                         <span className="text-xs text-text-tertiary bg-white/5 px-2 py-1 rounded border border-white/5">Esperando</span>
@@ -397,6 +390,8 @@ export default function Social({ setView }) {
                                     <UserListItem
                                         key={user.id}
                                         user={user}
+                                        isHighlighted={highlightedId === user.id}
+                                        onNavigate={goToProfile}
                                         action={
                                             !isMe && !isFriend && !hasSentRequest ? (
                                                 <button
@@ -476,7 +471,6 @@ export default function Social({ setView }) {
                     if (rank === 3) rankIcon = <Medal size={20} className="text-amber-700 drop-shadow-md" />;
 
                     const isMe = user.id === userProfile?.id;
-                    // --- MODIFICACIÓN: Usar helper para la imagen ---
                     const imgSrc = getProfileImageUrl(user.profile_image_url);
 
                     return (
@@ -517,7 +511,6 @@ export default function Social({ setView }) {
                     <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
                         Comunidad
                     </h1>
-                    {/* Badge BETA */}
                     <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase">
                         BETA
                     </span>
@@ -525,7 +518,6 @@ export default function Social({ setView }) {
                 <p className="text-text-tertiary text-sm mt-1">Conecta y compite con otros atletas</p>
             </header>
 
-            {/* MODAL DE CONFIRMACIÓN DE BORRADO */}
             {deleteConfirmation.isOpen && (
                 <ConfirmationModal
                     message="¿Seguro que quieres eliminar a este amigo de tu lista?"
@@ -538,36 +530,40 @@ export default function Social({ setView }) {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-                {/* Navegación (Tabs) */}
                 <div className="md:col-span-1">
-                    {/* md:z-10 para desktop, z-auto/0 para móvil */}
                     <GlassCard className="flex md:flex-col overflow-hidden md:p-2 sticky md:top-24 md:z-10">
                         <TabButton
                             id="friends"
                             icon={Users}
                             label="Amigos"
+                            isActive={activeTab === 'friends'}
+                            onClick={changeTab}
                         />
                         <TabButton
                             id="requests"
                             icon={UserPlus}
                             label="Solicitudes"
                             badge={socialRequests?.received?.length || 0}
+                            isActive={activeTab === 'requests'}
+                            onClick={changeTab}
                         />
                         <TabButton
                             id="search"
                             icon={Search}
                             label="Buscar"
+                            isActive={activeTab === 'search'}
+                            onClick={changeTab}
                         />
                         <TabButton
                             id="leaderboard"
                             icon={Trophy}
                             label="Ranking"
+                            isActive={activeTab === 'leaderboard'}
+                            onClick={changeTab}
                         />
                     </GlassCard>
                 </div>
 
-                {/* Contenido Principal */}
                 <div className="md:col-span-3 min-h-[400px]">
                     {activeTab === 'friends' && renderFriends()}
                     {activeTab === 'requests' && renderRequests()}

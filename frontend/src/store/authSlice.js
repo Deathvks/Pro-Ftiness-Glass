@@ -112,14 +112,14 @@ export const createAuthSlice = (set, get) => ({
     // Cierra sesión (LOGOUT MANUAL)
     handleLogout: () => {
         clearAuthStorage();
-        get().clearWorkoutState();
+        get().clearWorkoutState(); // Borra el estado del workout explícitamente al salir manual
         get().clearDataState();
         set({
             isAuthenticated: false,
             token: null,
             userProfile: null,
             isLoading: false,
-            twoFactorPending: null, // Limpiamos también esto por si acaso
+            twoFactorPending: null,
             // NO reseteamos cookieConsent aquí
         });
     },
@@ -127,7 +127,7 @@ export const createAuthSlice = (set, get) => ({
     // Maneja la EXPIRACIÓN DE SESIÓN (LOGOUT AUTOMÁTICO)
     handleSessionExpiry: () => {
         clearAuthStorage();
-        // Mantenemos el workout activo en localStorage
+        // Mantenemos el workout activo en localStorage (NO llamamos a clearWorkoutState)
         get().clearDataState();
 
         set({

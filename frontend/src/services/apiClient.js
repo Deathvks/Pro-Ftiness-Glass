@@ -46,6 +46,8 @@ const apiClient = async (endpoint, options = {}) => {
 
             if (response.status === 401) {
                 useAppStore.getState().handleSessionExpiry();
+                // --- CAMBIO: Interrumpir flujo inmediatamente ---
+                throw new Error('Sesión expirada');
             }
 
             let errorMessage = 'Ha ocurrido un error inesperado.';
@@ -77,7 +79,6 @@ const apiClient = async (endpoint, options = {}) => {
 
         return response.json();
     } catch (error) {
-        // --- INICIO DE LA MODIFICACIÓN ---
         // Interceptamos fallos de red (Offline) para peticiones de escritura (POST, PUT, DELETE, etc.)
         if (error.message === 'Failed to fetch' && config.method !== 'GET') {
             // No guardamos FormData en la cola por complejidad de serialización (imágenes, etc.)
@@ -90,7 +91,6 @@ const apiClient = async (endpoint, options = {}) => {
                 throw new Error('Sin conexión. Cambio guardado localmente para sincronizar después.');
             }
         }
-        // --- FIN DE LA MODIFICACIÓN ---
 
         if (error.message === 'Failed to fetch') {
             throw new Error('No se pudo conectar con el servidor. Revisa tu conexión a internet.');

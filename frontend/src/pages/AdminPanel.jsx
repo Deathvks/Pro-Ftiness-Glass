@@ -377,9 +377,21 @@ const AdminPanel = ({ onCancel }) => {
                             <span className="text-sm text-text-secondary">Rol:</span>
                             <span className={`inline-flex items-center px-2 py-1 text-xs font-bold rounded-full capitalize ${user.role === 'admin' ? 'bg-accent-transparent text-accent' : 'bg-bg-secondary text-text-secondary'}`}>{user.role}</span>
                           </div>
+
+                          {/* CAMBIO: Añadido texto Sí/No en móvil */}
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-text-secondary">Verificado:</span>
-                            {user.is_verified ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-red-500" />}
+                            {user.is_verified ? (
+                              <div className="flex items-center gap-1 text-green-500">
+                                <CheckCircle size={14} />
+                                <span className="text-xs font-bold">Sí</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-red-500">
+                                <XCircle size={14} />
+                                <span className="text-xs font-bold">No</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
