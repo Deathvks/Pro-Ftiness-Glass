@@ -1,5 +1,5 @@
 /* frontend/src/App.jsx */
-import React, { useState, lazy, Suspense, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, lazy, useMemo, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Home, Dumbbell, BarChart2, Settings, Utensils, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -16,9 +16,8 @@ import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
 import TwoFactorPromoModal from './components/TwoFactorPromoModal';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
-// --- INICIO DE LA MODIFICACIÓN ---
 import VersionUpdater from './components/VersionUpdater';
-// --- FIN DE LA MODIFICACIÓN ---
+import SEOHead from './components/SEOHead';
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
@@ -151,8 +150,6 @@ export default function App() {
     return descKeys[view] || descKeys.default;
   }, [view, t, userProfile?.username]);
 
-  const currentPath = useMemo(() => (view === 'dashboard' ? '/' : `/${view}`), [view]);
-  const canonicalUrl = `${CANONICAL_BASE_URL}${currentPath}`;
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
 
   const currentViewComponent = useMemo(() => {
@@ -186,26 +183,6 @@ export default function App() {
     }
   }, [view, navigate, theme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
 
-  if (window.location.pathname === '/reset-password') {
-    return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
-  }
-
-  if (isLoading && isInitialLoad) {
-    return <InitialLoadingSkeleton />;
-  }
-
-  if (!isAuthenticated) {
-    return <AuthScreens authView={authView} setAuthView={setAuthView} />;
-  }
-
-  if (userProfile && !userProfile.goal) {
-    return <OnboardingScreen />;
-  }
-
-  if (!userProfile) {
-    return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
-  }
-
   const navItems = [
     { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
     { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: <Users size={24} /> },
@@ -215,59 +192,81 @@ export default function App() {
     { id: 'settings', label: t('Ajustes', { defaultValue: 'Ajustes' }), icon: <Settings size={24} /> },
   ];
 
+  const content = useMemo(() => {
+    if (window.location.pathname === '/reset-password') {
+      return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
+    }
+
+    if (isLoading && isInitialLoad) {
+      return <InitialLoadingSkeleton />;
+    }
+
+    if (!isAuthenticated) {
+      return <AuthScreens authView={authView} setAuthView={setAuthView} />;
+    }
+
+    if (userProfile && !userProfile.goal) {
+      return <OnboardingScreen />;
+    }
+
+    if (!userProfile) {
+      return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
+    }
+
+    return (
+      <>
+        <MainAppLayout
+          view={view}
+          navigate={navigate}
+          mainContentRef={mainContentRef}
+          currentTitle={currentTitle}
+          currentViewComponent={currentViewComponent}
+          navItems={navItems}
+          handleLogoutClick={handleLogoutClick}
+          showLogoutConfirm={showLogoutConfirm}
+          confirmLogout={confirmLogout}
+          setShowLogoutConfirm={setShowLogoutConfirm}
+          handleShowPolicy={handleShowPolicy}
+          fetchInitialData={fetchInitialData}
+          {...verificationProps}
+        />
+        {isResting && (
+          restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
+        )}
+        {show2FAPromo && (
+          <TwoFactorPromoModal
+            onClose={handleClose2FAPromo}
+            onConfigure={handleConfigure2FA}
+          />
+        )}
+      </>
+    );
+  }, [
+    authView, isInitialLoad, isLoading, isAuthenticated, userProfile, view, navigate,
+    mainContentRef, currentTitle, currentViewComponent, navItems, handleLogoutClick,
+    showLogoutConfirm, confirmLogout, handleShowPolicy, fetchInitialData, verificationProps,
+    isResting, restTimerMode, show2FAPromo
+  ]);
+
   return (
     <>
+      <SEOHead title={fullPageTitle} description={currentDescription} route={view} />
+
       <Helmet>
         <html lang="es" />
-        <title>{fullPageTitle}</title>
-        <meta name="description" content={currentDescription} />
-        <link rel="canonical" href={canonicalUrl} />
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
         <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:title" content={fullPageTitle} />
-        <meta property="og:description" content={currentDescription} />
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta property="og:site_name" content="Pro Fitness Glass" />
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content={canonicalUrl} />
-        <meta property="twitter:title" content={fullPageTitle} />
-        <meta property="twitter:description" content={currentDescription} />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
 
-      {/* --- INICIO DE LA MODIFICACIÓN --- */}
       <VersionUpdater />
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
-      <MainAppLayout
-        view={view}
-        navigate={navigate}
-        mainContentRef={mainContentRef}
-        currentTitle={currentTitle}
-        currentViewComponent={currentViewComponent}
-        navItems={navItems}
-        handleLogoutClick={handleLogoutClick}
-        showLogoutConfirm={showLogoutConfirm}
-        confirmLogout={confirmLogout}
-        setShowLogoutConfirm={setShowLogoutConfirm}
-        handleShowPolicy={handleShowPolicy}
-        fetchInitialData={fetchInitialData}
-        {...verificationProps}
-      />
-
-      {isResting && (
-        restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
-      )}
-
-      {show2FAPromo && (
-        <TwoFactorPromoModal
-          onClose={handleClose2FAPromo}
-          onConfigure={handleConfigure2FA}
-        />
-      )}
+      {content}
     </>
   );
 }

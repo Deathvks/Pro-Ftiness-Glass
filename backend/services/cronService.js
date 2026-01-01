@@ -1,6 +1,6 @@
 /* backend/services/cronService.js */
 import cron from 'node-cron';
-import { Op, literal, fn, col } from 'sequelize';
+import { Op } from 'sequelize';
 import db from '../models/index.js';
 import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
@@ -8,21 +8,13 @@ import { cleanOrphanedImages } from './imageService.js';
 
 /**
  * Obtiene la hora y fecha local para una zona horaria dada.
- * @param {string} timezone - Ejemplo: 'Europe/Madrid', 'Atlantic/Canary'
  */
 const getLocalTime = (timezone) => {
   try {
-    // Validar timezone o usar default
     const tz = timezone || 'Europe/Madrid';
     const now = new Date();
-
-    // Hora (0-23)
     const hourStr = now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: 'numeric' });
-
-    // Día del mes (1-31)
     const dayStr = now.toLocaleDateString('en-US', { timeZone: tz, day: 'numeric' });
-
-    // Fecha completa YYYY-MM-DD (Formato sueco es ISO-friendly)
     const dateStr = now.toLocaleDateString('sv-SE', { timeZone: tz });
 
     return {
@@ -32,7 +24,6 @@ const getLocalTime = (timezone) => {
     };
   } catch (error) {
     console.error(`[Cron] Error zona horaria inválida (${timezone}):`, error.message);
-    // Fallback seguro a UTC si falla
     const now = new Date();
     return {
       hour: now.getUTCHours(),
@@ -47,7 +38,6 @@ const getLocalTime = (timezone) => {
  */
 const notifyUser = async (userId, payload) => {
   try {
-    // 1. Crear notificación interna
     await createNotification(userId, {
       type: 'info',
       title: payload.title,
@@ -55,11 +45,8 @@ const notifyUser = async (userId, payload) => {
       data: { url: payload.url }
     });
 
-    // 2. Enviar Push
     const subscriptions = await db.PushSubscription.findAll({ where: { user_id: userId } });
     if (subscriptions.length === 0) return;
-
-    // console.log(`[Cron] Enviando Push a usuario ${userId}...`);
 
     const notifications = subscriptions.map(sub => {
       const subscriptionObject = {
@@ -73,7 +60,6 @@ const notifyUser = async (userId, payload) => {
       return pushService.sendNotification(subscriptionObject, payload)
         .catch(error => {
           if (error.statusCode === 410 || error.statusCode === 404) {
-            // console.log(`[Cron] Eliminando suscripción caducada.`);
             return sub.destroy();
           }
           console.error(`[Cron] Error enviando push: ${error.message}`);
@@ -88,13 +74,11 @@ const notifyUser = async (userId, payload) => {
 
 /**
  * TAREA 1: Recordatorio de Nutrición
- * Se ejecuta CADA HORA, pero solo notifica si en la zona horaria del usuario son las 20:00 (8 PM).
  */
 const checkNutritionGoals = () => {
   cron.schedule('0 * * * *', async () => {
     console.log('[Cron] Verificando Metas Nutricionales (Hora actual)...');
     try {
-      // 1. Buscar usuarios con metas definidas
       const users = await db.User.findAll({
         where: {
           [Op.or]: [
@@ -105,7 +89,6 @@ const checkNutritionGoals = () => {
         attributes: ['id', 'target_calories', 'target_protein', 'timezone']
       });
 
-      // 2. Filtrar usuarios donde sean las 20:00
       const targetUsers = users.filter(user => {
         const { hour } = getLocalTime(user.timezone);
         return hour === 20;
@@ -113,13 +96,11 @@ const checkNutritionGoals = () => {
 
       if (targetUsers.length === 0) return;
 
-      console.log(`[Cron] Analizando nutrición para ${targetUsers.length} usuarios (son las 20:00 local).`);
+      console.log(`[Cron] Analizando nutrición para ${targetUsers.length} usuarios.`);
 
-      // 3. Verificar progreso individualmente
       for (const user of targetUsers) {
         const { date: localDate } = getLocalTime(user.timezone);
 
-        // Sumar logs de ESE día local
         const logs = await db.NutritionLog.findAll({
           where: { user_id: user.id, log_date: localDate },
           attributes: ['calories', 'protein_g']
@@ -142,32 +123,25 @@ const checkNutritionGoals = () => {
     } catch (error) {
       console.error('[Cron] Error en la tarea de nutrición:', error);
     }
-  }); // Sin timezone global, usa la hora del sistema para dispararse cada hora
+  });
 };
 
 /**
  * TAREA 2: Recordatorio de Entrenamiento
- * Se ejecuta CADA HORA, notifica si son las 10:00 (10 AM).
  */
 const checkTrainingReminder = () => {
   cron.schedule('0 * * * *', async () => {
     console.log('[Cron] Verificando Recordatorio Entrenamiento...');
     try {
-      // Obtener usuarios con suscripciones y hacer join con User para sacar timezone
-      const subscriptions = await db.PushSubscription.findAll({
-        include: [{
-          model: db.User,
-          as: 'user', // Asegúrate de que la relación existe en tus modelos, si no, usa el método siguiente
-          attributes: ['id', 'timezone']
-        }]
-      });
-
-      // Si la relación no está definida directamente en el modelo PushSubscription,
-      // iteramos IDs únicos y buscamos los usuarios.
-      const userIds = [...new Set(subscriptions.map(s => s.user_id))];
+      // Optimización: Obtener directamente usuarios que tienen suscripciones activas
       const users = await db.User.findAll({
-        where: { id: userIds },
-        attributes: ['id', 'timezone']
+        attributes: ['id', 'timezone'],
+        include: [{
+          model: db.PushSubscription,
+          as: 'PushSubscriptions',
+          required: true, // INNER JOIN: Solo usuarios con suscripciones
+          attributes: []
+        }]
       });
 
       const targetUsers = users.filter(user => {
@@ -193,7 +167,7 @@ const checkTrainingReminder = () => {
 };
 
 /**
- * TAREA 3: Recordatorio de Peso (Día 1 del mes, 09:00 AM)
+ * TAREA 3: Recordatorio de Peso
  */
 const checkWeightLogReminder = () => {
   cron.schedule('0 * * * *', async () => {
@@ -210,10 +184,9 @@ const checkWeightLogReminder = () => {
 
       console.log(`[Cron] Analizando peso para ${targetUsers.length} usuarios.`);
 
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Aprox
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
       for (const user of targetUsers) {
-        // Verificar último log
         const lastLog = await db.BodyWeightLog.findOne({
           where: { user_id: user.id },
           order: [['log_date', 'DESC']],
@@ -238,7 +211,6 @@ const checkWeightLogReminder = () => {
 
 /**
  * TAREA 4: Limpieza de imágenes huérfanas
- * (Semanal, Domingos 04:00 AM hora del servidor - Mantenimiento del sistema)
  */
 const scheduleImageCleanup = () => {
   cron.schedule('0 4 * * 0', async () => {
@@ -251,9 +223,6 @@ const scheduleImageCleanup = () => {
   });
 };
 
-/**
- * Inicializa todas las tareas programadas.
- */
 export const startCronJobs = () => {
   console.log('[Cron] Inicializando tareas programadas (Multizona)...');
   checkNutritionGoals();
