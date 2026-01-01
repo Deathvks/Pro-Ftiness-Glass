@@ -75,33 +75,46 @@ const WorkoutSetGrid = ({
       {setsDone.map((set, setIndex) => (
         <div key={setIndex} className="contents">
           {/* --- Toggle Calentamiento --- */}
-          <span
-            onClick={
-              hasWorkoutStarted
-                ? () => {
-                  triggerHaptic(HapticType.selection);
-                  if (onToggleWarmup) onToggleWarmup(actualExIndex, setIndex);
-                }
-                : onDisabledButtonClick
-            }
-            className={`
-              text-center font-bold text-sm rounded-md px-1 py-3 flex items-center justify-center transition-all duration-200 select-none
-              ${hasWorkoutStarted ? 'cursor-pointer hover:brightness-110 active:scale-95' : 'cursor-not-allowed opacity-70'}
-              ${set.is_dropset
-                ? 'bg-red-500/10 text-red-500' // Dropset
-                : set.is_warmup
-                  ? 'bg-accent/10 text-accent' // Calentamiento: Solo fondo, sin borde
-                  : 'bg-bg-secondary text-text-secondary hover:bg-bg-secondary/80' // Normal
+          {/* El contenedor externo ayuda a alinear el botón y darle tamaño */}
+          <div className="flex items-center justify-center h-full">
+            <button
+              onClick={
+                hasWorkoutStarted
+                  ? () => {
+                    triggerHaptic(HapticType.selection);
+                    if (onToggleWarmup) onToggleWarmup(actualExIndex, setIndex);
+                  }
+                  : onDisabledButtonClick
               }
-            `}
-            title={
-              hasWorkoutStarted
-                ? "Click para marcar/desmarcar como Calentamiento"
-                : "Inicia el entrenamiento para editar"
-            }
-          >
-            {set.is_dropset ? 'DS' : set.is_warmup ? <Flame size={16} strokeWidth={2.5} /> : set.set_number}
-          </span>
+              // CAMBIO: Copiadas clases base de botones de acción (p-3 rounded-md border...).
+              // Si no es warmup, se ve igual que los otros botones (bg-bg-primary text-text-secondary).
+              // Si es warmup, se ve naranja.
+              className={`
+                p-3 rounded-md border transition h-full flex items-center justify-center w-full
+                ${hasWorkoutStarted ? 'cursor-pointer hover:brightness-110 active:scale-95' : 'cursor-not-allowed opacity-70'}
+                ${set.is_dropset
+                  ? 'bg-red-500/10 text-red-500 border-red-500/20' // Dropset
+                  : set.is_warmup
+                    ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' // Calentamiento Activo
+                    : 'bg-bg-primary border-glass-border text-text-secondary hover:text-accent hover:border-accent/50' // Normal (Igual que "Sustituir" e "Historial")
+                }
+              `}
+              title={
+                hasWorkoutStarted
+                  ? "Click para marcar/desmarcar como Calentamiento"
+                  : "Inicia el entrenamiento para editar"
+              }
+              disabled={!hasWorkoutStarted}
+            >
+              {set.is_dropset ? (
+                <span className="font-bold text-xs">DS</span>
+              ) : set.is_warmup ? (
+                <Flame size={18} />
+              ) : (
+                <span className="font-bold text-sm">{set.set_number}</span>
+              )}
+            </button>
+          </div>
 
           {/* Input: Peso (kg) */}
           <input

@@ -1,11 +1,7 @@
 /* frontend/src/components/WorkoutSummaryModal.jsx */
 import React from 'react';
 import { X, Share2, Clock, Flame, Target } from 'lucide-react';
-import GlassCard from './GlassCard';
-// --- INICIO DE LA MODIFICACIÓN ---
-// 1. Importamos el hook de traducción
 import { useTranslation } from 'react-i18next';
-// --- FIN DE LA MODIFICACIÓN ---
 
 // Helper para formatear el tiempo
 const formatTime = (timeInSeconds) => {
@@ -19,10 +15,7 @@ const formatTime = (timeInSeconds) => {
 };
 
 const WorkoutSummaryModal = ({ workoutData, onClose }) => {
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 2. Inicializamos el traductor, pidiendo el namespace 'exercise_names'
   const { t } = useTranslation(['exercise_names']);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const handleShare = async () => {
     if (!workoutData) {
@@ -42,15 +35,12 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
       exerciseSummary = safeDetails.map(ex => {
         const setsDone = Array.isArray(ex.setsDone) ? ex.setsDone : [];
         const setsStr = setsDone.map(set => `  • ${set.weight_kg || 0} kg x ${set.reps || 0} reps`).join('\n');
-        
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // 3. Traducimos el nombre para la función de compartir
-        const translatedName = t(ex.exerciseName, { 
-          ns: 'exercise_names', 
-          defaultValue: ex.exerciseName || 'Ejercicio desconocido' 
+
+        const translatedName = t(ex.exerciseName, {
+          ns: 'exercise_names',
+          defaultValue: ex.exerciseName || 'Ejercicio desconocido'
         });
         return `${translatedName}:\n${setsStr}`;
-        // --- FIN DE LA MODIFICACIÓN ---
 
       }).join('\n\n');
     } else {
@@ -86,7 +76,7 @@ ${exerciseSummary}
 
   if (!workoutData || typeof workoutData !== 'object' || Object.keys(workoutData).length === 0) {
     console.error("WorkoutSummaryModal received invalid workoutData:", workoutData);
-    return null; 
+    return null;
   }
 
   const { routineName, duration_seconds, calories_burned, details, notes } = workoutData;
@@ -97,14 +87,16 @@ ${exerciseSummary}
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
-      <GlassCard className="w-full max-w-lg m-4 p-6 border-accent-border relative max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
+      <div
+        className="w-full max-w-lg m-4 p-6 relative max-h-[90vh] overflow-y-auto bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out]"
+      >
+        <div className="flex justify-between items-center mb-4 border-b border-glass-border pb-4">
           <h2 className="text-2xl font-bold text-text-primary">¡Entrenamiento Guardado!</h2>
           <div className="flex gap-2">
-            <button onClick={handleShare} className="p-2 text-text-muted hover:text-accent transition-colors rounded-full">
+            <button onClick={handleShare} className="p-2 text-text-muted hover:text-accent transition-colors rounded-full hover:bg-bg-secondary">
               <Share2 size={20} />
             </button>
-            <button onClick={onClose} className="p-2 text-text-muted hover:text-red transition-colors rounded-full">
+            <button onClick={onClose} className="p-2 text-text-muted hover:text-red transition-colors rounded-full hover:bg-bg-secondary">
               <X size={20} />
             </button>
           </div>
@@ -116,15 +108,15 @@ ${exerciseSummary}
             {safeRoutineName}
           </h3>
           <div className="grid grid-cols-2 gap-4 text-center">
-            <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
+            <div className="bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-sm">
               <Clock size={24} className="mx-auto text-text-secondary mb-1" />
               <span className="text-sm text-text-secondary">Duración</span>
-              <p className="text-xl font-bold">{formatTime(duration_seconds || 0)}</p>
+              <p className="text-xl font-bold text-text-primary">{formatTime(duration_seconds || 0)}</p>
             </div>
-            <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
+            <div className="bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-sm">
               <Flame size={24} className="mx-auto text-text-secondary mb-1" />
               <span className="text-sm text-text-secondary">Calorías</span>
-              <p className="text-xl font-bold">{Math.round(safeCalories)} kcal</p>
+              <p className="text-xl font-bold text-text-primary">{Math.round(safeCalories)} kcal</p>
             </div>
           </div>
         </div>
@@ -132,21 +124,17 @@ ${exerciseSummary}
         <div className="space-y-4">
           <h4 className="text-lg font-semibold text-text-primary">Resumen de Ejercicios</h4>
           {safeDetails.length > 0 ? (
-            <div className="space-y-3 bg-bg-secondary p-4 rounded-lg border border-glass-border max-h-60 overflow-y-auto">
+            <div className="space-y-3 bg-bg-secondary p-4 rounded-xl border border-glass-border max-h-60 overflow-y-auto custom-scrollbar shadow-inner">
               {safeDetails.map((ex, index) => (
-                <div key={index}>
-                  
-                  {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                  {/* 4. Traducimos el nombre en la lista del modal */}
+                <div key={index} className="pb-3 border-b border-glass-border last:border-0 last:pb-0">
                   <p className="font-semibold text-text-primary">
-                    {t(ex.exerciseName, { 
-                      ns: 'exercise_names', 
-                      defaultValue: ex.exerciseName || 'Ejercicio desconocido' 
+                    {t(ex.exerciseName, {
+                      ns: 'exercise_names',
+                      defaultValue: ex.exerciseName || 'Ejercicio desconocido'
                     })}
                   </p>
-                  {/* --- FIN DE LA MODIFICACIÓN --- */}
 
-                  <ul className="list-disc list-inside pl-2 text-sm text-text-secondary">
+                  <ul className="list-disc list-inside pl-2 text-sm text-text-secondary mt-1">
                     {(Array.isArray(ex.setsDone) ? ex.setsDone : []).map((set, setIndex) => (
                       <li key={setIndex}>
                         {set.weight_kg || 0} kg x {set.reps || 0} reps {set.is_dropset ? '(Dropset)' : ''}
@@ -163,18 +151,18 @@ ${exerciseSummary}
           {safeNotes && (
             <div>
               <h4 className="text-lg font-semibold text-text-primary mb-2">Notas</h4>
-              <p className="bg-bg-secondary p-4 rounded-lg border border-glass-border text-text-secondary text-sm whitespace-pre-wrap">{safeNotes}</p>
+              <p className="bg-bg-secondary p-4 rounded-xl border border-glass-border text-text-secondary text-sm whitespace-pre-wrap">{safeNotes}</p>
             </div>
           )}
         </div>
 
         <button
           onClick={onClose}
-          className="mt-6 w-full px-6 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:bg-accent/80"
+          className="mt-6 w-full px-6 py-3 rounded-xl bg-accent text-bg-secondary font-bold transition hover:scale-[1.01] shadow-lg shadow-accent/20"
         >
           Cerrar
         </button>
-      </GlassCard>
+      </div>
     </div>
   );
 };

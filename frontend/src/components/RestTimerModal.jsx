@@ -1,7 +1,6 @@
 /* frontend/src/components/RestTimerModal.jsx */
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, Plus, Minus, Minimize2, Play, Pause } from 'lucide-react';
-import GlassCard from './GlassCard';
 import useAppStore from '../store/useAppStore';
 import { triggerHaptic, HapticType } from '../utils/haptics'; // Importamos la utilidad
 
@@ -148,16 +147,16 @@ const RestTimerModal = () => {
   const formattedPlanned = formatTime(planned);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
-      <GlassCard
-        className="relative p-8 m-4 w-full max-w-sm text-center"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+      <div
+        className="relative p-8 m-4 w-full max-w-sm text-center bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={handleClose} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"><X size={20} /></button>
 
         {view === 'select' && (
           <div>
-            <h3 className="text-xl font-bold mb-6">Seleccionar Descanso</h3>
+            <h3 className="text-xl font-bold mb-6 text-text-primary">Seleccionar Descanso</h3>
 
             <div className="relative w-48 h-48 mx-auto mb-6 flex items-center justify-center">
               <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -183,7 +182,7 @@ const RestTimerModal = () => {
 
             <button
               onClick={() => handleStartPreset(planned)}
-              className="w-full p-4 mb-4 bg-accent text-bg-secondary rounded-md border border-accent/50 hover:bg-accent/80 transition font-semibold text-lg"
+              className="w-full p-4 mb-4 bg-accent text-bg-secondary rounded-xl border border-accent/50 hover:bg-accent/80 transition font-bold text-lg shadow-lg shadow-accent/20"
             >
               Iniciar Planeado ({formattedPlanned})
             </button>
@@ -193,10 +192,10 @@ const RestTimerModal = () => {
                 <button
                   key={time}
                   onClick={() => handleStartPreset(time)}
-                  className="p-4 bg-bg-secondary rounded-md border border-glass-border hover:border-accent transition"
+                  className="p-4 bg-bg-secondary rounded-xl border border-glass-border hover:border-accent transition text-text-primary hover:text-accent"
                 >
                   <span className="font-bold text-xl">{time / 60}</span>
-                  <span className="text-xs text-text-muted">min</span>
+                  <span className="text-xs text-text-muted block">min</span>
                 </button>
               ))}
             </div>
@@ -206,11 +205,11 @@ const RestTimerModal = () => {
                 placeholder="M:SS"
                 value={customDuration}
                 onChange={handleCustomDurationChange}
-                className="w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
+                className="w-full text-center bg-bg-secondary border border-glass-border rounded-xl px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition placeholder-text-tertiary"
               />
               <button
                 onClick={handleStartCustom}
-                className="px-6 py-3 rounded-md bg-accent text-bg-secondary font-semibold whitespace-nowrap"
+                className="px-6 py-3 rounded-xl bg-accent text-bg-secondary font-bold whitespace-nowrap shadow-md shadow-accent/10"
               >
                 Iniciar
               </button>
@@ -230,7 +229,7 @@ const RestTimerModal = () => {
               <Minimize2 size={20} />
             </button>
 
-            <h3 className="text-xl font-bold mb-4">Tiempo de Descanso</h3>
+            <h3 className="text-xl font-bold mb-4 text-text-primary">Tiempo de Descanso</h3>
             <div className="relative w-48 h-48 mx-auto flex items-center justify-center">
               <svg className="w-full h-full" viewBox="0 0 100 100">
                 <circle className="text-glass-border" strokeWidth="8" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
@@ -248,7 +247,7 @@ const RestTimerModal = () => {
                   style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.5s linear, stroke 0.5s linear' }}
                 />
               </svg>
-              <div className={`absolute font-mono text-5xl font-bold ${timeLeft === 0 ? 'animate-pulse text-red' : ''}`}>
+              <div className={`absolute font-mono text-5xl font-bold ${timeLeft === 0 ? 'animate-pulse text-red' : 'text-text-primary'}`}>
                 {formatTime(timeLeft)}
               </div>
             </div>
@@ -278,8 +277,8 @@ const RestTimerModal = () => {
                   onClick={() => handleAddTime(-10)}
                   disabled={timeLeft === 0}
                   className={`px-5 py-3 flex items-center justify-center gap-2 rounded-full border transition ${timeLeft === 0
-                    ? 'bg-gray-600 border-gray-500 text-gray-400 cursor-not-allowed opacity-50'
-                    : 'bg-bg-secondary border-glass-border hover:border-accent'
+                    ? 'bg-gray-200 border-gray-300 text-gray-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-600 cursor-not-allowed opacity-50'
+                    : 'bg-bg-secondary border-glass-border text-text-primary hover:border-accent'
                     }`}
                 >
                   <Minus size={18} />
@@ -287,7 +286,7 @@ const RestTimerModal = () => {
                 </button>
                 <button
                   onClick={() => handleAddTime(10)}
-                  className="px-5 py-3 flex items-center justify-center gap-2 rounded-full bg-bg-secondary border border-glass-border hover:border-accent transition"
+                  className="px-5 py-3 flex items-center justify-center gap-2 rounded-full bg-bg-secondary border border-glass-border text-text-primary hover:border-accent transition"
                 >
                   <Plus size={18} />
                   <span className="font-semibold text-sm">+10 seg</span>
@@ -296,7 +295,7 @@ const RestTimerModal = () => {
             </div>
           </div>
         )}
-      </GlassCard>
+      </div>
     </div>
   );
 };

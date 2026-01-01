@@ -265,17 +265,19 @@ const Dashboard = ({ setView }) => {
                         <span className="text-2xl font-bold text-text-primary">{weeklySessions}</span>
                     </div>
 
-                    {/* --- INICIO MODIFICACIÓN: Scroll y ajuste responsivo --- */}
-                    <div className="flex justify-between items-center overflow-x-auto scrollbar-hide gap-2">
+                    {/* --- INICIO MODIFICACIÓN: Ajuste de tamaño para ver todos los días --- */}
+                    {/* gap-1 y justify-between para distribuir uniformemente sin ocupar tanto espacio */}
+                    <div className="flex justify-between items-center w-full px-1">
                         {weekDays.map((date, i) => {
                             const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
                             const isToday = isSameDay(date, new Date());
                             const hasWorkout = workoutLog.some(log => isSameDay(new Date(log.workout_date), date));
                             return (
-                                <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-                                    <span className={`text-xs font-semibold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/25' : 'bg-bg-secondary/50 text-transparent'}`}>
-                                        {hasWorkout && <Check size={16} strokeWidth={3} />}
+                                <div key={i} className="flex flex-col items-center gap-1">
+                                    <span className={`text-[10px] font-semibold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
+                                    {/* w-6 h-6 para asegurar que quepan en layout de 4 columnas */}
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/25' : 'bg-bg-secondary/50 text-transparent'}`}>
+                                        {hasWorkout && <Check size={12} strokeWidth={3} />}
                                     </div>
                                 </div>
                             );

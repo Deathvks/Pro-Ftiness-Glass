@@ -70,7 +70,8 @@ const RoutineHeader = ({
             )}
 
             {/* --- SECCIÓN DE IMAGEN DE PORTADA --- */}
-            <div className="mb-6 bg-bg-secondary/30 rounded-xl p-4 border border-glass-border">
+            {/* CAMBIO: Eliminada transparencia /30 y añadido shadow-sm para mejor visibilidad en modo claro */}
+            <div className="mb-6 bg-bg-secondary rounded-xl p-4 border border-glass-border shadow-sm">
                 <label className="block text-sm font-medium text-text-secondary mb-3">
                     Imagen de Portada
                 </label>

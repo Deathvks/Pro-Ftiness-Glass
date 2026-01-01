@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { X } from 'lucide-react';
 import MuscleHeatmap from '../MuscleHeatmap/MuscleHeatmap';
-import GlassCard from '../GlassCard';
+import { useAppTheme } from '../../hooks/useAppTheme'; // Importamos el hook de tema
 
 // Importamos la utilidad centralizada para evitar duplicidad de código
 import { guessMuscleFromText } from '../../utils/muscleUtils';
@@ -16,6 +16,9 @@ const INTENSITY_LEVELS = [
 ];
 
 const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
+    // 1. Obtenemos el tema actual
+    const { theme } = useAppTheme();
+    const isDark = theme !== 'light';
 
     // Calcular la intensidad por músculo basada en el número de series
     const muscleData = useMemo(() => {
@@ -66,56 +69,56 @@ const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
-            <div className="w-full max-w-md relative animate-[scale-in_0.3s_ease-out]">
-                <GlassCard className="p-0 overflow-hidden relative flex flex-col max-h-[90vh]">
+            {/* Reemplazamos GlassCard por un div con bg-bg-primary para consistencia en modo claro */}
+            <div className="w-full max-w-md relative animate-[scale-in_0.3s_ease-out] bg-bg-primary rounded-2xl border border-glass-border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
-                    {/* Cabecera */}
-                    <div className="p-4 border-b border-glass-border flex justify-between items-center bg-bg-secondary/30">
-                        <h2 className="text-xl font-bold text-text-primary">Músculos Trabajados</h2>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition"
-                        >
-                            <X size={20} />
-                        </button>
-                    </div>
+                {/* Cabecera */}
+                <div className="p-4 border-b border-glass-border flex justify-between items-center bg-bg-secondary">
+                    <h2 className="text-xl font-bold text-text-primary">Músculos Trabajados</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 rounded-full hover:bg-bg-primary text-text-secondary hover:text-text-primary transition border border-transparent hover:border-glass-border"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
 
-                    {/* Contenido (Heatmap) */}
-                    <div className="p-6 flex flex-col justify-center items-center bg-gradient-to-b from-transparent to-bg-primary/50 overflow-y-auto min-h-[350px]">
-                        {Object.keys(muscleData).length > 0 ? (
-                            <>
-                                <MuscleHeatmap muscleData={muscleData} darkMode={true} />
+                {/* Contenido (Heatmap) */}
+                <div className="p-6 flex flex-col justify-center items-center bg-bg-primary overflow-y-auto min-h-[350px]">
+                    {Object.keys(muscleData).length > 0 ? (
+                        <>
+                            {/* Pasamos la variable isDark correctamente */}
+                            <MuscleHeatmap muscleData={muscleData} darkMode={isDark} />
 
-                                {/* Leyenda de Colores */}
-                                <div className="flex flex-wrap justify-center gap-4 mt-6 mb-2">
-                                    {INTENSITY_LEVELS.map((level) => (
-                                        <div key={level.label} className="flex items-center gap-2">
-                                            <div
-                                                className="w-3 h-3 rounded-full"
-                                                style={{
-                                                    backgroundColor: level.color,
-                                                    boxShadow: `0 0 8px ${level.color}`
-                                                }}
-                                            />
-                                            <span className="text-xs text-text-secondary font-medium">{level.label}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
-                            <div className="text-center py-10 px-4">
-                                <p className="text-text-primary font-medium mb-2">No se han detectado grupos musculares.</p>
-                                <p className="text-text-secondary text-sm">
-                                    Asegúrate de que tus ejercicios tengan asignado un grupo muscular específico.
-                                </p>
+                            {/* Leyenda de Colores */}
+                            <div className="flex flex-wrap justify-center gap-4 mt-6 mb-2">
+                                {INTENSITY_LEVELS.map((level) => (
+                                    <div key={level.label} className="flex items-center gap-2">
+                                        <div
+                                            className="w-3 h-3 rounded-full"
+                                            style={{
+                                                backgroundColor: level.color,
+                                                boxShadow: `0 0 8px ${level.color}`
+                                            }}
+                                        />
+                                        <span className="text-xs text-text-secondary font-medium">{level.label}</span>
+                                    </div>
+                                ))}
                             </div>
-                        )}
-                    </div>
+                        </>
+                    ) : (
+                        <div className="text-center py-10 px-4">
+                            <p className="text-text-primary font-medium mb-2">No se han detectado grupos musculares.</p>
+                            <p className="text-text-secondary text-sm">
+                                Asegúrate de que tus ejercicios tengan asignado un grupo muscular específico.
+                            </p>
+                        </div>
+                    )}
+                </div>
 
-                    <div className="p-4 border-t border-glass-border text-center text-xs text-text-secondary">
-                        La intensidad del color indica el volumen de series en esta sesión.
-                    </div>
-                </GlassCard>
+                <div className="p-4 border-t border-glass-border text-center text-xs text-text-secondary bg-bg-secondary">
+                    La intensidad del color indica el volumen de series en esta sesión.
+                </div>
             </div>
         </div>
     );

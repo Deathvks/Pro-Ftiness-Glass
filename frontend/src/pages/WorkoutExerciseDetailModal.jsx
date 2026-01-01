@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import GlassCard from '../components/GlassCard';
 import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
@@ -93,8 +92,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
       onClick={onClose}
     >
-      <GlassCard
-        className="relative w-full max-w-lg max-h-[60vh] md:max-h-[85vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out]"
+      <div
+        className="relative w-full max-w-lg max-h-[60vh] md:max-h-[85vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out] bg-bg-primary rounded-2xl border border-glass-border shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -104,7 +103,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-2xl font-bold mb-4 pr-8 break-words">
+        <h2 className="text-2xl font-bold mb-4 pr-8 break-words text-text-primary">
           {t(titleKey, { ns: 'exercise_names', defaultValue: titleKey })}
         </h2>
 
@@ -130,26 +129,26 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
           <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
             <Target size={20} className="text-accent" />
-            <span className="font-medium capitalize">
+            <span className="font-medium capitalize text-text-primary">
               {muscleGroupLabel}
             </span>
           </div>
 
           <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
             <Dumbbell size={20} className="text-accent" />
-            <span className="font-medium">
+            <span className="font-medium text-text-primary">
               {t('n_sets', { count: exercise.sets, ns: 'exercise_ui' })}
             </span>
           </div>
           <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
             <Repeat size={20} className="text-accent" />
-            <span className="font-medium">
+            <span className="font-medium text-text-primary">
               {t('n_reps', { count: exercise.reps, ns: 'exercise_ui' })}
             </span>
           </div>
           <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
             <Clock size={20} className="text-accent" />
-            <span className="font-medium">
+            <span className="font-medium text-text-primary">
               {t('n_rest', { count: exercise.rest_seconds || 90, ns: 'exercise_ui' })}
             </span>
           </div>
@@ -177,7 +176,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           )}
         </div>
 
-      </GlassCard>
+      </div>
     </div>
   );
 };

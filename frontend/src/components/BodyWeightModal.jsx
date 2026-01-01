@@ -1,24 +1,9 @@
 /* frontend/src/components/BodyWeightModal.jsx */
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import GlassCard from './GlassCard';
 
 const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
   const [weight, setWeight] = useState('');
-
-  // --- INICIO DE LA CORRECCIÓN ---
-  const [isDarkTheme, setIsDarkTheme] = useState(() =>
-    typeof document !== 'undefined' && !document.body.classList.contains('light-theme')
-  );
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDarkTheme(!document.body.classList.contains('light-theme'));
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-  // --- FIN DE LA CORRECCIÓN ---
 
   useEffect(() => {
     if (existingLog) {
@@ -27,10 +12,8 @@ const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
   }, [existingLog]);
 
   const handleSaveClick = () => {
-    // --- INICIO DE LA MODIFICACIÓN ---
     // Aseguramos que el valor se parsee correctamente, reemplazando comas por puntos.
     const newWeight = parseFloat(String(weight).replace(',', '.'));
-    // --- FIN DE LA MODIFICACIÓN ---
 
     if (!isNaN(newWeight) && newWeight > 0) {
       onSave({ weight: newWeight });
@@ -47,20 +30,18 @@ const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
       onClick={onClose}
     >
-      <GlassCard
-        // --- INICIO DE LA CORRECCIÓN ---
-        className={`relative w-full max-w-md p-8 m-4 ${!isDarkTheme ? '!bg-white/95 !border-black/10' : ''}`}
-        // --- FIN DE LA CORRECCIÓN ---
+      <div
+        className="relative w-full max-w-md p-8 m-4 bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition">
           <X size={20} />
         </button>
 
-        <h3 className="text-xl font-bold text-center mb-4">
+        <h3 className="text-xl font-bold text-text-primary text-center mb-4">
           {existingLog ? 'Editar Peso de Hoy' : 'Registrar Peso Corporal'}
         </h3>
 
@@ -69,7 +50,6 @@ const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
             <label htmlFor="weight-input" className="block text-sm font-medium text-text-secondary mb-2 text-center">
               Peso (kg)
             </label>
-            {/* --- INICIO DE LA MODIFICACIÓN --- */}
             <input
               id="weight-input"
               type="text"
@@ -77,22 +57,20 @@ const BodyWeightModal = ({ onSave, onClose, existingLog }) => {
               step="0.1"
               value={weight}
               onChange={(e) => setWeight(e.target.value.replace(',', '.'))}
-              className="w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
+              className="w-full text-center bg-bg-secondary border border-glass-border rounded-xl px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition placeholder-text-tertiary"
               placeholder="Ej: 80.5"
               required
               autoFocus
             />
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
           </div>
-          <button 
-            type="submit" // Cambiado a submit para que el 'Enter' funcione
-            onClick={handleSaveClick} 
-            className="w-full mt-2 py-3 rounded-md bg-accent text-bg-secondary font-semibold transition hover:scale-105"
+          <button
+            type="submit"
+            className="w-full mt-2 py-3 rounded-xl bg-accent text-bg-secondary font-bold shadow-lg shadow-accent/20 transition hover:scale-[1.02] active:scale-[0.98]"
           >
             Guardar Registro
           </button>
         </form>
-      </GlassCard>
+      </div>
     </div>
   );
 };

@@ -89,6 +89,7 @@ const WorkoutExerciseCard = ({
         </button>
 
         <div className="flex gap-2 items-center shrink-0">
+          {/* Botón Historial */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -102,13 +103,15 @@ const WorkoutExerciseCard = ({
             <History size={18} />
           </button>
 
+          {/* Botón Calentamiento - AHORA COINCIDE CON EL ESTILO */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               if (hasWorkoutStarted) setShowWarmupInput(true);
             }}
-            className={`p-2 rounded-xl transition-all shrink-0 ${hasWorkoutStarted
-              ? 'bg-accent/10 text-accent hover:bg-accent/20 shadow-lg shadow-accent/10 hover:shadow-accent/20'
+            // CAMBIO: Estilo igualado al de Historial y Reemplazar (bg-bg-primary, text-secondary)
+            className={`p-2 rounded-xl transition shrink-0 ${hasWorkoutStarted
+              ? 'bg-bg-primary text-text-secondary hover:text-accent hover:shadow-md hover:shadow-accent/10'
               : 'bg-bg-primary text-text-muted opacity-50 cursor-not-allowed'
               }`}
             title={hasWorkoutStarted ? "Generar series de calentamiento" : "Inicia el entrenamiento primero"}
@@ -117,6 +120,7 @@ const WorkoutExerciseCard = ({
             <Flame size={18} />
           </button>
 
+          {/* Botón Reemplazar */}
           <button
             onClick={(e) => {
               e.stopPropagation();

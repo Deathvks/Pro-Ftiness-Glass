@@ -5,7 +5,6 @@ import BarcodeScanner from './BarcodeScanner';
 import Spinner from './Spinner';
 import ConfirmationModal from './ConfirmationModal';
 import { useNutritionModal } from '../hooks/useNutritionModal';
-import GlassCard from './GlassCard';
 import { searchFoods } from '../services/nutritionService';
 
 import TabButton from './nutrition/logModal/TabButton';
@@ -24,7 +23,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
         isEditingLog, editingFavorite, searchTerm, setSearchTerm, activeTab, setActiveTab,
         itemsToAdd, favoritesPage, setFavoritesPage, mealToDelete, setMealToDelete,
         editingListItemId, manualFormState, setManualFormState, showScanner, setShowScanner,
-        paginatedFavorites, filteredRecents, isLoadingRecents, totalPages, isDarkTheme,
+        paginatedFavorites, filteredRecents, isLoadingRecents, totalPages,
         handleAddManualItem, handleAddFavoriteItem, handleAddRecentItem, handleRemoveItem,
         handleToggleFavorite, handleEditListItem, handleEditFavorite, handleSaveListItem,
         handleSaveList, handleSaveSingle, handleSaveEdit, handleScanSuccess,
@@ -92,13 +91,13 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
     if (selectedDetailItem) {
         return (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s]">
-                <GlassCard className={`relative w-11/12 max-w-md overflow-hidden m-4 ${!isDarkTheme ? '!bg-bg-secondary' : ''}`} onClick={(e) => e.stopPropagation()}>
+                <div className="relative w-11/12 max-w-md overflow-hidden m-4 bg-bg-primary rounded-2xl border border-glass-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
                     <FoodDetailView
                         food={selectedDetailItem}
                         onClose={() => setSelectedDetailItem(null)}
                         onAdd={handleAddFromDetail}
                     />
-                </GlassCard>
+                </div>
             </div>
         );
     }
@@ -192,7 +191,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
     return (
         <>
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] p-4 sm:p-0 pb-12 md:pb-0">
-                <GlassCard className={`relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col h-full max-h-[85dvh] sm:h-auto sm:max-h-[90vh] ${!isDarkTheme ? '!bg-bg-secondary' : ''}`} onClick={(e) => e.stopPropagation()}>
+                <div className="relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col h-full max-h-[85dvh] sm:h-auto sm:max-h-[90vh] bg-bg-primary rounded-2xl border border-glass-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
                     <div className="p-5 flex items-center justify-between border-b border-glass-border flex-shrink-0">
                         <h3 className="text-xl font-bold truncate pr-4 text-text-primary">{title}</h3>
                         <button onClick={onClose} className="p-2 -m-2 rounded-full hover:bg-bg-primary transition flex-shrink-0"><X size={20} className="text-text-secondary" /></button>
@@ -250,7 +249,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                     </div>
 
                     {!(isEditingLog || editingFavorite) && itemsToAdd.length > 0 && (
-                        <div className="p-5 border-t border-glass-border flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-[--glass-bg] backdrop-blur-xl z-10">
+                        <div className="p-5 border-t border-glass-border flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-bg-primary z-10">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-semibold text-text-primary">Añadir ({itemsToAdd.length})</h4>
                             </div>
@@ -270,7 +269,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                             </button>
                         </div>
                     )}
-                </GlassCard>
+                </div>
             </div>
 
             {mealToDelete && (<ConfirmationModal
