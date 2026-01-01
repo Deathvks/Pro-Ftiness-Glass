@@ -1,6 +1,6 @@
 /* frontend/src/components/progress/DailyDetailView.jsx */
 import React, { useState, useMemo } from 'react';
-import { X, Trash2, Link2, Timer, Flame, BarChartHorizontal, TrendingUp } from 'lucide-react';
+import { X, Trash2, Link2, Timer, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from '../GlassCard';
 import ConfirmationModal from '../ConfirmationModal';
@@ -19,7 +19,6 @@ const DailyDetailView = ({ logs, onClose }) => {
   const { addToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logToDelete, setLogToDelete] = useState(null);
-  // NUEVO: Estado para ocultar visualmente los logs borrados al instante
   const [deletedLogIds, setDeletedLogIds] = useState([]);
 
   const handleDeleteClick = (log) => {
@@ -34,12 +33,9 @@ const DailyDetailView = ({ logs, onClose }) => {
 
       if (result.success) {
         addToast(result.message, 'success');
-
-        // AÑADIDO: Actualizamos la lista local para feedback instantáneo
         const newDeletedIds = [...deletedLogIds, idToDelete];
         setDeletedLogIds(newDeletedIds);
 
-        // Comprobamos si quedan logs visibles
         const remainingLogs = logs.filter(l => !newDeletedIds.includes(l.id));
         if (remainingLogs.length === 0) {
           onClose();
@@ -85,7 +81,6 @@ const DailyDetailView = ({ logs, onClose }) => {
     return parseFloat(sortedLog[0].weight_kg);
   }, [bodyWeightLog]);
 
-  // CAMBIO: Filtramos usando la lista local de borrados
   const visibleLogs = logs.filter(log => !deletedLogIds.includes(log.id));
 
   const totalDuration = visibleLogs.reduce((acc, log) => acc + log.duration_seconds, 0);
@@ -94,111 +89,145 @@ const DailyDetailView = ({ logs, onClose }) => {
     return acc + calories;
   }, 0);
 
+  // Componente auxiliar para renderizar una fila de serie
+  const SetRow = ({ set, isWarmup }) => (
+    <li className={`flex items-center justify-between p-2 rounded text-xs ${isWarmup ? 'bg-orange-500/10 text-orange-900 dark:text-orange-200/90' : 'bg-gray-500/10'}`}>
+      <span className="flex items-center gap-2">
+        <span className={`font-mono font-bold ${isWarmup ? 'text-orange-600 dark:text-orange-400' : 'text-accent'}`}>
+          {set.reps}
+        </span>
+        <span className="text-[10px] uppercase text-text-tertiary">reps</span>
+        <span className="text-text-tertiary">×</span>
+        <span className={`font-mono font-bold ${isWarmup ? 'text-orange-600 dark:text-orange-400' : 'text-text-primary'}`}>
+          {set.weight_kg}
+        </span>
+        <span className="text-[10px] uppercase text-text-tertiary">kg</span>
+      </span>
+
+      <div className="flex gap-1">
+        {set.is_dropset && (
+          <span className="bg-red-500/10 text-red-500 font-bold px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-red-500/20">
+            Dropset
+          </span>
+        )}
+      </div>
+    </li>
+  );
+
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
-        <GlassCard className="relative w-full max-w-lg p-6 flex flex-col gap-4 m-4 bg-bg-secondary shadow-2xl">
-          <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"><X size={20} /></button>
+        <GlassCard className="relative w-full max-w-lg p-6 flex flex-col gap-4 m-4 bg-bg-secondary shadow-2xl max-h-[90vh]">
+          <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary z-10"><X size={20} /></button>
+
           <div className="text-center pb-4 border-b border-glass-border">
             <h3 className="text-xl font-bold">Resumen del Día</h3>
-            {/* Protección para mostrar la fecha incluso si se borran todos antes de cerrar */}
             {logs.length > 0 && (
               <p className="text-text-muted text-sm">{new Date(logs[0].workout_date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4 text-center">
+
+          <div className="grid grid-cols-2 gap-4 text-center shrink-0">
             <div>
-              <span className="text-sm text-text-secondary">Duración Total: <strong>{Math.round(totalDuration / 60)} min</strong></span>
+              <span className="text-sm text-text-secondary">Duración: <strong>{Math.round(totalDuration / 60)} min</strong></span>
             </div>
             <div>
-              <span className="text-sm text-text-secondary">Calorías (est.): <strong>{totalCalories} kcal</strong></span>
+              <span className="text-sm text-text-secondary">Calorías: <strong>{totalCalories} kcal</strong></span>
             </div>
           </div>
-          <div className="flex flex-col gap-4 border-t border-glass-border pt-4 max-h-[45vh] overflow-y-auto">
-            <h4 className="font-semibold">Entrenamientos Registrados</h4>
+
+          <div className="flex flex-col gap-4 border-t border-glass-border pt-4 overflow-y-auto pr-1 custom-scrollbar">
             {visibleLogs.map((log) => {
               const exerciseGroups = groupExercises(log.WorkoutLogDetails);
               const isCardioOnly = !log.WorkoutLogDetails || log.WorkoutLogDetails.length === 0;
 
               return (
-                <div key={log.id} className="bg-bg-secondary rounded-md">
-                  <div className="flex justify-between items-center p-3">
-                    <h5 className="font-bold text-accent">{log.routine_name}</h5>
-                    <button onClick={() => handleDeleteClick(log)} className="p-2 -m-2 rounded-full text-text-muted hover:bg-red/20 hover:text-red transition">
+                <div key={log.id} className="bg-bg-secondary rounded-xl overflow-hidden border border-glass-border shadow-sm">
+                  {/* FIX: Usar bg-gray-500/10 para asegurar visibilidad en ambos temas */}
+                  <div className="flex justify-between items-center p-3 bg-gray-500/10 border-b border-glass-border">
+                    <h5 className="font-bold text-accent truncate pr-4">{log.routine_name}</h5>
+                    <button onClick={() => handleDeleteClick(log)} className="p-2 -m-2 rounded-full text-text-muted hover:text-red-400 transition">
                       <Trash2 size={16} />
                     </button>
                   </div>
-                  <div className="px-3 pb-3 space-y-3">
+
+                  <div className="p-3 space-y-4">
                     {log.notes && (
-                      <div className="bg-[--glass-bg] p-3 rounded-md border-l-2 border-accent">
-                        <p className="font-semibold text-xs text-accent mb-1">Notas de la sesión</p>
-                        <p className="text-sm text-text-secondary whitespace-pre-wrap">{log.notes}</p>
+                      <div className="bg-gray-500/10 p-3 rounded-lg border-l-2 border-accent/50">
+                        <p className="font-semibold text-xs text-accent mb-1 flex items-center gap-1"><Link2 size={10} /> Notas</p>
+                        <p className="text-sm text-text-secondary whitespace-pre-wrap italic">"{log.notes}"</p>
                       </div>
                     )}
+
                     {isCardioOnly ? (
-                      <div className="bg-bg-primary rounded-md border border-glass-border p-3 flex justify-around text-center">
+                      <div className="flex justify-around text-center py-2 bg-gray-500/10 rounded-lg border border-glass-border">
                         <div>
-                          <p className="text-xs text-text-secondary flex items-center gap-1"><Timer size={12} /> Duración</p>
-                          <p className="font-bold">{Math.round(log.duration_seconds / 60)} min</p>
+                          <p className="text-xs text-text-tertiary mb-1">Tiempo</p>
+                          <p className="font-mono font-bold text-lg text-text-primary">{Math.round(log.duration_seconds / 60)}<span className="text-xs ml-1 font-sans text-text-tertiary">min</span></p>
                         </div>
                         <div>
-                          <p className="text-xs text-text-secondary flex items-center gap-1"><Flame size={12} /> Calorías</p>
-                          <p className="font-bold">{log.calories_burned} kcal</p>
+                          <p className="text-xs text-text-tertiary mb-1">Energía</p>
+                          <p className="font-mono font-bold text-lg text-text-primary">{log.calories_burned}<span className="text-xs ml-1 font-sans text-text-tertiary">kcal</span></p>
                         </div>
                       </div>
                     ) : (
                       exerciseGroups.map((group, groupIndex) => (
-                        <div key={groupIndex} className="bg-bg-primary rounded-md border border-glass-border">
+                        <div key={groupIndex} className="relative">
                           {group.length > 1 && (
-                            <div className="flex items-center gap-2 p-2 text-accent text-sm font-semibold border-b border-glass-border bg-accent/10">
-                              <Link2 size={14} />
-                              <span>Superserie</span>
-                            </div>
+                            <div className="absolute -left-3 top-4 bottom-4 w-1 bg-accent/30 rounded-r-full" title="Superserie" />
                           )}
-                          <div className="p-3">
-                            {group.map((exercise, exIdx) => (
-                              <div key={exIdx} className={exIdx > 0 ? 'mt-3 pt-3 border-t border-glass-border' : ''}>
 
-                                <p className="font-semibold">
-                                  {t(exercise.exercise_name, {
-                                    ns: 'exercise_names',
-                                    defaultValue: exercise.exercise_name
-                                  })}
-                                </p>
+                          <div className={`space-y-4 ${group.length > 1 ? 'pl-2' : ''}`}>
+                            {group.map((exercise, exIdx) => {
+                              const sets = exercise.WorkoutLogSets || [];
+                              const warmupSets = sets.filter(s => s.is_warmup);
+                              const workSets = sets.filter(s => !s.is_warmup);
 
-                                <div className="flex gap-4 text-xs text-text-muted my-2">
-                                  <div className="flex items-center gap-1"><BarChartHorizontal size={12} /><span>Volumen: <strong>{exercise.total_volume} kg</strong></span></div>
-                                  <div className="flex items-center gap-1"><TrendingUp size={12} /><span>Mejor Set: <strong>{exercise.best_set_weight} kg</strong></span></div>
+                              return (
+                                <div key={exIdx} className={`${exIdx > 0 ? 'pt-4 border-t border-glass-border' : ''}`}>
+                                  {/* Encabezado del Ejercicio */}
+                                  <div className="flex justify-between items-start mb-2">
+                                    <p className="font-bold text-sm text-text-primary">
+                                      {t(exercise.exercise_name, { ns: 'exercise_names', defaultValue: exercise.exercise_name })}
+                                    </p>
+                                    <div className="text-[10px] text-text-tertiary flex flex-col items-end">
+                                      <span className="flex items-center gap-1"><BarChartHorizontal size={10} /> Vol: {exercise.total_volume}kg</span>
+                                      <span className="flex items-center gap-1"><TrendingUp size={10} /> Max: {exercise.best_set_weight}kg</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-3">
+                                    {/* Sección de Calentamiento (si existe) */}
+                                    {warmupSets.length > 0 && (
+                                      <div>
+                                        <p className="text-[10px] font-bold text-orange-500/80 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                          <Flame size={10} /> Calentamiento
+                                        </p>
+                                        <ul className="space-y-1">
+                                          {warmupSets.map((set, i) => <SetRow key={i} set={set} isWarmup={true} />)}
+                                        </ul>
+                                      </div>
+                                    )}
+
+                                    {/* Sección de Series Efectivas */}
+                                    {workSets.length > 0 ? (
+                                      <div>
+                                        {warmupSets.length > 0 && (
+                                          <p className="text-[10px] font-bold text-accent/80 uppercase tracking-wider mb-1 flex items-center gap-1 mt-2">
+                                            <Dumbbell size={10} /> Series Efectivas
+                                          </p>
+                                        )}
+                                        <ul className="space-y-1">
+                                          {workSets.map((set, i) => <SetRow key={i} set={set} isWarmup={false} />)}
+                                        </ul>
+                                      </div>
+                                    ) : (
+                                      sets.length === 0 && <p className="text-xs text-text-tertiary italic">Sin series registradas</p>
+                                    )}
+                                  </div>
                                 </div>
-                                <ul className="space-y-1 text-sm">
-                                  {exercise.WorkoutLogSets && exercise.WorkoutLogSets.length > 0 ? (
-                                    exercise.WorkoutLogSets.map((set, setIdx) => (
-                                      <li key={setIdx} className="flex items-center justify-between bg-bg-secondary/50 p-2 rounded text-xs">
-                                        <span>
-                                          Serie {set.set_number}: <strong>{set.reps} reps</strong> con <strong>{set.weight_kg} kg</strong>
-                                        </span>
-                                        <div className="flex gap-1">
-                                          {/* --- CAMBIO: Badge Calentamiento sin borde --- */}
-                                          {set.is_warmup && (
-                                            <span className="bg-accent/10 text-accent font-bold px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1">
-                                              <Flame size={10} strokeWidth={3} /> CALENTAMIENTO
-                                            </span>
-                                          )}
-                                          {/* --- Badge Dropset sin borde --- */}
-                                          {set.is_dropset && (
-                                            <span className="bg-red-500/10 text-red-500 font-bold px-2 py-0.5 rounded-full text-[10px]">
-                                              DROPSET
-                                            </span>
-                                          )}
-                                        </div>
-                                      </li>
-                                    ))
-                                  ) : (
-                                    <li className="text-text-muted text-xs">No se registraron series.</li>
-                                  )}
-                                </ul>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       ))
@@ -210,14 +239,18 @@ const DailyDetailView = ({ logs, onClose }) => {
           </div>
         </GlassCard>
       </div>
+
       {showDeleteConfirm && (
         <ConfirmationModal
-          message="¿Estás seguro de que quieres borrar este entrenamiento? Esta acción no se puede deshacer."
+          message="¿Borrar este entrenamiento? No podrás recuperarlo."
           onConfirm={confirmDelete}
           onCancel={cancelDelete}
+          confirmText="Sí, borrar"
+          cancelText="Cancelar"
         />
       )}
     </>
   );
 };
+
 export default DailyDetailView;
