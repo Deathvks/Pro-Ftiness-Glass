@@ -145,7 +145,7 @@ const RoutineHeader = ({
                                 O elige un estilo
                             </span>
                             {/* CORRECCIÓN: p-2 en lugar de pb-2 para evitar recortes al escalar */}
-                            <div className="flex gap-3 overflow-x-auto p-2 scrollbar-hide justify-center sm:justify-start">
+                            <div className="flex gap-3 overflow-x-auto p-2 scrollbar-hide justify-start">
                                 {PREDEFINED_BACKGROUNDS.map((bg, idx) => (
                                     <button
                                         key={idx}
