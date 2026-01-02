@@ -21,6 +21,7 @@ import {
 import useAppStore from '../store/useAppStore';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { useToast } from '../hooks/useToast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -128,6 +129,10 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const [badgePage, setBadgePage] = useState(0);
     const BADGES_PER_PAGE = 4;
 
+    // --- ESTADO PARA CONFIRMACIÓN DE ELIMINAR ---
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeletingFriend, setIsDeletingFriend] = useState(false);
+
     useEffect(() => {
         if (userId) {
             fetchPublicProfile(userId);
@@ -178,11 +183,24 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         else showToast('Error al enviar solicitud', 'error');
     };
 
-    const handleRemoveFriend = async () => {
-        if (window.confirm('¿Seguro que quieres eliminar a este amigo?')) {
+    // Abre el modal en lugar de window.confirm
+    const handleRemoveFriend = () => {
+        setShowDeleteConfirm(true);
+    };
+
+    // Ejecuta la acción al confirmar en el modal
+    const confirmRemoveFriend = async () => {
+        setIsDeletingFriend(true);
+        try {
             await removeFriend(userId);
             showToast('Amigo eliminado', 'success');
             handleGoBack({ preventDefault: () => { }, stopPropagation: () => { } });
+        } catch (error) {
+            console.error(error);
+            showToast('Error al eliminar amigo', 'error');
+        } finally {
+            setIsDeletingFriend(false);
+            setShowDeleteConfirm(false);
         }
     };
 
@@ -489,6 +507,18 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     </p>
                 </GlassCard>
             </div>
+
+            {/* --- MODAL CONFIRMACIÓN ELIMINAR AMIGO --- */}
+            {showDeleteConfirm && (
+                <ConfirmationModal
+                    message="¿Seguro que quieres eliminar a este amigo?"
+                    confirmText="Eliminar"
+                    cancelText="Cancelar"
+                    onConfirm={confirmRemoveFriend}
+                    onCancel={() => setShowDeleteConfirm(false)}
+                    isLoading={isDeletingFriend}
+                />
+            )}
 
         </div>
     );
