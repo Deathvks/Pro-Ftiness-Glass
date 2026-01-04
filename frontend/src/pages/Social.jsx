@@ -19,7 +19,7 @@ import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
-import UserAvatar from '../components/UserAvatar'; // Importamos el componente seguro
+import UserAvatar from '../components/UserAvatar';
 
 // --- Componentes Extraídos ---
 
@@ -53,8 +53,8 @@ const UserListItem = ({ user, action, subtext, isHighlighted, onNavigate }) => {
                 }`}
         >
             <div className="flex items-center gap-3">
-                {/* Usamos UserAvatar para manejar URLs relativas y HTTP/HTTPS */}
-                <UserAvatar user={user} size={10} />
+                {/* Añadido className="w-10 h-10" para asegurar que Tailwind genere el tamaño */}
+                <UserAvatar user={user} size={10} className="w-10 h-10" />
 
                 <div>
                     <p className={`font-semibold transition-colors line-clamp-1 ${isHighlighted ? 'text-accent-primary' : 'text-text-primary group-hover:text-accent-primary'}`}>
@@ -468,7 +468,9 @@ export default function Social({ setView }) {
                                 {rankIcon || <span className="text-sm opacity-60">#{rank}</span>}
                             </div>
                             <div className="flex-1 flex items-center gap-3 min-w-0 pl-2">
-                                <UserAvatar user={user} size={9} />
+                                {/* CORREGIDO: Añadido className="w-9 h-9" para asegurar el tamaño */}
+                                <UserAvatar user={user} size={9} className="w-9 h-9" />
+
                                 <span className={`truncate text-sm ${isMe ? 'text-accent-primary font-bold' : 'text-text-primary font-medium'}`}>
                                     {user.username} {isMe && "(Tú)"}
                                 </span>
