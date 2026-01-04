@@ -617,6 +617,16 @@ export default function SettingsScreen({
           <SettingsCard>
             <SectionTitle icon={Info} title="Soporte y General" />
             <div className="flex flex-col gap-1">
+              {/* --- NUEVO: Descarga de APK --- */}
+              <a href="/app-release.apk" download="ProFitnessGlass.apk" className="no-underline">
+                <SettingsItem
+                  icon={Smartphone}
+                  title="Descargar App Android"
+                  subtitle="Instalar APK nativo"
+                  action={<Download size={16} className="text-accent" />}
+                />
+              </a>
+
               <SettingsItem
                 icon={Bug}
                 title="Reportar un problema"

@@ -86,9 +86,11 @@ ${exerciseSummary}
   const safeNotes = notes || "";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+    // CORRECCIÓN: z-50 a z-[60] para superar el navbar (que es z-50)
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
       <div
-        className="w-full max-w-lg m-4 p-6 relative max-h-[90vh] overflow-y-auto bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out]"
+        // CORRECCIÓN: Reducido max-h-[90vh] a max-h-[80vh] para que no ocupe tanto verticalmente en móvil
+        className="w-full max-w-lg m-4 p-6 relative max-h-[80vh] overflow-y-auto bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out]"
       >
         <div className="flex justify-between items-center mb-4 border-b border-glass-border pb-4">
           <h2 className="text-2xl font-bold text-text-primary">¡Entrenamiento Guardado!</h2>

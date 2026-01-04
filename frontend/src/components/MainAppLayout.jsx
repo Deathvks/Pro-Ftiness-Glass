@@ -4,9 +4,7 @@ import { User, Zap, Bell } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { useOfflineSync } from '../hooks/useOfflineSync';
-// --- FIN DE LA MODIFICACIÓN ---
 
 // Componentes UI
 import Sidebar from './Sidebar';
@@ -17,6 +15,10 @@ import WelcomeModal from './WelcomeModal';
 import EmailVerificationModal from './EmailVerificationModal';
 import EmailVerification from './EmailVerification';
 import CookieConsentBanner from './CookieConsentBanner';
+// --- INICIO DE LA MODIFICACIÓN: Importar componentes de App Nativa ---
+import AndroidDownloadPrompt from './AndroidDownloadPrompt';
+import APKUpdater from './APKUpdater';
+// --- FIN DE LA MODIFICACIÓN ---
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -58,9 +60,8 @@ export default function MainAppLayout({
 }) {
   const { addToast } = useToast();
 
-  // --- INICIO DE LA MODIFICACIÓN: Activamos la sincronización offline ---
+  // Activamos la sincronización offline
   useOfflineSync();
-  // --- FIN DE LA MODIFICACIÓN ---
 
   // Estados y acciones obtenidos directamente de Zustand
   const {
@@ -380,6 +381,12 @@ export default function MainAppLayout({
           backButtonText="Volver"
         />
       )}
+
+      {/* --- INICIO DE LA MODIFICACIÓN: Componentes de descarga/update Android --- */}
+      <AndroidDownloadPrompt />
+      <APKUpdater />
+      {/* --- FIN DE LA MODIFICACIÓN --- */}
+
     </div>
   );
 }

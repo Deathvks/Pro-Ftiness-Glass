@@ -7,18 +7,50 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencias
 node_modules
+.pnpm-store
+
+# Build de Producción (Web)
 dist
 dist-ssr
-*.local
+dev-dist
 
-# Editor directories and files
+# Entornos Locales (¡Importante para no subir secretos de pruebas!)
+*.local
+.env.local
+.env.*.local
+
+# Editor y Sistema Operativo
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# --- CAPACITOR / ANDROID ---
+# No ignoramos la carpeta 'android' entera porque ahí vive tu configuración nativa.
+# Pero SÍ debemos ignorar los archivos temporales de compilación de Android Studio.
+
+# Builds nativos y caché
+android/app/build
+android/.gradle
+android/captures
+android/app/src/main/assets/public/*
+
+# Excepción: Mantener cordova_plugins si existiera (buena práctica en Capacitor)
+!android/app/src/main/assets/public/cordova_plugins.js
+
+# Si en el futuro añades iOS
+ios/App/App/public/*
+ios/App/Pods/
+
+# --- ARCHIVOS GRANDES ---
+# Si NO quieres guardar el instalable en el historial de Git (recomendado para no inflar el repo),
+# descomenta la siguiente línea. Si quieres que se descargue desde la web, déjalo comentado.
+# *.apk

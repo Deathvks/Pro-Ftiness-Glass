@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
   Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
-  Link, Smartphone, Image, Globe, Clock // Añadido Globe
+  Link, Smartphone, Image, Globe, Clock, Download
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -49,36 +49,68 @@ const WelcomeModal = ({ onClose }) => {
 
         {/* Decoración de fondo interna (SIN MORADOS) */}
         <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-accent/20 rounded-full blur-[100px] pointer-events-none"></div>
-        {/* Cambiado de purple-500/20 a accent/10 para consistencia */}
         <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[100px] pointer-events-none"></div>
 
         {/* Scroll interno */}
         <div className="overflow-y-auto custom-scrollbar p-6 flex flex-col h-full relative z-10">
 
-          {/* --- Cabecera V4 --- */}
+          {/* --- Cabecera V5 --- */}
           <div className="text-center mb-8 flex flex-col items-center">
             <div className="mb-4 relative group">
               <div className="absolute inset-0 bg-accent/40 blur-xl rounded-full group-hover:bg-accent/60 transition-all duration-500"></div>
-              <div className="relative w-20 h-20 bg-gradient-to-br from-bg-secondary to-bg-primary rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500">
-                <span className="text-4xl font-black text-accent">
-                  v4
+              <div className="relative w-24 h-24 bg-gradient-to-br from-bg-secondary to-bg-primary rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500 border border-white/10">
+                <span className="text-5xl font-black text-accent drop-shadow-lg">
+                  v5
                 </span>
               </div>
               {/* Badge "New" */}
-              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-bounce">
-                NUEVO
+              <div className="absolute -top-2 -right-8 bg-gradient-to-r from-red-600 to-orange-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg animate-bounce z-20">
+                GRAN ACTUALIZACIÓN
               </div>
             </div>
 
             <h1 className="text-3xl font-bold bg-gradient-to-r from-text-primary via-accent to-text-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_3s_infinite_linear]">
-              La Evolución
+              La Revolución Nativa
             </h1>
-            <p className="text-text-secondary mt-2 text-sm max-w-[80%]">
-              Hemos rediseñado la experiencia para conectar tu progreso con tu comunidad.
+            <p className="text-text-secondary mt-2 text-sm max-w-[90%]">
+              Pro Fitness Glass llega a tu móvil con una experiencia nativa, más rápida y completa que nunca.
             </p>
           </div>
 
           <div className="space-y-6 mb-8">
+
+            {/* --- BLOQUE 0: APP NATIVA (NUEVO DESTACADO) --- */}
+            {/* CORRECCIÓN: Eliminadas las clases 'border' y 'border-accent/20'. Ahora es totalmente limpio sin borde. */}
+            <div className="bg-white/5 bg-gradient-to-br from-accent/10 to-transparent rounded-2xl p-5 backdrop-blur-sm shadow-lg shadow-accent/5 group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-bl-full -mr-10 -mt-10 blur-md"></div>
+
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider relative z-10">
+                <Smartphone size={16} className="text-accent" /> App Android Nativa
+              </h2>
+
+              <div className="flex justify-center relative z-10">
+                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/90 border border-glass-border rounded-xl flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                  <div className="flex items-center gap-5 relative z-10">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-accent rounded-full animate-ping opacity-20"></div>
+                      <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-bg-primary shadow-lg shadow-accent/30">
+                        <Download size={24} strokeWidth={3} />
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-lg text-text-primary">Descárgala Ya</span>
+                      <span className="text-xs text-text-secondary">Rendimiento máximo</span>
+                    </div>
+                  </div>
+                  {/* Partículas de fondo internas */}
+                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-accent to-transparent"></div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center font-medium relative z-10">
+                Disponible ahora como archivo APK. ¡Instálala y siente la diferencia!
+              </p>
+            </div>
+
 
             {/* --- BLOQUE 1: EXPERIENCIA Y NIVELES --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
@@ -235,7 +267,7 @@ const WelcomeModal = ({ onClose }) => {
               </p>
             </div>
 
-            {/* --- BLOQUE 4: SUPERSERIES (NUEVO) --- */}
+            {/* --- BLOQUE 4: SUPERSERIES --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Link size={16} className="text-accent" /> Superseries Pro
@@ -260,7 +292,7 @@ const WelcomeModal = ({ onClose }) => {
               </p>
             </div>
 
-            {/* --- BLOQUE 5: IMÁGENES (NUEVO) --- */}
+            {/* --- BLOQUE 5: IMÁGENES --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Image size={16} className="text-accent" /> Portadas de Rutina
@@ -285,7 +317,7 @@ const WelcomeModal = ({ onClose }) => {
               </p>
             </div>
 
-            {/* --- BLOQUE 6: VIBRACIÓN (NUEVO) --- */}
+            {/* --- BLOQUE 6: VIBRACIÓN --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Smartphone size={16} className="text-accent" /> Feedback Háptico
@@ -305,7 +337,7 @@ const WelcomeModal = ({ onClose }) => {
               </p>
             </div>
 
-            {/* --- BLOQUE 7: ZONA HORARIA (NUEVO AÑADIDO) --- */}
+            {/* --- BLOQUE 7: ZONA HORARIA --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Globe size={16} className="text-accent" /> Zona Horaria
@@ -335,7 +367,7 @@ const WelcomeModal = ({ onClose }) => {
               onClick={handleGetStarted}
               className="group w-full py-4 px-6 bg-gradient-to-r from-accent to-accent-secondary hover:to-accent text-bg-primary font-black rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent/20 flex items-center justify-center gap-3"
             >
-              <span className="tracking-wide">DESCUBRIR LA V4</span>
+              <span className="tracking-wide">DESCUBRIR LA V5</span>
               <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
 
