@@ -19,18 +19,9 @@ import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
+import UserAvatar from '../components/UserAvatar'; // Importamos el componente seguro
 
-// --- Constantes y Helpers (Fuera del componente) ---
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const BACKEND_BASE_URL = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
-
-const getProfileImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('blob:')) return url;
-    return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-};
-
-// --- Componentes Extraídos para evitar Re-montaje y Parpadeo ---
+// --- Componentes Extraídos ---
 
 const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
     <button
@@ -52,8 +43,6 @@ const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
 );
 
 const UserListItem = ({ user, action, subtext, isHighlighted, onNavigate }) => {
-    const imgSrc = getProfileImageUrl(user.profile_image_url);
-
     return (
         <div
             onClick={() => onNavigate(user.id)}
@@ -64,13 +53,9 @@ const UserListItem = ({ user, action, subtext, isHighlighted, onNavigate }) => {
                 }`}
         >
             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-bg-secondary flex items-center justify-center overflow-hidden border border-white/10 relative flex-shrink-0">
-                    {imgSrc ? (
-                        <img src={imgSrc} alt={user.username} className="w-full h-full object-cover" />
-                    ) : (
-                        <Users size={18} className="text-text-tertiary" />
-                    )}
-                </div>
+                {/* Usamos UserAvatar para manejar URLs relativas y HTTP/HTTPS */}
+                <UserAvatar user={user} size={10} />
+
                 <div>
                     <p className={`font-semibold transition-colors line-clamp-1 ${isHighlighted ? 'text-accent-primary' : 'text-text-primary group-hover:text-accent-primary'}`}>
                         {user.username || user.name || 'Usuario'}
@@ -471,7 +456,6 @@ export default function Social({ setView }) {
                     if (rank === 3) rankIcon = <Medal size={20} className="text-amber-700 drop-shadow-md" />;
 
                     const isMe = user.id === userProfile?.id;
-                    const imgSrc = getProfileImageUrl(user.profile_image_url);
 
                     return (
                         <div
@@ -484,13 +468,7 @@ export default function Social({ setView }) {
                                 {rankIcon || <span className="text-sm opacity-60">#{rank}</span>}
                             </div>
                             <div className="flex-1 flex items-center gap-3 min-w-0 pl-2">
-                                <div className="w-9 h-9 rounded-full bg-bg-secondary overflow-hidden flex-shrink-0 border border-white/10">
-                                    {imgSrc ? (
-                                        <img src={imgSrc} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <Users size={16} className="text-text-tertiary m-auto mt-2" />
-                                    )}
-                                </div>
+                                <UserAvatar user={user} size={9} />
                                 <span className={`truncate text-sm ${isMe ? 'text-accent-primary font-bold' : 'text-text-primary font-medium'}`}>
                                     {user.username} {isMe && "(Tú)"}
                                 </span>

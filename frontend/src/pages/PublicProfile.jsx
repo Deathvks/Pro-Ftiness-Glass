@@ -25,18 +25,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { useToast } from '../hooks/useToast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-// --- AÑADIDO: Constantes para construir la URL correcta ---
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const BACKEND_BASE_URL = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
-
-// --- AÑADIDO: Helper para procesar la imagen ---
-const getProfileImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('blob:')) return url;
-    // Si es relativa, le pegamos el dominio del backend
-    return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-};
+import UserAvatar from '../components/UserAvatar'; // IMPORTADO: Componente para gestionar imágenes seguras
 
 // --- DICCIONARIO DE INSIGNIAS (Diseño Original con Emojis) ---
 const BADGES_MAP = {
@@ -283,9 +272,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const totalBadgePages = Math.ceil(badges.length / BADGES_PER_PAGE);
     const visibleBadges = badges.slice(badgePage * BADGES_PER_PAGE, (badgePage + 1) * BADGES_PER_PAGE);
 
-    // --- MODIFICACIÓN: Procesar imagen ---
-    const imgSrc = getProfileImageUrl(profile.profile_image_url);
-
     return (
         <div className="pb-6 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
 
@@ -322,17 +308,13 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent-primary/20 to-transparent pointer-events-none" />
 
                 <div className="relative z-10 w-32 h-32 rounded-full p-1 bg-gradient-to-br from-accent-primary to-accent-secondary shadow-xl shadow-accent-primary/20">
-                    <div className="w-full h-full rounded-full bg-bg-primary overflow-hidden relative">
-                        {imgSrc ? (
-                            <img
-                                src={imgSrc}
-                                alt={profile.username}
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <User size={64} className="text-text-tertiary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                        )}
-                    </div>
+                    {/* UserAvatar: usamos size="full" para llenar el contenedor padre de 32x32 */}
+                    <UserAvatar
+                        user={profile}
+                        size="full"
+                        className="w-full h-full border-none bg-bg-primary"
+                    />
+
                     {profile.show_level_xp && (
                         <div className="absolute -bottom-2 -right-2 bg-bg-primary border-2 border-accent-primary rounded-full w-10 h-10 flex items-center justify-center font-black text-sm text-text-primary shadow-lg">
                             {profile.level || 1}
@@ -358,7 +340,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 {relationshipStatus !== 'me' && (
                     <div className="z-10 flex gap-3 mt-2">
                         {relationshipStatus === 'none' && (
-                            // MODIFICACIÓN: Añadido outline-none y focus:outline-none
                             <button
                                 onClick={handleSendRequest}
                                 className="flex items-center gap-2 px-6 py-2 bg-accent-primary/10 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/20 transition-all active:scale-95 outline-none focus:outline-none"
@@ -395,7 +376,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         )}
 
                         {relationshipStatus === 'pending_received' && (
-                            // MODIFICACIÓN: Añadido outline-none y focus:outline-none
                             <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-2 bg-accent-primary/10 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/20 transition-all outline-none focus:outline-none">
                                 <UserCheck size={18} />
                                 Responder Solicitud
@@ -444,7 +424,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             {/* --- INSIGNIAS (PAGINADAS) --- */}
             {profile.show_badges && badges.length > 0 && (
                 <div className="space-y-4">
-                    {/* MODIFICACIÓN: flex-wrap y gap para que sea responsive sin superponerse */}
                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                         <h3 className="text-lg font-bold text-text-primary flex items-center gap-2 whitespace-nowrap">
                             <Medal size={20} className="text-accent-primary" />
