@@ -9,10 +9,8 @@ import * as templateRoutineService from '../services/templateRoutineService';
 import * as creatinaService from '../services/creatinaService';
 import * as exerciseService from '../services/exerciseService';
 
-// Función para obtener la fecha actual en formato YYYY-MM-DD
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
-// Estado inicial para esta porción del store
 const initialState = {
   routines: [],
   workoutLog: [],
@@ -30,19 +28,14 @@ const initialState = {
   allExercises: [],
 };
 
-// Definimos el "slice" que gestiona los datos de la aplicación.
 export const createDataSlice = (set, get) => ({
   ...initialState,
 
-  // --- ACCIONES ---
-
-  // Muestra una notificación de nuevo récord personal durante 7 segundos.
   showPRNotification: (newPRs) => {
     set({ prNotification: newPRs });
     setTimeout(() => set({ prNotification: null }), 7000);
   },
 
-  // Carga todos los datos iniciales necesarios para la aplicación.
   fetchInitialData: async () => {
     if (!get().token) {
       set({ isAuthenticated: false, isLoading: false });
@@ -54,28 +47,23 @@ export const createDataSlice = (set, get) => ({
       const profileData = await userService.getMyProfile();
       set({ userProfile: profileData, isAuthenticated: true });
 
-      // --- INICIO MODIFICACIÓN: Cargar datos de Gamificación ---
       if (profileData && get().setGamificationData) {
-        // CORRECCIÓN: Usar las claves exactas que espera gamificationSlice (snake_case)
         get().setGamificationData({
           xp: profileData.xp,
           level: profileData.level,
           streak: profileData.streak,
-          last_activity_date: profileData.last_activity_date, // Clave corregida
-          unlocked_badges: profileData.unlocked_badges        // Clave corregida
+          last_activity_date: profileData.last_activity_date,
+          unlocked_badges: profileData.unlocked_badges
         });
 
-        // Comprobar racha al iniciar
         const today = getTodayDateString();
         if (get().checkStreak) get().checkStreak(today);
 
-        // Otorgar insignia de primer login solo si NO la tiene ya (evita duplicados en reload)
         const hasFirstLoginBadge = profileData.unlocked_badges && profileData.unlocked_badges.includes('first_login');
         if (get().unlockBadge && !hasFirstLoginBadge) {
           get().unlockBadge('first_login');
         }
       }
-      // --- FIN MODIFICACIÓN ---
 
       if (profileData?.id) {
         await get().checkCookieConsent(profileData.id);
@@ -129,15 +117,14 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  // Obtiene los datos de nutrición para una fecha específica.
   fetchDataForDate: async (date) => {
     set({ selectedDate: date, isLoading: true });
     try {
       const [nutrition, todaysCreatine, favoriteMeals, recentMeals] = await Promise.all([
         nutritionService.getNutritionLogsByDate(date),
         creatinaService.getCreatinaLogs({ startDate: date, endDate: date }),
-        favoriteMealService.getFavoriteMeals(), // Recargar favoritos
-        nutritionService.getRecentMeals()       // Recargar recientes
+        favoriteMealService.getFavoriteMeals(),
+        nutritionService.getRecentMeals()
       ]);
       set({
         nutritionLog: nutrition.nutrition || [],
@@ -153,7 +140,6 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  // Obtiene el resumen de nutrición para un mes y año.
   fetchNutritionSummary: async (month, year) => {
     try {
       const summaryData = await nutritionService.getNutritionSummary(month, year);
@@ -168,10 +154,6 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  /**
-   * Obtiene la lista maestra de ejercicios de forma segura.
-   * Si no está en el estado, la va a buscar a la API.
-   */
   getOrFetchAllExercises: async () => {
     const currentExercises = get().allExercises;
     if (currentExercises && currentExercises.length > 0) {
@@ -188,28 +170,24 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  // --- Acciones C.R.U.D. para Rutinas ---
+  // --- RUTINAS ---
 
   createRoutine: async (routineData) => {
     try {
       const newRoutine = await routineService.createRoutine(routineData);
 
-      if (!newRoutine || !newRoutine.id) {
-        throw new Error('La respuesta del servidor no incluyó la rutina creada.');
-      }
+      if (!newRoutine || !newRoutine.id) throw new Error('Error al crear rutina');
 
       set(state => ({
         routines: [...state.routines, newRoutine]
       }));
 
-      // --- GAMIFICACIÓN: XP por crear rutina y mantener racha ---
       if (get().addXp) get().addXp(20);
       if (get().checkStreak) get().checkStreak(getTodayDateString());
 
       return { success: true, routine: newRoutine, message: 'Rutina creada con éxito.' };
     } catch (error) {
-      console.error('Error en createRoutine (dataSlice):', error);
-      return { success: false, routine: null, message: `Error al crear la rutina: ${error.message}` };
+      return { success: false, routine: null, message: error.message };
     }
   },
 
@@ -217,20 +195,15 @@ export const createDataSlice = (set, get) => ({
     try {
       const updatedRoutine = await routineService.updateRoutine(routineId, routineData);
 
-      if (!updatedRoutine || !updatedRoutine.id) {
-        throw new Error('La respuesta del servidor no incluyó la rutina actualizada.');
-      }
+      if (!updatedRoutine || !updatedRoutine.id) throw new Error('Error al actualizar rutina');
 
       set(state => ({
-        routines: state.routines.map(r =>
-          r.id === routineId ? updatedRoutine : r
-        )
+        routines: state.routines.map(r => r.id === routineId ? updatedRoutine : r)
       }));
 
       return { success: true, routine: updatedRoutine, message: 'Rutina actualizada.' };
     } catch (error) {
-      console.error('Error en updateRoutine (dataSlice):', error);
-      return { success: false, routine: null, message: `Error al actualizar la rutina: ${error.message}` };
+      return { success: false, routine: null, message: error.message };
     }
   },
 
@@ -244,18 +217,17 @@ export const createDataSlice = (set, get) => ({
 
       const { activeWorkout, endWorkout } = get();
       if (activeWorkout && activeWorkout.routine_id === routineId) {
-        endWorkout(false); // Terminar sin guardar
+        endWorkout(false);
       }
 
       return { success: true, message: 'Rutina eliminada.' };
     } catch (error) {
-      console.error('Error en deleteRoutine (dataSlice):', error);
-      return { success: false, message: `Error al eliminar la rutina: ${error.message}` };
+      return { success: false, message: error.message };
     }
   },
 
+  // --- FAVORITOS ---
 
-  // Añade una comida a la lista de favoritos.
   addFavoriteMeal: async (mealData) => {
     try {
       const newMeal = await favoriteMealService.createFavoriteMeal(mealData);
@@ -268,7 +240,6 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  // Actualiza una comida favorita existente.
   updateFavoriteMeal: async (mealId, mealData) => {
     try {
       const updatedMeal = await favoriteMealService.updateFavoriteMeal(mealId, mealData);
@@ -283,7 +254,6 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  // Elimina una comida de la lista de favoritos.
   deleteFavoriteMeal: async (mealId) => {
     try {
       await favoriteMealService.deleteFavoriteMeal(mealId);
@@ -296,42 +266,35 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
-  // Registra un nuevo peso corporal.
+  // --- PESO CORPORAL ---
+
   logBodyWeight: async (weightData) => {
     try {
       await bodyWeightService.logWeight(weightData);
-
-      // OPTIMIZACIÓN: Actualizar solo el historial de peso en lugar de recargar toda la app
       const history = await bodyWeightService.getHistory();
       set({ bodyWeightLog: history });
 
-      // Actualizar peso en perfil localmente si es más reciente
       if (weightData.weight) {
         set(state => ({
           userProfile: { ...state.userProfile, weight: weightData.weight }
         }));
       }
 
-      // --- GAMIFICACIÓN: XP por peso y racha ---
       if (get().addXp) get().addXp(10);
       if (get().checkStreak) get().checkStreak(getTodayDateString());
 
       return { success: true, message: 'Peso registrado con éxito.' };
     } catch (error) {
-      return { success: false, message: `Error al guardar: ${error.message}` };
+      return { success: false, message: error.message };
     }
   },
 
-  // Actualiza el peso corporal del día actual.
   updateTodayBodyWeight: async (weightData) => {
     try {
       await bodyWeightService.updateTodaysWeight(weightData);
-
-      // OPTIMIZACIÓN: Actualizar solo el historial de peso
       const history = await bodyWeightService.getHistory();
       set({ bodyWeightLog: history });
 
-      // Actualizar peso en perfil localmente
       if (weightData.weight) {
         set(state => ({
           userProfile: { ...state.userProfile, weight: weightData.weight }
@@ -340,11 +303,10 @@ export const createDataSlice = (set, get) => ({
 
       return { success: true, message: 'Peso actualizado con éxito.' };
     } catch (error) {
-      return { success: false, message: `Error al actualizar: ${error.message}` };
+      return { success: false, message: error.message };
     }
   },
 
-  // Resetea el estado de los datos al cerrar sesión.
   clearDataState: () => {
     set({ ...initialState });
   },

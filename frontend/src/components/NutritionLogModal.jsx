@@ -60,6 +60,8 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
     const handleSelectSearchResult = (food) => {
         const foodData = {
+            id: food.id, // Preservamos ID si viene de la API
+            name: food.name || food.description || 'Alimento', // --- CORRECCIÓN: 'name' es obligatorio para favoritesService
             description: food.name || food.description || 'Alimento',
             calories: food.calories || 0,
             protein_g: food.protein_g || food.protein || 0,

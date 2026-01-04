@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useMemo } from 'react';
 import { Save, Plus, Star, Check, Camera, X } from 'lucide-react';
 import Spinner from '../../Spinner';
 import { useToast } from '../../../hooks/useToast';
-import useAppStore from '../../../store/useAppStore'; // Importar useAppStore
+import useAppStore from '../../../store/useAppStore';
 
 // Obtener la URL base del backend desde las variables de entorno
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -48,7 +48,6 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                     <Spinner />
                 ) : imageUrl ? (
                     <>
-                        {/* Construir la URL completa si es necesario */}
                         <img
                             src={imageUrl.startsWith('http') || imageUrl.startsWith('blob:') ? imageUrl : `${BACKEND_BASE_URL}${imageUrl}`}
                             alt="Previsualización de la comida"
@@ -79,8 +78,8 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
         <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
         <input
             name={name}
-            type={type} // El tipo ya es 'text' por defecto, lo cual es correcto para comas/puntos
-            inputMode={inputMode} // Se pasará 'decimal' para los campos numéricos
+            type={type}
+            inputMode={inputMode}
             value={value}
             onChange={onChange}
             required={required}
@@ -90,7 +89,6 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
     </div>
 );
 
-// Componente para mostrar macros calculados, ajustado para recibir directamente los valores calculados
 const CalculatedMacros = ({ calories, protein, carbs, fats }) => (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Cal</p><p className="font-semibold">{Math.round(calories) || 0}</p></div>
@@ -118,7 +116,6 @@ const ManualEntryForm = ({
     setIsPer100g
 }) => {
     const { addToast } = useToast();
-    // --- MODIFICACIÓN: Importamos addXp ---
     const { favoriteMeals, addXp } = useAppStore(state => ({
         favoriteMeals: state.favoriteMeals,
         addXp: state.addXp
@@ -126,58 +123,31 @@ const ManualEntryForm = ({
 
     const { formData, per100Data, isFavorite } = formState;
 
-    // --- INICIO DE LA MODIFICACIÓN: Estado para saber si el item *original* era favorito ---
-    // Usamos useMemo para calcular si el nombre original ya está en favoritos solo una vez
+    // Detectar si el item original ya era favorito
     const isOriginallyFavorite = useMemo(() => {
-        // Si estamos editando un favorito, obviamente es favorito
         if (editingFavorite) return true;
-        // Si estamos editando un log o un item de la lista,
-        // comprobamos si el nombre *original* (antes de cualquier cambio en el form)
-        // ya existe en la lista de favoritos.
         if (isEditing || editingListItem) {
             const originalName = (isEditing ? formState.originalDescription : editingListItem?.description)?.trim().toLowerCase();
-            // Añadimos console.log para depurar
-            // console.log("Checking original favorite status:", { originalName, favoriteNames: favoriteMeals.map(f => f.name.toLowerCase()) });
             return originalName && favoriteMeals.some(fav => fav.name.toLowerCase() === originalName);
         }
-        // Si estamos añadiendo uno nuevo, no es originalmente favorito
         return false;
-    }, [isEditing, editingListItem, editingFavorite, formState.originalDescription, favoriteMeals]); // Dependencias: estados de edición y lista de favoritos
-    // --- FIN DE LA MODIFICACIÓN ---
+    }, [isEditing, editingListItem, editingFavorite, formState.originalDescription, favoriteMeals]);
 
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // 1. Normalizamos el valor: reemplazamos comas por puntos
         const normalizedValue = value.replace(',', '.');
-        // --- FIN DE LA MODIFICACIÓN ---
-
-        // Permite números, punto decimal (ahora normalizado) y el campo de descripción
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // 2. Validamos el valor normalizado
         if (name === 'description' || /^\d*\.?\d*$/.test(normalizedValue)) {
-            // 3. Guardamos el valor normalizado en el estado
             onFormStateChange({ ...formState, formData: { ...formData, [name]: normalizedValue } });
         }
-        // --- FIN DE LA MODIFICACIÓN ---
     };
 
     const handlePer100Change = (e) => {
         const { name, value } = e.target;
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // 1. Normalizamos el valor: reemplazamos comas por puntos
         const normalizedValue = value.replace(',', '.');
-        // --- FIN DE LA MODIFICACIÓN ---
-
-        // Permite solo números y punto decimal (ahora normalizado)
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // 2. Validamos el valor normalizado
         if (/^\d*\.?\d*$/.test(normalizedValue)) {
-            // 3. Guardamos el valor normalizado en el estado
             onFormStateChange({ ...formState, per100Data: { ...per100Data, [name]: normalizedValue } });
         }
-        // --- FIN DE LA MODIFICACIÓN ---
     };
 
     const handleFavoriteChange = () => {
@@ -193,15 +163,11 @@ const ManualEntryForm = ({
     };
 
     const round = useCallback((val, d = 1) => {
-        // Ya no necesitamos reemplazar comas aquí, porque el estado ya está normalizado
         const n = parseFloat(val);
-        return isNaN(n)
-            ? ''
-            : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
+        return isNaN(n) ? '' : (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
     }, []);
 
     const calculatedMacros = useMemo(() => {
-        // Todos los valores de formData y per100Data ya vienen con '.' como decimal
         if (isPer100g) {
             const weight = parseFloat(formData.weight_g) || 0;
             const factor = weight / 100;
@@ -222,18 +188,17 @@ const ManualEntryForm = ({
     }, [formData, per100Data, isPer100g, round]);
 
     const validateAndGetData = useCallback(() => {
-        // Todos los valores en formData y per100Data ya están normalizados (usan '.')
         const finalData = {
             description: formData.description?.trim() || '',
             calories: calculatedMacros.calories,
             protein_g: calculatedMacros.protein_g,
             carbs_g: calculatedMacros.carbs_g,
             fats_g: calculatedMacros.fats_g,
-            weight_g: formData.weight_g, // ya está normalizado
+            weight_g: formData.weight_g,
             image_url: formData.image_url,
         };
 
-        const weight = parseFloat(finalData.weight_g) || 0; // parseFloat maneja bien los '.'
+        const weight = parseFloat(finalData.weight_g) || 0;
         const calories = parseFloat(finalData.calories) || 0;
 
         if (!finalData.description) {
@@ -242,7 +207,7 @@ const ManualEntryForm = ({
         }
 
         if (isPer100g) {
-            const cal100 = parseFloat(per100Data.calories); // ya está normalizado
+            const cal100 = parseFloat(per100Data.calories);
             if (isNaN(weight) || weight <= 0) {
                 addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
                 return null;
@@ -267,7 +232,7 @@ const ManualEntryForm = ({
                 if (key === 'weight_g') {
                     finalData[key] = (!isNaN(weight) && weight > 0) ? weight : null;
                 } else {
-                    const numericValue = parseFloat(finalData[key]); // parseFloat funciona
+                    const numericValue = parseFloat(finalData[key]);
                     finalData[key] = isNaN(numericValue) ? 0 : numericValue;
                 }
             }
@@ -279,6 +244,14 @@ const ManualEntryForm = ({
         return finalData;
     }, [formData, isPer100g, addToast, calculatedMacros, per100Data]);
 
+    // --- HELPER PARA OBTENER CAMPOS PER 100G CONSISTENTEMENTE ---
+    const getPer100Fields = () => ({
+        calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
+        protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
+        carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
+        fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
+    });
+
     const handleAddToList = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
@@ -287,26 +260,32 @@ const ManualEntryForm = ({
             name: finalData.description,
             isFavorite,
             image_url: finalData.image_url,
-            calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
-            protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
-            carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
-            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
+            ...getPer100Fields(), // Usamos el helper
         });
     };
 
     const handleSaveEdited = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // Pasamos el estado actual de isFavorite al guardar
-        onSaveEdit({ ...finalData, isFavorite });
+        onSaveEdit({
+            ...finalData,
+            isFavorite,
+            ...getPer100Fields() // IMPORTANTE: Enviamos nulls si isPer100g es false
+        });
         addToast('Comida actualizada correctamente', 'success');
     };
 
     const handleUpdateListItem = () => {
         const finalData = validateAndGetData();
         if (!finalData) return;
-        // Pasamos el estado actual de isFavorite al guardar
-        onSaveListItem({ ...editingListItem, ...finalData, name: finalData.description, isFavorite, image_url: finalData.image_url });
+        onSaveListItem({
+            ...editingListItem,
+            ...finalData,
+            name: finalData.description,
+            isFavorite,
+            image_url: finalData.image_url,
+            ...getPer100Fields() // IMPORTANTE: Sobrescribimos con nulls o valores nuevos
+        });
         addToast('Comida actualizada', 'success');
     };
 
@@ -316,16 +295,12 @@ const ManualEntryForm = ({
         const dataToSave = {
             ...finalData,
             name: finalData.description,
-            saveAsFavorite: isFavorite, // Usamos el estado actual de isFavorite
+            saveAsFavorite: isFavorite,
             image_url: formData.image_url,
-            calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
-            protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
-            carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
-            fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
+            ...getPer100Fields(), // Usamos el helper
         };
         onSaveSingle([dataToSave]);
 
-        // --- AÑADIDO: Feedback explícito de XP y Toast ---
         if (addXp) addXp(15, 'Comida registrada');
         addToast('Comida guardada correctamente', 'success');
     };
@@ -361,14 +336,12 @@ const ManualEntryForm = ({
 
             {isPer100g ? (
                 <>
-                    {/* Inputs para valores por 100g */}
                     <div className="grid grid-cols-2 gap-4">
                         <InputField label="Cal/100g" name="calories" value={per100Data.calories} onChange={handlePer100Change} inputMode="decimal" required={isPer100g} />
                         <InputField label="Prot/100g" name="protein_g" value={per100Data.protein_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Carbs/100g" name="carbs_g" value={per100Data.carbs_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Grasas/100g" name="fats_g" value={per100Data.fats_g} onChange={handlePer100Change} inputMode="decimal" />
                     </div>
-                    {/* Input para gramos totales */}
                     <div className="relative">
                         <InputField
                             label="Gramos totales a consumir"
@@ -379,7 +352,6 @@ const ManualEntryForm = ({
                             required={isPer100g}
                         />
                     </div>
-                    {/* Mostrar macros calculados */}
                     <CalculatedMacros
                         calories={calculatedMacros.calories}
                         protein={calculatedMacros.protein_g}
@@ -389,7 +361,6 @@ const ManualEntryForm = ({
                 </>
             ) : (
                 <>
-                    {/* Inputs para valores totales */}
                     <InputField label="Calorías (kcal)" name="calories" value={formData.calories} onChange={handleChange} inputMode="decimal" required />
                     <div className="grid grid-cols-3 gap-4">
                         <InputField label="Proteínas (g)" name="protein_g" value={formData.protein_g} onChange={handleChange} inputMode="decimal" />
@@ -400,7 +371,6 @@ const ManualEntryForm = ({
                 </>
             )}
 
-            {/* --- INICIO DE LA MODIFICACIÓN: Se muestra siempre para permitir desmarcar/borrar favorito --- */}
             <button
                 type="button"
                 onClick={handleFavoriteChange}
@@ -414,13 +384,11 @@ const ManualEntryForm = ({
                     size={18}
                     className={`transition-all ${isFavorite ? 'fill-accent' : ''}`}
                 />
-                {/* Texto ajustado para ser claro: si ya era favorito y se desmarca, indica que se eliminará */}
                 {isFavorite
                     ? (isOriginallyFavorite ? 'Actualizar favorito' : 'Guardar en favoritos')
                     : (isOriginallyFavorite ? 'Eliminar de favoritos' : 'Guardar en favoritos')
                 }
             </button>
-            {/* --- FIN DE LA MODIFICACIÓN --- */}
 
             {isEditing || editingFavorite ? (
                 <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50 mt-2">

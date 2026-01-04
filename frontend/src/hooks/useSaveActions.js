@@ -40,6 +40,35 @@ export const useSaveActions = ({
     return false;
   }, [originalData, editingFavorite, favoriteMeals]);
 
+  // --- INICIO DE LA MODIFICACIÓN: Helper para preparar el payload de favoritos ---
+  const prepareFavoritePayload = (item) => {
+    const weight = parseFloat(item.weight_g) || 100;
+
+    // Cálculo robusto de valores por 100g si faltan
+    // Priorizamos el valor explícito, si no, calculamos desde el total
+    const getPer100 = (valPer100, totalVal) => {
+      if (valPer100 !== undefined && valPer100 !== null) return parseFloat(valPer100);
+      return (parseFloat(totalVal || 0) / weight) * 100;
+    };
+
+    return {
+      name: item.name || item.description || 'Sin nombre',
+      calories: parseFloat(item.calories) || 0,
+      protein_g: parseFloat(item.protein_g) || 0,
+      carbs_g: parseFloat(item.carbs_g) || 0,
+      fats_g: parseFloat(item.fats_g || item.fat_g || item.fats || 0), // Soporte para variaciones de nombre
+      weight_g: weight,
+      image_url: item.image_url || null,
+      micronutrients: item.micronutrients || null,
+
+      calories_per_100g: getPer100(item.calories_per_100g, item.calories),
+      protein_per_100g: getPer100(item.protein_per_100g, item.protein_g),
+      carbs_per_100g: getPer100(item.carbs_per_100g, item.carbs_g),
+      fat_per_100g: getPer100(item.fat_per_100g || item.fats_per_100g, item.fats_g || item.fat_g || item.fats),
+    };
+  };
+  // --- FIN DE LA MODIFICACIÓN ---
+
   const handleSaveList = async () => {
     if (itemsToAdd.length === 0)
       return addToast('No has añadido ninguna comida.', 'info');
@@ -49,29 +78,17 @@ export const useSaveActions = ({
     if (newFavorites.length > 0) {
       try {
         await Promise.all(
-          newFavorites.map((fav) =>
-            addFavoriteMeal({
-              name: fav.description,
-              calories: fav.calories,
-              protein_g: fav.protein_g,
-              carbs_g: fav.carbs_g,
-              fats_g: fav.fats_g,
-              weight_g: fav.weight_g,
-              image_url: fav.image_url || null,
-              micronutrients: fav.micronutrients || null,
-              // --- CORRECCIÓN: Añadimos los valores por 100g ---
-              calories_per_100g: fav.calories_per_100g,
-              protein_per_100g: fav.protein_per_100g,
-              carbs_per_100g: fav.carbs_per_100g,
-              fat_per_100g: fav.fat_per_100g,
-            })
-          )
+          newFavorites.map((fav) => {
+            const payload = prepareFavoritePayload(fav);
+            return addFavoriteMeal(payload);
+          })
         );
         addToast(
           `${newFavorites.length} comida(s) guardada(s) en favoritos.`,
           'success'
         );
       } catch (error) {
+        console.error("Error guardando favoritos:", error);
         addToast(error.message || 'Error al guardar en favoritos.', 'error');
       }
     }
@@ -82,23 +99,11 @@ export const useSaveActions = ({
     const item = itemData[0];
     if (item.saveAsFavorite) {
       try {
-        const favData = {
-          name: item.description,
-          calories: item.calories,
-          protein_g: item.protein_g,
-          carbs_g: item.carbs_g,
-          fats_g: item.fats_g,
-          weight_g: item.weight_g,
-          image_url: item.image_url || null,
-          micronutrients: item.micronutrients || null,
-          calories_per_100g: item.calories_per_100g,
-          protein_per_100g: item.protein_per_100g,
-          carbs_per_100g: item.carbs_per_100g,
-          fat_per_100g: item.fat_per_100g,
-        };
-        await addFavoriteMeal(favData);
+        const payload = prepareFavoritePayload(item);
+        await addFavoriteMeal(payload);
         addToast(`'${item.description}' guardado en favoritos.`, 'success');
       } catch (error) {
+        console.error("Error guardando favorito single:", error);
         addToast(error.message || 'Error al guardar en favoritos.', 'error');
       }
     }
@@ -147,20 +152,11 @@ export const useSaveActions = ({
 
     // 4. Gestionar el estado de favorito
     if (hasFavoriteStatusChanged || (editingFavorite && hasDataChanged)) {
-      const favData = {
-        name: formData.description,
-        calories: formData.calories,
-        protein_g: formData.protein_g,
-        carbs_g: formData.carbs_g,
-        fats_g: formData.fats_g,
-        weight_g: formData.weight_g,
-        image_url: formData.image_url || null,
-        micronutrients: formData.micronutrients || null,
-        calories_per_100g: originalData?.calories_per_100g,
-        protein_per_100g: originalData?.protein_per_100g,
-        carbs_per_100g: originalData?.carbs_per_100g,
-        fat_per_100g: originalData?.fat_per_100g,
-      };
+      // Usamos el helper también aquí
+      const basePayload = prepareFavoritePayload(formData);
+
+      // Combinamos con el payload preparado para asegurar consistencia
+      const favData = { ...basePayload };
 
       const existingFavoriteByName = favoriteMeals.find(
         (fav) => fav.name.toLowerCase() === formData.description.toLowerCase()
@@ -196,6 +192,7 @@ export const useSaveActions = ({
           }
         }
       } catch (error) {
+        console.error("Error gestionando favorito en edit:", error);
         addToast(error.message || 'Error al gestionar el favorito.', 'error');
         favoriteOperationSuccess = false;
       }
