@@ -10,6 +10,9 @@ const AndroidDownloadPrompt = () => {
     const DAYS_TO_WAIT = 5;
     const STORAGE_KEY = 'android_prompt_last_seen';
 
+    // URL directa a GitHub Release para asegurar que baje como APK y no como ZIP
+    const DOWNLOAD_URL = "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.0.0/app-release.apk";
+
     useEffect(() => {
         const checkEligibility = () => {
             // 1. Si ya estamos en modo nativo (la app instalada), no mostrar nada.
@@ -87,10 +90,9 @@ const AndroidDownloadPrompt = () => {
 
                         <div className="flex gap-3 mt-2">
                             <a
-                                href="/app-release.apk"
-                                download="ProFitnessGlass.apk"
+                                href={DOWNLOAD_URL}
                                 onClick={handleDownload}
-                                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-accent text-white dark:text-bg-secondary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-lg shadow-accent/20"
+                                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-accent text-white dark:text-bg-secondary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-lg shadow-accent/20 no-underline"
                             >
                                 <Download size={16} /> Descargar
                             </a>

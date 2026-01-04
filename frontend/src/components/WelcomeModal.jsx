@@ -9,6 +9,8 @@ import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
   const appVersion = `v${APP_VERSION}`;
+  // ENLACE DE GITHUB
+  const DOWNLOAD_URL = "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.0.0/app-release.apk";
 
   const handleGetStarted = () => {
     if (onClose) {
@@ -79,37 +81,38 @@ const WelcomeModal = ({ onClose }) => {
 
           <div className="space-y-6 mb-8">
 
-            {/* --- BLOQUE 0: APP NATIVA (NUEVO DESTACADO) --- */}
-            {/* CORRECCIÓN: Eliminadas las clases 'border' y 'border-accent/20'. Ahora es totalmente limpio sin borde. */}
-            <div className="bg-white/5 bg-gradient-to-br from-accent/10 to-transparent rounded-2xl p-5 backdrop-blur-sm shadow-lg shadow-accent/5 group relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-bl-full -mr-10 -mt-10 blur-md"></div>
+            {/* --- BLOQUE 0: APP NATIVA (CLICKABLE & DESTACADO SIN BORDE BLANCO) --- */}
+            <a href={DOWNLOAD_URL} className="block no-underline transform transition-transform hover:scale-[1.02] active:scale-95">
+              <div className="bg-white/5 bg-gradient-to-br from-accent/10 to-transparent rounded-2xl p-5 backdrop-blur-sm shadow-lg shadow-accent/5 group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-bl-full -mr-10 -mt-10 blur-md"></div>
 
-              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider relative z-10">
-                <Smartphone size={16} className="text-accent" /> App Android Nativa
-              </h2>
+                <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider relative z-10">
+                  <Smartphone size={16} className="text-accent" /> App Android Nativa
+                </h2>
 
-              <div className="flex justify-center relative z-10">
-                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/90 border border-glass-border rounded-xl flex items-center justify-center shadow-xl overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
-                  <div className="flex items-center gap-5 relative z-10">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-accent rounded-full animate-ping opacity-20"></div>
-                      <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-bg-primary shadow-lg shadow-accent/30">
-                        <Download size={24} strokeWidth={3} />
+                <div className="flex justify-center relative z-10">
+                  <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/90 border border-glass-border rounded-xl flex items-center justify-center shadow-xl overflow-hidden">
+                    <div className="flex items-center gap-5 relative z-10">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-accent rounded-full animate-ping opacity-20"></div>
+                        <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-bg-primary shadow-lg shadow-accent/30">
+                          <Download size={24} strokeWidth={3} />
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-lg text-text-primary">Descárgala Ya</span>
+                        <span className="text-xs text-text-secondary">Rendimiento máximo</span>
                       </div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-lg text-text-primary">Descárgala Ya</span>
-                      <span className="text-xs text-text-secondary">Rendimiento máximo</span>
-                    </div>
+                    {/* Partículas de fondo internas */}
+                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-accent to-transparent"></div>
                   </div>
-                  {/* Partículas de fondo internas */}
-                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-accent to-transparent"></div>
                 </div>
+                <p className="mt-3 text-xs text-text-muted text-center font-medium relative z-10">
+                  Disponible ahora como archivo APK. ¡Instálala y siente la diferencia!
+                </p>
               </div>
-              <p className="mt-3 text-xs text-text-muted text-center font-medium relative z-10">
-                Disponible ahora como archivo APK. ¡Instálala y siente la diferencia!
-              </p>
-            </div>
+            </a>
 
 
             {/* --- BLOQUE 1: EXPERIENCIA Y NIVELES --- */}

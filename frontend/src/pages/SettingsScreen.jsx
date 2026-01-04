@@ -617,8 +617,11 @@ export default function SettingsScreen({
           <SettingsCard>
             <SectionTitle icon={Info} title="Soporte y General" />
             <div className="flex flex-col gap-1">
-              {/* --- NUEVO: Descarga de APK --- */}
-              <a href="/app-release.apk" download="ProFitnessGlass.apk" className="no-underline">
+              {/* --- NUEVO: Descarga de APK (Link a GitHub) --- */}
+              <a
+                href="https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.0.0/app-release.apk"
+                className="no-underline"
+              >
                 <SettingsItem
                   icon={Smartphone}
                   title="Descargar App Android"
