@@ -315,6 +315,14 @@ export default function SettingsScreen({
     }
   };
 
+  // Función helper para generar el subtítulo de las notificaciones
+  const getPushSubtitle = () => {
+    if (!isPushSupported) return 'No soportado en este dispositivo/navegador';
+    if (pushPermission === 'denied') return 'Bloqueadas en navegador';
+    if (isSubscribed) return 'Recibiendo alertas';
+    return 'Pausadas';
+  };
+
   return (
     <div className="px-4 pb-6 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
@@ -428,17 +436,17 @@ export default function SettingsScreen({
           <SettingsCard>
             <SectionTitle icon={BellRing} title="Notificaciones" />
             <div className="flex flex-col gap-2">
-              {isPushSupported && (
-                <SwitchItem
-                  icon={BellRing}
-                  title="Push Notifications"
-                  subtitle={pushPermission === 'denied' ? 'Bloqueadas en navegador' : (isSubscribed ? 'Recibiendo alertas' : 'Pausadas')}
-                  checked={isSubscribed}
-                  onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
-                  disabled={pushPermission === 'denied'}
-                  loading={isPushLoading}
-                />
-              )}
+              {/* CORRECCIÓN: Quitamos el render condicional {isPushSupported && ...} 
+                  para que siempre salga la opción y el usuario vea si está soportado o no */}
+              <SwitchItem
+                icon={BellRing}
+                title="Push Notifications"
+                subtitle={getPushSubtitle()}
+                checked={isSubscribed}
+                onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
+                disabled={!isPushSupported || pushPermission === 'denied'}
+                loading={isPushLoading}
+              />
 
               <SwitchItem
                 icon={userProfile?.two_factor_enabled ? ShieldAlert : MailWarning}
