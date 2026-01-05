@@ -17,6 +17,8 @@ import TwoFactorPromoModal from './components/TwoFactorPromoModal';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
 import VersionUpdater from './components/VersionUpdater';
+import APKUpdater from './components/APKUpdater'; // <--- NUEVO
+import AndroidDownloadPrompt from './components/AndroidDownloadPrompt'; // <--- NUEVO
 import SEOHead from './components/SEOHead';
 
 import OnboardingScreen from './pages/OnboardingScreen';
@@ -282,6 +284,10 @@ export default function App() {
         {/* Meta Theme Color Dinámico para Safari/iOS */}
         <meta name="theme-color" content={currentThemeColor} />
       </Helmet>
+
+      <VersionUpdater />
+      <APKUpdater />
+      <AndroidDownloadPrompt />
 
       <VersionUpdater />
 

@@ -26,18 +26,15 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // CAMBIO IMPORTANTE: 'prompt' permite que el componente VersionUpdater controle
+      // cuándo se muestra el aviso y cuándo se actualiza.
+      registerType: 'prompt',
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.webp'],
       manifest: {
         name: 'Pro Fitness Glass',
         short_name: 'FitTrack-Pro',
         description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
-        // --- CORRECCIÓN CRÍTICA ---
-        // Eliminamos theme_color y background_color del manifiesto.
-        // Esto permite que las metaetiquetas dinámicas del index.html controlen
-        // el color de las barras en iOS/Android según el tema elegido (Claro/Oscuro).
-        // theme_color: '#0c111b',
-        // background_color: '#0c111b',
+        // Eliminamos theme_color del manifiesto para que lo controle el HTML dinámico
         display: 'standalone',
         scope: '/',
         start_url: '/',

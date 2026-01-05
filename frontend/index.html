@@ -52,17 +52,26 @@
   <script>
     (function () {
       try {
-        // 1. Recuperar preferencias
+        // 1. Recuperar Preferencias (Tema y Acento)
         var savedTheme = localStorage.getItem('theme') || 'system';
+        var savedAccent = localStorage.getItem('accent') || '#22c55e'; // Default Green
         var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-        // 2. Determinar tema efectivo
+        // Limpieza del acento si se guardó como JSON string
+        if (savedAccent.startsWith('"') && savedAccent.endsWith('"')) {
+          savedAccent = savedAccent.slice(1, -1);
+        }
+
+        // 2. Establecer variable CSS global para el Splash Screen
+        document.documentElement.style.setProperty('--app-accent', savedAccent);
+
+        // 3. Determinar tema efectivo
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') {
           effectiveTheme = systemDark ? 'dark' : 'light';
         }
 
-        // 3. Definir paleta exacta (Debe coincidir con useAppTheme.js)
+        // 4. Definir paleta exacta (Debe coincidir con useAppTheme.js)
         var colors = {
           light: '#f7fafc',
           dark: '#0c111b',
@@ -70,12 +79,10 @@
         };
         var selectedColor = colors[effectiveTheme] || colors.dark;
 
-        // 4. Determinar estilo de Status Bar (iOS 26 Logic)
-        // 'default' = texto negro (para fondos claros)
-        // 'black-translucent' = texto blanco sobre fondo body (para dark/oled)
+        // 5. Determinar estilo de Status Bar (iOS 26 Logic)
         var statusBarStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
 
-        // 5. Aplicar clases al ROOT
+        // 6. Aplicar clases al ROOT
         var root = document.documentElement;
         root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
 
@@ -85,12 +92,9 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // 6. FIX CRÍTICO iOS 26: Sincronizar Background INMEDIATAMENTE
-        // Safari usa el background-color del body/html para el "overscroll" y la barra inferior
-        // cuando la interfaz es traslúcida ("Liquid Glass").
+        // 7. FIX CRÍTICO iOS 26: Sincronizar Background INMEDIATAMENTE
         root.style.backgroundColor = selectedColor;
 
-        // Intentar aplicar al body si ya existe, si no, esperar al evento.
         if (document.body) {
           document.body.style.backgroundColor = selectedColor;
         } else {
@@ -99,9 +103,7 @@
           });
         }
 
-        // 7. Gestión de Meta Tags (Sin borrar, buscar o crear)
-
-        // A) theme-color
+        // 8. Gestión de Meta Tags
         var metaTheme = document.querySelector('meta[name="theme-color"]');
         if (!metaTheme) {
           metaTheme = document.createElement('meta');
@@ -110,7 +112,6 @@
         }
         metaTheme.content = selectedColor;
 
-        // B) apple-mobile-web-app-status-bar-style
         var metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
         if (!metaStatus) {
           metaStatus = document.createElement('meta');
@@ -129,6 +130,11 @@
 <body>
   <div id="root">
     <style>
+      :root {
+        /* Fallback seguro por si JS falla */
+        --app-accent: #22c55e;
+      }
+
       .app-splash-screen {
         display: flex;
         flex-direction: column;
@@ -150,7 +156,8 @@
         height: 40px;
         border: 3px solid rgba(255, 255, 255, 0.1);
         border-radius: 50%;
-        border-top-color: #22c55e;
+        border-top-color: var(--app-accent);
+        /* Usamos la variable */
         animation: spin 1s ease-in-out infinite;
       }
 
@@ -160,7 +167,8 @@
 
       html.light-theme .app-splash-spinner {
         border-color: rgba(0, 0, 0, 0.1);
-        border-top-color: #22c55e;
+        border-top-color: var(--app-accent);
+        /* Usamos la variable */
       }
 
       .app-splash-title {
@@ -175,7 +183,9 @@
 
       .app-splash-title span {
         display: inline-block;
-        background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+        /* Usamos el acento como base sólida o gradiente suave */
+        background: var(--app-accent);
+        background: linear-gradient(135deg, var(--app-accent) 0%, var(--app-accent) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;

@@ -2,19 +2,24 @@
 import React, { useEffect, useState } from 'react';
 import { Download, X, Sparkles } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
-import { APP_VERSION } from '../config/version'; // Asegúrate que esto apunta a tu const '5.0.0'
+import { APP_VERSION } from '../config/version';
+
+// URL de producción donde se aloja el version.json
+const REMOTE_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 
 const APKUpdater = () => {
     const [updateAvailable, setUpdateAvailable] = useState(null);
 
     useEffect(() => {
-        // Solo ejecutar en la app nativa de Android
         if (Capacitor.getPlatform() !== 'android') return;
 
         const checkVersion = async () => {
             try {
-                // Añadimos timestamp para evitar caché del navegador
-                const response = await fetch(`/version.json?t=${new Date().getTime()}`);
+                // CORRECCIÓN: Usamos URL absoluta, si no fetch busca en localhost (el móvil)
+                const response = await fetch(`${REMOTE_BASE_URL}/version.json?t=${new Date().getTime()}`);
+
+                if (!response.ok) return;
+
                 const data = await response.json();
 
                 if (isNewerVersion(APP_VERSION, data.version)) {
@@ -28,7 +33,6 @@ const APKUpdater = () => {
         checkVersion();
     }, []);
 
-    // Comparador simple de versiones semánticas (ej: 5.0.0 vs 5.0.1)
     const isNewerVersion = (current, remote) => {
         const cParts = current.split('.').map(Number);
         const rParts = remote.split('.').map(Number);
@@ -42,7 +46,6 @@ const APKUpdater = () => {
 
     const handleUpdate = () => {
         if (updateAvailable?.downloadUrl) {
-            // Abrir en el navegador del sistema para que gestione la descarga e instalación
             window.open(updateAvailable.downloadUrl, '_system');
         }
     };
@@ -66,7 +69,7 @@ const APKUpdater = () => {
 
                 <div className="p-5">
                     <p className="text-text-secondary text-sm mb-4">
-                        {updateAvailable.notes || "Hay una nueva versión disponible con mejoras y correcciones. Descárgala para disfrutar de lo último."}
+                        {updateAvailable.notes || "Mejoras y correcciones disponibles."}
                     </p>
 
                     <button
@@ -76,7 +79,7 @@ const APKUpdater = () => {
                         <Download size={20} /> Actualizar Ahora
                     </button>
                     <p className="text-center text-[10px] text-text-muted mt-3">
-                        Se descargará el APK. Pulsa "Abrir" al finalizar para instalar sobre la actual.
+                        Se descargará el APK. Pulsa "Abrir" al finalizar.
                     </p>
                 </div>
             </div>

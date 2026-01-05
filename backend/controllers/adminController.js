@@ -7,8 +7,20 @@ const User = db.User;
 export const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
-      attributes: ['id', 'name', 'email', 'role', 'is_verified', 'username', 'profile_image_url', 'lastSeen'],
-      order: [['id', 'ASC']],
+      attributes: [
+        'id',
+        'name',
+        'email',
+        'role',
+        'is_verified',
+        'username',
+        'profile_image_url',
+        'lastSeen',
+        // CORRECCIÓN CRÍTICA: Mapeo explícito de la columna de base de datos al atributo
+        ['created_at', 'createdAt']
+      ],
+      // Ordenamos usando el nombre real de la columna en la base de datos
+      order: [['created_at', 'DESC']],
     });
     res.json(users);
   } catch (error) {
@@ -49,6 +61,7 @@ export const createUser = async (req, res, next) => {
       is_verified: is_verified || false,
     });
 
+    // Sequelize puebla automáticamente los campos virtuales/mapeados tras crear
     res.status(201).json({
       id: newUser.id,
       username: newUser.username,
@@ -58,6 +71,7 @@ export const createUser = async (req, res, next) => {
       is_verified: newUser.is_verified,
       profile_image_url: newUser.profile_image_url,
       lastSeen: newUser.lastSeen,
+      createdAt: newUser.createdAt || newUser.getDataValue('created_at')
     });
   } catch (error) {
     next(error);
@@ -119,6 +133,7 @@ export const updateUser = async (req, res, next) => {
       is_verified: user.is_verified,
       profile_image_url: user.profile_image_url,
       lastSeen: user.lastSeen,
+      createdAt: user.createdAt || user.getDataValue('created_at')
     });
   } catch (error) {
     next(error);

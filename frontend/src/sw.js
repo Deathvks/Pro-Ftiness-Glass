@@ -6,12 +6,22 @@ import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { StaleWhileRevalidate, NetworkFirst, NetworkOnly } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
-import { BackgroundSyncPlugin } from 'workbox-background-sync'; // Nuevo import
+import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
 
 // 1. Control inmediato
-self.skipWaiting();
+// --- CAMBIO IMPORTANTE ---
+// Quitamos self.skipWaiting() automático para que la actualización no sea forzosa.
+// self.skipWaiting(); 
 clientsClaim();
+
+// Escuchamos el evento 'message' que envía el componente VersionUpdater cuando el usuario pulsa "Actualizar"
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+// -------------------------
 
 // 2. Limpieza y Pre-cache
 cleanupOutdatedCaches();
@@ -42,7 +52,6 @@ registerRoute(
 );
 
 // C. API - Lectura (GET) -> NetworkFirst
-// Intenta internet primero. Si falla (offline), usa lo guardado en caché.
 registerRoute(
   ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
   new NetworkFirst({
@@ -58,7 +67,6 @@ registerRoute(
 );
 
 // D. API - Escritura (POST, PUT, DELETE) -> Background Sync
-// Si falla por falta de conexión, se encola y se reintenta automáticamente cuando vuelva internet.
 registerRoute(
   ({ url, request }) => url.pathname.startsWith('/api/') && request.method !== 'GET',
   new NetworkOnly({

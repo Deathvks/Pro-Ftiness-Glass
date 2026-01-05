@@ -1,6 +1,6 @@
 /* frontend/src/components/AndroidDownloadPrompt.jsx */
 import React, { useState, useEffect } from 'react';
-import { Smartphone, X, Download, Info } from 'lucide-react';
+import { Smartphone, X, Download } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 
 const AndroidDownloadPrompt = () => {
@@ -10,7 +10,7 @@ const AndroidDownloadPrompt = () => {
     const DAYS_TO_WAIT = 5;
     const STORAGE_KEY = 'android_prompt_last_seen';
 
-    // URL directa a GitHub Release para asegurar que baje como APK y no como ZIP
+    // URL directa a GitHub Release
     const DOWNLOAD_URL = "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.0.0/app-release.apk";
 
     useEffect(() => {
@@ -37,8 +37,7 @@ const AndroidDownloadPrompt = () => {
                 }
             }
 
-            // Si pasa todas las pruebas, mostrar
-            // Pequeño delay para no salir de golpe al cargar la página
+            // Si pasa todas las pruebas, mostrar con pequeño delay
             setTimeout(() => setIsVisible(true), 2000);
         };
 
@@ -47,27 +46,27 @@ const AndroidDownloadPrompt = () => {
 
     const handleDismiss = () => {
         setIsVisible(false);
-        // Guardamos la fecha actual para no volver a molestar hasta dentro de X días
         localStorage.setItem(STORAGE_KEY, new Date().toISOString());
     };
 
     const handleDownload = () => {
-        // Al descargar, asumimos que lo va a instalar, así que guardamos también para que no salga
-        // inmediatamente si vuelve a entrar a la web
         localStorage.setItem(STORAGE_KEY, new Date().toISOString());
     };
 
     if (!isVisible) return null;
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-[100] animate-[slide-in-up_0.5s_ease-out]">
-            <div className="bg-bg-primary/95 backdrop-blur-md border border-accent/30 shadow-2xl rounded-2xl p-4 max-w-md mx-auto relative overflow-hidden">
-                {/* Efecto de brillo de fondo */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-50" />
+        <div className="fixed bottom-4 left-4 right-4 z-[100] animate-[slide-in-up_0.5s_ease-out] flex justify-center">
+            {/* CORRECCIÓN: 
+                - Usamos 'bg-bg-secondary' para un fondo sólido del color del tema (sin brillos blancos).
+                - Eliminado 'backdrop-blur' y cualquier clase 'glass'.
+                - Borde sutil estándar.
+            */}
+            <div className="bg-bg-secondary border border-glass-border shadow-xl rounded-2xl p-4 w-full max-w-md relative overflow-hidden">
 
                 <button
                     onClick={handleDismiss}
-                    className="absolute top-2 right-2 p-1 rounded-full text-text-secondary hover:bg-bg-secondary transition-colors"
+                    className="absolute top-2 right-2 p-1 rounded-full text-text-secondary hover:bg-white/5 transition-colors"
                 >
                     <X size={18} />
                 </button>
@@ -92,7 +91,7 @@ const AndroidDownloadPrompt = () => {
                             <a
                                 href={DOWNLOAD_URL}
                                 onClick={handleDownload}
-                                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-accent text-white dark:text-bg-secondary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-lg shadow-accent/20 no-underline"
+                                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-accent text-white dark:text-bg-primary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline"
                             >
                                 <Download size={16} /> Descargar
                             </a>

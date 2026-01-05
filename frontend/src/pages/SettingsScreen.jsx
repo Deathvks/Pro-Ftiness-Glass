@@ -554,7 +554,10 @@ export default function SettingsScreen({
         </div>
 
         {/* --- COLUMNA 3: SEGURIDAD, SOPORTE Y GENERAL --- */}
-        <div className="flex flex-col gap-6">
+        {/* CORRECCIÓN: En Tablet (md), esta columna ocupará TODO el ancho (col-span-2) 
+            y sus hijos se pondrán en una parrilla de 2 columnas para llenar el espacio. 
+            En Desktop (xl) vuelve a ser 1 columna normal vertical. */}
+        <div className="flex flex-col gap-6 md:col-span-2 md:grid md:grid-cols-2 xl:col-span-1 xl:flex xl:flex-col">
           <SettingsCard>
             <SectionTitle icon={Shield} title="Seguridad" />
             <div className="flex flex-col gap-1">
