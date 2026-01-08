@@ -20,6 +20,7 @@
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^6.1.8",
     "@react-oauth/google": "^0.12.2",
+    "@remotion/cli": "^4.0.400",
     "date-fns": "^4.1.0",
     "html5-qrcode": "^2.3.8",
     "i18next": "^23.12.2",
@@ -34,6 +35,7 @@
     "react-is": "^19.2.0",
     "react-router-dom": "^7.9.4",
     "recharts": "^3.1.0",
+    "remotion": "^4.0.400",
     "serve": "^14.2.3",
     "uuid": "^13.0.0",
     "zustand": "^4.5.7"

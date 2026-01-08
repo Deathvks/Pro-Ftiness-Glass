@@ -54,3 +54,9 @@ ios/App/Pods/
 # Si NO quieres guardar el instalable en el historial de Git (recomendado para no inflar el repo),
 # descomenta la siguiente línea. Si quieres que se descargue desde la web, déjalo comentado.
 # *.apk
+
+# --- REMOTION ---
+# Ignorar salidas de renderizado y caché
+out
+.remotion
+remotion

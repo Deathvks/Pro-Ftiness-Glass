@@ -174,8 +174,8 @@ const DailyDetailView = ({ logs, onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
-        <div className={`relative w-full max-w-lg p-0 flex flex-col m-4 bg-bg-primary rounded-2xl shadow-2xl border ${subtleBorderClass} max-h-[90vh] overflow-hidden animate-[scale-in_0.3s_ease-out]`}>
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+        <div className={`relative w-full max-w-lg p-0 flex flex-col m-4 bg-bg-primary rounded-2xl shadow-2xl border ${subtleBorderClass} max-h-[80vh] md:max-h-[90vh] overflow-hidden animate-[scale-in_0.3s_ease-out]`}>
 
           {/* Header */}
           <div className={`p-5 border-b ${subtleBorderClass} bg-bg-secondary flex justify-between items-center z-10`}>

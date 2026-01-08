@@ -17,8 +17,8 @@ import TwoFactorPromoModal from './components/TwoFactorPromoModal';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
 import VersionUpdater from './components/VersionUpdater';
-import APKUpdater from './components/APKUpdater'; // <--- NUEVO
-import AndroidDownloadPrompt from './components/AndroidDownloadPrompt'; // <--- NUEVO
+import APKUpdater from './components/APKUpdater';
+import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
 import SEOHead from './components/SEOHead';
 
 import OnboardingScreen from './pages/OnboardingScreen';
@@ -212,9 +212,11 @@ export default function App() {
   ];
 
   const content = useMemo(() => {
+    // --- RUTAS ESPECIALES (Full Screen) ---
     if (window.location.pathname === '/reset-password') {
       return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
     }
+    // -------------------------------------
 
     if (isLoading && isInitialLoad) {
       return <InitialLoadingSkeleton />;
@@ -288,8 +290,6 @@ export default function App() {
       <VersionUpdater />
       <APKUpdater />
       <AndroidDownloadPrompt />
-
-      <VersionUpdater />
 
       {content}
     </>
