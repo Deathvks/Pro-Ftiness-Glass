@@ -21,7 +21,6 @@ const DailyDetailView = ({ logs, onClose }) => {
   const [deletedLogIds, setDeletedLogIds] = useState([]);
 
   // Estilo de borde MUY sutil para modo oscuro/OLED.
-  // Usamos white/10 para que sea apenas perceptible sobre fondo oscuro.
   const subtleBorderClass = 'border-white/10';
 
   const handleDeleteClick = (log) => {
@@ -175,10 +174,11 @@ const DailyDetailView = ({ logs, onClose }) => {
   return (
     <>
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+        {/* Contenedor Modal: Flex Column con max-height */}
         <div className={`relative w-full max-w-lg p-0 flex flex-col m-4 bg-bg-primary rounded-2xl shadow-2xl border ${subtleBorderClass} max-h-[80vh] md:max-h-[90vh] overflow-hidden animate-[scale-in_0.3s_ease-out]`}>
 
-          {/* Header */}
-          <div className={`p-5 border-b ${subtleBorderClass} bg-bg-secondary flex justify-between items-center z-10`}>
+          {/* Header (Fijo) */}
+          <div className={`p-5 border-b ${subtleBorderClass} bg-bg-secondary flex justify-between items-center z-10 shrink-0`}>
             <div>
               <h3 className="text-xl font-bold text-text-primary">Resumen del Día</h3>
               {logs.length > 0 && (
@@ -188,7 +188,7 @@ const DailyDetailView = ({ logs, onClose }) => {
             <button onClick={onClose} className="text-text-secondary hover:text-text-primary p-2 hover:bg-bg-primary rounded-full transition"><X size={20} /></button>
           </div>
 
-          {/* Resumen de estadísticas */}
+          {/* Estadísticas (Fijo) */}
           <div className={`grid grid-cols-2 gap-4 text-center shrink-0 p-4 bg-bg-primary border-b ${subtleBorderClass}`}>
             <div className={`bg-bg-secondary p-2 rounded-xl border ${subtleBorderClass} shadow-sm`}>
               <span className="text-xs text-text-secondary block mb-1">Duración</span>
@@ -200,13 +200,14 @@ const DailyDetailView = ({ logs, onClose }) => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 p-4 overflow-y-auto custom-scrollbar bg-bg-primary">
+          {/* Lista Scrollable (Flexible) */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4 bg-bg-primary min-h-0">
             {visibleLogs.map((log) => {
               const exerciseGroups = groupExercises(log.WorkoutLogDetails);
               const isCardioOnly = !log.WorkoutLogDetails || log.WorkoutLogDetails.length === 0;
 
               return (
-                <div key={log.id} className={`bg-bg-secondary rounded-2xl overflow-hidden border ${subtleBorderClass} shadow-sm`}>
+                <div key={log.id} className={`bg-bg-secondary rounded-2xl overflow-hidden border ${subtleBorderClass} shadow-sm shrink-0`}>
                   {/* Header de la Rutina */}
                   <div className={`flex justify-between items-center p-4 bg-gray-500/5 border-b ${subtleBorderClass}`}>
                     <h5 className="font-bold text-accent truncate pr-4 text-base">{log.routine_name}</h5>
@@ -253,7 +254,6 @@ const DailyDetailView = ({ logs, onClose }) => {
                               <div className="p-3">
                                 {group.map((exercise, exIdx) => (
                                   <div key={exIdx} className="relative">
-                                    {/* Conector visual entre ejercicios de la superserie */}
                                     {exIdx > 0 && (
                                       <div className="flex justify-center my-3 opacity-30">
                                         <div className="w-0.5 h-4 bg-accent"></div>
