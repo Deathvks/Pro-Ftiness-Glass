@@ -74,7 +74,6 @@ const BADGE_DETAILS = {
   }
 };
 
-// --- MODIFICACIÓN: Añadido navigate a los props por compatibilidad ---
 const Profile = ({ onCancel, setView, navigate }) => {
   const { userProfile, fetchInitialData, handleLogout, gamification } = useAppStore(
     (state) => ({
@@ -120,7 +119,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
     }
   };
 
-  // Función robusta para navegar al perfil público
   const handleViewPublicProfile = () => {
     if (setView) {
       setView('publicProfile', { userId: userProfile.id });
@@ -327,8 +325,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
           <ChevronLeft size={20} />
           Volver
         </button>
-        <h1 className="hidden md:block text-4xl font-extrabold mb-8">
-          Editar Perfil
+
+        {/* CORRECCIÓN: 'w-fit' para ajustar el ancho del degradado al texto y 'to-text-muted' para más contraste */}
+        <h1 className="hidden md:block w-fit text-4xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-muted">
+          Perfil
         </h1>
 
         <GlassCard className="p-6">
@@ -500,7 +500,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
             Así es como otros usuarios ven tu perfil, logros y estadísticas.
             Puedes personalizar qué información es pública desde los ajustes.
           </p>
-          {/* MODIFICACIÓN: Botón con estilo sólido y lógica de navegación robusta */}
           <button
             type="button"
             onClick={handleViewPublicProfile}

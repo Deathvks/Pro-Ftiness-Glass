@@ -2,7 +2,8 @@
 import React from 'react';
 import {
     X, Trophy, Dumbbell, Calendar, Plus, Activity, Star, Crown,
-    Utensils, Droplets, Zap, Rocket, ChefHat, Info, LogIn, Flame
+    Utensils, Droplets, Zap, Rocket, ChefHat, Info, LogIn, Flame,
+    Footprints
 } from 'lucide-react';
 
 const XPGuideModal = ({ onClose }) => {
@@ -71,6 +72,19 @@ const XPGuideModal = ({ onClose }) => {
                                     <div className="flex flex-col">
                                         <span className="font-bold text-sm text-text-primary">Completar Entrenamiento</span>
                                         <span className="text-xs text-text-muted">Finaliza una rutina completa</span>
+                                    </div>
+                                </div>
+                                <span className={dailyXpClass}>+50 XP (Máx 2/día)</span>
+                            </div>
+
+                            <div className={dailyCardClass}>
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg">
+                                        <Footprints size={18} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-sm text-text-primary">Sesión de Cardio</span>
+                                        <span className="text-xs text-text-muted">Registra una actividad de cardio</span>
                                     </div>
                                 </div>
                                 <span className={dailyXpClass}>+50 XP (Máx 2/día)</span>

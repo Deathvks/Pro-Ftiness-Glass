@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
   Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
-  Link, Smartphone, Image, Globe, Clock, Download
+  Link, Smartphone, Image, Globe, Clock, Download, Footprints, MapPin
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -81,7 +81,7 @@ const WelcomeModal = ({ onClose }) => {
 
           <div className="space-y-6 mb-8">
 
-            {/* --- BLOQUE 0: APP NATIVA (CLICKABLE & DESTACADO SIN BORDE BLANCO) --- */}
+            {/* --- BLOQUE 0: APP NATIVA --- */}
             <a href={DOWNLOAD_URL} className="block no-underline transform transition-transform hover:scale-[1.02] active:scale-95">
               <div className="bg-white/5 bg-gradient-to-br from-accent/10 to-transparent rounded-2xl p-5 backdrop-blur-sm shadow-lg shadow-accent/5 group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-bl-full -mr-10 -mt-10 blur-md"></div>
@@ -113,7 +113,6 @@ const WelcomeModal = ({ onClose }) => {
                 </p>
               </div>
             </a>
-
 
             {/* --- BLOQUE 1: EXPERIENCIA Y NIVELES --- */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
@@ -168,6 +167,50 @@ const WelcomeModal = ({ onClose }) => {
               </div>
               <p className="mt-3 text-xs text-text-muted text-center">
                 Visualiza tu progreso y sube de nivel con cada entrenamiento.
+              </p>
+            </div>
+
+            {/* --- BLOQUE NUEVO: CARDIO & GPS --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Footprints size={16} className="text-accent" /> Cardio & GPS
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+
+                  {/* Map Pattern Background */}
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#22c55e 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
+
+                  {/* Path Simulation */}
+                  <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                    <path
+                      d="M20,60 Q50,20 80,40 T140,30 T200,60"
+                      fill="none"
+                      stroke="#22c55e"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      className="drop-shadow-[0_0_8px_rgba(34,197,94,0.6)]"
+                    />
+                  </svg>
+
+                  {/* Moving Marker */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-[bounce_2s_infinite]">
+                    <MapPin size={24} className="text-red-500 drop-shadow-md fill-red-500/20" />
+                  </div>
+
+                  {/* Stats Overlay */}
+                  <div className="absolute bottom-2 left-2 right-2 flex justify-between px-2">
+                    <div className="bg-bg-secondary/90 backdrop-blur border border-white/10 px-2 py-1 rounded text-[9px] font-mono text-text-primary flex items-center gap-1">
+                      <Clock size={8} /> 24:00
+                    </div>
+                    <div className="bg-bg-secondary/90 backdrop-blur border border-white/10 px-2 py-1 rounded text-[9px] font-mono text-accent flex items-center gap-1">
+                      <Zap size={8} /> 5:30 /km
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Registra tus sesiones de running y ciclismo con GPS, mapas y estadísticas en tiempo real.
               </p>
             </div>
 

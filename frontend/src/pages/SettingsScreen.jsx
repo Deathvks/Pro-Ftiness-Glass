@@ -5,7 +5,7 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download, Vibrate, Globe, Clock, MapPin
+  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube // Importamos Youtube
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -116,6 +116,24 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
       </button>
     )}
   </div>
+);
+
+// --- Componente Icono Personalizado para TikTok ---
+const TikTokIcon = ({ size = 20, className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
 );
 
 export default function SettingsScreen({
@@ -660,6 +678,22 @@ export default function SettingsScreen({
                   icon={Instagram}
                   title="Instagram"
                   subtitle="@pro_fitness_glass"
+                  action={<ChevronRight size={16} className="text-text-muted" />}
+                />
+              </a>
+              <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="no-underline">
+                <SettingsItem
+                  icon={TikTokIcon}
+                  title="TikTok"
+                  subtitle="@pro_fitness_glass"
+                  action={<ChevronRight size={16} className="text-text-muted" />}
+                />
+              </a>
+              <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="no-underline">
+                <SettingsItem
+                  icon={Youtube}
+                  title="YouTube"
+                  subtitle="@ProFitnessGlass"
                   action={<ChevronRight size={16} className="text-text-muted" />}
                 />
               </a>

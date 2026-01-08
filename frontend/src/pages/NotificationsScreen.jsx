@@ -282,10 +282,6 @@ const NotificationsScreen = ({ setView }) => {
     const groups = { hoy: [], ayer: [], anterior: [] };
 
     // Obtenemos la fecha actual en la zona horaria del usuario para comparar correctamente 'Hoy' y 'Ayer'
-    // Nota: isToday de date-fns usa la hora local del sistema. Para ser estricto con la TZ del usuario
-    // tendríamos que comparar strings de fecha (YYYY-MM-DD) generados con la TZ.
-    // Por simplicidad y rendimiento, usamos la aproximación estándar, pero parseando bien la fecha origen.
-
     filteredList.forEach(n => {
       const date = parseDateSafe(n.created_at);
       if (isToday(date)) groups.hoy.push(n);
@@ -362,8 +358,12 @@ const NotificationsScreen = ({ setView }) => {
       {/* Header */}
       <div className="flex justify-between items-end md:items-center mb-6">
 
-        <h2 className="hidden md:flex text-2xl font-bold text-text-primary items-center gap-3">
-          <Bell className="text-accent" /> Notificaciones
+        {/* MODIFICACIÓN: Encabezado con degradado en PC */}
+        <h2 className="hidden md:flex text-2xl font-bold items-center gap-3">
+          <Bell className="text-accent" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
+            Notificaciones
+          </span>
         </h2>
 
         <div className="md:hidden flex flex-col gap-0.5">

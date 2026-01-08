@@ -3,9 +3,7 @@ import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { processWorkoutGamification } from '../services/gamificationService.js';
-// --- INICIO MODIFICACIÓN: Importar createNotification ---
 import { createNotification } from '../services/notificationService.js';
-// --- FIN MODIFICACIÓN ---
 
 // --- Función para calcular 1RM ---
 const calculate1RM = (weight, reps) => {
@@ -104,20 +102,36 @@ export const logWorkoutSession = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { routineName, duration_seconds, calories_burned, details, notes, routineId } = req.body;
+  // MODIFICACIÓN: Extraemos params robustamente (camelCase y snake_case para compatibilidad)
+  const {
+    routineName, routine_name, // Frontend puede enviar cualquiera de los dos
+    workout_date,              // Frontend puede enviar fecha específica
+    duration_seconds, calories_burned, details, exercises, notes, routineId
+  } = req.body;
+
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
-    const today = new Date();
-    // Fecha local a las 00:00:00 para guardar en BD (mantenemos consistencia)
-    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    // Determinar la fecha del workout
+    let finalDate;
+    if (workout_date) {
+      // Si el cliente envía fecha, la usamos
+      finalDate = new Date(workout_date);
+    } else {
+      // Si no, usamos fecha actual del servidor (sin hora para consistencia diaria)
+      const today = new Date();
+      finalDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    }
+
+    // Unificamos el nombre de la rutina para usarlo tanto en el Log como en Gamificación
+    const finalRoutineName = routineName || routine_name || 'Entrenamiento Sin Nombre';
 
     const newWorkoutLog = await WorkoutLog.create({
       user_id: userId,
-      routine_name: routineName,
-      routine_id: routineId,
-      workout_date: localDate,
+      routine_name: finalRoutineName,
+      routine_id: routineId || null,
+      workout_date: finalDate,
       duration_seconds,
       calories_burned,
       notes
@@ -125,7 +139,10 @@ export const logWorkoutSession = async (req, res, next) => {
 
     let newPRs = [];
 
-    for (const exercise of details) {
+    // Unificamos la lista de ejercicios (soporta details, exercises o vacío para cardio puro)
+    const exercisesToProcess = details || exercises || [];
+
+    for (const exercise of exercisesToProcess) {
       let totalVolume = 0;
       let bestSetWeight = 0;
       let bestSetFor1RM = null;
@@ -196,12 +213,12 @@ export const logWorkoutSession = async (req, res, next) => {
             user_id: userId,
             exercise_name: exercise.exerciseName,
             weight_kg: bestSetWeight,
-            date: localDate
+            date: finalDate
           }, { transaction: t });
           newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
         } else if (bestSetWeight > existingPR.weight_kg) {
           existingPR.weight_kg = bestSetWeight;
-          existingPR.date = localDate;
+          existingPR.date = finalDate;
           await existingPR.save({ transaction: t });
           newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
         }
@@ -210,17 +227,20 @@ export const logWorkoutSession = async (req, res, next) => {
 
     await t.commit();
 
-    // Lógica modular de gamificación (ahora capturamos el resultado)
-    const gamificationResult = await processWorkoutGamification(userId, localDate);
+    // CAMBIO: Pasamos el nombre de la actividad para personalizar la notificación de XP
+    const gamificationResult = await processWorkoutGamification(userId, finalDate, finalRoutineName);
 
-    // --- INICIO MODIFICACIÓN: Gestión de eventos y notificaciones ---
     const gamificationEvents = [];
 
     if (gamificationResult.xpAdded > 0) {
-      gamificationEvents.push({ type: 'xp', amount: gamificationResult.xpAdded, reason: 'Entrenamiento completado' });
+      // CAMBIO: El motivo en la respuesta ahora coincide con la notificación
+      gamificationEvents.push({
+        type: 'xp',
+        amount: gamificationResult.xpAdded,
+        reason: `${finalRoutineName} completado`
+      });
     }
 
-    // 1. Notificación Persistente (Campana) si se alcanza el límite justo ahora
     if (gamificationResult.limitReachedNow) {
       await createNotification(userId, {
         type: 'warning',
@@ -230,21 +250,19 @@ export const logWorkoutSession = async (req, res, next) => {
       });
     }
 
-    // 2. Feedback Inmediato (Toast) si ya se había alcanzado o se acaba de alcanzar
     if (gamificationResult.reason === 'daily_limit_reached') {
       gamificationEvents.push({
         type: 'info',
         message: 'Límite diario de experiencia por entrenamientos alcanzado (2/2).'
       });
     }
-    // --- FIN MODIFICACIÓN ---
 
     res.status(201).json({
       message: 'Entrenamiento guardado con éxito',
       workoutId: newWorkoutLog.id,
       newPRs: newPRs,
       xpAdded: gamificationResult?.xpAdded || 0,
-      gamification: gamificationEvents // Enviamos eventos al frontend
+      gamification: gamificationEvents
     });
   } catch (error) {
     await t.rollback();

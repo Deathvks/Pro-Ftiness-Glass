@@ -1,3 +1,4 @@
+/* backend/models/workoutModel.js */
 import { DataTypes } from "sequelize";
 import sequelize from "../db.js";
 
@@ -44,7 +45,8 @@ const WorkoutLog = sequelize.define(
       allowNull: true,
     },
     notes: {
-      type: DataTypes.TEXT,
+      // CAMBIO: TEXT('long') para soportar JSONs grandes de GPS
+      type: DataTypes.TEXT('long'),
       allowNull: true,
     },
   },

@@ -213,7 +213,8 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
 };
 
 // --- MODIFICADO: WORKOUTS ---
-export const processWorkoutGamification = async (userId, workoutDate) => {
+// Ahora acepta activityName para personalizar la razón del XP
+export const processWorkoutGamification = async (userId, workoutDate, activityName = 'Entrenamiento') => {
     const t = await sequelize.transaction();
     try {
         const user = await User.findByPk(userId, { transaction: t, lock: true });
@@ -227,7 +228,8 @@ export const processWorkoutGamification = async (userId, workoutDate) => {
             user.changed('daily_gamification_state', true);
             await user.save({ transaction: t });
 
-            const result = await addXp(userId, WORKOUT_COMPLETION_XP, 'Entrenamiento completado', { transaction: t, userInstance: user });
+            // Usamos activityName en la razón del XP
+            const result = await addXp(userId, WORKOUT_COMPLETION_XP, `${activityName} completado`, { transaction: t, userInstance: user });
 
             // Detectar si acabamos de llegar al límite
             if (state.workouts === LIMITS.workouts) {

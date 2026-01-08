@@ -1,9 +1,10 @@
 /* frontend/src/pages/Workout.jsx */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import { calculateCalories } from '../utils/helpers';
+import Spinner from '../components/Spinner';
 
 // --- Imports de Modales ---
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -12,9 +13,7 @@ import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import ExerciseReplaceModal from './ExerciseReplaceModal';
 import WorkoutExerciseDetailModal from './WorkoutExerciseDetailModal';
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
-// --- AÑADIDO: Import del Modal de Historial ---
 import ExerciseHistoryModal from './ExerciseHistoryModal';
-// --- AÑADIDO: Import del Modal de Heatmap ---
 import WorkoutHeatmapModal from '../components/Workout/WorkoutHeatmapModal';
 
 // --- IMPORTS DE COMPONENTES MODULARIZADOS ---
@@ -23,6 +22,9 @@ import WorkoutHeader from '../components/Workout/WorkoutHeader';
 import WorkoutExerciseList from '../components/Workout/WorkoutExerciseList';
 import WorkoutNotes from '../components/Workout/WorkoutNotes';
 
+// --- Lazy Load de QuickCardio ---
+const QuickCardio = React.lazy(() => import('./QuickCardio'));
+
 /**
  * Página principal del Entrenamiento Activo.
  * Gestiona el estado, los modales y coordina los componentes
@@ -30,9 +32,6 @@ import WorkoutNotes from '../components/Workout/WorkoutNotes';
  */
 const Workout = ({ timer, setView }) => {
   const { addToast } = useToast();
-  // NOTA: Mantenemos las traducciones (ej. 'exercise_descriptions') aquí
-  // por si los modales las necesitan, aunque 'exercise_names' se
-  // pasa ahora a WorkoutExerciseList.
   const { t } = useTranslation(['exercise_names', 'exercise_descriptions']);
 
   // --- 1. Estado de Zustand (Global) ---
@@ -77,25 +76,17 @@ const Workout = ({ timer, setView }) => {
   const [completedWorkoutData, setCompletedWorkoutData] = useState(null);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
-  // --- AÑADIDO: Estado para el modal de Historial ---
   const [historyExercise, setHistoryExercise] = useState(null);
-  // --- AÑADIDO: Estado para el modal de Heatmap ---
   const [showHeatmapModal, setShowHeatmapModal] = useState(false);
 
-  // Efecto de limpieza: Si el usuario sale de la página (desmonta el componente)
-  // y el entrenamiento NO se ha iniciado (workoutStartTime es null), lo cancelamos.
+  // Estado para la vista de Cardio Rápido
+  const [showQuickCardio, setShowQuickCardio] = useState(false);
+
+  // Efecto de limpieza
   useEffect(() => {
-    // Capturamos el momento exacto en que se monta ESTA instancia del componente
     const mountTime = Date.now();
-
     return () => {
-      // Calculamos cuánto tiempo ha estado vivo el componente
       const timeAlive = Date.now() - mountTime;
-
-      // --- PROTECCIÓN STRICT MODE ---
-      // Si el componente ha vivido menos de 500ms, asumimos que es un desmontaje
-      // técnico de React Strict Mode (en desarrollo) o un error inmediato,
-      // y NO ejecutamos la limpieza para evitar borrar el workout recién creado.
       if (timeAlive < 500) return;
 
       const state = useAppStore.getState();
@@ -152,11 +143,10 @@ const Workout = ({ timer, setView }) => {
     return groups;
   }, [activeWorkout, isSimpleWorkout]);
 
-  // Clases base para los inputs (pasadas como prop)
   const baseInputClasses = `w-full text-center bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition ${!hasWorkoutStarted ? 'opacity-50 cursor-not-allowed' : ''
     }`;
 
-  // --- 4. Funciones Helper (Normalización y Parseo) ---
+  // --- 4. Funciones Helper ---
 
   const safeParseFloat = (value) => {
     return parseFloat(String(value).replace(',', '.')) || 0;
@@ -166,7 +156,7 @@ const Workout = ({ timer, setView }) => {
     return parseFloat(String(value).replace(',', '.')) || 0;
   };
 
-  // --- 5. Manejadores de Eventos (Callbacks) ---
+  // --- 5. Manejadores de Eventos ---
 
   const handleFinishClick = () => {
     if (timer === 0) {
@@ -203,7 +193,6 @@ const Workout = ({ timer, setView }) => {
     setView(returnView);
   };
 
-  // Manejador para guardar el entrenamiento (tras modal de calorías)
   const handleCalorieInputComplete = async (calories) => {
     const isAnySetFilled =
       isSimpleWorkout ||
@@ -250,7 +239,6 @@ const Workout = ({ timer, setView }) => {
               reps: safeParseReps(set.reps),
               weight_kg: safeParseFloat(set.weight_kg),
               is_dropset: set.is_dropset || false,
-              // --- AÑADIDO: Mapear is_warmup ---
               is_warmup: set.is_warmup || false,
             })),
         })),
@@ -260,7 +248,6 @@ const Workout = ({ timer, setView }) => {
 
     const result = await logWorkout(workoutData);
     if (result.success) {
-      // --- INICIO MODIFICACIÓN: Manejo de Gamificación (XP/Warnings/Info) ---
       if (result.gamification) {
         result.gamification.forEach(event => {
           if (event.type === 'xp') {
@@ -270,14 +257,11 @@ const Workout = ({ timer, setView }) => {
           } else if (event.type === 'warning') {
             addToast(event.message, 'warning');
           } else if (event.type === 'info') {
-            // AÑADIDO: Manejo de info (límite ya alcanzado)
             addToast(event.message, 'info');
           }
         });
       }
-      // --- FIN MODIFICACIÓN ---
 
-      // --- CAMBIO: Detectar mensaje de límite de XP para mostrar Warning ---
       if (result.message && result.message.includes('Límite de XP')) {
         addToast(result.message, 'warning');
       } else {
@@ -293,7 +277,6 @@ const Workout = ({ timer, setView }) => {
     setIsSaving(false);
   };
 
-  // Manejadores para inputs/botones deshabilitados
   const handleDisabledInputClick = () => {
     addToast(
       'Debes iniciar el cronómetro antes de registrar datos.',
@@ -312,16 +295,23 @@ const Workout = ({ timer, setView }) => {
 
   // 6.1. Guard Clause: No hay entrenamiento activo
   if (!activeWorkout) {
-    return <NoActiveWorkout setView={setView} />;
+    if (showQuickCardio) {
+      return (
+        <Suspense fallback={<div className="flex justify-center p-10"><Spinner size={40} /></div>}>
+          <QuickCardio />
+        </Suspense>
+      );
+    }
+    // Pasamos el handler para activar Cardio Rápido desde NoActiveWorkout
+    return <NoActiveWorkout setView={setView} onStartQuickCardio={() => setShowQuickCardio(true)} />;
   }
 
-  // 6.2. Renderizado Principal
+  // 6.2. Renderizado Principal (Entrenamiento Activo)
   return (
     <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-      {/* --- Componente: Cabecera (Cronómetro y Controles) --- */}
       <WorkoutHeader
         routineName={activeWorkout.routineName}
-        routineImage={activeWorkout.image_url} // <--- MODIFICACIÓN AQUÍ
+        routineImage={activeWorkout.image_url}
         timer={timer}
         isWorkoutPaused={isWorkoutPaused}
         hasWorkoutStarted={hasWorkoutStarted}
@@ -329,11 +319,9 @@ const Workout = ({ timer, setView }) => {
         onTogglePause={togglePauseWorkout}
         onFinishClick={handleFinishClick}
         onShowCalculator={() => setShowCalculatorModal(true)}
-        // AÑADIDO: Prop para mostrar el heatmap
         onShowHeatmap={() => setShowHeatmapModal(true)}
       />
 
-      {/* --- Componente: Lista de Ejercicios --- */}
       {!isSimpleWorkout && (
         <WorkoutExerciseList
           exerciseGroups={exerciseGroups}
@@ -341,14 +329,11 @@ const Workout = ({ timer, setView }) => {
           hasWorkoutStarted={hasWorkoutStarted}
           onSetSelectedExercise={setSelectedExercise}
           onSetExerciseToReplace={setExerciseToReplace}
-          // AÑADIDO: Pasamos la función para abrir historial
           onShowHistory={setHistoryExercise}
-          // Props para pasar a los componentes hijos
           baseInputClasses={baseInputClasses}
           onUpdateSet={updateActiveWorkoutSet}
           onAddDropset={addDropset}
           onRemoveDropset={removeDropset}
-          // --- AÑADIDO: Pasamos toggleWarmupSet ---
           onToggleWarmup={toggleWarmupSet}
           onOpenRestModal={openRestModal}
           onDisabledInputClick={handleDisabledInputClick}
@@ -356,14 +341,11 @@ const Workout = ({ timer, setView }) => {
         />
       )}
 
-      {/* --- Componente: Notas de la Sesión --- */}
       <WorkoutNotes
         notes={notes}
         setNotes={setNotes}
         hasWorkoutStarted={hasWorkoutStarted}
       />
-
-      {/* --- Sección de Modales --- */}
 
       {showCalorieModal && (
         <CalorieInputModal
@@ -418,14 +400,12 @@ const Workout = ({ timer, setView }) => {
         />
       )}
 
-      {/* AÑADIDO: Modal de Calculadora de Platos */}
       {showCalculatorModal && (
         <PlateCalculatorModal
           onClose={() => setShowCalculatorModal(false)}
         />
       )}
 
-      {/* AÑADIDO: Modal de Historial */}
       {historyExercise && (
         <ExerciseHistoryModal
           exercise={historyExercise}
@@ -433,7 +413,6 @@ const Workout = ({ timer, setView }) => {
         />
       )}
 
-      {/* AÑADIDO: Modal de Heatmap */}
       {showHeatmapModal && (
         <WorkoutHeatmapModal
           exercises={activeWorkout?.exercises || []}

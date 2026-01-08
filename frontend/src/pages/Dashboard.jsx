@@ -5,14 +5,14 @@ import {
     Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
     Bike, Activity, Repeat, Droplet, Beef, Zap, CheckCircle, XCircle,
     ArrowUp, ArrowDown, Minus, ChevronRight, Trophy, Check, Crown,
-    Info
+    Info, LayoutGrid
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import BodyWeightModal from '../components/BodyWeightModal';
 import { isSameDay } from '../utils/helpers';
 import useAppStore from '../store/useAppStore';
-import { getXpRequiredForLevel, getLevelProgress } from '../store/gamificationSlice';
+import { getLevelProgress } from '../store/gamificationSlice';
 import CircularProgress from '../components/CircularProgress';
 import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
@@ -217,7 +217,6 @@ const Dashboard = ({ setView }) => {
                 {/* Gamification Card */}
                 <GlassCard className="w-auto self-start flex-shrink-0 p-3 sm:p-4 flex items-center gap-3 sm:gap-4 bg-gradient-to-br from-bg-secondary/80 to-accent/5 border-accent/20 overflow-hidden">
                     <div className="relative flex-shrink-0">
-                        {/* Tamaño estándar restaurado */}
                         <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-accent/20 flex items-center justify-center border-2 border-accent text-accent font-black text-lg md:text-2xl shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]">
                             {levelData.level}
                         </div>
@@ -239,7 +238,6 @@ const Dashboard = ({ setView }) => {
                             </span>
                         </div>
 
-                        {/* Barra de progreso: Borde unificado con el contenedor */}
                         <div className="h-1.5 md:h-2 w-full bg-bg-primary rounded-full overflow-hidden border border-glass-border">
                             <div className="h-full bg-gradient-to-r from-accent to-accent-light transition-all duration-1000 ease-out" style={{ width: `${levelData.percentage}%` }} />
                         </div>
@@ -265,8 +263,6 @@ const Dashboard = ({ setView }) => {
                         <span className="text-2xl font-bold text-text-primary">{weeklySessions}</span>
                     </div>
 
-                    {/* --- INICIO MODIFICACIÓN: Ajuste de tamaño para ver todos los días --- */}
-                    {/* gap-1 y justify-between para distribuir uniformemente sin ocupar tanto espacio */}
                     <div className="flex justify-between items-center w-full px-1">
                         {weekDays.map((date, i) => {
                             const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -275,7 +271,6 @@ const Dashboard = ({ setView }) => {
                             return (
                                 <div key={i} className="flex flex-col items-center gap-1">
                                     <span className={`text-[10px] font-semibold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                                    {/* w-6 h-6 para asegurar que quepan en layout de 4 columnas */}
                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/25' : 'bg-bg-secondary/50 text-transparent'}`}>
                                         {hasWorkout && <Check size={12} strokeWidth={3} />}
                                     </div>
@@ -283,7 +278,6 @@ const Dashboard = ({ setView }) => {
                             );
                         })}
                     </div>
-                    {/* --- FIN MODIFICACIÓN --- */}
                 </GlassCard>
                 <StatCard icon={<Target size={24} />} title="Meta Calórica" value={targets.calories.toLocaleString()} unit="kcal" />
                 <StatCard icon={<Clock size={24} />} title="Tiempo Activo" value={weeklyTimeDisplay} unit="" />
@@ -379,17 +373,44 @@ const Dashboard = ({ setView }) => {
                         </div>
                     </section>
 
+                    {/* SECCIÓN MODIFICADA: Cardio Rápido con Acceso a Librería */}
                     <section>
-                        <div className="flex items-center gap-2 mb-4 px-1"><Zap size={20} className="text-accent" /><h2 className="text-xl font-bold">Cardio Rápido</h2></div>
+                        <div className="flex items-center justify-between mb-4 px-1">
+                            <div className="flex items-center gap-2">
+                                <Zap size={20} className="text-accent" />
+                                <h2 className="text-xl font-bold">Cardio Rápido</h2>
+                            </div>
+                            <button
+                                onClick={() => setView('quickCardio')}
+                                className="text-xs font-semibold text-accent flex items-center gap-1 hover:text-accent/80 transition-colors"
+                            >
+                                Ver librería completa <ChevronRight size={14} />
+                            </button>
+                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            {[{ name: 'Cinta', icon: Footprints }, { name: 'Bici', icon: Bike }, { name: 'Elíptica', icon: Activity }, { name: 'Comba', icon: Repeat }].map(item => (
+                            {/* Accesos rápidos a los más comunes */}
+                            {[{ name: 'Cinta', icon: Footprints }, { name: 'Bici', icon: Bike }, { name: 'Elíptica', icon: Activity }].map(item => (
                                 <GlassCard key={item.name} className="p-0 overflow-hidden group hover:-translate-y-1">
-                                    <button onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }} className="w-full h-full p-4 flex flex-col items-center justify-center gap-2 hover:bg-accent/10 transition-colors">
+                                    <button
+                                        onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }}
+                                        className="w-full h-full p-4 flex flex-col items-center justify-center gap-2 hover:bg-accent/10 transition-colors"
+                                    >
                                         <item.icon size={24} className="text-accent group-hover:text-white" />
                                         <span className="text-sm font-semibold">{item.name}</span>
                                     </button>
                                 </GlassCard>
                             ))}
+
+                            {/* Botón "Ver Más" que lleva a la librería */}
+                            <GlassCard className="p-0 overflow-hidden group hover:-translate-y-1 bg-accent/5 border-accent/20">
+                                <button
+                                    onClick={() => setView('quickCardio')}
+                                    className="w-full h-full p-4 flex flex-col items-center justify-center gap-2 hover:bg-accent/10 transition-colors"
+                                >
+                                    <LayoutGrid size={24} className="text-accent" />
+                                    <span className="text-sm font-bold text-accent">Explorar</span>
+                                </button>
+                            </GlassCard>
                         </div>
                     </section>
                 </div>

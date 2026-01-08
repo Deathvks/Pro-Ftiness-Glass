@@ -1,6 +1,10 @@
 /* frontend/src/components/progress/DailyDetailView.jsx */
 import React, { useState, useMemo } from 'react';
-import { X, Trash2, Link2, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell, Link } from 'lucide-react';
+import {
+  X, Trash2, Link2, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell, Link, MapPin, Maximize2
+} from 'lucide-react';
+import { MapContainer, TileLayer, Polyline } from 'react-leaflet'; // Importamos Leaflet
+import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
 import ConfirmationModal from '../ConfirmationModal';
 import { calculateCalories } from '../../utils/helpers';
@@ -19,6 +23,9 @@ const DailyDetailView = ({ logs, onClose }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logToDelete, setLogToDelete] = useState(null);
   const [deletedLogIds, setDeletedLogIds] = useState([]);
+
+  // Estado para el mapa expandido
+  const [expandedMapPath, setExpandedMapPath] = useState(null);
 
   // Estilo de borde MUY sutil para modo oscuro/OLED.
   const subtleBorderClass = 'border-white/10';
@@ -53,6 +60,24 @@ const DailyDetailView = ({ logs, onClose }) => {
   const cancelDelete = () => {
     setShowDeleteConfirm(false);
     setLogToDelete(null);
+  };
+
+  // Helper para extraer datos de GPS de las notas
+  const extractGpsData = (notes) => {
+    if (!notes || typeof notes !== 'string') return null;
+    const gpsMarker = 'GPS_DATA::';
+    const parts = notes.split(gpsMarker);
+    if (parts.length > 1) {
+      try {
+        const path = JSON.parse(parts[1]);
+        const userNote = parts[0].trim();
+        return { path, userNote };
+      } catch (e) {
+        console.error("Error parsing GPS data", e);
+        return null;
+      }
+    }
+    return null;
   };
 
   const groupExercises = (exercises) => {
@@ -205,6 +230,7 @@ const DailyDetailView = ({ logs, onClose }) => {
             {visibleLogs.map((log) => {
               const exerciseGroups = groupExercises(log.WorkoutLogDetails);
               const isCardioOnly = !log.WorkoutLogDetails || log.WorkoutLogDetails.length === 0;
+              const gpsData = extractGpsData(log.notes); // Extraer datos GPS si existen
 
               return (
                 <div key={log.id} className={`bg-bg-secondary rounded-2xl overflow-hidden border ${subtleBorderClass} shadow-sm shrink-0`}>
@@ -217,10 +243,51 @@ const DailyDetailView = ({ logs, onClose }) => {
                   </div>
 
                   <div className="p-4 space-y-5">
-                    {log.notes && (
+
+                    {/* Mapa GPS si existe */}
+                    {gpsData && gpsData.path && gpsData.path.length > 0 && (
+                      <div
+                        className={`bg-bg-primary rounded-xl overflow-hidden border ${subtleBorderClass} h-40 relative z-0 cursor-pointer group`}
+                        onClick={() => setExpandedMapPath(gpsData.path)}
+                      >
+                        <MapContainer
+                          center={gpsData.path[Math.floor(gpsData.path.length / 2)]}
+                          zoom={14}
+                          style={{ height: '100%', width: '100%' }}
+                          zoomControl={false}
+                          attributionControl={false}
+                          dragging={false} // Mapa estático
+                          scrollWheelZoom={false}
+                          doubleClickZoom={false}
+                        >
+                          <TileLayer
+                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                          />
+                          <Polyline
+                            positions={gpsData.path}
+                            pathOptions={{ color: '#22c55e', weight: 4, opacity: 0.8 }}
+                          />
+                        </MapContainer>
+
+                        {/* Overlay y Botón de expansión */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-[401]" />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-[402] bg-black/50 p-2 rounded-full text-white backdrop-blur-sm">
+                          <Maximize2 size={20} />
+                        </div>
+
+                        <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-white flex items-center gap-1 z-[400]">
+                          <MapPin size={10} /> Ruta GPS
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notas (Priorizar nota limpia si hay GPS, sino nota completa) */}
+                    {(gpsData ? gpsData.userNote : log.notes) && (
                       <div className={`bg-bg-primary p-3 rounded-xl border ${subtleBorderClass}`}>
                         <p className="font-semibold text-xs text-accent mb-1 flex items-center gap-1"><Link2 size={10} /> Notas</p>
-                        <p className="text-sm text-text-secondary whitespace-pre-wrap italic">"{log.notes}"</p>
+                        <p className="text-sm text-text-secondary whitespace-pre-wrap italic">
+                          "{gpsData ? gpsData.userNote : log.notes}"
+                        </p>
                       </div>
                     )}
 
@@ -283,6 +350,30 @@ const DailyDetailView = ({ logs, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* MODAL DEL MAPA EXPANDIDO */}
+      {expandedMapPath && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]">
+          <div className={`relative w-full h-full max-w-4xl max-h-[85vh] bg-bg-primary rounded-2xl overflow-hidden shadow-2xl border ${subtleBorderClass} flex flex-col`}>
+            <div className="absolute top-4 right-4 z-[1000]">
+              <button
+                onClick={() => setExpandedMapPath(null)}
+                className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-md transition border border-white/10"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <MapContainer
+              center={expandedMapPath[Math.floor(expandedMapPath.length / 2)]}
+              zoom={15}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+              <Polyline positions={expandedMapPath} pathOptions={{ color: '#22c55e', weight: 5, opacity: 0.9 }} />
+            </MapContainer>
+          </div>
+        </div>
+      )}
 
       {showDeleteConfirm && (
         <ConfirmationModal

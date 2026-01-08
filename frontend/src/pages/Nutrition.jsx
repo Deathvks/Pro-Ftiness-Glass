@@ -1,7 +1,7 @@
 /* frontend/src/pages/Nutrition.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, BookOpen, X, Scale, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -134,6 +134,7 @@ const Nutrition = ({ setView }) => {
     const [viewLog, setViewLog] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
+    const [mealGroupToDelete, setMealGroupToDelete] = useState(null);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
 
     // --- Helper para procesar eventos del servidor ---
@@ -145,7 +146,6 @@ const Nutrition = ({ setView }) => {
             } else if (event.type === 'badge') {
                 addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
             } else if (event.type === 'info') {
-                // Muestra mensajes informativos (como límites alcanzados)
                 addToast(event.message, 'info');
             }
         });
@@ -209,7 +209,6 @@ const Nutrition = ({ setView }) => {
             const res = await nutritionService.upsertWaterLog({ log_date: selectedDate, quantity_ml });
             addToast('Registro de agua actualizado.', 'success');
 
-            // Procesar gamificación devuelta por el servidor
             if (res && res.gamification) {
                 processGamificationEvents(res.gamification);
             }
@@ -281,7 +280,6 @@ const Nutrition = ({ setView }) => {
                 }
                 const res = await nutritionService.updateFoodLog(modal.data.id, formData);
 
-                // Procesar gamificación (Ej: Objetivo calorías)
                 if (res && res.gamification) {
                     processGamificationEvents(res.gamification);
                 }
@@ -295,7 +293,6 @@ const Nutrition = ({ setView }) => {
                     meal_type: modal.data.mealType,
                 }));
 
-                // Esperar a todas las peticiones y procesar sus respuestas
                 const responses = await Promise.all(payloads.map(payload => nutritionService.addFoodLog(payload)));
 
                 responses.forEach(res => {
@@ -334,6 +331,31 @@ const Nutrition = ({ setView }) => {
             setLogToDelete(null);
         } catch (error) {
             addToast(error.message || 'Error al eliminar la comida.', 'error');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteMealGroup = async () => {
+        if (!mealGroupToDelete) return;
+        setIsSubmitting(true);
+        try {
+            const logsToDelete = nutritionLog.filter(log => log.meal_type === mealGroupToDelete);
+            const promises = logsToDelete.map(log => nutritionService.deleteFoodLog(log.id));
+            await Promise.all(promises);
+
+            const mealName = { breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealGroupToDelete];
+            addToast(`Se vació el registro de ${mealName}.`, 'success');
+
+            await fetchDataForDate(selectedDate);
+
+            if (fetchNotifications) fetchNotifications();
+            if (fetchInitialData) fetchInitialData();
+
+            setMealGroupToDelete(null);
+        } catch (error) {
+            console.error(error);
+            addToast('Error al eliminar las comidas.', 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -393,13 +415,6 @@ const Nutrition = ({ setView }) => {
 
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 mt-10 md:mt-0 gap-4">
                 <h1 className="hidden md:block text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">Nutrición</h1>
-                <button
-                    onClick={() => setView('templateDiets')}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-white font-bold shadow-lg shadow-accent/20 hover:brightness-110 transition-all w-full md:w-auto justify-center"
-                >
-                    <BookOpen size={20} />
-                    <span>Dietas Recomendadas</span>
-                </button>
             </div>
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
@@ -410,7 +425,9 @@ const Nutrition = ({ setView }) => {
                 <>
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
                         <GlassCard className="lg:col-span-3 p-6">
-                            <h2 className="text-xl font-bold mb-4">Resumen del Día</h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold">Resumen del Día</h2>
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <StatCard icon={<Flame size={24} />} title="Calorías" value={totals.calories.toLocaleString('es-ES')} unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} />
                                 <StatCard icon={<Beef size={24} />} title="Proteínas" value={totals.protein.toFixed(1)} unit={`/ ${proteinTarget} g`} />
@@ -465,9 +482,24 @@ const Nutrition = ({ setView }) => {
                                             </span>
                                         )}
                                     </h2>
-                                    <button onClick={() => setModal({ type: 'food', data: { mealType } })} className="p-2 -m-2 rounded-full text-accent hover:bg-accent-transparent transition">
-                                        <Plus size={20} />
-                                    </button>
+                                    <div className="flex gap-6">
+                                        {/* MODIFICACIÓN: Gap aumentado a 6 para evitar roce de hover */}
+                                        {logs.length > 1 && (
+                                            <button
+                                                onClick={() => setMealGroupToDelete(mealType)}
+                                                className="p-2 -m-2 rounded-full text-red-500 hover:bg-red-500/10 transition"
+                                                title="Eliminar todos los alimentos de esta comida"
+                                            >
+                                                <Trash2 size={20} />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => setModal({ type: 'food', data: { mealType } })}
+                                            className="p-2 -m-2 rounded-full text-accent hover:bg-accent-transparent transition"
+                                        >
+                                            <Plus size={20} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="flex flex-col gap-3">
                                     {logs.length > 0 ? logs.map(log => {
@@ -622,7 +654,6 @@ const Nutrition = ({ setView }) => {
                     onSave={handleSaveFood}
                     mealType={modal.data?.mealType}
                     logToEdit={modal.data?.id ? modal.data : null}
-                    // CORRECCIÓN: Pasar isLoading para bloquear doble click
                     isLoading={isSubmitting}
                 />
             )}
@@ -634,6 +665,18 @@ const Nutrition = ({ setView }) => {
                     onCancel={() => setLogToDelete(null)}
                     isLoading={isSubmitting}
                     confirmText="Eliminar"
+                />
+            )}
+
+            {/* Modal para eliminar grupo de comida */}
+            {mealGroupToDelete && (
+                <ConfirmationModal
+                    message={`¿Estás seguro de que quieres eliminar TODOS los alimentos de ${{ breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealGroupToDelete]
+                        }?`}
+                    onConfirm={handleDeleteMealGroup}
+                    onCancel={() => setMealGroupToDelete(null)}
+                    isLoading={isSubmitting}
+                    confirmText="Eliminar Todo"
                 />
             )}
 

@@ -40,11 +40,12 @@ const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
 const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
 const Social = lazy(() => import('./pages/Social'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
+const QuickCardio = lazy(() => import('./pages/QuickCardio'));
+const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
 
-// Mapeo de colores HEX exactos según index.css para sincronizar Safari
 const THEME_COLORS = {
   light: '#f7fafc',
   dark: '#0c111b',
@@ -94,15 +95,11 @@ export default function App() {
     restTimerMode: state.restTimerMode,
   }));
 
-  // --- LÓGICA DE SINCRONIZACIÓN DE TEMA PARA SAFARI (iOS) ---
   const currentThemeColor = useMemo(() => THEME_COLORS[theme] || THEME_COLORS.dark, [theme]);
 
   useEffect(() => {
-    // Forzamos el background del body para que Safari detecte el cambio visual
-    // y actualice el tinte de la barra de estado/busqueda inmediatamente.
     document.body.style.backgroundColor = currentThemeColor;
   }, [currentThemeColor]);
-  // -----------------------------------------------------------
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
@@ -150,6 +147,8 @@ export default function App() {
       templateDiets: { key: 'Dietas Plantilla', default: 'Dietas Plantilla' },
       social: { key: 'Comunidad', default: 'Comunidad' },
       publicProfile: { key: 'Perfil Público', default: 'Perfil Público' },
+      quickCardio: { key: 'Cardio Rápido', default: 'Cardio Rápido' },
+      'active-cardio': { key: 'Sesión Activa', default: 'Sesión Activa' },
     };
     const titleInfo = titleMap[view];
     if (titleInfo) return t(titleInfo.key, { defaultValue: titleInfo.default });
@@ -181,6 +180,8 @@ export default function App() {
       case 'templateDiets': return <TemplateDiets setView={navigate} />;
       case 'social': return <Social setView={navigate} />;
       case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigate('social')} />;
+      case 'quickCardio': return <QuickCardio onBack={() => navigate('dashboard')} setView={navigate} />;
+      case 'active-cardio': return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
       case 'settings':
         return (
           <SettingsScreen
@@ -212,11 +213,13 @@ export default function App() {
   ];
 
   const content = useMemo(() => {
-    // --- RUTAS ESPECIALES (Full Screen) ---
     if (window.location.pathname === '/reset-password') {
       return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
     }
-    // -------------------------------------
+
+    if (view === 'active-cardio') {
+      return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
+    }
 
     if (isLoading && isInitialLoad) {
       return <InitialLoadingSkeleton />;
@@ -266,7 +269,7 @@ export default function App() {
     authView, isInitialLoad, isLoading, isAuthenticated, userProfile, view, navigate,
     mainContentRef, currentTitle, currentViewComponent, navItems, handleLogoutClick,
     showLogoutConfirm, confirmLogout, handleShowPolicy, fetchInitialData, verificationProps,
-    isResting, restTimerMode, show2FAPromo
+    isResting, restTimerMode, show2FAPromo, navParams
   ]);
 
   return (
@@ -283,7 +286,6 @@ export default function App() {
         <meta property="og:site_name" content="Pro Fitness Glass" />
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
-        {/* Meta Theme Color Dinámico para Safari/iOS */}
         <meta name="theme-color" content={currentThemeColor} />
       </Helmet>
 
