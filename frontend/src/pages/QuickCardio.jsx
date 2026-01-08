@@ -39,90 +39,100 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-bg-primary border border-white/10 w-full max-w-md rounded-2xl p-6 shadow-2xl animate-scale-in relative">
+            {/* MODIFICADO: 
+                - mb-20 en móvil para evitar navbar
+                - max-h-[85vh] para no ocupar toda la pantalla
+                - flex flex-col para gestionar el scroll interno
+            */}
+            <div className="bg-bg-primary border border-white/10 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in relative mb-20 md:mb-0 max-h-[85vh] flex flex-col">
+
+                {/* Botón de cierre fijo en la esquina superior */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-text-secondary transition"
+                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-text-secondary transition z-10"
                 >
                     <X size={20} />
                 </button>
 
-                <div className="flex flex-col items-center mb-6">
-                    <div className={`p-4 rounded-full mb-4 ${activity.bg} ${activity.color} shadow-[0_0_20px_rgba(0,0,0,0.3)]`}>
-                        <activity.icon size={40} />
+                {/* Contenedor con SCROLL para el contenido */}
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                    <div className="flex flex-col items-center mb-6">
+                        <div className={`p-4 rounded-full mb-4 ${activity.bg} ${activity.color} shadow-[0_0_20px_rgba(0,0,0,0.3)]`}>
+                            <activity.icon size={40} />
+                        </div>
+                        <h2 className="text-2xl font-bold text-center text-text-primary">{activity.name}</h2>
+                        <span className="text-sm font-medium text-text-secondary mt-1 px-3 py-1 rounded-full bg-bg-secondary border border-white/5">
+                            Intensidad: {activity.intensity}
+                        </span>
                     </div>
-                    <h2 className="text-2xl font-bold text-center text-text-primary">{activity.name}</h2>
-                    <span className="text-sm font-medium text-text-secondary mt-1 px-3 py-1 rounded-full bg-bg-secondary border border-white/5">
-                        Intensidad: {activity.intensity}
-                    </span>
-                </div>
 
-                <div className="space-y-6">
-                    {activity.hasGPS && (
-                        <div className="mb-4">
-                            <button
-                                onClick={() => onStartGPS(activity)}
-                                className="w-full py-4 rounded-xl font-bold text-lg bg-accent text-bg-primary hover:bg-white hover:text-black transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:shadow-[0_0_25px_rgba(0,255,136,0.5)] flex items-center justify-center gap-2"
-                            >
-                                <MapPin size={24} />
-                                Iniciar Ruta GPS
-                            </button>
-                            {/* MODIFICADO: Eliminadas las líneas divisorias (hr) */}
-                            <div className="flex items-center justify-center my-4">
-                                <span className="text-xs text-text-secondary uppercase">O registro manual</span>
+                    <div className="space-y-6">
+                        {activity.hasGPS && (
+                            <div className="mb-4">
+                                <button
+                                    onClick={() => onStartGPS(activity)}
+                                    className="w-full py-4 rounded-xl font-bold text-lg bg-accent text-bg-primary hover:bg-white hover:text-black transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:shadow-[0_0_25px_rgba(0,255,136,0.5)] flex items-center justify-center gap-2"
+                                >
+                                    <MapPin size={24} />
+                                    Iniciar Ruta GPS
+                                </button>
+                                {/* MODIFICADO: Eliminadas las líneas divisorias (hr) */}
+                                <div className="flex items-center justify-center my-4">
+                                    <span className="text-xs text-text-secondary uppercase">O registro manual</span>
+                                </div>
                             </div>
-                        </div>
-                    )}
-
-                    <div>
-                        <div className="flex justify-between mb-2">
-                            <label className="text-sm font-bold text-text-secondary flex items-center gap-2">
-                                <Clock size={16} className="text-accent" /> Duración
-                            </label>
-                            <span className="text-xl font-bold text-accent font-mono">{duration} min</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="5"
-                            max="180"
-                            step="5"
-                            value={duration}
-                            onChange={(e) => setDuration(parseInt(e.target.value))}
-                            className="w-full h-2 rounded-lg cursor-pointer accent-accent hover:accent-accent/80 transition-all bg-bg-secondary"
-                        />
-                        <div className="flex justify-between text-xs text-text-tertiary mt-2 font-mono">
-                            <span>5m</span>
-                            <span>3h</span>
-                        </div>
-                    </div>
-
-                    <div className="bg-bg-secondary/50 rounded-xl p-4 border border-white/5 flex items-center justify-between">
-                        <div>
-                            <span className="text-xs text-text-secondary block mb-1">Estimación de Quema</span>
-                            <div className="text-2xl font-bold text-text-primary flex items-end gap-1 font-mono">
-                                {estimatedCalories}
-                                <span className="text-xs font-sans text-text-tertiary mb-1.5">kcal</span>
-                            </div>
-                        </div>
-                        <Flame size={32} className={`${activity.color} opacity-80`} />
-                    </div>
-
-                    <button
-                        onClick={handleSaveInternal}
-                        disabled={isSubmitting}
-                        className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed
-                        ${activity.hasGPS
-                                ? 'bg-bg-secondary text-text-primary border border-white/10 hover:bg-white/5'
-                                : 'bg-accent text-bg-primary hover:bg-white hover:text-black shadow-[0_0_15px_rgba(0,255,136,0.3)]'
-                            }`}
-                    >
-                        {isSubmitting ? <Spinner size={24} color="border-current" /> : (
-                            <>
-                                <Save size={20} />
-                                {activity.hasGPS ? 'Registrar Manualmente' : 'Registrar Sesión'}
-                            </>
                         )}
-                    </button>
+
+                        <div>
+                            <div className="flex justify-between mb-2">
+                                <label className="text-sm font-bold text-text-secondary flex items-center gap-2">
+                                    <Clock size={16} className="text-accent" /> Duración
+                                </label>
+                                <span className="text-xl font-bold text-accent font-mono">{duration} min</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="5"
+                                max="180"
+                                step="5"
+                                value={duration}
+                                onChange={(e) => setDuration(parseInt(e.target.value))}
+                                className="w-full h-2 rounded-lg cursor-pointer accent-accent hover:accent-accent/80 transition-all bg-bg-secondary"
+                            />
+                            <div className="flex justify-between text-xs text-text-tertiary mt-2 font-mono">
+                                <span>5m</span>
+                                <span>3h</span>
+                            </div>
+                        </div>
+
+                        <div className="bg-bg-secondary/50 rounded-xl p-4 border border-white/5 flex items-center justify-between">
+                            <div>
+                                <span className="text-xs text-text-secondary block mb-1">Estimación de Quema</span>
+                                <div className="text-2xl font-bold text-text-primary flex items-end gap-1 font-mono">
+                                    {estimatedCalories}
+                                    <span className="text-xs font-sans text-text-tertiary mb-1.5">kcal</span>
+                                </div>
+                            </div>
+                            <Flame size={32} className={`${activity.color} opacity-80`} />
+                        </div>
+
+                        <button
+                            onClick={handleSaveInternal}
+                            disabled={isSubmitting}
+                            className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed
+                            ${activity.hasGPS
+                                    ? 'bg-bg-secondary text-text-primary border border-white/10 hover:bg-white/5'
+                                    : 'bg-accent text-bg-primary hover:bg-white hover:text-black shadow-[0_0_15px_rgba(0,255,136,0.3)]'
+                                }`}
+                        >
+                            {isSubmitting ? <Spinner size={24} color="border-current" /> : (
+                                <>
+                                    <Save size={20} />
+                                    {activity.hasGPS ? 'Registrar Manualmente' : 'Registrar Sesión'}
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

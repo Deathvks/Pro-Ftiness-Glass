@@ -411,7 +411,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
                 )}
             </div>
 
-            {/* Degradado superior dinámico: usa 'bg-primary' en Dark y 'black' en OLED */}
+            {/* Degradado superior dinámico */}
             <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${mapConfig.gradientFrom} to-transparent z-10 pointer-events-none`} />
 
             <div className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-start">
@@ -427,7 +427,8 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
                 </button>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary/90 backdrop-blur-xl rounded-t-3xl border-t border-text-primary/10 p-6 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-slide-up">
+            {/* MODIFICACIÓN: Aumentado el padding bottom a 'pb-16 md:pb-10' para elevar el contenido en móvil */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary/90 backdrop-blur-xl rounded-t-3xl border-t border-text-primary/10 p-6 pb-20 md:pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-slide-up">
                 <div className="text-center mb-6">
                     <div className="text-6xl font-black font-mono text-text-primary tracking-tight">{formatTime(seconds)}</div>
                     <p className="text-xs text-text-muted uppercase tracking-widest mt-1">Tiempo Transcurrido</p>
