@@ -23,7 +23,7 @@ export const getRecentMeals = () => {
  * @param {number} year - El año (ej: 2025).
  */
 export const getNutritionSummary = (month, year) => {
-    return apiClient(`/nutrition/summary?month=${month}&year=${year}`);
+  return apiClient(`/nutrition/summary?month=${month}&year=${year}`);
 };
 
 /**
@@ -31,7 +31,6 @@ export const getNutritionSummary = (month, year) => {
  * @param {string} query - Término de búsqueda.
  */
 export const searchFoods = (query) => {
-  // --- CORRECCIÓN: Cambiado 'query' por 'q' para coincidir con el backend ---
   return apiClient(`/nutrition/search?q=${encodeURIComponent(query)}`);
 };
 
@@ -41,19 +40,22 @@ export const searchFoods = (query) => {
  */
 export const addFoodLog = (foodData) => {
   const bodyData = {
-      description: foodData.description,
-      calories: foodData.calories,
-      protein_g: foodData.protein_g,
-      carbs_g: foodData.carbs_g,
-      fats_g: foodData.fats_g,
-      weight_g: foodData.weight_g,
-      meal_type: foodData.meal_type,
-      log_date: foodData.log_date,
-      image_url: foodData.image_url,
-      calories_per_100g: foodData.calories_per_100g,
-      protein_per_100g: foodData.protein_per_100g,
-      carbs_per_100g: foodData.carbs_per_100g,
-      fat_per_100g: foodData.fat_per_100g
+    description: foodData.description || foodData.name, // Asegurar compatibilidad
+    calories: foodData.calories,
+    protein_g: foodData.protein_g,
+    carbs_g: foodData.carbs_g,
+    fats_g: foodData.fats_g,
+    weight_g: foodData.weight_g,
+    meal_type: foodData.meal_type,
+    log_date: foodData.log_date,
+    image_url: foodData.image_url,
+    // Datos por 100g (si existen)
+    calories_per_100g: foodData.calories_per_100g,
+    protein_per_100g: foodData.protein_per_100g,
+    carbs_per_100g: foodData.carbs_per_100g,
+    fat_per_100g: foodData.fat_per_100g,
+    // Flag para guardar en favoritos simultáneamente
+    save_as_favorite: foodData.saveAsFavorite || foodData.isFavorite || false
   };
 
   return apiClient('/nutrition/food', {
@@ -68,25 +70,31 @@ export const addFoodLog = (foodData) => {
  * @param {object} foodData - Nuevos datos de la comida.
  */
 export const updateFoodLog = (logId, foodData) => {
-    const bodyData = { ...foodData }; 
-    
-    delete bodyData.id;
-    delete bodyData.log_date;
-    delete bodyData.meal_type;
-    delete bodyData.tempId;
-    delete bodyData.base;
-    delete bodyData.origin;
-    delete bodyData.isFavorite; 
-    delete bodyData.name; 
+  const bodyData = { ...foodData };
 
-    if (bodyData.weight_g === 0 || bodyData.weight_g === '') {
-        bodyData.weight_g = null;
-    }
+  // Mapeamos isFavorite a save_as_favorite si existe, antes de borrarlo
+  if (bodyData.isFavorite !== undefined) {
+    bodyData.save_as_favorite = bodyData.isFavorite;
+  }
 
-    return apiClient(`/nutrition/food/${logId}`, {
-        method: 'PUT',
-        body: bodyData,
-    });
+  // Limpieza de campos internos del frontend que no van al backend
+  delete bodyData.id;
+  delete bodyData.log_date;
+  delete bodyData.meal_type;
+  delete bodyData.tempId;
+  delete bodyData.base;
+  delete bodyData.origin;
+  delete bodyData.isFavorite; // Ya lo mapeamos arriba
+  delete bodyData.name;
+
+  if (bodyData.weight_g === 0 || bodyData.weight_g === '') {
+    bodyData.weight_g = null;
+  }
+
+  return apiClient(`/nutrition/food/${logId}`, {
+    method: 'PUT',
+    body: bodyData,
+  });
 };
 
 /**
@@ -123,32 +131,32 @@ export const searchByBarcode = (barcode) => {
  * @param {File} imageFile - El archivo de la imagen a subir.
  */
 export const uploadFoodImage = (imageFile) => {
-    const formData = new FormData();
-    formData.append('foodImage', imageFile);
+  const formData = new FormData();
+  formData.append('foodImage', imageFile);
 
-    const token = useAppStore.getState().token;
-    const headers = {};
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+  const token = useAppStore.getState().token;
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  return fetch(`${API_BASE_URL}/nutrition/food/image`, {
+    method: 'POST',
+    body: formData,
+    headers,
+  }).then(async response => {
+    if (!response.ok) {
+      let errorMessage = 'Error al subir la imagen.';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch (e) {
+        // No hay cuerpo JSON
+      }
+      throw new Error(errorMessage);
     }
-
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-    return fetch(`${API_BASE_URL}/nutrition/food/image`, {
-        method: 'POST',
-        body: formData,
-        headers,
-    }).then(async response => {
-        if (!response.ok) {
-            let errorMessage = 'Error al subir la imagen.';
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.error || errorData.message || errorMessage;
-            } catch (e) {
-                // No hay cuerpo JSON
-            }
-            throw new Error(errorMessage);
-        }
-        return response.json();
-    });
+    return response.json();
+  });
 };

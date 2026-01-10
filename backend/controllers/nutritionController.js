@@ -166,7 +166,8 @@ const getNutritionSummary = async (req, res, next) => {
 const addFoodLog = async (req, res, next) => {
   try {
     const { userId } = req.user;
-    const { log_date, meal_type, description, calories, protein_g, carbs_g, fats_g, weight_g, image_url, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g } = req.body;
+    // Añadido: save_as_favorite en la destructuración
+    const { log_date, meal_type, description, calories, protein_g, carbs_g, fats_g, weight_g, image_url, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, save_as_favorite } = req.body;
 
     let sanitizedImageUrl = image_url;
     if (sanitizedImageUrl === 'null' || sanitizedImageUrl === 'undefined' || sanitizedImageUrl === '') sanitizedImageUrl = null;
@@ -175,6 +176,33 @@ const addFoodLog = async (req, res, next) => {
     const foodData = { user_id: userId, log_date, meal_type, description, calories: calories || 0, protein_g: protein_g || null, carbs_g: carbs_g || null, fats_g: fats_g || null, weight_g: weight_g || null, image_url: finalImageUrl, micronutrients: micronutrients || null, calories_per_100g: calories_per_100g || null, protein_per_100g: protein_per_100g || null, carbs_per_100g: carbs_per_100g || null, fat_per_100g: fat_per_100g || null };
 
     const newLog = await NutritionLog.create(foodData);
+
+    // --- LÓGICA DE FAVORITOS (AÑADIR) ---
+    if (save_as_favorite) {
+      const favData = {
+        user_id: userId,
+        name: description,
+        calories: foodData.calories,
+        protein_g: foodData.protein_g,
+        carbs_g: foodData.carbs_g,
+        fats_g: foodData.fats_g,
+        weight_g: foodData.weight_g,
+        image_url: foodData.image_url,
+        micronutrients: foodData.micronutrients,
+        calories_per_100g: foodData.calories_per_100g,
+        protein_per_100g: foodData.protein_per_100g,
+        carbs_per_100g: foodData.carbs_per_100g,
+        fat_per_100g: foodData.fat_per_100g
+      };
+
+      const existingFav = await FavoriteMeal.findOne({ where: { user_id: userId, name: description } });
+      if (existingFav) {
+        await existingFav.update(favData);
+      } else {
+        await FavoriteMeal.create(favData);
+      }
+    }
+
     const gamificationEvents = [];
 
     try {
@@ -226,7 +254,9 @@ const updateFoodLog = async (req, res, next) => {
       if (req.file && req.file.processedPath) deleteFile(req.file.processedPath);
       return res.status(404).json({ error: 'Registro de comida no encontrado.' });
     }
-    const { description, calories, protein_g, carbs_g, fats_g, weight_g, image_url, meal_type, log_date, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g } = req.body;
+    // Añadido: save_as_favorite en la destructuración
+    const { description, calories, protein_g, carbs_g, fats_g, weight_g, image_url, meal_type, log_date, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, save_as_favorite } = req.body;
+
     const oldImageUrl = log.image_url;
     let newImageUrl;
     if (req.file && req.file.processedPath) newImageUrl = req.file.processedPath;
@@ -236,8 +266,38 @@ const updateFoodLog = async (req, res, next) => {
     const foodData = { description: description !== undefined ? description : log.description, calories: calories !== undefined ? calories : log.calories, protein_g: protein_g !== undefined ? protein_g : log.protein_g, carbs_g: carbs_g !== undefined ? carbs_g : log.carbs_g, fats_g: fats_g !== undefined ? fats_g : log.fats_g, weight_g: weight_g !== undefined ? weight_g : log.weight_g, image_url: newImageUrl, meal_type: meal_type !== undefined ? meal_type : log.meal_type, log_date: log_date !== undefined ? log_date : log.log_date, micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients, calories_per_100g: calories_per_100g !== undefined ? calories_per_100g : log.calories_per_100g, protein_per_100g: protein_per_100g !== undefined ? protein_per_100g : log.protein_per_100g, carbs_per_100g: carbs_per_100g !== undefined ? carbs_per_100g : log.carbs_per_100g, fat_per_100g: fat_per_100g !== undefined ? fat_per_100g : log.fat_per_100g };
 
     await log.update(foodData);
-    const favorite = await FavoriteMeal.findOne({ where: { user_id: userId, name: foodData.description } });
-    if (favorite) await favorite.update({ calories: foodData.calories, protein_g: foodData.protein_g, carbs_g: foodData.carbs_g, fats_g: foodData.fats_g, weight_g: foodData.weight_g, image_url: foodData.image_url, micronutrients: foodData.micronutrients });
+
+    // --- LÓGICA DE FAVORITOS (ACTUALIZAR) ---
+    const favData = {
+      user_id: userId,
+      name: foodData.description,
+      calories: foodData.calories,
+      protein_g: foodData.protein_g,
+      carbs_g: foodData.carbs_g,
+      fats_g: foodData.fats_g,
+      weight_g: foodData.weight_g,
+      image_url: foodData.image_url,
+      micronutrients: foodData.micronutrients,
+      calories_per_100g: foodData.calories_per_100g,
+      protein_per_100g: foodData.protein_per_100g,
+      carbs_per_100g: foodData.carbs_per_100g,
+      fat_per_100g: foodData.fat_per_100g
+    };
+
+    if (save_as_favorite) {
+      // Si se pide explícitamente, forzamos creación/actualización
+      const existingFav = await FavoriteMeal.findOne({ where: { user_id: userId, name: foodData.description } });
+      if (existingFav) {
+        await existingFav.update(favData);
+      } else {
+        await FavoriteMeal.create(favData);
+      }
+    } else {
+      // Sincronización implícita si ya existe
+      const favorite = await FavoriteMeal.findOne({ where: { user_id: userId, name: foodData.description } });
+      if (favorite) await favorite.update(favData);
+    }
+
     if (oldImageUrl && oldImageUrl !== newImageUrl) {
       const inUse = await isImageInUse(oldImageUrl, logId);
       if (!inUse) deleteFile(oldImageUrl);
