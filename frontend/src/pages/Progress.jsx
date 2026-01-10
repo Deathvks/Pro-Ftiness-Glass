@@ -237,7 +237,9 @@ const Progress = ({ darkMode }) => {
     };
 
     const axisColor = darkMode ? "#94a3b8" : "#475569";
-    const getTabClass = (type) => `px-4 py-2 text-sm font-semibold rounded-full transition whitespace-nowrap ${viewType === type ? 'bg-accent text-bg-secondary shadow-[0_0_15px_rgba(0,242,255,0.3)]' : 'bg-bg-secondary hover:bg-white/10 text-text-secondary'}`;
+
+    // MODIFICADO: Eliminados shadow y hover para un estilo plano y limpio
+    const getTabClass = (type) => `px-4 py-2 text-sm font-semibold rounded-full transition whitespace-nowrap ${viewType === type ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary text-text-secondary'}`;
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-6 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
