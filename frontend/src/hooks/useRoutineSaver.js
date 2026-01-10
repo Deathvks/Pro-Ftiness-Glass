@@ -17,7 +17,8 @@ export const useRoutineSaver = ({
   id,
   routineName,
   description,
-  imageUrl, // <-- Nueva propiedad recibida
+  imageUrl,
+  folder, // <-- Nueva propiedad recibida
   exercises,
   addToast,
   handleSaveProp,
@@ -107,7 +108,8 @@ export const useRoutineSaver = ({
     const routineData = {
       name: routineName,
       description: description,
-      image_url: imageUrl, // <-- Enviamos la imagen al backend
+      image_url: imageUrl,
+      folder: folder || null, // <-- Enviamos la carpeta al backend
       exercises: exercises.map((ex, index) => {
         // Normalizamos el 'rest_seconds'
         const rest = parseInt(ex.rest_seconds, 10);

@@ -1,14 +1,25 @@
 /* frontend/src/components/RoutineEditor/RoutineHeader.jsx */
-import React, { useRef } from 'react';
-import { ChevronLeft, Info, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
+import {
+    ChevronLeft,
+    Info,
+    Upload,
+    Image as ImageIcon,
+    Trash2,
+    Folder,
+    ChevronDown,
+    Plus,
+    Check
+} from 'lucide-react';
+import useAppStore from '../../store/useAppStore';
 
-// Colores/Degradados predefinidos basados en variables CSS del tema
+// Colores/Degradados predefinidos
 const PREDEFINED_BACKGROUNDS = [
     'linear-gradient(135deg, var(--color-accent) 0%, var(--bg-primary) 100%)',
     'linear-gradient(to bottom right, var(--bg-secondary), var(--color-accent))',
     'linear-gradient(45deg, #000000 0%, var(--color-accent) 100%)',
     'linear-gradient(to right, var(--glass-highlight), var(--color-accent-transparent))',
-    'var(--color-accent)', // Opción sólida
+    'var(--color-accent)',
 ];
 
 const RoutineHeader = ({
@@ -22,10 +33,39 @@ const RoutineHeader = ({
     imageUrl,
     setImageUrl,
     onImageUpload,
-    isUploadingImage
+    isUploadingImage,
+    folder,
+    setFolder
 }) => {
     const fileInputRef = useRef(null);
+    const folderWrapperRef = useRef(null);
+    const [isFolderOpen, setIsFolderOpen] = useState(false);
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+    // Obtener carpetas únicas del store
+    const routines = useAppStore(state => state.routines);
+    const uniqueFolders = useMemo(() => {
+        if (!routines) return [];
+        const folders = routines.map(r => r.folder).filter(f => f && f.trim() !== '');
+        return [...new Set(folders)].sort();
+    }, [routines]);
+
+    // Filtrar carpetas según lo que escribe el usuario
+    const filteredFolders = useMemo(() => {
+        if (!folder) return uniqueFolders;
+        return uniqueFolders.filter(f => f.toLowerCase().includes(folder.toLowerCase()));
+    }, [uniqueFolders, folder]);
+
+    // Cerrar el dropdown si se hace click fuera
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (folderWrapperRef.current && !folderWrapperRef.current.contains(event.target)) {
+                setIsFolderOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -35,17 +75,20 @@ const RoutineHeader = ({
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    // Helper para saber si es un estilo CSS (gradiente/variable) o una URL
     const isCssBackground = (value) => {
         return value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
     };
 
-    // Helper para resolver la URL completa de la imagen (solo si no es CSS)
     const getDisplayImageUrl = (path) => {
         if (!path || isCssBackground(path)) return null;
         if (path.startsWith('http') || path.startsWith('blob:')) return path;
         if (path.startsWith('/uploads')) return `${API_URL}${path}`;
         return path;
+    };
+
+    const handleSelectFolder = (selectedFolder) => {
+        setFolder(selectedFolder);
+        setIsFolderOpen(false);
     };
 
     return (
@@ -69,25 +112,19 @@ const RoutineHeader = ({
                 </div>
             )}
 
-            {/* --- SECCIÓN DE IMAGEN DE PORTADA --- */}
-            {/* CAMBIO: Eliminada transparencia /30 y añadido shadow-sm para mejor visibilidad en modo claro */}
+            {/* --- SECCIÓN DE IMAGEN --- */}
             <div className="mb-6 bg-bg-secondary rounded-xl p-4 border border-glass-border shadow-sm">
                 <label className="block text-sm font-medium text-text-secondary mb-3">
                     Imagen de Portada
                 </label>
 
-                {/* AJUSTE: Centrado en móvil (items-center), alineado inicio en PC (sm:items-start) */}
                 <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
-
-                    {/* Previsualización: Ancho controlado (w-40 en móvil, w-48 en PC), evitando que ocupe todo */}
+                    {/* Previsualización */}
                     <div className="relative w-40 sm:w-48 aspect-video bg-bg-primary rounded-lg overflow-hidden border border-glass-border flex items-center justify-center flex-shrink-0 group shadow-sm">
                         {imageUrl ? (
                             <>
                                 {isCssBackground(imageUrl) ? (
-                                    <div
-                                        className="w-full h-full transition-transform duration-500 group-hover:scale-105"
-                                        style={{ background: imageUrl }}
-                                    />
+                                    <div className="w-full h-full transition-transform duration-500 group-hover:scale-105" style={{ background: imageUrl }} />
                                 ) : (
                                     <img
                                         src={getDisplayImageUrl(imageUrl)}
@@ -96,7 +133,6 @@ const RoutineHeader = ({
                                         onError={(e) => { e.target.src = 'https://via.placeholder.com/300x169?text=Error'; }}
                                     />
                                 )}
-
                                 <button
                                     onClick={() => setImageUrl(null)}
                                     className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
@@ -111,7 +147,6 @@ const RoutineHeader = ({
                                 <span className="text-xs font-medium">Sin imagen</span>
                             </div>
                         )}
-
                         {isUploadingImage && (
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-20">
                                 <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
@@ -119,9 +154,8 @@ const RoutineHeader = ({
                         )}
                     </div>
 
-                    {/* Controles y Galería */}
+                    {/* Controles Imagen */}
                     <div className="flex-1 w-full space-y-4">
-                        {/* Botón de subida */}
                         <div>
                             <button
                                 onClick={() => fileInputRef.current?.click()}
@@ -131,21 +165,12 @@ const RoutineHeader = ({
                                 <Upload size={16} />
                                 {isUploadingImage ? 'Subiendo...' : 'Subir desde Galería'}
                             </button>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                            />
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                         </div>
-
-                        {/* Galería Predefinida */}
                         <div className="text-center sm:text-left">
                             <span className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-2 block">
                                 O elige un estilo
                             </span>
-                            {/* CORRECCIÓN: p-2 en lugar de pb-2 para evitar recortes al escalar */}
                             <div className="flex gap-3 overflow-x-auto p-2 scrollbar-hide justify-start">
                                 {PREDEFINED_BACKGROUNDS.map((bg, idx) => (
                                     <button
@@ -165,7 +190,7 @@ const RoutineHeader = ({
                 </div>
             </div>
 
-            {/* --- CAMPOS DE TEXTO EXISTENTES --- */}
+            {/* --- CAMPOS DE TEXTO --- */}
             <div className="mb-6 space-y-4">
                 <input
                     type="text"
@@ -174,6 +199,86 @@ const RoutineHeader = ({
                     onChange={(e) => setRoutineName(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent text-lg placeholder-text-tertiary"
                 />
+
+                {/* --- CUSTOM SELECT / CREATABLE COMBOBOX PARA CARPETAS --- */}
+                <div className="relative" ref={folderWrapperRef}>
+                    <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none">
+                            <Folder size={18} />
+                        </div>
+
+                        <input
+                            type="text"
+                            placeholder="Carpeta (Selecciona o escribe una nueva)"
+                            value={folder}
+                            onChange={(e) => {
+                                setFolder(e.target.value);
+                                setIsFolderOpen(true);
+                            }}
+                            onFocus={() => setIsFolderOpen(true)}
+                            className="w-full pl-11 pr-10 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent placeholder-text-tertiary"
+                        />
+
+                        <button
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-accent transition-colors p-1"
+                            onClick={() => setIsFolderOpen(!isFolderOpen)}
+                            type="button"
+                        >
+                            <ChevronDown
+                                size={18}
+                                className={`transition-transform duration-200 ${isFolderOpen ? 'rotate-180' : ''}`}
+                            />
+                        </button>
+                    </div>
+
+                    {/* DROPDOWN MENU */}
+                    {isFolderOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary border border-glass-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                            {filteredFolders.length > 0 ? (
+                                <ul>
+                                    {filteredFolders.map((f) => (
+                                        <li
+                                            key={f}
+                                            onClick={() => handleSelectFolder(f)}
+                                            className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors text-text-primary"
+                                        >
+                                            <Folder size={16} className="text-accent" />
+                                            <span className="flex-1">{f}</span>
+                                            {folder === f && <Check size={16} className="text-accent" />}
+                                        </li>
+                                    ))}
+                                    {/* Opción de crear si no coincide exactamente */}
+                                    {folder && !uniqueFolders.includes(folder) && (
+                                        <li
+                                            onClick={() => handleSelectFolder(folder)}
+                                            className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 border-t border-glass-border text-accent font-medium"
+                                        >
+                                            <Plus size={16} />
+                                            <span>Crear nueva: "{folder}"</span>
+                                        </li>
+                                    )}
+                                </ul>
+                            ) : (
+                                <ul>
+                                    {folder ? (
+                                        <li
+                                            onClick={() => handleSelectFolder(folder)}
+                                            className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 text-accent font-medium"
+                                        >
+                                            <Plus size={16} />
+                                            <span>Crear carpeta: "{folder}"</span>
+                                        </li>
+                                    ) : (
+                                        <li className="px-4 py-4 text-center text-text-tertiary text-sm italic">
+                                            Escribe para crear una carpeta o selecciona una existente.
+                                        </li>
+                                    )}
+                                </ul>
+                            )}
+                        </div>
+                    )}
+                </div>
+
                 <textarea
                     placeholder="Descripción (opcional)"
                     value={description}

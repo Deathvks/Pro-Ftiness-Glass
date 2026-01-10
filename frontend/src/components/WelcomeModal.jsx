@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
   Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
-  Link, Smartphone, Image, Globe, Clock, Download, Footprints, MapPin
+  Link, Smartphone, Image, Globe, Clock, Download, Footprints, MapPin,
+  Folder
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -211,6 +212,42 @@ const WelcomeModal = ({ onClose }) => {
               </div>
               <p className="mt-3 text-xs text-text-muted text-center">
                 Registra tus sesiones de running y ciclismo con GPS, mapas y estadísticas en tiempo real.
+              </p>
+            </div>
+
+            {/* --- BLOQUE NUEVO: ORGANIZACIÓN POR CARPETAS --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Folder size={16} className="text-yellow-400" /> Carpetas de Rutinas
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center gap-3 shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500 px-4">
+
+                  {/* Carpeta 1 */}
+                  <div className="flex flex-col items-center gap-1 group/folder transition-transform hover:-translate-y-1">
+                    <div className="relative">
+                      <Folder size={32} className="text-yellow-400 fill-yellow-400/20" />
+                      {/* Punto eliminado */}
+                    </div>
+                    <div className="h-1.5 w-10 bg-white/20 rounded-full"></div>
+                  </div>
+
+                  {/* Carpeta 2 */}
+                  <div className="flex flex-col items-center gap-1 group/folder transition-transform hover:-translate-y-1">
+                    <Folder size={32} className="text-blue-400 fill-blue-400/20" />
+                    <div className="h-1.5 w-12 bg-white/20 rounded-full"></div>
+                  </div>
+
+                  {/* Carpeta 3 (Active) */}
+                  <div className="flex flex-col items-center gap-1 group/folder transition-transform hover:-translate-y-1">
+                    <Folder size={32} className="text-accent fill-accent/20" />
+                    <div className="h-1.5 w-8 bg-accent/40 rounded-full"></div>
+                  </div>
+
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Organiza tus rutinas en carpetas personalizadas (Pecho, Pierna, Hipertrofia...) para un acceso más rápido.
               </p>
             </div>
 

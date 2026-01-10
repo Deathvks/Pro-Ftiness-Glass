@@ -49,6 +49,7 @@ router.use(authenticateToken);
 const routineValidationRules = [
     body('name').trim().notEmpty().withMessage('El nombre de la rutina es requerido.'),
     body('description').optional().trim(),
+    body('folder').optional().trim(), // --- NUEVO CAMPO: Carpeta ---
     body('image_url').optional(), // Permitimos imagen opcional (URL o null)
     body('exercises.*.name').trim().notEmpty().withMessage('El nombre del ejercicio es requerido.'),
     body('exercises.*.sets').isInt({ min: 1 }).withMessage('Las series deben ser un número positivo.'),

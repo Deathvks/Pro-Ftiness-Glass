@@ -37,6 +37,11 @@ const Routine = sequelize.define(
       defaultValue: false,
       allowNull: false
     },
+    folder: { // Nuevo campo para organizar carpetas
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: null
+    },
     downloads_count: {
       type: DataTypes.INTEGER,
       defaultValue: 0,

@@ -17,7 +17,8 @@ import { v4 as uuidv4 } from 'uuid';
  * @param {function} params.setIsLoading - Setter para el estado de carga.
  * @param {function} params.setRoutineName - Setter para el nombre de la rutina.
  * @param {function} params.setDescription - Setter para la descripción.
-  * @param {function} params.setImageUrl - Setter para la imagen de portada.
+ * @param {function} params.setImageUrl - Setter para la imagen de portada.
+ * @param {function} params.setFolder - Setter para la carpeta.
  * @param {function} params.setExercises - Setter para la lista de ejercicios.
  */
 export const useRoutineLoader = ({
@@ -27,7 +28,8 @@ export const useRoutineLoader = ({
   setIsLoading,
   setRoutineName,
   setDescription,
-  setImageUrl, // <-- Nuevo parámetro
+  setImageUrl,
+  setFolder, // <-- Nuevo parámetro
   setExercises,
   // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
   exercises, // 1. Recibimos el array de ejercicios (posiblemente del borrador)
@@ -56,11 +58,12 @@ export const useRoutineLoader = ({
         const allExercisesData = await getExerciseList();
         const routine = await getRoutineById(id);
 
-        // 2. Actualizamos el estado simple (nombre, descripción, imagen)
+        // 2. Actualizamos el estado simple (nombre, descripción, imagen, carpeta)
         setRoutineName(routine.name);
         setDescription(routine.description);
         // Nota: El backend envía 'image_url' (snake_case)
         setImageUrl(routine.image_url || null);
+        setFolder(routine.folder || ''); // <-- Cargar carpeta
 
         // 3. Formateamos los ejercicios de la rutina
         const exercisesToFormat = routine.RoutineExercises || routine.exercises || [];
@@ -135,6 +138,6 @@ export const useRoutineLoader = ({
 
     // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
     // 3. Añadimos dependencias
-  }, [id, addToast, onCancel, setIsLoading, setRoutineName, setDescription, setImageUrl, setExercises, exercises]);
+  }, [id, addToast, onCancel, setIsLoading, setRoutineName, setDescription, setImageUrl, setFolder, setExercises, exercises]);
   // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
 };

@@ -8,19 +8,20 @@ import ExerciseList from '../components/RoutineEditor/ExerciseList';
 import RoutineActions from '../components/RoutineEditor/RoutineActions';
 import Spinner from '../components/Spinner';
 
-const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCancel }) => {
+const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCancel, initialFolder }) => {
 
   // Usamos el hook para toda la lógica
   const {
     id,
     routineName, setRoutineName,
     description, setDescription,
-    imageUrl, setImageUrl, // <-- NUEVO: Estado de imagen
+    imageUrl, setImageUrl,
+    folder, setFolder, // <-- NUEVO: Estado de carpeta
     exercises,
     isLoading,
     isSaving,
     isDeleting,
-    isUploadingImage, // <-- NUEVO: Estado de carga
+    isUploadingImage,
     showDeleteConfirm, setShowDeleteConfirm,
     validationError,
 
@@ -30,7 +31,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
     handleSave,
     handleDelete,
     handleCancel,
-    handleImageUpload, // <-- NUEVO: Función de subida
+    handleImageUpload,
 
     addExercise,
     updateExerciseField,
@@ -47,11 +48,11 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
     handleOpenSearchForAdd,
     showExerciseSearch,
 
-    // Funciones wrappers importadas del hook (código más limpio)
+    // Funciones wrappers importadas del hook
     handleSelectExerciseForReplace,
     handleAddCustomExerciseForReplace
 
-  } = useRoutineEditor({ initialRoutine, onSave: handleSaveProp, onCancel });
+  } = useRoutineEditor({ initialRoutine, onSave: handleSaveProp, onCancel, initialFolder });
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
@@ -68,11 +69,12 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
         setRoutineName={setRoutineName}
         description={description}
         setDescription={setDescription}
-        // --- NUEVAS PROPS DE IMAGEN ---
         imageUrl={imageUrl}
         setImageUrl={setImageUrl}
         onImageUpload={handleImageUpload}
         isUploadingImage={isUploadingImage}
+        folder={folder} // <-- Pasar prop
+        setFolder={setFolder} // <-- Pasar prop
       />
 
       <ExerciseList

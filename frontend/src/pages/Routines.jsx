@@ -14,6 +14,8 @@ import {
   BookCopy,
   Compass,
   Clock,
+  Folder,
+  FolderOpen
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -69,6 +71,7 @@ const Routines = ({ setView }) => {
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
+  const [selectedFolder, setSelectedFolder] = useState('all'); // all | uncategorized | [folderName]
 
   const [activeTab, setActiveTab] = useState(() => {
     const forcedTab = localStorage.getItem('routinesForceTab');
@@ -124,6 +127,15 @@ const Routines = ({ setView }) => {
     });
     return map;
   }, [workoutLog]);
+
+  // Extraer carpetas únicas
+  const uniqueFolders = useMemo(() => {
+    if (!routines) return [];
+    const folders = routines
+      .map(r => r.folder)
+      .filter(f => f && f.trim() !== '');
+    return [...new Set(folders)].sort();
+  }, [routines]);
 
   const groupExercises = (exercises) => {
     if (!exercises || exercises.length === 0) return [];
@@ -213,6 +225,7 @@ const Routines = ({ setView }) => {
       const copy = {
         name: `${routine.name} (Copia)`,
         description: routine.description,
+        folder: routine.folder, // Copiar también la carpeta
         exercises: (routine.RoutineExercises || routine.exercises || []).map(
           ({ ...ex }) => ({
             ...ex,
@@ -283,13 +296,24 @@ const Routines = ({ setView }) => {
   const filteredSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    let list = (routines || []).filter(
-      (r) =>
-        r &&
-        (!q ||
-          r.name?.toLowerCase().includes(q) ||
-          r.description?.toLowerCase().includes(q))
-    );
+    let list = (routines || []).filter((r) => {
+      if (!r) return false;
+
+      // Filtro de búsqueda texto
+      const matchesQuery = !q ||
+        r.name?.toLowerCase().includes(q) ||
+        r.description?.toLowerCase().includes(q);
+
+      // Filtro de carpeta
+      let matchesFolder = true;
+      if (selectedFolder === 'uncategorized') {
+        matchesFolder = !r.folder || r.folder.trim() === '';
+      } else if (selectedFolder !== 'all') {
+        matchesFolder = r.folder === selectedFolder;
+      }
+
+      return matchesQuery && matchesFolder;
+    });
 
     list.sort((a, b) => {
       const da = a ? lastUsedMap.get(a.id)?.getTime() || 0 : 0;
@@ -298,7 +322,7 @@ const Routines = ({ setView }) => {
     });
 
     return list;
-  }, [routines, query, lastUsedMap]);
+  }, [routines, query, lastUsedMap, selectedFolder]);
 
   if (editingRoutine) {
     return (
@@ -307,6 +331,7 @@ const Routines = ({ setView }) => {
         routine={editingRoutine}
         onSave={handleSave}
         onCancel={() => setEditingRoutine(null)}
+        initialFolder={selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : null}
       />
     );
   }
@@ -320,7 +345,12 @@ const Routines = ({ setView }) => {
   const CreateRoutineButton = ({ className = '' }) => (
     <button
       onClick={() => {
-        setEditingRoutine({ name: '', description: '', exercises: [] });
+        setEditingRoutine({
+          name: '',
+          description: '',
+          exercises: [],
+          folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
+        });
       }}
       className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 ${className}`}
     >
@@ -378,11 +408,9 @@ const Routines = ({ setView }) => {
 
       {activeTab === 'myRoutines' && (
         <>
-          <div className="mb-6 max-w-md">
-            <label className="text-sm text-text-secondary mb-2 block">
-              Buscar en mis rutinas
-            </label>
-            <div className="relative">
+          <div className="mb-6 flex flex-col gap-4">
+            {/* Buscador */}
+            <div className="max-w-md relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
                 size={16}
@@ -390,13 +418,51 @@ const Routines = ({ setView }) => {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Nombre o descripción..."
+                placeholder="Buscar rutinas..."
                 className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-secondary border border-[--glass-border] focus:outline-none focus:ring-2 focus:ring-accent/40"
               />
             </div>
+
+            {/* Selector de Carpetas (Chips) */}
+            {uniqueFolders.length > 0 && (
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  onClick={() => setSelectedFolder('all')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${selectedFolder === 'all'
+                      ? 'bg-accent/20 border-accent text-accent'
+                      : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                    }`}
+                >
+                  Todas
+                </button>
+
+                {uniqueFolders.map(folder => (
+                  <button
+                    key={folder}
+                    onClick={() => setSelectedFolder(folder)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border flex items-center gap-1.5 ${selectedFolder === folder
+                        ? 'bg-accent/20 border-accent text-accent'
+                        : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                      }`}
+                  >
+                    {selectedFolder === folder ? <FolderOpen size={14} /> : <Folder size={14} />}
+                    {folder}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setSelectedFolder('uncategorized')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${selectedFolder === 'uncategorized'
+                      ? 'bg-accent/20 border-accent text-accent'
+                      : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                    }`}
+                >
+                  Otros
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* --- AQUÍ ESTÁ EL CAMBIO: items-start añadido para independencia de altura --- */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map((routine) => {
@@ -415,7 +481,15 @@ const Routines = ({ setView }) => {
                 const imageSrc = routine.imageUrl || routine.image_url;
 
                 return (
-                  <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group">
+                  <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group relative">
+                    {/* Badge de Carpeta */}
+                    {routine.folder && (
+                      <div className="absolute top-2 right-2 z-20">
+                        <span className="px-2 py-1 rounded-md bg-black/50 backdrop-blur-md text-xs font-medium text-white border border-white/10 flex items-center gap-1">
+                          <Folder size={10} /> {routine.folder}
+                        </span>
+                      </div>
+                    )}
 
                     {/* --- IMAGEN: Encima de todo el contenido --- */}
                     {imageSrc && (
@@ -577,9 +651,12 @@ const Routines = ({ setView }) => {
               <div className="lg:col-span-3 md:col-span-2">
                 <GlassCard className="text-center p-10">
                   <p className="text-text-muted">
-                    Aún no has creado ninguna rutina.
+                    {routines && routines.length > 0
+                      ? `No hay rutinas en la carpeta "${selectedFolder === 'uncategorized' ? 'Otros' : selectedFolder}".`
+                      : 'Aún no has creado ninguna rutina.'
+                    }
                   </p>
-                  <p className="text-text-muted">
+                  <p className="text-text-muted mt-2">
                     ¡Haz clic en{' '}
                     <span className="font-semibold">“Crear Rutina”</span> para
                     empezar!

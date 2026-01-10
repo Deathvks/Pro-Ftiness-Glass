@@ -24,6 +24,7 @@ export const getAllRoutines = async (req, res, next) => {
         },
       ],
       order: [
+        ['folder', 'ASC'], // Ordenar también por carpeta si quieres que salgan agrupadas
         ['id', 'ASC'],
         ['RoutineExercises', 'exercise_order', 'ASC'],
         ['RoutineExercises', 'id', 'ASC'],
@@ -143,7 +144,7 @@ export const createRoutine = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, description, is_public = false, exercises = [], image_url } = req.body;
+  const { name, description, is_public = false, exercises = [], image_url, folder } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -164,6 +165,7 @@ export const createRoutine = async (req, res, next) => {
         description,
         user_id: userId,
         is_public,
+        folder: folder || null, // --- NUEVO: Guardar carpeta ---
         downloads_count: 0,
         image_url: image_url || null
       },
@@ -205,7 +207,7 @@ export const updateRoutine = async (req, res, next) => {
   }
 
   const { id } = req.params;
-  const { name, description, is_public, exercises = [], image_url } = req.body;
+  const { name, description, is_public, exercises = [], image_url, folder } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -242,6 +244,7 @@ export const updateRoutine = async (req, res, next) => {
     const updateData = { name, description };
     if (typeof is_public !== 'undefined') updateData.is_public = is_public;
     if (typeof image_url !== 'undefined') updateData.image_url = image_url;
+    if (typeof folder !== 'undefined') updateData.folder = folder; // --- NUEVO: Actualizar carpeta ---
 
     await routine.update(updateData, { transaction: t });
 
@@ -485,6 +488,7 @@ export const downloadRoutine = async (req, res, next) => {
       description: sourceRoutine.description,
       user_id: userId,
       is_public: false,
+      folder: null, // Las descargas van a la raíz por defecto
       downloads_count: 0,
       image_url: null // Iniciamos sin imagen
     }, { transaction: t });

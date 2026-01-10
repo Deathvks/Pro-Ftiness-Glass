@@ -1,4 +1,5 @@
 /* frontend/src/hooks/useRoutineEditor.js */
+import { useState } from 'react';
 // Importamos los hooks modulares
 import { useRoutineState } from './useRoutineState';
 import { useRoutineLoader } from './useRoutineLoader';
@@ -13,9 +14,7 @@ import { uploadRoutineImage } from '../services/routineService';
 
 // Claves de borrador (deben coincidir)
 const DRAFT_KEY = 'routineEditorDraft'; // Borrador de la rutina
-// --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 const CART_DRAFT_KEY = 'exerciseSearchCartDraft'; // Borrador del carrito
-// --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 
 /**
 * Hook principal (orquestador) para el editor de rutinas.
@@ -26,9 +25,10 @@ const CART_DRAFT_KEY = 'exerciseSearchCartDraft'; // Borrador del carrito
 * @param {Object} params.initialRoutine - La rutina inicial (si se edita).
 * @param {function} params.onSave - Callback a ejecutar tras guardar/borrar.
 * @param {function} params.onCancel - Callback a ejecutar al cancelar.
+* @param {string} params.initialFolder - Carpeta inicial (opcional).
 * @returns {Object} Todo el estado y funciones necesarias para el editor.
 */
-export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCancel }) => {
+export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCancel, initialFolder }) => {
   const id = initialRoutine?.id;
   const { addToast } = useToast();
 
@@ -36,18 +36,22 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   const {
     routineName, setRoutineName,
     description, setDescription,
-    imageUrl, setImageUrl, // <-- Estado de la imagen
+    imageUrl, setImageUrl,
     exercises, setExercises,
     isLoading, setIsLoading,
     isSaving, setIsSaving,
     isDeleting, setIsDeleting,
-    isUploadingImage, setIsUploadingImage, // <-- Estado de carga de subida
+    isUploadingImage, setIsUploadingImage,
     showDeleteConfirm, setShowDeleteConfirm,
     validationError, setValidationError,
     showExerciseSearch, setShowExerciseSearch,
     activeDropdownTempId, setActiveDropdownTempId,
     replacingExerciseTempId, setReplacingExerciseTempId,
   } = useRoutineState(initialRoutine);
+
+  // --- NUEVO: Estado para la carpeta ---
+  // Inicializamos con la prop initialFolder o con lo que venga en la rutina si estamos editando
+  const [folder, setFolder] = useState(initialFolder || initialRoutine?.folder || '');
 
   // 2. Hook de Carga (useEffect)
   useRoutineLoader({
@@ -57,7 +61,8 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     setIsLoading,
     setRoutineName,
     setDescription,
-    setImageUrl, // <-- Pasamos el setter para cargar la imagen existente
+    setImageUrl,
+    setFolder, // <-- Pasamos el setter para cargar la carpeta existente
     setExercises,
     exercises,
   });
@@ -72,19 +77,18 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     setReplacingExerciseTempId,
   });
 
-  // --- INICIO DE LA MODIFICACIÓN (Persistencia del Carrito) ---
   const handleSearchModalClose = () => {
     localStorage.removeItem(CART_DRAFT_KEY);
     originalHandleSearchModalClose();
   };
-  // --- FIN DE LA MODIFICACIÓN (Persistencia del Carrito) ---
 
   // 4. Hook de Guardado/Borrado (Zustand, Validación)
   const { handleSave, handleDelete } = useRoutineSaver({
     id,
     routineName,
     description,
-    imageUrl, // <-- Pasamos la URL de la imagen para guardar
+    imageUrl,
+    folder, // <-- Pasamos la carpeta para guardar
     exercises,
     addToast,
     handleSaveProp,
@@ -148,13 +152,13 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     onCancel();
   };
 
-  // --- NUEVA FUNCIÓN: Manejo de subida de imagen ---
+  // Manejo de subida de imagen
   const handleImageUpload = async (file) => {
     if (!file) return;
     setIsUploadingImage(true);
     try {
       const response = await uploadRoutineImage(file);
-      setImageUrl(response.imageUrl); // Guardamos la ruta relativa devuelta por el backend
+      setImageUrl(response.imageUrl);
       addToast('Imagen subida correctamente', 'success');
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -171,12 +175,13 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     // Estados y Setters
     routineName, setRoutineName,
     description, setDescription,
-    imageUrl, setImageUrl, // <-- Exportamos estado de imagen
+    imageUrl, setImageUrl,
+    folder, setFolder, // <-- Exportamos estado de carpeta
     exercises,
     isLoading,
     isSaving,
     isDeleting,
-    isUploadingImage, // <-- Exportamos estado de subida
+    isUploadingImage,
     showDeleteConfirm, setShowDeleteConfirm,
     validationError,
     showExerciseSearch, setShowExerciseSearch,
@@ -188,7 +193,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     handleSave,
     handleDelete,
     handleCancel: handleCancelWrapper,
-    handleImageUpload, // <-- Exportamos función de subida
+    handleImageUpload,
 
     // Acciones de Ejercicios
     addExercise,
