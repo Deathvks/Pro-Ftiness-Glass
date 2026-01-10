@@ -423,14 +423,15 @@ const Routines = ({ setView }) => {
               />
             </div>
 
-            {/* Selector de Carpetas (Chips) */}
+            {/* Selector de Carpetas (Scroll Horizontal) */}
             {uniqueFolders.length > 0 && (
-              <div className="flex flex-wrap gap-2 items-center">
+              // Contenedor del scroll: flex, no wrap, overflow-x-auto, scrollbar-hide
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                 <button
                   onClick={() => setSelectedFolder('all')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${selectedFolder === 'all'
-                      ? 'bg-accent/20 border-accent text-accent'
-                      : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${selectedFolder === 'all'
+                    ? 'bg-accent/20 border-accent text-accent'
+                    : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
                     }`}
                 >
                   Todas
@@ -440,9 +441,9 @@ const Routines = ({ setView }) => {
                   <button
                     key={folder}
                     onClick={() => setSelectedFolder(folder)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border flex items-center gap-1.5 ${selectedFolder === folder
-                        ? 'bg-accent/20 border-accent text-accent'
-                        : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${selectedFolder === folder
+                      ? 'bg-accent/20 border-accent text-accent'
+                      : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
                       }`}
                   >
                     {selectedFolder === folder ? <FolderOpen size={14} /> : <Folder size={14} />}
@@ -452,9 +453,9 @@ const Routines = ({ setView }) => {
 
                 <button
                   onClick={() => setSelectedFolder('uncategorized')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${selectedFolder === 'uncategorized'
-                      ? 'bg-accent/20 border-accent text-accent'
-                      : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${selectedFolder === 'uncategorized'
+                    ? 'bg-accent/20 border-accent text-accent'
+                    : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
                     }`}
                 >
                   Otros
