@@ -5,7 +5,7 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube // Importamos Youtube
+  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -15,6 +15,7 @@ import * as userService from '../services/userService';
 import { useToast } from '../hooks/useToast';
 import ActiveSessions from '../components/ActiveSessions';
 import BugReportModal from '../components/BugReportModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 import CustomSelect from '../components/CustomSelect';
 
 // --- Constantes ---
@@ -54,6 +55,16 @@ const TIMEZONES = [
   { value: 'America/Santiago', label: 'Chile (Santiago)' },
   { value: 'UTC', label: 'UTC (Universal)' },
 ];
+
+// Detección simple de iOS
+const isIOS = () => {
+  if (typeof navigator === 'undefined') return false;
+  return [
+    'iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod'
+  ].includes(navigator.platform)
+    // iPad en iOS 13+ detection
+    || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+};
 
 // --- Sub-componentes ---
 const SectionTitle = ({ icon: Icon, title }) => (
@@ -163,6 +174,10 @@ export default function SettingsScreen({
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
+
+  // Estados para modal de recarga iOS
+  const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
+  const [pendingTheme, setPendingTheme] = useState(null);
 
   // --- NUEVO STATE: Auto Timezone (Persistente en LocalStorage) ---
   const [autoTimezone, setAutoTimezone] = useState(() => {
@@ -341,6 +356,27 @@ export default function SettingsScreen({
     return 'Pausadas';
   };
 
+  // --- LÓGICA DE CAMBIO DE TEMA EN IOS ---
+  const handleThemeClick = (mode) => {
+    if (isIOS()) {
+      // En iOS forzamos confirmación para recargar
+      setPendingTheme(mode);
+      setShowThemeReloadModal(true);
+    } else {
+      // En otros dispositivos cambiamos directamente
+      setTheme(mode);
+    }
+  };
+
+  const confirmThemeReload = () => {
+    if (pendingTheme) {
+      setTheme(pendingTheme);
+      // Forzar recarga para limpiar UI del sistema en iOS
+      window.location.reload();
+    }
+    setShowThemeReloadModal(false);
+  };
+
   return (
     <div className="px-4 pb-6 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
@@ -366,7 +402,7 @@ export default function SettingsScreen({
                 {['system', 'light', 'dark', 'oled'].map((mode) => (
                   <button
                     key={mode}
-                    onClick={() => setTheme(mode)}
+                    onClick={() => handleThemeClick(mode)}
                     className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${theme === mode
                       ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20'
                       : 'border-[--glass-border] text-text-secondary hover:bg-bg-secondary'
@@ -454,8 +490,6 @@ export default function SettingsScreen({
           <SettingsCard>
             <SectionTitle icon={BellRing} title="Notificaciones" />
             <div className="flex flex-col gap-2">
-              {/* CORRECCIÓN: Quitamos el render condicional {isPushSupported && ...} 
-                  para que siempre salga la opción y el usuario vea si está soportado o no */}
               <SwitchItem
                 icon={BellRing}
                 title="Push Notifications"
@@ -580,9 +614,6 @@ export default function SettingsScreen({
         </div>
 
         {/* --- COLUMNA 3: SEGURIDAD, SOPORTE Y GENERAL --- */}
-        {/* CORRECCIÓN: En Tablet (md), esta columna ocupará TODO el ancho (col-span-2) 
-            y sus hijos se pondrán en una parrilla de 2 columnas para llenar el espacio. 
-            En Desktop (xl) vuelve a ser 1 columna normal vertical. */}
         <div className="flex flex-col gap-6 md:col-span-2 md:grid md:grid-cols-2 xl:col-span-1 xl:flex xl:flex-col">
           <SettingsCard>
             <SectionTitle icon={Shield} title="Seguridad" />
@@ -646,7 +677,6 @@ export default function SettingsScreen({
           <SettingsCard>
             <SectionTitle icon={Info} title="Soporte y General" />
             <div className="flex flex-col gap-1">
-              {/* --- NUEVO: Descarga de APK (Link a GitHub) --- */}
               <a
                 href="https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.0.0/app-release.apk"
                 className="no-underline"
@@ -727,6 +757,17 @@ export default function SettingsScreen({
 
       {showBugModal && (
         <BugReportModal onClose={() => setShowBugModal(false)} />
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN PARA IOS */}
+      {showThemeReloadModal && (
+        <ConfirmationModal
+          message="En iOS es necesario recargar la página para aplicar los cambios de tema en la interfaz del sistema. ¿Deseas continuar?"
+          confirmText="Recargar"
+          cancelText="Cancelar"
+          onConfirm={confirmThemeReload}
+          onCancel={() => setShowThemeReloadModal(false)}
+        />
       )}
     </div>
   );
