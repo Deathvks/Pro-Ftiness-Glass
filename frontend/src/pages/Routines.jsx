@@ -425,7 +425,6 @@ const Routines = ({ setView }) => {
 
             {/* Selector de Carpetas (Scroll Horizontal) */}
             {uniqueFolders.length > 0 && (
-              // Contenedor del scroll: flex, no wrap, overflow-x-auto, scrollbar-hide
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                 <button
                   onClick={() => setSelectedFolder('all')}
@@ -483,16 +482,8 @@ const Routines = ({ setView }) => {
 
                 return (
                   <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group relative">
-                    {/* Badge de Carpeta */}
-                    {routine.folder && (
-                      <div className="absolute top-2 right-2 z-20">
-                        <span className="px-2 py-1 rounded-md bg-black/50 backdrop-blur-md text-xs font-medium text-white border border-white/10 flex items-center gap-1">
-                          <Folder size={10} /> {routine.folder}
-                        </span>
-                      </div>
-                    )}
 
-                    {/* --- IMAGEN: Encima de todo el contenido --- */}
+                    {/* --- IMAGEN (Si existe) --- */}
                     {imageSrc && (
                       <div className="h-32 sm:h-40 w-full relative shrink-0 overflow-hidden bg-bg-secondary">
                         {isCssBackground(imageSrc) ? (
@@ -509,99 +500,96 @@ const Routines = ({ setView }) => {
                           />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary/90 to-transparent opacity-60" />
+
+                        {/* Badge de Carpeta SOBRE IMAGEN */}
+                        {routine.folder && (
+                          <div className="absolute top-2 right-2 z-20">
+                            <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-xs font-medium text-white border border-white/10 flex items-center gap-1">
+                              <Folder size={12} /> {routine.folder}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    <div className="p-5 md:p-6 flex-1 flex flex-col">
-                      <div className="flex items-center justify-between gap-4 mb-3">
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary min-w-0">
-                          {isCompleted && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold">
-                              <CheckCircle size={14} /> Completada hoy
+                    <div className="p-5 flex-1 flex flex-col">
+
+                      {/* --- CABECERA: Título y Acciones --- */}
+                      <div className="flex justify-between items-start gap-3 mb-2">
+                        <div className="flex flex-col gap-1 min-w-0">
+                          {/* Badge de Carpeta INLINE (Si NO hay imagen) */}
+                          {!imageSrc && routine.folder && (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-text-muted mb-0.5">
+                              <Folder size={12} /> {routine.folder}
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
-                            <Dumbbell size={14} /> {totalExercises} ejercicio
-                            {totalExercises !== 1 ? 's' : ''}
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[--glass-border] bg-[--glass-bg]">
-                            <CalendarClock size={14} />
-                            {lastUsed
-                              ? new Date(lastUsed).toLocaleDateString('es-ES')
-                              : 'Sin uso'}
-                          </span>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-lg md:text-xl font-bold text-text-primary leading-tight truncate">
+                              {routine.name}
+                            </h2>
+                            {isActive && (
+                              <span className="px-2 py-0.5 rounded-full bg-accent-transparent text-accent text-[10px] uppercase font-bold shrink-0 border border-accent/20">
+                                Activo
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="shrink-0 flex items-center gap-1">
-                          <button
-                            onClick={() => handleEditClick(routine)}
-                            className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent"
-                            title="Editar"
-                          >
-                            <Edit size={18} />
+
+                        {/* Botones de Acción */}
+                        <div className="shrink-0 flex items-center gap-1 -mt-1">
+                          <button onClick={() => handleEditClick(routine)} className="p-2 rounded-full text-text-secondary hover:bg-bg-secondary border border-transparent hover:border-glass-border transition-all" title="Editar">
+                            <Edit size={16} />
                           </button>
-                          <button
-                            onClick={() => duplicateRoutine(routine)}
-                            className="p-2 rounded-full text-text-secondary hover:bg-accent-transparent hover:text-accent"
-                            title="Duplicar"
-                          >
-                            <Plus size={18} />
+                          <button onClick={() => duplicateRoutine(routine)} className="p-2 rounded-full text-text-secondary hover:bg-bg-secondary border border-transparent hover:border-glass-border transition-all" title="Duplicar">
+                            <Plus size={16} />
                           </button>
-                          <button
-                            onClick={() => handleDeleteClick(routine.id)}
-                            className="p-2 rounded-full text-text-muted hover:bg-red/20 hover:text-red"
-                            title="Eliminar"
-                          >
-                            <Trash2 size={18} />
+                          <button onClick={() => handleDeleteClick(routine.id)} className="p-2 rounded-full text-text-muted hover:text-red hover:bg-red/10 border border-transparent hover:border-red/20 transition-all" title="Eliminar">
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>
 
-                      <div className="pb-4 border-b border-[--glass-border]">
-                        <div className="flex items-center gap-3">
-                          <h2 className="text-lg md:text-xl font-bold text-text-primary">
-                            {routine.name}
-                          </h2>
-                          {isActive && (
-                            <span className="px-2 py-0.5 rounded-full bg-accent-transparent text-accent text-xs font-semibold shrink-0">
-                              Activo
-                            </span>
-                          )}
-                        </div>
+                      {/* Descripción */}
+                      {routine.description && (
+                        <p className="text-sm text-text-secondary line-clamp-2 mb-3">
+                          {routine.description}
+                        </p>
+                      )}
 
-                        {routine.description && (
-                          <p className="text-sm text-text-secondary mt-1 line-clamp-2">
-                            {routine.description}
-                          </p>
+                      {/* --- INFO ROW (Reorganizado) --- */}
+                      <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-[--glass-border]">
+                        {isCompleted && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green/10 text-green text-xs font-semibold border border-green/20">
+                            <CheckCircle size={12} /> Completada
+                          </span>
                         )}
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-bg-secondary text-text-secondary text-xs font-medium border border-glass-border">
+                          <Dumbbell size={12} /> {totalExercises} ejercicios
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-bg-secondary text-text-secondary text-xs font-medium border border-glass-border">
+                          <CalendarClock size={12} /> {lastUsed ? new Date(lastUsed).toLocaleDateString('es-ES') : 'Sin uso'}
+                        </span>
                       </div>
 
+                      {/* --- LISTA DE EJERCICIOS --- */}
                       {exerciseGroups.length > 0 && (
-                        <div className="mt-4">
-                          <h3 className="text-sm font-semibold text-text-secondary mb-2">
-                            Plan de ejercicios
-                          </h3>
+                        <div className="mb-4">
                           <div className="flex flex-col gap-3">
                             {exerciseGroups.map((group, groupIndex) => (
                               <div key={groupIndex}>
                                 {group.length > 1 && (
-                                  <div className="mb-1 inline-flex items-center gap-2 text-accent text-xs font-semibold">
-                                    <Link2 size={14} />
-                                    Superserie
+                                  <div className="mb-1 inline-flex items-center gap-1.5 text-accent text-[10px] uppercase font-bold tracking-wider">
+                                    <Link2 size={12} /> Superserie
                                   </div>
                                 )}
-                                <ul
-                                  className={`flex flex-col gap-2 ${group.length > 1 ? 'ml-4' : ''
-                                    }`}
-                                >
+                                <ul className={`flex flex-col gap-2 ${group.length > 1 ? 'pl-3 border-l-2 border-accent/20' : ''}`}>
                                   {group.map((ex) => (
-                                    <li
-                                      key={ex.id || ex.tempId}
-                                      className="flex items-center gap-2 text-sm"
-                                    >
-                                      <span className="truncate font-semibold text-text-primary">
+                                    <li key={ex.id || ex.tempId} className="flex items-center justify-between text-sm">
+                                      <span className="truncate font-medium text-text-primary pr-2">
                                         {t(ex.name)}
                                       </span>
-                                      <span className="text-accent whitespace-nowrap font-medium">
+                                      <span className="text-text-muted text-xs whitespace-nowrap bg-bg-secondary px-1.5 py-0.5 rounded">
                                         {ex.sets}×{ex.reps}
                                       </span>
                                     </li>
@@ -613,14 +601,15 @@ const Routines = ({ setView }) => {
                         </div>
                       )}
 
-                      <div className="mt-5">
+                      {/* --- BOTÓN START --- */}
+                      <div className="mt-auto pt-2">
                         <button
                           onClick={() => handleStartWorkout(routine)}
                           disabled={isCompleted || isActive || isLoading}
-                          className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition
+                          className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all
                           ${isCompleted || isActive
-                              ? 'bg-[--glass-bg] text-text-muted cursor-not-allowed'
-                              : 'bg-accent text-bg-secondary hover:scale-[1.01]'
+                              ? 'bg-bg-secondary text-text-muted cursor-not-allowed border border-glass-border'
+                              : 'bg-accent text-bg-secondary hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-0.5'
                             }
                         `}
                         >
@@ -628,17 +617,17 @@ const Routines = ({ setView }) => {
                             <Spinner size="small" />
                           ) : isCompleted ? (
                             <>
-                              <CheckCircle size={18} />
-                              Completada Hoy
+                              <CheckCircle size={16} />
+                              Entrenamiento Completado
                             </>
                           ) : isActive ? (
                             <>
-                              <Clock size={18} />
-                              En Curso
+                              <Clock size={16} />
+                              Continuar Entrenamiento
                             </>
                           ) : (
                             <>
-                              <Play size={18} />
+                              <Play size={16} fill="currentColor" />
                               Empezar Entrenamiento
                             </>
                           )}

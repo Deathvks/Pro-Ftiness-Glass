@@ -22,6 +22,8 @@
     "@react-oauth/google": "^0.12.2",
     "@remotion/cli": "^4.0.400",
     "date-fns": "^4.1.0",
+    "driver.js": "^1.4.0",
+    "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
     "i18next": "^23.12.2",
     "i18next-browser-languagedetector": "^8.0.0",
@@ -57,6 +59,7 @@
     "tailwindcss": "^3.4.17",
     "vite": "^7.0.4",
     "vite-plugin-pwa": "^1.0.3",
+    "vite-plugin-sitemap": "^0.8.2",
     "workbox-background-sync": "^7.4.0"
   }
 }

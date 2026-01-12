@@ -25,7 +25,8 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { useToast } from '../hooks/useToast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import UserAvatar from '../components/UserAvatar'; // IMPORTADO: Componente para gestionar imágenes seguras
+import UserAvatar from '../components/UserAvatar';
+import { Helmet } from 'react-helmet-async'; // Aseguramos importar Helmet
 
 // --- DICCIONARIO DE INSIGNIAS (Diseño Original con Emojis) ---
 const BADGES_MAP = {
@@ -111,14 +112,12 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         sendFriendRequest,
         removeFriend,
         userProfile: myProfile,
-        gamification // Obtenemos el estado local de gamificación
+        gamification
     } = useAppStore();
 
-    // --- ESTADO PARA PAGINACIÓN DE INSIGNIAS ---
     const [badgePage, setBadgePage] = useState(0);
     const BADGES_PER_PAGE = 4;
 
-    // --- ESTADO PARA CONFIRMACIÓN DE ELIMINAR ---
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeletingFriend, setIsDeletingFriend] = useState(false);
 
@@ -147,23 +146,53 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         return 'none';
     }, [socialFriends, socialRequests, myProfile, userId]);
 
-    // --- CORRECCIÓN RACHA Y ENTRENOS: Usar datos locales si es mi propio perfil ---
     const profile = useMemo(() => {
         if (!fetchedProfile) return null;
         if (relationshipStatus === 'me' && gamification) {
             return {
                 ...fetchedProfile,
-                // Sobreescribimos con datos en vivo del store local para XP, Nivel y Racha
                 xp: gamification.xp ?? fetchedProfile.xp,
                 level: gamification.level ?? fetchedProfile.level,
                 streak: gamification.streak ?? fetchedProfile.streak,
-                // CORRECCIÓN: Usamos SIEMPRE el dato del backend para workoutsCount,
-                // ya que es un conteo dinámico de la BD y el estado local suele estar desactualizado.
                 workoutsCount: fetchedProfile.workoutsCount,
             };
         }
         return fetchedProfile;
     }, [fetchedProfile, relationshipStatus, gamification]);
+
+    // --- SCHEMA.ORG GENERATOR ---
+    const structuredData = useMemo(() => {
+        if (!profile) return null;
+
+        const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+        const profileUrl = `${baseUrl}/profile/${profile.id}`;
+
+        // Construimos un objeto Schema tipo "Person"
+        // Google entiende esto y puede mostrar detalles ricos.
+        const schema = {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": profile.username,
+            "url": profileUrl,
+            "description": `Perfil de atleta en Pro Fitness Glass. Nivel ${profile.level || 1} con ${profile.workoutsCount || 0} entrenamientos completados.`,
+            "identifier": profile.id,
+            "interactionStatistic": [
+                {
+                    "@type": "InteractionCounter",
+                    "interactionType": "https://schema.org/ExerciseAction",
+                    "userInteractionCount": profile.workoutsCount || 0
+                }
+            ]
+        };
+
+        if (profile.avatar_url) {
+            schema.image = profile.avatar_url.startsWith('http')
+                ? profile.avatar_url
+                : `${baseUrl}${profile.avatar_url}`;
+        }
+
+        return JSON.stringify(schema);
+    }, [profile]);
 
 
     const handleSendRequest = async () => {
@@ -172,12 +201,10 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         else showToast('Error al enviar solicitud', 'error');
     };
 
-    // Abre el modal en lugar de window.confirm
     const handleRemoveFriend = () => {
         setShowDeleteConfirm(true);
     };
 
-    // Ejecuta la acción al confirmar en el modal
     const confirmRemoveFriend = async () => {
         setIsDeletingFriend(true);
         try {
@@ -193,26 +220,19 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         }
     };
 
-    // --- LÓGICA DE NAVEGACIÓN ROBUSTA ---
     const handleGoBack = (e) => {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
-
-        // 1. Prioridad: onBack (patrón Profile.jsx)
         if (onBack) {
             onBack();
             return;
         }
-
-        // 2. Soporte: setView (por si acaso se pasa esta prop)
         if (setView) {
             setView('social');
             return;
         }
-
-        // 3. Fallback: Recarga segura a Social
         window.location.href = '/social';
     };
 
@@ -268,12 +288,25 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         badges = [];
     }
 
-    // --- CÁLCULOS PAGINACIÓN ---
     const totalBadgePages = Math.ceil(badges.length / BADGES_PER_PAGE);
     const visibleBadges = badges.slice(badgePage * BADGES_PER_PAGE, (badgePage + 1) * BADGES_PER_PAGE);
 
     return (
         <div className="pb-6 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
+
+            {/* --- SEO & STRUCTURED DATA --- */}
+            {profile && (
+                <Helmet>
+                    <title>{`${profile.username} - Perfil en Pro Fitness Glass`}</title>
+                    <meta name="description" content={`Mira el perfil de fitness de ${profile.username}. Nivel ${profile.level}, ${profile.workoutsCount} entrenamientos completados.`} />
+                    {/* JSON-LD Script para Google */}
+                    {structuredData && (
+                        <script type="application/ld+json">
+                            {structuredData}
+                        </script>
+                    )}
+                </Helmet>
+            )}
 
             {/* --- HEADER DESKTOP --- */}
             <div className="hidden md:flex items-center justify-between pt-6 mb-2 relative z-50">
@@ -308,7 +341,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent-primary/20 to-transparent pointer-events-none" />
 
                 <div className="relative z-10 w-32 h-32 rounded-full p-1 bg-gradient-to-br from-accent-primary to-accent-secondary shadow-xl shadow-accent-primary/20">
-                    {/* UserAvatar: usamos size="full" para llenar el contenedor padre de 32x32 */}
                     <UserAvatar
                         user={profile}
                         size="full"

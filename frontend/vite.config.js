@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import Sitemap from 'vite-plugin-sitemap'; // Importamos el plugin de Sitemap
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -25,16 +26,34 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    // --- NUEVA CONFIGURACIÓN DE SITEMAP ---
+    Sitemap({
+      hostname: 'https://pro-fitness-glass.zeabur.app', // Tu dominio real
+      readable: true, // Sitemap legible para humanos
+      // Rutas estáticas principales que quieres indexar
+      dynamicRoutes: [
+        '/',
+        '/login',
+        '/register',
+        '/social',
+        '/explore',
+        '/privacy-policy'
+      ],
+      robots: [
+        {
+          userAgent: '*',
+          allow: '/',
+          disallow: ['/admin', '/settings'] // Ocultar áreas privadas
+        }
+      ]
+    }),
     VitePWA({
-      // CAMBIO IMPORTANTE: 'prompt' permite que el componente VersionUpdater controle
-      // cuándo se muestra el aviso y cuándo se actualiza.
       registerType: 'prompt',
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.webp'],
       manifest: {
         name: 'Pro Fitness Glass',
         short_name: 'FitTrack-Pro',
         description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
-        // Eliminamos theme_color del manifiesto para que lo controle el HTML dinámico
         display: 'standalone',
         scope: '/',
         start_url: '/',

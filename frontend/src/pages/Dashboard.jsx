@@ -1,5 +1,5 @@
 /* frontend/src/pages/Dashboard.jsx */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
     Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
@@ -17,6 +17,7 @@ import CircularProgress from '../components/CircularProgress';
 import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
 import XPGuideModal from '../components/XPGuideModal';
+import TourGuide from '../components/TourGuide';
 import * as nutritionService from '../services/nutritionService';
 import { useToast } from '../hooks/useToast';
 
@@ -86,9 +87,13 @@ const Dashboard = ({ setView }) => {
     const [showXPModal, setShowXPModal] = useState(false);
     const [modal, setModal] = useState({ type: null });
 
+    // --- CORRECCIÓN CRÍTICA: Evitar bucle infinito en checkStreak ---
+    const streakCheckedRef = useRef(false);
+
     useEffect(() => {
-        if (checkStreak) {
+        if (checkStreak && !streakCheckedRef.current) {
             checkStreak(new Date().toISOString().split('T')[0]);
+            streakCheckedRef.current = true;
         }
     }, [checkStreak]);
 
@@ -203,6 +208,9 @@ const Dashboard = ({ setView }) => {
                 <title>Dashboard - Pro Fitness Glass</title>
             </Helmet>
 
+            {/* Tour Guiado Activo */}
+            <TourGuide />
+
             {/* Header + Gamification */}
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8 items-start">
                 <div>
@@ -214,46 +222,48 @@ const Dashboard = ({ setView }) => {
                     </p>
                 </div>
 
-                {/* Gamification Card */}
-                <GlassCard className="w-auto self-start flex-shrink-0 p-3 sm:p-4 flex items-center gap-3 sm:gap-4 bg-gradient-to-br from-bg-secondary/80 to-accent/5 border-accent/20 overflow-hidden">
-                    <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-accent/20 flex items-center justify-center border-2 border-accent text-accent font-black text-lg md:text-2xl shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]">
-                            {levelData.level}
-                        </div>
-                        <div className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 bg-bg-primary rounded-full p-0.5 md:p-1 border border-glass-border shadow-sm">
-                            <Crown size={12} className="md:w-[14px] md:h-[14px] text-amber-400 fill-amber-400" />
-                        </div>
-                    </div>
-
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <div className="flex flex-wrap justify-between items-end mb-1 gap-x-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="text-[10px] md:text-xs font-bold text-text-secondary uppercase tracking-wider truncate">Nivel {levelData.level}</span>
-                                <button onClick={() => setShowXPModal(true)} className="text-text-muted hover:text-accent transition-colors flex-shrink-0">
-                                    <Info size={12} className="md:w-[14px] md:h-[14px]" />
-                                </button>
+                {/* Gamification Card - ID para Tour */}
+                <div id="tour-gamification">
+                    <GlassCard className="w-auto self-start flex-shrink-0 p-3 sm:p-4 flex items-center gap-3 sm:gap-4 bg-gradient-to-br from-bg-secondary/80 to-accent/5 border-accent/20 overflow-hidden">
+                        <div className="relative flex-shrink-0">
+                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-accent/20 flex items-center justify-center border-2 border-accent text-accent font-black text-lg md:text-2xl shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)]">
+                                {levelData.level}
                             </div>
-                            <span className="text-[10px] md:text-xs font-medium text-text-muted text-right truncate w-auto">
-                                {levelData.progress} / {levelData.needed} XP
-                            </span>
+                            <div className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 bg-bg-primary rounded-full p-0.5 md:p-1 border border-glass-border shadow-sm">
+                                <Crown size={12} className="md:w-[14px] md:h-[14px] text-amber-400 fill-amber-400" />
+                            </div>
                         </div>
 
-                        <div className="h-1.5 md:h-2 w-full bg-bg-primary rounded-full overflow-hidden border border-glass-border">
-                            <div className="h-full bg-gradient-to-r from-accent to-accent-light transition-all duration-1000 ease-out" style={{ width: `${levelData.percentage}%` }} />
-                        </div>
-                    </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                            <div className="flex flex-wrap justify-between items-end mb-1 gap-x-2">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-[10px] md:text-xs font-bold text-text-secondary uppercase tracking-wider truncate">Nivel {levelData.level}</span>
+                                    <button onClick={() => setShowXPModal(true)} className="text-text-muted hover:text-accent transition-colors flex-shrink-0">
+                                        <Info size={12} className="md:w-[14px] md:h-[14px]" />
+                                    </button>
+                                </div>
+                                <span className="text-[10px] md:text-xs font-medium text-text-muted text-right truncate w-auto">
+                                    {levelData.progress} / {levelData.needed} XP
+                                </span>
+                            </div>
 
-                    <div className="flex flex-col items-center justify-center pl-2 md:pl-3 border-l border-glass-border flex-shrink-0">
-                        <div className={`transition-all duration-500 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.5)]' : 'text-text-muted opacity-50'}`}>
-                            <Flame size={20} className="md:w-[24px] md:h-[24px]" fill={levelData.streak > 0 ? "currentColor" : "none"} />
+                            <div className="h-1.5 md:h-2 w-full bg-bg-primary rounded-full overflow-hidden border border-glass-border">
+                                <div className="h-full bg-gradient-to-r from-accent to-accent-light transition-all duration-1000 ease-out" style={{ width: `${levelData.percentage}%` }} />
+                            </div>
                         </div>
-                        <span className="text-[10px] md:text-xs font-bold mt-0.5">{levelData.streak} días</span>
-                    </div>
-                </GlassCard>
+
+                        <div className="flex flex-col items-center justify-center pl-2 md:pl-3 border-l border-glass-border flex-shrink-0">
+                            <div className={`transition-all duration-500 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.5)]' : 'text-text-muted opacity-50'}`}>
+                                <Flame size={20} className="md:w-[24px] md:h-[24px]" fill={levelData.streak > 0 ? "currentColor" : "none"} />
+                            </div>
+                            <span className="text-[10px] md:text-xs font-bold mt-0.5">{levelData.streak} días</span>
+                        </div>
+                    </GlassCard>
+                </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {/* Stats Grid - ID para Tour */}
+            <div id="tour-stats" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <GlassCard className="p-4 flex flex-col justify-between h-full relative overflow-hidden">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
@@ -284,8 +294,8 @@ const Dashboard = ({ setView }) => {
                 <StatCard icon={<Flame size={24} />} title="Quemadas" value={weeklyCalories.toLocaleString()} unit="kcal" />
             </div>
 
-            {/* Nutrition Summary */}
-            <section className="mb-8">
+            {/* Nutrition Summary - ID para Tour */}
+            <section id="tour-nutrition" className="mb-8">
                 <div className="flex items-center gap-2 mb-4 px-1">
                     <Activity size={20} className="text-accent" />
                     <h2 className="text-xl font-bold">Resumen de Hoy</h2>
@@ -314,7 +324,8 @@ const Dashboard = ({ setView }) => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                 {/* Left: Routines & Cardio */}
                 <div className="flex flex-col gap-8">
-                    <section>
+                    {/* ID para Tour */}
+                    <section id="tour-routines">
                         <div className="flex items-center justify-between mb-4 px-1">
                             <div className="flex items-center gap-2"><Dumbbell size={20} className="text-accent" /><h2 className="text-xl font-bold">Rutinas</h2></div>
                             <button onClick={() => setView('routines', { forceTab: 'myRoutines' })} className="text-xs font-semibold text-accent flex items-center gap-1">Ver todas <ChevronRight size={14} /></button>
@@ -373,8 +384,8 @@ const Dashboard = ({ setView }) => {
                         </div>
                     </section>
 
-                    {/* SECCIÓN MODIFICADA: Cardio Rápido con Acceso a Librería */}
-                    <section>
+                    {/* SECCIÓN MODIFICADA: Cardio Rápido con Acceso a Librería - ID para Tour */}
+                    <section id="tour-quick-cardio">
                         <div className="flex items-center justify-between mb-4 px-1">
                             <div className="flex items-center gap-2">
                                 <Zap size={20} className="text-accent" />
@@ -417,7 +428,8 @@ const Dashboard = ({ setView }) => {
 
                 {/* Right: Weight */}
                 <div className="flex flex-col gap-8">
-                    <section>
+                    {/* ID para Tour */}
+                    <section id="tour-weight">
                         <div className="flex items-center justify-between mb-4 px-1">
                             <div className="flex items-center gap-2"><Trophy size={20} className="text-accent" /><h2 className="text-xl font-bold">Peso Corporal</h2></div>
                             <button onClick={() => setShowWeightModal(true)} className="text-xs font-semibold text-accent flex items-center gap-1">

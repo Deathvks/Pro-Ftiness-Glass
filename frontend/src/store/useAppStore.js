@@ -18,7 +18,6 @@ const useAppStore = create((set, get) => ({
     ...createSyncSlice(set, get),
 
     // --- Configuración Global: Vibración (Haptics) ---
-    // Inicializamos leyendo de localStorage (por defecto true)
     hapticsEnabled: (() => {
         try {
             const stored = localStorage.getItem('hapticsEnabled');
@@ -28,7 +27,6 @@ const useAppStore = create((set, get) => ({
         }
     })(),
 
-    // Acción para cambiar el estado y persistirlo
     setHapticsEnabled: (enabled) => {
         try {
             localStorage.setItem('hapticsEnabled', JSON.stringify(enabled));
@@ -37,6 +35,32 @@ const useAppStore = create((set, get) => ({
         }
         set({ hapticsEnabled: enabled });
     },
+
+    // --- Configuración Global: Tour Guiado ---
+    tourCompleted: (() => {
+        try {
+            return localStorage.getItem('tourCompleted') === 'true';
+        } catch (e) {
+            return false;
+        }
+    })(),
+
+    completeTour: () => {
+        try {
+            localStorage.setItem('tourCompleted', 'true');
+        } catch (e) {
+            console.warn(e);
+        }
+        set({ tourCompleted: true });
+    },
+
+    // Acción útil para desarrollo o para un botón de "Ver tutorial de nuevo"
+    resetTour: () => {
+        try {
+            localStorage.removeItem('tourCompleted');
+        } catch (e) { }
+        set({ tourCompleted: false });
+    }
 }));
 
 export default useAppStore;
