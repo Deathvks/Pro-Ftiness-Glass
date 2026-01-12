@@ -5,20 +5,21 @@ import 'driver.js/dist/driver.css';
 import useAppStore from '../store/useAppStore';
 
 const TourGuide = () => {
-    const { tourCompleted, completeTour } = useAppStore(state => ({
-        tourCompleted: state.tourCompleted,
-        completeTour: state.completeTour
-    }));
+  const { tourCompleted, completeTour } = useAppStore(state => ({
+    tourCompleted: state.tourCompleted,
+    completeTour: state.completeTour
+  }));
 
-    const driverRef = useRef(null);
+  const driverRef = useRef(null);
+  const timeoutRef = useRef(null);
 
-    useEffect(() => {
-        // --- Inyección de Estilos Personalizados (Glassmorphism Theme) ---
-        const styleId = 'driver-js-custom-theme';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.innerHTML = `
+  useEffect(() => {
+    // --- Inyección de Estilos Personalizados (Glassmorphism Theme) ---
+    const styleId = 'driver-js-custom-theme';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = `
         /* Popover Container */
         .driver-popover {
           background-color: var(--bg-secondary) !important;
@@ -171,82 +172,99 @@ const TourGuide = () => {
           opacity: 0.85 !important;
         }
       `;
-            document.head.appendChild(style);
+      document.head.appendChild(style);
+    }
+
+    if (tourCompleted) return;
+
+    // Configuración del Driver
+    driverRef.current = driver({
+      showProgress: true,
+      animate: true,
+      allowClose: true,
+      doneBtnText: '¡A entrenar!',
+      nextBtnText: 'Siguiente',
+      prevBtnText: 'Atrás',
+      progressText: '{{current}} / {{total}}',
+      steps: [
+        {
+          element: '#tour-gamification',
+          popover: {
+            title: 'Nivel y Racha',
+            description: 'Tu progreso gamificado. ¡Mantén la llama encendida entrenando o registrando datos cada día para subir de nivel!'
+          }
+        },
+        {
+          element: '#tour-stats',
+          popover: {
+            title: 'Resumen Semanal',
+            description: 'Un vistazo rápido a tus sesiones, calorías quemadas y cumplimiento de tu meta calórica diaria.'
+          }
+        },
+        {
+          element: '#tour-nutrition',
+          popover: {
+            title: 'Nutrición Rápida',
+            description: 'Toca los anillos para registrar calorías, proteínas, agua o creatina al instante. ¡Todo cuenta!'
+          }
+        },
+        {
+          element: '#tour-routines',
+          popover: {
+            title: 'Tus Rutinas',
+            description: 'Aquí aparecen tus rutinas creadas. Pulsa "Play" para iniciar el Modo Entrenamiento.'
+          }
+        },
+        {
+          element: '#tour-quick-cardio',
+          popover: {
+            title: 'Cardio Exprés',
+            description: '¿Solo vas a correr o usar la bici? Inicia una sesión rápida sin necesidad de configurar una rutina compleja.'
+          }
+        },
+        {
+          element: '#tour-weight',
+          popover: {
+            title: 'Control de Peso',
+            description: 'Registra tu peso corporal regularmente para ver tu tendencia y gráfica de progreso aquí mismo.'
+          }
         }
+      ],
+      onDestroyed: () => {
+        completeTour();
+      }
+    });
 
-        if (tourCompleted) return;
+    // Función recursiva para iniciar el tour solo si no hay modales activos
+    const checkModalsAndStart = () => {
+      // Buscamos elementos que cumplan el patrón de modales de la app (fixed + inset-0 + z-index)
+      // ConfirmationModal usa z-[1000], otros pueden usar z-50
+      const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
+        const className = el.className || '';
+        return typeof className === 'string' && className.includes('z-') && !className.includes('-z-');
+      });
 
-        // Configuración del Driver
-        driverRef.current = driver({
-            showProgress: true,
-            animate: true,
-            allowClose: true,
-            doneBtnText: '¡A entrenar!',
-            nextBtnText: 'Siguiente',
-            prevBtnText: 'Atrás',
-            progressText: '{{current}} / {{total}}',
-            steps: [
-                {
-                    element: '#tour-gamification',
-                    popover: {
-                        title: 'Nivel y Racha',
-                        description: 'Tu progreso gamificado. ¡Mantén la llama encendida entrenando o registrando datos cada día para subir de nivel!'
-                    }
-                },
-                {
-                    element: '#tour-stats',
-                    popover: {
-                        title: 'Resumen Semanal',
-                        description: 'Un vistazo rápido a tus sesiones, calorías quemadas y cumplimiento de tu meta calórica diaria.'
-                    }
-                },
-                {
-                    element: '#tour-nutrition',
-                    popover: {
-                        title: 'Nutrición Rápida',
-                        description: 'Toca los anillos para registrar calorías, proteínas, agua o creatina al instante. ¡Todo cuenta!'
-                    }
-                },
-                {
-                    element: '#tour-routines',
-                    popover: {
-                        title: 'Tus Rutinas',
-                        description: 'Aquí aparecen tus rutinas creadas. Pulsa "Play" para iniciar el Modo Entrenamiento.'
-                    }
-                },
-                {
-                    element: '#tour-quick-cardio',
-                    popover: {
-                        title: 'Cardio Exprés',
-                        description: '¿Solo vas a correr o usar la bici? Inicia una sesión rápida sin necesidad de configurar una rutina compleja.'
-                    }
-                },
-                {
-                    element: '#tour-weight',
-                    popover: {
-                        title: 'Control de Peso',
-                        description: 'Registra tu peso corporal regularmente para ver tu tendencia y gráfica de progreso aquí mismo.'
-                    }
-                }
-            ],
-            onDestroyed: () => {
-                completeTour();
-            }
-        });
+      if (activeModals.length > 0) {
+        // Si hay modales detectados, esperamos y volvemos a comprobar
+        timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+      } else {
+        // Si está limpio, iniciamos el tour
+        driverRef.current.drive();
+      }
+    };
 
-        const timer = setTimeout(() => {
-            driverRef.current.drive();
-        }, 1500);
+    // Iniciamos la comprobación
+    timeoutRef.current = setTimeout(checkModalsAndStart, 1500);
 
-        return () => {
-            clearTimeout(timer);
-            if (driverRef.current) {
-                driverRef.current.destroy();
-            }
-        };
-    }, [tourCompleted, completeTour]);
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (driverRef.current) {
+        driverRef.current.destroy();
+      }
+    };
+  }, [tourCompleted, completeTour]);
 
-    return null;
+  return null;
 };
 
 export default TourGuide;
