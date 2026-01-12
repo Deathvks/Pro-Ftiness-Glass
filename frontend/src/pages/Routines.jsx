@@ -560,7 +560,7 @@ const Routines = ({ setView }) => {
                       {/* --- INFO ROW (Reorganizado) --- */}
                       <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-[--glass-border]">
                         {isCompleted && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green/10 text-green text-xs font-semibold border border-green/20">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-bg-secondary text-xs font-semibold">
                             <CheckCircle size={12} /> Completada
                           </span>
                         )}
