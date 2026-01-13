@@ -4,7 +4,7 @@ import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
   Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
   Link, Smartphone, Image, Globe, Clock, Download, Footprints, MapPin,
-  Folder
+  Folder, Share2, ArrowUpRight // <--- AÑADIDOS Share2 y ArrowUpRight
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -227,7 +227,6 @@ const WelcomeModal = ({ onClose }) => {
                   <div className="flex flex-col items-center gap-1 group/folder transition-transform hover:-translate-y-1">
                     <div className="relative">
                       <Folder size={32} className="text-yellow-400 fill-yellow-400/20" />
-                      {/* Punto eliminado */}
                     </div>
                     <div className="h-1.5 w-10 bg-white/20 rounded-full"></div>
                   </div>
@@ -397,6 +396,40 @@ const WelcomeModal = ({ onClose }) => {
               </div>
               <p className="mt-3 text-xs text-text-muted text-center">
                 Dale vida a tus entrenamientos personalizando la portada de tus rutinas.
+              </p>
+            </div>
+
+            {/* --- BLOQUE NUEVO: COMPARTIR ENTRENAMIENTO --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Share2 size={16} className="text-pink-500" /> Comparte tu Logro
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-28 bg-black border border-white/10 rounded-xl overflow-hidden shadow-lg group-hover:scale-[1.02] transition-transform duration-500 flex flex-col p-3">
+                  {/* Background gradients similar to ShareCard */}
+                  <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 w-[200px] h-[200px] bg-accent/30 rounded-full blur-[40px]"></div>
+
+                  {/* Content Mockup */}
+                  <div className="relative z-10 flex flex-col h-full justify-between">
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Sesión Completada</div>
+                      <div className="text-lg font-black text-white leading-none">LEG DAY</div>
+                    </div>
+
+                    <div className="flex justify-between items-end">
+                      <div className="flex gap-2">
+                        <div className="bg-white/10 px-2 py-1 rounded text-[8px] text-white">45m</div>
+                        <div className="bg-white/10 px-2 py-1 rounded text-[8px] text-accent">12.5t</div>
+                      </div>
+                      <div className="bg-white text-black p-1.5 rounded-full">
+                        <ArrowUpRight size={12} strokeWidth={3} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Genera imágenes profesionales de tus rutinas listas para subir a Instagram Stories.
               </p>
             </div>
 

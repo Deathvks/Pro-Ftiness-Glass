@@ -1,8 +1,8 @@
 /* frontend/src/pages/Progress.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react'; // Importamos iconos de flechas
-import { useTranslation } from 'react-i18next'; // Importamos hook de traducción
+import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 
@@ -12,9 +12,9 @@ import { BodyWeightChart } from '../components/progress/ProgressCharts';
 import ExerciseView from '../components/progress/ExerciseView';
 import NutritionView from '../components/progress/NutritionView';
 import RecordsView from '../components/progress/RecordsView';
+import MeasurementsView from '../components/progress/MeasurementsView';
 import MuscleHeatmap from '../components/MuscleHeatmap/MuscleHeatmap';
 
-// Importamos la utilidad de músculos para evitar duplicidad y centralizar lógica
 import {
     DB_TO_HEATMAP_MAP,
     guessMuscleFromText,
@@ -22,19 +22,16 @@ import {
     MUSCLE_NAMES_ES
 } from '../utils/muscleUtils';
 
-// Leyenda de intensidad
 const INTENSITY_LEVELS = [
-    { label: 'Bajo', color: '#00f2ff' },   // Frecuencia 1
-    { label: 'Medio', color: '#00ff88' },  // Frecuencia 2
-    { label: 'Alto', color: '#ffea00' },   // Frecuencia 3
-    { label: 'Máximo', color: '#ff0055' }  // Frecuencia 4
+    { label: 'Bajo', color: '#00f2ff' },
+    { label: 'Medio', color: '#00ff88' },
+    { label: 'Alto', color: '#ffea00' },
+    { label: 'Máximo', color: '#ff0055' }
 ];
 
 const Progress = ({ darkMode }) => {
-    // Hook de traducción
     const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_muscles']);
 
-    // Extraemos allExercises del store
     const { workoutLog, bodyWeightLog, exercises, getOrFetchAllExercises } = useAppStore(state => ({
         workoutLog: state.workoutLog,
         bodyWeightLog: state.bodyWeightLog,
@@ -42,21 +39,34 @@ const Progress = ({ darkMode }) => {
         getOrFetchAllExercises: state.getOrFetchAllExercises
     }));
 
-    const [viewType, setViewType] = useState('heatmap');
+    // --- CAMBIO: Inicializar estado desde localStorage ---
+    const [viewType, setViewType] = useState(() => {
+        try {
+            return localStorage.getItem('progressViewType') || 'heatmap';
+        } catch {
+            return 'heatmap';
+        }
+    });
+
+    // --- CAMBIO: Guardar estado en localStorage al cambiar ---
+    useEffect(() => {
+        try {
+            localStorage.setItem('progressViewType', viewType);
+        } catch (e) {
+            console.error('Error guardando preferencia de vista', e);
+        }
+    }, [viewType]);
+
     const [detailedLog, setDetailedLog] = useState(null);
     const [exerciseForHistory, setExerciseForHistory] = useState('');
     const [showHistoryModal, setShowHistoryModal] = useState(false);
-
-    // Estado para paginación de sugerencias
     const [suggestionsPage, setSuggestionsPage] = useState(0);
     const SUGGESTIONS_PER_PAGE = 3;
 
-    // Cargar ejercicios al montar
     useEffect(() => {
         getOrFetchAllExercises();
     }, [getOrFetchAllExercises]);
 
-    // Chart Data
     const bodyWeightChartData = useMemo(() => {
         return bodyWeightLog
             .map(log => {
@@ -71,7 +81,6 @@ const Progress = ({ darkMode }) => {
             .sort((a, b) => a.timestamp - b.timestamp);
     }, [bodyWeightLog]);
 
-    // Lista única de ejercicios realizados
     const executedExercisesList = useMemo(() => {
         const exerciseSet = new Set(
             workoutLog.flatMap(log => log.WorkoutLogDetails?.map(d => d.exercise_name) || [])
@@ -79,7 +88,6 @@ const Progress = ({ darkMode }) => {
         return Array.from(exerciseSet);
     }, [workoutLog]);
 
-    // Progreso por ejercicio
     const exerciseProgressData = useMemo(() => {
         const progress = {};
         if (!workoutLog || workoutLog.length === 0) return progress;
@@ -109,7 +117,6 @@ const Progress = ({ darkMode }) => {
         return progress;
     }, [workoutLog]);
 
-    // --- LÓGICA DE MAPA DE CALOR Y RECOMENDADOR ---
     const { muscleHeatmapData, weakPointSuggestions } = useMemo(() => {
         if (!workoutLog || workoutLog.length === 0) return { muscleHeatmapData: {}, weakPointSuggestions: [] };
 
@@ -117,65 +124,48 @@ const Progress = ({ darkMode }) => {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        // Logs recientes
         const recentLogs = workoutLog.filter(log => new Date(log.workout_date) >= thirtyDaysAgo);
 
         recentLogs.forEach(log => {
             log.WorkoutLogDetails?.forEach(detail => {
                 const name = detail.exercise_name;
-
-                // 1. Intentar buscar en DB (allExercises)
                 const exerciseData = exercises?.find(e => e.name === name);
-
                 let targetMuscles = [];
 
                 if (exerciseData && exerciseData.muscle_group) {
-                    // Normalizamos y separamos por comas
                     const groups = exerciseData.muscle_group.split(',').map(g => g.trim().toLowerCase());
-
                     groups.forEach(g => {
-                        // Buscamos coincidencia exacta en el mapa importado
                         if (DB_TO_HEATMAP_MAP[g]) {
                             targetMuscles.push(...DB_TO_HEATMAP_MAP[g]);
                         }
                     });
                 }
 
-                // 2. Si falló la DB o no trajo músculos válidos, usamos la "adivinanza" importada
                 if (targetMuscles.length === 0) {
                     targetMuscles = guessMuscleFromText(name);
                 }
 
-                // Sumamos puntuación
                 targetMuscles.forEach(muscleId => {
                     scores[muscleId] = (scores[muscleId] || 0) + 1;
                 });
             });
         });
 
-        // --- DETECCIÓN DE PUNTOS DÉBILES (Múltiples) ---
         const candidates = Object.keys(MUSCLE_NAMES_ES);
-
         let minScore = Infinity;
-        // Buscamos el score mínimo
         candidates.forEach(c => {
             const s = scores[c] || 0;
             if (s < minScore) minScore = s;
         });
 
-        // Filtramos todos los músculos que comparten ese score mínimo
         const weakMuscles = candidates.filter(c => (scores[c] || 0) === minScore);
 
-        // Seleccionamos las recomendaciones aleatorias entre las más débiles
         const suggestions = weakMuscles
-            .sort(() => 0.5 - Math.random()) // Mezclar para variedad
+            .sort(() => 0.5 - Math.random())
             .map(muscleKey => {
-                // Filtramos la lista 'exercises' para encontrar ejercicios que ataquen este músculo
                 const possibleExercises = exercises.filter(ex => {
                     if (!ex.muscle_group) return false;
-
                     const groups = ex.muscle_group.split(',').map(g => g.trim().toLowerCase());
-
                     return groups.some(g => {
                         const mapped = DB_TO_HEATMAP_MAP[g];
                         return mapped && mapped.includes(muscleKey);
@@ -183,7 +173,6 @@ const Progress = ({ darkMode }) => {
                 });
 
                 let selectedExerciseName = null;
-
                 if (possibleExercises.length > 0) {
                     const randomEx = possibleExercises[Math.floor(Math.random() * possibleExercises.length)];
                     selectedExerciseName = randomEx.name;
@@ -200,7 +189,6 @@ const Progress = ({ darkMode }) => {
             })
             .filter(Boolean);
 
-        // --- NORMALIZACIÓN PARA HEATMAP ---
         const maxVal = Math.max(...Object.values(scores), 1);
         const normalized = {};
         Object.keys(scores).forEach(k => {
@@ -210,12 +198,10 @@ const Progress = ({ darkMode }) => {
         return { muscleHeatmapData: normalized, weakPointSuggestions: suggestions };
     }, [workoutLog, exercises]);
 
-    // Reseteamos la página si cambian las sugerencias
     useEffect(() => {
         setSuggestionsPage(0);
     }, [weakPointSuggestions.length]);
 
-    // Lógica de Paginación
     const totalPages = Math.ceil(weakPointSuggestions.length / SUGGESTIONS_PER_PAGE);
     const displayedSuggestions = weakPointSuggestions.slice(
         suggestionsPage * SUGGESTIONS_PER_PAGE,
@@ -230,15 +216,12 @@ const Progress = ({ darkMode }) => {
         setSuggestionsPage(prev => Math.max(prev - 1, 0));
     };
 
-
     const handleShowHistory = (exerciseName) => {
         setExerciseForHistory(exerciseName);
         setShowHistoryModal(true);
     };
 
     const axisColor = darkMode ? "#94a3b8" : "#475569";
-
-    // MODIFICADO: Eliminados shadow y hover para un estilo plano y limpio
     const getTabClass = (type) => `px-4 py-2 text-sm font-semibold rounded-full transition whitespace-nowrap ${viewType === type ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary text-text-secondary'}`;
 
     return (
@@ -260,6 +243,7 @@ const Progress = ({ darkMode }) => {
                     <button onClick={() => setViewType('nutrition')} className={getTabClass('nutrition')}>Nutrición</button>
                     <button onClick={() => setViewType('records')} className={getTabClass('records')}>Récords</button>
                     <button onClick={() => setViewType('bodyWeight')} className={getTabClass('bodyWeight')}>Peso Corporal</button>
+                    <button onClick={() => setViewType('measurements')} className={getTabClass('measurements')}>Medidas</button>
                     <button onClick={() => setViewType('calendar')} className={getTabClass('calendar')}>Calendario</button>
                 </div>
             </div>
@@ -270,7 +254,6 @@ const Progress = ({ darkMode }) => {
                         <MuscleHeatmap muscleData={muscleHeatmapData} darkMode={darkMode} />
                     </div>
 
-                    {/* Leyenda de Colores */}
                     <div className="flex flex-wrap justify-center gap-4 mt-6 mb-2">
                         {INTENSITY_LEVELS.map((level) => (
                             <div key={level.label} className="flex items-center gap-2">
@@ -286,7 +269,6 @@ const Progress = ({ darkMode }) => {
                         ))}
                     </div>
 
-                    {/* Widgets de Recomendación (Paginados) */}
                     {weakPointSuggestions.length > 0 && (
                         <div className="mt-6 w-full max-w-md animate-fade-in-up">
                             <div className="space-y-3 min-h-[100px]">
@@ -312,7 +294,6 @@ const Progress = ({ darkMode }) => {
                                                 Tiene baja frecuencia en tus últimos entrenos.
                                                 <br />
                                                 Prueba añadir <strong className="text-text-primary">
-                                                    {/* FIX: Traducción del ejercicio */}
                                                     {t(suggestion.exercise, { ns: 'exercise_names', defaultValue: suggestion.exercise })}
                                                 </strong>.
                                             </p>
@@ -321,7 +302,6 @@ const Progress = ({ darkMode }) => {
                                 ))}
                             </div>
 
-                            {/* Controles de Paginación (Solo si hay más de 1 página) */}
                             {totalPages > 1 && (
                                 <div className="flex items-center justify-between mt-4 px-2">
                                     <button
@@ -348,7 +328,6 @@ const Progress = ({ darkMode }) => {
                         </div>
                     )}
 
-                    {/* --- EXPLICACIÓN DE INTENSIDAD --- */}
                     <div className="text-xs text-text-secondary mt-8 text-center max-w-md bg-bg-secondary/50 p-4 rounded-xl border border-white/5 backdrop-blur-md space-y-2">
                         <p>
                             <strong>¿Cómo funciona?</strong> La intensidad es relativa a tu músculo más entrenado en los últimos 30 días (Referencia 100%).
@@ -370,6 +349,7 @@ const Progress = ({ darkMode }) => {
             {viewType === 'nutrition' && <NutritionView axisColor={axisColor} />}
             {viewType === 'records' && <RecordsView />}
             {viewType === 'bodyWeight' && <BodyWeightChart data={bodyWeightChartData} axisColor={axisColor} />}
+            {viewType === 'measurements' && <MeasurementsView axisColor={axisColor} />}
             {viewType === 'calendar' && <CalendarView setDetailedLog={setDetailedLog} />}
 
             {detailedLog && <DailyDetailView logs={detailedLog} onClose={() => setDetailedLog(null)} />}

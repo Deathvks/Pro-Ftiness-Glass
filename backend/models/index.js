@@ -7,6 +7,9 @@ import Routine from './routineModel.js';
 import RoutineExercise from './exerciseModel.js';
 import WorkoutLog from './workoutModel.js';
 import BodyWeightLog from './bodyweightModel.js';
+// --- INICIO MODIFICACIÓN ---
+import BodyMeasurementLog from './bodyMeasurementModel.js';
+// --- FIN MODIFICACIÓN ---
 import WorkoutLogDetail from './workoutLogDetailModel.js';
 import WorkoutLogSet from './workoutLogSetModel.js';
 import ExerciseList from './exerciseListModel.js';
@@ -30,13 +33,16 @@ Routine.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(WorkoutLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'WorkoutLogs' });
 WorkoutLog.belongsTo(User, { foreignKey: 'user_id' });
 
-// --- INICIO DE LA MODIFICACIÓN: Asociación WorkoutLog <-> Routine ---
 WorkoutLog.belongsTo(Routine, { foreignKey: 'routine_id', as: 'routine' });
 Routine.hasMany(WorkoutLog, { foreignKey: 'routine_id', as: 'workoutLogs' });
-// --- FIN DE LA MODIFICACIÓN ---
 
 User.hasMany(BodyWeightLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'BodyWeightLogs' });
 BodyWeightLog.belongsTo(User, { foreignKey: 'user_id' });
+
+// --- INICIO MODIFICACIÓN: Asociación User <-> BodyMeasurementLog ---
+User.hasMany(BodyMeasurementLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'BodyMeasurementLogs' });
+BodyMeasurementLog.belongsTo(User, { foreignKey: 'user_id' });
+// --- FIN MODIFICACIÓN ---
 
 User.hasMany(NutritionLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'NutritionLogs' });
 NutritionLog.belongsTo(User, { foreignKey: 'user_id' });
@@ -94,6 +100,7 @@ const models = {
     WorkoutLogDetail,
     WorkoutLogSet,
     BodyWeightLog,
+    BodyMeasurementLog, // --- AÑADIDO ---
     ExerciseList,
     PersonalRecord,
     NutritionLog,

@@ -12,6 +12,9 @@ const __dirname = path.dirname(__filename);
 
 import authRoutes from './routes/auth.js';
 import bodyweightRoutes from './routes/bodyweight.js';
+// --- INICIO MODIFICACIÓN ---
+import bodyMeasurementRoutes from './routes/bodyMeasurements.js';
+// --- FIN MODIFICACIÓN ---
 import creatinaRoutes from './routes/creatina.js';
 import exerciseRoutes from './routes/exercises.js';
 import exerciseListRoutes from './routes/exerciseList.js';
@@ -77,6 +80,9 @@ app.use(express.static(staticPath));
 // Rutas API
 app.use('/api/auth', authRoutes);
 app.use('/api/bodyweight', bodyweightRoutes);
+// --- INICIO MODIFICACIÓN ---
+app.use('/api/measurements', bodyMeasurementRoutes);
+// --- FIN MODIFICACIÓN ---
 app.use('/api/creatina', creatinaRoutes);
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/exercise-list', exerciseListRoutes);

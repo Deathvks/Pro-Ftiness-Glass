@@ -36,19 +36,32 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
         return `${m}m`;
     };
 
+    // --- FIX: Filtramos series válidas para no contar vacías ---
     const getSetsSummary = (sets) => {
         if (!sets || sets.length === 0) return "Sin peso";
-        const weights = sets.map(s => s.weight_kg).filter(w => w > 0);
+
+        // FILTRO CRÍTICO: Solo contamos series que tengan al menos 1 repetición
+        const validSets = sets.filter(s => parseFloat(s.reps) > 0);
+
+        if (validSets.length === 0) return "Sin series";
+
+        const weights = validSets.map(s => parseFloat(s.weight_kg) || 0).filter(w => w > 0);
         const maxW = weights.length > 0 ? Math.max(...weights) : 0;
-        if (weights.length === 0) return `${sets.length} series (Cardio/BW)`;
-        return `${sets.length} series (Máx: ${maxW}kg)`;
+
+        if (weights.length === 0) return `${validSets.length} series (Cardio/BW)`;
+        return `${validSets.length} series (Máx: ${maxW}kg)`;
     };
 
     const getMaxWeight = (sets) => {
         if (!sets || sets.length === 0) return 0;
-        const weights = sets.map(s => parseFloat(s.weight_kg) || 0);
+        // También usamos solo series válidas para el peso máximo
+        const validSets = sets.filter(s => parseFloat(s.reps) > 0);
+        if (validSets.length === 0) return 0;
+
+        const weights = validSets.map(s => parseFloat(s.weight_kg) || 0);
         return Math.max(...weights, 0);
     };
+    // -----------------------------------------------------------
 
     return (
         <div
@@ -120,6 +133,9 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                     <div className="flex flex-col gap-3">
                         {details && details.map((ex, i) => {
                             const maxWeight = getMaxWeight(ex.setsDone);
+                            // Opcional: Si no hay series válidas, no mostramos el ejercicio (descomentar si se desea)
+                            // if (maxWeight === 0 && (!ex.setsDone || ex.setsDone.filter(s=>s.reps>0).length === 0)) return null;
+
                             return (
                                 <div key={i} className="flex justify-between items-center w-full">
                                     <div className="flex flex-col min-w-0 pr-4 flex-1 gap-1">

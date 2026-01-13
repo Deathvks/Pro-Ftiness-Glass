@@ -220,6 +220,7 @@ export const createWorkoutSlice = (set, get) => ({
         routineId: routine.id || null,
         routineName: routine.name,
         exercises,
+        startTime: new Date().toISOString(), // Guardamos la hora de INICIO
       },
       workoutStartTime: null,
       isWorkoutPaused: true,
@@ -235,6 +236,7 @@ export const createWorkoutSlice = (set, get) => ({
         routineId: null,
         routineName: workoutName,
         exercises: [],
+        startTime: new Date().toISOString(), // Guardamos la hora de INICIO
       },
       workoutStartTime: null,
       isWorkoutPaused: true,
@@ -538,7 +540,17 @@ export const createWorkoutSlice = (set, get) => ({
 
   logWorkout: async (workoutData) => {
     try {
-      const responseData = await workoutService.logWorkout(workoutData);
+      // Usamos el startTime guardado en el estado (momento de inicio) como fecha del entreno.
+      // Si no existe (legacy), usamos la fecha actual (comportamiento anterior).
+      const state = get();
+      const workoutDate = state.activeWorkout?.startTime || new Date().toISOString();
+
+      const finalWorkoutData = {
+        ...workoutData,
+        date: workoutDate, // Forzamos la fecha de inicio
+      };
+
+      const responseData = await workoutService.logWorkout(finalWorkoutData);
 
       if (workoutData.routineId) {
         const current = get().completedRoutineIdsToday;

@@ -3,6 +3,7 @@ import * as userService from '../services/userService';
 import * as routineService from '../services/routineService';
 import * as workoutService from '../services/workoutService';
 import * as bodyWeightService from '../services/bodyweightService';
+import * as bodyMeasurementService from '../services/bodyMeasurementService'; // --- NUEVO IMPORT ---
 import * as nutritionService from '../services/nutritionService';
 import * as favoriteMealService from '../services/favoriteMealService';
 import * as templateRoutineService from '../services/templateRoutineService';
@@ -15,6 +16,7 @@ const initialState = {
   routines: [],
   workoutLog: [],
   bodyWeightLog: [],
+  bodyMeasurementsLog: [], // --- NUEVO ESTADO ---
   prNotification: null,
   nutritionLog: [],
   waterLog: { quantity_ml: 0 },
@@ -76,6 +78,7 @@ export const createDataSlice = (set, get) => ({
           routines,
           workouts,
           bodyweight,
+          measurements, // --- NUEVO DATO ---
           nutrition,
           favoriteMeals,
           recentMeals,
@@ -87,6 +90,7 @@ export const createDataSlice = (set, get) => ({
           routineService.getRoutines(),
           workoutService.getWorkouts(),
           bodyWeightService.getHistory(),
+          bodyMeasurementService.getHistory(), // --- CARGA DEL HISTORIAL ---
           nutritionService.getNutritionLogsByDate(today),
           favoriteMealService.getFavoriteMeals(),
           nutritionService.getRecentMeals(),
@@ -99,6 +103,7 @@ export const createDataSlice = (set, get) => ({
           routines,
           workoutLog: workouts,
           bodyWeightLog: bodyweight,
+          bodyMeasurementsLog: measurements || [], // --- SET STATE ---
           nutritionLog: nutrition.nutrition || [],
           waterLog: nutrition.water || { quantity_ml: 0 },
           favoriteMeals,
@@ -302,6 +307,54 @@ export const createDataSlice = (set, get) => ({
       }
 
       return { success: true, message: 'Peso actualizado con éxito.' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  // --- NUEVAS ACCIONES: MEDIDAS CORPORALES ---
+
+  logBodyMeasurement: async (data) => {
+    try {
+      const response = await bodyMeasurementService.logMeasurement(data);
+      const history = await bodyMeasurementService.getHistory();
+      set({ bodyMeasurementsLog: history });
+
+      // Solo sumamos XP si el backend indicó que se ganó (xpAdded > 0)
+      if (response && response.xpAdded > 0) {
+        if (get().addXp) get().addXp(response.xpAdded);
+      }
+
+      // Mensaje condicional dependiendo de si se ganó XP o no
+      const message = (response && response.xpAdded > 0)
+        ? 'Medida registrada con éxito.'
+        : 'Medida registrada. Límite diario de XP por músculo alcanzado.';
+
+      return { success: true, message: message };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  updateTodayBodyMeasurement: async (data) => {
+    try {
+      await bodyMeasurementService.updateTodayMeasurement(data);
+      const history = await bodyMeasurementService.getHistory();
+      set({ bodyMeasurementsLog: history });
+
+      return { success: true, message: 'Medida actualizada con éxito.' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  deleteBodyMeasurement: async (id) => {
+    try {
+      await bodyMeasurementService.deleteMeasurement(id);
+      set(state => ({
+        bodyMeasurementsLog: state.bodyMeasurementsLog.filter(log => log.id !== id)
+      }));
+      return { success: true, message: 'Medida eliminada.' };
     } catch (error) {
       return { success: false, message: error.message };
     }

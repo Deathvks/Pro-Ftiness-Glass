@@ -102,10 +102,10 @@ export const logWorkoutSession = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  // MODIFICACIÓN: Extraemos params robustamente (camelCase y snake_case para compatibilidad)
+  // MODIFICACIÓN: Extraemos params robustamente (camelCase, snake_case y 'date' del frontend)
   const {
     routineName, routine_name, // Frontend puede enviar cualquiera de los dos
-    workout_date,              // Frontend puede enviar fecha específica
+    workout_date, date,        // 'workout_date' (legacy/manual) o 'date' (nuevo desde workoutSlice)
     duration_seconds, calories_burned, details, exercises, notes, routineId
   } = req.body;
 
@@ -115,11 +115,14 @@ export const logWorkoutSession = async (req, res, next) => {
   try {
     // Determinar la fecha del workout
     let finalDate;
-    if (workout_date) {
-      // Si el cliente envía fecha, la usamos
-      finalDate = new Date(workout_date);
+    // Priorizamos la fecha que venga en el cuerpo de la petición
+    const incomingDate = workout_date || date;
+
+    if (incomingDate) {
+      // Si el cliente envía fecha (ej. el startTime guardado), la usamos
+      finalDate = new Date(incomingDate);
     } else {
-      // Si no, usamos fecha actual del servidor (sin hora para consistencia diaria)
+      // Si no, usamos fecha actual del servidor (fallback)
       const today = new Date();
       finalDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     }
