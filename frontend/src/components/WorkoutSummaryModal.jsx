@@ -1,9 +1,10 @@
 /* frontend/src/components/WorkoutSummaryModal.jsx */
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Share2, Clock, Flame, Target, ArrowLeft, Send } from 'lucide-react';
+import { X, Share2, Clock, Flame, Target, ArrowLeft, Send, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import html2canvas from 'html2canvas';
 import useAppStore from '../store/useAppStore';
+import { useToast } from '../hooks/useToast'; // CORRECCIÓN: Import con llaves
 import WorkoutShareCard from './WorkoutShareCard';
 import Spinner from './Spinner';
 
@@ -19,6 +20,7 @@ const formatTime = (timeInSeconds) => {
 const WorkoutSummaryModal = ({ workoutData, onClose }) => {
   const { t } = useTranslation(['exercise_names']);
   const { userProfile } = useAppStore(state => ({ userProfile: state.userProfile }));
+  const { showToast } = useToast(); // CORRECCIÓN: Usamos showToast en lugar de addToast
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -30,38 +32,22 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
   useEffect(() => {
     const resolveAccentColor = () => {
       try {
-        // 1. Elemento dummy para leer el color real de Tailwind
         const tempDiv = document.createElement('div');
         tempDiv.className = 'bg-accent';
         tempDiv.style.display = 'none';
         document.body.appendChild(tempDiv);
-
-        // 2. Lectura
         const computedStyle = window.getComputedStyle(tempDiv);
         const bgColor = computedStyle.backgroundColor;
-
         document.body.removeChild(tempDiv);
-
         if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
           setAccentColor(bgColor);
         } else {
-          // Fallback a variable CSS directa
           const docStyle = getComputedStyle(document.documentElement);
           const rawVar = docStyle.getPropertyValue('--accent').trim();
-
-          if (rawVar) {
-            if (rawVar.includes(' ')) {
-              setAccentColor(`hsl(${rawVar})`);
-            } else {
-              setAccentColor(rawVar);
-            }
-          }
+          if (rawVar) setAccentColor(rawVar.includes(' ') ? `hsl(${rawVar})` : rawVar);
         }
-      } catch (e) {
-        console.warn('Error detectando color:', e);
-      }
+      } catch (e) { console.warn(e); }
     };
-
     setTimeout(resolveAccentColor, 200);
   }, []);
 
@@ -69,13 +55,18 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
     if (!workoutData || isGenerating) return;
     setIsGenerating(true);
 
+    // Pequeño delay para dar tiempo al renderizado si el dispositivo va lento
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
       if (shareCardRef.current) {
+        // scale: 1 para evitar problemas de memoria en Android WebViews
         const canvas = await html2canvas(shareCardRef.current, {
-          scale: 2,
+          scale: 1,
           useCORS: true,
           backgroundColor: '#000000',
           logging: false,
+          allowTaint: true,
         });
 
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
@@ -84,25 +75,29 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
 
         setImageFile(file);
         setPreviewImage(previewUrl);
+      } else {
+        throw new Error("Elemento de referencia no encontrado");
       }
     } catch (error) {
       console.error('Error generando preview:', error);
+      showToast('Error al generar la imagen. Inténtalo de nuevo.', 'error');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleNativeShare = async () => {
-    if (!imageFile) return;
+  const downloadImage = () => {
+    if (!previewImage) return;
 
-    if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
-      try {
-        await navigator.share({
-          files: [imageFile],
-          title: 'Mi Entrenamiento',
-          text: '¡Mira mi progreso en Pro Fitness Glass! 💪',
-        });
-      } catch (e) { console.log('Share cancelado'); }
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+      const newWindow = window.open(previewImage, '_blank');
+      if (!newWindow) {
+        showToast('Mantén pulsada la imagen para guardarla', 'info');
+      } else {
+        showToast('Guarda la imagen desde la nueva pestaña', 'success');
+      }
     } else {
       const link = document.createElement('a');
       link.href = previewImage;
@@ -110,6 +105,30 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      showToast('Imagen guardada', 'success');
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (!imageFile) return;
+
+    const shareData = {
+      files: [imageFile],
+      title: 'Mi Entrenamiento',
+      text: 'Pro Fitness Glass 💪',
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        throw new Error('API no soportada');
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.warn('Share falló:', e);
+        showToast('No se pudo abrir el menú compartir. Usa el botón de descarga.', 'error');
+      }
     }
   };
 
@@ -129,8 +148,8 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
 
-      {/* --- GENERADOR (Fuera de pantalla) --- */}
-      <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
+      {/* --- GENERADOR --- */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '1080px', zIndex: -100, opacity: 0, pointerEvents: 'none' }}>
         <WorkoutShareCard
           ref={shareCardRef}
           workoutData={workoutData}
@@ -140,7 +159,6 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
       </div>
 
       <div className="w-full max-w-lg m-4 p-6 relative max-h-[90vh] overflow-y-auto bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out] flex flex-col">
-
         <div className="flex justify-between items-center mb-4 border-b border-glass-border pb-4 shrink-0">
           <h2 className="text-2xl font-bold text-text-primary">
             {previewImage ? 'Vista Previa' : '¡Entrenamiento Guardado!'}
@@ -179,6 +197,15 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
               >
                 <ArrowLeft size={18} /> Volver
               </button>
+
+              <button
+                onClick={downloadImage}
+                className="w-14 flex items-center justify-center rounded-xl bg-bg-secondary border border-glass-border text-text-primary hover:text-accent transition"
+                title="Descargar imagen"
+              >
+                <Download size={20} />
+              </button>
+
               <button
                 onClick={handleNativeShare}
                 className="flex-[2] py-3 rounded-xl bg-accent text-bg-secondary font-bold hover:brightness-110 transition shadow-lg shadow-accent/20 flex items-center justify-center gap-2"
@@ -230,7 +257,6 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
               ) : (
                 <p className="text-text-secondary italic">No se registraron ejercicios de fuerza.</p>
               )}
-
               {safeNotes && (
                 <div>
                   <h4 className="text-lg font-semibold text-text-primary mb-2">Notas</h4>

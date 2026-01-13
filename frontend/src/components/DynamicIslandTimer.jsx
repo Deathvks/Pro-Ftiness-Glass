@@ -160,12 +160,12 @@ const DynamicIslandTimer = () => {
                 transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] overflow-hidden select-none
                 ${isExpanded
                     ? 'w-[320px] h-[220px] rounded-[2.5rem]'
-                    : 'w-[210px] h-11 rounded-[22px]' // Cambiado rounded-full por 22px (mitad de h-11) para transición suave
+                    : 'w-[210px] h-11 rounded-[22px]'
                 }
                 ${isFinished
                     ? (isBlinking
-                        ? 'border-2 border-accent shadow-[0_0_20px] shadow-accent'
-                        : 'border-2 border-accent/30 shadow-none'
+                        ? 'border border-gray-800 shadow-[0_0_20px] shadow-accent' // CAMBIO: Usamos border-gray-800 (suave) + shadow
+                        : 'border border-gray-800 shadow-none' // CAMBIO: Usamos border-gray-800
                     )
                     : 'border border-gray-800'
                 }

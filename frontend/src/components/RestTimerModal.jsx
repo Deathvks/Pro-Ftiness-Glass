@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, Plus, Minus, Minimize2, Play, Pause } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
-import { triggerHaptic, HapticType } from '../utils/haptics'; // Importamos la utilidad
+import { triggerHaptic, HapticType } from '../utils/haptics';
 
 const RestTimerModal = () => {
   const {
@@ -52,10 +52,9 @@ const RestTimerModal = () => {
 
       const newTimeLeft = Math.max(0, remaining);
 
-      // Usamos el callback del estado para detectar la transición exacta a 0 y vibrar
       setTimeLeft(prevTimeLeft => {
         if (prevTimeLeft > 0 && newTimeLeft === 0) {
-          triggerHaptic(HapticType.timer); // Vibración larga al terminar
+          triggerHaptic(HapticType.timer);
         }
         return newTimeLeft;
       });
@@ -182,7 +181,8 @@ const RestTimerModal = () => {
 
             <button
               onClick={() => handleStartPreset(planned)}
-              className="w-full p-4 mb-4 bg-accent text-bg-secondary rounded-xl border border-accent/50 hover:bg-accent/80 transition font-bold text-lg shadow-lg shadow-accent/20"
+              // CAMBIO: Eliminado 'border border-accent/50' para quitar el borde.
+              className="w-full p-4 mb-4 bg-accent text-bg-secondary rounded-xl hover:bg-accent/80 transition font-bold text-lg shadow-lg shadow-accent/20"
             >
               Iniciar Planeado ({formattedPlanned})
             </button>

@@ -38,7 +38,8 @@ const XPGuideModal = ({ onClose }) => {
 
                 {/* Modificado: pb-6 en lugar de pb-24 para reducir espacio excesivo al final */}
                 <div className="p-6 overflow-y-auto custom-scrollbar pb-6">
-                    <div className="bg-accent/10 rounded-xl p-4 flex items-start gap-3 mb-6 border border-accent/20">
+                    {/* CAMBIO: border-accent/20 por border-glass-border para borde suave */}
+                    <div className="bg-accent/10 rounded-xl p-4 flex items-start gap-3 mb-6 border border-glass-border">
                         <Info className="text-accent shrink-0" size={20} />
                         <p className="text-text-secondary text-sm">
                             Gana XP realizando acciones diarias. <br />

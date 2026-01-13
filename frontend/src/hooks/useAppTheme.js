@@ -40,7 +40,7 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // --- EFECTO PRINCIPAL DE TEMA (Lógica iOS 26) ---
+  // --- EFECTO PRINCIPAL DE TEMA (Lógica iOS/Android) ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
@@ -63,7 +63,7 @@ export const useAppTheme = () => {
       }
 
       // 2. FIX CRÍTICO: Bloquear transiciones temporalmente
-      // Evita que Safari capture el color 'intermedio' de la transición CSS en la barra de estado.
+      // Evita que Safari/Chrome capturen el color 'intermedio' de la transición CSS en la barra de estado.
       const originalTransitionBody = body.style.transition;
       const originalTransitionRoot = root.style.transition;
 
@@ -87,9 +87,9 @@ export const useAppTheme = () => {
       body.offsetHeight;
 
       // 5. GESTIÓN DE META TAGS (Estrategia de Destrucción/Recreación)
-      // Safari a veces ignora cambios simples de atributo. Recrear el nodo fuerza la actualización UI.
+      // Esta estrategia fuerza a Safari y WebViews de Android a repintar la barra de estado/navegación.
 
-      // A) theme-color (Color de la barra/isla)
+      // A) theme-color (Color de la barra de navegación en Android y barra de estado en nuevos iOS)
       const metaName = "theme-color";
       let metaTheme = document.querySelector(`meta[name="${metaName}"]`);
       if (metaTheme) {
@@ -100,14 +100,14 @@ export const useAppTheme = () => {
       metaTheme.content = color;
       document.head.appendChild(metaTheme);
 
-      // B) apple-mobile-web-app-status-bar-style (Texto Blanco/Negro)
+      // B) apple-mobile-web-app-status-bar-style (iOS Legacy y PWA)
       // 'default' = texto negro (para fondos claros)
       // 'black-translucent' = texto blanco sobre fondo (para oscuros/oled)
       const statusStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
       const metaStatusName = "apple-mobile-web-app-status-bar-style";
       let metaStatus = document.querySelector(`meta[name="${metaStatusName}"]`);
 
-      // Solo recreamos si el valor cambia
+      // Solo recreamos si el valor cambia para evitar parpadeos innecesarios en algunos dispositivos
       if (!metaStatus || metaStatus.getAttribute('content') !== statusStyle) {
         if (metaStatus) metaStatus.remove();
         metaStatus = document.createElement('meta');
@@ -116,7 +116,7 @@ export const useAppTheme = () => {
         document.head.appendChild(metaStatus);
       }
 
-      // 6. Restaurar transiciones (breve delay)
+      // 6. Restaurar transiciones (breve delay para permitir que el motor de renderizado termine)
       setTimeout(() => {
         body.style.transition = ''; // Volver al CSS definido en index.css
         root.style.transition = '';
