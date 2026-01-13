@@ -1,60 +1,137 @@
 /* frontend/src/pages/OnboardingScreen.jsx */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowDown, Minus, ArrowUp, Edit, ChevronRight,
-  Check, Activity, Scale, User, Target, ChevronLeft, Sparkles
+  Check, Activity, Scale, User, Target, ChevronLeft, Sparkles,
+  Coffee, Footprints, Dumbbell, Trophy
 } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 
-// --- Componentes UI Reutilizables ---
+// --- ESTILOS (Animaciones) ---
+const styles = `
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-in-left {
+    from { opacity: 0; transform: translateX(-50px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-slide-right { animation: slide-in-right 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .animate-slide-left { animation: slide-in-left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .animate-float { animation: float 6s ease-in-out infinite; }
+  
+  /* Stagger delays */
+  .delay-100 { animation-delay: 100ms; opacity: 0; animation-fill-mode: forwards; }
+  .delay-200 { animation-delay: 200ms; opacity: 0; animation-fill-mode: forwards; }
+  .delay-300 { animation-delay: 300ms; opacity: 0; animation-fill-mode: forwards; }
+  .delay-400 { animation-delay: 400ms; opacity: 0; animation-fill-mode: forwards; }
+  .delay-500 { animation-delay: 500ms; opacity: 0; animation-fill-mode: forwards; }
+`;
 
-const TitleSection = ({ icon: Icon, title, description }) => (
-  <div className="text-center mb-6">
-    <div className="flex justify-center mb-3">
-      <div className="p-3 bg-accent/10 rounded-full text-accent">
-        <Icon size={32} />
-      </div>
-    </div>
-    <h2 className="text-2xl font-bold text-text-primary mb-2">{title}</h2>
-    <p className="text-sm text-text-secondary px-4 leading-relaxed">{description}</p>
+// --- COMPONENTES UI (DEFINIDOS FUERA) ---
+
+const AnimContainer = ({ children, direction }) => (
+  <div className={direction === 'right' ? 'animate-slide-right' : 'animate-slide-left'}>
+    {children}
   </div>
 );
 
-const SelectionButton = ({ selected, onClick, children, className = '' }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    style={{ WebkitTapHighlightColor: 'transparent' }}
-    className={`relative w-full p-4 rounded-xl border-2 transition-all duration-200 text-left group outline-none focus:outline-none focus:ring-0 select-none active:scale-[0.98]
-    ${selected
-        ? 'border-accent bg-accent/5 shadow-[0_0_15px_-3px_var(--accent)]'
-        : 'border-glass-border bg-bg-secondary md:hover:border-accent/50 active:border-accent/50'
-      } ${className}`}
-  >
-    {children}
-    {selected && (
-      <div className="absolute top-3 right-3 text-accent animate-scale-in">
-        <Check size={18} strokeWidth={3} />
+const StoryProgress = ({ total, current }) => (
+  <div className="flex gap-2 w-full px-6 pt-6 z-50">
+    {Array.from({ length: total }).map((_, idx) => (
+      <div key={idx} className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+        <div
+          className={`h-full bg-accent transition-all duration-700 cubic-bezier(0.4, 0, 0.2, 1) ${idx + 1 <= current ? 'w-full' : 'w-0'
+            }`}
+        />
       </div>
+    ))}
+  </div>
+);
+
+const BigTitle = ({ children, className = "" }) => (
+  <h1 className={`text-4xl md:text-5xl font-black text-text-primary mb-4 tracking-tight animate-slide-right ${className}`}>
+    {children}
+  </h1>
+);
+
+const SubText = ({ children, className = "" }) => (
+  <p className={`text-lg text-text-secondary mb-8 leading-relaxed font-medium max-w-md animate-slide-right delay-100 ${className}`}>
+    {children}
+  </p>
+);
+
+const BigOptionButton = ({ selected, onClick, icon: Icon, title, desc, delay = "" }) => (
+  <button
+    onClick={onClick}
+    className={`w-full p-5 rounded-2xl border transition-all duration-300 flex items-center gap-4 group text-left relative overflow-hidden animate-slide-right ${delay}
+    ${selected
+        ? 'bg-accent text-white border-accent shadow-[0_10px_30px_-10px_var(--accent)] scale-[1.02]'
+        : 'bg-bg-secondary/40 border-white/10 hover:bg-bg-secondary hover:border-glass-highlight text-text-secondary hover:text-text-primary hover:scale-[1.01]'
+      } active:scale-[0.98]`}
+  >
+    {selected && <div className="absolute inset-0 bg-white/10 animate-pulse" />}
+    <div className={`relative p-3 rounded-full transition-all duration-500 ${selected ? 'bg-white/20 rotate-[360deg]' : 'bg-bg-primary text-text-secondary group-hover:text-accent'}`}>
+      <Icon size={28} strokeWidth={selected ? 3 : 2} />
+    </div>
+    <div className="flex-1 relative">
+      <div className={`font-bold text-lg transition-colors ${selected ? 'text-white' : 'text-text-primary'}`}>{title}</div>
+      {desc && <div className={`text-sm transition-colors ${selected ? 'text-white/80' : 'text-text-muted'} leading-tight mt-0.5`}>{desc}</div>}
+    </div>
+    {selected && <Check size={24} className="text-white animate-[scale-in_0.3s_cubic-bezier(0.175,0.885,0.32,1.275)]" strokeWidth={3} />}
+  </button>
+);
+
+const GiantInput = ({ value, onChange, placeholder, unit, autoFocus }) => (
+  <div className="relative inline-flex items-baseline justify-center group animate-slide-right delay-200">
+    <div className="relative">
+      <input
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoFocus={autoFocus}
+        className="bg-transparent text-6xl md:text-8xl font-black text-text-primary text-center outline-none w-full max-w-[300px] placeholder:text-text-muted/10 border-b-2 border-transparent focus:border-accent/50 transition-all pb-2 focus:scale-110 duration-300 ease-out"
+        style={{ colorScheme: 'dark' }}
+      />
+      <div className="absolute inset-0 bg-accent/20 blur-3xl opacity-0 transition-opacity duration-500 group-focus-within:opacity-50 -z-10 rounded-full" />
+    </div>
+    <span className="text-xl md:text-2xl font-bold text-text-secondary ml-2 transition-colors group-focus-within:text-accent">{unit}</span>
+  </div>
+);
+
+const FloatingFab = ({ onClick, disabled, isLoading, text }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled || isLoading}
+    className="fixed bottom-8 right-6 bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none z-50 text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
+  >
+    {isLoading ? <Spinner size={24} color="#fff" /> : (
+      <>
+        {text} <ChevronRight size={24} strokeWidth={3} />
+      </>
     )}
   </button>
 );
 
-const InputField = ({ label, id, ...props }) => (
-  <div className="w-full">
-    <label htmlFor={id} className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 ml-1">
-      {label}
-    </label>
-    <input
-      id={id}
-      className="w-full bg-bg-secondary border border-glass-border rounded-xl px-4 py-3 text-lg text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-      {...props}
-    />
-  </div>
+const BackButton = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className="fixed bottom-8 left-6 p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/10 transition-all active:scale-75 z-50 backdrop-blur-md bg-black/20"
+  >
+    <ChevronLeft size={28} />
+  </button>
 );
+
+// --- COMPONENTE PRINCIPAL ---
 
 const OnboardingScreen = () => {
   const { updateUserProfile, userProfile } = useAppStore(state => ({
@@ -63,351 +140,333 @@ const OnboardingScreen = () => {
   }));
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState('right');
 
-  const [formData, setFormData] = useState({
-    gender: 'male',
-    age: '',
-    weight: '',
-    height: '',
-    activityLevel: 1.55,
-    goal: 'lose'
+  // Inicializar estado desde localStorage o valores por defecto
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem('onboarding_step');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('onboarding_data');
+    return saved ? JSON.parse(saved) : {
+      gender: 'male',
+      age: '',
+      weight: '',
+      height: '',
+      activityLevel: 1.55,
+      goal: 'lose'
+    };
   });
 
   const totalSteps = 5;
-  const progress = (step / totalSteps) * 100;
 
-  // --- Constantes y Descripciones ---
-  const activityOptions = [
-    { value: 1.2, label: 'Sedentario', desc: 'Trabajo de oficina, poco o nada de ejercicio.' },
-    { value: 1.375, label: 'Ligero', desc: 'Ejercicio suave 1-3 días por semana.' },
-    { value: 1.55, label: 'Moderado', desc: 'Entrenamiento moderado 3-5 días por semana.' },
-    { value: 1.725, label: 'Activo', desc: 'Entrenamiento fuerte 6-7 días por semana.' },
-    { value: 1.9, label: 'Muy Activo', desc: 'Trabajo físico duro o doble sesión diaria.' },
-  ];
+  // Persistir cambios en localStorage
+  useEffect(() => {
+    localStorage.setItem('onboarding_data', JSON.stringify(formData));
+    localStorage.setItem('onboarding_step', step.toString());
+  }, [formData, step]);
 
-  const goalOptions = [
-    { value: 'lose', label: 'Perder Grasa', icon: ArrowDown, desc: 'Déficit calórico para reducir % graso.' },
-    { value: 'recomp', label: 'Recomposición', icon: Sparkles, desc: 'Perder grasa y ganar músculo a la vez.' },
-    { value: 'gain', label: 'Ganar Músculo', icon: ArrowUp, desc: 'Superávit ligero para hipertrofia.' },
-    { value: 'maintain', label: 'Mantener Peso', icon: Minus, desc: 'Mismo peso, mejorando rendimiento.' },
-  ];
+  // Scroll al top al cambiar paso
+  useEffect(() => { window.scrollTo(0, 0); }, [step]);
 
-  // --- Validación por Paso ---
-  const validateStep = (currentStep) => {
-    switch (currentStep) {
-      case 1: // Perfil
-        if (!formData.age) {
-          addToast('Por favor, introduce tu edad.', 'warning');
-          return false;
-        }
-        if (formData.age < 10 || formData.age > 100) {
-          addToast('Por favor, introduce una edad válida.', 'warning');
-          return false;
-        }
-        return true;
-      case 2: // Medidas
-        if (!formData.height) {
-          addToast('Por favor, introduce tu altura.', 'warning');
-          return false;
-        }
-        if (!formData.weight) {
-          addToast('Por favor, introduce tu peso.', 'warning');
-          return false;
-        }
-        // Validación específica para altura (evitar metros si se pide cm)
-        if (formData.height < 50) {
-          addToast('La altura debe ser en centímetros (ej: 175).', 'warning');
-          return false;
-        }
-        if (formData.height > 250) {
-          addToast('Revisa la altura introducida.', 'warning');
-          return false;
-        }
-        return true;
-      case 3: // Actividad
-        if (!formData.activityLevel) {
-          addToast('Selecciona un nivel de actividad.', 'warning');
-          return false;
-        }
-        return true;
-      case 4: // Objetivo
-        if (!formData.goal) {
-          addToast('Selecciona un objetivo.', 'warning');
-          return false;
-        }
-        return true;
-      default:
-        return true;
-    }
+  const validateStep = (s) => {
+    if (s === 1 && (!formData.age || formData.age < 10 || formData.age > 100)) return addToast('Introduce una edad válida (10-100)', 'warning');
+    if (s === 2 && (!formData.height || !formData.weight)) return addToast('Por favor, completa tus medidas', 'warning');
+    return true;
   };
 
-  // --- Handlers ---
-  const handleNext = (e) => {
-    e.preventDefault();
+  const handleNext = () => {
     if (validateStep(step)) {
-      setStep(s => Math.min(s + 1, totalSteps));
+      setDirection('right');
+      setStep(Math.min(step + 1, totalSteps));
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const sanitizedValue = value.replace(',', '.');
-    setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
+  const handleBack = () => {
+    setDirection('left');
+    setStep(Math.max(step - 1, 1));
   };
 
-  const handleComplete = async (e) => {
-    e.preventDefault();
-    if (!validateStep(1) || !validateStep(2)) return;
+  const handleInput = (key, val, mode = 'decimal') => {
+    let clean;
+    if (mode === 'int') {
+      clean = val.replace(/[^0-9]/g, '');
+    } else {
+      clean = val.replace(',', '.').replace(/[^0-9.]/g, '');
+    }
+    setFormData(p => ({ ...p, [key]: clean }));
+  };
 
+  const handleComplete = async () => {
     setIsLoading(true);
     const result = await updateUserProfile(formData);
-
     if (!result.success) {
       addToast(result.message, 'error');
       setIsLoading(false);
+    } else {
+      localStorage.removeItem('onboarding_data');
+      localStorage.removeItem('onboarding_step');
     }
   };
 
-  const goToStep = (stepNumber) => setStep(stepNumber);
+  const activityData = [
+    { v: 1.2, t: 'Sedentario', d: 'Poco o nada de ejercicio.', icon: Coffee },
+    { v: 1.375, t: 'Ligero', d: 'Ejercicio ligero 1-3 días/semana.', icon: Footprints },
+    { v: 1.55, t: 'Moderado', d: 'Ejercicio moderado 3-5 días/semana.', icon: Activity },
+    { v: 1.725, t: 'Activo', d: 'Ejercicio fuerte 6-7 días/semana.', icon: Dumbbell },
+    { v: 1.9, t: 'Atleta', d: 'Ejercicio muy fuerte o doble sesión.', icon: Trophy },
+  ];
 
-  const renderStep = () => {
+  const getGoalLabel = (val) => {
+    switch (val) {
+      case 'lose': return 'Perder Grasa';
+      case 'gain': return 'Ganar Músculo';
+      case 'recomp': return 'Recomposición';
+      case 'maintain': return 'Mantenimiento';
+      default: return '';
+    }
+  };
+
+  const renderContent = () => {
     switch (step) {
       case 1:
         return (
-          <form onSubmit={handleNext} className="flex flex-col h-full">
-            <TitleSection
-              icon={User}
-              title={`Hola${userProfile?.username ? ', ' + userProfile.username : ''}!`}
-              description="Para empezar, necesitamos conocerte un poco. Tu género y edad son fundamentales para calcular tu metabolismo basal (TMB)."
-            />
+          <AnimContainer key={1} direction={direction}>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-accent/10 rounded-full flex items-center justify-center mb-6 animate-float text-accent shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+                <Sparkles size={48} className="animate-pulse" />
+              </div>
+              <BigTitle>¡Hola, {userProfile?.username || 'Atleta'}!</BigTitle>
+              <SubText>Configuremos tu perfil. Tu metabolismo depende de estos datos básicos.</SubText>
 
-            <div className="flex-1 flex flex-col gap-6">
-              <div className="grid grid-cols-2 gap-4">
-                <SelectionButton
-                  selected={formData.gender === 'male'}
-                  onClick={() => setFormData({ ...formData, gender: 'male' })}
-                  className="flex flex-col items-center justify-center gap-2 py-6"
-                >
-                  <User size={32} className="text-accent mb-1" />
-                  <span className="font-bold">Hombre</span>
-                </SelectionButton>
-                <SelectionButton
-                  selected={formData.gender === 'female'}
-                  onClick={() => setFormData({ ...formData, gender: 'female' })}
-                  className="flex flex-col items-center justify-center gap-2 py-6"
-                >
-                  <User size={32} className="text-accent mb-1" />
-                  <span className="font-bold">Mujer</span>
-                </SelectionButton>
+              <div className="grid grid-cols-2 gap-4 w-full mb-10 animate-slide-right delay-200">
+                {['male', 'female'].map(g => (
+                  <button
+                    key={g}
+                    onClick={() => setFormData({ ...formData, gender: g })}
+                    className={`p-6 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center gap-4 group hover:scale-[1.03] active:scale-95 ${formData.gender === g
+                      ? 'border-accent bg-accent/10 text-accent shadow-lg shadow-accent/20'
+                      : 'border-glass-border bg-bg-secondary/30 text-text-secondary hover:border-glass-highlight hover:bg-bg-secondary'
+                      }`}
+                  >
+                    <div className={`p-4 rounded-full transition-colors ${formData.gender === g ? 'bg-accent text-white' : 'bg-bg-primary'}`}>
+                      <User size={32} strokeWidth={formData.gender === g ? 3 : 2} />
+                    </div>
+                    <span className="font-bold text-lg">{g === 'male' ? 'Hombre' : 'Mujer'}</span>
+                  </button>
+                ))}
               </div>
 
-              <InputField
-                id="age"
-                name="age"
-                label="Tu Edad"
-                type="number"
-                value={formData.age}
-                onChange={handleChange}
-                required
-                placeholder="Ej: 25 años"
-                min="10"
-                max="100"
-              />
+              <div className="w-full animate-slide-right delay-300">
+                <p className="text-text-secondary mb-2 uppercase tracking-widest text-xs font-bold opacity-60">TU EDAD</p>
+                <GiantInput
+                  value={formData.age}
+                  onChange={(e) => handleInput('age', e.target.value, 'int')}
+                  placeholder="25"
+                  unit="años"
+                />
+              </div>
             </div>
-
-            <button type="submit" className="mt-6 w-full bg-accent text-white hover:bg-accent/90 py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-2 group">
-              Siguiente <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
+          </AnimContainer>
         );
 
       case 2:
         return (
-          <form onSubmit={handleNext} className="flex flex-col h-full">
-            <TitleSection
-              icon={Scale}
-              title="Medidas Corporales"
-              description="Estos datos nos ayudan a determinar tu Índice de Masa Corporal (IMC) y tus necesidades energéticas diarias."
-            />
+          <AnimContainer key={2} direction={direction}>
+            <div className="flex flex-col items-center text-center">
+              <BigTitle>Tus Medidas</BigTitle>
+              <SubText>Necesario para calcular tus macros con precisión milimétrica.</SubText>
 
-            <div className="flex-1 flex flex-col gap-6">
-              <InputField
-                id="height"
-                name="height"
-                label="Altura (cm)"
-                type="number"
-                value={formData.height}
-                onChange={handleChange}
-                required
-                placeholder="Ej: 175"
-              />
-              <InputField
-                id="weight"
-                name="weight"
-                label="Peso Actual (kg)"
-                type="number"
-                step="0.1"
-                value={formData.weight}
-                onChange={handleChange}
-                required
-                placeholder="Ej: 70.5"
-              />
+              <div className="flex flex-col gap-16 w-full mt-8">
+                <div className="animate-slide-right delay-100">
+                  <p className="text-accent mb-4 uppercase tracking-widest text-xs font-bold flex items-center justify-center gap-2 bg-accent/10 py-1 px-3 rounded-full w-fit mx-auto"><ArrowUp size={14} /> ALTURA</p>
+                  <GiantInput
+                    value={formData.height}
+                    onChange={(e) => handleInput('height', e.target.value, 'int')}
+                    placeholder="175"
+                    unit="cm"
+                    autoFocus
+                  />
+                </div>
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-glass-border to-transparent" />
+                <div className="animate-slide-right delay-200">
+                  <p className="text-accent mb-4 uppercase tracking-widest text-xs font-bold flex items-center justify-center gap-2 bg-accent/10 py-1 px-3 rounded-full w-fit mx-auto"><Scale size={14} /> PESO ACTUAL</p>
+                  <GiantInput
+                    value={formData.weight}
+                    onChange={(e) => handleInput('weight', e.target.value, 'decimal')}
+                    placeholder="70.5"
+                    unit="kg"
+                  />
+                </div>
+              </div>
             </div>
-
-            <button type="submit" className="mt-6 w-full bg-accent text-white hover:bg-accent/90 py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-2 group">
-              Siguiente <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
+          </AnimContainer>
         );
 
       case 3:
         return (
-          <form onSubmit={handleNext} className="flex flex-col h-full">
-            <TitleSection
-              icon={Activity}
-              title="Nivel de Actividad"
-              description="Sé honesto/a. Esto define tu factor de actividad (NEAT) y es crucial para no subestimar ni sobreestimar tus calorías."
-            />
+          <AnimContainer key={3} direction={direction}>
+            <div className="flex flex-col w-full">
+              <BigTitle className="text-center">Nivel de Actividad</BigTitle>
+              <SubText className="text-center mx-auto">Tu NEAT (actividad fuera del gym) quema más calorías que el propio entreno. Sé honesto.</SubText>
 
-            <div className="flex-1 flex flex-col gap-3 overflow-y-auto max-h-[40vh] pr-1 scrollbar-hide">
-              {activityOptions.map((option) => (
-                <SelectionButton
-                  key={option.value}
-                  selected={formData.activityLevel === option.value}
-                  onClick={() => setFormData({ ...formData, activityLevel: option.value })}
-                >
-                  <div className="font-bold text-text-primary mb-1">{option.label}</div>
-                  <div className="text-xs text-text-secondary">{option.desc}</div>
-                </SelectionButton>
-              ))}
+              <div className="flex flex-col gap-3 w-full pb-24">
+                {activityData.map((opt, i) => (
+                  <BigOptionButton
+                    key={opt.v}
+                    selected={formData.activityLevel === opt.v}
+                    onClick={() => setFormData({ ...formData, activityLevel: opt.v })}
+                    icon={opt.icon}
+                    title={opt.t}
+                    desc={opt.d}
+                    delay={`delay-${(i + 1) * 100}`}
+                  />
+                ))}
+              </div>
             </div>
-
-            <button type="submit" className="mt-6 w-full bg-accent text-white hover:bg-accent/90 py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-2 group">
-              Siguiente <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
+          </AnimContainer>
         );
 
       case 4:
         return (
-          <form onSubmit={(e) => { e.preventDefault(); goToStep(5); }} className="flex flex-col h-full">
-            <TitleSection
-              icon={Target}
-              title="Tu Objetivo"
-              description="¿Qué quieres lograr? Ajustaremos tus macronutrientes (proteínas, grasas, carbos) para optimizar tu progreso."
-            />
+          <AnimContainer key={4} direction={direction}>
+            <div className="flex flex-col w-full">
+              <BigTitle className="text-center">Tu Objetivo</BigTitle>
+              <SubText className="text-center mx-auto">Definiremos tus calorías y macronutrientes basándonos en esta elección.</SubText>
 
-            <div className="flex-1 flex flex-col gap-4">
-              {goalOptions.map((option) => (
-                <SelectionButton
-                  key={option.value}
-                  selected={formData.goal === option.value}
-                  onClick={() => setFormData({ ...formData, goal: option.value })}
-                  className="flex items-center gap-4"
-                >
-                  <div className={`p-3 rounded-full ${formData.goal === option.value ? 'bg-accent text-white' : 'bg-bg-primary text-text-secondary'}`}>
-                    <option.icon size={24} />
-                  </div>
-                  <div>
-                    <div className="font-bold text-text-primary mb-1">{option.label}</div>
-                    <div className="text-xs text-text-secondary">{option.desc}</div>
-                  </div>
-                </SelectionButton>
-              ))}
+              <div className="flex flex-col gap-4 w-full">
+                <BigOptionButton
+                  selected={formData.goal === 'lose'}
+                  onClick={() => setFormData({ ...formData, goal: 'lose' })}
+                  icon={ArrowDown}
+                  title="Perder Grasa"
+                  desc="Déficit calórico para definir y bajar peso."
+                  delay="delay-100"
+                />
+                <BigOptionButton
+                  selected={formData.goal === 'gain'}
+                  onClick={() => setFormData({ ...formData, goal: 'gain' })}
+                  icon={ArrowUp}
+                  title="Ganar Músculo"
+                  desc="Superávit ligero para hipertrofia (volumen)."
+                  delay="delay-200"
+                />
+                <BigOptionButton
+                  selected={formData.goal === 'recomp'}
+                  onClick={() => setFormData({ ...formData, goal: 'recomp' })}
+                  icon={Sparkles}
+                  title="Recomposición"
+                  desc="Bajar grasa y subir músculo (mismo peso)."
+                  delay="delay-300"
+                />
+                <BigOptionButton
+                  selected={formData.goal === 'maintain'}
+                  onClick={() => setFormData({ ...formData, goal: 'maintain' })}
+                  icon={Minus}
+                  title="Mantenimiento"
+                  desc="Mantener peso mejorando rendimiento."
+                  delay="delay-400"
+                />
+              </div>
             </div>
-
-            <button type="submit" className="mt-6 w-full bg-accent text-white hover:bg-accent/90 py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-2 group">
-              Revisar Todo <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
+          </AnimContainer>
         );
 
       case 5:
         return (
-          <div className="flex flex-col h-full">
-            <TitleSection
-              icon={Check}
-              title="Resumen Final"
-              description="Revisa que todo esté correcto antes de generar tu plan inicial. Siempre podrás cambiar esto en ajustes."
-            />
+          <AnimContainer key={5} direction={direction}>
+            <div className="flex flex-col items-center w-full text-center">
+              <div className="w-28 h-28 bg-gradient-to-br from-accent to-accent/80 rounded-full flex items-center justify-center mb-8 shadow-[0_0_60px_-10px_var(--accent)] animate-float">
+                <Check size={56} className="text-white drop-shadow-md" strokeWidth={4} />
+              </div>
+              <BigTitle>¡Todo Listo!</BigTitle>
+              <SubText>Revisa tus datos. Si algo está mal, toca la tarjeta para editarlo rápidamente.</SubText>
 
-            <div className="flex-1 flex flex-col gap-3">
-              {[
-                { label: 'Perfil', val: `${formData.gender === 'male' ? 'Hombre' : 'Mujer'}, ${formData.age} años`, step: 1 },
-                { label: 'Cuerpo', val: `${formData.height} cm / ${formData.weight} kg`, step: 2 },
-                { label: 'Actividad', val: activityOptions.find(o => o.value === formData.activityLevel)?.label, step: 3 },
-                { label: 'Objetivo', val: goalOptions.find(o => o.value === formData.goal)?.label, step: 4 }
-              ].map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center bg-bg-secondary p-4 rounded-xl border border-glass-border">
-                  <div>
-                    <p className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">{item.label}</p>
-                    <p className="font-semibold text-text-primary">{item.val}</p>
+              {/* TARJETA FINAL ACTUALIZADA - Borde más visible (white/15) + Sombra envolvente */}
+              <div className="w-full bg-bg-secondary/40 backdrop-blur-2xl rounded-[2rem] border border-white/15 flex flex-col mb-8 overflow-hidden shadow-[0_0_30px_-5px_rgba(255,255,255,0.08)] animate-slide-right delay-200">
+
+                {/* Item 1 */}
+                <button onClick={() => setStep(1)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group border-b border-black/20 text-center active:bg-white/10">
+                  <div className="flex flex-col items-center transition-transform group-hover:scale-105">
+                    <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">PERFIL</p>
+                    <p className="font-bold text-text-primary text-xl">{formData.gender === 'male' ? 'Hombre' : 'Mujer'}, {formData.age} años</p>
                   </div>
-                  <button
-                    onClick={() => goToStep(item.step)}
-                    className="p-2 rounded-lg hover:bg-bg-primary text-accent transition-colors"
-                    title="Editar"
-                  >
+                  <div className="absolute right-6 p-2 rounded-full bg-bg-primary/50 text-accent opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-sm">
                     <Edit size={18} />
-                  </button>
-                </div>
-              ))}
-            </div>
+                  </div>
+                </button>
 
-            <button
-              onClick={handleComplete}
-              disabled={isLoading}
-              className="mt-6 w-full bg-accent text-white hover:bg-accent/90 py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isLoading ? <Spinner size={24} color="#fff" /> : (
-                <>
-                  <Check size={20} strokeWidth={3} />
-                  <span>Confirmar y Empezar</span>
-                </>
-              )}
-            </button>
-          </div>
+                {/* Item 2 */}
+                <button onClick={() => setStep(2)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group border-b border-black/20 text-center active:bg-white/10">
+                  <div className="flex flex-col items-center transition-transform group-hover:scale-105">
+                    <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">MEDIDAS</p>
+                    <p className="font-bold text-text-primary text-xl">{formData.height} cm  •  {formData.weight} kg</p>
+                  </div>
+                  <div className="absolute right-6 p-2 rounded-full bg-bg-primary/50 text-accent opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-sm">
+                    <Edit size={18} />
+                  </div>
+                </button>
+
+                {/* Item 3 */}
+                <button onClick={() => setStep(3)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group border-b border-black/20 text-center active:bg-white/10">
+                  <div className="flex flex-col items-center transition-transform group-hover:scale-105">
+                    <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">ACTIVIDAD</p>
+                    <p className="font-bold text-text-primary text-xl">{activityData.find(a => a.v === formData.activityLevel)?.t}</p>
+                  </div>
+                  <div className="absolute right-6 p-2 rounded-full bg-bg-primary/50 text-accent opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-sm">
+                    <Edit size={18} />
+                  </div>
+                </button>
+
+                {/* Item 4 */}
+                <button onClick={() => setStep(4)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group text-center active:bg-white/10">
+                  <div className="flex flex-col items-center transition-transform group-hover:scale-105">
+                    <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">OBJETIVO</p>
+                    <p className="font-black text-accent text-xl uppercase tracking-tight shadow-accent drop-shadow-sm">{getGoalLabel(formData.goal)}</p>
+                  </div>
+                  <div className="absolute right-6 p-2 rounded-full bg-bg-primary/50 text-accent opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-sm">
+                    <Edit size={18} />
+                  </div>
+                </button>
+
+              </div>
+            </div>
+          </AnimContainer>
         );
-      default:
-        return null;
+      default: return null;
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto bg-bg-primary/95 backdrop-blur-md animate-[fade-in_0.3s_ease-out]">
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          {/* Barra de Progreso */}
-          <div className="mb-6 px-2">
-            <div className="flex justify-between text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
-              <span>Paso {step} de {totalSteps}</span>
-              <span>{Math.round(progress)}%</span>
-            </div>
-            <div className="h-2 bg-bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full bg-accent transition-all duration-500 ease-out rounded-full"
-                style={{ width: `${progress}%` }}
-              />
+    <>
+      <style>{styles}</style>
+      <div className="fixed inset-0 z-[100] bg-bg-primary flex flex-col animate-[fade-in_0.5s_ease-out]">
+        <div className="absolute top-0 left-0 w-full h-[70%] bg-gradient-to-b from-accent/5 to-transparent pointer-events-none" />
+        <div className="absolute -top-[20%] -right-[20%] w-[600px] h-[600px] bg-accent/15 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none animate-float delay-1000" />
+
+        <StoryProgress total={totalSteps} current={step} />
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden w-full relative z-10">
+          <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 max-w-2xl mx-auto py-20">
+            <div className="w-full">
+              {renderContent()}
             </div>
           </div>
-
-          <GlassCard className="p-6 md:p-8 min-h-[500px] flex flex-col shadow-2xl border-glass-border/50">
-            {renderStep()}
-          </GlassCard>
-
-          {/* Botón Volver (solo pasos > 1) */}
-          {step > 1 && (
-            <button
-              onClick={() => setStep(s => s - 1)}
-              className="mt-4 w-full text-center text-text-secondary hover:text-text-primary text-sm font-medium transition-colors flex items-center justify-center gap-1"
-            >
-              <ChevronLeft size={16} /> Volver al paso anterior
-            </button>
-          )}
         </div>
+
+        {step > 1 && <BackButton onClick={handleBack} />}
+
+        <FloatingFab
+          onClick={step === totalSteps ? handleComplete : handleNext}
+          disabled={step === 1 && !formData.age}
+          isLoading={isLoading}
+          text={step === totalSteps ? 'Empezar' : 'Siguiente'}
+        />
       </div>
-    </div>
+    </>
   );
 };
 
