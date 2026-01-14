@@ -4,7 +4,7 @@ import { X, Share2, Clock, Flame, Target, ArrowLeft, Send, Download } from 'luci
 import { useTranslation } from 'react-i18next';
 import html2canvas from 'html2canvas';
 import useAppStore from '../store/useAppStore';
-import { useToast } from '../hooks/useToast'; // CORRECCIÓN: Import con llaves
+import { useToast } from '../hooks/useToast';
 import WorkoutShareCard from './WorkoutShareCard';
 import Spinner from './Spinner';
 
@@ -17,10 +17,10 @@ const formatTime = (timeInSeconds) => {
   return `${minutes}:${seconds}`;
 };
 
-const WorkoutSummaryModal = ({ workoutData, onClose }) => {
+const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
   const { t } = useTranslation(['exercise_names']);
   const { userProfile } = useAppStore(state => ({ userProfile: state.userProfile }));
-  const { showToast } = useToast(); // CORRECCIÓN: Usamos showToast en lugar de addToast
+  const { showToast } = useToast();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -50,6 +50,17 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
     };
     setTimeout(resolveAccentColor, 200);
   }, []);
+
+  // --- AUTO GENERACIÓN SI ESTÁ EN MODO SHARE ---
+  useEffect(() => {
+    if (isShareMode && !previewImage && !isGenerating && shareCardRef.current) {
+      // Pequeño timeout para asegurar que el componente (invisible) está montado y renderizado
+      const timer = setTimeout(() => {
+        handleGeneratePreview();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isShareMode, shareCardRef.current]);
 
   const handleGeneratePreview = async () => {
     if (!workoutData || isGenerating) return;
@@ -145,6 +156,28 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
   const safeDetails = details || [];
   const safeNotes = notes || "";
 
+  // Si está generando automáticamente (isShareMode), mostramos un loader centrado
+  if (isShareMode && isGenerating && !previewImage) {
+    return (
+      <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+        {/* Renderizado oculto para la captura */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '1080px', zIndex: -100, opacity: 0, pointerEvents: 'none' }}>
+          <WorkoutShareCard
+            ref={shareCardRef}
+            workoutData={workoutData}
+            userName={userProfile?.username}
+            accentColor={accentColor}
+          />
+        </div>
+
+        <div className="flex flex-col items-center justify-center">
+          <Spinner size={50} />
+          <p className="mt-4 text-white font-medium animate-pulse">Generando vista previa...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
 
@@ -190,17 +223,18 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
               />
             </div>
 
-            <div className="flex gap-3 w-full">
+            {/* MODIFICADO: Layout responsive para los botones */}
+            <div className="flex flex-col-reverse sm:flex-row gap-3 w-full">
               <button
-                onClick={resetPreview}
-                className="flex-1 py-3 rounded-xl border border-glass-border text-text-secondary font-bold hover:bg-bg-secondary transition flex items-center justify-center gap-2"
+                onClick={isShareMode ? onClose : resetPreview} // Si es modo directo, volver cierra el modal
+                className="w-full sm:flex-1 py-3 rounded-xl border border-glass-border text-text-secondary font-bold hover:bg-bg-secondary transition flex items-center justify-center gap-2"
               >
-                <ArrowLeft size={18} /> Volver
+                <ArrowLeft size={18} /> {isShareMode ? 'Cerrar' : 'Volver'}
               </button>
 
               <button
                 onClick={downloadImage}
-                className="w-14 flex items-center justify-center rounded-xl bg-bg-secondary border border-glass-border text-text-primary hover:text-accent transition"
+                className="w-full sm:w-14 py-3 sm:py-0 flex items-center justify-center rounded-xl bg-bg-secondary border border-glass-border text-text-primary hover:text-accent transition"
                 title="Descargar imagen"
               >
                 <Download size={20} />
@@ -208,7 +242,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose }) => {
 
               <button
                 onClick={handleNativeShare}
-                className="flex-[2] py-3 rounded-xl bg-accent text-bg-secondary font-bold hover:brightness-110 transition shadow-lg shadow-accent/20 flex items-center justify-center gap-2"
+                className="w-full sm:flex-[2] py-3 rounded-xl bg-accent text-bg-secondary font-bold hover:brightness-110 transition shadow-lg shadow-accent/20 flex items-center justify-center gap-2"
               >
                 <Send size={18} /> Compartir
               </button>

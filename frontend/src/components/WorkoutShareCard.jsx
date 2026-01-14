@@ -1,6 +1,7 @@
 /* frontend/src/components/WorkoutShareCard.jsx */
 import React, { forwardRef, useMemo } from 'react';
-import { Clock, Flame, Trophy, Zap, TrendingUp } from 'lucide-react';
+import { Clock, Flame, Trophy, TrendingUp } from 'lucide-react';
+import { FaBolt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref) => {
@@ -36,37 +37,49 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
         return `${m}m`;
     };
 
-    // --- FIX: Filtramos series válidas para no contar vacías ---
     const getSetsSummary = (sets) => {
         if (!sets || sets.length === 0) return "Sin peso";
 
-        // FILTRO CRÍTICO: Solo contamos series que tengan al menos 1 repetición
-        const validSets = sets.filter(s => parseFloat(s.reps) > 0);
+        const workingSets = sets.filter(s =>
+            parseFloat(s.reps) > 0 &&
+            !s.is_warmup &&
+            !s.is_dropset
+        );
 
-        if (validSets.length === 0) return "Sin series";
+        if (workingSets.length === 0) {
+            const anyActivity = sets.some(s => parseFloat(s.reps) > 0);
+            return anyActivity ? "Solo Calentamiento" : "Sin series";
+        }
 
-        const weights = validSets.map(s => parseFloat(s.weight_kg) || 0).filter(w => w > 0);
+        const weights = workingSets.map(s => parseFloat(s.weight_kg) || 0).filter(w => w > 0);
         const maxW = weights.length > 0 ? Math.max(...weights) : 0;
 
-        if (weights.length === 0) return `${validSets.length} series (Cardio/BW)`;
-        return `${validSets.length} series (Máx: ${maxW}kg)`;
+        if (weights.length === 0) return `${workingSets.length} series (Cardio/BW)`;
+
+        return (
+            <>
+                {workingSets.length} series
+                <span className="mx-3 text-white/40">•</span>
+                Máx {maxW}kg
+            </>
+        );
     };
 
     const getMaxWeight = (sets) => {
         if (!sets || sets.length === 0) return 0;
-        // También usamos solo series válidas para el peso máximo
-        const validSets = sets.filter(s => parseFloat(s.reps) > 0);
-        if (validSets.length === 0) return 0;
-
-        const weights = validSets.map(s => parseFloat(s.weight_kg) || 0);
+        const workingSets = sets.filter(s =>
+            parseFloat(s.reps) > 0 &&
+            !s.is_warmup &&
+            !s.is_dropset
+        );
+        if (workingSets.length === 0) return 0;
+        const weights = workingSets.map(s => parseFloat(s.weight_kg) || 0);
         return Math.max(...weights, 0);
     };
-    // -----------------------------------------------------------
 
     return (
         <div
             ref={ref}
-            // Altura dinámica: crece según el contenido
             className="relative w-[1080px] min-h-[1920px] h-auto bg-black text-white flex flex-col font-sans"
         >
             {/* --- FONDOS --- */}
@@ -86,7 +99,6 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                         <div className="h-2 w-32 rounded-full mt-1" style={{ background: accent }} />
                     </div>
 
-                    {/* FECHA: pb-[10px] (Correcto) */}
                     <div className="bg-white/10 backdrop-blur-md border border-white/10 px-6 h-16 rounded-2xl flex items-center justify-center">
                         <span className="text-gray-300 font-bold tracking-widest text-xl uppercase leading-none pb-[10px]">
                             {dateStr}
@@ -122,7 +134,6 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                 {/* LISTA DE EJERCICIOS */}
                 <div className="flex-1 bg-[#0a0a0a] rounded-[3rem] border border-white/10 p-6 relative flex flex-col">
 
-                    {/* TÍTULO SECCIÓN */}
                     <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/10 shrink-0">
                         <TrendingUp size={32} strokeWidth={3} style={{ color: accent }} className="translate-y-[5px]" />
                         <h3 className="text-3xl font-bold text-white leading-none">
@@ -133,8 +144,6 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                     <div className="flex flex-col gap-3">
                         {details && details.map((ex, i) => {
                             const maxWeight = getMaxWeight(ex.setsDone);
-                            // Opcional: Si no hay series válidas, no mostramos el ejercicio (descomentar si se desea)
-                            // if (maxWeight === 0 && (!ex.setsDone || ex.setsDone.filter(s=>s.reps>0).length === 0)) return null;
 
                             return (
                                 <div key={i} className="flex justify-between items-center w-full">
@@ -146,16 +155,21 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                                             {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
                                         </span>
 
-                                        {/* SUBTÍTULO */}
-                                        <div className="flex items-center gap-2 text-gray-500">
-                                            <Zap size={20} strokeWidth={3} fill="currentColor" className="translate-y-[3px]" />
-                                            <span className="text-xl font-medium leading-none">
+                                        {/* SUBTÍTULO: Usando FaBolt de Font Awesome */}
+                                        <div className="flex items-center gap-2 text-gray-500 pb-5">
+                                            {/* Translate ligero para centrado óptico, FaBolt es sólido y seguro */}
+                                            <FaBolt
+                                                size={20}
+                                                className="shrink-0 translate-y-[2px]"
+                                            />
+
+                                            <div className="text-xl font-medium leading-none">
                                                 {getSetsSummary(ex.setsDone)}
-                                            </span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* CHIP PESO: Aumento a pb-4 (16px) para subirlo más */}
+                                    {/* CHIP PESO */}
                                     <div className="shrink-0 min-w-[140px] h-16 px-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
                                         <span className="text-2xl font-bold text-white whitespace-nowrap leading-none pb-4">
                                             {maxWeight > 0 ? `${maxWeight} kg` : '-'}

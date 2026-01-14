@@ -1,20 +1,23 @@
 /* frontend/src/components/progress/DailyDetailView.jsx */
 import React, { useState, useMemo } from 'react';
 import {
-  X, Trash2, Link2, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell, Link, MapPin, Maximize2
+  X, Trash2, Link2, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell, Link, MapPin, Maximize2, Share2
 } from 'lucide-react';
-import { MapContainer, TileLayer, Polyline } from 'react-leaflet'; // Importamos Leaflet
+import { MapContainer, TileLayer, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
 import ConfirmationModal from '../ConfirmationModal';
+import WorkoutSummaryModal from '../WorkoutSummaryModal';
 import { calculateCalories } from '../../utils/helpers';
 import useAppStore from '../../store/useAppStore';
 import { useToast } from '../../hooks/useToast';
+import { useAppTheme } from '../../hooks/useAppTheme';
 
 const DailyDetailView = ({ logs, onClose }) => {
   const { t } = useTranslation(['exercise_names']);
+  const { accent } = useAppTheme();
 
-  const { bodyWeightLog, deleteWorkoutLog } = useAppStore(state => ({
+  const { userProfile, bodyWeightLog, deleteWorkoutLog } = useAppStore(state => ({
     userProfile: state.userProfile,
     bodyWeightLog: state.bodyWeightLog,
     deleteWorkoutLog: state.deleteWorkoutLog,
@@ -23,6 +26,9 @@ const DailyDetailView = ({ logs, onClose }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logToDelete, setLogToDelete] = useState(null);
   const [deletedLogIds, setDeletedLogIds] = useState([]);
+
+  // Estado para compartir
+  const [shareData, setShareData] = useState(null);
 
   // Estado para el mapa expandido
   const [expandedMapPath, setExpandedMapPath] = useState(null);
@@ -33,6 +39,39 @@ const DailyDetailView = ({ logs, onClose }) => {
   const handleDeleteClick = (log) => {
     setLogToDelete(log);
     setShowDeleteConfirm(true);
+  };
+
+  const handleShareClick = (log) => {
+    // Normalizar detalles para el componente de compartir
+    const rawDetails = log.WorkoutLogDetails || [];
+
+    const normalizedDetails = rawDetails.map((ex) => {
+      const rawSets = ex.WorkoutLogSets || [];
+
+      const normalizedSets = rawSets.map(s => ({
+        weight_kg: parseFloat(s.weight_kg || 0),
+        reps: parseFloat(s.reps || 0),
+        is_dropset: !!s.is_dropset,
+        is_warmup: !!s.is_warmup,
+        set_number: parseInt(s.set_number || 0)
+      }));
+
+      const exName = ex.exercise_name || "Ejercicio";
+
+      return {
+        exerciseName: exName,
+        setsDone: normalizedSets
+      };
+    });
+
+    setShareData({
+      routineName: log.routine_name,
+      duration_seconds: log.duration_seconds || 0,
+      calories_burned: log.calories_burned || 0,
+      details: normalizedDetails,
+      notes: log.notes,
+      workout_date: log.workout_date
+    });
   };
 
   const confirmDelete = async () => {
@@ -237,9 +276,22 @@ const DailyDetailView = ({ logs, onClose }) => {
                   {/* Header de la Rutina */}
                   <div className={`flex justify-between items-center p-4 bg-gray-500/5 border-b ${subtleBorderClass}`}>
                     <h5 className="font-bold text-accent truncate pr-4 text-base">{log.routine_name}</h5>
-                    <button onClick={() => handleDeleteClick(log)} className="p-2 -m-2 rounded-full text-text-muted hover:text-red-500 transition">
-                      <Trash2 size={18} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleShareClick(log)}
+                        className="p-2 -m-2 mr-2 rounded-full text-text-muted hover:text-accent hover:bg-white/5 transition"
+                        title="Compartir"
+                      >
+                        <Share2 size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(log)}
+                        className="p-2 -m-2 rounded-full text-text-muted hover:text-red-500 hover:bg-white/5 transition"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="p-4 space-y-5">
@@ -382,6 +434,17 @@ const DailyDetailView = ({ logs, onClose }) => {
           onCancel={cancelDelete}
           confirmText="Sí, borrar"
           cancelText="Cancelar"
+        />
+      )}
+
+      {/* MODAL DE COMPARTIR */}
+      {shareData && (
+        <WorkoutSummaryModal
+          workoutData={shareData}
+          onClose={() => setShareData(null)}
+          isShareMode={true}
+          userName={userProfile?.username}
+          accentColor={accent}
         />
       )}
     </>

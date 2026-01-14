@@ -15,7 +15,8 @@ import {
   Compass,
   Clock,
   Folder,
-  FolderOpen
+  FolderOpen,
+  Share2
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -25,6 +26,7 @@ import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
+import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
@@ -71,7 +73,10 @@ const Routines = ({ setView }) => {
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
-  const [selectedFolder, setSelectedFolder] = useState('all'); // all | uncategorized | [folderName]
+  const [selectedFolder, setSelectedFolder] = useState('all');
+
+  // Estado para el modal de compartir
+  const [shareData, setShareData] = useState(null);
 
   const [activeTab, setActiveTab] = useState(() => {
     const forcedTab = localStorage.getItem('routinesForceTab');
@@ -195,6 +200,69 @@ const Routines = ({ setView }) => {
     }
   };
 
+  // --- Función para compartir rutina completada ---
+  const handleShareClick = (routine) => {
+    if (!workoutLog) return;
+
+    const today = new Date().toDateString();
+
+    // Buscamos el log de ESTA rutina que se haya hecho HOY.
+    const todaysLog = workoutLog
+      .filter(log => log.routine_id === routine.id)
+      .sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date))
+      .find(log => new Date(log.workout_date).toDateString() === today);
+
+    if (todaysLog) {
+      // Obtenemos los detalles, usando el fallback si 'details' no existe
+      const rawDetails = todaysLog.details || todaysLog.WorkoutLogDetails || [];
+
+      const normalizedDetails = rawDetails.map((ex) => {
+        // Intentamos encontrar las series en varias propiedades comunes
+        // AÑADIDO: ex.WorkoutLogSets que es donde vienen los datos reales
+        let rawSets = ex.setsDone || ex.sets_done || ex.sets || ex.Sets || ex.WorkoutLogSets || [];
+
+        // Si es un string (JSON), lo parseamos
+        if (typeof rawSets === 'string') {
+          try {
+            rawSets = JSON.parse(rawSets);
+          } catch (e) {
+            rawSets = [];
+          }
+        }
+
+        if (!Array.isArray(rawSets)) {
+          rawSets = [];
+        }
+
+        const normalizedSets = rawSets.map(s => ({
+          weight_kg: parseFloat(s.weight_kg || s.weight || 0),
+          reps: parseFloat(s.reps || 0),
+          is_dropset: !!(s.is_dropset || s.isDropset),
+          is_warmup: !!(s.is_warmup || s.isWarmup),
+          set_number: parseInt(s.set_number || s.setNumber || 0)
+        }));
+
+        const exName = ex.exercise_name || ex.exerciseName || ex.name || "Ejercicio";
+
+        return {
+          exerciseName: exName,
+          setsDone: normalizedSets
+        };
+      });
+
+      setShareData({
+        routineName: todaysLog.routine_name || routine.name,
+        duration_seconds: todaysLog.duration_seconds || 0,
+        calories_burned: todaysLog.calories_burned || 0,
+        details: normalizedDetails,
+        notes: todaysLog.notes,
+        workout_date: todaysLog.workout_date
+      });
+    } else {
+      addToast("No se encontraron datos del entrenamiento de hoy para compartir.", "info");
+    }
+  };
+
   const handleDeleteClick = (id) => {
     setRoutineToDelete(id);
     setShowDeleteModal(true);
@@ -225,7 +293,7 @@ const Routines = ({ setView }) => {
       const copy = {
         name: `${routine.name} (Copia)`,
         description: routine.description,
-        folder: routine.folder, // Copiar también la carpeta
+        folder: routine.folder,
         exercises: (routine.RoutineExercises || routine.exercises || []).map(
           ({ ...ex }) => ({
             ...ex,
@@ -298,20 +366,15 @@ const Routines = ({ setView }) => {
 
     let list = (routines || []).filter((r) => {
       if (!r) return false;
-
-      // Filtro de búsqueda texto
       const matchesQuery = !q ||
         r.name?.toLowerCase().includes(q) ||
         r.description?.toLowerCase().includes(q);
-
-      // Filtro de carpeta
       let matchesFolder = true;
       if (selectedFolder === 'uncategorized') {
         matchesFolder = !r.folder || r.folder.trim() === '';
       } else if (selectedFolder !== 'all') {
         matchesFolder = r.folder === selectedFolder;
       }
-
       return matchesQuery && matchesFolder;
     });
 
@@ -409,7 +472,6 @@ const Routines = ({ setView }) => {
       {activeTab === 'myRoutines' && (
         <>
           <div className="mb-6 flex flex-col gap-4">
-            {/* Buscador */}
             <div className="max-w-md relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
@@ -423,7 +485,6 @@ const Routines = ({ setView }) => {
               />
             </div>
 
-            {/* Selector de Carpetas (Scroll Horizontal) */}
             {uniqueFolders.length > 0 && (
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                 <button
@@ -469,21 +530,15 @@ const Routines = ({ setView }) => {
                 if (!routine) return null;
 
                 const isCompleted = completedRoutineIdsToday.includes(routine.id);
-                const isActive =
-                  activeWorkout && activeWorkout.routineId === routine.id;
-
-                const exercisesToGroup =
-                  routine.RoutineExercises || routine.exercises || [];
+                const isActive = activeWorkout && activeWorkout.routineId === routine.id;
+                const exercisesToGroup = routine.RoutineExercises || routine.exercises || [];
                 const exerciseGroups = groupExercises(exercisesToGroup);
                 const lastUsed = lastUsedMap.get(routine.id);
                 const totalExercises = exercisesToGroup.length;
-
                 const imageSrc = routine.imageUrl || routine.image_url;
 
                 return (
                   <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group relative">
-
-                    {/* --- IMAGEN (Si existe) --- */}
                     {imageSrc && (
                       <div className="h-32 sm:h-40 w-full relative shrink-0 overflow-hidden bg-bg-secondary">
                         {isCssBackground(imageSrc) ? (
@@ -500,8 +555,6 @@ const Routines = ({ setView }) => {
                           />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary/90 to-transparent opacity-60" />
-
-                        {/* Badge de Carpeta SOBRE IMAGEN */}
                         {routine.folder && (
                           <div className="absolute top-2 right-2 z-20">
                             <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-xs font-medium text-white border border-white/10 flex items-center gap-1">
@@ -513,17 +566,13 @@ const Routines = ({ setView }) => {
                     )}
 
                     <div className="p-5 flex-1 flex flex-col">
-
-                      {/* --- CABECERA: Título y Acciones --- */}
                       <div className="flex justify-between items-start gap-3 mb-2">
                         <div className="flex flex-col gap-1 min-w-0">
-                          {/* Badge de Carpeta INLINE (Si NO hay imagen) */}
                           {!imageSrc && routine.folder && (
                             <span className="inline-flex items-center gap-1 text-xs font-medium text-text-muted mb-0.5">
                               <Folder size={12} /> {routine.folder}
                             </span>
                           )}
-
                           <div className="flex items-center gap-2 flex-wrap">
                             <h2 className="text-lg md:text-xl font-bold text-text-primary leading-tight truncate">
                               {routine.name}
@@ -536,8 +585,16 @@ const Routines = ({ setView }) => {
                           </div>
                         </div>
 
-                        {/* Botones de Acción */}
                         <div className="shrink-0 flex items-center gap-1 -mt-1">
+                          {isCompleted && (
+                            <button
+                              onClick={() => handleShareClick(routine)}
+                              className="p-2 rounded-full text-text-secondary hover:text-accent hover:bg-bg-secondary border border-transparent hover:border-glass-border transition-all"
+                              title="Compartir resultado de hoy"
+                            >
+                              <Share2 size={16} />
+                            </button>
+                          )}
                           <button onClick={() => handleEditClick(routine)} className="p-2 rounded-full text-text-secondary hover:bg-bg-secondary border border-transparent hover:border-glass-border transition-all" title="Editar">
                             <Edit size={16} />
                           </button>
@@ -550,14 +607,12 @@ const Routines = ({ setView }) => {
                         </div>
                       </div>
 
-                      {/* Descripción */}
                       {routine.description && (
                         <p className="text-sm text-text-secondary line-clamp-2 mb-3">
                           {routine.description}
                         </p>
                       )}
 
-                      {/* --- INFO ROW (Reorganizado) --- */}
                       <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-[--glass-border]">
                         {isCompleted && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-bg-secondary text-xs font-semibold">
@@ -572,7 +627,6 @@ const Routines = ({ setView }) => {
                         </span>
                       </div>
 
-                      {/* --- LISTA DE EJERCICIOS --- */}
                       {exerciseGroups.length > 0 && (
                         <div className="mb-4">
                           <div className="flex flex-col gap-3">
@@ -601,7 +655,6 @@ const Routines = ({ setView }) => {
                         </div>
                       )}
 
-                      {/* --- BOTÓN START --- */}
                       <div className="mt-auto pt-2">
                         <button
                           onClick={() => handleStartWorkout(routine)}
@@ -669,6 +722,15 @@ const Routines = ({ setView }) => {
           isLoading={isLoading}
           confirmText="Eliminar"
           isDestructive={true}
+        />
+      )}
+
+      {/* MODAL DE COMPARTIR - Añadido isShareMode para generar imagen auto */}
+      {shareData && (
+        <WorkoutSummaryModal
+          workoutData={shareData}
+          onClose={() => setShareData(null)}
+          isShareMode={true}
         />
       )}
 

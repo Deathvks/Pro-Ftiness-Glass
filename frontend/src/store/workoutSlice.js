@@ -573,6 +573,11 @@ export const createWorkoutSlice = (set, get) => ({
         get()._showLocalPRNotification(responseData.newPRs);
       }
 
+      // --- CAMBIO: Limpiamos localStorage inmediatamente tras guardar con éxito ---
+      // Esto evita que, si se recarga la página, el usuario vuelva a entrar en el entrenamiento.
+      clearWorkoutInStorage();
+      clearRestTimerInStorage();
+
       // 2. DETECTAR LÍMITE DE XP: Si xpAdded viene en la respuesta y es 0, enviamos el mensaje de advertencia.
       if (responseData.xpAdded !== undefined && responseData.xpAdded === 0) {
         return {
