@@ -13,6 +13,13 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
     const { routineName, duration_seconds, calories_burned, details } = workoutData;
     const safeName = routineName || "Entrenamiento Libre";
 
+    // --- MODIFICACIÓN: Truncado agresivo a 12 caracteres ---
+    // La fuente text-7xl uppercase ocupa mucho. Reducimos a 12 para asegurar que los "..." se vean.
+    const MAX_TITLE_CHARS = 12;
+    const displayName = safeName.length > MAX_TITLE_CHARS
+        ? safeName.substring(0, MAX_TITLE_CHARS).trim() + '...'
+        : safeName;
+
     // FECHA CORTA: "LUN, 12 ENE 2026"
     const dateStr = new Date().toLocaleDateString('es-ES', {
         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
@@ -111,8 +118,9 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                     <span className="font-bold tracking-[0.2em] uppercase text-2xl mb-3 block" style={{ color: accent }}>
                         Sesión Completada
                     </span>
-                    <h2 className="text-7xl font-black text-white leading-normal uppercase w-full truncate pb-4 -mb-4">
-                        {safeName}
+                    {/* Quitamos truncate de CSS para confiar en el truncado JS (12 chars) y asegurar que se vean los puntos */}
+                    <h2 className="text-7xl font-black text-white leading-normal uppercase w-full pb-4 -mb-4 whitespace-nowrap overflow-hidden">
+                        {displayName}
                     </h2>
                 </div>
 

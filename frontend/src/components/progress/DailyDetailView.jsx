@@ -17,10 +17,12 @@ const DailyDetailView = ({ logs, onClose }) => {
   const { t } = useTranslation(['exercise_names']);
   const { accent } = useAppTheme();
 
-  const { userProfile, bodyWeightLog, deleteWorkoutLog } = useAppStore(state => ({
+  // AÑADIDO: Traemos 'routines' para buscar el nombre actualizado
+  const { userProfile, bodyWeightLog, deleteWorkoutLog, routines } = useAppStore(state => ({
     userProfile: state.userProfile,
     bodyWeightLog: state.bodyWeightLog,
     deleteWorkoutLog: state.deleteWorkoutLog,
+    routines: state.routines,
   }));
   const { addToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -64,8 +66,14 @@ const DailyDetailView = ({ logs, onClose }) => {
       };
     });
 
+    // LÓGICA DE ACTUALIZACIÓN DE NOMBRE:
+    // Buscamos si existe la rutina actual en el store con el mismo ID.
+    // Si existe, usamos su nombre nuevo. Si no, usamos el histórico del log.
+    const currentRoutine = routines.find(r => r.id === log.routine_id);
+    const displayRoutineName = currentRoutine ? currentRoutine.name : log.routine_name;
+
     setShareData({
-      routineName: log.routine_name,
+      routineName: displayRoutineName,
       duration_seconds: log.duration_seconds || 0,
       calories_burned: log.calories_burned || 0,
       details: normalizedDetails,
@@ -275,7 +283,10 @@ const DailyDetailView = ({ logs, onClose }) => {
                 <div key={log.id} className={`bg-bg-secondary rounded-2xl overflow-hidden border ${subtleBorderClass} shadow-sm shrink-0`}>
                   {/* Header de la Rutina */}
                   <div className={`flex justify-between items-center p-4 bg-gray-500/5 border-b ${subtleBorderClass}`}>
-                    <h5 className="font-bold text-accent truncate pr-4 text-base">{log.routine_name}</h5>
+                    {/* AÑADIDO: Visualización también actualizada en la lista, por consistencia */}
+                    <h5 className="font-bold text-accent truncate pr-4 text-base">
+                      {routines.find(r => r.id === log.routine_id)?.name || log.routine_name}
+                    </h5>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleShareClick(log)}

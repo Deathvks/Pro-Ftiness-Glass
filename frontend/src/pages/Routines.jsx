@@ -251,7 +251,8 @@ const Routines = ({ setView }) => {
       });
 
       setShareData({
-        routineName: todaysLog.routine_name || routine.name,
+        // CAMBIO: Priorizamos routine.name (nombre actual) sobre todaysLog.routine_name (nombre histórico)
+        routineName: routine.name || todaysLog.routine_name,
         duration_seconds: todaysLog.duration_seconds || 0,
         calories_burned: todaysLog.calories_burned || 0,
         details: normalizedDetails,
