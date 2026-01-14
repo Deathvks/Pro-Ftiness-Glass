@@ -1,6 +1,6 @@
 /* frontend/src/pages/ExerciseHistoryModal.jsx */
 import React, { useMemo, useState, useEffect } from 'react';
-import { X, Flame } from 'lucide-react';
+import { X, Flame, CalendarX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import CustomSelect from '../components/CustomSelect';
@@ -162,7 +162,7 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
         <div className="overflow-y-auto p-4 md:p-6 custom-scrollbar bg-bg-primary">
           {historyByDay.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-text-muted opacity-60">
-              <span className="text-4xl mb-3">📅</span>
+              <CalendarX size={48} strokeWidth={1.5} className="mb-4 text-text-muted" />
               <p>
                 {tCommon(
                   'No hay registros para los filtros seleccionados.',
