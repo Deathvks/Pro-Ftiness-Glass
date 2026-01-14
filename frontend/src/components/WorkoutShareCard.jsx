@@ -47,27 +47,37 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
     const getSetsSummary = (sets) => {
         if (!sets || sets.length === 0) return "Sin peso";
 
-        const workingSets = sets.filter(s =>
-            parseFloat(s.reps) > 0 &&
-            !s.is_warmup &&
-            !s.is_dropset
-        );
+        const validSets = sets.filter(s => parseFloat(s.reps) > 0);
 
-        if (workingSets.length === 0) {
-            const anyActivity = sets.some(s => parseFloat(s.reps) > 0);
-            return anyActivity ? "Solo Calentamiento" : "Sin series";
-        }
+        // Contadores separados
+        const effectiveCount = validSets.filter(s => !s.is_warmup && !s.is_dropset).length;
+        const dropCount = validSets.filter(s => s.is_dropset).length;
+        const warmupCount = validSets.filter(s => s.is_warmup).length;
 
-        const weights = workingSets.map(s => parseFloat(s.weight_kg) || 0).filter(w => w > 0);
-        const maxW = weights.length > 0 ? Math.max(...weights) : 0;
+        // Construir array de partes (ej: ["3 Series", "1 Drop"])
+        const parts = [];
+        if (effectiveCount > 0) parts.push(`${effectiveCount} Series`);
+        if (dropCount > 0) parts.push(`${dropCount} Drop`);
+        if (warmupCount > 0) parts.push(`${warmupCount} Calent.`);
 
-        if (weights.length === 0) return `${workingSets.length} series (Cardio/BW)`;
+        if (parts.length === 0) return "Sin series";
+
+        // Calcular peso máximo solo de series efectivas (para consistencia con el chip lateral)
+        const effectiveWeights = validSets
+            .filter(s => !s.is_warmup && !s.is_dropset)
+            .map(s => parseFloat(s.weight_kg) || 0);
+
+        const maxW = effectiveWeights.length > 0 ? Math.max(...effectiveWeights) : 0;
 
         return (
             <>
-                {workingSets.length} series
-                <span className="mx-3 text-white/40">•</span>
-                Máx {maxW}kg
+                {parts.join(' + ')}
+                {maxW > 0 && (
+                    <>
+                        <span className="mx-3 text-white/40">•</span>
+                        Máx {maxW}kg
+                    </>
+                )}
             </>
         );
     };
