@@ -5,16 +5,29 @@ import { Capacitor } from '@capacitor/core';
 
 const AndroidDownloadPrompt = () => {
     const [isVisible, setIsVisible] = useState(false);
+    
+    // URL por defecto (fallback) por si falla la carga dinámica
+    const [downloadUrl, setDownloadUrl] = useState("https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk");
 
     // Configuración: Días de espera antes de volver a mostrar
     const DAYS_TO_WAIT = 5;
     const STORAGE_KEY = 'android_prompt_last_seen';
 
-    // URL directa a GitHub Release
-    const DOWNLOAD_URL = "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.0.0/app-release.apk";
-
     useEffect(() => {
-        const checkEligibility = () => {
+        const initPrompt = async () => {
+            // 0. Intentar obtener la URL dinámica desde version.json
+            try {
+                const response = await fetch(`/version.json?t=${Date.now()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.downloadUrl) {
+                        setDownloadUrl(data.downloadUrl);
+                    }
+                }
+            } catch (error) {
+                console.warn("No se pudo cargar la configuración de versión dinámica", error);
+            }
+
             // 1. Si ya estamos en modo nativo (la app instalada), no mostrar nada.
             if (Capacitor.isNativePlatform()) return;
 
@@ -41,7 +54,7 @@ const AndroidDownloadPrompt = () => {
             setTimeout(() => setIsVisible(true), 2000);
         };
 
-        checkEligibility();
+        initPrompt();
     }, []);
 
     const handleDismiss = () => {
@@ -57,11 +70,6 @@ const AndroidDownloadPrompt = () => {
 
     return (
         <div className="fixed bottom-4 left-4 right-4 z-[100] animate-[slide-in-up_0.5s_ease-out] flex justify-center">
-            {/* CORRECCIÓN: 
-                - Usamos 'bg-bg-secondary' para un fondo sólido del color del tema (sin brillos blancos).
-                - Eliminado 'backdrop-blur' y cualquier clase 'glass'.
-                - Borde sutil estándar.
-            */}
             <div className="bg-bg-secondary border border-glass-border shadow-xl rounded-2xl p-4 w-full max-w-md relative overflow-hidden">
 
                 <button
@@ -89,7 +97,7 @@ const AndroidDownloadPrompt = () => {
 
                         <div className="flex gap-3 mt-2">
                             <a
-                                href={DOWNLOAD_URL}
+                                href={downloadUrl}
                                 onClick={handleDownload}
                                 className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-accent text-white dark:text-bg-primary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline"
                             >

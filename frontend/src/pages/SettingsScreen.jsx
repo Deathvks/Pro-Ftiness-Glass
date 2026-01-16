@@ -174,6 +174,9 @@ export default function SettingsScreen({
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
+  
+  // Estado para la URL dinámica de la APK
+  const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
 
   // Estados para modal de recarga iOS
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
@@ -203,6 +206,25 @@ export default function SettingsScreen({
     isSupported: isPushSupported,
     permission: pushPermission
   } = usePushNotifications();
+
+  // --- EFECTO: Obtener URL dinámica desde version.json ---
+  useEffect(() => {
+    const fetchVersionInfo = async () => {
+      try {
+        // Añadimos timestamp para evitar caché
+        const response = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.downloadUrl) {
+            setApkDownloadUrl(data.downloadUrl);
+          }
+        }
+      } catch (error) {
+        console.warn("No se pudo obtener la información de versión dinámica", error);
+      }
+    };
+    fetchVersionInfo();
+  }, []);
 
   const COLORS_PER_PAGE = 12;
   const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
@@ -678,7 +700,7 @@ export default function SettingsScreen({
             <SectionTitle icon={Info} title="Soporte y General" />
             <div className="flex flex-col gap-1">
               <a
-                href="https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.0.0/app-release.apk"
+                href={apkDownloadUrl || "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk"}
                 className="no-underline"
               >
                 <SettingsItem
