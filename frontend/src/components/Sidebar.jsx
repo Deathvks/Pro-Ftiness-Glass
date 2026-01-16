@@ -3,7 +3,7 @@ import React from 'react';
 import { Dumbbell, User, LogOut, Bell } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 
-const SidebarItem = ({ label, icon, isActive, onClick, badgeCount, isRed }) => (
+const SidebarItem = ({ label, icon, isActive, onClick, badgeCount, isRed, shouldTruncate }) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-4 w-full md:px-4 md:py-3 lg:px-6 lg:py-4 rounded-lg text-base font-semibold transition-all duration-200 ${isRed
@@ -19,8 +19,11 @@ const SidebarItem = ({ label, icon, isActive, onClick, badgeCount, isRed }) => (
         <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-accent rounded-full border-2 border-[--glass-bg]" />
       )}
     </div>
-    {/* whitespace-nowrap fuerza el texto en una sola línea */}
-    <span className="whitespace-nowrap">{label}</span>
+    {/* Aquí está el cambio:
+      - Si shouldTruncate es true (Username): usa 'truncate' (...)
+      - Si no (Notificaciones, etc): usa 'whitespace-nowrap' (comportamiento original)
+    */}
+    <span className={shouldTruncate ? "truncate" : "whitespace-nowrap"}>{label}</span>
   </button>
 );
 
@@ -71,6 +74,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL, hand
           isActive={view === 'notifications'}
           onClick={() => navigate('notifications')}
           badgeCount={unreadCount}
+          // No pasamos shouldTruncate, así que se queda como estaba (whitespace-nowrap)
         />
 
         <div className="h-px bg-[--glass-border] my-2" />
@@ -80,6 +84,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL, hand
           icon={getProfileIcon()}
           isActive={view === 'profile'}
           onClick={() => navigate('profile')}
+          shouldTruncate={true} // SOLO aplicamos "..." aquí
         />
 
         <SidebarItem
