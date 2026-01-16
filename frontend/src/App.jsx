@@ -3,6 +3,9 @@ import React, { useState, lazy, useMemo, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Home, Dumbbell, BarChart2, Settings, Utensils, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { NavigationBar } from '@capgo/capacitor-navigation-bar';
 import useAppStore from './store/useAppStore';
 
 import { useAppNavigation } from './hooks/useAppNavigation';
@@ -46,12 +49,6 @@ const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
 
-const THEME_COLORS = {
-  light: '#f7fafc',
-  dark: '#0c111b',
-  oled: '#000000',
-};
-
 export default function App() {
   const [authView, setAuthView] = useState('login');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -68,7 +65,9 @@ export default function App() {
     handleShowPolicy
   } = useAppNavigation();
 
-  const { theme, setTheme, accent, setAccent } = useAppTheme();
+  // Obtenemos resolvedTheme (light/dark/oled) y themeColor (hex) directamente del hook
+  const { theme, setTheme, accent, setAccent, resolvedTheme, themeColor } = useAppTheme();
+  
   const timer = useWorkoutTimer();
   const { t } = useTranslation('translation');
 
@@ -95,11 +94,34 @@ export default function App() {
     restTimerMode: state.restTimerMode,
   }));
 
-  const currentThemeColor = useMemo(() => THEME_COLORS[theme] || THEME_COLORS.dark, [theme]);
-
+  // --- Sincronización de Tema con UI Nativa (Android/iOS) ---
   useEffect(() => {
-    document.body.style.backgroundColor = currentThemeColor;
-  }, [currentThemeColor]);
+    if (Capacitor.isNativePlatform()) {
+      const applyNativeTheme = async () => {
+        try {
+          // 1. Barra de Estado (Notch area): Color exacto del tema
+          await StatusBar.setBackgroundColor({ color: themeColor });
+          
+          // 2. Estilo de iconos (Oscuros en tema claro, Claros en tema oscuro)
+          // Usamos resolvedTheme para saber si es realmente light o dark (incluso en modo 'system')
+          const isLight = resolvedTheme === 'light';
+          await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
+
+          // 3. Barra de Navegación (Botones/Gestos abajo)
+          await NavigationBar.setColor({ color: themeColor });
+          
+          // Aseguramos que no se superponga
+          await StatusBar.setOverlaysWebView({ overlay: false });
+        } catch (error) {
+          console.warn('Error configurando interfaz nativa:', error);
+        }
+      };
+      applyNativeTheme();
+    }
+    
+    // Sincronización web (fallback)
+    document.body.style.backgroundColor = themeColor;
+  }, [themeColor, resolvedTheme]);
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
@@ -173,7 +195,7 @@ export default function App() {
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigate} />;
-      case 'progress': return <Progress darkMode={theme !== 'light'} />;
+      case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} />;
       case 'routines': return <Routines setView={navigate} />;
       case 'workout': return <Workout timer={timer} setView={navigate} />;
       case 'nutrition': return <Nutrition setView={navigate} />;
@@ -201,7 +223,7 @@ export default function App() {
       case 'notifications': return <NotificationsScreen setView={navigate} />;
       default: return <Dashboard setView={navigate} />;
     }
-  }, [view, navigate, theme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
+  }, [view, navigate, theme, resolvedTheme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
 
   const navItems = [
     { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
@@ -230,7 +252,6 @@ export default function App() {
     }
 
     if (userProfile && !userProfile.goal) {
-      // Fix: Evitar flash de Onboarding si el usuario ya tiene historial de navegación válido
       const lastView = localStorage.getItem('lastView');
       const isReturningUser = lastView && !['login', 'register', 'onboarding', 'resetPassword', 'forgotPassword'].includes(lastView);
 
@@ -293,7 +314,7 @@ export default function App() {
         <meta property="og:site_name" content="Pro Fitness Glass" />
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
-        <meta name="theme-color" content={currentThemeColor} />
+        <meta name="theme-color" content={themeColor} />
       </Helmet>
 
       <VersionUpdater />

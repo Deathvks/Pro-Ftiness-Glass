@@ -12,8 +12,11 @@
     "start": "serve -s dist"
   },
   "dependencies": {
+    "@capgo/capacitor-navigation-bar": "^7.0.0",
     "@capacitor/android": "^6.0.0",
     "@capacitor/core": "^6.0.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
     "@headlessui/react": "^2.2.9",
     "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
