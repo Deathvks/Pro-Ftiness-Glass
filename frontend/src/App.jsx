@@ -230,6 +230,13 @@ export default function App() {
     }
 
     if (userProfile && !userProfile.goal) {
+      // Fix: Evitar flash de Onboarding si el usuario ya tiene historial de navegación válido
+      const lastView = localStorage.getItem('lastView');
+      const isReturningUser = lastView && !['login', 'register', 'onboarding', 'resetPassword', 'forgotPassword'].includes(lastView);
+
+      if (isReturningUser) {
+        return <InitialLoadingSkeleton />;
+      }
       return <OnboardingScreen />;
     }
 
