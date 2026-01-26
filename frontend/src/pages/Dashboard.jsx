@@ -65,9 +65,9 @@ const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconC
   >
     <div className="flex justify-between items-start relative z-10">
       {/* CORRECCIÓN VISUAL:
-         - Light: bg-transparent, sin sombra, sin borde.
-         - Dark: bg-white/5, sombra suave, borde blanco/20 visible.
-         - OLED: bg-transparent FORZADO.
+          - Light: bg-transparent, sin sombra, sin borde.
+          - Dark: bg-white/5, sombra suave, borde blanco/20 visible.
+          - OLED: bg-transparent FORZADO.
       */}
       <div className={`
         p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110

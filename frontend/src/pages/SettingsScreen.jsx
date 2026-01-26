@@ -612,7 +612,8 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
 
-          <GlassCard className={`${glassCardClass} ${resolvedTheme === 'oled' ? '!bg-transparent' : ''}`}>
+          {/* CORRECCIÓN: Usar GlassCard estándar sin lógica especial de transparencia */}
+          <GlassCard className={glassCardClass}>
             <ActiveSessions />
           </GlassCard>
         </div>
