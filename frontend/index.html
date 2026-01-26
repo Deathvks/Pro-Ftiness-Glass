@@ -53,22 +53,27 @@
 
   <style>
     :root {
-      /* Fallback seguro inicial */
-      --app-accent: #22c55e;
+      /* Valores por defecto */
+      --accent-r: 34;
+      --accent-g: 197;
+      --accent-b: 94; 
       
-      /* Variables Glass con Fallback para navegadores antiguos */
-      --splash-glass-bg: rgba(255, 255, 255, 0.1); 
-      --splash-glass-border: rgba(255, 255, 255, 0.2);
-      --splash-glass-highlight: rgba(255, 255, 255, 0.3);
+      /* Base Glass Colors */
+      --glass-base: 26, 35, 53; /* Dark Blue Gray */
+      --glass-opacity: 0.65;
+      --glass-border-opacity: 0.2;
     }
 
-    /* Redefinición con color-mix si está soportado */
-    @supports (background-color: color-mix(in srgb, red, blue)) {
-      :root {
-        --splash-glass-bg: color-mix(in srgb, var(--app-accent) 15%, rgba(255, 255, 255, 0.05));
-        --splash-glass-border: color-mix(in srgb, var(--app-accent) 40%, rgba(255, 255, 255, 0.1));
-        --splash-glass-highlight: rgba(255, 255, 255, 0.15);
-      }
+    html.light-theme {
+      --glass-base: 255, 255, 255;
+      --glass-opacity: 0.75;
+      --glass-border-opacity: 0.2;
+    }
+
+    html.oled-theme {
+      --glass-base: 0, 0, 0;
+      --glass-opacity: 0.8;
+      --glass-border-opacity: 0.3;
     }
 
     .app-splash-screen {
@@ -83,7 +88,7 @@
       height: 100vh;
       z-index: 9999;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background-color: inherit; /* Hereda del body configurado por JS */
+      background-color: inherit; 
       color: #ffffff;
       opacity: 1;
       transition: opacity 0.3s ease;
@@ -94,9 +99,10 @@
       height: 48px;
       border: 3px solid rgba(255, 255, 255, 0.1);
       border-radius: 50%;
-      border-top-color: var(--app-accent);
+      /* Usamos las variables RGB para el color */
+      border-top-color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
       animation: spin 1s ease-in-out infinite;
-      box-shadow: 0 0 20px -5px var(--app-accent);
+      box-shadow: 0 0 20px -5px rgb(var(--accent-r), var(--accent-g), var(--accent-b));
       margin-top: 2rem;
     }
 
@@ -106,7 +112,7 @@
 
     html.light-theme .app-splash-spinner {
       border-color: rgba(0, 0, 0, 0.05);
-      border-top-color: var(--app-accent);
+      border-top-color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
     }
 
     .app-splash-title {
@@ -119,12 +125,11 @@
       flex-direction: column;
       align-items: center;
       gap: 0.75rem;
-      /* Animación de entrada */
       animation: fadeUp 0.8s ease-out forwards;
-      opacity: 0; /* Empieza invisible y la animación lo muestra */
+      opacity: 0;
     }
 
-    /* Badge GLASS */
+    /* BADGE GLASS CON TINTADO COMPATIBLE */
     .app-splash-title span.glass-badge {
       display: inline-block;
       font-size: 1.5rem;
@@ -133,9 +138,14 @@
       padding: 0.5rem 1.5rem;
       border-radius: 1rem;
       
-      background-color: var(--splash-glass-bg);
-      border: 1px solid var(--splash-glass-border);
-      border-top-color: var(--splash-glass-highlight);
+      /* ESTRATEGIA DE CAPAS: Tinte Acento (20%) + Base Glass Theme */
+      background-image: 
+        linear-gradient(rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.20), rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.20)),
+        linear-gradient(rgba(var(--glass-base), var(--glass-opacity)), rgba(var(--glass-base), var(--glass-opacity)));
+        
+      /* Borde tintado */
+      border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), var(--glass-border-opacity));
+      border-top-color: rgba(255, 255, 255, 0.3);
       
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -145,7 +155,7 @@
         0 2px 4px -1px rgba(0, 0, 0, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
         
-      color: var(--app-accent);
+      color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
       text-transform: uppercase;
     }
 
@@ -162,25 +172,75 @@
   <script>
     (function () {
       try {
-        // 1. Recuperar Preferencias (Tema y Acento)
+        // --- MAPA DE COLORES (Debe coincidir con ACCENT_OPTIONS en SettingsScreen) ---
+        var accentMap = {
+          'green': '#22c55e',
+          'blue': '#3b82f6',
+          'violet': '#8b5cf6',
+          'amber': '#f59e0b',
+          'rose': '#f43f5e',
+          'teal': '#14b8a6',
+          'cyan': '#06b6d4',
+          'orange': '#f97316',
+          'lime': '#84cc16',
+          'fuchsia': '#d946ef',
+          'emerald': '#10b981',
+          'indigo': '#6366f1',
+          'purple': '#a855f7',
+          'pink': '#ec4899',
+          'red': '#ef4444',
+          'yellow': '#eab308',
+          'sky': '#0ea5e9',
+          'slate': '#64748b',
+          'zinc': '#71717a',
+          'stone': '#78716c',
+          'neutral': '#737373'
+        };
+
+        // 1. Recuperar Preferencias
         var savedTheme = localStorage.getItem('theme') || 'system';
-        var savedAccent = localStorage.getItem('accent') || '#22c55e';
+        var savedAccentKey = localStorage.getItem('accent') || 'green'; // Puede ser 'blue' o '#3b82f6'
         var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-        if (savedAccent.startsWith('"') && savedAccent.endsWith('"')) {
-          savedAccent = savedAccent.slice(1, -1);
+        // Limpiar comillas si es un JSON string
+        if (savedAccentKey.startsWith('"') && savedAccentKey.endsWith('"')) {
+          savedAccentKey = savedAccentKey.slice(1, -1);
         }
 
-        // 2. Variable CSS global inmediata
-        document.documentElement.style.setProperty('--app-accent', savedAccent);
+        // 2. RESOLVER HEXADECIMAL (Clave o Hex directo)
+        var hexColor = accentMap[savedAccentKey] || savedAccentKey;
+        
+        // Validación básica de Hex, si falla usar Green
+        if (!/^#[0-9A-F]{6}$/i.test(hexColor)) {
+            hexColor = '#22c55e';
+        }
 
-        // 3. Tema efectivo
+        // 3. FUNCIÓN HEX A RGB
+        function hexToRgb(hex) {
+          var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+          return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+          } : { r: 34, g: 197, b: 94 };
+        }
+
+        var rgb = hexToRgb(hexColor);
+
+        // 4. Inyectar variables RGB en el root
+        var root = document.documentElement;
+        root.style.setProperty('--app-accent', hexColor);
+        root.style.setProperty('--accent-r', rgb.r);
+        root.style.setProperty('--accent-g', rgb.g);
+        root.style.setProperty('--accent-b', rgb.b);
+
+        // 5. Determinar tema efectivo
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') {
           effectiveTheme = systemDark ? 'dark' : 'light';
         }
 
-        // 4. Paleta
+        // 6. Colores de Fondo
         var colors = {
           light: '#f7fafc',
           dark: '#0c111b',
@@ -189,27 +249,23 @@
         var selectedColor = colors[effectiveTheme] || colors.dark;
         var statusBarStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
 
-        // 5. Clases y Background
-        var root = document.documentElement;
+        // 7. Aplicar Clases
         root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
-
         if (savedTheme === 'system') {
           root.classList.add(systemDark ? 'dark-theme' : 'light-theme');
         } else {
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // Sincronización crítica del fondo
+        // Sincronizar background inmediatamente
         root.style.backgroundColor = selectedColor;
-        
-        // Aplicar al body apenas esté disponible
         var setBodyColor = function() {
             if(document.body) document.body.style.backgroundColor = selectedColor;
         };
         if(document.body) setBodyColor();
         else document.addEventListener('DOMContentLoaded', setBodyColor);
 
-        // 6. Meta Tags
+        // 8. Meta Tags
         var updateMeta = function(name, content) {
             var meta = document.querySelector('meta[name="' + name + '"]');
             if (!meta) {

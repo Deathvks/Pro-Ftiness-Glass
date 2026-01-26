@@ -200,7 +200,8 @@ export default function Social({ setView }) {
         );
 
         return (
-            <GlassCard>
+            // CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10
+            <GlassCard className="[.oled-theme_&]:border-white/10">
                 <h3 className="text-lg font-bold text-text-primary mb-4 px-4 pt-4 border-b border-white/5 pb-2">Mis Amigos ({socialFriends.length})</h3>
                 {socialFriends.length === 0 ? (
                     <div className="text-center py-12 text-text-tertiary">
@@ -266,7 +267,8 @@ export default function Social({ setView }) {
 
         return (
             <div className="space-y-6">
-                <GlassCard>
+                {/* CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10 */}
+                <GlassCard className="[.oled-theme_&]:border-white/10">
                     <h3 className="text-lg font-bold text-text-primary mb-4 px-4 pt-4 flex items-center gap-2 border-b border-white/5 pb-2">
                         Solicitudes Recibidas
                         {received.length > 0 && <span className="bg-accent-primary text-bg-primary text-xs px-2 py-0.5 rounded-full font-bold">{received.length}</span>}
@@ -307,7 +309,8 @@ export default function Social({ setView }) {
                 </GlassCard>
 
                 {sent.length > 0 && (
-                    <GlassCard>
+                    // CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10
+                    <GlassCard className="[.oled-theme_&]:border-white/10">
                         <h3 className="text-lg font-bold text-text-primary mb-4 px-4 pt-4 border-b border-white/5 pb-2">Enviadas</h3>
                         <div className="flex flex-col">
                             {sent.map((req) => (
@@ -340,7 +343,8 @@ export default function Social({ setView }) {
         return (
             <div className="space-y-4 max-w-xl w-full">
                 <form onSubmit={handleSearch}>
-                    <GlassCard className="flex items-center px-3 py-2 gap-2 focus-within:border-accent-primary/50 transition-colors">
+                    {/* CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10 al input de búsqueda */}
+                    <GlassCard className="flex items-center px-3 py-2 gap-2 focus-within:border-accent-primary/50 transition-colors [.oled-theme_&]:border-white/10">
                         <Search size={20} className="text-text-tertiary ml-1" />
                         <input
                             type="text"
@@ -360,7 +364,8 @@ export default function Social({ setView }) {
                 </form>
 
                 {totalResults > 0 && (
-                    <GlassCard>
+                    // CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10 a los resultados
+                    <GlassCard className="[.oled-theme_&]:border-white/10">
                         <h3 className="text-lg font-bold text-text-primary mb-2 px-4 pt-4 border-b border-white/5 pb-2 flex justify-between items-center">
                             <span>Resultados</span>
                             <span className="text-xs font-medium text-text-tertiary">{totalResults} encontrados</span>
@@ -433,7 +438,8 @@ export default function Social({ setView }) {
     };
 
     const renderLeaderboard = () => (
-        <GlassCard className="overflow-hidden">
+        // CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10
+        <GlassCard className="overflow-hidden [.oled-theme_&]:border-white/10">
             <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
                     <Trophy className="text-yellow-500" size={20} />
@@ -511,7 +517,8 @@ export default function Social({ setView }) {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="md:col-span-1">
-                    <GlassCard className="flex md:flex-col overflow-hidden md:p-2 sticky md:top-24 md:z-10">
+                    {/* CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10 a la navegación */}
+                    <GlassCard className="flex md:flex-col overflow-hidden md:p-2 sticky md:top-24 md:z-10 [.oled-theme_&]:border-white/10">
                         <TabButton
                             id="friends"
                             icon={Users}
