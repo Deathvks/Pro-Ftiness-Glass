@@ -1,11 +1,10 @@
+/* frontend/src/components/nutrition/logModal/FavoritesList.jsx */
 import React from 'react';
 import SearchResultItem from './SearchResultItem';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const FavoritesList = ({
-    // --- INICIO DE LA CORRECCIÓN ---
-    favorites, // Cambiado de `items` a `favorites` para coincidir con la prop recibida
-    // --- FIN DE LA CORRECCIÓN ---
+    favorites,
     onAdd,
     onDelete,
     onEdit,
@@ -16,10 +15,8 @@ const FavoritesList = ({
     return (
         <div className="flex flex-col h-full">
             <div className="space-y-2 flex-grow overflow-y-auto pr-1">
-                {/* --- INICIO DE LA CORRECCIÓN --- */}
-                {favorites.length > 0 ? (
+                {favorites && favorites.length > 0 ? (
                     favorites.map(meal => (
-                // --- FIN DE LA CORRECCIÓN ---
                         <SearchResultItem
                             key={`fav-${meal.id}`}
                             item={meal}

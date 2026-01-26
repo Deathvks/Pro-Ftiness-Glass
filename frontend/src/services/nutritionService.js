@@ -45,6 +45,7 @@ export const addFoodLog = (foodData) => {
     protein_g: foodData.protein_g,
     carbs_g: foodData.carbs_g,
     fats_g: foodData.fats_g,
+    sugars_g: foodData.sugars_g,
     weight_g: foodData.weight_g,
     meal_type: foodData.meal_type,
     log_date: foodData.log_date,
@@ -54,6 +55,7 @@ export const addFoodLog = (foodData) => {
     protein_per_100g: foodData.protein_per_100g,
     carbs_per_100g: foodData.carbs_per_100g,
     fat_per_100g: foodData.fat_per_100g,
+    sugars_per_100g: foodData.sugars_per_100g,
     // Flag para guardar en favoritos simultáneamente
     save_as_favorite: foodData.saveAsFavorite || foodData.isFavorite || false
   };

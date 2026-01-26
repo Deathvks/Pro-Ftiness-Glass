@@ -34,7 +34,7 @@ export const createAuthSlice = (set, get) => ({
     // --- ACCIONES ---
 
     // Inicia sesión: guarda el token, actualiza el estado.
-    // MODIFICADO: Ya no llama a fetchInitialData() aquí para evitar doble carga/race condition.
+    // MODIFICADO: Ahora guarda también el userProfile si viene en la respuesta.
     handleLogin: async (credentials) => {
         const response = await authService.loginUser(credentials);
 
@@ -53,18 +53,24 @@ export const createAuthSlice = (set, get) => ({
         // --- FIN MODIFICACIÓN 2FA ---
 
         // Flujo normal si no hay 2FA o ya devolvió token
-        const { token } = response;
+        // MODIFICACIÓN: Extraemos 'user' además del token
+        const { token, user } = response;
 
         localStorage.removeItem('fittrack_token');
-
         localStorage.setItem('pro_fitness_token', token);
-        // Al establecer isAuthenticated: true, el componente MainAppLayout se montará
-        // y su hook useAppInitialization se encargará de llamar a fetchInitialData.
-        set({ token, isAuthenticated: true, twoFactorPending: null });
+        
+        // Al establecer isAuthenticated: true, el componente MainAppLayout se montará.
+        // Guardamos userProfile inmediatamente para tener la foto y datos disponibles.
+        set({ 
+            token, 
+            isAuthenticated: true, 
+            twoFactorPending: null,
+            userProfile: user || null // Guardamos el usuario si existe
+        });
     },
 
     // Inicia sesión con Google
-    // MODIFICADO: Eliminada la llamada redundante a fetchInitialData()
+    // MODIFICADO: Ahora guarda también el userProfile si viene en la respuesta.
     handleGoogleLogin: async (googleToken) => {
         const response = await authService.googleLogin(googleToken);
 
@@ -80,27 +86,38 @@ export const createAuthSlice = (set, get) => ({
         }
         // --- FIN MODIFICACIÓN 2FA ---
 
-        const { token } = response;
+        // MODIFICACIÓN: Extraemos 'user' además del token
+        const { token, user } = response;
 
         localStorage.removeItem('fittrack_token');
         localStorage.setItem('pro_fitness_token', token);
 
-        set({ token, isAuthenticated: true, twoFactorPending: null });
+        // Guardamos userProfile inmediatamente (aquí suele venir la foto de Google)
+        set({ 
+            token, 
+            isAuthenticated: true, 
+            twoFactorPending: null,
+            userProfile: user || null 
+        });
     },
 
     // --- INICIO MODIFICACIÓN 2FA ---
     // Nueva acción para completar el login con el código 2FA
-    // MODIFICADO: Eliminada la llamada redundante a fetchInitialData()
     handleVerify2FA: async (verificationData) => {
         // verificationData trae { userId, token/code, method }
-        const { token } = await authService.verify2FALogin(verificationData);
+        // MODIFICACIÓN: Extraemos 'user' además del token si el backend lo devuelve
+        const { token, user } = await authService.verify2FALogin(verificationData);
 
         localStorage.removeItem('fittrack_token');
         localStorage.setItem('pro_fitness_token', token);
 
         // Limpiamos el estado pendiente y marcamos autenticado.
-        // useAppInitialization detectará el cambio y cargará los datos.
-        set({ token, isAuthenticated: true, twoFactorPending: null });
+        set({ 
+            token, 
+            isAuthenticated: true, 
+            twoFactorPending: null,
+            userProfile: user || null 
+        });
     },
 
     // Acción para cancelar el proceso de 2FA y volver al login normal

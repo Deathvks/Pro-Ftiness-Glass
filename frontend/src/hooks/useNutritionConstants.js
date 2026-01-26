@@ -7,13 +7,18 @@ export const initialManualFormState = {
     protein_g: '',
     carbs_g: '',
     fats_g: '',
+    sugars_g: '', // Añadido para gestionar el azúcar
     weight_g: '',
     image_url: null,
-    // --- INICIO DE LA MODIFICACIÓN ---
     micronutrients: null,
-    // --- FIN DE LA MODIFICACIÓN ---
   },
-  per100Data: { calories: '', protein_g: '', carbs_g: '', fats_g: '' },
+  per100Data: { 
+    calories: '', 
+    protein_g: '', 
+    carbs_g: '', 
+    fats_g: '',
+    sugars_g: '' // Añadido para gestionar el azúcar por 100g
+  },
   per100Mode: false,
   isFavorite: false,
 };

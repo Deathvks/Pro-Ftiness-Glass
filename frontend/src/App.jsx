@@ -251,13 +251,9 @@ export default function App() {
       return <AuthScreens authView={authView} setAuthView={setAuthView} />;
     }
 
+    // --- CORRECCIÓN: Simplificación de lógica para Onboarding ---
+    // Si el usuario no tiene objetivo (goal), SIEMPRE mostramos la pantalla de onboarding.
     if (userProfile && !userProfile.goal) {
-      const lastView = localStorage.getItem('lastView');
-      const isReturningUser = lastView && !['login', 'register', 'onboarding', 'resetPassword', 'forgotPassword'].includes(lastView);
-
-      if (isReturningUser) {
-        return <InitialLoadingSkeleton />;
-      }
       return <OnboardingScreen />;
     }
 

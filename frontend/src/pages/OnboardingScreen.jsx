@@ -235,9 +235,21 @@ const OnboardingScreen = () => {
         return (
           <AnimContainer key={1} direction={direction}>
             <div className="flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-accent/10 rounded-full flex items-center justify-center mb-6 animate-float text-accent shadow-[0_0_30px_rgba(34,197,94,0.2)]">
-                <Sparkles size={48} className="animate-pulse" />
+              {/* Avatar dinámico */}
+              <div className="w-24 h-24 mb-6 animate-float relative">
+                {userProfile?.profile_picture ? (
+                  <img
+                    src={userProfile.profile_picture}
+                    alt="Profile"
+                    className="w-full h-full rounded-full object-cover border-2 border-accent/50 shadow-[0_0_30px_rgba(34,197,94,0.4)]"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-accent/10 rounded-full flex items-center justify-center text-accent shadow-[0_0_30px_rgba(34,197,94,0.2)] border border-accent/20">
+                    <Sparkles size={40} className="animate-pulse" />
+                  </div>
+                )}
               </div>
+
               <BigTitle>¡Hola, {userProfile?.username || 'Atleta'}!</BigTitle>
               <SubText>Configuremos tu perfil. Tu metabolismo depende de estos datos básicos.</SubText>
 
@@ -384,10 +396,8 @@ const OnboardingScreen = () => {
               <BigTitle>¡Todo Listo!</BigTitle>
               <SubText>Revisa tus datos. Si algo está mal, toca la tarjeta para editarlo rápidamente.</SubText>
 
-              {/* TARJETA FINAL ACTUALIZADA - Borde más visible (white/15) + Sombra envolvente */}
               <div className="w-full bg-bg-secondary/40 backdrop-blur-2xl rounded-[2rem] border border-white/15 flex flex-col mb-8 overflow-hidden shadow-[0_0_30px_-5px_rgba(255,255,255,0.08)] animate-slide-right delay-200">
 
-                {/* Item 1 */}
                 <button onClick={() => setStep(1)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group border-b border-black/20 text-center active:bg-white/10">
                   <div className="flex flex-col items-center transition-transform group-hover:scale-105">
                     <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">PERFIL</p>
@@ -398,7 +408,6 @@ const OnboardingScreen = () => {
                   </div>
                 </button>
 
-                {/* Item 2 */}
                 <button onClick={() => setStep(2)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group border-b border-black/20 text-center active:bg-white/10">
                   <div className="flex flex-col items-center transition-transform group-hover:scale-105">
                     <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">MEDIDAS</p>
@@ -409,7 +418,6 @@ const OnboardingScreen = () => {
                   </div>
                 </button>
 
-                {/* Item 3 */}
                 <button onClick={() => setStep(3)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group border-b border-black/20 text-center active:bg-white/10">
                   <div className="flex flex-col items-center transition-transform group-hover:scale-105">
                     <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">ACTIVIDAD</p>
@@ -420,7 +428,6 @@ const OnboardingScreen = () => {
                   </div>
                 </button>
 
-                {/* Item 4 */}
                 <button onClick={() => setStep(4)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group text-center active:bg-white/10">
                   <div className="flex flex-col items-center transition-transform group-hover:scale-105">
                     <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">OBJETIVO</p>

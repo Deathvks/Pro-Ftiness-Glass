@@ -12,28 +12,19 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
     // 1. Lógica para construir la URL correcta de la imagen
     const getImageUrl = (url, updatedAt) => {
         if (!url) return null;
-        // Si ya es una URL completa (ej: OpenFoodFacts), la usamos tal cual
         if (url.startsWith('http')) return url;
 
-        // Si es una ruta relativa local, le añadimos el dominio del backend
-        // Usamos VITE_API_BASE_URL pero quitamos '/api' si está presente para ir a la raíz
         const apiBase = import.meta.env.VITE_API_BASE_URL || '';
         const rootUrl = apiBase.replace(/\/api\/?$/, '');
-
-        // Aseguramos que haya un slash entre el dominio y la ruta
         const fullUrl = `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Añadimos timestamp para cache busting si está disponible
         if (updatedAt) {
             const separator = fullUrl.includes('?') ? '&' : '?';
-            // Si updatedAt es un string ISO, lo convertimos a timestamp, si es número lo usamos directo
             const ts = new Date(updatedAt).getTime();
             if (!isNaN(ts)) {
                 return `${fullUrl}${separator}v=${ts}`;
             }
         }
-        // --- FIN DE LA MODIFICACIÓN ---
 
         return fullUrl;
     };
@@ -64,6 +55,12 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
         .filter(Boolean) : [];
 
     const hasMicros = availableMicros.length > 0;
+
+    // Helper para macros seguros
+    const protein = item.protein_g || item.protein || 0;
+    const carbs = item.carbs_g || item.carbs || 0;
+    const fats = item.fats_g || item.fat || item.fats || 0;
+    const sugars = item.sugars_g || item.sugars || 0;
 
     return (
         <div
@@ -98,6 +95,13 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                         {item.weight_g && <span>• {formatNumber(item.weight_g, 1)}g</span>}
                         {item.brand && <span className="truncate hidden sm:inline">• {item.brand}</span>}
                     </p>
+                    {/* --- NUEVA LÍNEA DE MACROS --- */}
+                    <div className="text-[10px] flex items-center gap-2 mt-0.5 font-medium">
+                        <span className="text-green-500">P: {formatNumber(protein, 1)}</span>
+                        <span className="text-blue-500">C: {formatNumber(carbs, 1)}</span>
+                        <span className="text-yellow-500">G: {formatNumber(fats, 1)}</span>
+                        <span className="text-pink-500">Az: {formatNumber(sugars, 1)}</span>
+                    </div>
                 </div>
             </div>
 

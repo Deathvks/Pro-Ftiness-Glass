@@ -67,18 +67,26 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
             protein_g: food.protein_g || food.protein || 0,
             carbs_g: food.carbs_g || food.carbs || 0,
             fats_g: food.fats_g || food.fat || 0,
+            // --- CORRECCIÓN SUGAR: Mapear azúcar explícitamente ---
+            sugars_g: food.sugars_g || food.sugars || 0,
+            
             weight_g: food.weight_g || 100,
             serving_weight_g: food.serving_weight_g,
             image_url: food.image_url,
             brand: food.brand,
+            
             calories_per_100g: food.calories_per_100g,
             protein_per_100g: food.protein_per_100g,
             carbs_per_100g: food.carbs_per_100g,
             fat_per_100g: food.fat_per_100g,
+            // --- CORRECCIÓN SUGAR: Mapear azúcar por 100g ---
+            sugars_per_100g: food.sugars_per_100g || food.sugars_per_100,
+
             calories_per_serving: food.calories_per_serving,
             protein_per_serving: food.protein_per_serving,
             carbs_per_serving: food.carbs_per_serving,
             fat_per_serving: food.fat_per_serving,
+            sugars_per_serving: food.sugars_per_serving,
         };
 
         setSelectedDetailItem(foodData);

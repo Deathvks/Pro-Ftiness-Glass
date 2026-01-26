@@ -1,21 +1,30 @@
+/* frontend/src/components/CircularProgress.jsx */
 import React from 'react';
 
-// Se añade 'displayText' como un nuevo prop opcional
-const CircularProgress = ({ value, maxValue, label, icon, colorClass = 'text-accent', displayText }) => {
+const CircularProgress = ({ value, maxValue, label, icon, color, displayText, pulse }) => {
     const Icon = icon;
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Se limita el porcentaje a un máximo de 100 para que el círculo no siga girando.
-    const percentage = maxValue > 0 ? Math.min((value / maxValue) * 100, 100) : 0;
-    // --- FIN DE LA MODIFICACIÓN ---
+    // Aseguramos que el porcentaje no pase de 100 ni sea NaN
+    const validValue = isNaN(value) ? 0 : value;
+    const validMax = isNaN(maxValue) || maxValue === 0 ? 1 : maxValue;
+    const percentage = Math.min((validValue / validMax) * 100, 100);
+    
     const circumference = 2 * Math.PI * 45; // Radio de 45
     const offset = circumference - (percentage / 100) * circumference;
 
+    // Color por defecto (accent) si no se pasa nada
+    const finalColor = color || 'var(--accent)';
+
     return (
-        <div className="flex flex-col items-center justify-center gap-2 text-center">
-            <div className="relative w-24 h-24">
-                <svg className="w-full h-full" viewBox="0 0 100 100">
+        <div 
+            className="flex flex-col items-center justify-center gap-2 text-center"
+            style={{ color: finalColor }} // Forzamos el color en el contenedor padre
+        >
+            {/* CAMBIO: Aplicamos animate-pulse al contenedor común para sincronización perfecta */}
+            <div className={`relative w-24 h-24 ${pulse ? 'animate-pulse' : ''}`}>
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                    {/* Fondo del círculo */}
                     <circle
-                        className="stroke-[var(--glass-border)]"
+                        className="text-[var(--glass-border)]"
                         strokeWidth="8"
                         stroke="currentColor"
                         fill="transparent"
@@ -23,37 +32,37 @@ const CircularProgress = ({ value, maxValue, label, icon, colorClass = 'text-acc
                         cx="50"
                         cy="50"
                     />
+                    {/* Progreso: Usamos el prop 'stroke' directo para máxima prioridad */}
                     <circle
-                        className={`${colorClass} transition-all duration-500`}
+                        className="transition-all duration-500 ease-out"
                         strokeWidth="8"
                         strokeDasharray={circumference}
                         strokeDashoffset={offset}
                         strokeLinecap="round"
-                        stroke="currentColor"
+                        stroke={finalColor} 
                         fill="transparent"
                         r="45"
                         cx="50"
                         cy="50"
-                        style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
                     />
                 </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-text-primary">
-                    {Icon && <Icon size={24} />}
+                
+                <div className="absolute inset-0 flex items-center justify-center">
+                    {Icon && <Icon size={24} color={finalColor} />}
                 </div>
             </div>
+            
             <div className="-mt-2">
-                {/* --- INICIO DE LA CORRECCIÓN --- */}
-                <p className="font-bold text-lg">
-                    {/* Si se proporciona displayText (para la creatina), lo muestra. */}
-                    {/* Si no, muestra el valor numérico como antes. */}
+                <p className="font-bold text-lg" style={{ color: finalColor }}>
                     {displayText ? displayText : (
                         <>
                             {value.toLocaleString('es-ES')}
-                            <span className="text-sm text-text-muted">/{maxValue.toLocaleString('es-ES')}</span>
+                            <span className="text-sm opacity-60 ml-0.5" style={{ color: 'var(--text-muted)' }}>
+                                /{maxValue.toLocaleString('es-ES')}
+                            </span>
                         </>
                     )}
                 </p>
-                {/* --- FIN DE LA CORRECCIÓN --- */}
                 <p className="text-xs text-text-secondary">{label}</p>
             </div>
         </div>

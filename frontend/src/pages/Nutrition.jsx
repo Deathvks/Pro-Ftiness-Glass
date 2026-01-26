@@ -1,7 +1,7 @@
 /* frontend/src/pages/Nutrition.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon, IceCream, AlertTriangle, Check } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -10,6 +10,7 @@ import WaterLogModal from '../components/WaterLogModal';
 import NutritionLogModal from '../components/NutritionLogModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CreatinaTracker from '../components/CreatinaTracker';
+import SugarTargetModal from '../components/SugarTargetModal';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
 
@@ -78,7 +79,7 @@ const MealImage = ({ src, alt, className, onClick }) => {
     if (!imgSrc || hasError) {
         return (
             <div
-                className={`flex-shrink-0 rounded-md bg-bg-secondary/50 overflow-hidden border border-glass-border flex items-center justify-center ${className}`}
+                className={`flex-shrink-0 bg-bg-secondary/50 overflow-hidden border border-glass-border flex items-center justify-center ${className}`}
                 onClick={onClick}
             >
                 <ImageIcon size={20} className="text-text-muted opacity-70" />
@@ -87,7 +88,7 @@ const MealImage = ({ src, alt, className, onClick }) => {
     }
 
     return (
-        <div className={`flex-shrink-0 rounded-md bg-bg-primary overflow-hidden border border-glass-border ${className}`} onClick={onClick}>
+        <div className={`flex-shrink-0 bg-bg-primary overflow-hidden border border-glass-border ${className}`} onClick={onClick}>
             <img
                 src={imgSrc}
                 alt={alt}
@@ -104,6 +105,7 @@ const Nutrition = ({ setView }) => {
         userProfile,
         nutritionLog,
         waterLog,
+        todaysCreatineLog,
         selectedDate,
         fetchDataForDate,
         isLoading,
@@ -118,6 +120,7 @@ const Nutrition = ({ setView }) => {
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
         waterLog: state.waterLog,
+        todaysCreatineLog: state.todaysCreatineLog,
         selectedDate: state.selectedDate,
         fetchDataForDate: state.fetchDataForDate,
         isLoading: state.isLoading,
@@ -182,10 +185,10 @@ const Nutrition = ({ setView }) => {
 
     const calorieTarget = useMemo(() => {
         if (!userProfile || !userProfile.goal || !latestWeight) return 2000;
-        const { gender, age, height, activity_level, goal } = userProfile;
-        let bmr = gender === 'male'
-            ? 88.362 + (13.397 * latestWeight) + (4.799 * height) - (5.677 * age)
-            : 447.593 + (9.247 * latestWeight) + (3.098 * height) - (4.330 * age);
+        const { gender, age, height, activity_level = 1.2, goal } = userProfile;
+
+        let bmr = (10 * latestWeight) + (6.25 * height) - (5 * age) + (gender === 'male' ? 5 : -161);
+        
         let target = bmr * activity_level;
         if (goal === 'lose') target -= 500;
         if (goal === 'gain') target += 500;
@@ -197,6 +200,10 @@ const Nutrition = ({ setView }) => {
         const multiplier = userProfile.goal === 'gain' ? 2.0 : userProfile.goal === 'lose' ? 1.8 : 1.6;
         return Math.round(latestWeight * multiplier);
     }, [latestWeight, userProfile]);
+
+    const sugarTarget = useMemo(() => {
+        return Math.round((calorieTarget * 0.10) / 4);
+    }, [calorieTarget]);
 
     const waterTarget = useMemo(() => {
         if (!latestWeight) return 2500;
@@ -362,12 +369,13 @@ const Nutrition = ({ setView }) => {
     };
 
     const totals = useMemo(() => {
-        const result = { calories: 0, protein: 0, carbs: 0, fats: 0 };
+        const result = { calories: 0, protein: 0, carbs: 0, fats: 0, sugar: 0 };
         (nutritionLog || []).forEach(log => {
             result.calories += log.calories || 0;
             result.protein += parseFloat(log.protein_g) || 0;
             result.carbs += parseFloat(log.carbs_g) || 0;
             result.fats += parseFloat(log.fats_g) || 0;
+            result.sugar += parseFloat(log.sugars_g || log.sugar_g) || 0;
         });
         return result;
     }, [nutritionLog]);
@@ -405,6 +413,8 @@ const Nutrition = ({ setView }) => {
         return null;
     };
 
+    const isSugarHigh = totals.sugar >= sugarTarget;
+
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
 
@@ -429,124 +439,235 @@ const Nutrition = ({ setView }) => {
                                 <h2 className="text-xl font-bold">Resumen del Día</h2>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <StatCard icon={<Flame size={24} />} title="Calorías" value={totals.calories.toLocaleString('es-ES')} unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} />
-                                <StatCard icon={<Beef size={24} />} title="Proteínas" value={totals.protein.toFixed(1)} unit={`/ ${proteinTarget} g`} />
-                                <StatCard icon={<Wheat size={24} />} title="Carbs" value={totals.carbs.toFixed(1)} unit="g" />
-                                <StatCard icon={<Salad size={24} />} title="Grasas" value={totals.fats.toFixed(1)} unit="g" />
+                                <StatCard icon={<Flame size={24} className="text-orange-500" />} title="Calorías" value={totals.calories.toLocaleString('es-ES')} unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} />
+                                <StatCard icon={<Beef size={24} className="text-red" />} title="Proteínas" value={totals.protein.toFixed(1)} unit={`/ ${proteinTarget} g`} />
+                                <StatCard icon={<Wheat size={24} className="text-blue-500" />} title="Carbs" value={totals.carbs.toFixed(1)} unit="g" />
+                                <StatCard icon={<Salad size={24} className="text-yellow-500" />} title="Grasas" value={totals.fats.toFixed(1)} unit="g" />
+                                
+                                <div 
+                                    className="cursor-pointer transition-transform hover:scale-[1.02]"
+                                    onClick={() => setModal({ type: 'sugar' })}
+                                >
+                                    <StatCard 
+                                        icon={isSugarHigh ? <AlertTriangle size={24} className="text-red animate-pulse" /> : <IceCream size={24} className="text-pink-500" />} 
+                                        title="Azúcar" 
+                                        value={totals.sugar.toFixed(1)} 
+                                        unit={`/ ${sugarTarget} g`} 
+                                        className={isSugarHigh ? "border-red/30 bg-red/5" : ""}
+                                    />
+                                </div>
                             </div>
                         </GlassCard>
 
                         <div className="lg:col-span-2 space-y-4">
-                            <GlassCard className="p-6 flex flex-col justify-between">
-                                <h2 className="text-xl font-bold">Agua</h2>
-                                <div className="flex items-center justify-center gap-4 my-4">
-                                    <Droplet size={32} className="text-blue-400" />
-                                    <p className="text-4xl font-bold">{(waterLog?.quantity_ml || 0)}<span className="text-base font-medium text-text-muted"> / {waterTarget} ml</span></p>
+                            {/* Tarjeta de Agua Rediseñada */}
+                            <GlassCard 
+                                className="p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-colors"
+                                onClick={() => setModal({ type: 'water', data: null })}
+                            >
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/5 relative z-10">
+                                    <div className="flex items-baseline gap-2">
+                                        <h2 className="text-lg font-bold text-text-primary">Agua</h2>
+                                        <span className="text-sm font-semibold text-text-muted">
+                                            ({waterLog?.quantity_ml || 0} / {waterTarget} ml)
+                                        </span>
+                                    </div>
+                                    <div className="p-1.5 rounded-full bg-white/5 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                        <Edit size={18} />
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={() => setModal({ type: 'water', data: null })}
-                                    className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-white font-semibold py-3 hover:brightness-110 transition-all shadow-md"
-                                >
-                                    <Plus size={20} />
-                                    <span>Añadir / Editar Agua</span>
-                                </button>
+
+                                <div className="flex flex-col items-center justify-center py-2 relative z-10 gap-3">
+                                    <div className="relative">
+                                        <Droplet size={48} className="text-blue-500 drop-shadow-lg" />
+                                    </div>
+                                    
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-3xl font-black text-white tracking-tight">
+                                            {waterLog?.quantity_ml || 0}
+                                            <span className="text-sm font-medium text-text-muted ml-1">ml</span>
+                                        </span>
+                                    </div>
+
+                                    <div className="w-full h-2 bg-bg-secondary rounded-full overflow-hidden border border-white/5">
+                                        <div 
+                                            className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500"
+                                            style={{ width: `${Math.min(100, ((waterLog?.quantity_ml || 0) / waterTarget) * 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="absolute -bottom-8 -right-8 text-blue-500/5 rotate-12 pointer-events-none transition-transform group-hover:scale-110 duration-700">
+                                    <Droplet size={140} />
+                                </div>
                             </GlassCard>
 
-                            <GlassCard className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold flex items-center gap-2">
-                                        <Zap size={24} className="text-accent" />
-                                        Creatina
-                                    </h2>
+                            {/* Tarjeta de Creatina Rediseñada */}
+                            <GlassCard 
+                                className="p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-colors"
+                                onClick={() => setShowCreatinaTracker(true)}
+                            >
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/5 relative z-10">
+                                    <h2 className="text-lg font-bold text-text-primary">Creatina</h2>
+                                    <div className="p-1.5 rounded-full bg-white/5 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                        <Plus size={18} />
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={() => setShowCreatinaTracker(true)}
-                                    className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-white font-semibold py-3 hover:brightness-110 transition-all shadow-md"
-                                >
-                                    <Zap size={20} />
-                                    <span>Gestionar Creatina</span>
-                                </button>
+
+                                <div className="flex flex-col items-center justify-center py-2 relative z-10 gap-3">
+                                    <div className={`relative transition-all duration-500 ${todaysCreatineLog?.length > 0 ? 'scale-110' : 'scale-100'}`}>
+                                        <div className={`p-4 rounded-full border-4 transition-all duration-500 ${todaysCreatineLog?.length > 0 ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_30px_rgba(168,85,247,0.5)]' : 'bg-transparent border-white/10 text-text-muted'}`}>
+                                            {todaysCreatineLog?.length > 0 ? (
+                                                <Check size={40} strokeWidth={4} />
+                                            ) : (
+                                                <Zap size={40} strokeWidth={1.5} />
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-col items-center">
+                                        <div className="flex items-baseline gap-1">
+                                            <span className={`text-4xl font-black tracking-tighter ${todaysCreatineLog?.length > 0 ? 'text-white' : 'text-text-muted'}`}>
+                                                {todaysCreatineLog?.length || 0}
+                                            </span>
+                                            <span className="text-sm font-bold text-text-secondary uppercase tracking-wider">Tomas</span>
+                                        </div>
+                                        <span className={`text-xs font-medium mt-1 ${todaysCreatineLog?.length > 0 ? 'text-purple-400' : 'text-text-muted/50'}`}>
+                                            {todaysCreatineLog?.length > 0 ? '¡Registrado!' : 'Toca para registrar'}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div className={`absolute -bottom-6 -right-6 rotate-12 pointer-events-none transition-all duration-700 ${todaysCreatineLog?.length > 0 ? 'text-purple-500/20 scale-125' : 'text-white/5'}`}>
+                                    <Zap size={140} />
+                                </div>
                             </GlassCard>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         {Object.entries(meals).map(([mealType, logs]) => (
-                            <GlassCard key={mealType} className="p-6">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-xl font-bold capitalize">
-                                        {{ breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealType]}
+                            <GlassCard key={mealType} className="p-5 flex flex-col">
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/5">
+                                    <div className="flex items-baseline gap-2">
+                                        <h2 className="text-lg font-bold capitalize text-text-primary">
+                                            {{ breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealType]}
+                                        </h2>
                                         {mealTotals[mealType] > 0 && (
-                                            <span className="text-base font-medium text-text-secondary ml-2">
+                                            <span className="text-sm font-semibold text-text-muted">
                                                 ({mealTotals[mealType].toLocaleString('es-ES')} kcal)
                                             </span>
                                         )}
-                                    </h2>
-                                    <div className="flex gap-6">
-                                        {/* MODIFICACIÓN: Gap aumentado a 6 para evitar roce de hover */}
+                                    </div>
+                                    <div className="flex gap-2">
                                         {logs.length > 1 && (
                                             <button
                                                 onClick={() => setMealGroupToDelete(mealType)}
-                                                className="p-2 -m-2 rounded-full text-red-500 hover:bg-red-500/10 transition"
+                                                className="p-1.5 rounded-full text-red-500 hover:bg-red-500/10 transition"
                                                 title="Eliminar todos los alimentos de esta comida"
                                             >
-                                                <Trash2 size={20} />
+                                                <Trash2 size={18} />
                                             </button>
                                         )}
                                         <button
                                             onClick={() => setModal({ type: 'food', data: { mealType } })}
-                                            className="p-2 -m-2 rounded-full text-accent hover:bg-accent-transparent transition"
+                                            className="p-1.5 rounded-full text-accent hover:bg-accent-transparent transition"
+                                            title="Añadir comida"
                                         >
                                             <Plus size={20} />
                                         </button>
                                     </div>
                                 </div>
+                                
                                 <div className="flex flex-col gap-3">
                                     {logs.length > 0 ? logs.map(log => {
                                         const displayImage = getLogImage(log);
+                                        const protein = Math.round(log.protein_g || 0);
+                                        const carbs = Math.round(log.carbs_g || 0);
+                                        const fats = Math.round(log.fats_g || 0);
+                                        const sugars = Math.round(log.sugars_g || log.sugar_g || 0);
 
                                         return (
                                             <div
                                                 key={log.id}
                                                 onClick={() => setViewLog(log)}
-                                                className="bg-bg-secondary p-3 rounded-md border border-glass-border group relative flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-all active:scale-[0.99]"
+                                                className="bg-bg-primary/40 hover:bg-bg-secondary/60 border border-transparent hover:border-glass-border hover:shadow-sm transition-all duration-200 rounded-xl p-3 flex items-center gap-3 cursor-pointer group"
                                             >
                                                 <MealImage
                                                     src={displayImage}
                                                     alt={log.description}
-                                                    className="w-12 h-12"
+                                                    className="w-14 h-14 rounded-lg shadow-sm shrink-0"
                                                 />
 
-                                                <div className="flex-grow pr-20 sm:pr-16 min-w-0">
-                                                    <p className="font-semibold truncate">
-                                                        {log.description}
-                                                        {log.weight_g && ` (${log.weight_g}g)`}
-                                                    </p>
-                                                    <p className="text-sm text-text-secondary truncate">
-                                                        {log.calories} kcal • {log.protein_g || 0}g P • {log.carbs_g || 0}g C • {log.fats_g || 0}g G
-                                                    </p>
+                                                <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+                                                    <div className="flex justify-between items-start">
+                                                        <p className="font-semibold text-sm text-text-primary truncate pr-2 leading-tight">
+                                                            {log.description}
+                                                        </p>
+                                                        <p className="font-bold text-xs text-accent shrink-0">
+                                                            {Math.round(log.calories)} <span className="font-normal text-text-muted">kcal</span>
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap items-end justify-between gap-y-1 text-[10px] sm:text-xs">
+                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                            
+                                                            <div className="flex items-center gap-1 text-red font-bold">
+                                                                <div className="w-2 h-2 rounded-full bg-red shrink-0" style={{ backgroundColor: '#ef4444' }}></div>
+                                                                <span style={{ color: '#ef4444' }}>{protein}p</span>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-1 text-blue-500 font-bold">
+                                                                <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" style={{ backgroundColor: '#3b82f6' }}></div>
+                                                                <span style={{ color: '#3b82f6' }}>{carbs}c</span>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-1 text-yellow-500 font-bold">
+                                                                <div className="w-2 h-2 rounded-full bg-yellow-500 shrink-0" style={{ backgroundColor: '#eab308' }}></div>
+                                                                <span style={{ color: '#eab308' }}>{fats}g</span>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-1 text-pink-500 font-bold">
+                                                                <div className="w-2 h-2 rounded-full bg-pink-500 shrink-0" style={{ backgroundColor: '#ec4899' }}></div>
+                                                                <span style={{ color: '#ec4899' }}>{sugars}a</span>
+                                                            </div>
+
+                                                        </div>
+                                                        
+                                                        {log.weight_g && (
+                                                            <span className="text-text-muted font-medium ml-2">{Math.round(log.weight_g)}g</span>
+                                                        )}
+                                                    </div>
                                                 </div>
 
-                                                <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col sm:flex-row gap-1 sm:gap-1">
+                                                <div className="flex flex-col items-center gap-1 pl-2 border-l border-white/5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setModal({ type: 'food', data: { ...log, mealType } }); }}
-                                                        className="p-2 rounded-full bg-bg-primary hover:bg-accent/20 hover:text-accent transition-all duration-200 shadow-sm border border-glass-border"
-                                                        title="Editar comida"
+                                                        className="p-1.5 rounded-md hover:bg-white/10 text-text-secondary hover:text-accent transition-colors"
+                                                        title="Editar"
                                                     >
-                                                        <Edit size={14} className="sm:w-4 sm:h-4" />
+                                                        <Edit size={16} />
                                                     </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setLogToDelete(log); }}
-                                                        className="p-2 rounded-full bg-bg-primary hover:bg-red-500/20 hover:text-red-500 transition-all duration-200 shadow-sm border border-glass-border"
-                                                        title="Eliminar comida"
+                                                        className="p-1.5 rounded-md hover:bg-white/10 text-text-secondary hover:text-red-400 transition-colors"
+                                                        title="Eliminar"
                                                     >
-                                                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                                                        <Trash2 size={16} />
                                                     </button>
                                                 </div>
                                             </div>
                                         );
                                     }) : (
-                                        <p className="text-sm text-text-muted text-center py-4">No hay registros.</p>
+                                        <div className="flex flex-col items-center justify-center py-8 text-text-muted/50 rounded-xl">
+                                            <p className="text-xs font-medium">Sin registros</p>
+                                            <button 
+                                                onClick={() => setModal({ type: 'food', data: { mealType } })} 
+                                                className="mt-2 text-xs text-accent hover:underline flex items-center gap-1"
+                                            >
+                                                <Plus size={12} /> Añadir
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </GlassCard>
@@ -602,27 +723,35 @@ const Nutrition = ({ setView }) => {
                             </div>
 
                             <h4 className="font-semibold text-text-primary mb-4">Macronutrientes</h4>
-                            <div className="grid grid-cols-3 gap-4">
+                            
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
-                                    <div className="p-2 rounded-full bg-blue-500/10 mb-2">
-                                        <Beef size={20} className="text-blue-400" />
+                                    <div className="p-2 rounded-full bg-red-500/10 mb-2">
+                                        <Beef size={20} className="text-red" />
                                     </div>
-                                    <span className="text-2xl font-bold">{viewLog.protein_g || 0}g</span>
+                                    <span className="text-2xl font-bold text-red">{viewLog.protein_g || 0}g</span>
                                     <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Proteína</span>
                                 </div>
                                 <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
-                                    <div className="p-2 rounded-full bg-yellow-500/10 mb-2">
-                                        <Wheat size={20} className="text-yellow-400" />
+                                    <div className="p-2 rounded-full bg-blue-500/10 mb-2">
+                                        <Wheat size={20} className="text-blue-500" />
                                     </div>
-                                    <span className="text-2xl font-bold">{viewLog.carbs_g || 0}g</span>
+                                    <span className="text-2xl font-bold text-blue-500">{viewLog.carbs_g || 0}g</span>
                                     <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Carbos</span>
                                 </div>
                                 <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
-                                    <div className="p-2 rounded-full bg-green-500/10 mb-2">
-                                        <Salad size={20} className="text-green-400" />
+                                    <div className="p-2 rounded-full bg-yellow-500/10 mb-2">
+                                        <Salad size={20} className="text-yellow-500" />
                                     </div>
-                                    <span className="text-2xl font-bold">{viewLog.fats_g || 0}g</span>
+                                    <span className="text-2xl font-bold text-yellow-500">{viewLog.fats_g || 0}g</span>
                                     <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Grasas</span>
+                                </div>
+                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
+                                    <div className="p-2 rounded-full bg-pink-500/10 mb-2">
+                                        <IceCream size={20} className="text-pink-500" />
+                                    </div>
+                                    <span className="text-2xl font-bold text-pink-500">{viewLog.sugars_g || viewLog.sugar_g || 0}g</span>
+                                    <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Azúcar</span>
                                 </div>
                             </div>
                         </div>
@@ -658,6 +787,15 @@ const Nutrition = ({ setView }) => {
                 />
             )}
 
+            {modal.type === 'sugar' && (
+                <SugarTargetModal
+                    isOpen={true}
+                    onClose={() => setModal({ type: null, data: null })}
+                    currentSugar={totals.sugar}
+                    maxSugar={sugarTarget}
+                />
+            )}
+
             {logToDelete && (
                 <ConfirmationModal
                     message={`¿Seguro que quieres eliminar "${logToDelete.description}"?`}
@@ -668,7 +806,6 @@ const Nutrition = ({ setView }) => {
                 />
             )}
 
-            {/* Modal para eliminar grupo de comida */}
             {mealGroupToDelete && (
                 <ConfirmationModal
                     message={`¿Estás seguro de que quieres eliminar TODOS los alimentos de ${{ breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealGroupToDelete]

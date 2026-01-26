@@ -1,3 +1,4 @@
+/* backend/models/nutritionLogModel.js */
 import { DataTypes } from "sequelize";
 import sequelize from "../db.js";
 
@@ -44,6 +45,12 @@ const NutritionLog = sequelize.define('NutritionLog', {
     type: DataTypes.DECIMAL(6, 2),
     allowNull: true,
   },
+  // --- AÑADIDO: Azúcar ---
+  sugars_g: {
+    type: DataTypes.DECIMAL(6, 2),
+    allowNull: true,
+    comment: 'Azúcar en gramos'
+  },
   weight_g: {
     type: DataTypes.DECIMAL(8, 2),
     allowNull: true,
@@ -59,7 +66,6 @@ const NutritionLog = sequelize.define('NutritionLog', {
     allowNull: true,
     comment: 'Micronutrientes (vitaminas, minerales) en formato JSON'
   },
-  // --- INICIO DE LA MODIFICACIÓN ---
   // Campos para guardar la información nutricional base (por 100g)
   calories_per_100g: {
     type: DataTypes.DECIMAL(6, 2),
@@ -81,7 +87,12 @@ const NutritionLog = sequelize.define('NutritionLog', {
     allowNull: true,
     comment: 'Grasas por cada 100g'
   },
-  // --- FIN DE LA MODIFICACIÓN ---
+  // --- AÑADIDO: Azúcar por 100g ---
+  sugars_per_100g: {
+    type: DataTypes.DECIMAL(6, 2),
+    allowNull: true,
+    comment: 'Azúcar por cada 100g'
+  },
 }, {
   tableName: 'nutrition_logs',
   timestamps: true,

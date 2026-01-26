@@ -1,3 +1,4 @@
+/* backend/routes/favoriteMeals.js */
 import express from 'express';
 import { body } from 'express-validator';
 import favoriteMealController from '../controllers/favoriteMealController.js';
@@ -15,27 +16,30 @@ const favoriteMealValidationRules = [
   body('protein_g').optional().isFloat({ min: 0 }).withMessage('Las proteínas deben ser un número positivo.'),
   body('carbs_g').optional().isFloat({ min: 0 }).withMessage('Los carbohidratos deben ser un número positivo.'),
   body('fats_g').optional().isFloat({ min: 0 }).withMessage('Las grasas deben ser un número positivo.'),
+  // AÑADIDO: Validación para azúcar
+  body('sugars_g').optional().isFloat({ min: 0 }).withMessage('El azúcar debe ser un número positivo.'),
   body('weight_g').optional().isFloat({ min: 0 }).withMessage('Los gramos deben ser un número positivo.'),
+  
+  // AÑADIDO: Validaciones para campos por 100g
+  body('calories_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las calorías por 100g deben ser un número positivo.'),
+  body('protein_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las proteínas por 100g deben ser un número positivo.'),
+  body('carbs_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Los carbohidratos por 100g deben ser un número positivo.'),
+  body('fat_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las grasas por 100g deben ser un número positivo.'),
+  body('sugars_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('El azúcar por 100g debe ser un número positivo.'),
 ];
 
 // --- Definición de Rutas ---
 
 // GET /api/favorite-meals -> Obtener todas las comidas favoritas del usuario
-// CAMBIO: '/meals' -> '/'
 router.get('/', favoriteMealController.getFavoriteMeals);
 
 // POST /api/favorite-meals -> Crear una nueva comida favorita
-// CAMBIO: '/meals' -> '/'
 router.post('/', favoriteMealValidationRules, favoriteMealController.createFavoriteMeal);
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // PUT /api/favorite-meals/:mealId -> Actualizar una comida favorita existente
-// CAMBIO: '/meals/:mealId' -> '/:mealId'
 router.put('/:mealId', favoriteMealValidationRules, favoriteMealController.updateFavoriteMeal);
-// --- FIN DE LA MODIFICACIÓN ---
 
 // DELETE /api/favorite-meals/:mealId -> Eliminar una comida favorita
-// CAMBIO: '/meals/:mealId' -> '/:mealId'
 router.delete('/:mealId', favoriteMealController.deleteFavoriteMeal);
 
 export default router;

@@ -129,7 +129,16 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
 
   // Determinamos el item a editar aquí, en el hook principal
   const itemToEdit = useMemo(() => {
-    if (isEditingLog) return logToEdit;
+    if (isEditingLog && logToEdit) {
+       // Normalizamos las propiedades para asegurar que el formulario reciba lo que espera (sugars_g)
+      return {
+        ...logToEdit,
+        sugars_g: logToEdit.sugars_g ?? logToEdit.sugars ?? 0,
+        protein_g: logToEdit.protein_g ?? logToEdit.protein ?? 0,
+        carbs_g: logToEdit.carbs_g ?? logToEdit.carbs ?? 0,
+        fats_g: logToEdit.fats_g ?? logToEdit.fats ?? logToEdit.fat ?? 0,
+      };
+    }
     if (editingFavorite) return editingFavorite;
     if (editingListItemId) {
       return itemsToAdd.find((item) => item.tempId === editingListItemId);

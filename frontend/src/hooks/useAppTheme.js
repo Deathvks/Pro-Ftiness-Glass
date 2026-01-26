@@ -72,10 +72,18 @@ export const useAppTheme = () => {
       root.style.transition = 'none';
 
       // 4. Aplicar Clases CSS al ROOT
-      root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
-      // Mapeamos system -> light/dark explícito en CSS
+      // Limpiamos todas las clases posibles anteriores
+      root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'dark');
+      
+      // Mapeamos system -> light/dark explícito en CSS (variables CSS)
       const classTheme = effectiveTheme === 'oled' ? 'oled' : (effectiveTheme === 'light' ? 'light' : 'dark');
       root.classList.add(`${classTheme}-theme`);
+
+      // ACTIVAR MODO OSCURO DE TAILWIND (para modificadores dark:...)
+      // Tanto 'dark' como 'oled' se consideran modos oscuros para Tailwind.
+      if (effectiveTheme !== 'light') {
+        root.classList.add('dark');
+      }
 
       // 5. Sincronización de fondo
       root.style.backgroundColor = color;

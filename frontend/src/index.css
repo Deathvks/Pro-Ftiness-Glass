@@ -50,11 +50,8 @@
   --bg-primary: #f7fafc;
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
-  /* Slate 900 (Casi negro) */
   --text-secondary: #64748b;
-  /* Slate 500 (Gris azulado medio) - Más claro para contraste */
   --text-muted: #94a3b8;
-  /* Slate 400 (Gris azulado claro) */
 
   --glass-border: rgba(0, 0, 0, 0.09);
   --glass-bg: rgba(255, 255, 255, 0.7);
@@ -69,9 +66,10 @@
   --text-secondary: #a3a3a3;
   --text-muted: #525252;
 
-  --glass-border: rgba(255, 255, 255, 0.15);
+  /* AJUSTADO: Mayor contraste para bordes en fondo negro absoluto */
+  --glass-border: rgba(255, 255, 255, 0.25);
   --glass-bg: #000000;
-  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.15);
   --glass-shadow-inner: none;
 }
 
@@ -211,15 +209,12 @@
     @apply h-full;
   }
 
-  /* IMPORTANTE: Crear contexto de apilamiento en root para que el Blob (z-index -1)
+  /* IMPORTANTE: Crear contexto de apilamiento en root para que el Blob
      se pinte sobre el background del body */
   #root {
     isolation: isolate;
   }
 
-  /* FIX IOS 26: Sincronización de fondo
-     Safari usa el background-color del body/html para el overscroll
-     y la barra de estado en modo 'Liquid Glass'. */
   html {
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
@@ -228,8 +223,6 @@
   body {
     @apply text-text-primary antialiased;
     overflow: hidden;
-
-    /* Sincronización explícita para iOS */
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
   }

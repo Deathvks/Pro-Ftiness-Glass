@@ -1,3 +1,4 @@
+/* backend/models/favoriteMealModel.js */
 import { DataTypes } from "sequelize";
 import sequelize from "../db.js";
 
@@ -38,23 +39,53 @@ const FavoriteMeal = sequelize.define(
       type: DataTypes.DECIMAL(6, 2),
       allowNull: true,
     },
+    // --- AÑADIDO: Azúcar ---
+    sugars_g: {
+      type: DataTypes.DECIMAL(6, 2),
+      allowNull: true,
+      comment: 'Azúcar en gramos'
+    },
     weight_g: {
       type: DataTypes.DECIMAL(8, 2),
       allowNull: true,
       comment: 'Peso de la comida en gramos'
     },
-    image_url: { // <-- Nuevo campo para guardar la URL de la imagen
+    image_url: {
       type: DataTypes.STRING(255),
       allowNull: true,
       comment: 'URL de la imagen de la comida'
     },
-    // --- INICIO DE LA MODIFICACIÓN ---
     micronutrients: {
       type: DataTypes.JSON,
       allowNull: true,
       comment: 'Micronutrientes (vitaminas, minerales) en formato JSON'
     },
-    // --- FIN DE LA MODIFICACIÓN ---
+    // --- Campos por 100g ---
+    calories_per_100g: {
+      type: DataTypes.DECIMAL(6, 2),
+      allowNull: true,
+      comment: 'Calorías por cada 100g'
+    },
+    protein_per_100g: {
+      type: DataTypes.DECIMAL(6, 2),
+      allowNull: true,
+      comment: 'Proteínas por cada 100g'
+    },
+    carbs_per_100g: {
+      type: DataTypes.DECIMAL(6, 2),
+      allowNull: true,
+      comment: 'Carbohidratos por cada 100g'
+    },
+    fat_per_100g: {
+      type: DataTypes.DECIMAL(6, 2),
+      allowNull: true,
+      comment: 'Grasas por cada 100g'
+    },
+    sugars_per_100g: {
+      type: DataTypes.DECIMAL(6, 2),
+      allowNull: true,
+      comment: 'Azúcar por cada 100g'
+    },
   },
   {
     tableName: 'favorite_meals',

@@ -131,7 +131,13 @@ const getNutritionLogsByDate = async (req, res, next) => {
 const getRecentMeals = async (req, res, next) => {
   try {
     const { userId } = req.user;
-    const recentLogs = await NutritionLog.findAll({ where: { user_id: userId }, limit: 50, order: [['id', 'DESC']], attributes: ['id', 'description', 'calories', 'protein_g', 'carbs_g', 'fats_g', 'weight_g', 'image_url', 'micronutrients'] });
+    // Añadido sugars_g a los atributos
+    const recentLogs = await NutritionLog.findAll({ 
+      where: { user_id: userId }, 
+      limit: 50, 
+      order: [['id', 'DESC']], 
+      attributes: ['id', 'description', 'calories', 'protein_g', 'carbs_g', 'fats_g', 'sugars_g', 'weight_g', 'image_url', 'micronutrients'] 
+    });
     const uniqueMeals = [];
     const descriptionsSeen = new Set();
     for (const log of recentLogs) {
@@ -155,7 +161,21 @@ const getNutritionSummary = async (req, res, next) => {
     if (!month || !year) return res.status(400).json({ error: 'El mes y el año son requeridos.' });
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
-    const nutritionSummary = await NutritionLog.findAll({ where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } }, attributes: [['log_date', 'date'], [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'], [sequelize.fn('sum', sequelize.col('protein_g')), 'total_protein'], [sequelize.fn('sum', sequelize.col('carbs_g')), 'total_carbs'], [sequelize.fn('sum', sequelize.col('fats_g')), 'total_fats']], group: ['log_date'], order: [['log_date', 'ASC']] });
+    
+    // Añadido sumatorio de azúcares
+    const nutritionSummary = await NutritionLog.findAll({ 
+      where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } }, 
+      attributes: [
+        ['log_date', 'date'], 
+        [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'], 
+        [sequelize.fn('sum', sequelize.col('protein_g')), 'total_protein'], 
+        [sequelize.fn('sum', sequelize.col('carbs_g')), 'total_carbs'], 
+        [sequelize.fn('sum', sequelize.col('fats_g')), 'total_fats'],
+        [sequelize.fn('sum', sequelize.col('sugars_g')), 'total_sugars']
+      ], 
+      group: ['log_date'], 
+      order: [['log_date', 'ASC']] 
+    });
     const waterSummary = await WaterLog.findAll({ where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } }, attributes: ['log_date', 'quantity_ml'], order: [['log_date', 'ASC']] });
     res.json({ nutritionSummary, waterSummary });
   } catch (error) {
@@ -166,14 +186,32 @@ const getNutritionSummary = async (req, res, next) => {
 const addFoodLog = async (req, res, next) => {
   try {
     const { userId } = req.user;
-    // Añadido: save_as_favorite en la destructuración
-    const { log_date, meal_type, description, calories, protein_g, carbs_g, fats_g, weight_g, image_url, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, save_as_favorite } = req.body;
+    // Añadido: sugars_g y sugars_per_100g en la destructuración
+    const { log_date, meal_type, description, calories, protein_g, carbs_g, fats_g, sugars_g, weight_g, image_url, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, sugars_per_100g, save_as_favorite } = req.body;
 
     let sanitizedImageUrl = image_url;
     if (sanitizedImageUrl === 'null' || sanitizedImageUrl === 'undefined' || sanitizedImageUrl === '') sanitizedImageUrl = null;
     const finalImageUrl = (req.file && req.file.processedPath) ? req.file.processedPath : sanitizedImageUrl;
 
-    const foodData = { user_id: userId, log_date, meal_type, description, calories: calories || 0, protein_g: protein_g || null, carbs_g: carbs_g || null, fats_g: fats_g || null, weight_g: weight_g || null, image_url: finalImageUrl, micronutrients: micronutrients || null, calories_per_100g: calories_per_100g || null, protein_per_100g: protein_per_100g || null, carbs_per_100g: carbs_per_100g || null, fat_per_100g: fat_per_100g || null };
+    const foodData = { 
+      user_id: userId, 
+      log_date, 
+      meal_type, 
+      description, 
+      calories: calories || 0, 
+      protein_g: protein_g || null, 
+      carbs_g: carbs_g || null, 
+      fats_g: fats_g || null, 
+      sugars_g: sugars_g || null,
+      weight_g: weight_g || null, 
+      image_url: finalImageUrl, 
+      micronutrients: micronutrients || null, 
+      calories_per_100g: calories_per_100g || null, 
+      protein_per_100g: protein_per_100g || null, 
+      carbs_per_100g: carbs_per_100g || null, 
+      fat_per_100g: fat_per_100g || null,
+      sugars_per_100g: sugars_per_100g || null
+    };
 
     const newLog = await NutritionLog.create(foodData);
 
@@ -186,13 +224,15 @@ const addFoodLog = async (req, res, next) => {
         protein_g: foodData.protein_g,
         carbs_g: foodData.carbs_g,
         fats_g: foodData.fats_g,
+        sugars_g: foodData.sugars_g,
         weight_g: foodData.weight_g,
         image_url: foodData.image_url,
         micronutrients: foodData.micronutrients,
         calories_per_100g: foodData.calories_per_100g,
         protein_per_100g: foodData.protein_per_100g,
         carbs_per_100g: foodData.carbs_per_100g,
-        fat_per_100g: foodData.fat_per_100g
+        fat_per_100g: foodData.fat_per_100g,
+        sugars_per_100g: foodData.sugars_per_100g
       };
 
       const existingFav = await FavoriteMeal.findOne({ where: { user_id: userId, name: description } });
@@ -254,8 +294,8 @@ const updateFoodLog = async (req, res, next) => {
       if (req.file && req.file.processedPath) deleteFile(req.file.processedPath);
       return res.status(404).json({ error: 'Registro de comida no encontrado.' });
     }
-    // Añadido: save_as_favorite en la destructuración
-    const { description, calories, protein_g, carbs_g, fats_g, weight_g, image_url, meal_type, log_date, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, save_as_favorite } = req.body;
+    // Añadido: sugars_g y sugars_per_100g en la destructuración
+    const { description, calories, protein_g, carbs_g, fats_g, sugars_g, weight_g, image_url, meal_type, log_date, micronutrients, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, sugars_per_100g, save_as_favorite } = req.body;
 
     const oldImageUrl = log.image_url;
     let newImageUrl;
@@ -263,7 +303,24 @@ const updateFoodLog = async (req, res, next) => {
     else if (image_url !== undefined) newImageUrl = (image_url === 'null' || image_url === 'undefined' || image_url === '') ? null : image_url;
     else newImageUrl = oldImageUrl;
 
-    const foodData = { description: description !== undefined ? description : log.description, calories: calories !== undefined ? calories : log.calories, protein_g: protein_g !== undefined ? protein_g : log.protein_g, carbs_g: carbs_g !== undefined ? carbs_g : log.carbs_g, fats_g: fats_g !== undefined ? fats_g : log.fats_g, weight_g: weight_g !== undefined ? weight_g : log.weight_g, image_url: newImageUrl, meal_type: meal_type !== undefined ? meal_type : log.meal_type, log_date: log_date !== undefined ? log_date : log.log_date, micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients, calories_per_100g: calories_per_100g !== undefined ? calories_per_100g : log.calories_per_100g, protein_per_100g: protein_per_100g !== undefined ? protein_per_100g : log.protein_per_100g, carbs_per_100g: carbs_per_100g !== undefined ? carbs_per_100g : log.carbs_per_100g, fat_per_100g: fat_per_100g !== undefined ? fat_per_100g : log.fat_per_100g };
+    const foodData = { 
+      description: description !== undefined ? description : log.description, 
+      calories: calories !== undefined ? calories : log.calories, 
+      protein_g: protein_g !== undefined ? protein_g : log.protein_g, 
+      carbs_g: carbs_g !== undefined ? carbs_g : log.carbs_g, 
+      fats_g: fats_g !== undefined ? fats_g : log.fats_g, 
+      sugars_g: sugars_g !== undefined ? sugars_g : log.sugars_g,
+      weight_g: weight_g !== undefined ? weight_g : log.weight_g, 
+      image_url: newImageUrl, 
+      meal_type: meal_type !== undefined ? meal_type : log.meal_type, 
+      log_date: log_date !== undefined ? log_date : log.log_date, 
+      micronutrients: micronutrients !== undefined ? micronutrients : log.micronutrients, 
+      calories_per_100g: calories_per_100g !== undefined ? calories_per_100g : log.calories_per_100g, 
+      protein_per_100g: protein_per_100g !== undefined ? protein_per_100g : log.protein_per_100g, 
+      carbs_per_100g: carbs_per_100g !== undefined ? carbs_per_100g : log.carbs_per_100g, 
+      fat_per_100g: fat_per_100g !== undefined ? fat_per_100g : log.fat_per_100g,
+      sugars_per_100g: sugars_per_100g !== undefined ? sugars_per_100g : log.sugars_per_100g
+    };
 
     await log.update(foodData);
 
@@ -275,13 +332,15 @@ const updateFoodLog = async (req, res, next) => {
       protein_g: foodData.protein_g,
       carbs_g: foodData.carbs_g,
       fats_g: foodData.fats_g,
+      sugars_g: foodData.sugars_g,
       weight_g: foodData.weight_g,
       image_url: foodData.image_url,
       micronutrients: foodData.micronutrients,
       calories_per_100g: foodData.calories_per_100g,
       protein_per_100g: foodData.protein_per_100g,
       carbs_per_100g: foodData.carbs_per_100g,
-      fat_per_100g: foodData.fat_per_100g
+      fat_per_100g: foodData.fat_per_100g,
+      sugars_per_100g: foodData.sugars_per_100g
     };
 
     if (save_as_favorite) {
@@ -423,8 +482,9 @@ const searchFoods = async (req, res, next) => {
     const { q } = req.query;
     console.log(`[BACKEND] Buscando alimentos: "${q}"`);
     const favoriteResultsPromise = FavoriteMeal.findAll({ where: { user_id: userId, name: { [Op.like]: `%${q}%` } }, limit: 10 });
+    // Añadido sugars_100g a la búsqueda en OFF
     const offSearchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_es,nutriments,image_url,image_small_url`;
-    const offResultsPromise = axios.get(offSearchUrl).then(response => { if (response.data && response.data.products) { return response.data.products.map(p => ({ id: `off-${p.code}`, name: p.product_name_es || p.product_name || 'Sin nombre', calories: p.nutriments?.['energy-kcal_100g'] || 0, protein_g: p.nutriments?.proteins_100g || 0, carbs_g: p.nutriments?.carbohydrates_100g || 0, fats_g: p.nutriments?.fat_100g || 0, calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0, protein_per_100g: p.nutriments?.proteins_100g || 0, carbs_per_100g: p.nutriments?.carbohydrates_100g || 0, fat_per_100g: p.nutriments?.fat_100g || 0, image_url: p.image_small_url || p.image_url || null, source: 'global', weight_g: 100 })); } return []; }).catch(err => { console.error("Error buscando en Open Food Facts:", err.message); return []; });
+    const offResultsPromise = axios.get(offSearchUrl).then(response => { if (response.data && response.data.products) { return response.data.products.map(p => ({ id: `off-${p.code}`, name: p.product_name_es || p.product_name || 'Sin nombre', calories: p.nutriments?.['energy-kcal_100g'] || 0, protein_g: p.nutriments?.proteins_100g || 0, carbs_g: p.nutriments?.carbohydrates_100g || 0, fats_g: p.nutriments?.fat_100g || 0, sugars_g: p.nutriments?.sugars_100g || 0, calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0, protein_per_100g: p.nutriments?.proteins_100g || 0, carbs_per_100g: p.nutriments?.carbohydrates_100g || 0, fat_per_100g: p.nutriments?.fat_100g || 0, sugars_per_100g: p.nutriments?.sugars_100g || 0, image_url: p.image_small_url || p.image_url || null, source: 'global', weight_g: 100 })); } return []; }).catch(err => { console.error("Error buscando en Open Food Facts:", err.message); return []; });
     const [favoriteResults, offResults] = await Promise.all([favoriteResultsPromise, offResultsPromise]);
     const formattedFavorites = favoriteResults.map(f => ({ ...f.toJSON(), source: 'local', calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0 }));
     const combinedResults = [...formattedFavorites, ...offResults];

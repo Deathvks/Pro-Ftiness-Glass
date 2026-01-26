@@ -46,7 +46,11 @@ export const createFavoriteMeal = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  let { name, calories, protein_g, carbs_g, fats_g, weight_g, image_url, micronutrients } = req.body;
+  // AÑADIDO: sugars_g y campos per_100g
+  let { 
+    name, calories, protein_g, carbs_g, fats_g, sugars_g, weight_g, image_url, micronutrients,
+    calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, sugars_per_100g 
+  } = req.body;
 
   if (image_url === 'null' || image_url === 'undefined' || image_url === '') {
     image_url = null;
@@ -62,9 +66,15 @@ export const createFavoriteMeal = async (req, res, next) => {
       protein_g,
       carbs_g,
       fats_g,
+      sugars_g: sugars_g || null,
       weight_g,
       image_url: image_url || null,
       micronutrients: micronutrients || null,
+      calories_per_100g: calories_per_100g || null,
+      protein_per_100g: protein_per_100g || null,
+      carbs_per_100g: carbs_per_100g || null,
+      fat_per_100g: fat_per_100g || null,
+      sugars_per_100g: sugars_per_100g || null,
     });
     res.status(201).json(newMeal);
   } catch (error) {
@@ -85,7 +95,11 @@ export const updateFavoriteMeal = async (req, res, next) => {
   const { mealId } = req.params;
   const { userId } = req.user;
 
-  let { name, calories, protein_g, carbs_g, fats_g, weight_g, image_url, micronutrients } = req.body;
+  // AÑADIDO: sugars_g y campos per_100g
+  let { 
+    name, calories, protein_g, carbs_g, fats_g, sugars_g, weight_g, image_url, micronutrients,
+    calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, sugars_per_100g 
+  } = req.body;
 
   if (image_url === 'null' || image_url === 'undefined' || image_url === '') {
     image_url = null;
@@ -118,8 +132,14 @@ export const updateFavoriteMeal = async (req, res, next) => {
     meal.protein_g = protein_g;
     meal.carbs_g = carbs_g;
     meal.fats_g = fats_g;
+    meal.sugars_g = sugars_g;
     meal.weight_g = weight_g;
     meal.micronutrients = micronutrients;
+    meal.calories_per_100g = calories_per_100g;
+    meal.protein_per_100g = protein_per_100g;
+    meal.carbs_per_100g = carbs_per_100g;
+    meal.fat_per_100g = fat_per_100g;
+    meal.sugars_per_100g = sugars_per_100g;
 
     // 1. Guardamos en BD (La imagen antigua desaparece de este registro aquí)
     await meal.save();

@@ -5,9 +5,7 @@ import Spinner from '../../Spinner';
 import { useToast } from '../../../hooks/useToast';
 import useAppStore from '../../../store/useAppStore';
 
-// Obtener la URL base del backend desde las variables de entorno
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-// Eliminar '/api' del final si existe para obtener solo la base del backend
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
@@ -42,7 +40,7 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                     onChange={handleFileChange}
                     className="hidden"
                     accept="image/*"
-                    capture="environment" // Prioriza la cámara trasera en móviles
+                    capture="environment"
                 />
                 {isUploading ? (
                     <Spinner />
@@ -50,13 +48,12 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                     <>
                         <img
                             src={imageUrl.startsWith('http') || imageUrl.startsWith('blob:') ? imageUrl : `${BACKEND_BASE_URL}${imageUrl}`}
-                            alt="Previsualización de la comida"
+                            alt="Previsualización"
                             className="max-w-full max-h-full object-contain rounded-lg"
                         />
                         <button
                             onClick={handleRemoveImage}
                             className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 text-white hover:bg-black/80 transition-opacity"
-                            aria-label="Eliminar imagen"
                         >
                             <X size={16} />
                         </button>
@@ -71,7 +68,6 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
         </div>
     );
 };
-
 
 const InputField = ({ label, name, value, onChange, placeholder = '', inputMode = 'text', required = false, type = 'text', className = '' }) => (
     <div>
@@ -89,15 +85,16 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
     </div>
 );
 
-const CalculatedMacros = ({ calories, protein, carbs, fats }) => (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
+const CalculatedMacros = ({ calories, protein, carbs, fats, sugars }) => (
+    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-1">
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Cal</p><p className="font-semibold">{Math.round(calories) || 0}</p></div>
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Prot</p><p className="font-semibold">{protein || 0} g</p></div>
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Carbs</p><p className="font-semibold">{carbs || 0} g</p></div>
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Grasas</p><p className="font-semibold">{fats || 0} g</p></div>
+        {/* CORRECCIÓN: Añadido campo de azúcar visual */}
+        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Azúcar</p><p className="font-semibold text-pink-500">{sugars || 0} g</p></div>
     </div>
 );
-
 
 const ManualEntryForm = ({
     onAddManual,
@@ -123,7 +120,6 @@ const ManualEntryForm = ({
 
     const { formData, per100Data, isFavorite } = formState;
 
-    // Detectar si el item original ya era favorito
     const isOriginallyFavorite = useMemo(() => {
         if (editingFavorite) return true;
         if (isEditing || editingListItem) {
@@ -132,7 +128,6 @@ const ManualEntryForm = ({
         }
         return false;
     }, [isEditing, editingListItem, editingFavorite, formState.originalDescription, favoriteMeals]);
-
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -176,6 +171,8 @@ const ManualEntryForm = ({
                 protein_g: round((parseFloat(per100Data.protein_g) || 0) * factor),
                 carbs_g: round((parseFloat(per100Data.carbs_g) || 0) * factor),
                 fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor),
+                // CORRECCIÓN: Cálculo de azúcar
+                sugars_g: round((parseFloat(per100Data.sugars_g) || 0) * factor),
             };
         } else {
             return {
@@ -183,6 +180,8 @@ const ManualEntryForm = ({
                 protein_g: round(formData.protein_g),
                 carbs_g: round(formData.carbs_g),
                 fats_g: round(formData.fats_g),
+                // CORRECCIÓN: Passthrough de azúcar
+                sugars_g: round(formData.sugars_g),
             };
         }
     }, [formData, per100Data, isPer100g, round]);
@@ -194,6 +193,8 @@ const ManualEntryForm = ({
             protein_g: calculatedMacros.protein_g,
             carbs_g: calculatedMacros.carbs_g,
             fats_g: calculatedMacros.fats_g,
+            // CORRECCIÓN: Incluir azúcar en los datos finales
+            sugars_g: calculatedMacros.sugars_g,
             weight_g: formData.weight_g,
             image_url: formData.image_url,
         };
@@ -244,12 +245,13 @@ const ManualEntryForm = ({
         return finalData;
     }, [formData, isPer100g, addToast, calculatedMacros, per100Data]);
 
-    // --- HELPER PARA OBTENER CAMPOS PER 100G CONSISTENTEMENTE ---
     const getPer100Fields = () => ({
         calories_per_100g: isPer100g ? (parseFloat(per100Data.calories) || 0) : null,
         protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
         carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
         fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
+        // CORRECCIÓN: Campo de azúcar por 100g
+        sugars_per_100g: isPer100g ? (parseFloat(per100Data.sugars_g) || 0) : null,
     });
 
     const handleAddToList = () => {
@@ -260,7 +262,7 @@ const ManualEntryForm = ({
             name: finalData.description,
             isFavorite,
             image_url: finalData.image_url,
-            ...getPer100Fields(), // Usamos el helper
+            ...getPer100Fields(),
         });
     };
 
@@ -270,7 +272,7 @@ const ManualEntryForm = ({
         onSaveEdit({
             ...finalData,
             isFavorite,
-            ...getPer100Fields() // IMPORTANTE: Enviamos nulls si isPer100g es false
+            ...getPer100Fields()
         });
         addToast('Comida actualizada correctamente', 'success');
     };
@@ -284,7 +286,7 @@ const ManualEntryForm = ({
             name: finalData.description,
             isFavorite,
             image_url: finalData.image_url,
-            ...getPer100Fields() // IMPORTANTE: Sobrescribimos con nulls o valores nuevos
+            ...getPer100Fields()
         });
         addToast('Comida actualizada', 'success');
     };
@@ -297,14 +299,13 @@ const ManualEntryForm = ({
             name: finalData.description,
             saveAsFavorite: isFavorite,
             image_url: formData.image_url,
-            ...getPer100Fields(), // Usamos el helper
+            ...getPer100Fields(),
         };
         onSaveSingle([dataToSave]);
 
         if (addXp) addXp(15, 'Comida registrada');
         addToast('Comida guardada correctamente', 'success');
     };
-
 
     return (
         <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4 animate-[fade-in_0.3s] pt-2">
@@ -336,13 +337,18 @@ const ManualEntryForm = ({
 
             {isPer100g ? (
                 <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <InputField label="Cal/100g" name="calories" value={per100Data.calories} onChange={handlePer100Change} inputMode="decimal" required={isPer100g} />
                         <InputField label="Prot/100g" name="protein_g" value={per100Data.protein_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Carbs/100g" name="carbs_g" value={per100Data.carbs_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Grasas/100g" name="fats_g" value={per100Data.fats_g} onChange={handlePer100Change} inputMode="decimal" />
                     </div>
-                    <div className="relative">
+                    {/* CORRECCIÓN: Campo input de azúcar por 100g */}
+                    <div className="grid grid-cols-2 gap-4">
+                         <InputField label="Azúcar/100g" name="sugars_g" value={per100Data.sugars_g} onChange={handlePer100Change} inputMode="decimal" />
+                    </div>
+
+                    <div className="relative mt-2">
                         <InputField
                             label="Gramos totales a consumir"
                             name="weight_g"
@@ -357,17 +363,23 @@ const ManualEntryForm = ({
                         protein={calculatedMacros.protein_g}
                         carbs={calculatedMacros.carbs_g}
                         fats={calculatedMacros.fats_g}
+                        sugars={calculatedMacros.sugars_g}
                     />
                 </>
             ) : (
                 <>
-                    <InputField label="Calorías (kcal)" name="calories" value={formData.calories} onChange={handleChange} inputMode="decimal" required />
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                         <InputField label="Calorías (kcal)" name="calories" value={formData.calories} onChange={handleChange} inputMode="decimal" required />
+                         <InputField label="Gramos totales (opc)" name="weight_g" value={formData.weight_g} onChange={handleChange} inputMode="decimal" />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <InputField label="Proteínas (g)" name="protein_g" value={formData.protein_g} onChange={handleChange} inputMode="decimal" />
                         <InputField label="Carbs (g)" name="carbs_g" value={formData.carbs_g} onChange={handleChange} inputMode="decimal" />
                         <InputField label="Grasas (g)" name="fats_g" value={formData.fats_g} onChange={handleChange} inputMode="decimal" />
+                        {/* CORRECCIÓN: Campo input de azúcar */}
+                        <InputField label="Azúcar (g)" name="sugars_g" value={formData.sugars_g} onChange={handleChange} inputMode="decimal" />
                     </div>
-                    <InputField label="Gramos totales (opcional)" name="weight_g" value={formData.weight_g} onChange={handleChange} inputMode="decimal" />
                 </>
             )}
 

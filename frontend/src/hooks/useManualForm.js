@@ -35,9 +35,12 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
 
       const originalDescription = itemToEdit.description || itemToEdit.name || '';
 
-      // Helper para leer grasas de forma robusta (fat_g, fats_g, fats)
+      // Helper para leer grasas y azúcares de forma robusta
       const getFats = (obj) => parseFloat(obj.fats_g || obj.fat_g || obj.fats || 0);
       const getFatsPer100 = (obj) => parseFloat(obj.fat_per_100g || obj.fats_per_100g || obj.fat_per_100 || 0);
+      
+      const getSugars = (obj) => parseFloat(obj.sugars_g || obj.sugars || 0);
+      const getSugarsPer100 = (obj) => parseFloat(obj.sugars_per_100g || obj.sugars_per_100 || 0);
 
       let formData = {
         description: originalDescription,
@@ -45,6 +48,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
         protein_g: round(itemToEdit.protein_g || 0, 1),
         carbs_g: round(itemToEdit.carbs_g || 0, 1),
         fats_g: round(getFats(itemToEdit), 1),
+        sugars_g: round(getSugars(itemToEdit), 1),
         weight_g: round(itemToEdit.weight_g || (shouldBePer100g ? 100 : ''), 1), // Poner 100g por defecto si es modo /100g
         image_url: itemToEdit.image_url || null,
         micronutrients: itemToEdit.micronutrients || null,
@@ -57,6 +61,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
           protein_g: round(itemToEdit.protein_per_100g || 0, 1),
           carbs_g: round(itemToEdit.carbs_per_100g || 0, 1),
           fats_g: round(getFatsPer100(itemToEdit), 1),
+          sugars_g: round(getSugarsPer100(itemToEdit), 1),
         };
 
         // Si estamos en modo /100g, recalculamos los totales basándonos en el peso actual y los valores /100g
@@ -70,6 +75,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
             protein_g: round(parseFloat(per100Data.protein_g) * factor, 1),
             carbs_g: round(parseFloat(per100Data.carbs_g) * factor, 1),
             fats_g: round(parseFloat(per100Data.fats_g) * factor, 1),
+            sugars_g: round(parseFloat(per100Data.sugars_g) * factor, 1),
             // Preservamos micros si existen
             micronutrients: itemToEdit.micronutrients || null,
           };
@@ -95,6 +101,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
           protein_g: (parseFloat(itemToEdit.protein_g) || 0) / weight,
           carbs_g: (parseFloat(itemToEdit.carbs_g) || 0) / weight,
           fats_g: getFats(itemToEdit) / weight,
+          sugars_g: getSugars(itemToEdit) / weight,
         });
       } else {
         setBaseMacros(null);
@@ -117,6 +124,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
           protein_g: round(baseMacros.protein_g * newWeight, 1),
           carbs_g: round(baseMacros.carbs_g * newWeight, 1),
           fats_g: round(baseMacros.fats_g * newWeight, 1),
+          sugars_g: round(baseMacros.sugars_g * newWeight, 1),
         }
       }));
     }
@@ -135,6 +143,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
           protein_g: round((parseFloat(prev.per100Data.protein_g) || 0) * factor, 1),
           carbs_g: round((parseFloat(prev.per100Data.carbs_g) || 0) * factor, 1),
           fats_g: round((parseFloat(prev.per100Data.fats_g) || 0) * factor, 1),
+          sugars_g: round((parseFloat(prev.per100Data.sugars_g) || 0) * factor, 1),
         }
       }));
     }

@@ -4,7 +4,7 @@ import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
   Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
   Link, Smartphone, Image, Globe, Clock, Download, Footprints, MapPin,
-  Folder, Share2, ArrowUpRight // <--- AÑADIDOS Share2 y ArrowUpRight
+  Folder, Share2, ArrowUpRight, IceCream // <--- AÑADIDO IceCream
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -81,6 +81,37 @@ const WelcomeModal = ({ onClose }) => {
           </div>
 
           <div className="space-y-6 mb-8">
+
+            {/* --- BLOQUE NUEVO: AZÚCAR (TOP) --- */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-pink-500/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <IceCream size={16} className="text-pink-500" /> Nuevo: Control de Azúcar
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] bg-bg-primary/80 border border-glass-border rounded-xl p-3 shadow-lg flex items-center gap-4 group-hover:scale-[1.02] transition-transform duration-500">
+                  {/* Donut Chart Simulado */}
+                  <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <path className="text-bg-secondary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
+                      <path className="text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.6)]" strokeDasharray="70, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                    </svg>
+                    <IceCream size={14} className="absolute text-pink-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline mb-1">
+                      <span className="text-xs font-bold text-text-primary">Azúcar</span>
+                      <span className="text-[10px] text-pink-500 font-mono">24g / 35g</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full w-[70%] bg-pink-500 rounded-full shadow-[0_0_8px_rgba(236,72,153,0.4)]"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Ahora puedes monitorizar tu ingesta de azúcar diario y visualizarlo en tus macros.
+              </p>
+            </div>
 
             {/* --- BLOQUE 0: APP NATIVA --- */}
             <a href={DOWNLOAD_URL} className="block no-underline transform transition-transform hover:scale-[1.02] active:scale-95">

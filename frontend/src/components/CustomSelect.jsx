@@ -33,30 +33,23 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // FIX: Cierra el dropdown solo al hacer scroll externo (body/ventana) para no interferir con el scroll interno del menú.
   useEffect(() => {
     const handleScroll = (event) => {
       if (isOpen) {
-        // Si el evento se originó dentro del menú desplegable o el botón, lo ignoramos.
-        // Esto permite el scroll interno si el menú tiene overflow.
         if (
           (dropdownRef.current && dropdownRef.current.contains(event.target)) ||
           (buttonRef.current && buttonRef.current.contains(event.target))
         ) {
           return;
         }
-
-        // Si el scroll es externo (ej. scroll de la ventana/body), cerramos el menú
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      // Usamos la fase de captura (true) para ser más efectivos.
       document.addEventListener('scroll', handleScroll, true);
     }
 
-    // Limpieza
     return () => {
       document.removeEventListener('scroll', handleScroll, true);
     };
@@ -73,7 +66,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
         left: `${position.left}px`,
         width: `${position.width}px`,
       }}
-      className="bg-bg-secondary border border-glass-border rounded-xl shadow-lg max-h-48 overflow-y-auto z-[9999] p-2 animate-[fade-in-up_0.2s_ease_out]"
+      className="bg-bg-secondary border border-transparent dark:border-white/10 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[9999] p-2 animate-[fade-in-up_0.2s_ease_out]"
     >
       {options.map(option => (
         <button
@@ -101,10 +94,19 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary text-left outline-none transition flex items-center justify-between gap-2 hover:border-accent/60"
+        // CORRECCIÓN VISUAL:
+        // - Base: transparente.
+        // - Dark (normal): bg-white/5 y borde suave.
+        // - OLED ([.oled-theme_&]): FORZAMOS bg-transparent y quitamos el hover gris para que quede negro puro.
+        className={`
+          w-full rounded-xl px-4 py-3 text-text-primary text-left outline-none transition flex items-center justify-between gap-2 
+          border border-transparent dark:border-white/10
+          bg-transparent dark:bg-white/5 hover:bg-bg-secondary
+          [.oled-theme_&]:bg-transparent [.oled-theme_&]:hover:bg-transparent
+        `}
         disabled={isOpen && position.top === 0}
       >
-        <span className={selectedOption ? 'text-text-primary' : 'text-text-secondary'}>
+        <span className={`text-sm font-bold truncate ${selectedOption ? 'text-text-primary' : 'text-text-secondary'}`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown

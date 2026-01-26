@@ -22,6 +22,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
             protein: getBase('protein_per_100g', food.protein_g || food.protein),
             carbs: getBase('carbs_per_100g', food.carbs_g || food.carbs),
             fat: getBase('fat_per_100g', food.fats_g || food.fat || food.fats),
+            sugars: getBase('sugars_per_100g', food.sugars_g || food.sugars),
         };
     }, [food]);
 
@@ -31,7 +32,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
     
     // Estado para Favoritos (Solo visual/local ahora)
     const [isFavorite, setIsFavorite] = useState(false);
-    // Guardamos si ya era favorito al inicio para evitar duplicados innecesarios si la lógica padre lo requiere
+    // Guardamos si ya era favorito al inicio para evitar duplicados innecesarios
     const [wasInitiallyFavorite, setWasInitiallyFavorite] = useState(false); 
 
     useEffect(() => {
@@ -56,6 +57,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
         protein: (baseValues.protein * weight) / 100,
         carbs: (baseValues.carbs * weight) / 100,
         fat: (baseValues.fat * weight) / 100,
+        sugars: (baseValues.sugars * weight) / 100,
     };
 
     // Helpers de manejo
@@ -85,10 +87,12 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
             protein_g: parseFloat(currentMacros.protein),
             carbs_g: parseFloat(currentMacros.carbs),
             fats_g: parseFloat(currentMacros.fat),
+            sugars_g: parseFloat(currentMacros.sugars),
             calories_per_100g: baseValues.calories,
             protein_per_100g: baseValues.protein,
             carbs_per_100g: baseValues.carbs,
             fat_per_100g: baseValues.fat,
+            sugars_per_100g: baseValues.sugars,
             // Pasamos el flag de favorito para que el componente padre lo gestione al guardar
             isFavorite: isFavorite,
             wasInitiallyFavorite: wasInitiallyFavorite
@@ -223,10 +227,11 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
                     </div>
                     
                     {/* Resto de Macros */}
-                    <div className="grid grid-rows-3 gap-2">
+                    <div className="grid grid-rows-4 gap-2">
                         <MacroRow label="Proteína" value={currentMacros.protein} color="text-green-500" barColor="bg-green-500" />
                         <MacroRow label="Carbos" value={currentMacros.carbs} color="text-blue-500" barColor="bg-blue-500" />
                         <MacroRow label="Grasas" value={currentMacros.fat} color="text-yellow-500" barColor="bg-yellow-500" />
+                        <MacroRow label="Azúcar" value={currentMacros.sugars} color="text-pink-500" barColor="bg-pink-500" />
                     </div>
                 </div>
 

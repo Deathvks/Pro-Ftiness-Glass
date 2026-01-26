@@ -17,6 +17,8 @@ import ActiveSessions from '../components/ActiveSessions';
 import BugReportModal from '../components/BugReportModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CustomSelect from '../components/CustomSelect';
+import GlassCard from '../components/GlassCard';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 // --- Constantes ---
 const ACCENT_OPTIONS = [
@@ -68,15 +70,9 @@ const isIOS = () => {
 
 // --- Sub-componentes ---
 const SectionTitle = ({ icon: Icon, title }) => (
-  <div className="flex items-center gap-2 mb-4 text-text-primary">
-    <Icon size={18} className="text-accent" />
-    <h2 className="text-lg font-semibold">{title}</h2>
-  </div>
-);
-
-const SettingsCard = ({ children, className = '' }) => (
-  <div className={`rounded-2xl border border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass p-5 h-full ${className}`}>
-    {children}
+  <div className="flex items-center gap-3 mb-5 text-text-primary px-1">
+    <Icon size={22} className="text-accent" />
+    <h2 className="text-xl font-bold">{title}</h2>
   </div>
 );
 
@@ -85,31 +81,35 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
   return (
     <Component
       onClick={onClick}
-      className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent transition-all 
+      className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl border border-transparent transition-all 
       active:bg-bg-secondary/50 md:hover:bg-bg-secondary/50
       ${danger
           ? 'text-red active:bg-red/10 md:hover:bg-red/10'
           : 'text-text-primary md:hover:border-[--glass-border]'}`}
     >
-      {Icon && <Icon size={20} className={danger ? 'text-red' : 'text-accent'} />}
-      <div className="flex-1 text-left">
-        <div className="text-sm font-semibold">{title}</div>
-        {subtitle && <div className={`text-xs ${danger ? 'text-red/70' : 'text-text-secondary'}`}>{subtitle}</div>}
+      {Icon && <Icon size={22} className={danger ? 'text-red' : 'text-accent'} />}
+      <div className="flex-1 text-left min-w-0">
+        <div className="text-sm font-bold truncate">{title}</div>
+        {subtitle && <div className={`text-xs font-medium truncate ${danger ? 'text-red/70' : 'text-text-secondary'}`}>{subtitle}</div>}
       </div>
-      {action}
+      {action && <div className="flex-shrink-0 ml-2">{action}</div>}
     </Component>
   );
 };
 
 const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, loading }) => (
-  <div className={`flex items-center justify-between p-3 rounded-xl transition ${disabled ? 'opacity-50' : 'hover:bg-bg-secondary/30'}`}>
-    <div className="flex items-center gap-3">
-      <div className={`p-2 rounded-lg ${checked ? 'bg-accent/10 text-accent' : 'bg-text-muted/10 text-text-muted'}`}>
-        <Icon size={20} />
+  <div className={`flex items-center justify-between p-3 rounded-2xl transition ${disabled ? 'opacity-50' : 'hover:bg-bg-secondary/30'}`}>
+    <div className="flex items-center gap-4">
+      {/* Contenedor de icono */}
+      <div className={`
+        p-2.5 rounded-xl border border-transparent
+        ${checked ? 'bg-accent/10 text-accent dark:border-accent/20' : 'bg-text-muted/10 text-text-muted dark:border-white/10 [.oled-theme_&]:bg-transparent'}
+      `}>
+        <Icon size={22} />
       </div>
       <div>
-        <div className="text-sm font-semibold">{title}</div>
-        <div className="text-xs text-text-secondary">{subtitle}</div>
+        <div className="text-sm font-bold">{title}</div>
+        <div className="text-xs font-medium text-text-secondary">{subtitle}</div>
       </div>
     </div>
     {loading ? <Spinner size={20} /> : (
@@ -155,6 +155,8 @@ export default function SettingsScreen({
   setView,
   onLogoutClick
 }) {
+  const { resolvedTheme } = useAppTheme();
+
   const {
     userProfile,
     resetCookieConsent,
@@ -175,14 +177,11 @@ export default function SettingsScreen({
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
   
-  // Estado para la URL dinámica de la APK
   const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
 
-  // Estados para modal de recarga iOS
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
   const [pendingTheme, setPendingTheme] = useState(null);
 
-  // --- NUEVO STATE: Auto Timezone (Persistente en LocalStorage) ---
   const [autoTimezone, setAutoTimezone] = useState(() => {
     return localStorage.getItem('settings_auto_timezone') === 'true';
   });
@@ -207,11 +206,9 @@ export default function SettingsScreen({
     permission: pushPermission
   } = usePushNotifications();
 
-  // --- EFECTO: Obtener URL dinámica desde version.json ---
   useEffect(() => {
     const fetchVersionInfo = async () => {
       try {
-        // Añadimos timestamp para evitar caché
         const response = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
@@ -233,7 +230,6 @@ export default function SettingsScreen({
     (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
   );
 
-  // --- LÓGICA DE OPCIONES PARA CUSTOM SELECT ---
   const timezoneOptions = useMemo(() => {
     const options = [...TIMEZONES];
     const currentUserTz = userProfile?.timezone;
@@ -244,24 +240,20 @@ export default function SettingsScreen({
     return options;
   }, [userProfile?.timezone]);
 
-  // --- FUNCIÓN: Detectar Timezone (Modificada para soportar modo silencioso) ---
   const detectAndUpdateTimezone = async (silent = false) => {
     if (isUpdatingTimezone) return;
 
     try {
       const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      // Si ya tenemos la correcta, no hacemos nada (excepto avisar si fue manual)
       if (detected === userProfile?.timezone) {
         if (!silent) addToast('Ya tienes la zona horaria correcta.', 'info');
         return;
       }
 
-      // Si es diferente, actualizamos
       setIsUpdatingTimezone(true);
       const prevTimezone = userProfile?.timezone;
 
-      // Optimistic Update
       setUserProfile({ ...userProfile, timezone: detected });
 
       try {
@@ -278,10 +270,9 @@ export default function SettingsScreen({
     }
   };
 
-  // --- EFECTO: Ejecutar detección automática al montar o activar ---
   useEffect(() => {
     if (autoTimezone) {
-      detectAndUpdateTimezone(true); // Silent check
+      detectAndUpdateTimezone(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoTimezone]);
@@ -309,9 +300,8 @@ export default function SettingsScreen({
     setAutoTimezone(newValue);
     localStorage.setItem('settings_auto_timezone', newValue);
 
-    // Si se activa, forzamos detección inmediata
     if (newValue) {
-      detectAndUpdateTimezone(false); // No silent, para que el usuario vea que funciona
+      detectAndUpdateTimezone(false);
     }
   };
 
@@ -370,7 +360,6 @@ export default function SettingsScreen({
     }
   };
 
-  // Función helper para generar el subtítulo de las notificaciones
   const getPushSubtitle = () => {
     if (!isPushSupported) return 'No soportado en este dispositivo/navegador';
     if (pushPermission === 'denied') return 'Bloqueadas en navegador';
@@ -378,14 +367,11 @@ export default function SettingsScreen({
     return 'Pausadas';
   };
 
-  // --- LÓGICA DE CAMBIO DE TEMA EN IOS ---
   const handleThemeClick = (mode) => {
     if (isIOS()) {
-      // En iOS forzamos confirmación para recargar
       setPendingTheme(mode);
       setShowThemeReloadModal(true);
     } else {
-      // En otros dispositivos cambiamos directamente
       setTheme(mode);
     }
   };
@@ -393,48 +379,49 @@ export default function SettingsScreen({
   const confirmThemeReload = () => {
     if (pendingTheme) {
       setTheme(pendingTheme);
-      // Forzar recarga para limpiar UI del sistema en iOS
       window.location.reload();
     }
     setShowThemeReloadModal(false);
   };
 
+  const glassCardClass = "p-6 border-transparent dark:border dark:border-white/10";
+
   return (
-    <div className="px-4 pb-6 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div className="px-4 pb-24 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
-      <div className="flex items-center justify-between mb-6 pt-4 md:pt-0">
+      <div className="flex items-center justify-between mb-8 pt-4 md:pt-0">
         <h1 className="hidden md:flex text-3xl md:text-4xl font-extrabold flex-1 text-left text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary mt-10 md:mt-0">
           Ajustes
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
 
-        {/* --- COLUMNA 1: APARIENCIA Y NOTIFICACIONES --- */}
-        <div className="flex flex-col gap-6">
-          <SettingsCard>
+        {/* --- COLUMNA 1 --- */}
+        <div className="flex flex-col gap-8">
+          <GlassCard className={glassCardClass}>
             <SectionTitle icon={Palette} title="Apariencia" />
 
-            <div className="mb-6">
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Tema</h3>
-              <div className="grid grid-cols-4 gap-2">
+            <div className="mb-8">
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4">Tema</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {['system', 'light', 'dark', 'oled'].map((mode) => (
                   <button
                     key={mode}
                     onClick={() => handleThemeClick(mode)}
-                    className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${theme === mode
+                    className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-2xl border transition-all ${theme === mode
                       ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20'
-                      : 'border-[--glass-border] text-text-secondary hover:bg-bg-secondary'
+                      : 'border-transparent dark:border-white/10 text-text-secondary hover:bg-bg-secondary bg-transparent dark:bg-white/5 [.oled-theme_&]:bg-transparent'
                       }`}
                   >
-                    {mode === 'system' && <MonitorCog size={20} />}
-                    {mode === 'light' && <Sun size={20} />}
-                    {mode === 'dark' && <Moon size={20} />}
-                    {mode === 'oled' && <Smartphone size={20} />}
-                    <span className="text-xs font-medium capitalize">
+                    {mode === 'system' && <MonitorCog size={22} />}
+                    {mode === 'light' && <Sun size={22} />}
+                    {mode === 'dark' && <Moon size={22} />}
+                    {mode === 'oled' && <Smartphone size={22} />}
+                    <span className="text-[10px] font-bold uppercase tracking-wider">
                       {mode === 'system' ? 'Sistema' :
                         mode === 'light' ? 'Claro' :
                           mode === 'dark' ? 'Oscuro' : 'OLED'}
@@ -445,7 +432,7 @@ export default function SettingsScreen({
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-3">
+              <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
                 {totalPages > 1 && (
                   <div className="flex gap-1">
@@ -454,14 +441,14 @@ export default function SettingsScreen({
                       disabled={currentColorPage === 0}
                       className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
                     >
-                      <ChevronLeft size={14} />
+                      <ChevronLeft size={16} />
                     </button>
                     <button
                       onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
                       disabled={currentColorPage === totalPages - 1}
                       className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
                     >
-                      <ChevronRight size={14} />
+                      <ChevronRight size={16} />
                     </button>
                   </div>
                 )}
@@ -475,7 +462,7 @@ export default function SettingsScreen({
                     className="group relative flex justify-center items-center"
                   >
                     <span
-                      className="w-8 h-8 rounded-full border transition-transform hover:scale-110"
+                      className="w-9 h-9 rounded-full border transition-transform hover:scale-110"
                       style={{
                         backgroundColor: opt.hex,
                         borderColor: accent === opt.id ? opt.hex : 'transparent',
@@ -484,7 +471,7 @@ export default function SettingsScreen({
                     />
                     {accent === opt.id && (
                       <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none shadow-sm">
-                        <Check size={14} strokeWidth={3} />
+                        <Check size={16} strokeWidth={3} />
                       </span>
                     )}
                   </button>
@@ -492,8 +479,7 @@ export default function SettingsScreen({
               </div>
             </div>
 
-            {/* --- Switch Vibración --- */}
-            <div className="mt-6 pt-4 border-t border-[--glass-border]">
+            <div className="mt-8 pt-6 border-t border-[--glass-border]">
               <SwitchItem
                 icon={Vibrate}
                 title="Vibración"
@@ -506,12 +492,11 @@ export default function SettingsScreen({
                 }}
               />
             </div>
+          </GlassCard>
 
-          </SettingsCard>
-
-          <SettingsCard>
+          <GlassCard className={glassCardClass}>
             <SectionTitle icon={BellRing} title="Notificaciones" />
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <SwitchItem
                 icon={BellRing}
                 title="Push Notifications"
@@ -531,12 +516,12 @@ export default function SettingsScreen({
                 disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
               />
             </div>
-          </SettingsCard>
+          </GlassCard>
         </div>
 
-        {/* --- COLUMNA 2: PERFIL, REGIÓN Y PRIVACIDAD --- */}
-        <div className="flex flex-col gap-6">
-          <SettingsCard>
+        {/* --- COLUMNA 2 --- */}
+        <div className="flex flex-col gap-8">
+          <GlassCard className={glassCardClass}>
             <SectionTitle icon={User} title="Perfil" />
             <div className="flex flex-col gap-1">
               <SettingsItem
@@ -544,17 +529,14 @@ export default function SettingsScreen({
                 title="Datos Físicos"
                 subtitle="Editar peso, altura, objetivos..."
                 onClick={() => setView('physicalProfileEditor')}
-                action={<ChevronRight size={16} className="text-text-muted" />}
+                action={<ChevronRight size={18} className="text-text-muted" />}
               />
             </div>
-          </SettingsCard>
+          </GlassCard>
 
-          {/* --- TARJETA: REGIÓN Y HORA --- */}
-          <SettingsCard>
+          <GlassCard className={glassCardClass}>
             <SectionTitle icon={Globe} title="Región y Hora" />
-            <div className="flex flex-col gap-4">
-
-              {/* Opción Automática */}
+            <div className="flex flex-col gap-5">
               <SwitchItem
                 icon={MapPin}
                 title="Ajuste Automático"
@@ -563,9 +545,8 @@ export default function SettingsScreen({
                 onChange={handleToggleAutoTimezone}
               />
 
-              {/* Opción Manual (Desactivada si es auto) */}
-              <div className={`flex flex-col gap-2 transition-opacity duration-300 ${autoTimezone ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                <label className="text-sm font-semibold text-text-secondary ml-1">
+              <div className={`flex flex-col gap-3 transition-opacity duration-300 ${autoTimezone ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                <label className="text-sm font-bold text-text-secondary ml-1">
                   Zona Horaria Manual
                 </label>
                 <div className="flex gap-2 items-center">
@@ -580,29 +561,30 @@ export default function SettingsScreen({
                   <button
                     onClick={() => detectAndUpdateTimezone(false)}
                     disabled={isUpdatingTimezone || autoTimezone}
-                    className="p-3 rounded-xl bg-bg-secondary border border-[--glass-border] text-accent hover:bg-accent/10 transition flex items-center justify-center min-w-[50px] h-[48px]"
+                    // CORRECCIÓN: Fondo transparente estricto para OLED
+                    className="p-3 rounded-xl border border-transparent dark:border-white/10 text-accent hover:bg-accent/10 transition flex items-center justify-center min-w-[50px] h-[48px] bg-transparent dark:bg-white/5 [.oled-theme_&]:bg-transparent"
                     title="Detectar ahora"
                   >
                     {isUpdatingTimezone ? <Spinner size={20} /> : <Clock size={20} />}
                   </button>
                 </div>
                 {autoTimezone && (
-                  <p className="text-xs text-accent ml-1 flex items-center gap-1">
+                  <p className="text-xs text-accent ml-1 flex items-center gap-1 font-bold">
                     <Check size={12} /> Gestionado automáticamente
                   </p>
                 )}
                 {!autoTimezone && (
-                  <p className="text-xs text-text-muted ml-1 leading-relaxed">
+                  <p className="text-xs text-text-muted ml-1 leading-relaxed font-medium">
                     Afecta a la hora de reinicio de tus metas diarias.
                   </p>
                 )}
               </div>
             </div>
-          </SettingsCard>
+          </GlassCard>
 
-          <SettingsCard>
+          <GlassCard className={glassCardClass}>
             <SectionTitle icon={Users} title="Privacidad Social" />
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <SwitchItem
                 icon={Eye}
                 title="Perfil Público"
@@ -628,28 +610,25 @@ export default function SettingsScreen({
                 disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
               />
             </div>
-          </SettingsCard>
+          </GlassCard>
 
-          <SettingsCard>
+          <GlassCard className={`${glassCardClass} ${resolvedTheme === 'oled' ? '!bg-transparent' : ''}`}>
             <ActiveSessions />
-          </SettingsCard>
+          </GlassCard>
         </div>
 
-        {/* --- COLUMNA 3: SEGURIDAD, SOPORTE Y GENERAL --- */}
-        <div className="flex flex-col gap-6 md:col-span-2 md:grid md:grid-cols-2 xl:col-span-1 xl:flex xl:flex-col">
-          <SettingsCard>
+        {/* --- COLUMNA 3 --- */}
+        <div className="flex flex-col gap-8 md:col-span-2 md:grid md:grid-cols-2 xl:col-span-1 xl:flex xl:flex-col">
+          <GlassCard className={glassCardClass}>
             <SectionTitle icon={Shield} title="Seguridad" />
             <div className="flex flex-col gap-1">
+              
               <SettingsItem
                 icon={Smartphone}
                 title="Verificación en 2 pasos"
-                subtitle={userProfile?.two_factor_enabled
-                  ? `Activado (${userProfile.two_factor_method === 'app' ? 'App' : 'Email'})`
-                  : "Protege tu cuenta"
-                }
                 onClick={() => setView('twoFactorSetup')}
                 action={
-                  <div className={`px-2 py-1 rounded text-xs font-bold ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-text-muted/20 text-text-muted'}`}>
+                  <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-text-muted/20 text-text-muted [.oled-theme_&]:bg-transparent'}`}>
                     {userProfile?.two_factor_enabled ? 'ACTIVADO' : 'DESACTIVADO'}
                   </div>
                 }
@@ -663,13 +642,13 @@ export default function SettingsScreen({
                   <div className="flex gap-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleExport('json'); }}
-                      className="px-2 py-1 rounded-md bg-bg-secondary border border-[--glass-border] text-xs font-bold hover:bg-accent hover:text-white transition-colors"
+                      className="px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-transparent dark:border-white/10 text-[10px] font-bold hover:bg-accent hover:text-white transition-colors [.oled-theme_&]:bg-transparent"
                     >
                       JSON
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleExport('csv'); }}
-                      className="px-2 py-1 rounded-md bg-bg-secondary border border-[--glass-border] text-xs font-bold hover:bg-accent hover:text-white transition-colors"
+                      className="px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-transparent dark:border-white/10 text-[10px] font-bold hover:bg-accent hover:text-white transition-colors [.oled-theme_&]:bg-transparent"
                     >
                       CSV
                     </button>
@@ -694,9 +673,9 @@ export default function SettingsScreen({
                 />
               )}
             </div>
-          </SettingsCard>
+          </GlassCard>
 
-          <SettingsCard>
+          <GlassCard className={glassCardClass}>
             <SectionTitle icon={Info} title="Soporte y General" />
             <div className="flex flex-col gap-1">
               <a
@@ -707,7 +686,7 @@ export default function SettingsScreen({
                   icon={Smartphone}
                   title="Descargar App Android"
                   subtitle="Instalar APK nativo"
-                  action={<Download size={16} className="text-accent" />}
+                  action={<Download size={18} className="text-accent" />}
                 />
               </a>
 
@@ -722,7 +701,7 @@ export default function SettingsScreen({
                 <SettingsItem icon={Mail} title="Contactar Soporte" subtitle="profitnessglass@gmail.com" />
               </a>
 
-              <div className="my-2 h-px bg-[--glass-border]" />
+              <div className="my-3 h-px bg-[--glass-border]" />
 
               <SectionTitle icon={Share2} title="Síguenos" />
               <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
@@ -730,7 +709,7 @@ export default function SettingsScreen({
                   icon={Instagram}
                   title="Instagram"
                   subtitle="@pro_fitness_glass"
-                  action={<ChevronRight size={16} className="text-text-muted" />}
+                  action={<ChevronRight size={18} className="text-text-muted" />}
                 />
               </a>
               <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="no-underline">
@@ -738,7 +717,7 @@ export default function SettingsScreen({
                   icon={TikTokIcon}
                   title="TikTok"
                   subtitle="@pro_fitness_glass"
-                  action={<ChevronRight size={16} className="text-text-muted" />}
+                  action={<ChevronRight size={18} className="text-text-muted" />}
                 />
               </a>
               <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="no-underline">
@@ -746,25 +725,25 @@ export default function SettingsScreen({
                   icon={Youtube}
                   title="YouTube"
                   subtitle="@ProFitnessGlass"
-                  action={<ChevronRight size={16} className="text-text-muted" />}
+                  action={<ChevronRight size={18} className="text-text-muted" />}
                 />
               </a>
 
-              <div className="my-2 h-px bg-[--glass-border]" />
+              <div className="my-3 h-px bg-[--glass-border]" />
 
               <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
                 <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
               </a>
 
               <div className="flex md:hidden items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
-                <Binary size={20} className="text-accent" />
+                <Binary size={22} className="text-accent" />
                 <div className="flex-1 text-left">
-                  <div className="text-sm font-semibold">Versión de App</div>
-                  <div className="text-xs text-text-secondary">v{APP_VERSION}</div>
+                  <div className="text-sm font-bold">Versión de App</div>
+                  <div className="text-xs text-text-secondary font-medium">v{APP_VERSION}</div>
                 </div>
               </div>
 
-              <div className="my-2 h-px bg-[--glass-border]" />
+              <div className="my-3 h-px bg-[--glass-border]" />
 
               <SettingsItem
                 icon={LogOut}
@@ -773,7 +752,7 @@ export default function SettingsScreen({
                 danger
               />
             </div>
-          </SettingsCard>
+          </GlassCard>
         </div>
       </div>
 
@@ -781,7 +760,6 @@ export default function SettingsScreen({
         <BugReportModal onClose={() => setShowBugModal(false)} />
       )}
 
-      {/* MODAL DE CONFIRMACIÓN PARA IOS */}
       {showThemeReloadModal && (
         <ConfirmationModal
           message="En iOS es necesario recargar la página para aplicar los cambios de tema en la interfaz del sistema. ¿Deseas continuar?"

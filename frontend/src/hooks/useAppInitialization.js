@@ -6,7 +6,7 @@ import useAppStore from '../store/useAppStore';
  * Hook para gestionar la carga inicial de datos de la aplicación,
  * la redirección de vistas (ej. al workout activo o última vista),
  * y la comprobación de modales (verificación de email, bienvenida).
- * * @param {object} props
+ * @param {object} props
  * @param {function} props.setView - Función para establecer la vista principal (de useAppNavigation).
  * @param {function} props.setAuthView - Función para establecer la vista de autenticación.
  * @param {string} props.view - La vista actual (para cargar datos del dashboard).
@@ -60,6 +60,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         targetView = 'workout'; 
       } else {
         const lastView = localStorage.getItem('lastView');
+        // Verificación de seguridad: si hay lastView pero el usuario no tiene objetivo (nuevo usuario),
+        // la lógica en App.jsx se encargará de mostrar Onboarding, aquí solo definimos el target por defecto.
         if (lastView && loadedUserProfile?.goal) {
           if (lastView === 'adminPanel' && loadedUserProfile?.role !== 'admin') {
             targetView = 'dashboard'; 

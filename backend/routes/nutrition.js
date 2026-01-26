@@ -88,6 +88,8 @@ const foodLogValidationRules = [
     body('protein_g').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Las proteínas deben ser un número positivo.'),
     body('carbs_g').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Los carbohidratos deben ser un número positivo.'),
     body('fats_g').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Las grasas deben ser un número positivo.'),
+    // --- AÑADIDO: Azúcar ---
+    body('sugars_g').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('El azúcar debe ser un número positivo.'),
     body('weight_g').optional({ nullable: true }).isFloat({ min: 0.1 }).withMessage('El peso debe ser un número positivo.'),
     body('meal_type').isIn(['breakfast', 'lunch', 'dinner', 'snack']).withMessage('Tipo de comida inválido.'),
     body('log_date').isISO8601().toDate().withMessage('Fecha inválida.'),
@@ -99,6 +101,8 @@ const foodLogValidationRules = [
     body('protein_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las proteínas por 100g deben ser un número positivo.'),
     body('carbs_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Los carbohidratos por 100g deben ser un número positivo.'),
     body('fat_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las grasas por 100g deben ser un número positivo.'),
+    // --- AÑADIDO: Azúcar por 100g ---
+    body('sugars_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('El azúcar por 100g debe ser un número positivo.'),
     // --- FIN ---
 ];
 
@@ -108,6 +112,8 @@ const updateFoodLogValidationRules = [
     body('protein_g').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Las proteínas deben ser un número positivo.'),
     body('carbs_g').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Los carbohidratos deben ser un número positivo.'),
     body('fats_g').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Las grasas deben ser un número positivo.'),
+    // --- AÑADIDO: Azúcar ---
+    body('sugars_g').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('El azúcar debe ser un número positivo.'),
     body('weight_g').optional({ nullable: true }).isFloat({ min: 0.1 }).withMessage('El peso debe ser un número positivo.'),
     // No validamos image_url aquí
     body('micronutrients').optional({ nullable: true }).isObject().withMessage('Micronutrientes debe ser un objeto JSON.'),
@@ -117,6 +123,8 @@ const updateFoodLogValidationRules = [
     body('protein_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las proteínas por 100g deben ser un número positivo.'),
     body('carbs_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Los carbohidratos por 100g deben ser un número positivo.'),
     body('fat_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Las grasas por 100g deben ser un número positivo.'),
+    // --- AÑADIDO: Azúcar por 100g ---
+    body('sugars_per_100g').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('El azúcar por 100g debe ser un número positivo.'),
     // --- FIN ---
 ];
 
