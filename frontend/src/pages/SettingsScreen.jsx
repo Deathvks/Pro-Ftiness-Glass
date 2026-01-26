@@ -87,9 +87,11 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
           ? 'text-red active:bg-red/10 md:hover:bg-red/10'
           : 'text-text-primary md:hover:border-[--glass-border]'}`}
     >
-      {Icon && <Icon size={22} className={danger ? 'text-red' : 'text-accent'} />}
+      {/* CORRECCIÓN: flex-shrink-0 para que el icono no se aplaste */}
+      {Icon && <Icon size={22} className={`flex-shrink-0 ${danger ? 'text-red' : 'text-accent'}`} />}
       <div className="flex-1 text-left min-w-0">
-        <div className="text-sm font-bold truncate">{title}</div>
+        {/* CORRECCIÓN: Quitamos truncate y añadimos leading-tight para permitir multilínea */}
+        <div className="text-sm font-bold leading-tight">{title}</div>
         {subtitle && <div className={`text-xs font-medium truncate ${danger ? 'text-red/70' : 'text-text-secondary'}`}>{subtitle}</div>}
       </div>
       {action && <div className="flex-shrink-0 ml-2">{action}</div>}

@@ -15,10 +15,8 @@ import WelcomeModal from './WelcomeModal';
 import EmailVerificationModal from './EmailVerificationModal';
 import EmailVerification from './EmailVerification';
 import CookieConsentBanner from './CookieConsentBanner';
-// --- INICIO DE LA MODIFICACIÓN: Importar componentes de App Nativa ---
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
-// --- FIN DE LA MODIFICACIÓN ---
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -182,13 +180,20 @@ export default function MainAppLayout({
       <main
         ref={mainContentRef}
         className="flex-1 overflow-y-auto overflow-x-hidden md:pb-0 
-                   pb-[calc(5rem+env(safe-area-inset-bottom))]" // 5rem (h-20) + safe-area
+                   pb-[calc(7rem+env(safe-area-inset-bottom))]"
       >
 
-        {/* Header (Móvil) - z-50 para máxima prioridad */}
-        <div className="md:hidden flex justify-between items-center border-b border-[--glass-border] sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50
+        {/* Header (Móvil) */}
+        {/* CORRECCIÓN: 
+            - border-0: Quita el borde glass por defecto.
+            - [.oled-theme_&]:border-b: Añade borde abajo SOLO en OLED.
+            - [.oled-theme_&]:border-white/10: Usa el color suave del Sidebar.
+        */}
+        <div className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50
                         px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]
-                        sm:px-6 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]">
+                        sm:px-6 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]
+                        border-0 shadow-none 
+                        [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10">
 
           {/* Animación Título Header */}
           <div className="flex items-center gap-2">
@@ -270,10 +275,17 @@ export default function MainAppLayout({
       </main>
 
       {/* Navbar (Móvil) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass border-t border-[--glass-border] z-50
+      {/* CORRECCIÓN: 
+            - border-0: Quita el borde glass por defecto.
+            - [.oled-theme_&]:border-t: Añade borde arriba SOLO en OLED.
+            - [.oled-theme_&]:border-white/10: Usa el color suave.
+      */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50
                       pb-[env(safe-area-inset-bottom)] 
                       pl-[max(env(safe-area-inset-left),_0.5rem)] 
-                      pr-[max(env(safe-area-inset-right),_0.5rem)]">
+                      pr-[max(env(safe-area-inset-right),_0.5rem)]
+                      border-0 shadow-none
+                      [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10">
         {navItems.map((item, index) => {
           const isActive = view === item.id;
 
@@ -382,10 +394,8 @@ export default function MainAppLayout({
         />
       )}
 
-      {/* --- INICIO DE LA MODIFICACIÓN: Componentes de descarga/update Android --- */}
       <AndroidDownloadPrompt />
       <APKUpdater />
-      {/* --- FIN DE LA MODIFICACIÓN --- */}
 
     </div>
   );

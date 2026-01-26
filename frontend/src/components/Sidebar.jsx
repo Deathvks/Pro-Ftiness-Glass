@@ -45,7 +45,8 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL, hand
   };
 
   return (
-    <nav className="hidden md:flex flex-col md:gap-4 lg:gap-10 md:p-4 lg:p-8 md:w-56 lg:w-64 h-full border-r border-transparent dark:border-r dark:border-white/10 bg-[--glass-bg] backdrop-blur-glass overflow-y-auto scrollbar-hide">
+    // CORRECCIÓN: Agregado border-y-0 para quitar bordes superior e inferior, manteniendo border-l-0
+    <nav className="hidden md:flex flex-col md:gap-4 lg:gap-10 md:p-4 lg:p-8 md:w-56 lg:w-64 h-full border-r border-transparent dark:border-r dark:border-white/10 bg-[--glass-bg] backdrop-blur-glass overflow-y-auto scrollbar-hide border-l-0 border-y-0">
       {/* Logo */}
       <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 transition-transform hover:scale-105 flex-shrink-0">
         {/* CORRECCIÓN: Usar /logo.webp que es el que está en los metadatos del index.html */}

@@ -51,40 +51,145 @@
   <meta name="twitter:description" content="Tu compañero definitivo de entrenamiento y nutrición." />
   <meta name="twitter:image" content="/logo.webp" />
 
+  <style>
+    :root {
+      /* Fallback seguro inicial */
+      --app-accent: #22c55e;
+      
+      /* Variables Glass con Fallback para navegadores antiguos */
+      --splash-glass-bg: rgba(255, 255, 255, 0.1); 
+      --splash-glass-border: rgba(255, 255, 255, 0.2);
+      --splash-glass-highlight: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Redefinición con color-mix si está soportado */
+    @supports (background-color: color-mix(in srgb, red, blue)) {
+      :root {
+        --splash-glass-bg: color-mix(in srgb, var(--app-accent) 15%, rgba(255, 255, 255, 0.05));
+        --splash-glass-border: color-mix(in srgb, var(--app-accent) 40%, rgba(255, 255, 255, 0.1));
+        --splash-glass-highlight: rgba(255, 255, 255, 0.15);
+      }
+    }
+
+    .app-splash-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: inherit; /* Hereda del body configurado por JS */
+      color: #ffffff;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .app-splash-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--app-accent);
+      animation: spin 1s ease-in-out infinite;
+      box-shadow: 0 0 20px -5px var(--app-accent);
+      margin-top: 2rem;
+    }
+
+    html.light-theme .app-splash-screen {
+      color: #0f172a;
+    }
+
+    html.light-theme .app-splash-spinner {
+      border-color: rgba(0, 0, 0, 0.05);
+      border-top-color: var(--app-accent);
+    }
+
+    .app-splash-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      /* Animación de entrada */
+      animation: fadeUp 0.8s ease-out forwards;
+      opacity: 0; /* Empieza invisible y la animación lo muestra */
+    }
+
+    /* Badge GLASS */
+    .app-splash-title span.glass-badge {
+      display: inline-block;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.5rem 1.5rem;
+      border-radius: 1rem;
+      
+      background-color: var(--splash-glass-bg);
+      border: 1px solid var(--splash-glass-border);
+      border-top-color: var(--splash-glass-highlight);
+      
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      
+      box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        
+      color: var(--app-accent);
+      text-transform: uppercase;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
   <script>
     (function () {
       try {
         // 1. Recuperar Preferencias (Tema y Acento)
         var savedTheme = localStorage.getItem('theme') || 'system';
-        var savedAccent = localStorage.getItem('accent') || '#22c55e'; // Default Green
+        var savedAccent = localStorage.getItem('accent') || '#22c55e';
         var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-        // Limpieza del acento si se guardó como JSON string
         if (savedAccent.startsWith('"') && savedAccent.endsWith('"')) {
           savedAccent = savedAccent.slice(1, -1);
         }
 
-        // 2. Establecer variable CSS global para el Splash Screen
+        // 2. Variable CSS global inmediata
         document.documentElement.style.setProperty('--app-accent', savedAccent);
 
-        // 3. Determinar tema efectivo
+        // 3. Tema efectivo
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') {
           effectiveTheme = systemDark ? 'dark' : 'light';
         }
 
-        // 4. Definir paleta exacta (Debe coincidir con useAppTheme.js)
+        // 4. Paleta
         var colors = {
           light: '#f7fafc',
           dark: '#0c111b',
           oled: '#000000'
         };
         var selectedColor = colors[effectiveTheme] || colors.dark;
-
-        // 5. Determinar estilo de Status Bar (iOS 26 Logic)
         var statusBarStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
 
-        // 6. Aplicar clases al ROOT
+        // 5. Clases y Background
         var root = document.documentElement;
         root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
 
@@ -94,36 +199,31 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // 7. FIX CRÍTICO iOS 26: Sincronizar Background INMEDIATAMENTE
+        // Sincronización crítica del fondo
         root.style.backgroundColor = selectedColor;
+        
+        // Aplicar al body apenas esté disponible
+        var setBodyColor = function() {
+            if(document.body) document.body.style.backgroundColor = selectedColor;
+        };
+        if(document.body) setBodyColor();
+        else document.addEventListener('DOMContentLoaded', setBodyColor);
 
-        if (document.body) {
-          document.body.style.backgroundColor = selectedColor;
-        } else {
-          document.addEventListener('DOMContentLoaded', function () {
-            document.body.style.backgroundColor = selectedColor;
-          });
-        }
-
-        // 8. Gestión de Meta Tags
-        var metaTheme = document.querySelector('meta[name="theme-color"]');
-        if (!metaTheme) {
-          metaTheme = document.createElement('meta');
-          metaTheme.name = "theme-color";
-          document.head.appendChild(metaTheme);
-        }
-        metaTheme.content = selectedColor;
-
-        var metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-        if (!metaStatus) {
-          metaStatus = document.createElement('meta');
-          metaStatus.name = "apple-mobile-web-app-status-bar-style";
-          document.head.appendChild(metaStatus);
-        }
-        metaStatus.content = statusBarStyle;
+        // 6. Meta Tags
+        var updateMeta = function(name, content) {
+            var meta = document.querySelector('meta[name="' + name + '"]');
+            if (!meta) {
+                meta = document.createElement('meta');
+                meta.name = name;
+                document.head.appendChild(meta);
+            }
+            meta.content = content;
+        };
+        updateMeta("theme-color", selectedColor);
+        updateMeta("apple-mobile-web-app-status-bar-style", statusBarStyle);
 
       } catch (e) {
-        console.error('Error aplicando tema inicial', e);
+        console.error('Splash init error', e);
       }
     })();
   </script>
@@ -131,93 +231,10 @@
 
 <body>
   <div id="root">
-    <style>
-      :root {
-        /* Fallback seguro por si JS falla */
-        --app-accent: #22c55e;
-      }
-
-      .app-splash-screen {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 9999;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        background-color: inherit;
-        color: #ffffff;
-      }
-
-      .app-splash-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        border-top-color: var(--app-accent);
-        /* Usamos la variable */
-        animation: spin 1s ease-in-out infinite;
-      }
-
-      html.light-theme .app-splash-screen {
-        color: #0f172a;
-      }
-
-      html.light-theme .app-splash-spinner {
-        border-color: rgba(0, 0, 0, 0.1);
-        border-top-color: var(--app-accent);
-        /* Usamos la variable */
-      }
-
-      .app-splash-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 2rem;
-        text-align: center;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-        animation: pulse 2s infinite;
-      }
-
-      .app-splash-title span {
-        display: inline-block;
-        /* Usamos el acento como base sólida o gradiente suave */
-        background: var(--app-accent);
-        background: linear-gradient(135deg, var(--app-accent) 0%, var(--app-accent) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-left: 0.25rem;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      @keyframes pulse {
-
-        0%,
-        100% {
-          transform: scale(1);
-          opacity: 1;
-        }
-
-        50% {
-          transform: scale(1.02);
-          opacity: 0.9;
-        }
-      }
-    </style>
-
     <div class="app-splash-screen">
       <div class="app-splash-title">
-        PRO FITNESS <span>GLASS</span>
+        PRO FITNESS 
+        <span class="glass-badge">GLASS</span>
       </div>
       <div class="app-splash-spinner"></div>
     </div>

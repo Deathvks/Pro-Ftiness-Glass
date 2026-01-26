@@ -31,7 +31,8 @@ class ErrorBoundary extends React.Component {
                             <AlertTriangle className="text-red-500" size={32} />
                         </div>
 
-                        <h2 className="text-2xl font-bold text-white mb-2">
+                        {/* CORRECCIÓN: Usamos text-text-primary en lugar de text-white para soporte de temas */}
+                        <h2 className="text-2xl font-bold text-text-primary mb-2">
                             Algo salió mal
                         </h2>
 

@@ -9,12 +9,10 @@ import exerciseTranslations from '../locales/es/exercise_names.json';
 // Importamos hook de tema para detectar OLED
 import { useAppTheme } from '../hooks/useAppTheme';
 
-// --- INICIO DE LA MODIFICACIÓN ---
 // Traducciones manuales para ejercicios que falten en el JSON
 const EXTRA_TRANSLATIONS = {
   "Incline Dumbbell Press": "Press Inclinado con Mancuernas",
 };
-// --- FIN DE LA MODIFICACIÓN ---
 
 // --- RUTINAS PREDEFINIDAS ---
 const DEFAULT_ROUTINES = {
@@ -135,10 +133,7 @@ const TemplateRoutines = ({ setView }) => {
   // Obtener nombre traducido
   const getDisplayName = (originalName) => {
     if (!originalName) return "";
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Busca primero en el JSON, luego en el objeto manual, y si no, devuelve el original
     return exerciseTranslations[originalName] || EXTRA_TRANSLATIONS[originalName] || originalName;
-    // --- FIN DE LA MODIFICACIÓN ---
   };
 
   const prepareExercisesForCopy = (templateExercises) => {
@@ -161,7 +156,6 @@ const TemplateRoutines = ({ setView }) => {
         newEx.name = realExercise.name; // Nombre oficial (inglés) para la DB
 
         // --- FIX: COPIAR PROPIEDADES DE IMAGEN EXPLICITAMENTE ---
-        // Esto asegura que la vista de Workout tenga la URL sin tener que buscarla de nuevo
         const mediaUrl = getMediaUrl(realExercise);
         if (mediaUrl) {
           newEx.image_url = mediaUrl;
@@ -304,12 +298,14 @@ const TemplateRoutines = ({ setView }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar rutinas..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent/40 text-sm focus:border-accent transition"
+            // CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10
+            className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-secondary border border-glass-border [.oled-theme_&]:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent/40 text-sm focus:border-accent transition"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button onClick={() => setShowFilters(!showFilters)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${showFilters ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary text-text-secondary border border-glass-border'}`}>
+          {/* CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10 al botón de filtros */}
+          <button onClick={() => setShowFilters(!showFilters)} className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${showFilters ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary text-text-secondary border border-glass-border [.oled-theme_&]:border-white/10'}`}>
             <Filter size={16} /> Filtros
           </button>
           {(selectedCategory !== 'all' || selectedDifficulty !== 'all' || searchQuery) && (
@@ -320,7 +316,8 @@ const TemplateRoutines = ({ setView }) => {
         </div>
 
         {showFilters && (
-          <GlassCard className="p-4 relative z-50 overflow-visible">
+          // CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10
+          <GlassCard className="p-4 relative z-50 overflow-visible [.oled-theme_&]:border-white/10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="relative z-50">
                 <label className="block text-sm font-medium text-text-secondary mb-2">Categoría</label>
@@ -344,9 +341,10 @@ const TemplateRoutines = ({ setView }) => {
               <div key={category}>
                 <div className="flex flex-wrap items-center gap-4 mb-6">
                   <h2 className="text-xl md:text-2xl font-bold text-text-primary">{category}</h2>
-                  <span className="text-sm text-text-secondary bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-glass-border font-medium">{routinesForCategory.length} rutina{routinesForCategory.length !== 1 ? 's' : ''}</span>
+                  {/* CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10 al badge de cantidad */}
+                  <span className="text-sm text-text-secondary bg-bg-secondary/50 px-3 py-1.5 rounded-lg border border-glass-border [.oled-theme_&]:border-white/10 font-medium">{routinesForCategory.length} rutina{routinesForCategory.length !== 1 ? 's' : ''}</span>
                   {isMultiDay && (
-                    <button onClick={() => handleCopyFullRoutine(category, routinesForCategory)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 text-accent font-semibold hover:bg-accent/20 transition text-sm border border-glass-border">
+                    <button onClick={() => handleCopyFullRoutine(category, routinesForCategory)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 text-accent font-semibold hover:bg-accent/20 transition text-sm border border-glass-border [.oled-theme_&]:border-white/10">
                       <Copy size={14} /> Copiar Todo
                     </button>
                   )}
@@ -354,14 +352,15 @@ const TemplateRoutines = ({ setView }) => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 md:gap-8">
                   {routinesForCategory.map(routine => (
-                    <GlassCard key={routine.id} className="p-6 md:p-7 flex flex-col min-h-[400px] hover:border-accent/30 transition-colors">
+                    // CORRECCIÓN: Añadido [.oled-theme_&]:border-white/10 a la GlassCard principal
+                    <GlassCard key={routine.id} className="p-6 md:p-7 flex flex-col min-h-[400px] hover:border-accent/30 transition-colors [.oled-theme_&]:border-white/10">
                       <div className="flex-grow space-y-4">
                         <div className="space-y-3">
                           <h3 className="text-lg md:text-xl font-bold text-accent">{routine.name}</h3>
                           <div className="flex flex-wrap gap-2">
                             <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium border ${getDifficultyColor(routine.difficulty)}`}><Target size={14} /> {routine.difficulty}</span>
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-text-secondary bg-bg-secondary/50 border border-glass-border"><Clock size={14} /> ~{routine.duration} min</span>
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-text-secondary bg-bg-secondary/50 border border-glass-border"><Dumbbell size={14} /> {routine.TemplateRoutineExercises.length} ejer.</span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-text-secondary bg-bg-secondary/50 border border-glass-border [.oled-theme_&]:border-white/10"><Clock size={14} /> ~{routine.duration} min</span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium text-text-secondary bg-bg-secondary/50 border border-glass-border [.oled-theme_&]:border-white/10"><Dumbbell size={14} /> {routine.TemplateRoutineExercises.length} ejer.</span>
                           </div>
                         </div>
                         <p className="text-sm md:text-base text-text-secondary leading-relaxed">{routine.description}</p>
@@ -379,8 +378,8 @@ const TemplateRoutines = ({ setView }) => {
                                   <li key={ex.id} className="bg-bg-secondary/50 p-3 rounded-lg text-sm min-w-max md:min-w-0">
                                     <div className="flex items-center gap-3">
                                       {mediaUrl ? (
-                                        // Aplicamos 'imageBgClass' dinámicamente
-                                        <div className={`w-10 h-10 rounded overflow-hidden ${imageBgClass} shrink-0 border border-glass-border`}>
+                                        // Aplicamos 'imageBgClass' dinámicamente y el borde oled
+                                        <div className={`w-10 h-10 rounded overflow-hidden ${imageBgClass} shrink-0 border border-glass-border [.oled-theme_&]:border-white/10`}>
                                           <img
                                             src={mediaUrl}
                                             alt={displayName}
@@ -390,7 +389,8 @@ const TemplateRoutines = ({ setView }) => {
                                           />
                                         </div>
                                       ) : (
-                                        <div className="w-10 h-10 rounded bg-bg-primary flex items-center justify-center text-text-muted shrink-0 border border-glass-border">
+                                        // Borde oled aquí también
+                                        <div className="w-10 h-10 rounded bg-bg-primary flex items-center justify-center text-text-muted shrink-0 border border-glass-border [.oled-theme_&]:border-white/10">
                                           <Dumbbell size={16} />
                                         </div>
                                       )}
@@ -406,7 +406,8 @@ const TemplateRoutines = ({ setView }) => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-center gap-3 mt-6 pt-4 border-t border-glass-border">
+                      {/* Borde superior del footer de la card */}
+                      <div className="flex items-center justify-center gap-3 mt-6 pt-4 border-t border-glass-border [.oled-theme_&]:border-white/10">
                         <button onClick={() => handleCopyToMyRoutines(routine)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 text-accent font-semibold hover:bg-accent/20 transition text-sm"><Copy size={16} /> Copiar</button>
                         <button onClick={() => handleStartWorkout(routine)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent text-bg-secondary font-semibold hover:scale-105 transition text-sm"><Play size={16} /> Empezar</button>
                       </div>
@@ -418,7 +419,7 @@ const TemplateRoutines = ({ setView }) => {
           })}
         </div>
       ) : (
-        <GlassCard className="text-center p-8 md:p-10">
+        <GlassCard className="text-center p-8 md:p-10 [.oled-theme_&]:border-white/10">
           <p className="text-text-muted mb-2">No se encontraron rutinas.</p>
           <button onClick={clearFilters} className="text-accent hover:underline text-sm font-medium">Limpiar filtros</button>
         </GlassCard>
