@@ -387,13 +387,15 @@ export default function SettingsScreen({
   const glassCardClass = "p-6 border-transparent dark:border dark:border-white/10";
 
   return (
-    <div className="px-4 pb-24 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    // CAMBIO: Añadido pt-6 para separar del borde superior en móvil
+    <div className="px-4 pt-6 pb-24 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
-      <div className="flex items-center justify-between mb-8 pt-4 md:pt-0">
-        <h1 className="hidden md:flex text-3xl md:text-4xl font-extrabold flex-1 text-left text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary mt-10 md:mt-0">
+      {/* CORRECCIÓN: Contenedor oculto en móvil (hidden md:flex) para evitar espacios y título degradado visible solo en escritorio */}
+      <div className="hidden md:flex items-center justify-between mb-8">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
           Ajustes
         </h1>
       </div>

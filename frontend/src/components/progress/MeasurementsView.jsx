@@ -56,7 +56,7 @@ const MeasurementsView = ({ axisColor }) => {
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-bg-secondary p-3 border border-glass-border rounded-lg shadow-xl">
+                <div className="bg-bg-secondary p-3 border border-transparent dark:border dark:border-white/10 rounded-lg shadow-xl">
                     <p className="text-text-primary font-bold">{new Date(label).toLocaleDateString()}</p>
                     <p className="text-accent">
                         {payload[0].value} cm
@@ -71,7 +71,7 @@ const MeasurementsView = ({ axisColor }) => {
         <div className="w-full flex flex-col items-center animate-fade-in gap-6">
 
             {/* Controles: Selector y Botón Añadir */}
-            <div className="flex flex-wrap justify-center gap-4 w-full max-w-2xl bg-bg-secondary/50 p-4 rounded-xl border border-glass-border backdrop-blur-sm">
+            <div className="flex flex-wrap justify-center gap-4 w-full max-w-2xl bg-bg-secondary/50 p-4 rounded-xl border border-transparent dark:border dark:border-white/10 backdrop-blur-sm">
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
                     {/* Reemplazado select nativo por CustomSelect */}
                     <div className="w-full sm:w-64 z-10">
@@ -94,7 +94,7 @@ const MeasurementsView = ({ axisColor }) => {
             </div>
 
             {/* Gráfico */}
-            <div className="w-full h-[300px] md:h-[400px] max-w-4xl bg-bg-secondary/30 rounded-2xl p-4 border border-glass-border shadow-sm backdrop-blur-sm relative z-0">
+            <div className="w-full h-[300px] md:h-[400px] max-w-4xl bg-bg-secondary/30 rounded-2xl p-4 border border-transparent dark:border dark:border-white/10 shadow-sm backdrop-blur-sm relative z-0">
                 <h3 className="text-center text-text-secondary text-sm mb-4 font-medium uppercase tracking-wider">Evolución de {MEASUREMENT_TYPES.find(t => t.value === selectedType)?.label}</h3>
 
                 {chartData.length > 0 ? (

@@ -1,6 +1,6 @@
 /* frontend/src/components/Sidebar.jsx */
 import React from 'react';
-import { Dumbbell, User, LogOut, Bell } from 'lucide-react';
+import { User, LogOut, Bell } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 
 const SidebarItem = ({ label, icon, isActive, onClick, badgeCount, isRed, shouldTruncate }) => (
@@ -38,17 +38,18 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL, hand
       return <img src={src} alt="Perfil" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />;
     }
     return (
-      <div className="w-6 h-6 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center flex-shrink-0">
+      <div className="w-6 h-6 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 flex items-center justify-center flex-shrink-0">
         <User size={16} className="text-text-secondary" />
       </div>
     );
   };
 
   return (
-    <nav className="hidden md:flex flex-col md:gap-4 lg:gap-10 md:p-4 lg:p-8 md:w-56 lg:w-64 h-full border-r border-[--glass-border] bg-[--glass-bg] backdrop-blur-glass overflow-y-auto scrollbar-hide">
+    <nav className="hidden md:flex flex-col md:gap-4 lg:gap-10 md:p-4 lg:p-8 md:w-56 lg:w-64 h-full border-r border-transparent dark:border-r dark:border-white/10 bg-[--glass-bg] backdrop-blur-glass overflow-y-auto scrollbar-hide">
       {/* Logo */}
-      <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 text-accent transition-transform hover:scale-105 flex-shrink-0">
-        <Dumbbell className="h-7 w-7 flex-shrink-0" />
+      <button onClick={() => navigate('dashboard')} className="flex items-center justify-center gap-3 transition-transform hover:scale-105 flex-shrink-0">
+        {/* CORRECCIÓN: Usar /logo.webp que es el que está en los metadatos del index.html */}
+        <img src="/logo.webp" alt="Logo" className="h-8 w-8 object-contain" />
         <h1 className="text-xl font-bold text-text-primary whitespace-nowrap">Pro Fitness Glass</h1>
       </button>
 
@@ -77,7 +78,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL, hand
           // No pasamos shouldTruncate, así que se queda como estaba (whitespace-nowrap)
         />
 
-        <div className="h-px bg-[--glass-border] my-2" />
+        <div className="h-px bg-black/5 dark:bg-white/10 my-2" />
 
         <SidebarItem
           label={userProfile?.username || 'Perfil'}

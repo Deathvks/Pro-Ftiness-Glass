@@ -449,7 +449,7 @@ const Routines = ({ setView }) => {
         {activeTab === 'myRoutines' && <CreateRoutineButton />}
       </div>
 
-      <div className="flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-glass-border w-fit mt-6 md:mt-0">
+      <div className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit mt-6 md:mt-0`}>
         <button
           onClick={() => setActiveTab('myRoutines')}
           className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses
@@ -482,7 +482,7 @@ const Routines = ({ setView }) => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar rutinas..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-secondary border border-[--glass-border] focus:outline-none focus:ring-2 focus:ring-accent/40"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-secondary border border-transparent dark:border dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent/40"
               />
             </div>
 
@@ -492,7 +492,7 @@ const Routines = ({ setView }) => {
                   onClick={() => setSelectedFolder('all')}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${selectedFolder === 'all'
                     ? 'bg-accent/20 border-accent text-accent'
-                    : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                    : 'bg-bg-secondary border-transparent dark:border-white/10 text-text-secondary hover:bg-white/5'
                     }`}
                 >
                   Todas
@@ -504,7 +504,7 @@ const Routines = ({ setView }) => {
                     onClick={() => setSelectedFolder(folder)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${selectedFolder === folder
                       ? 'bg-accent/20 border-accent text-accent'
-                      : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                      : 'bg-bg-secondary border-transparent dark:border-white/10 text-text-secondary hover:bg-white/5'
                       }`}
                   >
                     {selectedFolder === folder ? <FolderOpen size={14} /> : <Folder size={14} />}
@@ -516,7 +516,7 @@ const Routines = ({ setView }) => {
                   onClick={() => setSelectedFolder('uncategorized')}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${selectedFolder === 'uncategorized'
                     ? 'bg-accent/20 border-accent text-accent'
-                    : 'bg-bg-secondary border-transparent text-text-secondary hover:bg-white/5'
+                    : 'bg-bg-secondary border-transparent dark:border-white/10 text-text-secondary hover:bg-white/5'
                     }`}
                 >
                   Otros
@@ -539,7 +539,7 @@ const Routines = ({ setView }) => {
                 const imageSrc = routine.imageUrl || routine.image_url;
 
                 return (
-                  <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group relative">
+                  <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group relative border-transparent dark:border dark:border-white/10">
                     {imageSrc && (
                       <div className="h-32 sm:h-40 w-full relative shrink-0 overflow-hidden bg-bg-secondary">
                         {isCssBackground(imageSrc) ? (
@@ -558,7 +558,7 @@ const Routines = ({ setView }) => {
                         <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary/90 to-transparent opacity-60" />
                         {routine.folder && (
                           <div className="absolute top-2 right-2 z-20">
-                            <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-xs font-medium text-white border border-white/10 flex items-center gap-1">
+                            <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-xs font-medium text-white border border-transparent dark:border dark:border-white/10 flex items-center gap-1">
                               <Folder size={12} /> {routine.folder}
                             </span>
                           </div>
@@ -614,19 +614,21 @@ const Routines = ({ setView }) => {
                         </p>
                       )}
 
-                      <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-[--glass-border]">
+                      {/* --- MODIFICADO: Eliminados borders inferiores y de chips --- */}
+                      <div className="flex flex-wrap items-center gap-2 mb-4">
                         {isCompleted && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-bg-secondary text-xs font-semibold">
                             <CheckCircle size={12} /> Completada
                           </span>
                         )}
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-bg-secondary text-text-secondary text-xs font-medium border border-glass-border">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-bg-secondary text-text-secondary text-xs font-medium">
                           <Dumbbell size={12} /> {totalExercises} ejercicios
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-bg-secondary text-text-secondary text-xs font-medium border border-glass-border">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-bg-secondary text-text-secondary text-xs font-medium">
                           <CalendarClock size={12} /> {lastUsed ? new Date(lastUsed).toLocaleDateString('es-ES') : 'Sin uso'}
                         </span>
                       </div>
+                      {/* --- FIN MODIFICACIÓN --- */}
 
                       {exerciseGroups.length > 0 && (
                         <div className="mb-4">
@@ -662,7 +664,7 @@ const Routines = ({ setView }) => {
                           disabled={isCompleted || isActive || isLoading}
                           className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all
                           ${isCompleted || isActive
-                              ? 'bg-bg-secondary text-text-muted cursor-not-allowed border border-glass-border'
+                              ? 'bg-bg-secondary text-text-muted cursor-not-allowed border border-transparent dark:border dark:border-white/10'
                               : 'bg-accent text-bg-secondary hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-0.5'
                             }
                         `}
@@ -693,7 +695,7 @@ const Routines = ({ setView }) => {
               })
             ) : (
               <div className="lg:col-span-3 md:col-span-2">
-                <GlassCard className="text-center p-10">
+                <GlassCard className="text-center p-10 border-transparent dark:border dark:border-white/10">
                   <p className="text-text-muted">
                     {routines && routines.length > 0
                       ? `No hay rutinas en la carpeta "${selectedFolder === 'uncategorized' ? 'Otros' : selectedFolder}".`

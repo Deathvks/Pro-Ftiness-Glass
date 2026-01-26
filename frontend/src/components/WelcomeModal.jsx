@@ -4,7 +4,7 @@ import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
   Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
   Link, Smartphone, Image, Globe, Clock, Download, Footprints, MapPin,
-  Folder, Share2, ArrowUpRight, IceCream // <--- AÑADIDO IceCream
+  Folder, Share2, ArrowUpRight, IceCream
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -48,7 +48,7 @@ const WelcomeModal = ({ onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-[fade-in_0.3s_ease-out]">
 
       {/* Contenedor del Modal */}
-      <div className="relative w-full max-w-md bg-bg-primary border border-glass-border rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-md bg-bg-primary border border-transparent dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Decoración de fondo interna (SIN MORADOS) */}
         <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-accent/20 rounded-full blur-[100px] pointer-events-none"></div>
@@ -61,13 +61,16 @@ const WelcomeModal = ({ onClose }) => {
           <div className="text-center mb-8 flex flex-col items-center">
             <div className="mb-4 relative group">
               <div className="absolute inset-0 bg-accent/40 blur-xl rounded-full group-hover:bg-accent/60 transition-all duration-500"></div>
-              <div className="relative w-24 h-24 bg-gradient-to-br from-bg-secondary to-bg-primary rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500 border border-white/10">
+              
+              {/* Contenedor del Icono V5 */}
+              <div className="relative w-24 h-24 bg-gradient-to-br from-bg-secondary to-bg-primary rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500 border border-black/10 dark:border-white/10">
                 <span className="text-5xl font-black text-accent drop-shadow-lg">
                   v5
                 </span>
               </div>
-              {/* Badge "New" */}
-              <div className="absolute -top-2 -right-8 bg-gradient-to-r from-red-600 to-orange-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg animate-bounce z-20">
+              
+              {/* Badge "GRAN ACTUALIZACIÓN" - CORREGIDO: Color de acento + Sombra + Texto Blanco */}
+              <div className="absolute -top-3 -right-6 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg shadow-accent/40 animate-bounce z-20 whitespace-nowrap border border-white/20">
                 GRAN ACTUALIZACIÓN
               </div>
             </div>
@@ -83,27 +86,27 @@ const WelcomeModal = ({ onClose }) => {
           <div className="space-y-6 mb-8">
 
             {/* --- BLOQUE NUEVO: AZÚCAR (TOP) --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-pink-500/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-[#ec4899]/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
-                <IceCream size={16} className="text-pink-500" /> Nuevo: Control de Azúcar
+                <IceCream size={16} className="text-[#ec4899]" /> Nuevo: Control de Azúcar
               </h2>
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] bg-bg-primary/80 border border-glass-border rounded-xl p-3 shadow-lg flex items-center gap-4 group-hover:scale-[1.02] transition-transform duration-500">
+                <div className="relative w-full max-w-[260px] bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl p-3 shadow-lg flex items-center gap-4 group-hover:scale-[1.02] transition-transform duration-500">
                   {/* Donut Chart Simulado */}
                   <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                       <path className="text-bg-secondary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
-                      <path className="text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.6)]" strokeDasharray="70, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                      <path className="text-[#ec4899] drop-shadow-[0_0_4px_rgba(236,72,153,0.6)]" strokeDasharray="70, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
                     </svg>
-                    <IceCream size={14} className="absolute text-pink-500" />
+                    <IceCream size={14} className="absolute text-[#ec4899]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline mb-1">
                       <span className="text-xs font-bold text-text-primary">Azúcar</span>
-                      <span className="text-[10px] text-pink-500 font-mono">24g / 35g</span>
+                      <span className="text-[10px] text-[#ec4899] font-mono">24g / 35g</span>
                     </div>
                     <div className="w-full h-1.5 bg-bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full w-[70%] bg-pink-500 rounded-full shadow-[0_0_8px_rgba(236,72,153,0.4)]"></div>
+                      <div className="h-full w-[70%] bg-[#ec4899] rounded-full shadow-[0_0_8px_rgba(236,72,153,0.4)]"></div>
                     </div>
                   </div>
                 </div>
@@ -115,7 +118,7 @@ const WelcomeModal = ({ onClose }) => {
 
             {/* --- BLOQUE 0: APP NATIVA --- */}
             <a href={DOWNLOAD_URL} className="block no-underline transform transition-transform hover:scale-[1.02] active:scale-95">
-              <div className="bg-white/5 bg-gradient-to-br from-accent/10 to-transparent rounded-2xl p-5 backdrop-blur-sm shadow-lg shadow-accent/5 group relative overflow-hidden">
+              <div className="bg-bg-secondary bg-gradient-to-br from-accent/10 to-transparent rounded-2xl p-5 backdrop-blur-sm shadow-lg shadow-accent/5 group relative overflow-hidden border border-black/5 dark:border-white/10">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-bl-full -mr-10 -mt-10 blur-md"></div>
 
                 <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider relative z-10">
@@ -123,7 +126,7 @@ const WelcomeModal = ({ onClose }) => {
                 </h2>
 
                 <div className="flex justify-center relative z-10">
-                  <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/90 border border-glass-border rounded-xl flex items-center justify-center shadow-xl overflow-hidden">
+                  <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/90 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-center shadow-xl overflow-hidden">
                     <div className="flex items-center gap-5 relative z-10">
                       <div className="relative">
                         <div className="absolute inset-0 bg-accent rounded-full animate-ping opacity-20"></div>
@@ -147,14 +150,14 @@ const WelcomeModal = ({ onClose }) => {
             </a>
 
             {/* --- BLOQUE 1: EXPERIENCIA Y NIVELES --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Trophy size={16} className="text-accent" /> Experiencia y Niveles
               </h2>
 
               {/* MOCKUP DASHBOARD */}
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] bg-bg-primary/80 border border-glass-border rounded-2xl overflow-hidden shadow-2xl flex flex-col transition-all duration-1000 p-1 transform group-hover:scale-[1.02]">
+                <div className="relative w-full max-w-[260px] bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col transition-all duration-1000 p-1 transform group-hover:scale-[1.02]">
                   <div className="p-3 space-y-2 bg-bg-secondary/20 rounded-xl relative h-full flex flex-col justify-center">
                     {/* Stats Row */}
                     <div className="flex gap-2">
@@ -203,12 +206,12 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE NUEVO: CARDIO & GPS --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Footprints size={16} className="text-accent" /> Cardio & GPS
               </h2>
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
 
                   {/* Map Pattern Background */}
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#22c55e 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
@@ -247,12 +250,12 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE NUEVO: ORGANIZACIÓN POR CARPETAS --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Folder size={16} className="text-yellow-400" /> Carpetas de Rutinas
               </h2>
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center gap-3 shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500 px-4">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-center gap-3 shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500 px-4">
 
                   {/* Carpeta 1 */}
                   <div className="flex flex-col items-center gap-1 group/folder transition-transform hover:-translate-y-1">
@@ -264,13 +267,17 @@ const WelcomeModal = ({ onClose }) => {
 
                   {/* Carpeta 2 */}
                   <div className="flex flex-col items-center gap-1 group/folder transition-transform hover:-translate-y-1">
-                    <Folder size={32} className="text-blue-400 fill-blue-400/20" />
+                    <div className="relative">
+                      <Folder size={32} className="text-blue-400 fill-blue-400/20" />
+                    </div>
                     <div className="h-1.5 w-12 bg-white/20 rounded-full"></div>
                   </div>
 
                   {/* Carpeta 3 (Active) */}
                   <div className="flex flex-col items-center gap-1 group/folder transition-transform hover:-translate-y-1">
-                    <Folder size={32} className="text-accent fill-accent/20" />
+                    <div className="relative">
+                      <Folder size={32} className="text-accent fill-accent/20" />
+                    </div>
                     <div className="h-1.5 w-8 bg-accent/40 rounded-full"></div>
                   </div>
 
@@ -282,13 +289,13 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE 2: MAPA DE CALOR --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Flame size={16} className="text-orange-500" /> Mapa de Calor Muscular
               </h2>
 
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500 gap-6">
+                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500 gap-6">
 
                   {/* Silueta Abstracta */}
                   <div className="relative w-12 h-20 opacity-90">
@@ -326,13 +333,13 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE 3: LO SOCIAL --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Users size={16} className="text-accent" /> Modo Social
               </h2>
 
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-between px-6 shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-between px-6 shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
 
                   {/* Avatar YO */}
                   <div className="relative z-10 flex flex-col items-center gap-1">
@@ -381,19 +388,19 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE 4: SUPERSERIES --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Link size={16} className="text-accent" /> Superseries Pro
               </h2>
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
                   <div className="flex gap-2 items-center">
-                    <div className="bg-bg-secondary/30 p-2 rounded-lg border border-glass-border flex flex-col items-center w-16">
+                    <div className="bg-bg-secondary/30 p-2 rounded-lg border border-white/10 flex flex-col items-center w-16">
                       <div className="w-8 h-8 rounded bg-accent/20 text-accent flex items-center justify-center font-bold text-xs mb-1">A1</div>
                       <div className="h-1 w-8 bg-white/10 rounded"></div>
                     </div>
                     <div className="h-0.5 w-6 bg-accent/50"></div>
-                    <div className="bg-bg-secondary/30 p-2 rounded-lg border border-glass-border flex flex-col items-center w-16">
+                    <div className="bg-bg-secondary/30 p-2 rounded-lg border border-white/10 flex flex-col items-center w-16">
                       <div className="w-8 h-8 rounded bg-accent/20 text-accent flex items-center justify-center font-bold text-xs mb-1">A2</div>
                       <div className="h-1 w-8 bg-white/10 rounded"></div>
                     </div>
@@ -406,12 +413,12 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE 5: IMÁGENES --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Image size={16} className="text-accent" /> Portadas de Rutina
               </h2>
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-glass-border rounded-xl overflow-hidden shadow-lg group-hover:scale-[1.02] transition-transform duration-500">
+                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl overflow-hidden shadow-lg group-hover:scale-[1.02] transition-transform duration-500">
                   {/* Background simula imagen */}
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/40 via-purple-500/40 to-blue-500/40 opacity-80"></div>
                   {/* Contenido simula tarjeta de rutina */}
@@ -431,9 +438,9 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE NUEVO: COMPARTIR ENTRENAMIENTO --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
-                <Share2 size={16} className="text-pink-500" /> Comparte tu Logro
+                <Share2 size={16} className="text-[#ec4899]" /> Comparte tu Logro
               </h2>
               <div className="flex justify-center">
                 <div className="relative w-full max-w-[260px] h-28 bg-black border border-white/10 rounded-xl overflow-hidden shadow-lg group-hover:scale-[1.02] transition-transform duration-500 flex flex-col p-3">
@@ -465,12 +472,12 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE 6: VIBRACIÓN --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Smartphone size={16} className="text-accent" /> Feedback Háptico
               </h2>
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
                   <div className="relative">
                     <Smartphone size={32} className="text-text-primary relative z-10" />
                     <div className="absolute inset-0 bg-accent/20 rounded-full animate-ping blur-sm"></div>
@@ -485,12 +492,12 @@ const WelcomeModal = ({ onClose }) => {
             </div>
 
             {/* --- BLOQUE 7: ZONA HORARIA --- */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
               <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
                 <Globe size={16} className="text-accent" /> Zona Horaria
               </h2>
               <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-glass-border rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                <div className="relative w-full max-w-[260px] h-20 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
                   <div className="relative flex items-center justify-center">
                     {/* Globo Girando Lento */}
                     <Globe size={40} className="text-text-primary/20 animate-[spin_10s_linear_infinite]" />

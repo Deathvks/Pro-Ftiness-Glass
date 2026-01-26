@@ -66,7 +66,8 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
         left: `${position.left}px`,
         width: `${position.width}px`,
       }}
-      className="bg-bg-secondary border border-transparent dark:border-white/10 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[9999] p-2 animate-[fade-in-up_0.2s_ease_out]"
+      // CORRECCIÓN: Borde y fondo consistentes para el dropdown
+      className="bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[9999] p-2 animate-[fade-in-up_0.2s_ease_out]"
     >
       {options.map(option => (
         <button
@@ -95,14 +96,12 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         // CORRECCIÓN VISUAL:
-        // - Base: transparente.
-        // - Dark (normal): bg-white/5 y borde suave.
-        // - OLED ([.oled-theme_&]): FORZAMOS bg-transparent y quitamos el hover gris para que quede negro puro.
+        // - Usamos bg-bg-secondary siempre para tener fondo en Light y Dark/OLED.
+        // - Borde fino blanco en Dark/OLED.
         className={`
           w-full rounded-xl px-4 py-3 text-text-primary text-left outline-none transition flex items-center justify-between gap-2 
-          border border-transparent dark:border-white/10
-          bg-transparent dark:bg-white/5 hover:bg-bg-secondary
-          [.oled-theme_&]:bg-transparent [.oled-theme_&]:hover:bg-transparent
+          border border-transparent dark:border dark:border-white/10
+          bg-bg-secondary hover:bg-bg-secondary/80
         `}
         disabled={isOpen && position.top === 0}
       >

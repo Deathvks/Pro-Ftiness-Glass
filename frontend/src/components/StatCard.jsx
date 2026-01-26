@@ -2,12 +2,13 @@
 import React from 'react';
 import GlassCard from './GlassCard';
 
-const StatCard = ({ icon, title, value, unit, onClick }) => (
+const StatCard = ({ icon, title, value, unit, onClick, className = '' }) => (
   <GlassCard
     className={`
       relative overflow-hidden p-5 transition-all duration-300 hover:scale-[1.02] group h-full
       flex flex-col items-center justify-center text-center gap-3
       ${onClick ? 'cursor-pointer hover:bg-white/5' : ''}
+      ${className}
     `}
     onClick={onClick}
   >

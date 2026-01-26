@@ -15,7 +15,7 @@ export const CustomTooltip = ({ active, payload, label }) => {
             : 'Fecha desconocida';
 
         return (
-            <div className="p-3 bg-bg-secondary border border-glass-border rounded-md shadow-lg text-sm">
+            <div className="p-3 bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-md shadow-lg text-sm">
                 <p className="font-semibold text-text-secondary">Fecha: {formattedDate}</p>
                 {payload.map((p, i) => (
                     <p key={i} style={{ color: p.color }}>
@@ -33,7 +33,7 @@ export const CustomTooltip = ({ active, payload, label }) => {
 // Gráfico de Calorías y Macronutrientes
 export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
     <>
-        <GlassCard className="p-6">
+        <GlassCard className="p-6 border-transparent dark:border dark:border-white/10">
             <h2 className="text-xl font-bold mb-4">Consumo de Calorías</h2>
             {isLoading ? <div className="flex justify-center items-center h-[300px]"><Spinner/></div> :
             <ResponsiveContainer width="100%" height={300}>
@@ -52,7 +52,7 @@ export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
             }
         </GlassCard>
 
-         <GlassCard className="p-6">
+         <GlassCard className="p-6 border-transparent dark:border dark:border-white/10">
              <h2 className="text-xl font-bold mb-4">Resumen de Macros</h2>
              {isLoading ? <div className="flex justify-center items-center h-[300px]"><Spinner/></div> :
              <ResponsiveContainer width="100%" height={300}>
@@ -73,7 +73,7 @@ export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
              }
          </GlassCard>
 
-        <GlassCard className="p-6">
+        <GlassCard className="p-6 border-transparent dark:border dark:border-white/10">
             <h2 className="text-xl font-bold mb-4">Consumo de Agua</h2>
             {isLoading ? <div className="flex justify-center items-center h-[300px]"><Spinner/></div> :
             <ResponsiveContainer width="100%" height={300}>
@@ -96,7 +96,7 @@ export const NutritionCharts = ({ chartData, axisColor, isLoading }) => (
 
 // Gráfico de Progreso por Ejercicio
 export const ExerciseChart = ({ data, axisColor, exerciseName }) => (
-    <GlassCard className="p-6">
+    <GlassCard className="p-6 border-transparent dark:border dark:border-white/10">
         <h2 className="text-xl font-bold mb-4">Progresión de Fuerza (Último Mes)</h2>
         {data && data.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -157,7 +157,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => (
 
 // Gráfico de Evolución del Peso Corporal
 export const BodyWeightChart = ({ data, axisColor }) => (
-    <GlassCard className="p-6">
+    <GlassCard className="p-6 border-transparent dark:border dark:border-white/10">
         <h2 className="text-xl font-bold mb-4">Evolución del Peso</h2>
         <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>

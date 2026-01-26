@@ -283,9 +283,11 @@ const Dashboard = ({ setView }) => {
                 {levelData.progress} / {levelData.needed} XP
               </span>
             </div>
-            <div className="h-2.5 w-full sm:w-48 bg-bg-primary rounded-full overflow-hidden">
+            {/* --- INICIO MODIFICACIÓN: Borde en la barra de progreso --- */}
+            <div className="h-2.5 w-full sm:w-48 bg-bg-primary rounded-full overflow-hidden border border-black/5 dark:border-white/10">
               <div className="h-full bg-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]" style={{ width: `${levelData.percentage}%` }} />
             </div>
+            {/* --- FIN MODIFICACIÓN --- */}
           </div>
 
           <div className="flex flex-col items-center justify-center pl-6 border-l border-white/5 flex-shrink-0">
@@ -323,7 +325,7 @@ const Dashboard = ({ setView }) => {
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
                   <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all 
-                    ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-transparent dark:bg-bg-primary/50 text-transparent'}
+                  ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-transparent dark:bg-bg-primary/50 text-transparent'}
                   `}>
                     {hasWorkout && <Check size={10} strokeWidth={4} />}
                   </div>
@@ -488,7 +490,7 @@ const Dashboard = ({ setView }) => {
                 const isActive = activeWorkout && String(activeWorkout.routineId) === String(routine.id);
 
                 return (
-                  <div
+                  <GlassCard
                     key={routine.id}
                     onClick={async () => {
                       if (isActive) { setView('workout'); return; }
@@ -497,9 +499,9 @@ const Dashboard = ({ setView }) => {
                     className={`
                       group relative p-5 rounded-[1.5rem] transition-all cursor-pointer border-transparent dark:border dark:border-white/5
                       ${isActive
-                        ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-[1.02]'
+                        ? '!bg-accent !border-accent text-white shadow-lg shadow-accent/20 scale-[1.02]'
                         : isCompleted
-                          ? 'bg-transparent dark:bg-green-500/10 opacity-70 hover:opacity-100'
+                          ? '!bg-transparent dark:!bg-green-500/10 opacity-70 hover:opacity-100 !border-transparent'
                           : 'bg-bg-secondary/40 hover:bg-bg-secondary hover:shadow-md'
                       }
                     `}
@@ -509,8 +511,8 @@ const Dashboard = ({ setView }) => {
                         {/* ICONO RUTINA */}
                         <div className={`
                           w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors border-none
-                          ${isActive 
-                            ? 'bg-white/20' 
+                          ${isActive
+                            ? 'bg-white/20'
                             : 'bg-transparent dark:bg-white/5 dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent'
                           }
                         `}>
@@ -527,7 +529,7 @@ const Dashboard = ({ setView }) => {
                         <ChevronRight size={18} className="text-text-muted group-hover:text-accent transition-colors -mr-1" />
                       )}
                     </div>
-                  </div>
+                  </GlassCard>
                 );
               }) : (
                 <div className="p-8 rounded-[2rem] bg-bg-secondary/20 border border-dashed border-white/10 text-center flex flex-col items-center gap-3">

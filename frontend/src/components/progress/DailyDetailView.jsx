@@ -36,7 +36,7 @@ const DailyDetailView = ({ logs, onClose }) => {
   const [expandedMapPath, setExpandedMapPath] = useState(null);
 
   // Estilo de borde MUY sutil para modo oscuro/OLED.
-  const subtleBorderClass = 'border-white/10';
+  const subtleBorderClass = 'border-transparent dark:border-white/10';
 
   const handleDeleteClick = (log) => {
     setLogToDelete(log);

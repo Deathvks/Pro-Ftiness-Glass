@@ -55,7 +55,7 @@ const ExerciseView = ({ allExercises, exerciseProgressData, axisColor, onShowHis
         <button
           onClick={() => onShowHistory(selectedExercise)}
           disabled={!selectedExercise}
-          className="p-3 rounded-md bg-bg-secondary border border-glass-border text-text-secondary transition enabled:hover:text-accent enabled:hover:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-3 rounded-md bg-bg-secondary border border-transparent dark:border dark:border-white/10 text-text-secondary transition enabled:hover:text-accent enabled:hover:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
           title={tCommon('Ver historial detallado', { defaultValue: 'Ver historial detallado' })}>
           <BookOpen size={20} />
         </button>

@@ -70,7 +70,8 @@ const AndroidDownloadPrompt = () => {
 
     return (
         <div className="fixed bottom-4 left-4 right-4 z-[100] animate-[slide-in-up_0.5s_ease-out] flex justify-center">
-            <div className="bg-bg-secondary border border-glass-border shadow-xl rounded-2xl p-4 w-full max-w-md relative overflow-hidden">
+            {/* CORRECCIÓN: Borde actualizado para modo OLED/Dark */}
+            <div className="bg-bg-secondary border border-transparent dark:border dark:border-white/10 shadow-xl rounded-2xl p-4 w-full max-w-md relative overflow-hidden">
 
                 <button
                     onClick={handleDismiss}

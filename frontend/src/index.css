@@ -24,8 +24,9 @@
   --color-red: #ef4444;
   --color-neutral: #6b7280;
 
-  /* Glassmorphism */
-  --glass-border: rgba(255, 255, 255, 0.08);
+  /* Glassmorphism - GLOBAL DEFAULT (Darkish) */
+  /* AJUSTADO: Borde fino blanco (White/10) por defecto */
+  --glass-border: rgba(255, 255, 255, 0.1);
   --glass-bg: rgba(26, 35, 53, 0.55);
   --glass-highlight: rgba(255, 255, 255, 0.12);
   --glass-shadow-inner: rgba(0, 0, 0, 0.2);
@@ -40,7 +41,8 @@
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
 
-  --glass-border: rgba(255, 255, 255, 0.08);
+  /* AJUSTADO: Borde fino blanco (White/10) */
+  --glass-border: rgba(255, 255, 255, 0.1);
   --glass-bg: rgba(26, 35, 53, 0.55);
   --glass-highlight: rgba(255, 255, 255, 0.12);
   --glass-shadow-inner: rgba(0, 0, 0, 0.2);
@@ -53,6 +55,7 @@
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
 
+  /* RESTAURADO: Borde sutil oscuro original para modo claro */
   --glass-border: rgba(0, 0, 0, 0.09);
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-highlight: rgba(255, 255, 255, 0.4);
@@ -66,8 +69,8 @@
   --text-secondary: #a3a3a3;
   --text-muted: #525252;
 
-  /* AJUSTADO: Mayor contraste para bordes en fondo negro absoluto */
-  --glass-border: rgba(255, 255, 255, 0.25);
+  /* AJUSTADO: Borde fino blanco (White/10) para contraste sutil en negro */
+  --glass-border: rgba(255, 255, 255, 0.1);
   --glass-bg: #000000;
   --glass-highlight: rgba(255, 255, 255, 0.15);
   --glass-shadow-inner: none;

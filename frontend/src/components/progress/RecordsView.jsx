@@ -132,7 +132,7 @@ const RecordsView = () => {
             {records.map((record) => (
               <div 
                 key={record.id}
-                className="bg-bg-secondary rounded-lg p-4 shadow-sm border border-glass-border hover:shadow-md transition-shadow"
+                className="bg-bg-secondary rounded-lg p-4 shadow-sm border border-transparent dark:border dark:border-white/10 hover:shadow-md transition-shadow"
               >
                 <div className="flex flex-col xs:flex-row items-start xs:items-center xs:justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0 w-full xs:w-auto">
@@ -166,7 +166,7 @@ const RecordsView = () => {
               <button
                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg bg-bg-secondary text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent-transparent hover:text-accent transition border border-glass-border"
+                className="p-2 rounded-lg bg-bg-secondary text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent-transparent hover:text-accent transition border border-transparent dark:border dark:border-white/10"
               >
                 <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -178,7 +178,7 @@ const RecordsView = () => {
               <button
                 onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg bg-bg-secondary text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent-transparent hover:text-accent transition border border-glass-border"
+                className="p-2 rounded-lg bg-bg-secondary text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent-transparent hover:text-accent transition border border-transparent dark:border dark:border-white/10"
               >
                 <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>

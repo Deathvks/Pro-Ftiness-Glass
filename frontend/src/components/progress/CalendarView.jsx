@@ -1,3 +1,4 @@
+/* frontend/src/components/progress/CalendarView.jsx */
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import GlassCard from '../GlassCard';
@@ -59,7 +60,7 @@ const CalendarView = ({ setDetailedLog }) => {
     }
 
     return (
-        <GlassCard className="p-6 max-w-xl mx-auto">
+        <GlassCard className="p-6 max-w-xl mx-auto border-transparent dark:border dark:border-white/10">
             <div className="flex justify-between items-center mb-4">
                 <button onClick={() => setCalendarDate(d => new Date(d.setMonth(d.getMonth() - 1)))} className="p-2 rounded-full hover:bg-white/10"><ChevronLeft /></button>
                 <h2 className="text-xl font-bold capitalize">{monthName} {year}</h2>

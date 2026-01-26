@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import CustomSelect from '../components/CustomSelect';
 
-export default function ExerciseHistoryModal({ exercise, onClose }) {
+// CORRECCIÓN: Ahora aceptamos 'exerciseName' directamente (que es lo que envía Progress.jsx)
+// en lugar de esperar un objeto 'exercise'.
+export default function ExerciseHistoryModal({ exerciseName, onClose }) {
   const workoutLog = useAppStore((state) => state.workoutLog);
   const { t } = useTranslation('exercise_names');
   const { t: tCommon } = useTranslation('translation');
-
-  const exerciseName = exercise?.name;
 
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
@@ -111,7 +111,7 @@ export default function ExerciseHistoryModal({ exercise, onClose }) {
   }, [selectedYear, availableMonths]);
 
 
-  if (!exercise) return null;
+  if (!exerciseName) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4">
