@@ -91,7 +91,6 @@ const CalculatedMacros = ({ calories, protein, carbs, fats, sugars }) => (
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Prot</p><p className="font-semibold">{protein || 0} g</p></div>
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Carbs</p><p className="font-semibold">{carbs || 0} g</p></div>
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Grasas</p><p className="font-semibold">{fats || 0} g</p></div>
-        {/* CORRECCIÓN: Añadido campo de azúcar visual */}
         <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Azúcar</p><p className="font-semibold text-pink-500">{sugars || 0} g</p></div>
     </div>
 );
@@ -171,7 +170,6 @@ const ManualEntryForm = ({
                 protein_g: round((parseFloat(per100Data.protein_g) || 0) * factor),
                 carbs_g: round((parseFloat(per100Data.carbs_g) || 0) * factor),
                 fats_g: round((parseFloat(per100Data.fats_g) || 0) * factor),
-                // CORRECCIÓN: Cálculo de azúcar
                 sugars_g: round((parseFloat(per100Data.sugars_g) || 0) * factor),
             };
         } else {
@@ -180,7 +178,6 @@ const ManualEntryForm = ({
                 protein_g: round(formData.protein_g),
                 carbs_g: round(formData.carbs_g),
                 fats_g: round(formData.fats_g),
-                // CORRECCIÓN: Passthrough de azúcar
                 sugars_g: round(formData.sugars_g),
             };
         }
@@ -193,7 +190,6 @@ const ManualEntryForm = ({
             protein_g: calculatedMacros.protein_g,
             carbs_g: calculatedMacros.carbs_g,
             fats_g: calculatedMacros.fats_g,
-            // CORRECCIÓN: Incluir azúcar en los datos finales
             sugars_g: calculatedMacros.sugars_g,
             weight_g: formData.weight_g,
             image_url: formData.image_url,
@@ -213,13 +209,15 @@ const ManualEntryForm = ({
                 addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
                 return null;
             }
+            // AJUSTE: Permitimos 0 calorías, solo bloqueamos negativos
             if (isNaN(cal100) || cal100 < 0) {
-                addToast('Las calorías por 100g son obligatorias.', 'error');
+                addToast('Las calorías por 100g no pueden ser negativas.', 'error');
                 return null;
             }
         } else {
-            if (isNaN(calories) || calories <= 0) {
-                addToast('Las calorías deben ser mayores a 0.', 'error');
+            // AJUSTE: Permitimos 0 calorías (para cantidades pequeñas o bebidas dietéticas)
+            if (isNaN(calories) || calories < 0) {
+                addToast('Las calorías no pueden ser negativas.', 'error');
                 return null;
             }
             if (finalData.weight_g !== null && finalData.weight_g !== undefined && finalData.weight_g !== '' && (isNaN(weight) || weight <= 0)) {
@@ -250,7 +248,6 @@ const ManualEntryForm = ({
         protein_per_100g: isPer100g ? (parseFloat(per100Data.protein_g) || 0) : null,
         carbs_per_100g: isPer100g ? (parseFloat(per100Data.carbs_g) || 0) : null,
         fat_per_100g: isPer100g ? (parseFloat(per100Data.fats_g) || 0) : null,
-        // CORRECCIÓN: Campo de azúcar por 100g
         sugars_per_100g: isPer100g ? (parseFloat(per100Data.sugars_g) || 0) : null,
     });
 
@@ -343,7 +340,7 @@ const ManualEntryForm = ({
                         <InputField label="Carbs/100g" name="carbs_g" value={per100Data.carbs_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Grasas/100g" name="fats_g" value={per100Data.fats_g} onChange={handlePer100Change} inputMode="decimal" />
                     </div>
-                    {/* CORRECCIÓN: Campo input de azúcar por 100g */}
+                    
                     <div className="grid grid-cols-2 gap-4">
                          <InputField label="Azúcar/100g" name="sugars_g" value={per100Data.sugars_g} onChange={handlePer100Change} inputMode="decimal" />
                     </div>
@@ -377,7 +374,6 @@ const ManualEntryForm = ({
                         <InputField label="Proteínas (g)" name="protein_g" value={formData.protein_g} onChange={handleChange} inputMode="decimal" />
                         <InputField label="Carbs (g)" name="carbs_g" value={formData.carbs_g} onChange={handleChange} inputMode="decimal" />
                         <InputField label="Grasas (g)" name="fats_g" value={formData.fats_g} onChange={handleChange} inputMode="decimal" />
-                        {/* CORRECCIÓN: Campo input de azúcar */}
                         <InputField label="Azúcar (g)" name="sugars_g" value={formData.sugars_g} onChange={handleChange} inputMode="decimal" />
                     </div>
                 </>

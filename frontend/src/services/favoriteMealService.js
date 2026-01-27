@@ -19,6 +19,7 @@ export const createFavoriteMeal = (mealData) => {
     protein_g: mealData.protein_g,
     carbs_g: mealData.carbs_g,
     fats_g: mealData.fats_g,
+    sugars_g: mealData.sugars_g, // AÑADIDO
     weight_g: mealData.weight_g,
     image_url: mealData.image_url,
     micronutrients: mealData.micronutrients,
@@ -26,6 +27,7 @@ export const createFavoriteMeal = (mealData) => {
     protein_per_100g: mealData.protein_per_100g,
     carbs_per_100g: mealData.carbs_per_100g,
     fat_per_100g: mealData.fat_per_100g,
+    sugars_per_100g: mealData.sugars_per_100g, // AÑADIDO
   };
 
   return apiClient('/meals', {
@@ -48,6 +50,7 @@ export const updateFavoriteMeal = (mealId, mealData) => {
     protein_g: mealData.protein_g,
     carbs_g: mealData.carbs_g,
     fats_g: mealData.fats_g,
+    sugars_g: mealData.sugars_g, // AÑADIDO
     weight_g: mealData.weight_g,
     image_url: mealData.image_url,
     micronutrients: mealData.micronutrients,
@@ -55,6 +58,7 @@ export const updateFavoriteMeal = (mealId, mealData) => {
     protein_per_100g: mealData.protein_per_100g,
     carbs_per_100g: mealData.carbs_per_100g,
     fat_per_100g: mealData.fat_per_100g,
+    sugars_per_100g: mealData.sugars_per_100g, // AÑADIDO
   };
 
   return apiClient(`/meals/${mealId}`, {

@@ -57,6 +57,7 @@ export const useSaveActions = ({
       protein_g: parseFloat(item.protein_g) || 0,
       carbs_g: parseFloat(item.carbs_g) || 0,
       fats_g: parseFloat(item.fats_g || item.fat_g || item.fats || 0), // Soporte para variaciones de nombre
+      sugars_g: parseFloat(item.sugars_g || item.sugars || 0), // AÑADIDO: Azúcar
       weight_g: weight,
       image_url: item.image_url || null,
       micronutrients: item.micronutrients || null,
@@ -65,6 +66,7 @@ export const useSaveActions = ({
       protein_per_100g: getPer100(item.protein_per_100g, item.protein_g),
       carbs_per_100g: getPer100(item.carbs_per_100g, item.carbs_g),
       fat_per_100g: getPer100(item.fat_per_100g || item.fats_per_100g, item.fats_g || item.fat_g || item.fats),
+      sugars_per_100g: getPer100(item.sugars_per_100g, item.sugars_g || item.sugars), // AÑADIDO: Azúcar por 100g
     };
   };
   // --- FIN DE LA MODIFICACIÓN ---
@@ -126,6 +128,7 @@ export const useSaveActions = ({
         (parseFloat(originalData.protein_g) || 0) !== formData.protein_g ||
         (parseFloat(originalData.carbs_g) || 0) !== formData.carbs_g ||
         (parseFloat(originalData.fats_g) || 0) !== formData.fats_g ||
+        (parseFloat(originalData.sugars_g) || 0) !== formData.sugars_g || // AÑADIDO: Comprobación de cambio en azúcar
         (parseFloat(originalData.weight_g) || null) !== formData.weight_g ||
         originalData.image_url !== formData.image_url ||
         originalMicros !== newMicros;

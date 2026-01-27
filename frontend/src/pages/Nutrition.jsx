@@ -477,7 +477,8 @@ const Nutrition = ({ setView }) => {
                                         title="Azúcar" 
                                         value={totals.sugar.toFixed(1)} 
                                         unit={`/ ${sugarTarget} g`} 
-                                        className={isSugarHigh ? "border-red/30 bg-red/5" : "border-transparent dark:border dark:border-white/10"}
+                                        className={isSugarHigh ? "border-red shadow-[0_0_20px_rgba(239,68,68,0.3)] after:absolute after:inset-0 after:rounded-2xl after:border-2 after:border-red after:animate-pulse" : "border-transparent dark:border dark:border-white/10"}
+                                        type={isSugarHigh ? 'danger' : 'default'}
                                     />
                                 </div>
                             </div>
