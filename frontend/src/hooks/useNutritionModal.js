@@ -24,8 +24,6 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
 
   const { addToast } = useToast();
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Obtenemos nutritionLog y recentMeals para la sincronización de imágenes
   const {
     favoriteMeals,
     addFavoriteMeal,
@@ -41,7 +39,6 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     nutritionLog: state.nutritionLog,
     recentMeals: state.recentMeals || [],
   }));
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const [isDarkTheme] = useState(
     () =>
@@ -49,18 +46,13 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
       !document.body.classList.contains('light-theme')
   );
 
-  // --- HOOKS MODULARIZADOS ---
-
   const {
     isLoadingRecents,
-    filteredRecents: rawFilteredRecents, // Renombramos para procesar
-    paginatedFavorites: rawPaginatedFavorites, // Renombramos para procesar
+    filteredRecents: rawFilteredRecents,
+    paginatedFavorites: rawPaginatedFavorites,
     totalPages,
   } = useNutritionData(activeTab, favoriteMeals, searchTerm, favoritesPage);
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Lógica de "mapa de imágenes" para sincronizar la vista del modal 
-  // con las imágenes más recientes (mismo mecanismo que en Nutrition.jsx)
   const imageMap = useMemo(() => {
     const map = {};
     const mergeItems = (items) => {
@@ -85,7 +77,6 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     return map;
   }, [nutritionLog, favoriteMeals, recentMeals]);
 
-  // Función auxiliar para aplicar la mejor imagen a una lista de items
   const patchItemsWithImage = (items) => {
     if (!items) return [];
     return items.map(item => {
@@ -96,41 +87,37 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         return {
           ...item,
           image_url: bestImage.url,
-          updated_at: bestImage.timestamp // Pasamos el timestamp para el cache busting
+          updated_at: bestImage.timestamp
         };
       }
       return item;
     });
   };
 
-  // Listas con imágenes sincronizadas
   const filteredRecents = useMemo(() => patchItemsWithImage(rawFilteredRecents), [rawFilteredRecents, imageMap]);
   const paginatedFavorites = useMemo(() => patchItemsWithImage(rawPaginatedFavorites), [rawPaginatedFavorites, imageMap]);
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const {
     itemsToAdd,
     addModeType,
     setAddModeType,
-    handleAddManualItem, // Original
-    handleAddFavoriteItem, // Original
-    handleAddRecentItem, // Original
-    handleRemoveItem, // Original
+    handleAddManualItem,
+    handleAddFavoriteItem,
+    handleAddRecentItem,
+    handleRemoveItem,
     handleToggleFavorite,
     handleEditListItem,
-    handleSaveListItem, // Original
+    handleSaveListItem,
   } = useItemList({
     editingListItemId,
     setEditingListItemId,
     setEditingFavorite,
     setIsPer100g,
-    // Ya no pasamos resetManualForm aquí
   });
 
   // Determinamos el item a editar aquí, en el hook principal
   const itemToEdit = useMemo(() => {
     if (isEditingLog && logToEdit) {
-       // Normalizamos las propiedades para asegurar que el formulario reciba lo que espera (sugars_g)
       return {
         ...logToEdit,
         sugars_g: logToEdit.sugars_g ?? logToEdit.sugars ?? 0,
@@ -140,23 +127,34 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
       };
     }
     
-    // --- CORRECCIÓN: Cálculo consistente al editar favoritos ---
+    // --- CORRECCIÓN DEFINITIVA: Cálculo robusto al editar favoritos ---
     if (editingFavorite) {
-        // Si tenemos datos por 100g y un peso válido, recalculamos los totales 
-        // para asegurar que el formulario muestra lo correcto, aunque el total guardado sea 0 o erróneo.
         const { weight_g, calories_per_100g } = editingFavorite;
         
-        // Verificamos si vale la pena recalcular (si hay datos base)
-        if (weight_g > 0 && calories_per_100g !== null && calories_per_100g !== undefined) {
-            const factor = weight_g / 100;
+        // Convertimos a números para evitar problemas con strings "100" vs números 100
+        const weight = parseFloat(weight_g);
+        const cal100 = parseFloat(calories_per_100g);
+        
+        // Verificamos si vale la pena recalcular (si hay peso > 0 y datos por 100g válidos)
+        if (!isNaN(weight) && weight > 0 && !isNaN(cal100)) {
+            const factor = weight / 100;
+            
+            // Helper para obtener valor seguro de propiedades variantes (fat vs fats)
+            const getVal = (key1, key2) => {
+                const v1 = parseFloat(editingFavorite[key1]);
+                const v2 = parseFloat(editingFavorite[key2]);
+                return !isNaN(v1) ? v1 : (!isNaN(v2) ? v2 : 0);
+            };
+
             return {
                 ...editingFavorite,
                 // Recalculamos los totales basándonos en los 100g para garantizar consistencia matemática
-                calories: (editingFavorite.calories_per_100g || 0) * factor,
-                protein_g: (editingFavorite.protein_per_100g || 0) * factor,
-                carbs_g: (editingFavorite.carbs_per_100g || 0) * factor,
-                fats_g: (editingFavorite.fat_per_100g || 0) * factor,
-                sugars_g: (editingFavorite.sugars_per_100g || 0) * factor,
+                calories: cal100 * factor,
+                protein_g: getVal('protein_per_100g', 'proteins_per_100g') * factor,
+                carbs_g: getVal('carbs_per_100g', 'carb_per_100g') * factor,
+                // Aquí es donde solía fallar: chequeamos fat Y fats
+                fats_g: getVal('fat_per_100g', 'fats_per_100g') * factor,
+                sugars_g: getVal('sugars_per_100g', 'sugar_per_100g') * factor,
             };
         }
         return editingFavorite;
@@ -165,7 +163,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     if (editingListItemId) {
       return itemsToAdd.find((item) => item.tempId === editingListItemId);
     }
-    return null; // No hay nada que editar
+    return null;
   }, [
     isEditingLog,
     logToEdit,
@@ -182,7 +180,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     setOriginalData,
     resetManualForm,
   } = useManualForm({
-    itemToEdit, // Pasamos el item a editar directamente
+    itemToEdit,
     favoriteMeals,
     isPer100g,
     setIsPer100g,
@@ -203,7 +201,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     itemsToAdd,
     onSave,
     onClose,
-    resetManualForm, // Pasamos la función de reseteo
+    resetManualForm,
     setAddModeType,
     originalData,
     isEditingLog,
@@ -212,46 +210,37 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     setActiveTab,
     logToEdit,
     manualFormState,
-    // --- AÑADIDO: Pasamos isPer100g al action handler para guardar correctamente ---
     isPer100g 
   });
 
-  // --- LÓGICA DE CONEXIÓN (El Arreglo) ---
-  // Creamos funciones "mejoradas" que llaman a las originales
-  // y luego ejecutan la lógica de reseteo del formulario.
-
   const enhancedHandleAddManualItem = (item) => {
-    handleAddManualItem(item); // Llama al hook de lista
-    resetManualForm(); // Resetea el formulario (lógica movida aquí)
+    handleAddManualItem(item);
+    resetManualForm();
   };
 
   const enhancedHandleAddFavoriteItem = (item) => {
     handleAddFavoriteItem(item);
-    // No necesita resetear el formulario manual
   };
 
   const enhancedHandleAddRecentItem = (item) => {
     handleAddRecentItem(item);
-    // No necesita resetear el formulario manual
   };
 
   const enhancedHandleRemoveItem = (tempId) => {
     const isEditingThisItem = editingListItemId === tempId;
-    handleRemoveItem(tempId); // Llama al hook de lista
+    handleRemoveItem(tempId);
     if (isEditingThisItem) {
-      resetManualForm(); // Resetea el formulario si estábamos editando este item
+      resetManualForm();
     }
   };
 
   const enhancedHandleSaveListItem = (updatedItem) => {
-    const shouldSwitchTab = handleSaveListItem(updatedItem); // Llama al hook de lista
-    resetManualForm(); // Resetea el formulario
+    const shouldSwitchTab = handleSaveListItem(updatedItem);
+    resetManualForm();
     if (shouldSwitchTab) {
       setActiveTab('favorites');
     }
   };
-
-  // --- LÓGICA RESTANTE (Gestión de estado principal) ---
 
   useEffect(() => {
     setFavoritesPage(1);
@@ -304,7 +293,7 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     isLoadingRecents,
     totalPages,
     isDarkTheme,
-    // Handlers de useItemList (versiones mejoradas)
+    // Handlers
     handleAddManualItem: enhancedHandleAddManualItem,
     handleAddFavoriteItem: enhancedHandleAddFavoriteItem,
     handleAddRecentItem: enhancedHandleAddRecentItem,
@@ -312,15 +301,12 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     handleToggleFavorite,
     handleEditListItem,
     handleSaveListItem: enhancedHandleSaveListItem,
-    // Handlers de useSaveActions
     handleSaveList,
     handleSaveSingle,
     handleSaveEdit,
-    // Handlers de useScanAndUpload
     handleScanSuccess,
     handleImageUpload,
     isUploading,
-    // Handlers locales
     handleDeleteFavorite,
     confirmDeleteFavorite,
     handleEditFavorite,

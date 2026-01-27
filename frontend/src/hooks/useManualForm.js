@@ -10,6 +10,12 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
   const [baseMacros, setBaseMacros] = useState(null);
   const [originalData, setOriginalData] = useState(null);
 
+  // --- SOLUCIÓN: Detección de desincronización ---
+  // Detectamos si el formulario aún tiene datos viejos que no coinciden con el item que queremos editar.
+  // Si estamos editando (itemToEdit existe) y la descripción no coincide, bloqueamos los cálculos.
+  const targetDescription = itemToEdit ? (itemToEdit.description || itemToEdit.name || '') : null;
+  const isStateSyncing = itemToEdit && manualFormState.originalDescription !== targetDescription;
+
   const resetManualForm = useCallback(() => {
     setManualFormState({
       ...initialManualFormState,
@@ -31,6 +37,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
       const shouldBePer100g = hasPer100Data;
       
       // Sincronizar el estado del switch
+      // NOTA: Esto puede disparar re-renderizados, por eso el bloqueo 'isStateSyncing' es vital.
       setIsPer100g(shouldBePer100g);
 
       const originalDescription = itemToEdit.description || itemToEdit.name || '';
@@ -49,13 +56,13 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
         protein_g: round(itemToEdit.protein_g || 0, 1),
         carbs_g: round(itemToEdit.carbs_g || 0, 1),
         fats_g: round(getFats(itemToEdit), 1),
-        sugars_g: round(getSugars(itemToEdit), 1), // Asegurar valor
+        sugars_g: round(getSugars(itemToEdit), 1),
         weight_g: round(itemToEdit.weight_g || (shouldBePer100g ? 100 : ''), 1),
         image_url: itemToEdit.image_url || null,
         micronutrients: itemToEdit.micronutrients || null,
       };
 
-      // Inicializar per100Data asegurando azúcar
+      // Inicializar per100Data
       let per100Data = { ...initialManualFormState.per100Data };
       
       if (hasPer100Data) {
@@ -67,7 +74,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
           sugars_g: round(getSugarsPer100(itemToEdit), 1),
         };
 
-        // Recalcular totales si estamos en modo 100g
+        // Recalcular totales si estamos en modo 100g para asegurar consistencia matemática inicial
         if (shouldBePer100g) {
           const currentWeight = parseFloat(formData.weight_g) || 100;
           const factor = currentWeight / 100;
@@ -81,7 +88,6 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
           };
         }
       } else {
-        // Asegurar que per100Data tenga sugars_g a 0 si no existe, para evitar NaN en futuros cálculos
         if (per100Data.sugars_g === undefined) per100Data.sugars_g = 0;
       }
 
@@ -115,6 +121,9 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
 
   // Efecto para recalcular macros cuando cambia el peso Y NO estamos en modo por 100g
   useEffect(() => {
+    // BLOQUEO: Si estamos sincronizando el estado inicial, NO ejecutar cálculos
+    if (isStateSyncing) return;
+
     if (!isPer100g && baseMacros) {
       const newWeight = parseFloat(manualFormState.formData.weight_g) || 0;
       setManualFormState(prev => ({
@@ -129,10 +138,13 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
         }
       }));
     }
-  }, [manualFormState.formData.weight_g, baseMacros, isPer100g]);
+  }, [manualFormState.formData.weight_g, baseMacros, isPer100g, isStateSyncing]);
 
   // Efecto para recalcular macros cuando cambia el peso Y SÍ estamos en modo por 100g
   useEffect(() => {
+    // BLOQUEO: Si estamos sincronizando el estado inicial, NO ejecutar cálculos
+    if (isStateSyncing) return;
+
     if (isPer100g) {
       const weight = parseFloat(manualFormState.formData.weight_g) || 0;
       const factor = weight / 100;
@@ -148,7 +160,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
         }
       }));
     }
-  }, [manualFormState.formData.weight_g, manualFormState.per100Data, isPer100g]);
+  }, [manualFormState.formData.weight_g, manualFormState.per100Data, isPer100g, isStateSyncing]);
 
   return {
     manualFormState,
