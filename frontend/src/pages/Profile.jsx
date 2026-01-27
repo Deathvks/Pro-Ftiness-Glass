@@ -113,6 +113,15 @@ const Profile = ({ onCancel, setView, navigate }) => {
     setBadgePage(0);
   }, [itemsPerPage]);
 
+  // Limpieza de memoria para ObjectURLs al desmontar
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const openImageModal = () => {
     if (imagePreview) {
       setIsImageModalOpen(true);
@@ -153,16 +162,30 @@ const Profile = ({ onCancel, setView, navigate }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
+      // --- MODIFICACIÓN: Validación más robusta para Android ---
+      // A veces Android no reporta el MIME type correcto o lo deja vacío.
+      // Verificamos si empieza por 'image/' O si la extensión es válida.
+      const isValidType = file.type.startsWith('image/') || /\.(jpe?g|png|webp)$/i.test(file.name);
+
+      if (!isValidType) {
         addToast('Formato de imagen no válido (solo JPG, PNG, WebP).', 'error');
         return;
       }
-      if (file.size > 2 * 1024 * 1024) {
-        addToast('La imagen no debe pesar más de 2MB.', 'error');
+
+      // --- MODIFICACIÓN: Límite aumentado a 5MB ---
+      // Las fotos de cámara móvil suelen pesar más de 2MB.
+      if (file.size > 5 * 1024 * 1024) {
+        addToast('La imagen es demasiado grande (máx 5MB).', 'error');
         return;
       }
+
       setProfileImageFile(file);
+      
+      // Limpiamos la URL anterior si era un blob
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      
       setImagePreview(URL.createObjectURL(file));
     }
   };
@@ -190,16 +213,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
       }
     }
 
-    if (profileImageFile && profileImageFile.size > 2 * 1024 * 1024) {
-      newErrors.image = 'La imagen no debe pesar más de 2MB.';
+    if (profileImageFile && profileImageFile.size > 5 * 1024 * 1024) {
+      newErrors.image = 'La imagen no debe pesar más de 5MB.';
     }
-    if (
-      profileImageFile &&
-      !['image/jpeg', 'image/png', 'image/webp'].includes(profileImageFile.type)
-    ) {
-      newErrors.image = 'Solo imágenes JPG, PNG o WebP.';
-    }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -310,28 +327,28 @@ const Profile = ({ onCancel, setView, navigate }) => {
   // --- Helper para URL de imagen segura ---
   const getProcessedImageUrl = (url) => {
     if (!url) return null;
-    if (url.startsWith('blob:')) return url;
+    // Si es un Blob local (previsualización), devolverlo directo
+    if (typeof url === 'string' && url.startsWith('blob:')) return url;
 
     let finalUrl = url;
     // Si es ruta relativa, añadir backend
-    if (!finalUrl.startsWith('http')) {
+    if (typeof finalUrl === 'string' && !finalUrl.startsWith('http')) {
       // Aseguramos que no haya doble slash si BACKEND_BASE_URL termina en /
       const separator = finalUrl.startsWith('/') ? '' : '/';
       finalUrl = `${BACKEND_BASE_URL}${separator}${finalUrl}`;
     }
 
     // Forzar HTTPS para URLs externas (Google, etc) si no estamos en localhost
-    const isLocalhost = finalUrl.includes('localhost') || finalUrl.includes('127.0.0.1');
-    if (!isLocalhost && finalUrl.startsWith('http:')) {
+    const isLocalhost = typeof finalUrl === 'string' && (finalUrl.includes('localhost') || finalUrl.includes('127.0.0.1'));
+    if (!isLocalhost && typeof finalUrl === 'string' && finalUrl.startsWith('http:')) {
       finalUrl = finalUrl.replace('http:', 'https:');
     }
 
     return finalUrl;
   };
 
-  // --- MODIFICADO: Eliminados focus:ring-accent/50 y focus:ring-2 para quitar el borde azul/doble ---
   const baseInputClasses =
-    'w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent outline-none transition';
+    'w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition';
 
   return (
     <>
