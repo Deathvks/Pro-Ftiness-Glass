@@ -28,6 +28,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    // Mantenemos esto porque reduce el peso de las imágenes sin romper el código
     ViteImageOptimizer({
       test: /\.(jpe?g|png|gif|tiff|webp|svg|avif)$/i,
       svg: {
@@ -37,7 +38,7 @@ export default defineConfig({
             name: 'preset-default',
             params: {
               overrides: {
-                // Configuración segura para SVGO
+                // Configuración por defecto
               },
             },
           },
@@ -112,42 +113,8 @@ export default defineConfig({
   ],
   build: {
     sourcemap: false,
-    chunkSizeWarningLimit: 1000,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            // 1. ICONOS: Aislamos Lucide y React Icons (Evita el error 'Activity' anterior)
-            if (id.includes('lucide') || id.includes('react-icons') || id.includes('heroicons')) {
-              return 'icons';
-            }
-
-            // 2. REACT CORE: Detección estricta
-            if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/react-router-dom/')) {
-              return 'react-vendor';
-            }
-
-            // 3. LIBRERÍAS PESADAS
-            if (id.includes('@mui') || id.includes('@emotion')) {
-              return 'mui-libs';
-            }
-            if (id.includes('recharts')) {
-              return 'recharts';
-            }
-            if (id.includes('html5-qrcode')) {
-              return 'scanner';
-            }
-            if (id.includes('remotion')) {
-              return 'remotion-libs';
-            }
-
-            // NOTA: Hemos eliminado el bloque de 'maps'. 
-            // Leaflet y react-leaflet caerán ahora en 'vendor', asegurando que 
-            // react-leaflet pueda encontrar el contexto de React sin errores.
-            return 'vendor';
-          }
-        }
-      }
-    },
+    chunkSizeWarningLimit: 1500, // Subimos el límite para que no avise, ya que haremos un solo bundle grande
+    // Hemos eliminado 'rollupOptions' con 'manualChunks'. 
+    // Dejamos que Vite decida cómo dividir el código, que es lo más seguro.
   },
 });
