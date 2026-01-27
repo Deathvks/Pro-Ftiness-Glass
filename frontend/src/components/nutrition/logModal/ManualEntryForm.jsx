@@ -209,13 +209,11 @@ const ManualEntryForm = ({
                 addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
                 return null;
             }
-            // AJUSTE: Permitimos 0 calorías, solo bloqueamos negativos
             if (isNaN(cal100) || cal100 < 0) {
                 addToast('Las calorías por 100g no pueden ser negativas.', 'error');
                 return null;
             }
         } else {
-            // AJUSTE: Permitimos 0 calorías (para cantidades pequeñas o bebidas dietéticas)
             if (isNaN(calories) || calories < 0) {
                 addToast('Las calorías no pueden ser negativas.', 'error');
                 return null;
@@ -321,16 +319,15 @@ const ManualEntryForm = ({
                 isUploading={isUploading}
             />
 
-            {!editingFavorite && (
-                <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-text-secondary">Valores por 100g</label>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={isPer100g} onChange={(e) => setIsPer100g(e.target.checked)} />
-                        <div className="w-10 h-6 bg-bg-primary rounded-full border border-glass-border peer-checked:bg-accent transition-colors"></div>
-                        <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4"></div>
-                    </label>
-                </div>
-            )}
+            {/* --- MODIFICACIÓN: Mostrar siempre el interruptor, incluso al editar favoritos --- */}
+            <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-text-secondary">Valores por 100g</label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={isPer100g} onChange={(e) => setIsPer100g(e.target.checked)} />
+                    <div className="w-10 h-6 bg-bg-primary rounded-full border border-glass-border peer-checked:bg-accent transition-colors"></div>
+                    <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4"></div>
+                </label>
+            </div>
 
             {isPer100g ? (
                 <>

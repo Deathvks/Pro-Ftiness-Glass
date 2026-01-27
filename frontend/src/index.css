@@ -238,6 +238,8 @@
     @apply text-text-primary;
   }
 
+  /* --- GLOBAL INPUT OVERRIDES --- */
+  /* Eliminamos el anillo/glow azul por defecto o de Tailwind y forzamos solo el borde de acento */
   input:focus,
   textarea:focus,
   select:focus,
@@ -249,8 +251,15 @@
     @apply outline-none;
   }
 
+  input:focus,
+  textarea:focus,
+  select:focus {
+    box-shadow: none !important; /* Elimina el anillo "azul" o doble borde */
+    border-color: var(--color-accent) !important; /* Fuerza el color de acento */
+    outline: none !important;
+  }
+
   /* --- GLASSMORPHISM UNIVERSAL --- */
-  /* Aplicamos estilos base a las utilidades de BG y a la clase .glass */
   .glass,
   .bg-glass-bg,
   .bg-\[--glass-bg\] {

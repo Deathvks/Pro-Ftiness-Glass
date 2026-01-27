@@ -139,7 +139,29 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
         fats_g: logToEdit.fats_g ?? logToEdit.fats ?? logToEdit.fat ?? 0,
       };
     }
-    if (editingFavorite) return editingFavorite;
+    
+    // --- CORRECCIÓN: Cálculo consistente al editar favoritos ---
+    if (editingFavorite) {
+        // Si tenemos datos por 100g y un peso válido, recalculamos los totales 
+        // para asegurar que el formulario muestra lo correcto, aunque el total guardado sea 0 o erróneo.
+        const { weight_g, calories_per_100g } = editingFavorite;
+        
+        // Verificamos si vale la pena recalcular (si hay datos base)
+        if (weight_g > 0 && calories_per_100g !== null && calories_per_100g !== undefined) {
+            const factor = weight_g / 100;
+            return {
+                ...editingFavorite,
+                // Recalculamos los totales basándonos en los 100g para garantizar consistencia matemática
+                calories: (editingFavorite.calories_per_100g || 0) * factor,
+                protein_g: (editingFavorite.protein_per_100g || 0) * factor,
+                carbs_g: (editingFavorite.carbs_per_100g || 0) * factor,
+                fats_g: (editingFavorite.fat_per_100g || 0) * factor,
+                sugars_g: (editingFavorite.sugars_per_100g || 0) * factor,
+            };
+        }
+        return editingFavorite;
+    }
+
     if (editingListItemId) {
       return itemsToAdd.find((item) => item.tempId === editingListItemId);
     }
@@ -190,6 +212,8 @@ export const useNutritionModal = ({ mealType, onSave, onClose, logToEdit }) => {
     setActiveTab,
     logToEdit,
     manualFormState,
+    // --- AÑADIDO: Pasamos isPer100g al action handler para guardar correctamente ---
+    isPer100g 
   });
 
   // --- LÓGICA DE CONEXIÓN (El Arreglo) ---

@@ -6,8 +6,9 @@ import { Capacitor } from '@capacitor/core';
 const AndroidDownloadPrompt = () => {
     const [isVisible, setIsVisible] = useState(false);
     
-    // URL por defecto (fallback) por si falla la carga dinámica
-    const [downloadUrl, setDownloadUrl] = useState("https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk");
+    // Iniciamos en null para depender estrictamente del version.json
+    // Si no carga el JSON, no mostramos nada (evitamos enlaces rotos o viejos)
+    const [downloadUrl, setDownloadUrl] = useState(null);
 
     // Configuración: Días de espera antes de volver a mostrar
     const DAYS_TO_WAIT = 5;
@@ -15,19 +16,6 @@ const AndroidDownloadPrompt = () => {
 
     useEffect(() => {
         const initPrompt = async () => {
-            // 0. Intentar obtener la URL dinámica desde version.json
-            try {
-                const response = await fetch(`/version.json?t=${Date.now()}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.downloadUrl) {
-                        setDownloadUrl(data.downloadUrl);
-                    }
-                }
-            } catch (error) {
-                console.warn("No se pudo cargar la configuración de versión dinámica", error);
-            }
-
             // 1. Si ya estamos en modo nativo (la app instalada), no mostrar nada.
             if (Capacitor.isNativePlatform()) return;
 
@@ -50,8 +38,21 @@ const AndroidDownloadPrompt = () => {
                 }
             }
 
-            // Si pasa todas las pruebas, mostrar con pequeño delay
-            setTimeout(() => setIsVisible(true), 2000);
+            // 4. Obtener URL desde version.json (Fuente única de verdad)
+            try {
+                // Usamos ruta relativa porque este componente corre en la web/PWA
+                const response = await fetch(`/version.json?t=${Date.now()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.downloadUrl) {
+                        setDownloadUrl(data.downloadUrl);
+                        // Solo mostramos el prompt si hemos conseguido una URL válida
+                        setTimeout(() => setIsVisible(true), 2000);
+                    }
+                }
+            } catch (error) {
+                console.warn("No se pudo cargar la configuración de versión dinámica", error);
+            }
         };
 
         initPrompt();
@@ -66,7 +67,7 @@ const AndroidDownloadPrompt = () => {
         localStorage.setItem(STORAGE_KEY, new Date().toISOString());
     };
 
-    if (!isVisible) return null;
+    if (!isVisible || !downloadUrl) return null;
 
     return (
         <div className="fixed bottom-4 left-4 right-4 z-[100] animate-[slide-in-up_0.5s_ease-out] flex justify-center">

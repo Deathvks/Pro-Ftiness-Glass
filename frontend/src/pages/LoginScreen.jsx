@@ -8,7 +8,6 @@ import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import GoogleTermsModal from '../components/GoogleTermsModal';
 import PrivacyPolicy from './PrivacyPolicy';
-// --- MODIFICACIÓN: Usamos el hook useGoogleLogin ---
 import { useGoogleLogin } from '@react-oauth/google';
 import { resend2FACode } from '../services/authService';
 
@@ -282,11 +281,13 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                             {errors.api && <p className="text-center text-red">{errors.api}</p>}
                             <div>
-                                <input type="email" placeholder="Email" className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition" value={email} onChange={(e) => setEmail(e.target.value)} />
+                                {/* MODIFICADO: Eliminado focus:ring-accent/50 focus:ring-2 */}
+                                <input type="email" placeholder="Email" className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent outline-none transition" value={email} onChange={(e) => setEmail(e.target.value)} />
                                 {errors.email && <p className="form-error-text text-left">{errors.email}</p>}
                             </div>
                             <div>
-                                <input type="password" placeholder="Contraseña" className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition" value={password} onChange={(e) => setPassword(e.target.value)} />
+                                {/* MODIFICADO: Eliminado focus:ring-accent/50 focus:ring-2 */}
+                                <input type="password" placeholder="Contraseña" className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent outline-none transition" value={password} onChange={(e) => setPassword(e.target.value)} />
                                 {errors.password && <p className="form-error-text text-left">{errors.password}</p>}
                             </div>
                             <button type="submit" disabled={isLoading} className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70 disabled:cursor-not-allowed">

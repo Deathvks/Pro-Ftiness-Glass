@@ -47,6 +47,7 @@ const UserAvatar = ({ user, size = 10, className = "" }) => {
                     className="w-full h-full object-cover"
                     onError={() => setError(true)}
                     loading="lazy"
+                    referrerPolicy="no-referrer"
                 />
             ) : (
                 <User

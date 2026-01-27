@@ -307,8 +307,31 @@ const Profile = ({ onCancel, setView, navigate }) => {
     }
   };
 
+  // --- Helper para URL de imagen segura ---
+  const getProcessedImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('blob:')) return url;
+
+    let finalUrl = url;
+    // Si es ruta relativa, añadir backend
+    if (!finalUrl.startsWith('http')) {
+      // Aseguramos que no haya doble slash si BACKEND_BASE_URL termina en /
+      const separator = finalUrl.startsWith('/') ? '' : '/';
+      finalUrl = `${BACKEND_BASE_URL}${separator}${finalUrl}`;
+    }
+
+    // Forzar HTTPS para URLs externas (Google, etc) si no estamos en localhost
+    const isLocalhost = finalUrl.includes('localhost') || finalUrl.includes('127.0.0.1');
+    if (!isLocalhost && finalUrl.startsWith('http:')) {
+      finalUrl = finalUrl.replace('http:', 'https:');
+    }
+
+    return finalUrl;
+  };
+
+  // --- MODIFICADO: Eliminados focus:ring-accent/50 y focus:ring-2 para quitar el borde azul/doble ---
   const baseInputClasses =
-    'w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition';
+    'w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent outline-none transition';
 
   return (
     <>
@@ -352,14 +375,15 @@ const Profile = ({ onCancel, setView, navigate }) => {
               >
                 {imagePreview ? (
                   <img
-                    src={
-                      imagePreview.startsWith('blob:') ||
-                        imagePreview.startsWith('http')
-                        ? imagePreview
-                        : `${BACKEND_BASE_URL}${imagePreview}`
-                    }
+                    src={getProcessedImageUrl(imagePreview)}
                     alt={`Foto de perfil de ${formData.username || 'usuario'}`}
                     className="w-32 h-32 rounded-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                       // Fallback simple si falla
+                       e.target.onerror = null; 
+                       // Podríamos poner una imagen placeholder aquí si quisiéramos
+                    }}
                   />
                 ) : (
                   <div className="w-32 h-32 rounded-full bg-bg-secondary flex items-center justify-center border border-glass-border">
@@ -641,12 +665,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
 
       {isImageModalOpen && (
         <ProfileImageModal
-          imageUrl={
-            imagePreview?.startsWith('blob:') ||
-              imagePreview?.startsWith('http')
-              ? imagePreview
-              : `${BACKEND_BASE_URL}${imagePreview}`
-          }
+          imageUrl={getProcessedImageUrl(imagePreview)}
           username={formData.username}
           onClose={() => setIsImageModalOpen(false)}
         />

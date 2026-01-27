@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "5.4.6",
+  "version": "5.4.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,11 +12,11 @@
     "start": "serve -s dist"
   },
   "dependencies": {
-    "@capgo/capacitor-navigation-bar": "^7.0.0",
     "@capacitor/android": "^6.0.0",
     "@capacitor/core": "^6.0.0",
     "@capacitor/geolocation": "^6.0.0",
     "@capacitor/status-bar": "^6.0.0",
+    "@capgo/capacitor-navigation-bar": "^7.0.0",
     "@headlessui/react": "^2.2.9",
     "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
@@ -59,8 +59,12 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "postcss": "^8.5.6",
+    "rollup-plugin-visualizer": "^5.12.0",
+    "sharp": "^0.33.2",
+    "svgo": "^4.0.0",
     "tailwindcss": "^3.4.17",
     "vite": "^7.0.4",
+    "vite-plugin-image-optimizer": "^1.1.8",
     "vite-plugin-pwa": "^1.0.3",
     "vite-plugin-sitemap": "^0.8.2",
     "workbox-background-sync": "^7.4.0"
