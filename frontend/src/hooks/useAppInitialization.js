@@ -29,7 +29,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     fetchInitialData,
     checkWelcomeModal,
     fetchDataForDate,
-    checkCookieConsent, // --- AÑADIDO: Acción para sincronizar cookies
+    checkCookieConsent,
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -37,11 +37,10 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     fetchInitialData: state.fetchInitialData,
     checkWelcomeModal: state.checkWelcomeModal,
     fetchDataForDate: state.fetchDataForDate,
-    checkCookieConsent: state.checkCookieConsent, // --- AÑADIDO
+    checkCookieConsent: state.checkCookieConsent,
   }));
 
   // Efecto 0: Sincronizar estado de cookies al montar el hook (inicio de la app)
-  // Esto asegura que el banner se muestre o no correctamente según localStorage
   useEffect(() => {
     checkCookieConsent();
   }, [checkCookieConsent]);
@@ -60,8 +59,6 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         targetView = 'workout'; 
       } else {
         const lastView = localStorage.getItem('lastView');
-        // Verificación de seguridad: si hay lastView pero el usuario no tiene objetivo (nuevo usuario),
-        // la lógica en App.jsx se encargará de mostrar Onboarding, aquí solo definimos el target por defecto.
         if (lastView && loadedUserProfile?.goal) {
           if (lastView === 'adminPanel' && loadedUserProfile?.role !== 'admin') {
             targetView = 'dashboard'; 
@@ -80,20 +77,23 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     } else {
       setIsInitialLoad(false); // Si no está auth, solo marcar la carga como completada
     }
-  }, [isAuthenticated, fetchInitialData, setView]); // Dependencias
+  }, [isAuthenticated, fetchInitialData, setView]); 
 
   // Efecto 2: Comprobar verificación de email y modal de bienvenida
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
-      // CORRECCIÓN: Esperar a que termine la carga inicial para verificar el estado del email.
-      // Esto evita que se muestre el modal si el userProfile inicial (del login) viene incompleto.
+      // Esperar a que termine la carga inicial para verificar el estado del email.
       if (!isInitialLoad) {
-        // Comprobar si el email está verificado
-        if (!userProfile.is_verified) {
+        // CORRECCIÓN: Comprobación estricta para evitar el parpadeo.
+        // Solo mostramos el modal si el campo existe y es explícitamente false.
+        // Si es undefined (aún no cargado del todo), asumimos que está bien por ahora.
+        const isVerifiedDefined = userProfile.is_verified !== undefined && userProfile.is_verified !== null;
+        
+        if (isVerifiedDefined && userProfile.is_verified === false) {
           setShowEmailVerificationModal(true);
           setVerificationEmail(userProfile.email);
         } else {
-          // Si ya está verificado, aseguramos que el modal esté cerrado (por si se activó antes)
+          // Si es true, o undefined, aseguramos que el modal esté cerrado
           setShowEmailVerificationModal(false);
         }
         
@@ -121,7 +121,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     handleUrlChange(); // Comprobar al cargar
     window.addEventListener('popstate', handleUrlChange); // Escuchar cambios de historial
     return () => window.removeEventListener('popstate', handleUrlChange);
-  }, [isAuthenticated, setAuthView]); // Dependencias
+  }, [isAuthenticated, setAuthView]); 
 
   // Retornar los estados y setters que App.jsx necesitará
   return {
