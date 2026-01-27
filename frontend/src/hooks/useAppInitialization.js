@@ -85,14 +85,20 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
   // Efecto 2: Comprobar verificación de email y modal de bienvenida
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
-      // Comprobar si el email está verificado
-      if (!userProfile.is_verified) {
-        setShowEmailVerificationModal(true);
-        setVerificationEmail(userProfile.email);
-      }
-      // Comprobar si se debe mostrar el modal de bienvenida
-      if (!isInitialLoad) { 
-          checkWelcomeModal();
+      // CORRECCIÓN: Esperar a que termine la carga inicial para verificar el estado del email.
+      // Esto evita que se muestre el modal si el userProfile inicial (del login) viene incompleto.
+      if (!isInitialLoad) {
+        // Comprobar si el email está verificado
+        if (!userProfile.is_verified) {
+          setShowEmailVerificationModal(true);
+          setVerificationEmail(userProfile.email);
+        } else {
+          // Si ya está verificado, aseguramos que el modal esté cerrado (por si se activó antes)
+          setShowEmailVerificationModal(false);
+        }
+        
+        // Comprobar si se debe mostrar el modal de bienvenida
+        checkWelcomeModal();
       }
     }
   }, [isAuthenticated, userProfile, isLoading, checkWelcomeModal, isInitialLoad]);
