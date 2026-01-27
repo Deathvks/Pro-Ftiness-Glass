@@ -117,23 +117,17 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // 1. MAPAS: Agrupamos leaflet y react-leaflet juntos para evitar roturas
-            if (id.includes('leaflet')) {
-              return 'maps';
-            }
-            
-            // 2. ICONOS: Aislamos Lucide y React Icons (Aquí estaba el fallo de 'Activity')
-            // Al ponerlos aparte, evitamos conflictos de inicialización con React Core
+            // 1. ICONOS: Aislamos Lucide y React Icons (Evita el error 'Activity' anterior)
             if (id.includes('lucide') || id.includes('react-icons') || id.includes('heroicons')) {
               return 'icons';
             }
 
-            // 3. REACT CORE: Detección estricta para no atrapar otras librerías
+            // 2. REACT CORE: Detección estricta
             if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/react-router-dom/')) {
               return 'react-vendor';
             }
 
-            // 4. LIBRERÍAS PESADAS: Separación estándar
+            // 3. LIBRERÍAS PESADAS
             if (id.includes('@mui') || id.includes('@emotion')) {
               return 'mui-libs';
             }
@@ -147,7 +141,9 @@ export default defineConfig({
               return 'remotion-libs';
             }
 
-            // 5. RESTO
+            // NOTA: Hemos eliminado el bloque de 'maps'. 
+            // Leaflet y react-leaflet caerán ahora en 'vendor', asegurando que 
+            // react-leaflet pueda encontrar el contexto de React sin errores.
             return 'vendor';
           }
         }
