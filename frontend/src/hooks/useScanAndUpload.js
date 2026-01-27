@@ -47,7 +47,9 @@ export const useScanAndUpload = ({
       const calories100g = getNutrientValue(nutriments, ['energy-kcal_100g', 'energy_100g'], 1) || getNutrientValue(nutriments, ['energy-kj_100g'], 1 / 4.184);
       const protein100g = getNutrientValue(nutriments, ['proteins_100g']);
       const carbs100g = getNutrientValue(nutriments, ['carbohydrates_100g']);
-      const fat100g = getNutrientValue(nutriments, ['fat_100g', 'fats_100g']); // <- CORREGIDO: Se buscaba 'fats_100g' también
+      const fat100g = getNutrientValue(nutriments, ['fat_100g', 'fats_100g']);
+      // --- AÑADIDO: Extracción de azúcar ---
+      const sugars100g = getNutrientValue(nutriments, ['sugars_100g', 'sugar_100g']);
 
       const hasUsefulData = productName !== 'Producto escaneado' || calories100g > 0 || protein100g > 0 || carbs100g > 0 || fat100g > 0;
 
@@ -66,10 +68,11 @@ export const useScanAndUpload = ({
       const servingCalories = getNutrientValue(nutriments, ['energy-kcal_serving', 'energy_serving'], 1) || getNutrientValue(nutriments, ['energy-kj_serving'], 1 / 4.184);
       const servingProtein = getNutrientValue(nutriments, ['proteins_serving']);
       const servingCarbs = getNutrientValue(nutriments, ['carbohydrates_serving']);
-      const servingFat = getNutrientValue(nutriments, ['fat_serving', 'fats_serving']); // <- CORREGIDO: Se buscaba 'fats_serving' también
-      const servingWeight = parseFloat(product.serving_quantity) || 100; // <- Usar product.serving_quantity
+      const servingFat = getNutrientValue(nutriments, ['fat_serving', 'fats_serving']);
+      // --- AÑADIDO: Azúcar por ración ---
+      const servingSugars = getNutrientValue(nutriments, ['sugars_serving', 'sugar_serving']);
+      const servingWeight = parseFloat(product.serving_quantity) || 100;
 
-      // --- INICIO DE LA MODIFICACIÓN ---
       // Calcular los macros para el peso por defecto (servingWeight) usando los datos por 100g
       const defaultWeight = servingWeight;
       const factor = defaultWeight / 100;
@@ -77,7 +80,8 @@ export const useScanAndUpload = ({
           calories: round(calories100g * factor, 0),
           protein_g: round(protein100g * factor, 1),
           carbs_g: round(carbs100g * factor, 1),
-          fats_g: round(fat100g * factor, 1), // Corregido a fats_g
+          fats_g: round(fat100g * factor, 1),
+          sugars_g: round(sugars100g * factor, 1), // --- AÑADIDO ---
       }
 
       // Preparamos los datos originales y los del formulario directamente
@@ -87,16 +91,16 @@ export const useScanAndUpload = ({
           protein_g: servingProtein || protein100g,
           carbs_g: servingCarbs || carbs100g,
           fats_g: servingFat || fat100g,
+          sugars_g: servingSugars || sugars100g, // --- AÑADIDO ---
           weight_g: servingWeight,
           image_url: productImageUrl,
           calories_per_100g: calories100g,
           protein_per_100g: protein100g,
           carbs_per_100g: carbs100g,
-          fat_per_100g: fat100g, // Corregido a fat_per_100g
+          fat_per_100g: fat100g,
+          sugars_per_100g: sugars100g, // --- AÑADIDO ---
           origin: 'scan',
-          // --- INICIO DE LA MODIFICACIÓN ---
-          micronutrients: nutriments, // Guardar todos los nutriments
-          // --- FIN DE LA MODIFICACIÓN ---
+          micronutrients: nutriments,
       };
 
       // Establecer el estado del formulario directamente
@@ -107,24 +111,23 @@ export const useScanAndUpload = ({
               protein_g: calculatedMacros.protein_g,
               carbs_g: calculatedMacros.carbs_g,
               fats_g: calculatedMacros.fats_g,
-              weight_g: round(defaultWeight, 1), // Peso por defecto redondeado
+              sugars_g: calculatedMacros.sugars_g, // --- AÑADIDO ---
+              weight_g: round(defaultWeight, 1),
               image_url: productImageUrl,
-              // --- INICIO DE LA MODIFICACIÓN ---
-              micronutrients: nutriments, // Guardar todos los nutriments
-              // --- FIN DE LA MODIFICACIÓN ---
+              micronutrients: nutriments,
           },
           per100Data: { // Cargar datos por 100g para el modo /100g
               calories: round(calories100g, 0),
               protein_g: round(protein100g, 1),
               carbs_g: round(carbs100g, 1),
               fats_g: round(fat100g, 1),
+              sugars_g: round(sugars100g, 1), // --- AÑADIDO ---
           },
           per100Mode: true, // Forzar modo por 100g
           isFavorite: false, // Por defecto no es favorito al escanear
       });
 
       setOriginalData(originalScannedData); // Guardar los datos originales por si se edita
-      // --- FIN DE LA MODIFICACIÓN ---
 
       setIsPer100g(true); // Activar modo por 100g en el hook padre
       setBaseMacros(null); // No usamos baseMacros en modo por 100g

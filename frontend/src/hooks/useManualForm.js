@@ -11,8 +11,6 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
   const [originalData, setOriginalData] = useState(null);
 
   // --- SOLUCIÓN: Detección de desincronización ---
-  // Detectamos si el formulario aún tiene datos viejos que no coinciden con el item que queremos editar.
-  // Si estamos editando (itemToEdit existe) y la descripción no coincide, bloqueamos los cálculos.
   const targetDescription = itemToEdit ? (itemToEdit.description || itemToEdit.name || '') : null;
   const isStateSyncing = itemToEdit && manualFormState.originalDescription !== targetDescription;
 
@@ -32,12 +30,11 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
       setOriginalData(itemToEdit);
       const weight = parseFloat(itemToEdit.weight_g);
 
-      // Comprobamos si existen datos por 100g
+      // Comprobamos si existen datos explícitos por 100g
       const hasPer100Data = itemToEdit.calories_per_100g != null;
-      const shouldBePer100g = hasPer100Data;
       
-      // Sincronizar el estado del switch
-      // NOTA: Esto puede disparar re-renderizados, por eso el bloqueo 'isStateSyncing' es vital.
+      // Si tiene datos por 100g, activamos el switch. Si no, lo desactivamos.
+      const shouldBePer100g = hasPer100Data;
       setIsPer100g(shouldBePer100g);
 
       const originalDescription = itemToEdit.description || itemToEdit.name || '';
@@ -49,7 +46,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
       const getSugars = (obj) => parseFloat(obj.sugars_g || obj.sugars || 0);
       const getSugarsPer100 = (obj) => parseFloat(obj.sugars_per_100g || obj.sugars_per_100 || 0);
 
-      // Inicializar formData asegurando que sugars_g tenga un valor numérico
+      // Inicializar formData
       let formData = {
         description: originalDescription,
         calories: round(itemToEdit.calories || 0, 0),
@@ -66,6 +63,7 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
       let per100Data = { ...initialManualFormState.per100Data };
       
       if (hasPer100Data) {
+        // Opción A: Usar datos explícitos de la DB
         per100Data = {
           calories: round(itemToEdit.calories_per_100g || 0, 0),
           protein_g: round(itemToEdit.protein_per_100g || 0, 1),
@@ -73,22 +71,38 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
           fats_g: round(getFatsPer100(itemToEdit), 1),
           sugars_g: round(getSugarsPer100(itemToEdit), 1),
         };
-
-        // Recalcular totales si estamos en modo 100g para asegurar consistencia matemática inicial
-        if (shouldBePer100g) {
-          const currentWeight = parseFloat(formData.weight_g) || 100;
-          const factor = currentWeight / 100;
-          formData = {
-            ...formData,
-            calories: round(parseFloat(per100Data.calories || 0) * factor, 0),
-            protein_g: round(parseFloat(per100Data.protein_g || 0) * factor, 1),
-            carbs_g: round(parseFloat(per100Data.carbs_g || 0) * factor, 1),
-            fats_g: round(parseFloat(per100Data.fats_g || 0) * factor, 1),
-            sugars_g: round(parseFloat(per100Data.sugars_g || 0) * factor, 1),
-          };
-        }
+      } else if (weight > 0) {
+        // Opción B (NUEVO): Calcular datos por 100g matemáticamente si faltan
+        // Esto evita que los campos queden vacíos si el usuario activa el switch manual
+        const factor = 100 / weight;
+        per100Data = {
+          calories: round((parseFloat(itemToEdit.calories) || 0) * factor, 0),
+          protein_g: round((parseFloat(itemToEdit.protein_g) || 0) * factor, 1),
+          carbs_g: round((parseFloat(itemToEdit.carbs_g) || 0) * factor, 1),
+          fats_g: round(getFats(itemToEdit) * factor, 1),
+          sugars_g: round(getSugars(itemToEdit) * factor, 1),
+        };
       } else {
+        // Opción C: No hay datos suficientes, asegurar ceros para evitar NaN
         if (per100Data.sugars_g === undefined) per100Data.sugars_g = 0;
+        per100Data.calories = 0;
+        per100Data.protein_g = 0;
+        per100Data.carbs_g = 0;
+        per100Data.fats_g = 0;
+      }
+
+      // Recalcular totales si estamos en modo 100g (consistencia inicial)
+      if (shouldBePer100g) {
+        const currentWeight = parseFloat(formData.weight_g) || 100;
+        const factor = currentWeight / 100;
+        formData = {
+          ...formData,
+          calories: round(parseFloat(per100Data.calories || 0) * factor, 0),
+          protein_g: round(parseFloat(per100Data.protein_g || 0) * factor, 1),
+          carbs_g: round(parseFloat(per100Data.carbs_g || 0) * factor, 1),
+          fats_g: round(parseFloat(per100Data.fats_g || 0) * factor, 1),
+          sugars_g: round(parseFloat(per100Data.sugars_g || 0) * factor, 1),
+        };
       }
 
       const isFavorite = favoriteMeals?.some(fav => fav.name.toLowerCase() === originalDescription.toLowerCase()) || false;
@@ -121,7 +135,6 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
 
   // Efecto para recalcular macros cuando cambia el peso Y NO estamos en modo por 100g
   useEffect(() => {
-    // BLOQUEO: Si estamos sincronizando el estado inicial, NO ejecutar cálculos
     if (isStateSyncing) return;
 
     if (!isPer100g && baseMacros) {
@@ -142,7 +155,6 @@ export const useManualForm = ({ itemToEdit, favoriteMeals, isPer100g, setIsPer10
 
   // Efecto para recalcular macros cuando cambia el peso Y SÍ estamos en modo por 100g
   useEffect(() => {
-    // BLOQUEO: Si estamos sincronizando el estado inicial, NO ejecutar cálculos
     if (isStateSyncing) return;
 
     if (isPer100g) {
