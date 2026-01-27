@@ -28,22 +28,20 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    // Optimización agresiva de imágenes
     ViteImageOptimizer({
       test: /\.(jpe?g|png|gif|tiff|webp|svg|avif)$/i,
       svg: {
         multipass: true,
         plugins: [
-          // Configuración corregida para evitar el warning de removeViewBox
           {
             name: 'preset-default',
             params: {
               overrides: {
-                // removeViewBox: false, // Ya no se pone aquí si da problemas en nuevas versiones de SVGO
+                // Configuración segura para SVGO
               },
             },
           },
-          'removeDimensions', // Mueve dimensiones al viewBox si es necesario
+          'removeDimensions',
         ],
       },
       png: { quality: 75 },
@@ -119,9 +117,23 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            // 1. MAPAS: Agrupamos leaflet y react-leaflet juntos para evitar roturas
+            if (id.includes('leaflet')) {
+              return 'maps';
+            }
+            
+            // 2. ICONOS: Aislamos Lucide y React Icons (Aquí estaba el fallo de 'Activity')
+            // Al ponerlos aparte, evitamos conflictos de inicialización con React Core
+            if (id.includes('lucide') || id.includes('react-icons') || id.includes('heroicons')) {
+              return 'icons';
+            }
+
+            // 3. REACT CORE: Detección estricta para no atrapar otras librerías
+            if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/react-router-dom/')) {
               return 'react-vendor';
             }
+
+            // 4. LIBRERÍAS PESADAS: Separación estándar
             if (id.includes('@mui') || id.includes('@emotion')) {
               return 'mui-libs';
             }
@@ -131,12 +143,11 @@ export default defineConfig({
             if (id.includes('html5-qrcode')) {
               return 'scanner';
             }
-            if (id.includes('leaflet') || id.includes('react-leaflet')) {
-              return 'maps';
-            }
             if (id.includes('remotion')) {
               return 'remotion-libs';
             }
+
+            // 5. RESTO
             return 'vendor';
           }
         }
