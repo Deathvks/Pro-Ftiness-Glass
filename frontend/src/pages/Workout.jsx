@@ -408,7 +408,8 @@ const Workout = ({ timer, setView }) => {
 
       {historyExercise && (
         <ExerciseHistoryModal
-          exercise={historyExercise}
+          /* --- CORRECCIÓN: Usamos 'exerciseName' en lugar de 'exercise' --- */
+          exerciseName={historyExercise.name}
           onClose={() => setHistoryExercise(null)}
         />
       )}

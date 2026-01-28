@@ -204,15 +204,19 @@ const ManualEntryForm = ({
         }
 
         if (isPer100g) {
-            const cal100 = parseFloat(per100Data.calories);
+            // --- INICIO CORRECCIÓN ---
+            // Usamos || 0 para que si es NaN (campo vacío) no falle la validación bloqueante, se asume 0.
+            const cal100 = parseFloat(per100Data.calories) || 0;
+            
             if (isNaN(weight) || weight <= 0) {
-                addToast('Los gramos a consumir deben ser mayores a 0.', 'error');
+                addToast('Introduce un peso válido (mayor a 0).', 'error');
                 return null;
             }
-            if (isNaN(cal100) || cal100 < 0) {
+            if (cal100 < 0) {
                 addToast('Las calorías por 100g no pueden ser negativas.', 'error');
                 return null;
             }
+            // --- FIN CORRECCIÓN ---
         } else {
             if (isNaN(calories) || calories < 0) {
                 addToast('Las calorías no pueden ser negativas.', 'error');

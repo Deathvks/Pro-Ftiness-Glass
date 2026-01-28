@@ -12,7 +12,8 @@ router.use(authenticateToken);
 // --- Reglas de Validación para Crear/Actualizar una Comida Favorita ---
 const favoriteMealValidationRules = [
   body('name').trim().notEmpty().withMessage('El nombre de la comida es requerido.'),
-  body('calories').isInt({ min: 0 }).withMessage('Las calorías deben ser un número positivo.'),
+  // CORRECCIÓN: Cambiado de isInt a isFloat para permitir calorías con decimales (ej: 0.4 kcal)
+  body('calories').isFloat({ min: 0 }).withMessage('Las calorías deben ser un número positivo.'),
   body('protein_g').optional().isFloat({ min: 0 }).withMessage('Las proteínas deben ser un número positivo.'),
   body('carbs_g').optional().isFloat({ min: 0 }).withMessage('Los carbohidratos deben ser un número positivo.'),
   body('fats_g').optional().isFloat({ min: 0 }).withMessage('Las grasas deben ser un número positivo.'),
