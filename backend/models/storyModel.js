@@ -5,7 +5,7 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Users',
+        model: 'users', // CAMBIO: minúscula
         key: 'id'
       }
     },
@@ -21,7 +21,6 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.ENUM('public', 'friends'),
       defaultValue: 'friends'
     },
-    // --- NUEVO CAMPO HDR ---
     is_hdr: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -32,7 +31,7 @@ export default (sequelize, DataTypes) => {
       allowNull: false
     }
   }, {
-    tableName: 'Stories',
+    tableName: 'stories', // CAMBIO: minúscula
     underscored: true,
   });
 

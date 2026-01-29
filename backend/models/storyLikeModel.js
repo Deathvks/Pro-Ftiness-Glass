@@ -5,7 +5,7 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Stories',
+        model: 'stories', // CAMBIO: minúscula
         key: 'id'
       }
     },
@@ -13,12 +13,12 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Users',
+        model: 'users', // CAMBIO: minúscula
         key: 'id'
       }
     }
   }, {
-    tableName: 'StoryLikes',
+    tableName: 'story_likes', // CAMBIO: minúscula y snake_case
     underscored: true,
   });
 
