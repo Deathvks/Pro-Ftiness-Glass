@@ -293,6 +293,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             <span>Público</span>
                         </button>
 
+                        {/* Mostrar botón HDR solo si el dispositivo lo soporta */}
                         {deviceSupportsHDR && (
                             <button 
                                 onClick={() => setIsHDR(!isHDR)}

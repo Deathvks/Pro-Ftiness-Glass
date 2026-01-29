@@ -34,100 +34,102 @@ const storage = multer.diskStorage({
         if (req.baseUrl.includes('stories')) folder = 'stories';
         else if (req.baseUrl.includes('users')) folder = 'profiles';
         else if (req.baseUrl.includes('nutrition')) folder = 'nutrition';
-        else if (req.baseUrl.includes('routines')) folder = 'routines';
+        else if (req.baseUrl.includes('exercises')) folder = 'exercises';
 
-        const uploadPath = path.join(UPLOADS_DIR, folder);
-        ensureDir(uploadPath);
-        cb(null, uploadPath);
+        const finalPath = path.join(UPLOADS_DIR, folder);
+        ensureDir(finalPath);
+        cb(null, finalPath);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
+// Filtro de archivos
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = [
-        'image/jpeg', 'image/png', 'image/webp', 'image/jpg',
-        'video/mp4', 'video/quicktime', 'video/webm'
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
         cb(null, true);
     } else {
-        cb(new Error('Formato no soportado. Usa JPG, PNG, WEBP o MP4/MOV.'));
+        cb(new Error('Formato de archivo no soportado'), false);
     }
 };
 
-export const upload = multer({ 
+export const upload = multer({
     storage: storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
-    fileFilter: fileFilter
+    fileFilter: fileFilter,
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB límite
 });
 
-// --- SINGLETON DEL MODELO NSFW ---
-let _model;
-const getNSFWModel = async () => {
-    if (!_model) {
-        // Carga el modelo en memoria
-        _model = await nsfw.load(); 
+// --- Variables Globales para el Modelo IA ---
+let model;
+
+const loadModel = async () => {
+    if (!model) {
+        try {
+            // Opción A: Cargar desde URL pública (más fácil, no requiere archivos locales)
+            model = await nsfw.load();
+            console.log("Modelo NSFWJS cargado correctamente.");
+        } catch (err) {
+            console.error("Error cargando modelo NSFWJS:", err);
+        }
     }
-    return _model;
+    return model;
 };
 
+// Inicializar modelo al arrancar
+loadModel();
+
 /**
- * Procesa el archivo subido con moderación de IA
+ * Procesa la imagen: Verifica NSFW y Optimiza/Convierte a WebP
+ * @param {Object} file - Objeto file de Multer
+ * @param {Boolean} isHDR - Si el usuario solicitó HDR
+ * @returns {String} - URL relativa del archivo procesado
  */
 export const processUploadedFile = async (file, isHDR = false) => {
-    if (!file) return null;
+    if (!file) throw new Error("No file provided");
 
-    // 1. VÍDEOS (Pasan directos)
+    // Si es video, por ahora no procesamos (solo devolvemos ruta)
     if (file.mimetype.startsWith('video/')) {
         const relativePath = path.relative(PUBLIC_DIR, file.path);
         return '/' + relativePath.split(path.sep).join('/');
     }
 
-    // 2. IMÁGENES (Análisis + Optimización)
     try {
-        // --- PASO A: DETECCIÓN NSFW (Estrategia Sharp + TFJS Puro) ---
-        try {
-            const model = await getNSFWModel();
-            
-            // Usamos Sharp para obtener los píxeles crudos (Raw Buffer)
-            // Esto evita usar tf.node.decodeImage que requiere binarios de C++
-            const { data, info } = await sharp(file.path)
-                .removeAlpha() // Quitar transparencia (necesitamos 3 canales RGB)
-                .resize(224, 224, { fit: 'fill' }) // Redimensionar al tamaño que espera la IA (más rápido)
-                .raw()
-                .toBuffer({ resolveWithObject: true });
+        // --- PASO A: VERIFICACIÓN NSFW ---
+        // Usamos sharp para leer la imagen y obtener metadatos antes de nada
+        const imagePipeline = sharp(file.path);
+        const metadata = await imagePipeline.metadata();
 
-            // Crear el tensor manualmente desde el buffer de píxeles
-            const imageTensor = tf.tensor3d(new Uint8Array(data), [info.height, info.width, 3], 'int32');
-            
-            // Clasificar
-            const predictions = await model.classify(imageTensor);
-            imageTensor.dispose(); // Liberar memoria
+        // Buffer para la IA (redimensionado pequeño para velocidad)
+        const buffer = await imagePipeline
+            .clone() // Clonamos para no afectar el pipeline principal
+            .resize(224, 224, { fit: 'cover' })
+            .toBuffer();
 
-            // Validar predicciones (> 60% seguridad)
-            const explicitContent = predictions.find(p => 
+        // Convertir buffer a tensor 3D
+        const tfImage = tf.node.decodeImage(buffer, 3);
+
+        const loadedModel = await loadModel();
+        if (loadedModel) {
+            const predictions = await loadedModel.classify(tfImage);
+            tfImage.dispose(); // Liberar memoria del tensor
+
+            // Reglas de bloqueo (Pornografía o Hentai > 60%)
+            const nsfwFound = predictions.find(p =>
                 (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.60
             );
 
-            if (explicitContent) {
-                // Si es indebido, borramos y lanzamos error
-                fs.unlinkSync(file.path);
-                const error = new Error('Imagen rechazada: Se ha detectado contenido explícito o inapropiado.');
-                error.statusCode = 400; 
-                throw error;
-            }
-
-        } catch (nsfwError) {
-            // Si el error es nuestro rechazo, lo subimos
-            if (nsfwError.message.includes('Imagen rechazada')) {
+            if (nsfwFound) {
+                // Borrar archivo temporal
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+                const nsfwError = new Error("Contenido inapropiado detectado (NSFW).");
+                nsfwError.code = "NSFW_DETECTED";
                 throw nsfwError;
             }
-            console.error('[NSFW Check Warning] Fallo técnico al verificar imagen:', nsfwError.message);
-            // Permitimos continuar si la IA falla técnicamente (Fail-Open)
+        } else {
+            if (tfImage) tfImage.dispose();
+            console.warn('[NSFW Check Warning] Modelo no cargado, saltando verificación.');
         }
 
         // --- PASO B: OPTIMIZACIÓN FINAL (Sharp) ---
@@ -136,19 +138,31 @@ export const processUploadedFile = async (file, isHDR = false) => {
         const newFilename = `${name}.webp`;
         const newPath = path.join(dir, newFilename);
 
-        const pipeline = sharp(file.path)
+        // --- LÓGICA HDR INTELIGENTE ---
+        // Verificamos si la imagen original realmente soporta HDR.
+        // Las imágenes HDR suelen tener una profundidad de bits 'ushort' (16-bit) o 'float',
+        // a diferencia del estándar 'uchar' (8-bit).
+        const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
+        
+        // Solo aplicamos procesado HDR si el usuario lo pidió Y la imagen tiene datos suficientes.
+        const shouldProcessAsHDR = isHDR && isSourceHighDepth;
+
+        const finalPipeline = sharp(file.path)
+            .rotate() // Auto-rotar según EXIF
             .resize(1080, 1920, { 
                 fit: 'inside', 
                 withoutEnlargement: true 
             });
 
-        if (isHDR) {
-            pipeline.withMetadata().webp({ quality: 90, effort: 5 });
+        if (shouldProcessAsHDR) {
+            // Modo HDR Real: Mantenemos metadatos (perfiles de color P3/Rec2020) y alta calidad
+            finalPipeline.withMetadata().webp({ quality: 90, effort: 5 });
         } else {
-            pipeline.webp({ quality: 80 });
+            // Modo Estándar: Eliminamos metadatos extra para ahorrar espacio, calidad estándar
+            finalPipeline.webp({ quality: 80, effort: 4 });
         }
 
-        await pipeline.toFile(newPath);
+        await finalPipeline.toFile(newPath);
 
         // Limpieza del original
         if (file.path !== newPath && fs.existsSync(file.path)) {
@@ -161,11 +175,8 @@ export const processUploadedFile = async (file, isHDR = false) => {
     } catch (error) {
         // Limpieza de emergencia
         if (file && file.path && fs.existsSync(file.path)) {
-            try { fs.unlinkSync(file.path); } catch(e) {}
+            try { fs.unlinkSync(file.path); } catch (e) { /* ignore */ }
         }
-        console.error('Error procesando imagen:', error.message);
         throw error;
     }
 };
-
-export default { upload, processUploadedFile };
