@@ -5,6 +5,7 @@ import BarcodeScanner from './BarcodeScanner';
 import Spinner from './Spinner';
 import ConfirmationModal from './ConfirmationModal';
 import { useNutritionModal } from '../hooks/useNutritionModal';
+import { useLocalNotifications } from '../hooks/useLocalNotifications';
 import { searchFoods } from '../services/nutritionService';
 
 import TabButton from './nutrition/logModal/TabButton';
@@ -31,6 +32,8 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
         isUploading, handleImageUpload,
         isPer100g, setIsPer100g
     } = useNutritionModal({ mealType, onSave, onClose, logToEdit });
+
+    const { cancelMealReminder } = useLocalNotifications();
 
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -167,7 +170,10 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                 return (
                     <ManualEntryForm
                         onAddManual={handleAddManualItem}
-                        onSaveSingle={handleSaveSingle}
+                        onSaveSingle={async (data) => {
+                            await handleSaveSingle(data);
+                            cancelMealReminder();
+                        }}
                         onSaveEdit={handleSaveEdit}
                         onSaveListItem={handleSaveListItem}
                         isLoading={isLoading} // También pasamos isLoading aquí si es necesario
@@ -270,7 +276,10 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                             </div>
                             {/* CORRECCIÓN: Botón deshabilitado si isLoading es true */}
                             <button
-                                onClick={handleSaveList}
+                                onClick={async () => {
+                                    await handleSaveList();
+                                    cancelMealReminder();
+                                }}
                                 disabled={isLoading}
                                 className={`w-full flex items-center justify-center py-3 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold hover:scale-[1.01] transition ${isLoading ? 'opacity-60 cursor-not-allowed' : 'disabled:opacity-60'}`}
                             >

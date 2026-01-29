@@ -7,32 +7,25 @@ import { isToday, isYesterday, parseISO } from 'date-fns';
 import {
   Bell, CheckCheck, Trash2, X, Info, AlertTriangle, CheckCircle, AlertCircle,
   Filter, ChevronDown, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
-  UserPlus, Users, Zap, Award
+  UserPlus, Users, Zap, Award, Settings
 } from 'lucide-react';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 
 // --- Imports de Modales Separados ---
 import DeleteNotificationModal from '../components/DeleteNotificationModal';
 import DeleteAllNotificationsModal from '../components/DeleteAllNotificationsModal';
+import { useLocalNotifications } from '../hooks/useLocalNotifications';
 
 // --- Utilidad para fechas Robustecida ---
 const parseDateSafe = (dateStr) => {
   if (!dateStr) return new Date();
-  // Si ya es un objeto Date, devolverlo
   if (typeof dateStr !== 'string') return dateStr;
-
-  // 1. Normalizar separador de fecha/hora si viene con espacio (común en SQL)
   let normalized = dateStr.replace(' ', 'T');
-
-  // 2. Detectar si ya tiene información de zona horaria (Z al final o offset +/-)
-  // Regex: Busca 'Z' al final, O un '+' o '-' seguido de 2 dígitos (horas), opcionalmente ':' y 2 dígitos (minutos) al final.
   const hasTimeZone = /Z$|[+-]\d{2}(:?\d{2})?$/.test(normalized);
-
-  // 3. Si NO tiene zona horaria, asumimos que es UTC (append Z)
-  // Esto evita que el navegador la interprete como local y le reste/sume horas incorrectamente.
   if (!hasTimeZone) {
     normalized += 'Z';
   }
-
   return parseISO(normalized);
 };
 
@@ -43,9 +36,8 @@ const formatTimeWithZone = (date, timeZone) => {
       hour: '2-digit',
       minute: '2-digit',
       timeZone: timeZone
-    }).format(date);
+     }).format(date);
   } catch (e) {
-    console.warn('Invalid timezone:', timeZone);
     return new Intl.DateTimeFormat('es-ES', {
       hour: '2-digit',
       minute: '2-digit'
@@ -82,6 +74,100 @@ const formatDateShortWithZone = (date, timeZone) => {
       month: 'short'
     }).format(date);
   }
+};
+
+// --- Sub-componente: Switch Toggle ---
+const ToggleSwitch = ({ checked, onChange, label, description }) => (
+  <div className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+    <div className="mr-4">
+      <p className="text-sm font-bold text-text-primary">{label}</p>
+      {description && <p className="text-xs text-text-secondary mt-0.5">{description}</p>}
+    </div>
+    <button
+      onClick={() => onChange(!checked)}
+      className={`
+        relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none
+        ${checked ? 'bg-accent' : 'bg-gray-600'}
+      `}
+    >
+      <span
+        className={`
+          pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+          ${checked ? 'translate-x-5' : 'translate-x-0'}
+        `}
+      />
+    </button>
+  </div>
+);
+
+// --- Sub-componente: Modal de Configuración ---
+const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily }) => {
+  // Estado local sincronizado con localStorage
+  const [engagement, setEngagement] = useState(() => localStorage.getItem('notif_engagement') !== 'false');
+  const [daily, setDaily] = useState(() => localStorage.getItem('notif_daily') !== 'false');
+
+  const handleEngagementChange = async (val) => {
+    setEngagement(val);
+    localStorage.setItem('notif_engagement', val);
+    if (Capacitor.isNativePlatform()) {
+      if (val) {
+        await scheduleEngagement();
+      } else {
+        // IDs 2000-2100 usados para engagement
+        const pending = await LocalNotifications.getPending();
+        const ids = pending.notifications.filter(n => n.id >= 2000 && n.id < 2100).map(n => ({ id: n.id }));
+        if (ids.length) await LocalNotifications.cancel({ notifications: ids });
+      }
+    }
+  };
+
+  const handleDailyChange = async (val) => {
+    setDaily(val);
+    localStorage.setItem('notif_daily', val);
+    if (Capacitor.isNativePlatform()) {
+      if (val) {
+        await scheduleDaily();
+      } else {
+        // IDs 1001 (Login) y 1002 (Meal)
+        await LocalNotifications.cancel({ notifications: [{ id: 1001 }, { id: 1002 }] });
+      }
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+      <div className="relative w-full max-w-sm bg-bg-primary border border-glass-border rounded-2xl p-6 shadow-2xl animate-[scale-in_0.2s_ease-out]">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-text-primary">Configuración</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-bg-secondary text-text-secondary">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="bg-bg-secondary/50 rounded-xl p-4 border border-glass-border space-y-2">
+          <ToggleSwitch 
+            checked={engagement} 
+            onChange={handleEngagementChange} 
+            label="Motivación Diaria" 
+            description="Frases, consejos y recordatorios de hidratación."
+          />
+          <ToggleSwitch 
+            checked={daily} 
+            onChange={handleDailyChange} 
+            label="Recordatorios Rutinarios" 
+            description="Avisos para registrar comidas y login diario."
+          />
+        </div>
+
+        <button
+          onClick={onClose}
+          className="mt-6 w-full py-3 bg-bg-secondary text-text-primary font-bold rounded-xl hover:bg-bg-secondary/80 transition"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  );
 };
 
 // --- Sub-componente: Modal de Detalles de Login ---
@@ -183,12 +269,15 @@ const NotificationsScreen = ({ setView }) => {
     userProfile
   } = useAppStore();
 
+  const { scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
+
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Estados para modales
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [deleteAction, setDeleteAction] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Determinar zona horaria del usuario con fallback seguro
   const userTimezone = useMemo(() => {
@@ -199,6 +288,8 @@ const NotificationsScreen = ({ setView }) => {
       return 'Europe/Madrid';
     }
   }, [userProfile]);
+
+  const isNative = Capacitor.isNativePlatform();
 
   // Carga inicial
   useEffect(() => {
@@ -334,6 +425,14 @@ const NotificationsScreen = ({ setView }) => {
         />
       )}
 
+      {showSettings && (
+        <NotificationSettingsModal 
+          onClose={() => setShowSettings(false)}
+          scheduleEngagement={scheduleEngagementNotifications}
+          scheduleDaily={scheduleDailyReminders}
+        />
+      )}
+
       <DeleteNotificationModal
         isOpen={deleteAction?.type === 'single'}
         onClose={() => setDeleteAction(null)}
@@ -377,23 +476,38 @@ const NotificationsScreen = ({ setView }) => {
           </span>
         </div>
 
-        {hasNotifications && (
+        {(isNative || hasNotifications) && (
           <div className="flex items-center p-1 bg-bg-secondary border border-glass-border rounded-full shadow-sm mb-1 md:mb-0">
-            <button
-              onClick={markAllNotificationsAsRead}
-              className="p-2 text-accent hover:bg-accent/10 rounded-full transition-colors"
-              title="Marcar todas como leídas"
-            >
-              <CheckCheck size={18} />
-            </button>
-            <div className="w-px h-5 bg-glass-border mx-1"></div>
-            <button
-              onClick={requestDeleteAll}
-              className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
-              title="Borrar todas"
-            >
-              <Trash2 size={18} />
-            </button>
+            {isNative && (
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-2 text-text-secondary hover:text-accent hover:bg-accent/10 rounded-full transition-colors"
+                title="Configuración"
+              >
+                <Settings size={18} />
+              </button>
+            )}
+            
+            {hasNotifications && (
+              <>
+                {isNative && <div className="w-px h-5 bg-glass-border mx-1"></div>}
+                <button
+                  onClick={markAllNotificationsAsRead}
+                  className="p-2 text-accent hover:bg-accent/10 rounded-full transition-colors"
+                  title="Marcar todas como leídas"
+                >
+                  <CheckCheck size={18} />
+                </button>
+                <div className="w-px h-5 bg-glass-border mx-1"></div>
+                <button
+                  onClick={requestDeleteAll}
+                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+                  title="Borrar todas"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

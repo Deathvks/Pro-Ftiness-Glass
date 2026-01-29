@@ -20,6 +20,7 @@ import XPGuideModal from '../components/XPGuideModal';
 import TourGuide from '../components/TourGuide';
 import * as nutritionService from '../services/nutritionService';
 import { useToast } from '../hooks/useToast';
+import { useLocalNotifications } from '../hooks/useLocalNotifications';
 
 // --- Helper: Lógica de Tendencia de Peso ---
 const getWeightTrendData = (current, previous, goal) => {
@@ -122,6 +123,8 @@ const Dashboard = ({ setView }) => {
     addXp: state.addXp
   }));
 
+  const { cancelLoginReminder } = useLocalNotifications();
+
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showXPModal, setShowXPModal] = useState(false);
   const [showSugarModal, setShowSugarModal] = useState(false);
@@ -133,8 +136,10 @@ const Dashboard = ({ setView }) => {
     if (checkStreak && !streakCheckedRef.current) {
       checkStreak(new Date().toISOString().split('T')[0]);
       streakCheckedRef.current = true;
+      // Si el usuario entra al dashboard, cancelamos el recordatorio de login de hoy
+      cancelLoginReminder();
     }
-  }, [checkStreak]);
+  }, [checkStreak, cancelLoginReminder]);
 
   const levelData = useMemo(() => {
     const level = gamification?.level || 1;

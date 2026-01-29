@@ -11,7 +11,8 @@ const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
-const { User, FavoriteMeal, NutritionLog, Exercise, Routine } = models;
+// CORRECCIÓN: Añadir Story a los modelos
+const { User, FavoriteMeal, NutritionLog, Exercise, Routine, Story } = models;
 
 /**
  * Borra un archivo del sistema de archivos dada su ruta relativa (ej: /uploads/perfil/foto.jpg)
@@ -71,7 +72,10 @@ export const cleanOrphanedImages = async () => {
         const routines = await Routine.findAll({ attributes: ['image_url'] });
         routines.forEach(r => r.image_url && activeImages.add(path.normalize(r.image_url)));
 
-        // Añadir aquí otros modelos si tienen imágenes subidas
+        // --- CORRECCIÓN: Historias (Stories) ---
+        // Importante: Las historias tienen campo 'url', no 'image_url'
+        const stories = await Story.findAll({ attributes: ['url'] });
+        stories.forEach(s => s.url && activeImages.add(path.normalize(s.url)));
 
         // 2. Obtener todos los archivos físicos en uploads (recursivo)
         const filesOnDisk = getAllFiles(UPLOADS_DIR);

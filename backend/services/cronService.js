@@ -4,7 +4,8 @@ import { Op } from 'sequelize';
 import db from '../models/index.js';
 import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
-import { cleanOrphanedImages } from './imageService.js';
+// FIX: Importamos deleteFile para borrar los archivos de las historias
+import { cleanOrphanedImages, deleteFile } from './imageService.js';
 
 /**
  * Obtiene la hora y fecha local para una zona horaria dada.
@@ -223,11 +224,50 @@ const scheduleImageCleanup = () => {
   });
 };
 
+/**
+ * TAREA 5: Limpieza de Historias Expiradas (NUEVO)
+ * Se ejecuta cada hora en punto.
+ */
+const cleanupExpiredStories = () => {
+  cron.schedule('0 * * * *', async () => {
+    console.log('[Cron] Buscando historias expiradas para eliminar...');
+    try {
+      const now = new Date();
+      // Buscar historias cuya fecha de expiración sea anterior a ahora
+      const expiredStories = await db.Story.findAll({
+        where: {
+          expires_at: { [Op.lt]: now }
+        }
+      });
+
+      if (expiredStories.length === 0) return;
+
+      console.log(`[Cron] Eliminando ${expiredStories.length} historias expiradas.`);
+
+      for (const story of expiredStories) {
+        // 1. Eliminar archivo físico (Imagen/Video)
+        if (story.url) {
+            try {
+                await deleteFile(story.url);
+            } catch (e) {
+                console.error(`[Cron] Error eliminando archivo de historia ${story.id}:`, e.message);
+            }
+        }
+        // 2. Eliminar registro de BD (Cascada borrará likes y views)
+        await story.destroy();
+      }
+    } catch (error) {
+      console.error('[Cron] Error en la limpieza de historias:', error);
+    }
+  });
+};
+
 export const startCronJobs = () => {
   console.log('[Cron] Inicializando tareas programadas (Multizona)...');
   checkNutritionGoals();
   checkTrainingReminder();
   checkWeightLogReminder();
   scheduleImageCleanup();
+  cleanupExpiredStories(); // Iniciar limpieza de historias
   console.log('[Cron] Tareas iniciadas.');
 };

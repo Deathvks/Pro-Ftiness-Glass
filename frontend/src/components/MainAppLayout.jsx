@@ -1,5 +1,5 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { User, Zap, Bell } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -17,6 +17,7 @@ import EmailVerification from './EmailVerification';
 import CookieConsentBanner from './CookieConsentBanner';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
+import StoryViewer from './StoryViewer'; // Importamos StoryViewer
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -78,7 +79,9 @@ export default function MainAppLayout({
     gamificationEvents,
     clearGamificationEvents,
     // Solicitudes sociales para el badge del navbar
-    socialRequests
+    socialRequests,
+    // Historias
+    myStories,
   } = useAppStore(state => ({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
@@ -94,11 +97,20 @@ export default function MainAppLayout({
     // Gamificación
     gamificationEvents: state.gamification?.gamificationEvents,
     clearGamificationEvents: state.clearGamificationEvents,
-    socialRequests: state.socialRequests
+    socialRequests: state.socialRequests,
+    // Historias
+    myStories: state.myStories,
   }));
+
+  // Estado local para ver mi historia desde el header
+  const [viewingStory, setViewingStory] = useState(false);
 
   // Calculamos el contador de no leídas localmente para asegurar consistencia
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  // Lógica de Historias (Igual que en Sidebar)
+  const hasStories = myStories && myStories.length > 0;
+  const hasUnseen = hasStories && myStories.some(s => !s.viewed);
 
   // Cargar notificaciones al inicio
   useEffect(() => {
@@ -147,7 +159,6 @@ export default function MainAppLayout({
       ? userProfile.profile_image_url
       : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`;
 
-    // Si tenemos updated_at, lo usamos como versión para forzar la recarga si cambió
     if (userProfile.updated_at) {
       const separator = rawUrl.includes('?') ? '&' : '?';
       return `${rawUrl}${separator}v=${new Date(userProfile.updated_at).getTime()}`;
@@ -164,6 +175,14 @@ export default function MainAppLayout({
 
       {/* Fondo decorativo */}
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
+
+      {/* Visor de Historia (Overlay) */}
+      {viewingStory && userProfile && (
+        <StoryViewer 
+            userId={userProfile.id} 
+            onClose={() => setViewingStory(false)} 
+        />
+      )}
 
       {/* Sidebar (Desktop) */}
       <Sidebar
@@ -184,11 +203,6 @@ export default function MainAppLayout({
       >
 
         {/* Header (Móvil) */}
-        {/* CORRECCIÓN: 
-            - border-0: Quita el borde glass por defecto.
-            - [.oled-theme_&]:border-b: Añade borde abajo SOLO en OLED.
-            - [.oled-theme_&]:border-white/10: Usa el color suave del Sidebar.
-        */}
         <div className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50
                         px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]
                         sm:px-6 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]
@@ -203,7 +217,6 @@ export default function MainAppLayout({
             >
               {currentTitle}
             </span>
-            {/* Badge BETA en Header Móvil */}
             {view === 'social' && (
               <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase animate-fade-in-up">
                 BETA
@@ -214,7 +227,7 @@ export default function MainAppLayout({
           {/* Botones de Header (Notif + Perfil) */}
           <div className="flex items-center">
 
-            {/* Botón de Notificaciones con Animación Wrapper tipo iOS */}
+            {/* Botón de Notificaciones */}
             <div
               className={`
                     flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
@@ -237,30 +250,50 @@ export default function MainAppLayout({
               </button>
             </div>
 
-            {/* Botón de Perfil con Animación Wrapper tipo iOS */}
+            {/* Botón de Perfil (Con lógica de Historia) */}
             <div
               className={`
                     flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
                     ${view === 'profile'
                   ? 'w-0 opacity-0 ml-0 translate-x-4'
-                  : 'w-10 opacity-100 ml-3 translate-x-0'
+                  : 'w-auto opacity-100 ml-3 translate-x-0' // w-auto para acomodar el anillo si existe
                 }
                 `}
             >
               <button
-                onClick={() => navigate('profile')}
-                className="w-10 h-10 rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 active:scale-95 transition-transform duration-200 outline-none focus:outline-none"
+                onClick={() => {
+                    // Si tiene historias -> Ver historia. Si no -> Ir a perfil
+                    if (hasStories) {
+                        setViewingStory(true);
+                    } else {
+                        navigate('profile');
+                    }
+                }}
+                // Ajustamos clases del contenedor del botón
+                className={`
+                    rounded-full flex items-center justify-center overflow-hidden shrink-0 active:scale-95 transition-transform duration-200 outline-none focus:outline-none relative
+                    ${hasStories 
+                        ? (hasUnseen 
+                            ? 'w-11 h-11 p-[2.5px] bg-accent shadow-md shadow-accent/40 animate-pulse-slow' // Nuevo: Acento + Glow + Pulso
+                            : 'w-11 h-11 p-[2.5px] bg-gray-400 dark:bg-white/20' // Visto: Gris/Desactivado
+                          )
+                        : 'w-10 h-10 bg-bg-secondary border border-glass-border' // Normal
+                    }
+                `}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                {profileImgSrc ? (
-                  <img
-                    src={profileImgSrc}
-                    alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <User size={24} className="text-text-secondary" />
-                )}
+                {/* Contenedor interno para recortar la imagen redonda dentro del anillo */}
+                <div className={`w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center ${hasStories ? 'border-[1.5px] border-bg-primary' : ''}`}>
+                    {profileImgSrc ? (
+                    <img
+                        src={profileImgSrc}
+                        alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
+                        className="w-full h-full object-cover"
+                    />
+                    ) : (
+                    <User size={24} className="text-text-secondary" />
+                    )}
+                </div>
               </button>
             </div>
           </div>
@@ -275,11 +308,6 @@ export default function MainAppLayout({
       </main>
 
       {/* Navbar (Móvil) */}
-      {/* CORRECCIÓN: 
-            - border-0: Quita el borde glass por defecto.
-            - [.oled-theme_&]:border-t: Añade borde arriba SOLO en OLED.
-            - [.oled-theme_&]:border-white/10: Usa el color suave.
-      */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50
                       pb-[env(safe-area-inset-bottom)] 
                       pl-[max(env(safe-area-inset-left),_0.5rem)] 
@@ -288,8 +316,6 @@ export default function MainAppLayout({
                       [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10">
         {navItems.map((item, index) => {
           const isActive = view === item.id;
-
-          // Lógica para badge de solicitudes sociales
           const isSocial = item.id === 'social';
           const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
 
@@ -309,7 +335,6 @@ export default function MainAppLayout({
                 WebkitTapHighlightColor: 'transparent'
               }}
             >
-              {/* Contenedor relativo para posicionar el badge */}
               <div className={`transition-transform duration-300 ${isActive ? 'scale-125' : 'group-hover:scale-110'} relative`}>
                 {item.icon}
                 {pendingCount > 0 && (

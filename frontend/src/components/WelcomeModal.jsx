@@ -4,7 +4,7 @@ import {
   Sparkles, ChevronRight, LayoutDashboard, Zap, Flame,
   Trophy, Check, Users, UserPlus, Heart, ArrowUp, Dumbbell,
   Link, Smartphone, Image, Globe, Clock, Download, Footprints, MapPin,
-  Folder, Share2, ArrowUpRight, IceCream
+  Folder, Share2, ArrowUpRight, IceCream, Camera
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
@@ -84,6 +84,51 @@ const WelcomeModal = ({ onClose }) => {
           </div>
 
           <div className="space-y-6 mb-8">
+
+            {/* --- BLOQUE NUEVO: HISTORIAS (STORIES) - TOP --- */}
+            <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-accent/30 transition-colors duration-500 group">
+              <h2 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Camera size={16} className="text-purple-500" /> Historias
+              </h2>
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary/80 border border-transparent dark:border-white/10 rounded-xl flex items-center justify-center gap-4 shadow-lg overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                  
+                  {/* Story Item (Viewed) */}
+                  <div className="flex flex-col items-center gap-1 opacity-50 scale-90">
+                    <div className="w-10 h-10 rounded-full border border-text-tertiary p-[2px]">
+                       <div className="w-full h-full bg-bg-secondary rounded-full overflow-hidden">
+                           <div className="w-full h-full bg-text-tertiary/20"></div>
+                       </div>
+                    </div>
+                  </div>
+
+                  {/* Story Item (Active) */}
+                  <div className="flex flex-col items-center gap-1 relative">
+                     <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-accent via-purple-500 to-orange-500 p-[3px]">
+                        <div className="w-full h-full bg-black rounded-full border-2 border-black overflow-hidden relative flex items-center justify-center">
+                            <Image size={20} className="text-white/80" />
+                        </div>
+                     </div>
+                     <div className="absolute -bottom-1 bg-accent text-white text-[8px] px-2 py-0.5 rounded-full font-bold shadow-sm">
+                        NUEVO
+                     </div>
+                  </div>
+
+                  {/* Story Item (Unviewed) */}
+                  <div className="flex flex-col items-center gap-1 scale-90">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]">
+                       <div className="w-full h-full bg-bg-secondary rounded-full border-2 border-black overflow-hidden">
+                          <div className="w-full h-full bg-text-tertiary/20"></div>
+                       </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-muted text-center">
+                Comparte tu progreso diario con historias efímeras. ¡Interactúa con tu comunidad!
+              </p>
+            </div>
 
             {/* --- BLOQUE NUEVO: AZÚCAR (TOP) --- */}
             <div className="bg-bg-secondary border border-black/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-[#ec4899]/30 transition-colors duration-500 group">
@@ -344,7 +389,7 @@ const WelcomeModal = ({ onClose }) => {
                   {/* Avatar YO */}
                   <div className="relative z-10 flex flex-col items-center gap-1">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-accent to-accent/50 p-[2px]">
-                      <div className="w-full h-full rounded-full bg-bg-primary flex items-center justify-center">
+                      <div className="w-full h-full bg-bg-primary flex items-center justify-center">
                         <span className="text-[10px] font-bold">YO</span>
                       </div>
                     </div>

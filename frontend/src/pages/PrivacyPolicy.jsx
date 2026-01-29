@@ -1,140 +1,242 @@
 /* frontend/src/pages/PrivacyPolicy.jsx */
 import React from 'react';
-import { ChevronLeft, Cookie, Palette, Moon, Sun, Camera, Shield, Bell, Globe, Trash2, Mail } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
+import { 
+  ChevronLeft, Cookie, Camera, Shield, Bell, Globe, Trash2, 
+  Mail, Clock, Users, HeartHandshake, MapPin 
+} from 'lucide-react';
 
 const PrivacyPolicy = ({ onBack }) => {
+  // Fecha actual formateada en español
+  const currentDate = new Date().toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  // Componente interno para las tarjetas con los estilos específicos
+  const PolicyCard = ({ children, className = "", highlight = false }) => {
+    return (
+      <div className={`
+        rounded-3xl p-6 transition-colors
+        ${highlight 
+          ? 'bg-accent/10 dark:bg-accent/10' // Destacado (Historias)
+          : 'bg-gray-100 dark:bg-white/5'    // Normal (Claro: Gris suave / Oscuro: Transparencia)
+        }
+        
+        /* Estilos específicos OLED (clase global .oled-theme) */
+        [.oled-theme_&]:bg-black 
+        [.oled-theme_&]:border 
+        [.oled-theme_&]:border-white/10
+        
+        ${className}
+      `}>
+        {children}
+      </div>
+    );
+  };
+
   return (
-    // z-[110] para estar por encima de todo, incluido el banner de cookies (z-[100])
-    <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto">
-      <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
-        <button onClick={onBack} className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4">
-          <ChevronLeft size={20} />
-          Volver
+    // z-[110] para estar por encima de todo
+    <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto custom-scrollbar">
+      <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        
+        {/* Botón Volver */}
+        <button 
+          onClick={onBack} 
+          className="group flex items-center gap-2 text-text-secondary font-bold hover:text-accent transition-all mb-6 px-2 outline-none focus:outline-none"
+        >
+          <div className="p-1.5 rounded-full bg-gray-200 dark:bg-white/5 group-hover:bg-accent/20 transition-colors">
+            <ChevronLeft size={20} />
+          </div>
+          <span>Volver</span>
         </button>
         
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-8">Política de Privacidad y Avisos Legales</h1>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-text-primary via-accent to-text-primary mb-4">
+            Tu Privacidad Importa
+          </h1>
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+            En <strong>Pro Fitness Glass</strong>, queremos que te sientas como en casa. Aquí te explicamos de forma sencilla y transparente cómo cuidamos tus datos.
+          </p>
+        </div>
 
-        <GlassCard className="p-6 md:p-8">
-          <div className="space-y-8 text-text-secondary">
-            <p className="text-lg">
-              En <strong>Pro Fitness Glass</strong>, la transparencia es nuestra prioridad. Aquí detallamos cómo funcionan nuestros servicios, qué datos procesamos y con qué finalidad.
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* --- SECCIÓN: Almacenamiento Local --- */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-                <Cookie className="text-accent" />
-                Almacenamiento Local y Preferencias
-              </h2>
-              <p>
-                Usamos el <strong>Almacenamiento Local</strong> de tu dispositivo para mejorar tu experiencia. No usamos cookies de rastreo publicitario.
+            {/* --- SECCIÓN DESTACADA: Historias --- */}
+            <PolicyCard className="md:col-span-2" highlight={true}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-accent text-white rounded-2xl shadow-lg shadow-accent/30">
+                  <Clock size={28} strokeWidth={2.5} />
+                </div>
+                <h2 className="text-2xl font-bold text-text-primary">Historias y Contenido Efímero</h2>
+              </div>
+              
+              <p className="text-text-secondary mb-6 text-lg leading-relaxed">
+                Las historias son para compartir el momento. Nos aseguramos de que sean realmente temporales y seguras para ti:
               </p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Personalización:</strong> Guardamos tu elección de tema (Claro/Oscuro) y color de acento.</li>
-                <li><strong>Sesión:</strong> Almacenamos un "token" de seguridad cifrado para mantener tu sesión activa sin que tengas que ingresar tu contraseña cada vez.</li>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-transparent dark:border-white/5">
+                    <div className="flex items-center gap-2 mb-2 text-accent font-bold">
+                        <Clock size={18} /> Duración 24h
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                        Todo lo que subas se <strong>autodestruye</strong> de nuestros servidores tras 24 horas. Sin copias ocultas.
+                    </p>
+                </div>
+                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-transparent dark:border-white/5">
+                    <div className="flex items-center gap-2 mb-2 text-accent font-bold">
+                        <Users size={18} /> Tú Decides
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                        Elige antes de publicar: <strong>"Público"</strong> para motivar a todos o <strong>"Solo Amigos"</strong> para tu círculo cercano.
+                    </p>
+                </div>
+                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-transparent dark:border-white/5">
+                    <div className="flex items-center gap-2 mb-2 text-accent font-bold">
+                        <HeartHandshake size={18} /> Respeto
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                        Mantén la comunidad segura. No subas contenido ofensivo o ilegal. Cuidémonos entre todos.
+                    </p>
+                </div>
+              </div>
+            </PolicyCard>
+
+            {/* --- TARJETA: GPS y Cardio (CORREGIDO) --- */}
+            <PolicyCard>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
+                  <MapPin size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-text-primary">Ubicación GPS</h2>
+              </div>
+              <p className="text-text-secondary text-sm leading-relaxed mb-3">
+                Solo usamos tu ubicación cuando activas el modo <strong>"Cardio"</strong> para registrar tu ruta, velocidad y distancia con precisión.
+              </p>
+              <ul className="text-sm text-text-secondary space-y-2 list-disc list-inside marker:text-accent">
+                <li>El GPS se apaga automáticamente al terminar el ejercicio.</li>
+                <li>El mapa de tu recorrido se guarda de forma <strong>privada</strong> en tu historial.</li>
               </ul>
-            </div>
+            </PolicyCard>
 
-            {/* --- SECCIÓN: Google Auth --- */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-                <Globe className="text-accent" />
-                Autenticación con Google
-              </h2>
-              <p>
-                Si decides iniciar sesión o registrarte utilizando tu cuenta de Google, utilizamos el servicio seguro de Google Identity.
+            {/* --- TARJETA: Almacenamiento Local --- */}
+            <PolicyCard>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
+                  <Cookie size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-text-primary">Tus Preferencias</h2>
+              </div>
+              <p className="text-text-secondary text-sm leading-relaxed mb-3">
+                Usamos la memoria de tu dispositivo para recordar cosas simples y mejorar tu experiencia, sin rastreo publicitario.
               </p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>
-                  <strong>Datos Recibidos:</strong> Solo recibimos tu nombre, dirección de correo electrónico y foto de perfil para crear tu usuario en nuestra plataforma.
-                </li>
-                <li>
-                  <strong>Seguridad:</strong> Nunca tenemos acceso a tu contraseña de Google. La autenticación se realiza directamente en los servidores de Google.
-                </li>
+              <ul className="text-sm text-text-secondary space-y-2 list-disc list-inside marker:text-accent">
+                <li><strong>Personalización:</strong> Tu tema (Oscuro/Claro) y colores favoritos.</li>
+                <li><strong>Sesión Activa:</strong> Para que no tengas que escribir tu contraseña cada vez que entras.</li>
               </ul>
-            </div>
+            </PolicyCard>
 
-            {/* --- SECCIÓN: Notificaciones --- */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-                <Bell className="text-accent" />
-                Notificaciones Push
-              </h2>
-              <p>
-                Solicitamos permiso para enviarte notificaciones push con fines exclusivamente funcionales y motivacionales:
+            {/* --- TARJETA: Google Auth --- */}
+            <PolicyCard>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
+                  <Globe size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-text-primary">Acceso con Google</h2>
+              </div>
+              <p className="text-text-secondary text-sm leading-relaxed mb-3">
+                Si usas Google para entrar, utilizamos su sistema seguro. Nosotros <strong>nunca</strong> vemos ni guardamos tu contraseña de Google.
               </p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Recordatorios de entrenamiento programados.</li>
-                <li>Avisos de finalización del temporizador de descanso.</li>
-                <li>Logros y récords personales alcanzados.</li>
+              <ul className="text-sm text-text-secondary space-y-2 list-disc list-inside marker:text-accent">
+                <li>Solo recibimos tu nombre, email y foto para crear tu perfil.</li>
+                <li>La seguridad depende directamente de los estándares de Google.</li>
               </ul>
-              <p>
-                Puedes revocar este permiso en cualquier momento desde los ajustes de tu dispositivo.
+            </PolicyCard>
+
+            {/* --- TARJETA: Notificaciones --- */}
+            <PolicyCard>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
+                  <Bell size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-text-primary">Notificaciones</h2>
+              </div>
+              <p className="text-text-secondary text-sm leading-relaxed mb-3">
+                Solo te avisaremos para ayudarte a cumplir tus metas. Puedes desactivarlas cuando quieras.
               </p>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-transparent dark:border-white/5">Recordatorios</span>
+                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-transparent dark:border-white/5">Temporizador</span>
+                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-transparent dark:border-white/5">Logros</span>
+              </div>
+            </PolicyCard>
+
+            {/* --- TARJETA: Cámara --- */}
+            <PolicyCard>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
+                  <Camera size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-text-primary">Cámara y Fotos</h2>
+              </div>
+              <p className="text-text-secondary text-sm leading-relaxed">
+                Necesitamos la cámara para escanear alimentos o subir fotos de progreso. Las fotos que subes a tu diario son privadas y se guardan de forma segura solo para ti.
+              </p>
+            </PolicyCard>
+
+            {/* --- TARJETA: Eliminación (Full Width) --- */}
+            <div className="md:col-span-2">
+                <PolicyCard>
+                    <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
+                                <Trash2 size={24} />
+                                </div>
+                                <h2 className="text-xl font-bold text-text-primary">Control Total de tus Datos</h2>
+                            </div>
+                            <p className="text-text-secondary text-sm leading-relaxed">
+                                Tus datos son tuyos. Puedes eliminar tu cuenta y borrar absolutamente todo (historial, fotos, perfil) instantáneamente desde la sección <strong>Perfil</strong>. Sin preguntas, sin esperas.
+                            </p>
+                        </div>
+                    </div>
+                </PolicyCard>
             </div>
 
-            {/* --- SECCIÓN: Cámara y Fotos --- */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-                <Camera className="text-accent" />
-                Cámara y Fotos de Comidas
-              </h2>
-              <p>
-                Necesitamos acceso a la cámara si deseas escanear códigos de barras de productos o subir fotos a tu diario de nutrición.
+            {/* --- TARJETA: Legal --- */}
+            <PolicyCard>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
+                  <Shield size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-text-primary">Responsabilidad</h2>
+              </div>
+              <p className="text-text-secondary text-sm leading-relaxed">
+                <strong>Pro Fitness Glass</strong> es una herramienta para ayudarte, pero no sustituye a un médico. Úsala con responsabilidad y consulta a un profesional antes de cambios drásticos en tu salud.
               </p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Escáner:</strong> El procesamiento del código de barras se realiza en tu dispositivo.</li>
-                <li><strong>Fotos de Comidas:</strong> Las imágenes que subes se almacenan de forma privada y segura en nuestros servidores, asociadas únicamente a tu cuenta.</li>
-              </ul>
-            </div>
+            </PolicyCard>
 
-            {/* --- SECCIÓN: Eliminación de Datos (MODIFICADO) --- */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-                <Trash2 className="text-accent" />
-                Eliminación de Datos
-              </h2>
-              <p>
-                Tienes el control total sobre tu información. Puedes <strong>eliminar tu cuenta y todos tus datos asociados</strong> (historial, perfil, fotos) en cualquier momento directamente desde la sección <strong>Perfil</strong> de la aplicación. Esta acción es irreversible.
-              </p>
-            </div>
-
-            {/* --- SECCIÓN: Legal --- */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
-                <Shield className="text-accent" />
-                Descargo de Responsabilidad
-              </h2>
-              <p>
-                <strong>Pro Fitness Glass</strong> es una herramienta informativa.
-              </p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>
-                  <strong>Salud:</strong> No sustituye el consejo médico profesional. Consulta a un especialista antes de iniciar dietas o ejercicios intensos.
-                </li>
-                <li>
-                  <strong>Responsabilidad:</strong> El uso de la aplicación es bajo tu propia responsabilidad.
-                </li>
-              </ul>
-            </div>
-
-            {/* --- SECCIÓN: Contacto (MODIFICADO) --- */}
-            <div className="space-y-3 mt-6 p-4 border border-glass-border rounded-lg bg-bg-secondary/50">
-              <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-                <Mail className="text-accent" size={20} />
-                Contacto y Soporte
-              </h2>
-              <p>
-                Si tienes preguntas adicionales sobre nuestra política de privacidad o necesitas asistencia, no dudes en contactarnos en:
-              </p>
-              <p className="font-semibold text-accent mt-2">
+            {/* --- TARJETA: Contacto --- */}
+            <div className="bg-gradient-to-br from-bg-secondary to-bg-primary border border-white/5 rounded-3xl p-6 flex flex-col justify-center items-center text-center hover:border-accent/30 transition-colors [.oled-theme_&]:bg-black [.oled-theme_&]:border-white/10">
+              <div className="p-3 bg-accent/20 text-accent rounded-full mb-3">
+                <Mail size={24} />
+              </div>
+              <h2 className="text-lg font-bold text-text-primary mb-1">¿Tienes dudas?</h2>
+              <p className="text-xs text-text-secondary mb-3">Estamos aquí para ayudarte en lo que necesites.</p>
+              <a href="mailto:profitnessglass@gmail.com" className="text-accent font-bold text-lg hover:underline">
                 profitnessglass@gmail.com
-              </p>
+              </a>
             </div>
 
-          </div>
-        </GlassCard>
+        </div>
+        
+        <div className="mt-10 text-center">
+            <p className="text-xs text-text-tertiary opacity-50">
+                Última actualización: {currentDate}
+            </p>
+        </div>
+
       </div>
     </div>
   );

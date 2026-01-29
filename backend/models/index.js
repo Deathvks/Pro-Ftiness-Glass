@@ -1,15 +1,14 @@
 /* backend/models/index.js */
 import sequelize from "../db.js";
+import { DataTypes } from 'sequelize'; // Necesario para inicializar los modelos de historias
 
-// 1. Importa todos los modelos
+// 1. Importa todos los modelos existentes
 import User from './userModel.js';
 import Routine from './routineModel.js';
 import RoutineExercise from './exerciseModel.js';
 import WorkoutLog from './workoutModel.js';
 import BodyWeightLog from './bodyweightModel.js';
-// --- INICIO MODIFICACIÓN ---
 import BodyMeasurementLog from './bodyMeasurementModel.js';
-// --- FIN MODIFICACIÓN ---
 import WorkoutLogDetail from './workoutLogDetailModel.js';
 import WorkoutLogSet from './workoutLogSetModel.js';
 import ExerciseList from './exerciseListModel.js';
@@ -26,24 +25,38 @@ import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
 
-// 2. Configuración de las asociaciones
+// 2. Importa las factorías de los nuevos modelos de Historias
+// Nota: Usamos una importación por defecto que traerá la función constructora
+import storyFactory from './storyModel.js';
+import storyLikeFactory from './storyLikeModel.js';
+import storyViewFactory from './storyViewModel.js';
+
+// 3. Inicializa los modelos de Historias
+const Story = storyFactory(sequelize, DataTypes);
+const StoryLike = storyLikeFactory(sequelize, DataTypes);
+const StoryView = storyViewFactory(sequelize, DataTypes);
+
+// 4. Configuración de las asociaciones
+
+// --- Usuarios y Rutinas ---
 User.hasMany(Routine, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Routines' });
 Routine.belongsTo(User, { foreignKey: 'user_id' });
 
+// --- Logs de Entrenamiento ---
 User.hasMany(WorkoutLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'WorkoutLogs' });
 WorkoutLog.belongsTo(User, { foreignKey: 'user_id' });
 
 WorkoutLog.belongsTo(Routine, { foreignKey: 'routine_id', as: 'routine' });
 Routine.hasMany(WorkoutLog, { foreignKey: 'routine_id', as: 'workoutLogs' });
 
+// --- Métricas Corporales ---
 User.hasMany(BodyWeightLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'BodyWeightLogs' });
 BodyWeightLog.belongsTo(User, { foreignKey: 'user_id' });
 
-// --- INICIO MODIFICACIÓN: Asociación User <-> BodyMeasurementLog ---
 User.hasMany(BodyMeasurementLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'BodyMeasurementLogs' });
 BodyMeasurementLog.belongsTo(User, { foreignKey: 'user_id' });
-// --- FIN MODIFICACIÓN ---
 
+// --- Nutrición e Hidratación ---
 User.hasMany(NutritionLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'NutritionLogs' });
 NutritionLog.belongsTo(User, { foreignKey: 'user_id' });
 
@@ -53,6 +66,10 @@ WaterLog.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(FavoriteMeal, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'FavoriteMeals' });
 FavoriteMeal.belongsTo(User, { foreignKey: 'user_id' });
 
+User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
+CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// --- Detalles de Rutinas y Ejercicios ---
 Routine.hasMany(RoutineExercise, { foreignKey: 'routine_id', onDelete: 'CASCADE', as: 'RoutineExercises' });
 RoutineExercise.belongsTo(Routine, { foreignKey: 'routine_id' });
 
@@ -65,14 +82,12 @@ WorkoutLogSet.belongsTo(WorkoutLogDetail, { foreignKey: 'log_detail_id' });
 ExerciseList.hasMany(RoutineExercise, { foreignKey: 'exercise_list_id' });
 RoutineExercise.belongsTo(ExerciseList, { foreignKey: 'exercise_list_id' });
 
+// --- Otros ---
 User.hasMany(PersonalRecord, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'PersonalRecords' });
 PersonalRecord.belongsTo(User, { foreignKey: 'user_id' });
 
 TemplateRoutine.hasMany(TemplateRoutineExercise, { foreignKey: 'template_routine_id', as: 'TemplateRoutineExercises' });
 TemplateRoutineExercise.belongsTo(TemplateRoutine, { foreignKey: 'template_routine_id' });
-
-User.hasMany(CreatinaLog, { foreignKey: 'user_id', as: 'creatinaLogs' });
-CreatinaLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 User.hasMany(PushSubscription, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'PushSubscriptions' });
 PushSubscription.belongsTo(User, { foreignKey: 'user_id' });
@@ -83,13 +98,31 @@ Notification.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(UserSession, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Sessions' });
 UserSession.belongsTo(User, { foreignKey: 'user_id' });
 
+User.hasMany(BugReport, { foreignKey: 'user_id', as: 'reports' });
+BugReport.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// --- Amistades ---
 User.hasMany(Friendship, { foreignKey: 'requester_id', as: 'SentRequests' });
 User.hasMany(Friendship, { foreignKey: 'addressee_id', as: 'ReceivedRequests' });
 Friendship.belongsTo(User, { foreignKey: 'requester_id', as: 'Requester' });
 Friendship.belongsTo(User, { foreignKey: 'addressee_id', as: 'Addressee' });
 
-User.hasMany(BugReport, { foreignKey: 'user_id', as: 'reports' });
-BugReport.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+// --- HISTORIAS (Nuevas Asociaciones) ---
+// Usuario tiene muchas historias
+User.hasMany(Story, { foreignKey: 'user_id', as: 'stories', onDelete: 'CASCADE' });
+Story.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Likes en Historias
+Story.hasMany(StoryLike, { foreignKey: 'story_id', as: 'likes', onDelete: 'CASCADE' });
+StoryLike.belongsTo(Story, { foreignKey: 'story_id', as: 'story' });
+User.hasMany(StoryLike, { foreignKey: 'user_id', as: 'likedStories' });
+StoryLike.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Vistas en Historias
+Story.hasMany(StoryView, { foreignKey: 'story_id', as: 'views', onDelete: 'CASCADE' });
+StoryView.belongsTo(Story, { foreignKey: 'story_id', as: 'story' });
+User.hasMany(StoryView, { foreignKey: 'user_id', as: 'viewedStories' });
+StoryView.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 const models = {
     sequelize,
@@ -100,7 +133,7 @@ const models = {
     WorkoutLogDetail,
     WorkoutLogSet,
     BodyWeightLog,
-    BodyMeasurementLog, // --- AÑADIDO ---
+    BodyMeasurementLog,
     ExerciseList,
     PersonalRecord,
     NutritionLog,
@@ -113,7 +146,11 @@ const models = {
     Notification,
     UserSession,
     Friendship,
-    BugReport
+    BugReport,
+    // Nuevos modelos
+    Story,
+    StoryLike,
+    StoryView
 };
 
 export default models;

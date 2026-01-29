@@ -12,9 +12,7 @@ const __dirname = path.dirname(__filename);
 
 import authRoutes from './routes/auth.js';
 import bodyweightRoutes from './routes/bodyweight.js';
-// --- INICIO MODIFICACIÓN ---
 import bodyMeasurementRoutes from './routes/bodyMeasurements.js';
-// --- FIN MODIFICACIÓN ---
 import creatinaRoutes from './routes/creatina.js';
 import exerciseRoutes from './routes/exercises.js';
 import exerciseListRoutes from './routes/exerciseList.js';
@@ -31,6 +29,7 @@ import twoFactorRoutes from './routes/twoFactor.js';
 import sessionRoutes from './routes/sessionRoutes.js';
 import socialRoutes from './routes/social.js';
 import reportRoutes from './routes/reports.js';
+import storyRoutes from './routes/stories.js';
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
@@ -64,25 +63,32 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Headers para Google Auth
+// Headers para Google Auth y Seguridad de Imágenes
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  // Permitir cargar imágenes desde cualquier origen (útil para previews en frontend)
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 });
 
 app.use(express.json());
 
-// Archivos estáticos (aquí se servirán las imágenes de los reportes)
+// --- ARCHIVOS ESTÁTICOS (CORRECCIÓN IMPORTANTE) ---
+
+// 1. Exponer la carpeta 'uploads' para que las historias sean accesibles
+// Mapea la URL http://.../uploads a la carpeta física backend/uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 2. Archivos estáticos de la carpeta public (si tienes)
 const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath));
 
-// Rutas API
+
+// --- Rutas API ---
 app.use('/api/auth', authRoutes);
 app.use('/api/bodyweight', bodyweightRoutes);
-// --- INICIO MODIFICACIÓN ---
 app.use('/api/measurements', bodyMeasurementRoutes);
-// --- FIN MODIFICACIÓN ---
 app.use('/api/creatina', creatinaRoutes);
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/exercise-list', exerciseListRoutes);
@@ -99,6 +105,7 @@ app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/stories', storyRoutes);
 
 app.use(errorHandler);
 
@@ -107,10 +114,11 @@ const PORT = process.env.PORT || 3001;
 db.sequelize.sync()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`✅ Server is running on port ${PORT}`);
+      console.log(`📂 Uploads folder serving at: http://localhost:${PORT}/uploads`);
     });
     startCronJobs();
   })
   .catch(err => {
-    console.error('Unable to connect to the database:', err);
+    console.error('❌ Unable to connect to the database:', err);
   });

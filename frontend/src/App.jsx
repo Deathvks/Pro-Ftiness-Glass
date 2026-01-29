@@ -12,6 +12,7 @@ import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppTheme } from './hooks/useAppTheme';
 import { useWorkoutTimer } from './hooks/useWorkoutTimer';
 import { useAppInitialization } from './hooks/useAppInitialization';
+import { useLocalNotifications } from './hooks/useLocalNotifications';
 
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
@@ -23,6 +24,7 @@ import VersionUpdater from './components/VersionUpdater';
 import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
 import SEOHead from './components/SEOHead';
+import StoryViewer from './components/StoryViewer'; // Importamos StoryViewer
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
@@ -53,6 +55,9 @@ export default function App() {
   const [authView, setAuthView] = useState('login');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
+  
+  // Estado para ver mi propia historia desde el header
+  const [viewingMyStory, setViewingMyStory] = useState(false);
 
   const {
     view,
@@ -65,11 +70,16 @@ export default function App() {
     handleShowPolicy
   } = useAppNavigation();
 
-  // Obtenemos resolvedTheme (light/dark/oled) y themeColor (hex) directamente del hook
   const { theme, setTheme, accent, setAccent, resolvedTheme, themeColor } = useAppTheme();
   
   const timer = useWorkoutTimer();
   const { t } = useTranslation('translation');
+
+  const { 
+    requestPermissions: requestNotificationPermissions, 
+    scheduleEngagementNotifications, 
+    scheduleDailyReminders 
+  } = useLocalNotifications();
 
   const {
     isInitialLoad,
@@ -84,6 +94,7 @@ export default function App() {
     fetchInitialData,
     isResting,
     restTimerMode,
+    myStories, // Obtenemos mis historias
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -92,25 +103,18 @@ export default function App() {
     fetchInitialData: state.fetchInitialData,
     isResting: state.isResting,
     restTimerMode: state.restTimerMode,
+    myStories: state.myStories,
   }));
 
-  // --- Sincronización de Tema con UI Nativa (Android/iOS) ---
+  // --- Sincronización de Tema con UI Nativa ---
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       const applyNativeTheme = async () => {
         try {
-          // 1. Barra de Estado (Notch area): Color exacto del tema
           await StatusBar.setBackgroundColor({ color: themeColor });
-          
-          // 2. Estilo de iconos (Oscuros en tema claro, Claros en tema oscuro)
-          // Usamos resolvedTheme para saber si es realmente light o dark (incluso en modo 'system')
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
-
-          // 3. Barra de Navegación (Botones/Gestos abajo)
           await NavigationBar.setColor({ color: themeColor });
-          
-          // Aseguramos que no se superponga
           await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
@@ -118,10 +122,22 @@ export default function App() {
       };
       applyNativeTheme();
     }
-    
-    // Sincronización web (fallback)
     document.body.style.backgroundColor = themeColor;
   }, [themeColor, resolvedTheme]);
+
+  // --- Inicialización de Notificaciones ---
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && Capacitor.isNativePlatform()) {
+      const initNotifications = async () => {
+        const granted = await requestNotificationPermissions();
+        if (granted) {
+          await scheduleEngagementNotifications();
+          await scheduleDailyReminders(false, false);
+        }
+      };
+      initNotifications();
+    }
+  }, [isAuthenticated, isLoading, requestNotificationPermissions, scheduleEngagementNotifications, scheduleDailyReminders]);
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
@@ -151,6 +167,17 @@ export default function App() {
     handleClose2FAPromo();
     navigate('twoFactorSetup');
   };
+
+  // Acción al hacer clic en el avatar del header
+  const handleHeaderAvatarClick = useCallback(() => {
+    // Si tengo historias activas, las abro
+    if (myStories && myStories.length > 0) {
+      setViewingMyStory(true);
+    } else {
+      // Si no, voy al perfil (comportamiento normal)
+      navigate('profile');
+    }
+  }, [myStories, navigate]);
 
   const currentTitle = useMemo(() => {
     const titleMap = {
@@ -188,7 +215,7 @@ export default function App() {
       default: t('default_desc', { defaultValue: 'Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass.' }),
     };
     return descKeys[view] || descKeys.default;
-  }, [view, t, userProfile?.username]);
+  }, [view, t]);
 
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
 
@@ -251,8 +278,6 @@ export default function App() {
       return <AuthScreens authView={authView} setAuthView={setAuthView} />;
     }
 
-    // --- CORRECCIÓN: Simplificación de lógica para Onboarding ---
-    // Si el usuario no tiene objetivo (goal), SIEMPRE mostramos la pantalla de onboarding.
     if (userProfile && !userProfile.goal) {
       return <OnboardingScreen />;
     }
@@ -260,6 +285,12 @@ export default function App() {
     if (!userProfile) {
       return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
     }
+
+    // Preparar objeto de usuario con info de historia para MainAppLayout
+    const userProfileWithStory = {
+        ...userProfile,
+        hasStories: myStories && myStories.length > 0
+    };
 
     return (
       <>
@@ -277,6 +308,9 @@ export default function App() {
           handleShowPolicy={handleShowPolicy}
           fetchInitialData={fetchInitialData}
           {...verificationProps}
+          // Pasamos el handler del avatar y el perfil enriquecido
+          onHeaderAvatarClick={handleHeaderAvatarClick}
+          userProfile={userProfileWithStory}
         />
         {isResting && (
           restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
@@ -287,13 +321,21 @@ export default function App() {
             onConfigure={handleConfigure2FA}
           />
         )}
+        
+        {/* Visor de mi historia (desde header) */}
+        {viewingMyStory && (
+            <StoryViewer 
+                userId={userProfile.id} 
+                onClose={() => setViewingMyStory(false)} 
+            />
+        )}
       </>
     );
   }, [
     authView, isInitialLoad, isLoading, isAuthenticated, userProfile, view, navigate,
     mainContentRef, currentTitle, currentViewComponent, navItems, handleLogoutClick,
     showLogoutConfirm, confirmLogout, handleShowPolicy, fetchInitialData, verificationProps,
-    isResting, restTimerMode, show2FAPromo, navParams
+    isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick
   ]);
 
   return (

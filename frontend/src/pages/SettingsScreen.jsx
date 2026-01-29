@@ -402,7 +402,8 @@ export default function SettingsScreen({
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
+      {/* LAYOUT: Grid responsivo de 1, 2 o 3 columnas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
 
         {/* --- COLUMNA 1 --- */}
         <div className="flex flex-col gap-8">
@@ -521,6 +522,63 @@ export default function SettingsScreen({
               />
             </div>
           </GlassCard>
+
+          {/* MOVIDO AQUI: Seguridad para que esté arriba en tablet */}
+          <GlassCard className={glassCardClass}>
+            <SectionTitle icon={Shield} title="Seguridad" />
+            <div className="flex flex-col gap-1">
+              
+              <SettingsItem
+                icon={Smartphone}
+                title="Verificación en 2 pasos"
+                onClick={() => setView('twoFactorSetup')}
+                action={
+                  <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-text-muted/20 text-text-muted [.oled-theme_&]:bg-transparent'}`}>
+                    {userProfile?.two_factor_enabled ? 'ACTIVADO' : 'DESACTIVADO'}
+                  </div>
+                }
+              />
+
+              <SettingsItem
+                icon={Download}
+                title="Exportar Datos"
+                subtitle="Descarga tu historial"
+                action={
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleExport('json'); }}
+                      className="px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-transparent dark:border-white/10 text-[10px] font-bold hover:bg-accent hover:text-white transition-colors [.oled-theme_&]:bg-transparent"
+                    >
+                      JSON
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleExport('csv'); }}
+                      className="px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-transparent dark:border-white/10 text-[10px] font-bold hover:bg-accent hover:text-white transition-colors [.oled-theme_&]:bg-transparent"
+                    >
+                      CSV
+                    </button>
+                  </div>
+                }
+              />
+
+              <SettingsItem
+                icon={Cookie}
+                title="Cookies"
+                subtitle="Gestionar consentimiento"
+                onClick={resetCookieConsent}
+              />
+
+              {userProfile?.role === 'admin' && (
+                <SettingsItem
+                  icon={Shield}
+                  title="Panel Admin"
+                  subtitle="Gestión avanzada"
+                  onClick={() => setView('adminPanel')}
+                  danger={false}
+                />
+              )}
+            </div>
+          </GlassCard>
         </div>
 
         {/* --- COLUMNA 2 --- */}
@@ -622,64 +680,9 @@ export default function SettingsScreen({
           </GlassCard>
         </div>
 
-        {/* --- COLUMNA 3 --- */}
-        <div className="flex flex-col gap-8 md:col-span-2 md:grid md:grid-cols-2 xl:col-span-1 xl:flex xl:flex-col">
-          <GlassCard className={glassCardClass}>
-            <SectionTitle icon={Shield} title="Seguridad" />
-            <div className="flex flex-col gap-1">
-              
-              <SettingsItem
-                icon={Smartphone}
-                title="Verificación en 2 pasos"
-                onClick={() => setView('twoFactorSetup')}
-                action={
-                  <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-text-muted/20 text-text-muted [.oled-theme_&]:bg-transparent'}`}>
-                    {userProfile?.two_factor_enabled ? 'ACTIVADO' : 'DESACTIVADO'}
-                  </div>
-                }
-              />
-
-              <SettingsItem
-                icon={Download}
-                title="Exportar Datos"
-                subtitle="Descarga tu historial"
-                action={
-                  <div className="flex gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleExport('json'); }}
-                      className="px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-transparent dark:border-white/10 text-[10px] font-bold hover:bg-accent hover:text-white transition-colors [.oled-theme_&]:bg-transparent"
-                    >
-                      JSON
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleExport('csv'); }}
-                      className="px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-transparent dark:border-white/10 text-[10px] font-bold hover:bg-accent hover:text-white transition-colors [.oled-theme_&]:bg-transparent"
-                    >
-                      CSV
-                    </button>
-                  </div>
-                }
-              />
-
-              <SettingsItem
-                icon={Cookie}
-                title="Cookies"
-                subtitle="Gestionar consentimiento"
-                onClick={resetCookieConsent}
-              />
-
-              {userProfile?.role === 'admin' && (
-                <SettingsItem
-                  icon={Shield}
-                  title="Panel Admin"
-                  subtitle="Gestión avanzada"
-                  onClick={() => setView('adminPanel')}
-                  danger={false}
-                />
-              )}
-            </div>
-          </GlassCard>
-
+        {/* --- COLUMNA 3 (Ahora solo Soporte) --- */}
+        {/* Ajustado: span-2 en tablet para ocupar el ancho completo abajo, o normal en Desktop */}
+        <div className="flex flex-col gap-8 md:col-span-2 lg:col-span-1">
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={Info} title="Soporte y General" />
             <div className="flex flex-col gap-1">

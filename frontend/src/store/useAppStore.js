@@ -7,6 +7,7 @@ import { createNotificationSlice } from './notificationSlice';
 import { createGamificationSlice } from './gamificationSlice';
 import { createSocialSlice } from './socialSlice';
 import { createSyncSlice } from './syncSlice';
+import { createStorySlice } from './storySlice';
 
 const useAppStore = create((set, get) => ({
     ...createAuthSlice(set, get),
@@ -16,6 +17,7 @@ const useAppStore = create((set, get) => ({
     ...createGamificationSlice(set, get),
     ...createSocialSlice(set, get),
     ...createSyncSlice(set, get),
+    ...createStorySlice(set, get),
 
     // --- Configuración Global: Vibración (Haptics) ---
     hapticsEnabled: (() => {

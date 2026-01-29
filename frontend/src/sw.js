@@ -1,5 +1,5 @@
 /* frontend/src/sw.js */
-// Desactivamos logs
+// Desactivamos logs de desarrollo
 self.__WB_DISABLE_DEV_LOGS = true;
 
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
@@ -9,21 +9,17 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
 
-// 1. Control inmediato
-// --- CAMBIO IMPORTANTE ---
-// Quitamos self.skipWaiting() automático para que la actualización no sea forzosa.
-// self.skipWaiting(); 
+// 1. Tomar control inmediato de la página
 clientsClaim();
 
-// Escuchamos el evento 'message' que envía el componente VersionUpdater cuando el usuario pulsa "Actualizar"
+// Escuchamos el evento 'message' para actualizaciones
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
-// -------------------------
 
-// 2. Limpieza y Pre-cache
+// 2. Limpieza de cachés antiguas y precarga
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
@@ -40,18 +36,29 @@ registerRoute(
   })
 );
 
-// B. Imágenes y Uploads (NetworkOnly)
+// B. Imágenes estáticas locales (logo, iconos, etc.)
+// IMPORTANTE: Excluimos '/uploads/' para evitar errores de CORS con el backend.
 registerRoute(
-  ({ request, url }) =>
-    request.destination === 'image' ||
-    url.pathname.startsWith('/images/') ||
-    url.pathname.startsWith('/uploads/'),
-  new NetworkOnly({
-    plugins: [],
+  ({ request, url }) => {
+    // Si la imagen viene de /uploads/ (Backend), NO la interceptamos.
+    // Dejamos que el navegador la maneje nativamente.
+    if (url.pathname.startsWith('/uploads/')) return false;
+
+    // Interceptamos solo imágenes locales o assets del frontend
+    return request.destination === 'image' || url.pathname.startsWith('/images/');
+  },
+  new StaleWhileRevalidate({
+    cacheName: 'local-images-cache',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 días
+      }),
+    ],
   })
 );
 
-// C. API - Lectura (GET) -> NetworkFirst
+// C. API - Lectura (GET) -> NetworkFirst (Intenta red, si falla usa caché)
 registerRoute(
   ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
   new NetworkFirst({
@@ -62,7 +69,7 @@ registerRoute(
         maxAgeSeconds: 24 * 60 * 60, // 24 horas
       }),
     ],
-    networkTimeoutSeconds: 5,
+    networkTimeoutSeconds: 5, // Si tarda más de 5s, usa caché
   })
 );
 
@@ -72,7 +79,7 @@ registerRoute(
   new NetworkOnly({
     plugins: [
       new BackgroundSyncPlugin('api-mutation-queue', {
-        maxRetentionTime: 24 * 60, // Retener peticiones hasta 24 horas
+        maxRetentionTime: 24 * 60, // Reintentar hasta 24 horas
       }),
     ],
   })

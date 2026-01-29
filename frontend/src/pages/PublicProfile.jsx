@@ -26,71 +26,58 @@ import { useToast } from '../hooks/useToast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import UserAvatar from '../components/UserAvatar';
-import { Helmet } from 'react-helmet-async'; // Aseguramos importar Helmet
+import { Helmet } from 'react-helmet-async';
+import StoryViewer from '../components/StoryViewer';
 
-// --- DICCIONARIO DE INSIGNIAS (Diseño Original con Emojis) ---
+// --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
+const SERVER_URL = API_URL.replace('/api', '');
+
+// Helper para corregir URLs de imágenes (Avatar)
+const getFullImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path; 
+    if (path.startsWith('blob:')) return path; 
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${SERVER_URL}${cleanPath}`;
+};
+
+// --- DICCIONARIO DE INSIGNIAS ---
 const BADGES_MAP = {
-    // --- Login / Cuenta ---
     'first_login': { name: 'Bienvenido', icon: '👋' },
     'early_adopter': { name: 'Pionero', icon: '🚀' },
     'profile_complete': { name: 'Identidad Real', icon: '🆔' },
     'verified_user': { name: 'Verificado', icon: '✅' },
-
-    // --- Entrenamientos ---
     'first_workout': { name: 'Primer Sudor', icon: '💦' },
     'workout_10': { name: 'Constante', icon: '🏋️' },
     'workout_50': { name: 'Dedicado', icon: '🦾' },
     'workout_100': { name: 'Centurión', icon: '💯' },
     'morning_bird': { name: 'Madrugador', icon: '🌅' },
     'night_owl': { name: 'Nocturno', icon: '🌙' },
-
-    // --- Maestrías ---
     'nutrition_master': { name: 'Master Nutrición', icon: '🍎' },
     'routine_master': { name: 'Creador Rutinas', icon: '📋' },
     'exercise_master': { name: 'Pro del Gym', icon: '💪' },
     'social_master': { name: 'Influencer', icon: '🌟' },
-
-    // --- Rachas (Streaks) ---
     'streak_3': { name: 'En Llamas', icon: '🔥' },
     'streak_7': { name: 'Imparable', icon: '⚡' },
     'streak_14': { name: 'Muro de Acero', icon: '🛡️' },
     'streak_30': { name: 'Leyenda', icon: '👑' },
     'streak_60': { name: 'Dios del Gym', icon: '🔱' },
-
-    // --- Social ---
     'social_add': { name: 'Amigable', icon: '🤝' },
     'social_10_friends': { name: 'Popular', icon: '🌟' },
-
-    // --- Objetivos / Peso ---
     'weight_goal': { name: 'Meta Cumplida', icon: '🎯' },
     'first_pr': { name: 'Récord Personal', icon: '🏆' },
-
-    // --- Fallback ---
     'default': { name: 'Logro', icon: '🏅' }
 };
 
-// Helper para resolver los datos de la insignia
 const resolveBadge = (badge) => {
     if (!badge) return BADGES_MAP['default'];
-
-    let badgeId = '';
-    // Normalizar ID
-    if (typeof badge === 'string') badgeId = badge;
-    else if (typeof badge === 'object') badgeId = badge.id || badge.name;
-
-    // 1. Buscar en el mapa manual
+    let badgeId = typeof badge === 'string' ? badge : (badge.id || badge.name);
     if (BADGES_MAP[badgeId]) return BADGES_MAP[badgeId];
-
-    // 2. Fallback inteligente
     if (badgeId) {
-        const friendlyName = badgeId
-            .toString()
-            .replace(/[_-]/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase());
-
+        const friendlyName = badgeId.toString().replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         return { name: friendlyName, icon: '🏅' };
     }
-
     return BADGES_MAP['default'];
 };
 
@@ -112,7 +99,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         sendFriendRequest,
         removeFriend,
         userProfile: myProfile,
-        gamification
+        gamification,
+        stories, 
+        fetchStories
     } = useAppStore();
 
     const [badgePage, setBadgePage] = useState(0);
@@ -120,13 +109,18 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeletingFriend, setIsDeletingFriend] = useState(false);
+    
+    // Estado para visor de historia
+    const [viewingStory, setViewingStory] = useState(false);
 
     useEffect(() => {
         if (userId) {
             fetchPublicProfile(userId);
+            // Cargar historias si no están cargadas
+            if (stories.length === 0) fetchStories();
         }
         return () => clearViewedProfile();
-    }, [userId, fetchPublicProfile, clearViewedProfile]);
+    }, [userId, fetchPublicProfile, clearViewedProfile, fetchStories]);
 
     const relationshipStatus = useMemo(() => {
         if (!myProfile || !userId) return 'unknown';
@@ -148,27 +142,54 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     const profile = useMemo(() => {
         if (!fetchedProfile) return null;
+        
+        const fullAvatarUrl = getFullImageUrl(fetchedProfile.avatar_url || fetchedProfile.avatar || fetchedProfile.profile_image_url);
+
+        const baseProfile = { 
+            ...fetchedProfile,
+            avatar: fullAvatarUrl, 
+            profile_image_url: fullAvatarUrl 
+        };
+
         if (relationshipStatus === 'me' && gamification) {
             return {
-                ...fetchedProfile,
-                xp: gamification.xp ?? fetchedProfile.xp,
-                level: gamification.level ?? fetchedProfile.level,
-                streak: gamification.streak ?? fetchedProfile.streak,
-                workoutsCount: fetchedProfile.workoutsCount,
+                ...baseProfile,
+                xp: gamification.xp ?? baseProfile.xp,
+                level: gamification.level ?? baseProfile.level,
+                streak: gamification.streak ?? baseProfile.streak,
+                workoutsCount: baseProfile.workoutsCount,
             };
         }
-        return fetchedProfile;
+        return baseProfile;
     }, [fetchedProfile, relationshipStatus, gamification]);
 
-    // --- SCHEMA.ORG GENERATOR ---
+    // Buscar si este usuario tiene historias activas
+    const userStory = useMemo(() => {
+        if (!profile) return null;
+        const storyGroup = stories.find(s => s.userId === profile.id);
+        
+        if (!storyGroup) return null;
+
+        const validStories = storyGroup.items.filter(item => {
+            const isExpired = new Date(item.expiresAt) <= new Date();
+            if (isExpired) return false;
+            if (relationshipStatus === 'friend' || relationshipStatus === 'me') return true;
+            return item.privacy === 'public';
+        });
+
+        if (validStories.length === 0) return null;
+
+        // Calcular si hay historias no vistas
+        const hasUnseen = validStories.some(item => !item.viewed);
+
+        return { ...storyGroup, items: validStories, hasUnseen };
+    }, [stories, profile, relationshipStatus]); // Dependencia clave: stories (se actualiza al verlas)
+
+
     const structuredData = useMemo(() => {
         if (!profile) return null;
-
         const baseUrl = 'https://pro-fitness-glass.zeabur.app';
         const profileUrl = `${baseUrl}/profile/${profile.id}`;
-
-        // Construimos un objeto Schema tipo "Person"
-        // Google entiende esto y puede mostrar detalles ricos.
         const schema = {
             "@context": "https://schema.org",
             "@type": "Person",
@@ -184,13 +205,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 }
             ]
         };
-
         if (profile.avatar_url) {
-            schema.image = profile.avatar_url.startsWith('http')
-                ? profile.avatar_url
-                : `${baseUrl}${profile.avatar_url}`;
+            schema.image = profile.avatar_url;
         }
-
         return JSON.stringify(schema);
     }, [profile]);
 
@@ -201,9 +218,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         else showToast('Error al enviar solicitud', 'error');
     };
 
-    const handleRemoveFriend = () => {
-        setShowDeleteConfirm(true);
-    };
+    const handleRemoveFriend = () => setShowDeleteConfirm(true);
 
     const confirmRemoveFriend = async () => {
         setIsDeletingFriend(true);
@@ -221,18 +236,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     };
 
     const handleGoBack = (e) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        if (onBack) {
-            onBack();
-            return;
-        }
-        if (setView) {
-            setView('social');
-            return;
-        }
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (onBack) { onBack(); return; }
+        if (setView) { setView('social'); return; }
         window.location.href = '/social';
     };
 
@@ -267,7 +273,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         <p className="text-text-tertiary mb-6">El usuario no existe o ha restringido su perfil.</p>
                     </>
                 )}
-
                 <button
                     type="button"
                     onClick={handleGoBack}
@@ -294,17 +299,20 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     return (
         <div className="pb-6 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
 
+            {/* --- VISOR DE HISTORIA --- */}
+            {viewingStory && (
+                <StoryViewer 
+                    userId={profile.id} 
+                    onClose={() => setViewingStory(false)} 
+                />
+            )}
+
             {/* --- SEO & STRUCTURED DATA --- */}
             {profile && (
                 <Helmet>
                     <title>{`${profile.username} - Perfil en Pro Fitness Glass`}</title>
                     <meta name="description" content={`Mira el perfil de fitness de ${profile.username}. Nivel ${profile.level}, ${profile.workoutsCount} entrenamientos completados.`} />
-                    {/* JSON-LD Script para Google */}
-                    {structuredData && (
-                        <script type="application/ld+json">
-                            {structuredData}
-                        </script>
-                    )}
+                    {structuredData && <script type="application/ld+json">{structuredData}</script>}
                 </Helmet>
             )}
 
@@ -340,9 +348,26 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             <GlassCard className="relative overflow-hidden p-6 flex flex-col items-center text-center gap-4">
                 <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent-primary/20 to-transparent pointer-events-none" />
 
-                <div className="relative z-10 w-32 h-32 rounded-full p-1 bg-gradient-to-br from-accent-primary to-accent-secondary shadow-xl shadow-accent-primary/20">
+                {/* Avatar con anillo de historia (si tiene) */}
+                <div 
+                    className={`relative z-10 w-32 h-32 rounded-full p-1 transition-all duration-300
+                        ${userStory 
+                            ? (userStory.hasUnseen 
+                                // FIX: Usar bg-accent sólido para anillo "nuevo"
+                                ? 'bg-accent shadow-xl shadow-accent/40 cursor-pointer animate-pulse-slow' 
+                                // FIX: Estilo para historias vistas (gris/transparente)
+                                : 'bg-gray-300 dark:bg-white/20 cursor-pointer'
+                              )
+                            : 'bg-gradient-to-br from-accent-primary to-accent-secondary shadow-xl shadow-accent-primary/20'
+                        }
+                    `}
+                    onClick={() => {
+                        if (userStory) setViewingStory(true);
+                    }}
+                >
+                    {/* FIX: Pasar profile completo que ya tiene profile_image_url corregido */}
                     <UserAvatar
-                        user={profile}
+                        user={profile} 
                         size="full"
                         className="w-full h-full border-none bg-bg-primary"
                     />
@@ -355,7 +380,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 </div>
 
                 <div className="z-10">
-                    <h2 className="text-2xl font-bold text-text-primary mb-1">{profile.username}</h2>
+                    <h2 className="text-2xl font-bold text-text-primary mb-1 flex items-center justify-center gap-2">
+                        {profile.username}
+                        {userStory && (
+                            <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">
+                                Historia
+                            </span>
+                        )}
+                    </h2>
                     <p className="text-text-secondary text-sm flex items-center justify-center gap-2">
                         Miembro desde {profile.createdAt ? new Date(profile.createdAt).getFullYear() : '2024'}
                         {profile.is_verified && <Shield size={14} className="text-blue-400 fill-blue-400/20" />}
@@ -501,7 +533,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 </div>
             )}
 
-            {/* --- RUTINAS PÚBLICAS (Próximamente) --- */}
+            {/* --- RUTINAS PÚBLICAS --- */}
             <div className="space-y-4">
                 <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
                     <Dumbbell size={20} className="text-accent-primary" />
