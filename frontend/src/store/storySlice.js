@@ -1,5 +1,6 @@
 /* frontend/src/store/storySlice.js */
 import api from '../services/apiClient';
+import { initSocket } from '../services/socket'; // Importamos el servicio de Socket
 
 export const createStorySlice = (set, get) => ({
   stories: [], // Historias de amigos/públicas
@@ -8,7 +9,7 @@ export const createStorySlice = (set, get) => ({
 
   // --- Acciones ---
 
-  // Cargar historias reales desde el backend
+  // Cargar historias reales desde el backend (REST inicial)
   fetchStories: async () => {
     set({ isStoriesLoading: true });
     try {
@@ -40,6 +41,75 @@ export const createStorySlice = (set, get) => ({
     }
   },
 
+  // --- SOCKETS: Suscripción en Tiempo Real ---
+  subscribeToStories: () => {
+    const socket = initSocket();
+    if (!socket) return;
+
+    // Limpiamos listener previo para evitar duplicados
+    socket.off('new_story');
+
+    // Escuchar el evento 'new_story'
+    socket.on('new_story', (payload) => {
+      // payload esperado: { story: Object, user: { id, username, avatar } }
+      const { story, user } = payload;
+      
+      const state = get();
+      const myId = state.userProfile?.id;
+
+      // 1. Si la historia es mía (subida desde otro dispositivo/pestaña)
+      if (user.id === myId) {
+         // Evitar duplicados si ya la tenemos (por la actualización optimista de uploadStory)
+         const alreadyExists = state.myStories.some(s => s.id === story.id);
+         if (!alreadyExists) {
+             set(state => ({
+                 myStories: [...state.myStories, story]
+             }));
+         }
+         return;
+      }
+
+      // 2. Si la historia es de otro usuario
+      set(state => {
+        const existingUserIndex = state.stories.findIndex(u => u.userId === user.id);
+        let newStories = [...state.stories];
+
+        if (existingUserIndex >= 0) {
+            // El usuario YA existe en la lista
+            const existingUser = newStories[existingUserIndex];
+            
+            // Verificamos si la historia ya existe para evitar duplicados
+            const storyExists = existingUser.items.some(s => s.id === story.id);
+            if (storyExists) return {}; // No cambiamos nada
+
+            const updatedUser = {
+                ...existingUser,
+                hasUnseen: true, // Marcamos que tiene algo nuevo
+                items: [...existingUser.items, story]
+            };
+            
+            // Movemos al usuario al principio de la lista (Feedback visual de novedad)
+            newStories.splice(existingUserIndex, 1);
+            newStories.unshift(updatedUser);
+
+        } else {
+            // El usuario NO estaba en la lista (primera historia del día)
+            const newUserGroup = {
+                userId: user.id,
+                username: user.username,
+                avatar: user.profile_image_url || user.avatar,
+                hasUnseen: true,
+                items: [story]
+            };
+            // Lo añadimos al principio
+            newStories.unshift(newUserGroup);
+        }
+
+        return { stories: newStories };
+      });
+    });
+  },
+
   // Subir una nueva historia (soporta imagen/video, privacidad y HDR)
   uploadStory: async (file, privacy = 'friends', isHDR = false) => {
     try {
@@ -66,7 +136,6 @@ export const createStorySlice = (set, get) => ({
       return { success: true }; 
     } catch (error) {
       console.error("Error subiendo historia:", error);
-      // Devolvemos el mensaje de error del backend (donde viene la alerta de moderación/NSFW)
       return { success: false, error: error.message || "Error al subir la historia" };
     }
   },
@@ -89,20 +158,17 @@ export const createStorySlice = (set, get) => ({
       const updateItems = (items) => items.map(item => {
         if (item.id === storyId) {
             const wasLiked = item.isLiked;
-            // Clonar array existente o iniciar vacío
             let newLikesList = Array.isArray(item.likes) ? [...item.likes] : [];
 
             if (wasLiked) {
-                // Si ya tenía like, lo quitamos (filtramos por ID)
                 newLikesList = newLikesList.filter(l => l.userId !== myId);
             } else {
-                // Si no tenía, nos añadimos
                 newLikesList.push(myLikeObject);
             }
 
             return {
                 ...item,
-                likes: newLikesList, // Guardamos el array actualizado
+                likes: newLikesList,
                 isLiked: !wasLiked
             };
         }
@@ -120,7 +186,7 @@ export const createStorySlice = (set, get) => ({
         return user;
       });
 
-      // Actualizar también si la historia es mía (caso raro pero posible)
+      // Actualizar también si la historia es mía
       let newMyStories = state.myStories;
       if (targetUserId === myId) {
           newMyStories = updateItems(state.myStories);
@@ -133,14 +199,14 @@ export const createStorySlice = (set, get) => ({
     try {
       const response = await api(`/stories/${storyId}/like`, { method: 'POST' });
 
-      // Si el servidor devuelve la lista actualizada, la usamos para corregir cualquier discrepancia
+      // Si el servidor devuelve la lista actualizada, la usamos
       if (response && Array.isArray(response.likes)) {
           set(state => {
               const syncItems = (items) => items.map(item => {
                   if (item.id === storyId) {
                       return { 
                           ...item, 
-                          likes: response.likes, // Usar lista oficial del backend
+                          likes: response.likes, 
                           isLiked: response.isLiked 
                       };
                   }
@@ -164,7 +230,6 @@ export const createStorySlice = (set, get) => ({
       }
     } catch (error) {
       console.error("Error dando like:", error);
-      // Aquí se podría revertir el cambio optimista si fuera necesario
     }
   },
 

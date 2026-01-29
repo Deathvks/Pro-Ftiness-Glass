@@ -37,19 +37,16 @@ export const createStory = async (req, res) => {
 
         const isHDRBoolean = isHDR === 'true';
 
-        // Procesar archivo (Aquí es donde la IA puede rechazar la imagen y verificar HDR real)
+        // Procesar archivo (Verificación IA y HDR real)
         let processedResult;
         try {
-            // Recibimos un objeto { url, isHDR } en lugar de solo el string
             processedResult = await processUploadedFile(req.file, isHDRBoolean);
         } catch (uploadError) {
-            // Si el error viene de la IA (NSFW), tiene un mensaje específico
             if (uploadError.message && (uploadError.message.includes('rechazada') || uploadError.message.includes('inapropiado'))) {
                 return res.status(400).json({ 
                     error: uploadError.message 
                 });
             }
-            // Si es otro error de procesamiento
             throw uploadError;
         }
         
@@ -58,7 +55,7 @@ export const createStory = async (req, res) => {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
 
-        // Usamos el flag isHDR real devuelto por el servicio (si era incompatible, será false)
+        // Usamos el flag isHDR real devuelto por el servicio
         const finalIsHDR = processedResult.isHDR;
 
         const newStory = await Story.create({
@@ -70,6 +67,12 @@ export const createStory = async (req, res) => {
             expires_at: expiresAt
         });
 
+        // Recuperar datos del usuario para enviarlos en el evento de Socket
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'username', 'profile_image_url']
+        });
+
+        // Estructura completa para el tiempo real
         const storyResponse = {
             id: newStory.id,
             url: newStory.url,
@@ -80,8 +83,27 @@ export const createStory = async (req, res) => {
             expiresAt: newStory.expires_at,
             likes: [], 
             isLiked: false,
-            viewed: true 
+            viewed: false,
+            // Datos del usuario para que el frontend actualice la burbuja inmediatamente
+            userId: user.id,
+            username: user.username,
+            avatar: user.profile_image_url
         };
+
+        // --- SOCKET.IO: EMITIR EVENTO REAL-TIME ---
+        const io = req.app.get('io');
+        if (io) {
+            // Enviamos el objeto con la historia y los datos del usuario
+            // El frontend suscrito recibirá esto y actualizará el carrusel
+            io.emit('new_story', {
+                story: storyResponse,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    avatar: user.profile_image_url
+                }
+            });
+        }
 
         res.status(201).json({ message: 'Historia creada', story: storyResponse });
 
@@ -96,10 +118,8 @@ export const getStories = async (req, res) => {
         const userId = req.user.userId;
         const now = new Date();
 
-        // 1. Obtener IDs de amigos
         const friendIds = await getFriendIds(userId);
 
-        // 2. Buscar Historias
         const stories = await Story.findAll({
             where: {
                 expires_at: { [Op.gt]: now },
@@ -121,7 +141,6 @@ export const getStories = async (req, res) => {
                 {
                     model: StoryLike,
                     as: 'likes',
-                    // Incluir datos del usuario para la lista
                     include: [{
                         model: User,
                         as: 'user',
@@ -138,7 +157,6 @@ export const getStories = async (req, res) => {
             order: [['created_at', 'ASC']] 
         });
 
-        // 3. Agrupar
         const groupedStories = {};
 
         stories.forEach(story => {
@@ -161,7 +179,6 @@ export const getStories = async (req, res) => {
                 groupedStories[u.id].hasUnseen = true;
             }
 
-            // Mapear likes a un array de usuarios
             const likesList = story.likes.map(like => ({
                 userId: like.user_id,
                 username: like.user?.username || 'Usuario',
@@ -176,7 +193,7 @@ export const getStories = async (req, res) => {
                 expiresAt: story.expires_at,
                 privacy: story.privacy,
                 isHDR: story.is_hdr,
-                likes: likesList, // Ahora enviamos el array completo
+                likes: likesList, 
                 isLiked: isLiked,
                 viewed: isViewed
             });
@@ -213,6 +230,12 @@ export const deleteStory = async (req, res) => {
         deleteFile(story.url);
         await story.destroy();
 
+        // Notificar eliminación en tiempo real
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('delete_story', { storyId: id, userId });
+        }
+
         res.json({ message: 'Historia eliminada' });
 
     } catch (error) {
@@ -243,7 +266,6 @@ export const toggleLikeStory = async (req, res) => {
             isLiked = true;
         }
 
-        // --- FIX CRÍTICO: Devolver la lista actualizada de usuarios ---
         const updatedLikes = await StoryLike.findAll({
             where: { story_id: id },
             include: [{
@@ -262,7 +284,7 @@ export const toggleLikeStory = async (req, res) => {
         res.json({ 
             message: isLiked ? 'Like añadido' : 'Like eliminado', 
             isLiked,
-            likes: likesList // Enviamos la lista real al frontend
+            likes: likesList 
         });
 
     } catch (error) {

@@ -420,6 +420,7 @@ export default function Social({ setView }) {
         myStories,
         fetchStories,
         uploadStory,
+        subscribeToStories, // <-- Añadido
     } = useAppStore();
 
     useEffect(() => {
@@ -427,7 +428,8 @@ export default function Social({ setView }) {
         fetchFriendRequests();
         fetchLeaderboard();
         fetchStories(); 
-    }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories]);
+        subscribeToStories(); // <-- Añadido: Activa la escucha de eventos en tiempo real
+    }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories, subscribeToStories]);
 
     // Manejo de params
     useEffect(() => {

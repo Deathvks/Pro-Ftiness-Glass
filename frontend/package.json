@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "5.5.4",
+  "version": "5.5.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -46,6 +46,7 @@
     "recharts": "^3.1.0",
     "remotion": "^4.0.400",
     "serve": "^14.2.3",
+    "socket.io-client": "^4.8.3",
     "uuid": "^13.0.0",
     "zustand": "^4.5.7"
   },

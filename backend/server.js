@@ -2,6 +2,9 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { createServer } from 'http'; // Necesario para unir Express + Socket.io
+import { Server } from 'socket.io';  // Servidor de WebSockets
+import jwt from 'jsonwebtoken';      // Para autenticar conexiones socket
 import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
@@ -33,6 +36,8 @@ import storyRoutes from './routes/stories.js';
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
+const httpServer = createServer(app); // Envolvemos Express en un servidor HTTP
+
 app.set('trust proxy', 1);
 
 // --- Configuración CORS ---
@@ -63,27 +68,57 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// --- INICIALIZACIÓN SOCKET.IO ---
+const io = new Server(httpServer, {
+  cors: {
+    origin: allowedOrigins, // Reutilizamos los orígenes permitidos
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+// Middleware de autenticación para Socket.io (Seguridad)
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('Authentication error: Token required'));
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded; // Adjuntamos usuario al socket
+    next();
+  } catch (err) {
+    return next(new Error('Authentication error: Invalid token'));
+  }
+});
+
+// Gestión de conexiones
+io.on('connection', (socket) => {
+  // console.log(`🔌 Cliente conectado: ${socket.user.userId} (${socket.id})`);
+  
+  socket.on('disconnect', () => {
+    // console.log(`🔌 Cliente desconectado: ${socket.id}`);
+  });
+});
+
+// Hacemos 'io' accesible en toda la aplicación (Controladores)
+app.set('io', io);
+
 // Headers para Google Auth y Seguridad de Imágenes
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  // Permitir cargar imágenes desde cualquier origen (útil para previews en frontend)
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 });
 
 app.use(express.json());
 
-// --- ARCHIVOS ESTÁTICOS (CORRECCIÓN IMPORTANTE) ---
-
-// 1. Exponer la carpeta 'uploads' para que las historias sean accesibles
-// Mapea la URL http://.../uploads a la carpeta física backend/uploads
+// --- ARCHIVOS ESTÁTICOS ---
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// 2. Archivos estáticos de la carpeta public (si tienes)
 const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath));
-
 
 // --- Rutas API ---
 app.use('/api/auth', authRoutes);
@@ -113,8 +148,9 @@ const PORT = process.env.PORT || 3001;
 
 db.sequelize.sync()
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(`✅ Server is running on port ${PORT}`);
+    // CAMBIO IMPORTANTE: Usamos httpServer.listen en lugar de app.listen
+    httpServer.listen(PORT, () => {
+      console.log(`✅ Server (HTTP + Socket.io) is running on port ${PORT}`);
       console.log(`📂 Uploads folder serving at: http://localhost:${PORT}/uploads`);
     });
     startCronJobs();
