@@ -3,8 +3,8 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // 1. Tabla de Historias
-    await queryInterface.createTable('Stories', {
+    // 1. Tabla de Historias (stories en minúscula)
+    await queryInterface.createTable('stories', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -15,7 +15,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Users',
+          model: 'users', // IMPORTANTE: 'users' en minúscula para coincidir con la tabla existente
           key: 'id'
         },
         onUpdate: 'CASCADE',
@@ -33,6 +33,10 @@ module.exports = {
         type: Sequelize.ENUM('public', 'friends'),
         defaultValue: 'friends'
       },
+      is_hdr: { // Aseguramos que el campo HDR exista si lo usas
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
       expires_at: {
         type: Sequelize.DATE,
         allowNull: false
@@ -49,8 +53,8 @@ module.exports = {
       }
     });
 
-    // 2. Tabla de Likes en Historias
-    await queryInterface.createTable('StoryLikes', {
+    // 2. Tabla de Likes en Historias (story_likes)
+    await queryInterface.createTable('story_likes', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -61,7 +65,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Stories',
+          model: 'stories', // Referencia a la tabla creada arriba (minúscula)
           key: 'id'
         },
         onUpdate: 'CASCADE',
@@ -71,7 +75,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Users',
+          model: 'users', // Referencia a users (minúscula)
           key: 'id'
         },
         onUpdate: 'CASCADE',
@@ -89,8 +93,8 @@ module.exports = {
       }
     });
 
-    // 3. Tabla de Vistas de Historias (para saber cuáles ya vio el usuario)
-    await queryInterface.createTable('StoryViews', {
+    // 3. Tabla de Vistas de Historias (story_views)
+    await queryInterface.createTable('story_views', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -101,7 +105,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Stories',
+          model: 'stories', // Referencia a stories (minúscula)
           key: 'id'
         },
         onUpdate: 'CASCADE',
@@ -111,7 +115,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Users',
+          model: 'users', // Referencia a users (minúscula)
           key: 'id'
         },
         onUpdate: 'CASCADE',
@@ -129,15 +133,15 @@ module.exports = {
       }
     });
 
-    // Índices para optimizar búsquedas
-    await queryInterface.addIndex('Stories', ['user_id', 'expires_at']); // Buscar historias activas de un usuario
-    await queryInterface.addIndex('StoryLikes', ['story_id', 'user_id'], { unique: true }); // Un like por usuario por historia
-    await queryInterface.addIndex('StoryViews', ['story_id', 'user_id'], { unique: true }); // Una vista por usuario por historia
+    // Índices para optimizar búsquedas (usando nombres de tabla en minúscula)
+    await queryInterface.addIndex('stories', ['user_id', 'expires_at']); 
+    await queryInterface.addIndex('story_likes', ['story_id', 'user_id'], { unique: true });
+    await queryInterface.addIndex('story_views', ['story_id', 'user_id'], { unique: true });
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('StoryViews');
-    await queryInterface.dropTable('StoryLikes');
-    await queryInterface.dropTable('Stories');
+    await queryInterface.dropTable('story_views');
+    await queryInterface.dropTable('story_likes');
+    await queryInterface.dropTable('stories');
   }
 };
