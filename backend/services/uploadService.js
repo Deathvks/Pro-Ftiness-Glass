@@ -101,17 +101,16 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
 
     try {
         // --- PASO A: VERIFICACIÓN NSFW ---
-        const imagePipeline = sharp(file.path);
-        const metadata = await imagePipeline.metadata();
-
-        // Buffer para la IA (redimensionado pequeño para velocidad)
-        const buffer = await imagePipeline
-            .clone()
+        // Usamos sharp para obtener los píxeles crudos (RGB) en lugar de un buffer codificado
+        // Esto evita depender de tf.node.decodeImage que requiere bindings nativos
+        const { data, info } = await sharp(file.path)
             .resize(224, 224, { fit: 'cover' })
-            .toBuffer();
+            .removeAlpha() // Forzar 3 canales (RGB) quitando transparencia si existe
+            .raw()
+            .toBuffer({ resolveWithObject: true });
 
-        // Convertir buffer a tensor 3D
-        const tfImage = tf.node.decodeImage(buffer, 3);
+        // Crear tensor desde los datos crudos (versión compatible con Pure JS)
+        const tfImage = tf.tensor3d(new Uint8Array(data), [info.height, info.width, 3], 'int32');
 
         const loadedModel = await loadModel();
         if (loadedModel) {
@@ -135,6 +134,10 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
         }
 
         // --- PASO B: OPTIMIZACIÓN FINAL (Sharp) ---
+        // Recargamos sharp con el archivo original para el procesado final
+        const imagePipeline = sharp(file.path);
+        const metadata = await imagePipeline.metadata();
+
         const dir = path.dirname(file.path);
         const name = path.parse(file.filename).name;
         const newFilename = `${name}.webp`;
