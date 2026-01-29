@@ -472,11 +472,14 @@ const StoryViewer = ({ userId, onClose }) => {
       if (isPaused) setIsPaused(false);
   };
 
+  // --- MODIFICADO: Registro de vista ---
   useEffect(() => {
-    if (currentStory && !currentStory.viewed && !isMyStory && storyData?.userId) {
+    // Eliminamos la restricción !isMyStory para que al ver mis propias historias
+    // se actualice el estado local y desaparezca el borde en el feed.
+    if (currentStory && !currentStory.viewed && storyData?.userId) {
       markStoryAsViewed(storyData.userId, currentStory.id);
     }
-  }, [currentIndex, currentStory, isMyStory, storyData, markStoryAsViewed]);
+  }, [currentIndex, currentStory, storyData, markStoryAsViewed]);
 
   const handleDownload = async (e) => {
     e.stopPropagation();

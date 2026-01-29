@@ -147,33 +147,58 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [privacy, setPrivacy] = useState('friends'); 
-    const [isHDR, setIsHDR] = useState(false);
-    const [deviceSupportsHDR, setDeviceSupportsHDR] = useState(false);
+    
+    // Estados para control HDR
+    const [canUseHDR, setCanUseHDR] = useState(false); // ¿El archivo es compatible?
+    const [isHDR, setIsHDR] = useState(false);         // ¿El usuario quiere activarlo?
     
     const galleryInputRef = useRef(null);
     const cameraInputRef = useRef(null);
-
-    useEffect(() => {
-        const checkHDR = () => {
-            const mediaQuery = window.matchMedia('(dynamic-range: high)');
-            setDeviceSupportsHDR(mediaQuery.matches);
-        };
-        checkHDR();
-        const mq = window.matchMedia('(dynamic-range: high)');
-        mq.addEventListener('change', e => setDeviceSupportsHDR(e.matches));
-        return () => mq.removeEventListener('change', e => setDeviceSupportsHDR(e.matches));
-    }, []);
 
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
         if (selected) {
             setFile(selected);
             setPreview(URL.createObjectURL(selected));
+            
+            // Reiniciar estados de detección
+            setCanUseHDR(false);
+            setIsHDR(false);
+
+            // 1. Detección por extensión para Imágenes (HEIC/AVIF suelen ser HDR)
+            if (selected.type.startsWith('image/')) {
+                const isPotentialHDRImage = /\.(heic|heif|avif)$/i.test(selected.name);
+                if (isPotentialHDRImage) {
+                    setCanUseHDR(true);
+                    setIsHDR(true); // Activar por defecto si se detecta
+                }
+            }
+        }
+    };
+
+    // 2. Detección avanzada para Vídeos al cargar metadatos
+    const handleVideoLoad = (e) => {
+        const video = e.target;
+        // API moderna para detectar espacio de color (Chrome/Edge/Safari recientes)
+        if (video.colorSpace) {
+            const { transfer, primaries } = video.colorSpace;
+            // Detectar espacios de color HDR típicos: BT.2020, PQ (smpte2084), HLG
+            const isHDRSpace = ['smpte2084', 'hlg', 'bt2020'].includes(transfer) || primaries === 'bt2020';
+            
+            if (isHDRSpace) {
+                setCanUseHDR(true);
+                setIsHDR(true); // Activar por defecto
+            }
         }
     };
 
     const handleSubmit = () => {
         if (file) onUpload(file, privacy, isHDR);
+    };
+
+    const toggleHDR = () => {
+        if (!canUseHDR) return;
+        setIsHDR(!isHDR);
     };
 
     return (
@@ -225,8 +250,10 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     src={preview} 
                                     className="max-h-[60vh] w-full object-contain" 
                                     controls 
+                                    onLoadedMetadata={handleVideoLoad}
                                     style={{ 
-                                        filter: isHDR ? 'brightness(1.1) contrast(1.05)' : 'none',
+                                        // Visualmente indicamos HDR si está activo
+                                        filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
                                     }}
                                 />
                             ) : (
@@ -235,12 +262,12 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     alt="Preview" 
                                     className="max-h-[60vh] object-contain"
                                     style={{ 
-                                        filter: isHDR ? 'brightness(1.1) contrast(1.05)' : 'none',
+                                        filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
                                     }}
                                 />
                             )}
                             <button 
-                                onClick={() => { setFile(null); setPreview(null); setIsHDR(false); }}
+                                onClick={() => { setFile(null); setPreview(null); setIsHDR(false); setCanUseHDR(false); }}
                                 className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500/80 transition-colors"
                             >
                                 <X size={16} />
@@ -293,14 +320,14 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             <span>Público</span>
                         </button>
 
-                        {/* Mostrar botón HDR solo si el dispositivo lo soporta Y hay un archivo seleccionado */}
-                        {deviceSupportsHDR && file && (
+                        {/* Botón Inteligente HDR: Solo aparece si canUseHDR es true */}
+                        {canUseHDR && (
                             <button 
-                                onClick={() => setIsHDR(!isHDR)}
-                                className={`flex-initial px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
+                                onClick={toggleHDR}
+                                className={`flex-initial px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all border
                                     ${isHDR 
-                                        ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.15)]' 
-                                        : 'bg-white/5 text-text-secondary border-white/5 opacity-80 hover:opacity-100'
+                                        ? 'bg-accent text-white border-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow' 
+                                        : 'bg-white/5 text-text-secondary border-white/5 opacity-60 hover:opacity-100'
                                     }`}
                             >
                                 <Zap size={14} className={isHDR ? "fill-current" : ""} />
@@ -528,6 +555,11 @@ export default function Social({ setView }) {
             return isFriend || hasPublicStories;
         });
     }, [stories, socialFriends]);
+
+    // Calcular si tengo historias sin ver
+    const myStoriesUnseen = useMemo(() => {
+        return myStories && myStories.some(s => !s.viewed);
+    }, [myStories]);
 
     // --- Renderers ---
 
@@ -785,7 +817,7 @@ export default function Social({ setView }) {
                         }} 
                         isMe={true} 
                         hasStories={myStories.length > 0} 
-                        hasUnseen={false} 
+                        hasUnseen={myStoriesUnseen} 
                         onClick={handleMyStoryClick} 
                         onAdd={initiateStoryUpload} // Usamos la nueva función con validación
                     />

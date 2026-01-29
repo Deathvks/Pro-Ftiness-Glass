@@ -255,7 +255,19 @@ export const createStorySlice = (set, get) => ({
 
   // Marcar historia como vista
   markStoryAsViewed: async (targetUserId, storyId) => {
+    const state = get();
+    const myId = state.userProfile?.id;
+
     set(state => {
+      // 1. Si la historia es mía, actualizamos myStories
+      if (targetUserId === myId) {
+          const newMyStories = state.myStories.map(item => 
+              item.id === storyId ? { ...item, viewed: true } : item
+          );
+          return { myStories: newMyStories };
+      }
+
+      // 2. Si es historia de otro, actualizamos stories
       const newStories = state.stories.map(user => {
         if (user.userId === targetUserId) {
           const updatedItems = user.items.map(item => 
@@ -269,10 +281,13 @@ export const createStorySlice = (set, get) => ({
       return { stories: newStories };
     });
 
-    try {
-      await api(`/stories/${storyId}/view`, { method: 'POST' });
-    } catch (error) {
-      console.error("Error marcando vista:", error);
+    // Solo llamamos a la API si la historia NO es mía
+    if (targetUserId !== myId) {
+        try {
+          await api(`/stories/${storyId}/view`, { method: 'POST' });
+        } catch (error) {
+          console.error("Error marcando vista:", error);
+        }
     }
   },
 

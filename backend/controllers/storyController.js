@@ -35,9 +35,12 @@ export const createStory = async (req, res) => {
             return res.status(400).json({ error: 'No se ha subido ningún archivo' });
         }
 
+        // Convertimos el string 'true'/'false' del FormData a booleano real
         const isHDRBoolean = isHDR === 'true';
 
-        // Procesar archivo (Verificación IA y HDR real)
+        // Procesar archivo:
+        // Pasamos la preferencia del usuario (isHDRBoolean) a la función de procesado.
+        // Si es false, el servicio forzará la conversión a SDR (colores estándar).
         let processedResult;
         try {
             processedResult = await processUploadedFile(req.file, isHDRBoolean);
@@ -55,7 +58,9 @@ export const createStory = async (req, res) => {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
 
-        // Usamos el flag isHDR real devuelto por el servicio
+        // Usamos el flag isHDR FINAL devuelto por el servicio.
+        // Esto asegura que la BD diga la verdad: si el usuario pidió HDR pero la imagen no era compatible,
+        // el servicio devolvió false y aquí guardamos false.
         const finalIsHDR = processedResult.isHDR;
 
         const newStory = await Story.create({
@@ -93,8 +98,6 @@ export const createStory = async (req, res) => {
         // --- SOCKET.IO: EMITIR EVENTO REAL-TIME ---
         const io = req.app.get('io');
         if (io) {
-            // Enviamos el objeto con la historia y los datos del usuario
-            // El frontend suscrito recibirá esto y actualizará el carrusel
             io.emit('new_story', {
                 story: storyResponse,
                 user: {

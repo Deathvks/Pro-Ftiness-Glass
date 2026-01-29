@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 
 // Directorio base público
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
-// CAMBIO IMPORTANTE: Usamos 'images' en lugar de 'uploads' para coincidir con el volumen persistente de Zeabur
+// CAMBIO: Usamos 'images' para persistencia en Zeabur
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'images');
 
 // Helper para asegurar directorios
@@ -68,7 +68,6 @@ let model;
 const loadModel = async () => {
     if (!model) {
         try {
-            // Opción A: Cargar desde URL pública
             model = await nsfw.load();
             console.log("Modelo NSFWJS cargado correctamente.");
         } catch (err) {
@@ -78,38 +77,36 @@ const loadModel = async () => {
     return model;
 };
 
-// Inicializar modelo al arrancar
 loadModel();
 
 /**
- * Procesa la imagen: Verifica NSFW y Optimiza/Convierte a WebP
+ * Procesa la imagen: Verifica NSFW y Gestiona HDR vs SDR
  * @param {Object} file - Objeto file de Multer
- * @param {Boolean} isHDRRequested - Si el usuario solicitó HDR
- * @returns {Promise<{url: string, isHDR: boolean}>} - Objeto con URL y estado final HDR
+ * @param {Boolean} isHDRRequested - Si el usuario confirmó usar HDR
+ * @returns {Promise<{url: string, isHDR: boolean}>}
  */
 export const processUploadedFile = async (file, isHDRRequested = false) => {
     if (!file) throw new Error("No file provided");
 
-    // Si es video, por ahora no procesamos (solo devolvemos ruta)
+    // --- VÍDEO: Sin transcodificación (Pass-through) ---
+    // Si el usuario desactivó el HDR en el frontend, isHDRRequested vendrá false.
+    // Guardamos ese estado para que el frontend no fuerce brillo extra al reproducir.
     if (file.mimetype.startsWith('video/')) {
         const relativePath = path.relative(PUBLIC_DIR, file.path);
-        // Aseguramos formato de URL con barras normales
         return {
             url: '/' + relativePath.split(path.sep).join('/'),
-            isHDR: isHDRRequested // Mantenemos el flag si es video
+            isHDR: isHDRRequested // Respetamos la decisión del usuario
         };
     }
 
     try {
         // --- PASO A: VERIFICACIÓN NSFW ---
-        // Usamos sharp para obtener los píxeles crudos (RGB)
         const { data, info } = await sharp(file.path)
             .resize(224, 224, { fit: 'cover' })
-            .removeAlpha() // Forzar 3 canales (RGB) quitando transparencia si existe
+            .removeAlpha()
             .raw()
             .toBuffer({ resolveWithObject: true });
 
-        // Crear tensor desde los datos crudos (versión compatible con Pure JS)
         const tfImage = tf.tensor3d(new Uint8Array(data), [info.height, info.width, 3], 'int32');
 
         const loadedModel = await loadModel();
@@ -117,7 +114,6 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
             const predictions = await loadedModel.classify(tfImage);
             tfImage.dispose(); 
 
-            // Reglas de bloqueo (Pornografía o Hentai > 60%)
             const nsfwFound = predictions.find(p =>
                 (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.60
             );
@@ -130,40 +126,45 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
             }
         } else {
             if (tfImage) tfImage.dispose();
-            console.warn('[NSFW Check Warning] Modelo no cargado, saltando verificación.');
         }
 
-        // --- PASO B: OPTIMIZACIÓN FINAL (Sharp) ---
+        // --- PASO B: PROCESAMIENTO HDR vs SDR ---
         const dir = path.dirname(file.path);
         const name = path.parse(file.filename).name;
         const newFilename = `${name}.webp`;
         const newPath = path.join(dir, newFilename);
 
-        // --- LÓGICA HDR INTELIGENTE ---
         const imagePipeline = sharp(file.path);
         const metadata = await imagePipeline.metadata();
+        
+        // Detectar si la imagen original TIENE datos HDR reales (16-bit, float, etc)
         const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
         
+        // Solo procesamos como HDR si:
+        // 1. La imagen original ES buena (no inventamos HDR de una foto mala).
+        // 2. El usuario LO PIDIÓ (no forzamos si él lo desactivó).
         const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
 
         const finalPipeline = sharp(file.path)
-            .rotate() // Auto-rotar según EXIF
+            .rotate() 
             .resize(1080, 1920, { 
                 fit: 'inside', 
                 withoutEnlargement: true 
             });
 
         if (shouldProcessAsHDR) {
-            // Modo HDR Real: Mantenemos metadatos y usamos alta calidad
+            // MANTENER HDR: Conservamos perfil de color y metadatos
             finalPipeline.withMetadata().webp({ quality: 90, effort: 5 });
         } else {
-            // Modo Estándar: Calidad estándar
-            finalPipeline.webp({ quality: 80, effort: 4 });
+            // FORZAR SDR: Si el usuario desactivó HDR o la imagen no era compatible,
+            // forzamos el espacio de color a sRGB estándar para "aplastar" el rango dinámico correctamente.
+            finalPipeline
+                .toColourspace('srgb') // Clave para eliminar el look "lavado" de HDR mal interpretado
+                .webp({ quality: 80, effort: 4 });
         }
 
         await finalPipeline.toFile(newPath);
 
-        // Limpieza del original
         if (file.path !== newPath && fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
         }
@@ -172,11 +173,10 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
         
         return {
             url: '/' + relativePath.split(path.sep).join('/'),
-            isHDR: shouldProcessAsHDR
+            isHDR: shouldProcessAsHDR // Devolvemos la realidad de cómo se guardó
         };
 
     } catch (error) {
-        // Limpieza de emergencia
         if (file && file.path && fs.existsSync(file.path)) {
             try { fs.unlinkSync(file.path); } catch (e) { /* ignore */ }
         }
