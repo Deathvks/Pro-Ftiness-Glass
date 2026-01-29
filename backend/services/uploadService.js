@@ -18,7 +18,8 @@ const __dirname = path.dirname(__filename);
 
 // Directorio base público
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
-const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
+// CAMBIO IMPORTANTE: Usamos 'images' en lugar de 'uploads' para coincidir con el volumen persistente de Zeabur
+const UPLOADS_DIR = path.join(PUBLIC_DIR, 'images');
 
 // Helper para asegurar directorios
 const ensureDir = (dir) => {
@@ -90,9 +91,9 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
     if (!file) throw new Error("No file provided");
 
     // Si es video, por ahora no procesamos (solo devolvemos ruta)
-    // Nota: Para video confiamos en la solicitud original ya que no estamos analizando metadatos de video aquí.
     if (file.mimetype.startsWith('video/')) {
         const relativePath = path.relative(PUBLIC_DIR, file.path);
+        // Aseguramos formato de URL con barras normales
         return {
             url: '/' + relativePath.split(path.sep).join('/'),
             isHDR: isHDRRequested // Mantenemos el flag si es video
@@ -101,8 +102,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
 
     try {
         // --- PASO A: VERIFICACIÓN NSFW ---
-        // Usamos sharp para obtener los píxeles crudos (RGB) en lugar de un buffer codificado
-        // Esto evita depender de tf.node.decodeImage que requiere bindings nativos
+        // Usamos sharp para obtener los píxeles crudos (RGB)
         const { data, info } = await sharp(file.path)
             .resize(224, 224, { fit: 'cover' })
             .removeAlpha() // Forzar 3 canales (RGB) quitando transparencia si existe
@@ -134,22 +134,16 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
         }
 
         // --- PASO B: OPTIMIZACIÓN FINAL (Sharp) ---
-        // Recargamos sharp con el archivo original para el procesado final
-        const imagePipeline = sharp(file.path);
-        const metadata = await imagePipeline.metadata();
-
         const dir = path.dirname(file.path);
         const name = path.parse(file.filename).name;
         const newFilename = `${name}.webp`;
         const newPath = path.join(dir, newFilename);
 
         // --- LÓGICA HDR INTELIGENTE ---
-        // Verificamos si la imagen original realmente soporta HDR (16-bit o float)
+        const imagePipeline = sharp(file.path);
+        const metadata = await imagePipeline.metadata();
         const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
         
-        // Solo aplicamos procesado HDR si:
-        // 1. El usuario lo pidió.
-        // 2. Y la imagen fuente tiene datos suficientes.
         const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
 
         const finalPipeline = sharp(file.path)
@@ -163,7 +157,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
             // Modo HDR Real: Mantenemos metadatos y usamos alta calidad
             finalPipeline.withMetadata().webp({ quality: 90, effort: 5 });
         } else {
-            // Modo Estándar: Si no es compatible o no se pidió, optimización estándar
+            // Modo Estándar: Calidad estándar
             finalPipeline.webp({ quality: 80, effort: 4 });
         }
 
@@ -178,7 +172,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
         
         return {
             url: '/' + relativePath.split(path.sep).join('/'),
-            isHDR: shouldProcessAsHDR // Devolvemos la realidad, no solo lo que pidió el usuario
+            isHDR: shouldProcessAsHDR
         };
 
     } catch (error) {

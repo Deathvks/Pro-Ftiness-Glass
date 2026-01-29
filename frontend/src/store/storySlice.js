@@ -1,6 +1,6 @@
 /* frontend/src/store/storySlice.js */
 import api from '../services/apiClient';
-import { initSocket } from '../services/socket'; // Importamos el servicio de Socket
+import { initSocket } from '../services/socket';
 
 export const createStorySlice = (set, get) => ({
   stories: [], // Historias de amigos/públicas
@@ -9,7 +9,7 @@ export const createStorySlice = (set, get) => ({
 
   // --- Acciones ---
 
-  // Cargar historias reales desde el backend (REST inicial)
+  // Cargar historias reales desde el backend
   fetchStories: async () => {
     set({ isStoriesLoading: true });
     try {
@@ -46,20 +46,20 @@ export const createStorySlice = (set, get) => ({
     const socket = initSocket();
     if (!socket) return;
 
-    // Limpiamos listener previo para evitar duplicados
+    // Limpiamos listeners previos para evitar duplicados
     socket.off('new_story');
+    socket.off('delete_story');
 
-    // Escuchar el evento 'new_story'
+    // 1. EVENTO: Nueva Historia
     socket.on('new_story', (payload) => {
-      // payload esperado: { story: Object, user: { id, username, avatar } }
       const { story, user } = payload;
       
       const state = get();
       const myId = state.userProfile?.id;
+      const socialFriends = state.socialFriends || []; // Necesitamos la lista de amigos para filtrar
 
-      // 1. Si la historia es mía (subida desde otro dispositivo/pestaña)
+      // A) Si la historia es mía (subida desde otro dispositivo)
       if (user.id === myId) {
-         // Evitar duplicados si ya la tenemos (por la actualización optimista de uploadStory)
          const alreadyExists = state.myStories.some(s => s.id === story.id);
          if (!alreadyExists) {
              set(state => ({
@@ -69,31 +69,37 @@ export const createStorySlice = (set, get) => ({
          return;
       }
 
-      // 2. Si la historia es de otro usuario
+      // B) Filtro de Privacidad (IMPORTANTE):
+      // Si la historia es "friends", solo la mostramos si el usuario está en mis amigos.
+      if (story.privacy === 'friends') {
+          const isFriend = socialFriends.some(f => f.id === user.id);
+          if (!isFriend) return; // Ignorar evento si no somos amigos
+      }
+
+      // C) Añadir a la lista de otros usuarios
       set(state => {
         const existingUserIndex = state.stories.findIndex(u => u.userId === user.id);
         let newStories = [...state.stories];
 
         if (existingUserIndex >= 0) {
-            // El usuario YA existe en la lista
+            // El usuario YA existe en el carrusel
             const existingUser = newStories[existingUserIndex];
             
-            // Verificamos si la historia ya existe para evitar duplicados
             const storyExists = existingUser.items.some(s => s.id === story.id);
-            if (storyExists) return {}; // No cambiamos nada
+            if (storyExists) return {}; 
 
             const updatedUser = {
                 ...existingUser,
-                hasUnseen: true, // Marcamos que tiene algo nuevo
+                hasUnseen: true,
                 items: [...existingUser.items, story]
             };
             
-            // Movemos al usuario al principio de la lista (Feedback visual de novedad)
+            // Lo movemos al principio (izquierda) para notificar novedad
             newStories.splice(existingUserIndex, 1);
             newStories.unshift(updatedUser);
 
         } else {
-            // El usuario NO estaba en la lista (primera historia del día)
+            // El usuario NO estaba en el carrusel
             const newUserGroup = {
                 userId: user.id,
                 username: user.username,
@@ -101,16 +107,49 @@ export const createStorySlice = (set, get) => ({
                 hasUnseen: true,
                 items: [story]
             };
-            // Lo añadimos al principio
             newStories.unshift(newUserGroup);
         }
 
         return { stories: newStories };
       });
     });
+
+    // 2. EVENTO: Historia Eliminada (NUEVO)
+    socket.on('delete_story', ({ storyId, userId }) => {
+        const state = get();
+        const myId = state.userProfile?.id;
+
+        // Convertimos a string para comparar seguramente (ids de DB vs params de socket)
+        const targetStoryId = String(storyId);
+
+        // A) Si se borró una historia mía
+        if (userId === myId) {
+            set(state => ({
+                myStories: state.myStories.filter(s => String(s.id) !== targetStoryId)
+            }));
+            return;
+        }
+
+        // B) Si se borró la historia de otro
+        set(state => {
+            const newStories = state.stories.map(user => {
+                if (user.userId === userId) {
+                    return {
+                        ...user,
+                        items: user.items.filter(s => String(s.id) !== targetStoryId)
+                    };
+                }
+                return user;
+            })
+            // Limpieza: Si el usuario se queda sin historias, lo quitamos del carrusel
+            .filter(user => user.items.length > 0);
+
+            return { stories: newStories };
+        });
+    });
   },
 
-  // Subir una nueva historia (soporta imagen/video, privacidad y HDR)
+  // Subir una nueva historia
   uploadStory: async (file, privacy = 'friends', isHDR = false) => {
     try {
       const formData = new FormData();
@@ -123,8 +162,6 @@ export const createStorySlice = (set, get) => ({
       });
 
       const newStory = response.story || response;
-      
-      // Aseguramos que likes sea un array para evitar errores en la UI
       if (!Array.isArray(newStory.likes)) newStory.likes = [];
 
       // Actualización optimista
@@ -132,7 +169,6 @@ export const createStorySlice = (set, get) => ({
         myStories: [...state.myStories, newStory]
       }));
 
-      // Devolvemos objeto de éxito
       return { success: true }; 
     } catch (error) {
       console.error("Error subiendo historia:", error);
@@ -140,21 +176,18 @@ export const createStorySlice = (set, get) => ({
     }
   },
 
-  // Dar like a una historia (Manejo de Array de Likes)
+  // Dar like a una historia
   likeStory: async (targetUserId, storyId) => {
     const userProfile = get().userProfile;
     const myId = userProfile?.id;
     
-    // Objeto de mi usuario para la UI optimista
     const myLikeObject = {
         userId: myId,
         username: userProfile?.username || 'Yo',
         avatar: userProfile?.profile_image_url || userProfile?.avatar
     };
 
-    // 1. Actualización Optimista en la UI (Feedback instantáneo)
     set(state => {
-      // Helper para actualizar lista de items
       const updateItems = (items) => items.map(item => {
         if (item.id === storyId) {
             const wasLiked = item.isLiked;
@@ -175,18 +208,13 @@ export const createStorySlice = (set, get) => ({
         return item;
       });
 
-      // Actualizar en la lista de historias de amigos
       const newStories = state.stories.map(user => {
         if (user.userId === targetUserId) {
-          return {
-            ...user,
-            items: updateItems(user.items)
-          };
+          return { ...user, items: updateItems(user.items) };
         }
         return user;
       });
 
-      // Actualizar también si la historia es mía
       let newMyStories = state.myStories;
       if (targetUserId === myId) {
           newMyStories = updateItems(state.myStories);
@@ -195,11 +223,8 @@ export const createStorySlice = (set, get) => ({
       return { stories: newStories, myStories: newMyStories };
     });
 
-    // 2. Llamada a la API y sincronización real
     try {
       const response = await api(`/stories/${storyId}/like`, { method: 'POST' });
-
-      // Si el servidor devuelve la lista actualizada, la usamos
       if (response && Array.isArray(response.likes)) {
           set(state => {
               const syncItems = (items) => items.map(item => {
@@ -258,12 +283,14 @@ export const createStorySlice = (set, get) => ({
 
   // Eliminar mi historia
   deleteMyStory: async (storyId) => {
+    // Optimista local
     set(state => ({
       myStories: state.myStories.filter(s => s.id !== storyId)
     }));
 
     try {
       await api(`/stories/${storyId}`, { method: 'DELETE' });
+      // Nota: No hace falta emitir nada aquí, el backend lo hará al recibir el DELETE
     } catch (error) {
       console.error("Error eliminando historia:", error);
     }

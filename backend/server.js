@@ -116,7 +116,8 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // --- ARCHIVOS ESTÁTICOS ---
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Servimos la carpeta 'public'. Como 'images' ahora está dentro de 'public' (gracias al volumen de Zeabur),
+// las URLs tipo /images/stories/foto.webp funcionarán automáticamente.
 const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath));
 
@@ -148,10 +149,10 @@ const PORT = process.env.PORT || 3001;
 
 db.sequelize.sync()
   .then(() => {
-    // CAMBIO IMPORTANTE: Usamos httpServer.listen en lugar de app.listen
+    // CAMBIO IMPORTANTE: Usamos httpServer.listen en lugar de app.listen para Sockets
     httpServer.listen(PORT, () => {
       console.log(`✅ Server (HTTP + Socket.io) is running on port ${PORT}`);
-      console.log(`📂 Uploads folder serving at: http://localhost:${PORT}/uploads`);
+      console.log(`📂 Public folder serving at: http://localhost:${PORT}/`);
     });
     startCronJobs();
   })
