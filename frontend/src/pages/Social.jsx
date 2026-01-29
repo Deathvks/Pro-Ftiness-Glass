@@ -293,8 +293,8 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             <span>Público</span>
                         </button>
 
-                        {/* Mostrar botón HDR solo si el dispositivo lo soporta */}
-                        {deviceSupportsHDR && (
+                        {/* Mostrar botón HDR solo si el dispositivo lo soporta Y hay un archivo seleccionado */}
+                        {deviceSupportsHDR && file && (
                             <button 
                                 onClick={() => setIsHDR(!isHDR)}
                                 className={`flex-initial px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border

@@ -143,9 +143,7 @@ const StoryViewer = ({ userId, onClose }) => {
     deleteMyStory 
   } = useAppStore();
 
-  // Estado para controlar qué usuario estamos viendo actualmente
   const [viewingUserId, setViewingUserId] = useState(userId);
-
   const isMyStory = viewingUserId === userProfile?.id;
 
   const getFullImageUrl = useCallback((path) => {
@@ -186,13 +184,11 @@ const StoryViewer = ({ userId, onClose }) => {
     });
   }, [storyData]);
 
-  // Encontrar la primera historia no vista del usuario actual
   const getInitialIndex = () => {
      const idx = activeStories.findIndex(s => !s.viewed && !isMyStory);
      return idx !== -1 ? idx : 0;
   };
 
-  // Solo inicializamos el índice una vez al montar, luego lo controlamos manualmente al cambiar de usuario
   const [currentIndex, setCurrentIndex] = useState(() => getInitialIndex());
   
   const [isPaused, setIsPaused] = useState(false);
@@ -200,18 +196,22 @@ const StoryViewer = ({ userId, onClose }) => {
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [mediaError, setMediaError] = useState(false); 
   const [isMuted, setIsMuted] = useState(true);
-  const [videoDuration, setVideoDuration] = useState(DEFAULT_STORY_DURATION);
   
+  // Eliminamos videoDuration como estado para simplificar, lo leemos directo del ref
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [showLikesList, setShowLikesList] = useState(false); 
 
   const videoRef = useRef(null);
-  const timerRef = useRef(null);
+  const animationFrameRef = useRef(null); // NUEVO: Para animación suave
   const startTimeRef = useRef(null);
   const pausedTimeRef = useRef(0);
-  const pressStartTimeRef = useRef(0); 
+  const pressStartTimeRef = useRef(0);
+  
+  // Refs para control de gestos (Swipe Up)
+  const touchStartY = useRef(0);
+  const touchStartX = useRef(0);
   
   useEffect(() => {
     if (currentIndex >= activeStories.length && activeStories.length > 0) {
@@ -256,19 +256,13 @@ const StoryViewer = ({ userId, onClose }) => {
 
   const goToNext = useCallback(() => {
     if (currentIndex < activeStories.length - 1) {
-      // Siguiente historia del mismo usuario
       setCurrentIndex(prev => prev + 1);
     } else {
-      // Fin de historias del usuario actual
       if (isMyStory) {
-        // Si soy yo, cierro al terminar
         onClose();
       } else {
-        // Si es otro usuario, buscamos el siguiente en la lista
         const currentGroupIndex = stories.findIndex(s => s.userId === viewingUserId);
         let foundNext = false;
-
-        // Iterar desde el siguiente usuario hasta el final para encontrar alguno con historias válidas
         for (let i = currentGroupIndex + 1; i < stories.length; i++) {
             const group = stories[i];
             const validItems = (group.items || []).filter(item => {
@@ -278,19 +272,14 @@ const StoryViewer = ({ userId, onClose }) => {
             });
 
             if (validItems.length > 0) {
-                // Encontramos el siguiente usuario con historias
                 const firstUnviewed = validItems.findIndex(s => !s.viewed);
-                
-                // Cambiamos de usuario y reseteamos índice
                 setViewingUserId(group.userId);
                 setCurrentIndex(firstUnviewed !== -1 ? firstUnviewed : 0);
                 foundNext = true;
                 break;
             }
         }
-
         if (!foundNext) {
-            // Si no hay más usuarios después, cerramos
             onClose();
         }
       }
@@ -301,7 +290,6 @@ const StoryViewer = ({ userId, onClose }) => {
     if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1);
     }
-    // Si currentIndex es 0, no hacemos nada (no reinicia historia ni va al usuario anterior)
   };
 
   useLayoutEffect(() => {
@@ -312,8 +300,7 @@ const StoryViewer = ({ userId, onClose }) => {
     setShowLikesList(false); 
     startTimeRef.current = null;
     pausedTimeRef.current = 0;
-    setVideoDuration(DEFAULT_STORY_DURATION);
-  }, [currentIndex, viewingUserId]); // Resetear también cuando cambia viewingUserId
+  }, [currentIndex, viewingUserId]);
 
   useEffect(() => {
     const safetyTimeout = setTimeout(() => {
@@ -324,75 +311,124 @@ const StoryViewer = ({ userId, onClose }) => {
     return () => clearTimeout(safetyTimeout);
   }, [currentIndex, mediaLoaded, mediaError]);
 
+  // --- CONTROL DE VIDEO (Play/Pause) ---
   useEffect(() => {
     if (isVideo && videoRef.current) {
         if (isPaused || !mediaLoaded || showDeleteConfirm || showLikesList) {
             videoRef.current.pause();
         } else {
-            videoRef.current.play().catch(err => console.log("Error play video:", err));
+            const playPromise = videoRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => console.log("Video play interrupted", err));
+            }
         }
     }
   }, [isPaused, mediaLoaded, isVideo, showDeleteConfirm, showLikesList]);
 
+  // --- TIMER PRINCIPAL (Optimizado con requestAnimationFrame) ---
   useEffect(() => {
-    if (isVideo || showDeleteConfirm || showLikesList) return; 
+    // Limpieza previa
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
-    if (!currentStory || isPaused || (!mediaLoaded && !mediaError)) {
-      if (timerRef.current) clearInterval(timerRef.current);
+    // Condiciones de parada
+    if (isPaused || (!mediaLoaded && !mediaError) || showDeleteConfirm || showLikesList) {
       return;
     }
 
-    if (!startTimeRef.current) {
-        startTimeRef.current = Date.now();
-    }
+    const animate = () => {
+      let shouldContinue = true;
 
-    timerRef.current = setInterval(() => {
-      const now = Date.now();
-      const timeElapsedInThisSegment = now - startTimeRef.current;
-      const totalTimeElapsed = timeElapsedInThisSegment + pausedTimeRef.current;
-      const newProgress = Math.min((totalTimeElapsed / DEFAULT_STORY_DURATION) * 100, 100);
+      if (isVideo) {
+        // --- Lógica Video: Basada en tiempo real del elemento ---
+        if (videoRef.current && !videoRef.current.paused && !videoRef.current.ended && videoRef.current.duration > 0) {
+            const current = videoRef.current.currentTime;
+            const duration = videoRef.current.duration;
+            const percentage = (current / duration) * 100;
+            
+            setProgress(percentage);
 
-      if (newProgress >= 100) {
-        clearInterval(timerRef.current);
-        goToNext();
+            if (percentage >= 100 || videoRef.current.ended) {
+                shouldContinue = false;
+                goToNext();
+            }
+        }
       } else {
+        // --- Lógica Imagen: Basada en tiempo transcurrido (Timer) ---
+        if (!startTimeRef.current) {
+            startTimeRef.current = Date.now();
+        }
+
+        const now = Date.now();
+        const timeElapsedInThisSegment = now - startTimeRef.current;
+        const totalTimeElapsed = timeElapsedInThisSegment + pausedTimeRef.current;
+        const newProgress = Math.min((totalTimeElapsed / DEFAULT_STORY_DURATION) * 100, 100);
+
         setProgress(newProgress);
+
+        if (newProgress >= 100) {
+            shouldContinue = false;
+            goToNext();
+        }
       }
-    }, 16);
+
+      if (shouldContinue) {
+          animationFrameRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    // Iniciar loop
+    animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [currentIndex, isPaused, currentStory, mediaLoaded, mediaError, goToNext, isVideo, showDeleteConfirm, showLikesList]);
+  }, [isPaused, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]); 
+  // Nota: Quitamos dependencias inestables, usamos refs para el estado mutable del timer.
 
-  const handleVideoLoadedMetadata = (e) => {
-      setVideoDuration(e.target.duration * 1000);
+  const handleVideoLoadedMetadata = () => {
       setMediaLoaded(true);
   };
+  
+  // Eliminamos handleVideoTimeUpdate y handleVideoEnded porque rAF ya lo controla
 
-  const handleVideoTimeUpdate = (e) => {
-      if (videoDuration > 0) {
-          const percentage = (e.target.currentTime / e.target.duration) * 100;
-          setProgress(percentage);
+  // --- Manejo de Gestos ---
+  const handleTouchStart = (e) => {
+      touchStartY.current = e.touches[0].clientY;
+      touchStartX.current = e.touches[0].clientX;
+      handlePauseStart();
+  };
+
+  const handleTouchEnd = (e, action) => {
+      const touchEndY = e.changedTouches[0].clientY;
+      const touchEndX = e.changedTouches[0].clientX;
+      
+      const deltaY = touchStartY.current - touchEndY; 
+      const deltaX = Math.abs(touchStartX.current - touchEndX);
+
+      if (isMyStory && deltaY > 50 && deltaX < 50) {
+          handleOpenLikesList(e);
+          return;
       }
+
+      handlePauseEnd(e, action);
   };
 
-  const handleVideoEnded = () => {
-      goToNext();
-  };
-
-  // --- Manejo de Tap vs Hold ---
   const handlePauseStart = () => {
     pressStartTimeRef.current = Date.now(); 
     if (!isPaused && (mediaLoaded || mediaError)) {
-        if (!isVideo) {
-            const now = Date.now();
-            if (startTimeRef.current) {
-                 pausedTimeRef.current += (now - startTimeRef.current);
-                 startTimeRef.current = null; 
-            }
-        }
         setIsPaused(true);
+        
+        // Pausar lógica de tiempo para imágenes
+        if (!isVideo && startTimeRef.current) {
+            const now = Date.now();
+            pausedTimeRef.current += (now - startTimeRef.current);
+            startTimeRef.current = null; // Resetear para el próximo segmento
+        }
+        
+        // Pausar video explícitamente
+        if (isVideo && videoRef.current) {
+            videoRef.current.pause();
+        }
     }
   };
 
@@ -403,7 +439,6 @@ const StoryViewer = ({ userId, onClose }) => {
         setIsPaused(false);
         
         const duration = Date.now() - pressStartTimeRef.current;
-        // Si fue una pulsación corta (< 200ms), interpretamos como click/navegación
         if (duration < 200) {
             if (action === 'prev') goToPrev();
             if (action === 'next') goToNext();
@@ -463,6 +498,7 @@ const StoryViewer = ({ userId, onClose }) => {
   const cancelDelete = () => {
       setShowDeleteConfirm(false);
       setIsPaused(false);
+      // Al cancelar, reanudamos el timer
       startTimeRef.current = Date.now();
   };
 
@@ -479,7 +515,7 @@ const StoryViewer = ({ userId, onClose }) => {
   };
 
   const handleOpenLikesList = (e) => {
-      e.stopPropagation();
+      if (e) e.stopPropagation();
       setIsPaused(true);
       setShowLikesList(true);
   };
@@ -524,16 +560,17 @@ const StoryViewer = ({ userId, onClose }) => {
         <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 p-2 pt-4 safe-top bg-gradient-to-b from-black/60 to-transparent">
           {activeStories.map((item, index) => {
             const isPast = index < currentIndex;
-            const isCurrentAndMoving = index === currentIndex && progress > 0;
-            const shouldAnimate = isPast || isCurrentAndMoving;
-
+            const isCurrent = index === currentIndex;
+            // Solo animamos con CSS las barras pasadas para que se vean llenas.
+            // La barra actual NO debe tener transición CSS porque JS la actualiza 60 veces/seg.
+            
             return (
               <div key={item.id} className="h-0.5 flex-1 bg-white/30 rounded-full overflow-hidden shadow-sm">
                 <div 
-                  className={`h-full bg-white ease-linear ${shouldAnimate ? 'transition-all duration-100' : ''}`}
+                  className={`h-full bg-white ease-linear ${isPast ? 'transition-all duration-300' : ''}`}
                   style={{ 
-                    width: index < currentIndex ? '100%' : 
-                             index === currentIndex ? `${progress}%` : '0%' 
+                    width: isPast ? '100%' : 
+                             isCurrent ? `${progress}%` : '0%' 
                   }}
                 />
               </div>
@@ -585,12 +622,12 @@ const StoryViewer = ({ userId, onClose }) => {
           </div>
         </div>
 
-        {/* Controladores Táctiles (Invisibles) */}
+        {/* Controladores Táctiles (Invisibles) con soporte de Swipe */}
         <div className="absolute inset-0 z-20 flex">
           <div 
               className="w-1/3 h-full cursor-pointer" 
-              onTouchStart={handlePauseStart} 
-              onTouchEnd={(e) => handlePauseEnd(e, 'prev')}
+              onTouchStart={handleTouchStart} 
+              onTouchEnd={(e) => handleTouchEnd(e, 'prev')}
               onMouseDown={handlePauseStart} 
               onMouseUp={(e) => handlePauseEnd(e, 'prev')}
               onMouseLeave={handleMouseLeave}
@@ -598,8 +635,8 @@ const StoryViewer = ({ userId, onClose }) => {
           />
           <div 
               className="w-2/3 h-full cursor-pointer" 
-              onTouchStart={handlePauseStart} 
-              onTouchEnd={(e) => handlePauseEnd(e, 'next')}
+              onTouchStart={handleTouchStart} 
+              onTouchEnd={(e) => handleTouchEnd(e, 'next')}
               onMouseDown={handlePauseStart} 
               onMouseUp={(e) => handlePauseEnd(e, 'next')}
               onMouseLeave={handleMouseLeave}
@@ -631,8 +668,6 @@ const StoryViewer = ({ userId, onClose }) => {
                         playsInline
                         muted={isMuted}
                         onLoadedMetadata={handleVideoLoadedMetadata}
-                        onTimeUpdate={handleVideoTimeUpdate}
-                        onEnded={handleVideoEnded}
                         onError={() => { setMediaError(true); setMediaLoaded(true); }}
                         style={hdrStyles}
                     />
@@ -705,14 +740,15 @@ const StoryViewer = ({ userId, onClose }) => {
         )}
         
         {isMyStory && (
-          <div className="absolute bottom-0 left-0 right-0 z-50 p-6 bg-gradient-to-t from-black/60 to-transparent pb-10">
-              <div className="flex items-center justify-center gap-2 text-white/90 drop-shadow-md">
+          <div className="absolute bottom-0 left-0 right-0 z-50 p-6 bg-gradient-to-t from-black/60 to-transparent pb-10 pointer-events-none">
+              <div className="flex items-center justify-center gap-2 text-white/90 drop-shadow-md pointer-events-auto">
                   <button 
                     onClick={handleOpenLikesList}
-                    className="text-sm font-medium outline-none focus:outline-none" 
+                    className="text-sm font-medium outline-none focus:outline-none animate-pulse" 
                     style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
                   >
                       {likesCount} {likesCount === 1 ? 'Me gusta' : 'Me gusta'}
+                      <span className="block text-[10px] opacity-70 font-normal">Desliza para ver</span>
                   </button>
               </div>
           </div>

@@ -67,7 +67,7 @@ let model;
 const loadModel = async () => {
     if (!model) {
         try {
-            // Opción A: Cargar desde URL pública (más fácil, no requiere archivos locales)
+            // Opción A: Cargar desde URL pública
             model = await nsfw.load();
             console.log("Modelo NSFWJS cargado correctamente.");
         } catch (err) {
@@ -83,27 +83,30 @@ loadModel();
 /**
  * Procesa la imagen: Verifica NSFW y Optimiza/Convierte a WebP
  * @param {Object} file - Objeto file de Multer
- * @param {Boolean} isHDR - Si el usuario solicitó HDR
- * @returns {String} - URL relativa del archivo procesado
+ * @param {Boolean} isHDRRequested - Si el usuario solicitó HDR
+ * @returns {Promise<{url: string, isHDR: boolean}>} - Objeto con URL y estado final HDR
  */
-export const processUploadedFile = async (file, isHDR = false) => {
+export const processUploadedFile = async (file, isHDRRequested = false) => {
     if (!file) throw new Error("No file provided");
 
     // Si es video, por ahora no procesamos (solo devolvemos ruta)
+    // Nota: Para video confiamos en la solicitud original ya que no estamos analizando metadatos de video aquí.
     if (file.mimetype.startsWith('video/')) {
         const relativePath = path.relative(PUBLIC_DIR, file.path);
-        return '/' + relativePath.split(path.sep).join('/');
+        return {
+            url: '/' + relativePath.split(path.sep).join('/'),
+            isHDR: isHDRRequested // Mantenemos el flag si es video
+        };
     }
 
     try {
         // --- PASO A: VERIFICACIÓN NSFW ---
-        // Usamos sharp para leer la imagen y obtener metadatos antes de nada
         const imagePipeline = sharp(file.path);
         const metadata = await imagePipeline.metadata();
 
         // Buffer para la IA (redimensionado pequeño para velocidad)
         const buffer = await imagePipeline
-            .clone() // Clonamos para no afectar el pipeline principal
+            .clone()
             .resize(224, 224, { fit: 'cover' })
             .toBuffer();
 
@@ -113,7 +116,7 @@ export const processUploadedFile = async (file, isHDR = false) => {
         const loadedModel = await loadModel();
         if (loadedModel) {
             const predictions = await loadedModel.classify(tfImage);
-            tfImage.dispose(); // Liberar memoria del tensor
+            tfImage.dispose(); 
 
             // Reglas de bloqueo (Pornografía o Hentai > 60%)
             const nsfwFound = predictions.find(p =>
@@ -121,7 +124,6 @@ export const processUploadedFile = async (file, isHDR = false) => {
             );
 
             if (nsfwFound) {
-                // Borrar archivo temporal
                 if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
                 const nsfwError = new Error("Contenido inapropiado detectado (NSFW).");
                 nsfwError.code = "NSFW_DETECTED";
@@ -139,13 +141,13 @@ export const processUploadedFile = async (file, isHDR = false) => {
         const newPath = path.join(dir, newFilename);
 
         // --- LÓGICA HDR INTELIGENTE ---
-        // Verificamos si la imagen original realmente soporta HDR.
-        // Las imágenes HDR suelen tener una profundidad de bits 'ushort' (16-bit) o 'float',
-        // a diferencia del estándar 'uchar' (8-bit).
+        // Verificamos si la imagen original realmente soporta HDR (16-bit o float)
         const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
         
-        // Solo aplicamos procesado HDR si el usuario lo pidió Y la imagen tiene datos suficientes.
-        const shouldProcessAsHDR = isHDR && isSourceHighDepth;
+        // Solo aplicamos procesado HDR si:
+        // 1. El usuario lo pidió.
+        // 2. Y la imagen fuente tiene datos suficientes.
+        const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
 
         const finalPipeline = sharp(file.path)
             .rotate() // Auto-rotar según EXIF
@@ -155,10 +157,10 @@ export const processUploadedFile = async (file, isHDR = false) => {
             });
 
         if (shouldProcessAsHDR) {
-            // Modo HDR Real: Mantenemos metadatos (perfiles de color P3/Rec2020) y alta calidad
+            // Modo HDR Real: Mantenemos metadatos y usamos alta calidad
             finalPipeline.withMetadata().webp({ quality: 90, effort: 5 });
         } else {
-            // Modo Estándar: Eliminamos metadatos extra para ahorrar espacio, calidad estándar
+            // Modo Estándar: Si no es compatible o no se pidió, optimización estándar
             finalPipeline.webp({ quality: 80, effort: 4 });
         }
 
@@ -170,7 +172,11 @@ export const processUploadedFile = async (file, isHDR = false) => {
         }
 
         const relativePath = path.relative(PUBLIC_DIR, newPath);
-        return '/' + relativePath.split(path.sep).join('/');
+        
+        return {
+            url: '/' + relativePath.split(path.sep).join('/'),
+            isHDR: shouldProcessAsHDR // Devolvemos la realidad, no solo lo que pidió el usuario
+        };
 
     } catch (error) {
         // Limpieza de emergencia

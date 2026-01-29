@@ -37,10 +37,11 @@ export const createStory = async (req, res) => {
 
         const isHDRBoolean = isHDR === 'true';
 
-        // Procesar archivo (Aquí es donde la IA puede rechazar la imagen)
-        let fileUrl;
+        // Procesar archivo (Aquí es donde la IA puede rechazar la imagen y verificar HDR real)
+        let processedResult;
         try {
-            fileUrl = await processUploadedFile(req.file, isHDRBoolean);
+            // Recibimos un objeto { url, isHDR } en lugar de solo el string
+            processedResult = await processUploadedFile(req.file, isHDRBoolean);
         } catch (uploadError) {
             // Si el error viene de la IA (NSFW), tiene un mensaje específico
             if (uploadError.message && (uploadError.message.includes('rechazada') || uploadError.message.includes('inapropiado'))) {
@@ -57,12 +58,15 @@ export const createStory = async (req, res) => {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
 
+        // Usamos el flag isHDR real devuelto por el servicio (si era incompatible, será false)
+        const finalIsHDR = processedResult.isHDR;
+
         const newStory = await Story.create({
             user_id: userId,
-            url: fileUrl,
+            url: processedResult.url,
             type: isVideo ? 'video' : 'image',
             privacy: privacy,
-            is_hdr: isHDRBoolean,
+            is_hdr: finalIsHDR, 
             expires_at: expiresAt
         });
 
