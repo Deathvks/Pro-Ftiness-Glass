@@ -197,14 +197,13 @@ const StoryViewer = ({ userId, onClose }) => {
   const [mediaError, setMediaError] = useState(false); 
   const [isMuted, setIsMuted] = useState(true);
   
-  // Eliminamos videoDuration como estado para simplificar, lo leemos directo del ref
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   const [showLikesList, setShowLikesList] = useState(false); 
 
   const videoRef = useRef(null);
-  const animationFrameRef = useRef(null); // NUEVO: Para animación suave
+  const animationFrameRef = useRef(null); 
   const startTimeRef = useRef(null);
   const pausedTimeRef = useRef(0);
   const pressStartTimeRef = useRef(0);
@@ -383,14 +382,11 @@ const StoryViewer = ({ userId, onClose }) => {
         if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, [isPaused, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]); 
-  // Nota: Quitamos dependencias inestables, usamos refs para el estado mutable del timer.
 
   const handleVideoLoadedMetadata = () => {
       setMediaLoaded(true);
   };
   
-  // Eliminamos handleVideoTimeUpdate y handleVideoEnded porque rAF ya lo controla
-
   // --- Manejo de Gestos ---
   const handleTouchStart = (e) => {
       touchStartY.current = e.touches[0].clientY;
@@ -561,13 +557,13 @@ const StoryViewer = ({ userId, onClose }) => {
           {activeStories.map((item, index) => {
             const isPast = index < currentIndex;
             const isCurrent = index === currentIndex;
-            // Solo animamos con CSS las barras pasadas para que se vean llenas.
-            // La barra actual NO debe tener transición CSS porque JS la actualiza 60 veces/seg.
             
+            // MODIFICADO: Eliminada la transición CSS para que el cambio sea instantáneo
+            // al adelantar, tal como pidió el usuario.
             return (
               <div key={item.id} className="h-0.5 flex-1 bg-white/30 rounded-full overflow-hidden shadow-sm">
                 <div 
-                  className={`h-full bg-white ease-linear ${isPast ? 'transition-all duration-300' : ''}`}
+                  className="h-full bg-white ease-linear" 
                   style={{ 
                     width: isPast ? '100%' : 
                              isCurrent ? `${progress}%` : '0%' 
