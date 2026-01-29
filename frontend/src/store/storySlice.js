@@ -56,11 +56,12 @@ export const createStorySlice = (set, get) => ({
       
       const state = get();
       const myId = state.userProfile?.id;
-      const socialFriends = state.socialFriends || []; // Necesitamos la lista de amigos para filtrar
+      const socialFriends = state.socialFriends || []; 
 
-      // A) Si la historia es mía (subida desde otro dispositivo)
+      // A) Si la historia es mía (subida desde otro dispositivo o confirmación de socket)
       if (user.id === myId) {
-         const alreadyExists = state.myStories.some(s => s.id === story.id);
+         // Verificación robusta de duplicados (String vs Number)
+         const alreadyExists = state.myStories.some(s => String(s.id) === String(story.id));
          if (!alreadyExists) {
              set(state => ({
                  myStories: [...state.myStories, story]
@@ -69,11 +70,10 @@ export const createStorySlice = (set, get) => ({
          return;
       }
 
-      // B) Filtro de Privacidad (IMPORTANTE):
-      // Si la historia es "friends", solo la mostramos si el usuario está en mis amigos.
+      // B) Filtro de Privacidad: solo amigos
       if (story.privacy === 'friends') {
           const isFriend = socialFriends.some(f => f.id === user.id);
-          if (!isFriend) return; // Ignorar evento si no somos amigos
+          if (!isFriend) return; 
       }
 
       // C) Añadir a la lista de otros usuarios
@@ -82,10 +82,8 @@ export const createStorySlice = (set, get) => ({
         let newStories = [...state.stories];
 
         if (existingUserIndex >= 0) {
-            // El usuario YA existe en el carrusel
             const existingUser = newStories[existingUserIndex];
-            
-            const storyExists = existingUser.items.some(s => s.id === story.id);
+            const storyExists = existingUser.items.some(s => String(s.id) === String(story.id));
             if (storyExists) return {}; 
 
             const updatedUser = {
@@ -94,12 +92,10 @@ export const createStorySlice = (set, get) => ({
                 items: [...existingUser.items, story]
             };
             
-            // Lo movemos al principio (izquierda) para notificar novedad
             newStories.splice(existingUserIndex, 1);
             newStories.unshift(updatedUser);
 
         } else {
-            // El usuario NO estaba en el carrusel
             const newUserGroup = {
                 userId: user.id,
                 username: user.username,
@@ -114,15 +110,12 @@ export const createStorySlice = (set, get) => ({
       });
     });
 
-    // 2. EVENTO: Historia Eliminada (NUEVO)
+    // 2. EVENTO: Historia Eliminada
     socket.on('delete_story', ({ storyId, userId }) => {
         const state = get();
         const myId = state.userProfile?.id;
-
-        // Convertimos a string para comparar seguramente (ids de DB vs params de socket)
         const targetStoryId = String(storyId);
 
-        // A) Si se borró una historia mía
         if (userId === myId) {
             set(state => ({
                 myStories: state.myStories.filter(s => String(s.id) !== targetStoryId)
@@ -130,7 +123,6 @@ export const createStorySlice = (set, get) => ({
             return;
         }
 
-        // B) Si se borró la historia de otro
         set(state => {
             const newStories = state.stories.map(user => {
                 if (user.userId === userId) {
@@ -140,9 +132,7 @@ export const createStorySlice = (set, get) => ({
                     };
                 }
                 return user;
-            })
-            // Limpieza: Si el usuario se queda sin historias, lo quitamos del carrusel
-            .filter(user => user.items.length > 0);
+            }).filter(user => user.items.length > 0);
 
             return { stories: newStories };
         });
@@ -164,10 +154,15 @@ export const createStorySlice = (set, get) => ({
       const newStory = response.story || response;
       if (!Array.isArray(newStory.likes)) newStory.likes = [];
 
-      // Actualización optimista
-      set(state => ({
-        myStories: [...state.myStories, newStory]
-      }));
+      // Actualización segura evitando duplicados si el socket llegó primero
+      set(state => {
+        const exists = state.myStories.some(s => String(s.id) === String(newStory.id));
+        if (exists) return {};
+        
+        return {
+           myStories: [...state.myStories, newStory]
+        };
+      });
 
       return { success: true }; 
     } catch (error) {
@@ -285,12 +280,11 @@ export const createStorySlice = (set, get) => ({
   deleteMyStory: async (storyId) => {
     // Optimista local
     set(state => ({
-      myStories: state.myStories.filter(s => s.id !== storyId)
+      myStories: state.myStories.filter(s => String(s.id) !== String(storyId))
     }));
 
     try {
       await api(`/stories/${storyId}`, { method: 'DELETE' });
-      // Nota: No hace falta emitir nada aquí, el backend lo hará al recibir el DELETE
     } catch (error) {
       console.error("Error eliminando historia:", error);
     }

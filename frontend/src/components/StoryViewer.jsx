@@ -177,11 +177,28 @@ const StoryViewer = ({ userId, onClose }) => {
   }, [viewingUserId, isMyStory, stories, myStories, userProfile, getFullImageUrl]);
 
   const activeStories = useMemo(() => {
-    return (storyData?.items || []).filter(item => {
+    // 1. Filtrar por expiración
+    const validStories = (storyData?.items || []).filter(item => {
         const expiry = item.expires_at || item.expiresAt;
         if (!expiry) return true;
         return new Date(expiry) > new Date();
     });
+
+    // 2. Filtrar DUPLICADOS (Seguridad UI)
+    // Esto previene que se muestren dos historias iguales si el estado se actualiza mal
+    const uniqueStories = [];
+    const seenIds = new Set();
+    
+    for (const story of validStories) {
+        // Usamos String() para asegurar comparación correcta entre '123' y 123
+        const id = String(story.id);
+        if (!seenIds.has(id)) {
+            seenIds.add(id);
+            uniqueStories.push(story);
+        }
+    }
+
+    return uniqueStories;
   }, [storyData]);
 
   const getInitialIndex = () => {
@@ -208,7 +225,7 @@ const StoryViewer = ({ userId, onClose }) => {
   const pausedTimeRef = useRef(0);
   const pressStartTimeRef = useRef(0);
   
-  // Refs para control de gestos (Swipe Up)
+  // Refs para control de gestos (Swipe)
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
   
@@ -401,8 +418,17 @@ const StoryViewer = ({ userId, onClose }) => {
       const deltaY = touchStartY.current - touchEndY; 
       const deltaX = Math.abs(touchStartX.current - touchEndX);
 
+      // 1. Swipe Up (Abrir Likes - Solo si es mi historia)
+      // deltaY positivo significa movimiento hacia ARRIBA
       if (isMyStory && deltaY > 50 && deltaX < 50) {
           handleOpenLikesList(e);
+          return;
+      }
+
+      // 2. Swipe Down (Cerrar Historia)
+      // deltaY negativo significa movimiento hacia ABAJO
+      if (deltaY < -50 && deltaX < 50) {
+          onClose();
           return;
       }
 
@@ -558,8 +584,6 @@ const StoryViewer = ({ userId, onClose }) => {
             const isPast = index < currentIndex;
             const isCurrent = index === currentIndex;
             
-            // MODIFICADO: Eliminada la transición CSS para que el cambio sea instantáneo
-            // al adelantar, tal como pidió el usuario.
             return (
               <div key={item.id} className="h-0.5 flex-1 bg-white/30 rounded-full overflow-hidden shadow-sm">
                 <div 
