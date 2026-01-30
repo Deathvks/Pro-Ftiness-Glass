@@ -245,7 +245,6 @@ const StoryViewer = ({ userId, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(() => getInitialIndex());
   
   const [isPaused, setIsPaused] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(true);
   const [progress, setProgress] = useState(0);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [mediaError, setMediaError] = useState(false); 
@@ -353,7 +352,7 @@ const StoryViewer = ({ userId, onClose }) => {
   useLayoutEffect(() => {
     setProgress(0);
     setIsPaused(false);
-    setIsBuffering(true); 
+    // OPTIMIZACIÓN: No activamos buffering por defecto para evitar spinner inmediato
     setMediaLoaded(false);
     setMediaError(false);
     setShowLikesList(false); 
@@ -365,12 +364,12 @@ const StoryViewer = ({ userId, onClose }) => {
     const safetyTimeout = setTimeout(() => {
         if (!mediaLoaded && !mediaError) {
             setMediaLoaded(true); 
-            setIsBuffering(false);
         }
     }, 8000);
     return () => clearTimeout(safetyTimeout);
   }, [currentIndex, mediaLoaded, mediaError]);
 
+  // --- CONTROL DE VIDEO (Play/Pause) ---
   useEffect(() => {
     if (isVideo && videoRef.current) {
         if (isPaused || showDeleteConfirm || showLikesList) {
@@ -378,18 +377,19 @@ const StoryViewer = ({ userId, onClose }) => {
         } else {
             const playPromise = videoRef.current.play();
             if (playPromise !== undefined) {
-                playPromise.catch(err => {
-                    console.log("Video play warning:", err);
+                playPromise.catch(() => {
+                    // Ignoramos errores de autoplay
                 });
             }
         }
     }
   }, [isPaused, isVideo, showDeleteConfirm, showLikesList, mediaLoaded]);
 
+  // --- TIMER PRINCIPAL ---
   useEffect(() => {
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
-    if (isPaused || isBuffering || (!mediaLoaded && !mediaError) || showDeleteConfirm || showLikesList) {
+    if (isPaused || (!mediaLoaded && !mediaError) || showDeleteConfirm || showLikesList) {
       return;
     }
 
@@ -437,12 +437,19 @@ const StoryViewer = ({ userId, onClose }) => {
     return () => {
         if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [isPaused, isBuffering, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]); 
+  }, [isPaused, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]); 
 
   const handleVideoLoadedMetadata = () => {
       setMediaLoaded(true);
   };
   
+  const handleVideoCanPlay = () => {
+      // Intento agresivo de reproducir en cuanto sea posible
+      if (videoRef.current && !isPaused && !showDeleteConfirm && !showLikesList) {
+          videoRef.current.play().catch(() => {});
+      }
+  };
+
   const handleTouchStart = (e) => {
       touchStartY.current = e.touches[0].clientY;
       touchStartX.current = e.touches[0].clientX;
@@ -458,13 +465,11 @@ const StoryViewer = ({ userId, onClose }) => {
 
       if (Math.abs(deltaY) > 50 && deltaX < 50) {
           if (deltaY > 0) {
-              // Swipe Up
               if (isMyStory) {
                   handleOpenLikesList(e);
               }
               return; 
           } else {
-              // Swipe Down
               animateAndClose();
               return;
           }
@@ -579,24 +584,32 @@ const StoryViewer = ({ userId, onClose }) => {
       startTimeRef.current = Date.now();
   };
 
-  // --- UI: ESTADO "NO HAY HISTORIAS" ---
+  // --- UI: ESTADO "NO HAY HISTORIAS" MEJORADO ---
   if (!storyData || activeStories.length === 0) {
     return (
-      <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4">
-        {/* Usamos un contenedor centrado con efecto glass para consistencia */}
-        <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center animate-fade-in backdrop-blur-md">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                <Film size={32} className="text-white/40" />
+      <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in">
+        <div className="w-full max-w-sm bg-bg-secondary/90 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden">
+            {/* Efecto de fondo */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-accent/20 rounded-full blur-[50px] pointer-events-none" />
+
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/5 relative z-10">
+                <Film size={40} className="text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]" />
             </div>
-            <h3 className="text-white font-bold text-lg mb-2">Sin Historias</h3>
-            <p className="text-white/50 text-sm mb-6">
-                No hay historias disponibles para ver en este momento.
+
+            <h3 className="text-2xl font-bold text-white mb-2 relative z-10">
+                Sin Historias
+            </h3>
+            
+            <p className="text-text-secondary text-sm mb-8 relative z-10 leading-relaxed">
+                No hay historias disponibles para ver en este momento.<br/>
+                ¡Vuelve más tarde o sube la tuya!
             </p>
+
             <button 
                 onClick={animateAndClose} 
-                className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all active:scale-[0.98]"
+                className="w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-accent/20 relative z-10"
             >
-                Volver
+                Volver al Feed
             </button>
         </div>
       </div>
@@ -731,11 +744,12 @@ const StoryViewer = ({ userId, onClose }) => {
 
         {/* --- Media (Imagen o Video) --- */}
         <div className="flex-1 flex items-center justify-center bg-black relative w-full h-full z-10">
-          {(!mediaLoaded && !mediaError) || (isVideo && isBuffering) ? (
+          {/* Spinner SOLO si no hay media cargada */}
+          {!mediaLoaded && !mediaError && (
               <div className="absolute inset-0 flex items-center justify-center z-0">
                   <Loader2 className="text-white/50 animate-spin" size={48} />
               </div>
-          ) : null}
+          )}
           
           {mediaError ? (
              <div className="flex flex-col items-center justify-center text-white/50 gap-2">
@@ -748,6 +762,7 @@ const StoryViewer = ({ userId, onClose }) => {
                     <video
                         ref={videoRef}
                         key={currentStory.id}
+                        src={currentMediaUrl}
                         className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
                         playsInline
                         webkit-playsinline="true"
@@ -755,20 +770,14 @@ const StoryViewer = ({ userId, onClose }) => {
                         preload="auto"
                         muted={isMuted}
                         onLoadedMetadata={handleVideoLoadedMetadata}
-                        onWaiting={() => setIsBuffering(true)} 
-                        onPlaying={() => setIsBuffering(false)}
-                        onCanPlay={() => setIsBuffering(false)}
+                        onCanPlay={handleVideoCanPlay} // Intento agresivo de play
                         onError={(e) => { 
                             console.error("Video Error:", e.nativeEvent); 
                             setMediaError(true); 
                             setMediaLoaded(true); 
-                            setIsBuffering(false);
                         }}
                         style={hdrStyles}
-                    >
-                        <source src={currentMediaUrl} type="video/mp4" />
-                        <source src={currentMediaUrl} />
-                    </video>
+                    />
                 ) : (
                     <img 
                         key={currentStory.id} 
@@ -786,9 +795,7 @@ const StoryViewer = ({ userId, onClose }) => {
           {/* Precarga del siguiente elemento */}
           {nextMediaUrl && (
              isNextVideo ? (
-                 <video preload="auto" className="hidden">
-                     <source src={nextMediaUrl} type="video/mp4" />
-                 </video>
+                 <video src={nextMediaUrl} preload="auto" className="hidden" />
              ) : (
                  <img src={nextMediaUrl} alt="preload" className="hidden" />
              )
