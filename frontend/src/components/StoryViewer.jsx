@@ -33,7 +33,7 @@ const LikesListModal = ({ likes, onClose }) => {
         const deltaX = Math.abs(touchStartX.current - touchEndX);
 
         // Detectar Swipe Down (Deslizar hacia abajo) para cerrar
-        // Solo si la lista está en el tope (scrollTop === 0) para no romper el scroll natural
+        // Solo si la lista está en el tope (scrollTop <= 0) para no romper el scroll natural
         // deltaY < -50 significa un deslizamiento hacia abajo consistente
         if (deltaY < -50 && deltaX < 50) {
             if (listRef.current && listRef.current.scrollTop <= 0) {

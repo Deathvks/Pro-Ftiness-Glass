@@ -37,14 +37,18 @@ registerRoute(
 );
 
 // B. Imágenes estáticas locales (logo, iconos, etc.)
-// IMPORTANTE: Excluimos '/uploads/' para evitar errores de CORS con el backend.
+// IMPORTANTE: Excluimos '/uploads/' y VÍDEOS para evitar errores de CORS/Range en Safari.
 registerRoute(
   ({ request, url }) => {
-    // Si la imagen viene de /uploads/ (Backend), NO la interceptamos.
-    // Dejamos que el navegador la maneje nativamente.
+    // 1. Si viene de /uploads/, ignorar (Backend)
     if (url.pathname.startsWith('/uploads/')) return false;
 
-    // Interceptamos solo imágenes locales o assets del frontend
+    // 2. CRÍTICO: Si es un video (.mp4, .mov, etc.), IGNORAR.
+    // Safari requiere 'Range Requests' (206 Partial Content) para videos.
+    // Si el SW intercepta y devuelve 200 OK desde caché, Safari falla y muestra "Content not available".
+    if (url.pathname.match(/\.(mp4|mov|webm|mkv)$/i)) return false;
+
+    // 3. Interceptamos solo imágenes reales
     return request.destination === 'image' || url.pathname.startsWith('/images/');
   },
   new StaleWhileRevalidate({
