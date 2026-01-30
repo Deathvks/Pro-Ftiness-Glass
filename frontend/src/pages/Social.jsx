@@ -276,12 +276,14 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             </p>
                         </div>
                     ) : (
+                        // CAMBIO: Contenedor con límites pero sin forzar el tamaño de la imagen interna con 'width: 100%'
                         <div className="relative w-full h-[60vh] rounded-xl overflow-hidden bg-black flex items-center justify-center">
                             {file?.type?.startsWith('video') ? (
                                 <video 
                                     ref={previewVideoRef}
                                     src={preview} 
-                                    className="w-full h-full object-contain" 
+                                    // Para video, object-contain suele funcionar mejor, pero aplicamos max-w/h por consistencia
+                                    className="max-w-full max-h-full w-auto h-auto outline-none" 
                                     controls 
                                     playsInline
                                     webkit-playsinline="true"
@@ -296,9 +298,11 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 <img 
                                     src={preview} 
                                     alt="Preview" 
-                                    // CAMBIO: Eliminamos propiedades que fuerzan GPU (transform, backface)
-                                    // Usamos w-full h-full object-contain simple para que el browser haga el scaling nativo
-                                    className="w-full h-full object-contain"
+                                    // CAMBIO CRÍTICO: 
+                                    // Usamos 'max-w-full max-h-full' junto con 'w-auto h-auto'.
+                                    // Esto evita que el browser estire o comprima agresivamente la imagen usando algoritmos rápidos.
+                                    // Al mantener el aspect ratio natural restringido por el contenedor, se suele activar una interpolación de mejor calidad.
+                                    className="max-w-full max-h-full w-auto h-auto shadow-sm mx-auto"
                                     style={{ 
                                         filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
                                     }}
