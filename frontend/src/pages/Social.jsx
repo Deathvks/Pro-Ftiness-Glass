@@ -158,8 +158,6 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const previewVideoRef = useRef(null);
 
     const handleFileChange = (e) => {
-        // Al usar 'multiple' para arreglar iOS, files sigue siendo una lista.
-        // Tomamos siempre el primero files[0] que es lo que nos interesa.
         const selected = e.target.files[0];
         if (selected) {
             setFile(selected);
@@ -319,13 +317,12 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                     )}
                     
                     {/* INPUT 1: GALERÍA (MODIFICADO)
-                        - accept: Volvemos al estándar 'image/*,video/*' que es más robusto.
-                        - multiple: ¡CLAVE! Esto fuerza el selector "Moderno" de iOS que arregla las previsualizaciones pixeladas.
+                        - multiple={false} (implícito al borrarlo): Solo deja seleccionar una.
+                        - accept="image/*,video/*": La configuración más simple es la que mejor funciona para activar el picker "bueno" de iOS.
                     */}
                     <input 
                         type="file" 
                         accept="image/*,video/*"
-                        multiple={true}
                         ref={galleryInputRef} 
                         className="hidden" 
                         onChange={handleFileChange} 
