@@ -158,6 +158,8 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const previewVideoRef = useRef(null);
 
     const handleFileChange = (e) => {
+        // Al usar 'multiple' para arreglar iOS, files sigue siendo una lista.
+        // Tomamos siempre el primero files[0] que es lo que nos interesa.
         const selected = e.target.files[0];
         if (selected) {
             setFile(selected);
@@ -316,14 +318,14 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         </div>
                     )}
                     
-                    {/* INPUT 1: GALERÍA 
-                        - Usamos una lista ESTRICTA de MIMEs para iOS.
-                        - Eliminamos el comodín 'video/*' que a veces fuerza el selector de Archivos.
-                        - Incluimos 'video/quicktime' y 'video/mp4' explícitamente.
+                    {/* INPUT 1: GALERÍA (MODIFICADO)
+                        - accept: Volvemos al estándar 'image/*,video/*' que es más robusto.
+                        - multiple: ¡CLAVE! Esto fuerza el selector "Moderno" de iOS que arregla las previsualizaciones pixeladas.
                     */}
                     <input 
                         type="file" 
-                        accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,video/mp4,video/quicktime"
+                        accept="image/*,video/*"
+                        multiple={true}
                         ref={galleryInputRef} 
                         className="hidden" 
                         onChange={handleFileChange} 
