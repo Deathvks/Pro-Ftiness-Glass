@@ -178,6 +178,13 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         }
     };
 
+    // Limpiar URL object para evitar fugas de memoria y asegurar refresco
+    useEffect(() => {
+        return () => {
+            if (preview) URL.revokeObjectURL(preview);
+        };
+    }, [preview]);
+
     // Efecto para forzar el frame en iOS/Safari
     useEffect(() => {
         if (preview && file?.type?.startsWith('video') && previewVideoRef.current) {
@@ -274,7 +281,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 <video 
                                     ref={previewVideoRef}
                                     src={preview} 
-                                    className="max-h-[60vh] w-full object-contain" 
+                                    className="max-h-[60vh] max-w-full w-auto h-auto object-contain" 
                                     controls 
                                     playsInline
                                     webkit-playsinline="true"
@@ -289,15 +296,21 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 <img 
                                     src={preview} 
                                     alt="Preview" 
-                                    className="max-h-[60vh] object-contain"
+                                    // CAMBIO: max-w-full w-auto h-auto ayuda a mantener el ratio natural
+                                    // sin forzar estiramientos que causan pixelado en iOS
+                                    className="max-h-[60vh] max-w-full w-auto h-auto object-contain"
                                     style={{ 
                                         filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
+                                        // CAMBIOS PARA IOS:
+                                        imageRendering: 'auto', // Asegura que use bicubic/smooth scaling
+                                        transform: 'translateZ(0)', // Fuerza composición por GPU
+                                        backfaceVisibility: 'hidden', // Evita aliasing en transformaciones
                                     }}
                                 />
                             )}
                             <button 
                                 onClick={() => { setFile(null); setPreview(null); setIsHDR(false); setCanUseHDR(false); }}
-                                className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500/80 transition-colors"
+                                className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500/80 transition-colors z-20"
                             >
                                 <X size={16} />
                             </button>
