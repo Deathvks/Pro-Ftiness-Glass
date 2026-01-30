@@ -7,11 +7,11 @@ import ConfirmationModal from './ConfirmationModal';
 
 const DEFAULT_STORY_DURATION = 5000;
 
-// Configuración de puerto (Backend default 3001)
+// Configuración de puerto
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
 
-// --- Subcomponente: Lista de Likes ---
+// --- Subcomponente: Lista de Likes (Con Swipe Down para cerrar) ---
 const LikesListModal = ({ likes, onClose }) => {
     const safeLikes = Array.isArray(likes) ? likes : [];
     
@@ -34,8 +34,9 @@ const LikesListModal = ({ likes, onClose }) => {
 
         // Detectar Swipe Down (Deslizar hacia abajo) para cerrar
         // Solo si la lista está en el tope (scrollTop === 0) para no romper el scroll natural
+        // deltaY < -50 significa un deslizamiento hacia abajo consistente
         if (deltaY < -50 && deltaX < 50) {
-            if (listRef.current && listRef.current.scrollTop === 0) {
+            if (listRef.current && listRef.current.scrollTop <= 0) {
                 e.stopPropagation();
                 onClose();
             }
@@ -57,7 +58,7 @@ const LikesListModal = ({ likes, onClose }) => {
             <div 
                 ref={listRef}
                 className="flex-1 overflow-y-auto p-2"
-                onClick={(e) => e.stopPropagation()} // Evitar propagación de clicks al fondo
+                onClick={(e) => e.stopPropagation()} 
             >
                 {safeLikes.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-text-tertiary opacity-60">
@@ -271,11 +272,13 @@ const StoryViewer = ({ userId, onClose }) => {
   const currentStory = activeStories[currentIndex];
   const nextStory = activeStories[currentIndex + 1];
 
+  // Detectar Video: Comprobamos tipo o extensión
   const isVideo = useMemo(() => {
     if (!currentStory) return false;
     const type = currentStory.type || '';
     const url = currentStory.url || '';
-    return type.startsWith('video') || url.match(/\.(mp4|mov|webm|mkv)$/i);
+    // Ampliamos regex para detectar .mov si llega
+    return type.startsWith('video') || url.match(/\.(mp4|mov|webm|mkv|m4v)$/i);
   }, [currentStory]);
 
   const isHDR = currentStory?.isHDR === true || currentStory?.isHDR === 'true';
@@ -374,12 +377,10 @@ const StoryViewer = ({ userId, onClose }) => {
     }
   }, [isPaused, mediaLoaded, isVideo, showDeleteConfirm, showLikesList]);
 
-  // --- TIMER PRINCIPAL (Optimizado con requestAnimationFrame) ---
+  // --- TIMER PRINCIPAL ---
   useEffect(() => {
-    // Limpieza previa
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
-    // Condiciones de parada
     if (isPaused || (!mediaLoaded && !mediaError) || showDeleteConfirm || showLikesList) {
       return;
     }
@@ -388,7 +389,6 @@ const StoryViewer = ({ userId, onClose }) => {
       let shouldContinue = true;
 
       if (isVideo) {
-        // --- Lógica Video: Basada en tiempo real del elemento ---
         if (videoRef.current && !videoRef.current.paused && !videoRef.current.ended && videoRef.current.duration > 0) {
             const current = videoRef.current.currentTime;
             const duration = videoRef.current.duration;
@@ -402,7 +402,6 @@ const StoryViewer = ({ userId, onClose }) => {
             }
         }
       } else {
-        // --- Lógica Imagen: Basada en tiempo transcurrido (Timer) ---
         if (!startTimeRef.current) {
             startTimeRef.current = Date.now();
         }
@@ -425,7 +424,6 @@ const StoryViewer = ({ userId, onClose }) => {
       }
     };
 
-    // Iniciar loop
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
@@ -451,7 +449,7 @@ const StoryViewer = ({ userId, onClose }) => {
       const deltaY = touchStartY.current - touchEndY; 
       const deltaX = Math.abs(touchStartX.current - touchEndX);
 
-      // Detección de Gestos Verticales (Swipe Up/Down)
+      // Detección de Gestos Verticales (Swipe Up/Down) > 50px
       if (Math.abs(deltaY) > 50 && deltaX < 50) {
           if (deltaY > 0) {
               // --- Swipe Up (Hacia ARRIBA) ---
@@ -459,16 +457,17 @@ const StoryViewer = ({ userId, onClose }) => {
                   // Si es MI historia -> Abrir likes
                   handleOpenLikesList(e);
               }
-              // Si NO es mi historia -> Bloquear acción (evita saltar a la siguiente)
-              // Hacemos return explícito para no llegar a handlePauseEnd
+              // Si NO es mi historia -> Bloquear acción (RETURN, evita saltar a la siguiente)
               return; 
           } else {
               // --- Swipe Down (Hacia ABAJO) ---
+              // Cerrar Historia
               onClose();
               return;
           }
       }
 
+      // Si no fue swipe vertical, procesamos como tap/navegación horizontal
       handlePauseEnd(e, action);
   };
 
@@ -476,15 +475,11 @@ const StoryViewer = ({ userId, onClose }) => {
     pressStartTimeRef.current = Date.now(); 
     if (!isPaused && (mediaLoaded || mediaError)) {
         setIsPaused(true);
-        
-        // Pausar lógica de tiempo para imágenes
         if (!isVideo && startTimeRef.current) {
             const now = Date.now();
             pausedTimeRef.current += (now - startTimeRef.current);
-            startTimeRef.current = null; // Resetear para el próximo segmento
+            startTimeRef.current = null; 
         }
-        
-        // Pausar video explícitamente
         if (isVideo && videoRef.current) {
             videoRef.current.pause();
         }
@@ -496,7 +491,6 @@ const StoryViewer = ({ userId, onClose }) => {
     
     if (!showDeleteConfirm && !showLikesList) {
         setIsPaused(false);
-        
         const duration = Date.now() - pressStartTimeRef.current;
         if (duration < 200) {
             if (action === 'prev') goToPrev();
@@ -509,6 +503,7 @@ const StoryViewer = ({ userId, onClose }) => {
       if (isPaused) setIsPaused(false);
   };
 
+  // --- Registro de vista ---
   useEffect(() => {
     if (currentStory && !currentStory.viewed && storyData?.userId) {
       markStoryAsViewed(storyData.userId, currentStory.id);
@@ -557,7 +552,6 @@ const StoryViewer = ({ userId, onClose }) => {
   const cancelDelete = () => {
       setShowDeleteConfirm(false);
       setIsPaused(false);
-      // Al cancelar, reanudamos el timer
       startTimeRef.current = Date.now();
   };
 
@@ -719,15 +713,25 @@ const StoryViewer = ({ userId, onClose }) => {
                 isVideo ? (
                     <video
                         ref={videoRef}
-                        key={currentStory.id} 
-                        src={currentMediaUrl}
+                        key={currentStory.id}
                         className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
                         playsInline
+                        webkit-playsinline="true" // Soporte legacy iOS
+                        preload="auto" // Ayuda a Safari a cargar metadatos rápido
                         muted={isMuted}
                         onLoadedMetadata={handleVideoLoadedMetadata}
-                        onError={() => { setMediaError(true); setMediaLoaded(true); }}
+                        onError={(e) => { 
+                            console.error("Video Error:", e.nativeEvent); 
+                            setMediaError(true); 
+                            setMediaLoaded(true); 
+                        }}
                         style={hdrStyles}
-                    />
+                    >
+                        {/* Source explícito para mejorar compatibilidad Safari */}
+                        <source src={currentMediaUrl} type="video/mp4" />
+                        {/* Fallback si el navegador no entiende la etiqueta source vacía */}
+                        <source src={currentMediaUrl} />
+                    </video>
                 ) : (
                     <img 
                         key={currentStory.id} 
@@ -745,7 +749,9 @@ const StoryViewer = ({ userId, onClose }) => {
           {/* Precarga del siguiente elemento */}
           {nextMediaUrl && (
              isNextVideo ? (
-                 <video src={nextMediaUrl} preload="auto" className="hidden" />
+                 <video preload="auto" className="hidden">
+                     <source src={nextMediaUrl} type="video/mp4" />
+                 </video>
              ) : (
                  <img src={nextMediaUrl} alt="preload" className="hidden" />
              )

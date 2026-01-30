@@ -90,31 +90,13 @@ loadModel();
 export const processUploadedFile = async (file, isHDRRequested = false) => {
     if (!file) throw new Error("No file provided");
 
-    // --- VÍDEO: Sin transcodificación pero con ajuste de extensión ---
+    // --- VÍDEO: Pass-through (Sin renombrado forzoso) ---
+    // Mantenemos la extensión original (.mov, .mp4).
+    // Renombrar .mov a .mp4 sin convertir el codec (transcoding) causa errores en Safari
+    // porque detecta una discrepancia entre el contenedor (QuickTime) y la extensión (MP4).
     if (file.mimetype.startsWith('video/')) {
-        const dir = path.dirname(file.path);
-        const name = path.parse(file.filename).name;
-        // Forzamos extensión .mp4 para mejorar compatibilidad en navegadores
-        // (Muchos navegadores no reproducen .mov o .mkv directamente)
-        const newFilename = `${name}.mp4`;
-        const newPath = path.join(dir, newFilename);
-
-        // Renombramos el archivo físico si no es ya mp4
-        if (file.path !== newPath) {
-            try {
-                if (fs.existsSync(file.path)) {
-                    fs.renameSync(file.path, newPath);
-                }
-            } catch (err) {
-                console.error("Error renombrando video:", err);
-                // Si falla, seguimos con el original
-            }
-        }
-
-        // Calculamos ruta final con el nuevo nombre (o el original si falló renombrado)
-        const finalPath = fs.existsSync(newPath) ? newPath : file.path;
-        const relativePath = path.relative(PUBLIC_DIR, finalPath);
-
+        const relativePath = path.relative(PUBLIC_DIR, file.path);
+        // Aseguramos formato de URL con barras normales
         return {
             url: '/' + relativePath.split(path.sep).join('/'),
             isHDR: isHDRRequested 
@@ -160,6 +142,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
         const metadata = await imagePipeline.metadata();
         
         const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
+        
         const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
 
         const finalPipeline = sharp(file.path)
