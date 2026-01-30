@@ -221,6 +221,11 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         setIsHDR(!isHDR);
     };
 
+    // Función para limpiar el input antes de abrirlo (fuerza al OS a refrescar el picker)
+    const onInputClick = (e) => {
+        e.target.value = null;
+    };
+
     return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
             <div className="w-full max-w-md bg-bg-secondary border border-glass-border rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
@@ -276,13 +281,11 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             </p>
                         </div>
                     ) : (
-                        // CAMBIO: Contenedor con límites pero sin forzar el tamaño de la imagen interna con 'width: 100%'
                         <div className="relative w-full h-[60vh] rounded-xl overflow-hidden bg-black flex items-center justify-center">
                             {file?.type?.startsWith('video') ? (
                                 <video 
                                     ref={previewVideoRef}
                                     src={preview} 
-                                    // Para video, object-contain suele funcionar mejor, pero aplicamos max-w/h por consistencia
                                     className="max-w-full max-h-full w-auto h-auto outline-none" 
                                     controls 
                                     playsInline
@@ -298,10 +301,6 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 <img 
                                     src={preview} 
                                     alt="Preview" 
-                                    // CAMBIO CRÍTICO: 
-                                    // Usamos 'max-w-full max-h-full' junto con 'w-auto h-auto'.
-                                    // Esto evita que el browser estire o comprima agresivamente la imagen usando algoritmos rápidos.
-                                    // Al mantener el aspect ratio natural restringido por el contenedor, se suele activar una interpolación de mejor calidad.
                                     className="max-w-full max-h-full w-auto h-auto shadow-sm mx-auto"
                                     style={{ 
                                         filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
@@ -317,16 +316,20 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         </div>
                     )}
                     
-                    {/* INPUT 1: GALERÍA (Sin capture, acepta todo) */}
+                    {/* CAMBIO: input Galería
+                        - Especificamos MIME types para intentar forzar el Photo Picker de iOS en lugar del Files Picker.
+                        - onClick={onInputClick} asegura que el input se resetee, forzando una nueva instancia del picker.
+                    */}
                     <input 
                         type="file" 
-                        accept="image/*,video/*" 
+                        accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif,video/*"
                         ref={galleryInputRef} 
                         className="hidden" 
                         onChange={handleFileChange} 
+                        onClick={onInputClick}
                     />
                     
-                    {/* INPUT 2: CÁMARA FOTOS (capture=environment, accept=image) */}
+                    {/* INPUT 2: CÁMARA FOTOS */}
                     <input 
                         type="file" 
                         accept="image/*" 
@@ -334,9 +337,10 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         ref={cameraPhotoInputRef} 
                         className="hidden" 
                         onChange={handleFileChange} 
+                        onClick={onInputClick}
                     />
 
-                    {/* INPUT 3: CÁMARA VÍDEO (capture=environment, accept=video) */}
+                    {/* INPUT 3: CÁMARA VÍDEO */}
                     <input 
                         type="file" 
                         accept="video/*" 
@@ -344,6 +348,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         ref={cameraVideoInputRef} 
                         className="hidden" 
                         onChange={handleFileChange} 
+                        onClick={onInputClick}
                     />
                 </div>
 
