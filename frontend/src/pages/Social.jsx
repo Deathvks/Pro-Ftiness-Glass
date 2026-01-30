@@ -316,13 +316,14 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         </div>
                     )}
                     
-                    {/* CAMBIO: input Galería
-                        - Especificamos MIME types para intentar forzar el Photo Picker de iOS en lugar del Files Picker.
-                        - onClick={onInputClick} asegura que el input se resetee, forzando una nueva instancia del picker.
+                    {/* INPUT 1: GALERÍA 
+                        - Usamos una lista ESTRICTA de MIMEs para iOS.
+                        - Eliminamos el comodín 'video/*' que a veces fuerza el selector de Archivos.
+                        - Incluimos 'video/quicktime' y 'video/mp4' explícitamente.
                     */}
                     <input 
                         type="file" 
-                        accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif,video/*"
+                        accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,video/mp4,video/quicktime"
                         ref={galleryInputRef} 
                         className="hidden" 
                         onChange={handleFileChange} 
