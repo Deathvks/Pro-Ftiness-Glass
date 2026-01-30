@@ -250,7 +250,17 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     src={preview} 
                                     className="max-h-[60vh] w-full object-contain" 
                                     controls 
+                                    playsInline // Importante para iOS
+                                    webkit-playsinline="true" // Legacy iOS
+                                    preload="auto"
                                     onLoadedMetadata={handleVideoLoad}
+                                    onLoadedData={(e) => {
+                                        // HACK PARA iOS: Forzar un pequeño avance para generar thumbnail
+                                        // Si no, iOS muestra el video transparente/negro hasta que das play
+                                        if (e.target.currentTime === 0) {
+                                            e.target.currentTime = 0.1;
+                                        }
+                                    }}
                                     style={{ 
                                         // Visualmente indicamos HDR si está activo
                                         filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',

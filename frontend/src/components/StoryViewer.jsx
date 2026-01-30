@@ -1,6 +1,6 @@
 /* frontend/src/components/StoryViewer.jsx */
 import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
-import { X, Heart, Download, Loader2, ImageOff, Volume2, VolumeX, Trash2, ChevronLeft } from 'lucide-react';
+import { X, Heart, Download, Loader2, ImageOff, Volume2, VolumeX, Trash2, ChevronLeft, Film } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import UserAvatar from './UserAvatar';
 import ConfirmationModal from './ConfirmationModal';
@@ -16,7 +16,6 @@ const LikesListModal = ({ likes, onClose }) => {
     const safeLikes = Array.isArray(likes) ? likes : [];
     const [isClosing, setIsClosing] = useState(false);
     
-    // Referencias para detección de gestos
     const listRef = useRef(null);
     const touchStartY = useRef(0);
     const touchStartX = useRef(0);
@@ -26,10 +25,8 @@ const LikesListModal = ({ likes, onClose }) => {
         touchStartX.current = e.touches[0].clientX;
     };
 
-    // Función para cerrar con animación
     const triggerClose = () => {
         setIsClosing(true);
-        // Esperar a que termine la animación (0.3s) antes de desmontar
         setTimeout(() => {
             onClose();
         }, 280);
@@ -189,7 +186,7 @@ const StoryViewer = ({ userId, onClose }) => {
 
   const [viewingUserId, setViewingUserId] = useState(userId);
   const isMyStory = viewingUserId === userProfile?.id;
-  const [isClosingStory, setIsClosingStory] = useState(false); // Estado para animación de cierre
+  const [isClosingStory, setIsClosingStory] = useState(false); 
 
   const getFullImageUrl = useCallback((path) => {
     if (!path) return null;
@@ -308,7 +305,6 @@ const StoryViewer = ({ userId, onClose }) => {
     return `${diffDays} d`;
   };
 
-  // Función de cierre animado
   const animateAndClose = useCallback(() => {
       setIsClosingStory(true);
       setTimeout(() => {
@@ -321,7 +317,7 @@ const StoryViewer = ({ userId, onClose }) => {
       setCurrentIndex(prev => prev + 1);
     } else {
       if (isMyStory) {
-        animateAndClose(); // Cierre animado para mi historia
+        animateAndClose(); 
       } else {
         const currentGroupIndex = stories.findIndex(s => s.userId === viewingUserId);
         let foundNext = false;
@@ -342,7 +338,7 @@ const StoryViewer = ({ userId, onClose }) => {
             }
         }
         if (!foundNext) {
-            animateAndClose(); // Cierre animado al terminar todas
+            animateAndClose(); 
         }
       }
     }
@@ -375,7 +371,6 @@ const StoryViewer = ({ userId, onClose }) => {
     return () => clearTimeout(safetyTimeout);
   }, [currentIndex, mediaLoaded, mediaError]);
 
-  // --- CONTROL DE VIDEO (Play/Pause) ---
   useEffect(() => {
     if (isVideo && videoRef.current) {
         if (isPaused || showDeleteConfirm || showLikesList) {
@@ -391,7 +386,6 @@ const StoryViewer = ({ userId, onClose }) => {
     }
   }, [isPaused, isVideo, showDeleteConfirm, showLikesList, mediaLoaded]);
 
-  // --- TIMER PRINCIPAL ---
   useEffect(() => {
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
@@ -449,7 +443,6 @@ const StoryViewer = ({ userId, onClose }) => {
       setMediaLoaded(true);
   };
   
-  // Gestos
   const handleTouchStart = (e) => {
       touchStartY.current = e.touches[0].clientY;
       touchStartX.current = e.touches[0].clientX;
@@ -586,11 +579,26 @@ const StoryViewer = ({ userId, onClose }) => {
       startTimeRef.current = Date.now();
   };
 
+  // --- UI: ESTADO "NO HAY HISTORIAS" ---
   if (!storyData || activeStories.length === 0) {
     return (
-      <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center text-white">
-        <p>No hay historias disponibles</p>
-        <button onClick={animateAndClose} className="mt-4 px-4 py-2 bg-white/20 rounded-full">Cerrar</button>
+      <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4">
+        {/* Usamos un contenedor centrado con efecto glass para consistencia */}
+        <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center animate-fade-in backdrop-blur-md">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                <Film size={32} className="text-white/40" />
+            </div>
+            <h3 className="text-white font-bold text-lg mb-2">Sin Historias</h3>
+            <p className="text-white/50 text-sm mb-6">
+                No hay historias disponibles para ver en este momento.
+            </p>
+            <button 
+                onClick={animateAndClose} 
+                className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all active:scale-[0.98]"
+            >
+                Volver
+            </button>
+        </div>
       </div>
     );
   }
