@@ -14,16 +14,51 @@ const SERVER_URL = API_URL.replace('/api', '');
 // --- Subcomponente: Lista de Likes ---
 const LikesListModal = ({ likes, onClose }) => {
     const safeLikes = Array.isArray(likes) ? likes : [];
+    
+    // Referencias para detección de gestos y scroll
+    const listRef = useRef(null);
+    const touchStartY = useRef(0);
+    const touchStartX = useRef(0);
+
+    const handleTouchStart = (e) => {
+        touchStartY.current = e.touches[0].clientY;
+        touchStartX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = (e) => {
+        const touchEndY = e.changedTouches[0].clientY;
+        const touchEndX = e.changedTouches[0].clientX;
+        
+        const deltaY = touchStartY.current - touchEndY; // Positivo = Arriba, Negativo = Abajo
+        const deltaX = Math.abs(touchStartX.current - touchEndX);
+
+        // Detectar Swipe Down (Deslizar hacia abajo) para cerrar
+        // Solo si la lista está en el tope (scrollTop === 0) para no romper el scroll natural
+        if (deltaY < -50 && deltaX < 50) {
+            if (listRef.current && listRef.current.scrollTop === 0) {
+                e.stopPropagation();
+                onClose();
+            }
+        }
+    };
 
     return (
-        <div className="absolute inset-0 z-[60] bg-bg-primary flex flex-col animate-[fade-in_0.2s]">
-            <div className="p-4 border-b border-white/10 flex items-center gap-3">
+        <div 
+            className="absolute inset-0 z-[60] bg-bg-primary flex flex-col animate-[fade-in_0.2s]"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
+            <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-bg-primary z-10" onClick={(e) => e.stopPropagation()}>
                 <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full">
                     <ChevronLeft size={24} className="text-text-primary" />
                 </button>
                 <h3 className="font-bold text-lg text-text-primary">Me gusta</h3>
             </div>
-            <div className="flex-1 overflow-y-auto p-2">
+            <div 
+                ref={listRef}
+                className="flex-1 overflow-y-auto p-2"
+                onClick={(e) => e.stopPropagation()} // Evitar propagación de clicks al fondo
+            >
                 {safeLikes.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-text-tertiary opacity-60">
                         <Heart size={48} className="mb-2" />
@@ -185,12 +220,10 @@ const StoryViewer = ({ userId, onClose }) => {
     });
 
     // 2. Filtrar DUPLICADOS (Seguridad UI)
-    // Esto previene que se muestren dos historias iguales si el estado se actualiza mal
     const uniqueStories = [];
     const seenIds = new Set();
     
     for (const story of validStories) {
-        // Usamos String() para asegurar comparación correcta entre '123' y 123
         const id = String(story.id);
         if (!seenIds.has(id)) {
             seenIds.add(id);
@@ -418,18 +451,22 @@ const StoryViewer = ({ userId, onClose }) => {
       const deltaY = touchStartY.current - touchEndY; 
       const deltaX = Math.abs(touchStartX.current - touchEndX);
 
-      // 1. Swipe Up (Abrir Likes - Solo si es mi historia)
-      // deltaY positivo significa movimiento hacia ARRIBA
-      if (isMyStory && deltaY > 50 && deltaX < 50) {
-          handleOpenLikesList(e);
-          return;
-      }
-
-      // 2. Swipe Down (Cerrar Historia)
-      // deltaY negativo significa movimiento hacia ABAJO
-      if (deltaY < -50 && deltaX < 50) {
-          onClose();
-          return;
+      // Detección de Gestos Verticales (Swipe Up/Down)
+      if (Math.abs(deltaY) > 50 && deltaX < 50) {
+          if (deltaY > 0) {
+              // --- Swipe Up (Hacia ARRIBA) ---
+              if (isMyStory) {
+                  // Si es MI historia -> Abrir likes
+                  handleOpenLikesList(e);
+              }
+              // Si NO es mi historia -> Bloquear acción (evita saltar a la siguiente)
+              // Hacemos return explícito para no llegar a handlePauseEnd
+              return; 
+          } else {
+              // --- Swipe Down (Hacia ABAJO) ---
+              onClose();
+              return;
+          }
       }
 
       handlePauseEnd(e, action);
@@ -472,10 +509,7 @@ const StoryViewer = ({ userId, onClose }) => {
       if (isPaused) setIsPaused(false);
   };
 
-  // --- MODIFICADO: Registro de vista ---
   useEffect(() => {
-    // Eliminamos la restricción !isMyStory para que al ver mis propias historias
-    // se actualice el estado local y desaparezca el borde en el feed.
     if (currentStory && !currentStory.viewed && storyData?.userId) {
       markStoryAsViewed(storyData.userId, currentStory.id);
     }

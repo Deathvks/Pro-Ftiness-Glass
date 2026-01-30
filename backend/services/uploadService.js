@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 
 // Directorio base público
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
-// CAMBIO: Usamos 'images' para persistencia en Zeabur
+// CAMBIO IMPORTANTE: Usamos 'images' en lugar de 'uploads' para coincidir con el volumen persistente de Zeabur
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'images');
 
 // Helper para asegurar directorios
@@ -68,6 +68,7 @@ let model;
 const loadModel = async () => {
     if (!model) {
         try {
+            // Opción A: Cargar desde URL pública
             model = await nsfw.load();
             console.log("Modelo NSFWJS cargado correctamente.");
         } catch (err) {
@@ -77,6 +78,7 @@ const loadModel = async () => {
     return model;
 };
 
+// Inicializar modelo al arrancar
 loadModel();
 
 /**
@@ -88,19 +90,39 @@ loadModel();
 export const processUploadedFile = async (file, isHDRRequested = false) => {
     if (!file) throw new Error("No file provided");
 
-    // --- VÍDEO: Sin transcodificación (Pass-through) ---
-    // Si el usuario desactivó el HDR en el frontend, isHDRRequested vendrá false.
-    // Guardamos ese estado para que el frontend no fuerce brillo extra al reproducir.
+    // --- VÍDEO: Sin transcodificación pero con ajuste de extensión ---
     if (file.mimetype.startsWith('video/')) {
-        const relativePath = path.relative(PUBLIC_DIR, file.path);
+        const dir = path.dirname(file.path);
+        const name = path.parse(file.filename).name;
+        // Forzamos extensión .mp4 para mejorar compatibilidad en navegadores
+        // (Muchos navegadores no reproducen .mov o .mkv directamente)
+        const newFilename = `${name}.mp4`;
+        const newPath = path.join(dir, newFilename);
+
+        // Renombramos el archivo físico si no es ya mp4
+        if (file.path !== newPath) {
+            try {
+                if (fs.existsSync(file.path)) {
+                    fs.renameSync(file.path, newPath);
+                }
+            } catch (err) {
+                console.error("Error renombrando video:", err);
+                // Si falla, seguimos con el original
+            }
+        }
+
+        // Calculamos ruta final con el nuevo nombre (o el original si falló renombrado)
+        const finalPath = fs.existsSync(newPath) ? newPath : file.path;
+        const relativePath = path.relative(PUBLIC_DIR, finalPath);
+
         return {
             url: '/' + relativePath.split(path.sep).join('/'),
-            isHDR: isHDRRequested // Respetamos la decisión del usuario
+            isHDR: isHDRRequested 
         };
     }
 
     try {
-        // --- PASO A: VERIFICACIÓN NSFW ---
+        // --- PASO A: VERIFICACIÓN NSFW (Imágenes) ---
         const { data, info } = await sharp(file.path)
             .resize(224, 224, { fit: 'cover' })
             .removeAlpha()
@@ -137,12 +159,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
         const imagePipeline = sharp(file.path);
         const metadata = await imagePipeline.metadata();
         
-        // Detectar si la imagen original TIENE datos HDR reales (16-bit, float, etc)
         const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
-        
-        // Solo procesamos como HDR si:
-        // 1. La imagen original ES buena (no inventamos HDR de una foto mala).
-        // 2. El usuario LO PIDIÓ (no forzamos si él lo desactivó).
         const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
 
         const finalPipeline = sharp(file.path)
@@ -153,13 +170,10 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
             });
 
         if (shouldProcessAsHDR) {
-            // MANTENER HDR: Conservamos perfil de color y metadatos
             finalPipeline.withMetadata().webp({ quality: 90, effort: 5 });
         } else {
-            // FORZAR SDR: Si el usuario desactivó HDR o la imagen no era compatible,
-            // forzamos el espacio de color a sRGB estándar para "aplastar" el rango dinámico correctamente.
             finalPipeline
-                .toColourspace('srgb') // Clave para eliminar el look "lavado" de HDR mal interpretado
+                .toColourspace('srgb')
                 .webp({ quality: 80, effort: 4 });
         }
 
@@ -173,7 +187,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
         
         return {
             url: '/' + relativePath.split(path.sep).join('/'),
-            isHDR: shouldProcessAsHDR // Devolvemos la realidad de cómo se guardó
+            isHDR: shouldProcessAsHDR
         };
 
     } catch (error) {
