@@ -276,12 +276,12 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             </p>
                         </div>
                     ) : (
-                        <div className="relative w-full h-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                        <div className="relative w-full h-[60vh] rounded-xl overflow-hidden bg-black flex items-center justify-center">
                             {file?.type?.startsWith('video') ? (
                                 <video 
                                     ref={previewVideoRef}
                                     src={preview} 
-                                    className="max-h-[60vh] max-w-full w-auto h-auto object-contain" 
+                                    className="w-full h-full object-contain" 
                                     controls 
                                     playsInline
                                     webkit-playsinline="true"
@@ -296,15 +296,11 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 <img 
                                     src={preview} 
                                     alt="Preview" 
-                                    // CAMBIO: max-w-full w-auto h-auto ayuda a mantener el ratio natural
-                                    // sin forzar estiramientos que causan pixelado en iOS
-                                    className="max-h-[60vh] max-w-full w-auto h-auto object-contain"
+                                    // CAMBIO: Eliminamos propiedades que fuerzan GPU (transform, backface)
+                                    // Usamos w-full h-full object-contain simple para que el browser haga el scaling nativo
+                                    className="w-full h-full object-contain"
                                     style={{ 
                                         filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
-                                        // CAMBIOS PARA IOS:
-                                        imageRendering: 'auto', // Asegura que use bicubic/smooth scaling
-                                        transform: 'translateZ(0)', // Fuerza composición por GPU
-                                        backfaceVisibility: 'hidden', // Evita aliasing en transformaciones
                                     }}
                                 />
                             )}
