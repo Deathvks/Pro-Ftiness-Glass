@@ -154,6 +154,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     
     const galleryInputRef = useRef(null);
     const cameraInputRef = useRef(null);
+    const previewVideoRef = useRef(null); // Ref para el video de previsualización
 
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
@@ -176,9 +177,27 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         }
     };
 
+    // Efecto para forzar el frame en iOS/Safari
+    useEffect(() => {
+        if (preview && file?.type?.startsWith('video') && previewVideoRef.current) {
+            // HACK SAFARI: Forzamos mute y un pequeño salto de tiempo para que renderice el thumbnail
+            const vid = previewVideoRef.current;
+            vid.muted = true; // Asegurar mute
+            vid.currentTime = 0.1; // Saltar al principio
+            
+            // A veces es necesario cargar explícitamente si el src cambia dinámicamente
+            vid.load();
+        }
+    }, [preview, file]);
+
     // 2. Detección avanzada para Vídeos al cargar metadatos
     const handleVideoLoad = (e) => {
         const video = e.target;
+        // HACK SAFARI 2: Asegurar de nuevo el salto de tiempo cuando los metadatos cargan
+        if (video.currentTime < 0.1) {
+            video.currentTime = 0.1;
+        }
+
         // API moderna para detectar espacio de color (Chrome/Edge/Safari recientes)
         if (video.colorSpace) {
             const { transfer, primaries } = video.colorSpace;
@@ -247,20 +266,15 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         <div className="relative w-full h-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
                             {file?.type?.startsWith('video') ? (
                                 <video 
+                                    ref={previewVideoRef}
                                     src={preview} 
                                     className="max-h-[60vh] w-full object-contain" 
                                     controls 
                                     playsInline // Importante para iOS
                                     webkit-playsinline="true" // Legacy iOS
-                                    preload="auto"
+                                    preload="auto" // Forzar carga de datos
+                                    muted // CRÍTICO: iOS renderiza mejor el thumbnail si está muteado inicialmente
                                     onLoadedMetadata={handleVideoLoad}
-                                    onLoadedData={(e) => {
-                                        // HACK PARA iOS: Forzar un pequeño avance para generar thumbnail
-                                        // Si no, iOS muestra el video transparente/negro hasta que das play
-                                        if (e.target.currentTime === 0) {
-                                            e.target.currentTime = 0.1;
-                                        }
-                                    }}
                                     style={{ 
                                         // Visualmente indicamos HDR si está activo
                                         filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
@@ -292,10 +306,11 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         className="hidden" 
                         onChange={handleFileChange} 
                     />
+                    
+                    {/* MODIFICADO: Eliminado capture="environment" para permitir elegir Foto o Vídeo en Android */}
                     <input 
                         type="file" 
                         accept="image/*,video/*" 
-                        capture="environment" 
                         ref={cameraInputRef} 
                         className="hidden" 
                         onChange={handleFileChange} 
