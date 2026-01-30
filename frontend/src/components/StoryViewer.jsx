@@ -11,11 +11,12 @@ const DEFAULT_STORY_DURATION = 5000;
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
 
-// --- Subcomponente: Lista de Likes (Con Swipe Down para cerrar) ---
+// --- Subcomponente: Lista de Likes (Con Animaciones) ---
 const LikesListModal = ({ likes, onClose }) => {
     const safeLikes = Array.isArray(likes) ? likes : [];
+    const [isClosing, setIsClosing] = useState(false);
     
-    // Referencias para detección de gestos y scroll
+    // Referencias para detección de gestos
     const listRef = useRef(null);
     const touchStartY = useRef(0);
     const touchStartX = useRef(0);
@@ -25,32 +26,39 @@ const LikesListModal = ({ likes, onClose }) => {
         touchStartX.current = e.touches[0].clientX;
     };
 
+    // Función para cerrar con animación
+    const triggerClose = () => {
+        setIsClosing(true);
+        // Esperar a que termine la animación (0.3s) antes de desmontar
+        setTimeout(() => {
+            onClose();
+        }, 280);
+    };
+
     const handleTouchEnd = (e) => {
         const touchEndY = e.changedTouches[0].clientY;
         const touchEndX = e.changedTouches[0].clientX;
         
-        const deltaY = touchStartY.current - touchEndY; // Positivo = Arriba, Negativo = Abajo
+        const deltaY = touchStartY.current - touchEndY; 
         const deltaX = Math.abs(touchStartX.current - touchEndX);
 
-        // Detectar Swipe Down (Deslizar hacia abajo) para cerrar
-        // Solo si la lista está en el tope (scrollTop <= 0) para no romper el scroll natural
-        // deltaY < -50 significa un deslizamiento hacia abajo consistente
+        // Swipe Down para cerrar
         if (deltaY < -50 && deltaX < 50) {
             if (listRef.current && listRef.current.scrollTop <= 0) {
                 e.stopPropagation();
-                onClose();
+                triggerClose();
             }
         }
     };
 
     return (
         <div 
-            className="absolute inset-0 z-[60] bg-bg-primary flex flex-col animate-[fade-in_0.2s]"
+            className={`absolute inset-0 z-[60] bg-bg-primary flex flex-col ${isClosing ? 'animate-slide-out' : 'animate-slide-in'}`}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
             <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-bg-primary z-10" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full">
+                <button onClick={triggerClose} className="p-1 hover:bg-white/10 rounded-full">
                     <ChevronLeft size={24} className="text-text-primary" />
                 </button>
                 <h3 className="font-bold text-lg text-text-primary">Me gusta</h3>
@@ -181,6 +189,7 @@ const StoryViewer = ({ userId, onClose }) => {
 
   const [viewingUserId, setViewingUserId] = useState(userId);
   const isMyStory = viewingUserId === userProfile?.id;
+  const [isClosingStory, setIsClosingStory] = useState(false); // Estado para animación de cierre
 
   const getFullImageUrl = useCallback((path) => {
     if (!path) return null;
@@ -213,17 +222,14 @@ const StoryViewer = ({ userId, onClose }) => {
   }, [viewingUserId, isMyStory, stories, myStories, userProfile, getFullImageUrl]);
 
   const activeStories = useMemo(() => {
-    // 1. Filtrar por expiración
     const validStories = (storyData?.items || []).filter(item => {
         const expiry = item.expires_at || item.expiresAt;
         if (!expiry) return true;
         return new Date(expiry) > new Date();
     });
 
-    // 2. Filtrar DUPLICADOS (Seguridad UI)
     const uniqueStories = [];
     const seenIds = new Set();
-    
     for (const story of validStories) {
         const id = String(story.id);
         if (!seenIds.has(id)) {
@@ -231,7 +237,6 @@ const StoryViewer = ({ userId, onClose }) => {
             uniqueStories.push(story);
         }
     }
-
     return uniqueStories;
   }, [storyData]);
 
@@ -243,6 +248,7 @@ const StoryViewer = ({ userId, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(() => getInitialIndex());
   
   const [isPaused, setIsPaused] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
   const [progress, setProgress] = useState(0);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [mediaError, setMediaError] = useState(false); 
@@ -258,8 +264,6 @@ const StoryViewer = ({ userId, onClose }) => {
   const startTimeRef = useRef(null);
   const pausedTimeRef = useRef(0);
   const pressStartTimeRef = useRef(0);
-  
-  // Refs para control de gestos (Swipe)
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
   
@@ -272,12 +276,10 @@ const StoryViewer = ({ userId, onClose }) => {
   const currentStory = activeStories[currentIndex];
   const nextStory = activeStories[currentIndex + 1];
 
-  // Detectar Video: Comprobamos tipo o extensión
   const isVideo = useMemo(() => {
     if (!currentStory) return false;
     const type = currentStory.type || '';
     const url = currentStory.url || '';
-    // Ampliamos regex para detectar .mov si llega
     return type.startsWith('video') || url.match(/\.(mp4|mov|webm|mkv|m4v)$/i);
   }, [currentStory]);
 
@@ -306,12 +308,20 @@ const StoryViewer = ({ userId, onClose }) => {
     return `${diffDays} d`;
   };
 
+  // Función de cierre animado
+  const animateAndClose = useCallback(() => {
+      setIsClosingStory(true);
+      setTimeout(() => {
+          onClose();
+      }, 280);
+  }, [onClose]);
+
   const goToNext = useCallback(() => {
     if (currentIndex < activeStories.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {
       if (isMyStory) {
-        onClose();
+        animateAndClose(); // Cierre animado para mi historia
       } else {
         const currentGroupIndex = stories.findIndex(s => s.userId === viewingUserId);
         let foundNext = false;
@@ -332,11 +342,11 @@ const StoryViewer = ({ userId, onClose }) => {
             }
         }
         if (!foundNext) {
-            onClose();
+            animateAndClose(); // Cierre animado al terminar todas
         }
       }
     }
-  }, [currentIndex, activeStories.length, isMyStory, onClose, stories, viewingUserId]);
+  }, [currentIndex, activeStories.length, isMyStory, animateAndClose, stories, viewingUserId]);
 
   const goToPrev = () => {
     if (currentIndex > 0) {
@@ -347,6 +357,7 @@ const StoryViewer = ({ userId, onClose }) => {
   useLayoutEffect(() => {
     setProgress(0);
     setIsPaused(false);
+    setIsBuffering(true); 
     setMediaLoaded(false);
     setMediaError(false);
     setShowLikesList(false); 
@@ -358,6 +369,7 @@ const StoryViewer = ({ userId, onClose }) => {
     const safetyTimeout = setTimeout(() => {
         if (!mediaLoaded && !mediaError) {
             setMediaLoaded(true); 
+            setIsBuffering(false);
         }
     }, 8000);
     return () => clearTimeout(safetyTimeout);
@@ -366,22 +378,24 @@ const StoryViewer = ({ userId, onClose }) => {
   // --- CONTROL DE VIDEO (Play/Pause) ---
   useEffect(() => {
     if (isVideo && videoRef.current) {
-        if (isPaused || !mediaLoaded || showDeleteConfirm || showLikesList) {
+        if (isPaused || showDeleteConfirm || showLikesList) {
             videoRef.current.pause();
         } else {
             const playPromise = videoRef.current.play();
             if (playPromise !== undefined) {
-                playPromise.catch(err => console.log("Video play interrupted", err));
+                playPromise.catch(err => {
+                    console.log("Video play warning:", err);
+                });
             }
         }
     }
-  }, [isPaused, mediaLoaded, isVideo, showDeleteConfirm, showLikesList]);
+  }, [isPaused, isVideo, showDeleteConfirm, showLikesList, mediaLoaded]);
 
   // --- TIMER PRINCIPAL ---
   useEffect(() => {
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
-    if (isPaused || (!mediaLoaded && !mediaError) || showDeleteConfirm || showLikesList) {
+    if (isPaused || isBuffering || (!mediaLoaded && !mediaError) || showDeleteConfirm || showLikesList) {
       return;
     }
 
@@ -396,7 +410,7 @@ const StoryViewer = ({ userId, onClose }) => {
             
             setProgress(percentage);
 
-            if (percentage >= 100 || videoRef.current.ended) {
+            if (percentage > 99 || (duration - current) < 0.2 || videoRef.current.ended) {
                 shouldContinue = false;
                 goToNext();
             }
@@ -429,13 +443,13 @@ const StoryViewer = ({ userId, onClose }) => {
     return () => {
         if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [isPaused, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]); 
+  }, [isPaused, isBuffering, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]); 
 
   const handleVideoLoadedMetadata = () => {
       setMediaLoaded(true);
   };
   
-  // --- Manejo de Gestos ---
+  // Gestos
   const handleTouchStart = (e) => {
       touchStartY.current = e.touches[0].clientY;
       touchStartX.current = e.touches[0].clientX;
@@ -449,25 +463,19 @@ const StoryViewer = ({ userId, onClose }) => {
       const deltaY = touchStartY.current - touchEndY; 
       const deltaX = Math.abs(touchStartX.current - touchEndX);
 
-      // Detección de Gestos Verticales (Swipe Up/Down) > 50px
       if (Math.abs(deltaY) > 50 && deltaX < 50) {
           if (deltaY > 0) {
-              // --- Swipe Up (Hacia ARRIBA) ---
+              // Swipe Up
               if (isMyStory) {
-                  // Si es MI historia -> Abrir likes
                   handleOpenLikesList(e);
               }
-              // Si NO es mi historia -> Bloquear acción (RETURN, evita saltar a la siguiente)
               return; 
           } else {
-              // --- Swipe Down (Hacia ABAJO) ---
-              // Cerrar Historia
-              onClose();
+              // Swipe Down
+              animateAndClose();
               return;
           }
       }
-
-      // Si no fue swipe vertical, procesamos como tap/navegación horizontal
       handlePauseEnd(e, action);
   };
 
@@ -488,7 +496,6 @@ const StoryViewer = ({ userId, onClose }) => {
 
   const handlePauseEnd = (e, action) => {
     if (e && e.cancelable) e.preventDefault();
-    
     if (!showDeleteConfirm && !showLikesList) {
         setIsPaused(false);
         const duration = Date.now() - pressStartTimeRef.current;
@@ -503,7 +510,6 @@ const StoryViewer = ({ userId, onClose }) => {
       if (isPaused) setIsPaused(false);
   };
 
-  // --- Registro de vista ---
   useEffect(() => {
     if (currentStory && !currentStory.viewed && storyData?.userId) {
       markStoryAsViewed(storyData.userId, currentStory.id);
@@ -544,7 +550,7 @@ const StoryViewer = ({ userId, onClose }) => {
           setShowDeleteConfirm(false);
           setIsPaused(false);
           if (activeStories.length <= 1) {
-              onClose();
+              animateAndClose();
           }
       }
   };
@@ -584,7 +590,7 @@ const StoryViewer = ({ userId, onClose }) => {
     return (
       <div className="fixed inset-0 bg-black/90 z-[90] flex items-center justify-center text-white">
         <p>No hay historias disponibles</p>
-        <button onClick={onClose} className="mt-4 px-4 py-2 bg-white/20 rounded-full">Cerrar</button>
+        <button onClick={animateAndClose} className="mt-4 px-4 py-2 bg-white/20 rounded-full">Cerrar</button>
       </div>
     );
   }
@@ -602,8 +608,28 @@ const StoryViewer = ({ userId, onClose }) => {
   const likesCount = Array.isArray(currentStory?.likes) ? currentStory.likes.length : (typeof currentStory?.likes === 'number' ? currentStory.likes : 0);
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black/95 flex items-center justify-center animate-[fade-in_0.2s_ease-out]">
-      <div className="absolute inset-0" onClick={onClose} />
+    <div className={`fixed inset-0 z-[80] bg-black/95 flex items-center justify-center ${isClosingStory ? 'animate-slide-out' : 'animate-fade-in'}`}>
+      <style>
+        {`
+          @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          @keyframes slideOutDown {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(100%); opacity: 0; }
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+          }
+          .animate-slide-in { animation: slideInUp 0.3s ease-out forwards; }
+          .animate-slide-out { animation: slideOutDown 0.3s ease-in forwards; }
+          .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        `}
+      </style>
+
+      <div className="absolute inset-0" onClick={animateAndClose} />
 
       <div 
         className="relative w-full h-full md:w-[420px] md:h-[85vh] md:max-h-[900px] bg-black md:rounded-2xl overflow-hidden shadow-2xl flex flex-col"
@@ -667,7 +693,7 @@ const StoryViewer = ({ userId, onClose }) => {
                     </button>
                   </>
               )}
-              <button onClick={onClose} className="p-2 text-white hover:bg-white/10 rounded-full transition drop-shadow-md outline-none focus:outline-none">
+              <button onClick={animateAndClose} className="p-2 text-white hover:bg-white/10 rounded-full transition drop-shadow-md outline-none focus:outline-none">
                   <X size={28} style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }} />
               </button>
           </div>
@@ -697,11 +723,11 @@ const StoryViewer = ({ userId, onClose }) => {
 
         {/* --- Media (Imagen o Video) --- */}
         <div className="flex-1 flex items-center justify-center bg-black relative w-full h-full z-10">
-          {!mediaLoaded && !mediaError && (
+          {(!mediaLoaded && !mediaError) || (isVideo && isBuffering) ? (
               <div className="absolute inset-0 flex items-center justify-center z-0">
                   <Loader2 className="text-white/50 animate-spin" size={48} />
               </div>
-          )}
+          ) : null}
           
           {mediaError ? (
              <div className="flex flex-col items-center justify-center text-white/50 gap-2">
@@ -716,20 +742,23 @@ const StoryViewer = ({ userId, onClose }) => {
                         key={currentStory.id}
                         className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
                         playsInline
-                        webkit-playsinline="true" // Soporte legacy iOS
-                        preload="auto" // Ayuda a Safari a cargar metadatos rápido
+                        webkit-playsinline="true"
+                        autoPlay
+                        preload="auto"
                         muted={isMuted}
                         onLoadedMetadata={handleVideoLoadedMetadata}
+                        onWaiting={() => setIsBuffering(true)} 
+                        onPlaying={() => setIsBuffering(false)}
+                        onCanPlay={() => setIsBuffering(false)}
                         onError={(e) => { 
                             console.error("Video Error:", e.nativeEvent); 
                             setMediaError(true); 
                             setMediaLoaded(true); 
+                            setIsBuffering(false);
                         }}
                         style={hdrStyles}
                     >
-                        {/* Source explícito para mejorar compatibilidad Safari */}
                         <source src={currentMediaUrl} type="video/mp4" />
-                        {/* Fallback si el navegador no entiende la etiqueta source vacía */}
                         <source src={currentMediaUrl} />
                     </video>
                 ) : (
