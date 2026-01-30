@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
     Users, UserPlus, Trophy, Search, UserX, Check, X, Medal,
     ChevronRight, ChevronLeft, Plus, Camera, Image as ImageIcon,
-    Globe, Zap, ShieldAlert, Clock, Lock
+    Globe, Zap, ShieldAlert, Clock, Lock, Video as VideoIcon
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -153,8 +153,9 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const [isHDR, setIsHDR] = useState(false);         // ¿El usuario quiere activarlo?
     
     const galleryInputRef = useRef(null);
-    const cameraInputRef = useRef(null);
-    const previewVideoRef = useRef(null); // Ref para el video de previsualización
+    const cameraPhotoInputRef = useRef(null);
+    const cameraVideoInputRef = useRef(null);
+    const previewVideoRef = useRef(null);
 
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
@@ -180,12 +181,9 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     // Efecto para forzar el frame en iOS/Safari
     useEffect(() => {
         if (preview && file?.type?.startsWith('video') && previewVideoRef.current) {
-            // HACK SAFARI: Forzamos mute y un pequeño salto de tiempo para que renderice el thumbnail
             const vid = previewVideoRef.current;
-            vid.muted = true; // Asegurar mute
-            vid.currentTime = 0.1; // Saltar al principio
-            
-            // A veces es necesario cargar explícitamente si el src cambia dinámicamente
+            vid.muted = true;
+            vid.currentTime = 0.1;
             vid.load();
         }
     }, [preview, file]);
@@ -193,20 +191,16 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     // 2. Detección avanzada para Vídeos al cargar metadatos
     const handleVideoLoad = (e) => {
         const video = e.target;
-        // HACK SAFARI 2: Asegurar de nuevo el salto de tiempo cuando los metadatos cargan
         if (video.currentTime < 0.1) {
             video.currentTime = 0.1;
         }
 
-        // API moderna para detectar espacio de color (Chrome/Edge/Safari recientes)
         if (video.colorSpace) {
             const { transfer, primaries } = video.colorSpace;
-            // Detectar espacios de color HDR típicos: BT.2020, PQ (smpte2084), HLG
             const isHDRSpace = ['smpte2084', 'hlg', 'bt2020'].includes(transfer) || primaries === 'bt2020';
-            
             if (isHDRSpace) {
                 setCanUseHDR(true);
-                setIsHDR(true); // Activar por defecto
+                setIsHDR(true);
             }
         }
     };
@@ -235,31 +229,43 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center min-h-[300px]">
                     {!preview ? (
-                        <div className="grid grid-cols-2 gap-4 w-full h-full">
-                            {/* Opción Cámara */}
+                        <div className="grid grid-cols-3 gap-3 w-full h-full">
+                            
+                            {/* Opción 1: Cámara FOTO (Solo Imagen) */}
                             <div 
-                                onClick={() => cameraInputRef.current?.click()}
-                                className="aspect-square border-2 border-dashed border-accent/50 rounded-xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-accent/10 transition-colors group"
+                                onClick={() => cameraPhotoInputRef.current?.click()}
+                                className="aspect-square border-2 border-dashed border-accent/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-accent/10 transition-colors group"
                             >
-                                <div className="p-4 bg-accent/20 rounded-full group-hover:scale-110 transition-transform text-accent">
-                                    <Camera size={32} />
+                                <div className="p-3 bg-accent/20 rounded-full group-hover:scale-110 transition-transform text-accent">
+                                    <Camera size={28} />
                                 </div>
-                                <p className="text-accent font-bold text-sm">Cámara</p>
+                                <p className="text-accent font-bold text-xs">Foto</p>
                             </div>
 
-                            {/* Opción Galería */}
+                            {/* Opción 2: Cámara VÍDEO (Solo Vídeo) */}
+                            <div 
+                                onClick={() => cameraVideoInputRef.current?.click()}
+                                className="aspect-square border-2 border-dashed border-red-500/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-500/10 transition-colors group"
+                            >
+                                <div className="p-3 bg-red-500/20 rounded-full group-hover:scale-110 transition-transform text-red-400">
+                                    <VideoIcon size={28} />
+                                </div>
+                                <p className="text-red-400 font-bold text-xs">Vídeo</p>
+                            </div>
+
+                            {/* Opción 3: Galería (Ambos) */}
                             <div 
                                 onClick={() => galleryInputRef.current?.click()}
-                                className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/5 transition-colors group"
+                                className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-colors group"
                             >
-                                <div className="p-4 bg-white/5 rounded-full group-hover:scale-110 transition-transform text-text-secondary">
-                                    <ImageIcon size={32} />
+                                <div className="p-3 bg-white/5 rounded-full group-hover:scale-110 transition-transform text-text-secondary">
+                                    <ImageIcon size={28} />
                                 </div>
-                                <p className="text-text-secondary font-medium text-sm">Galería</p>
+                                <p className="text-text-secondary font-medium text-xs">Galería</p>
                             </div>
                             
-                            <p className="col-span-2 text-center text-xs text-text-tertiary mt-2">
-                                Fotos o Vídeos • Duración máx 24h
+                            <p className="col-span-3 text-center text-xs text-text-tertiary mt-4">
+                                Elige el modo de cámara para asegurar compatibilidad
                             </p>
                         </div>
                     ) : (
@@ -270,13 +276,12 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     src={preview} 
                                     className="max-h-[60vh] w-full object-contain" 
                                     controls 
-                                    playsInline // Importante para iOS
-                                    webkit-playsinline="true" // Legacy iOS
-                                    preload="auto" // Forzar carga de datos
-                                    muted // CRÍTICO: iOS renderiza mejor el thumbnail si está muteado inicialmente
+                                    playsInline
+                                    webkit-playsinline="true"
+                                    preload="auto"
+                                    muted
                                     onLoadedMetadata={handleVideoLoad}
                                     style={{ 
-                                        // Visualmente indicamos HDR si está activo
                                         filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
                                     }}
                                 />
@@ -299,6 +304,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         </div>
                     )}
                     
+                    {/* INPUT 1: GALERÍA (Sin capture, acepta todo) */}
                     <input 
                         type="file" 
                         accept="image/*,video/*" 
@@ -307,11 +313,22 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         onChange={handleFileChange} 
                     />
                     
-                    {/* MODIFICADO: Eliminado capture="environment" para permitir elegir Foto o Vídeo en Android */}
+                    {/* INPUT 2: CÁMARA FOTOS (capture=environment, accept=image) */}
                     <input 
                         type="file" 
-                        accept="image/*,video/*" 
-                        ref={cameraInputRef} 
+                        accept="image/*" 
+                        capture="environment"
+                        ref={cameraPhotoInputRef} 
+                        className="hidden" 
+                        onChange={handleFileChange} 
+                    />
+
+                    {/* INPUT 3: CÁMARA VÍDEO (capture=environment, accept=video) */}
+                    <input 
+                        type="file" 
+                        accept="video/*" 
+                        capture="environment"
+                        ref={cameraVideoInputRef} 
                         className="hidden" 
                         onChange={handleFileChange} 
                     />
@@ -345,7 +362,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             <span>Público</span>
                         </button>
 
-                        {/* Botón Inteligente HDR: Solo aparece si canUseHDR es true */}
+                        {/* Botón Inteligente HDR */}
                         {canUseHDR && (
                             <button 
                                 onClick={toggleHDR}
