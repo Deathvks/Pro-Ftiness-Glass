@@ -1,5 +1,7 @@
 /* frontend/src/hooks/useAppTheme.js */
 import { useState, useLayoutEffect, useMemo } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { NavigationBar } from '@capgo/capacitor-navigation-bar'; // <--- CORRECCIÓN IMPORT
 import useAppStore from '../store/useAppStore';
 
 const THEME_COLORS = {
@@ -26,7 +28,6 @@ export const useAppTheme = () => {
   });
 
   // Estado para el tema resuelto (el que realmente se ve: light/dark/oled)
-  // Inicializamos con un valor seguro
   const [resolvedTheme, setResolvedTheme] = useState('dark');
 
   const setTheme = (newTheme) => {
@@ -56,7 +57,7 @@ export const useAppTheme = () => {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
-      // Actualizamos estado para consumidores (ej: App.jsx para Capacitor)
+      // Actualizamos estado para consumidores
       setResolvedTheme(effectiveTheme);
 
       // 2. Determinar Color HEX
@@ -67,20 +68,16 @@ export const useAppTheme = () => {
         color = THEME_COLORS.light;
       }
 
-      // 3. Bloquear transiciones temporalmente (evita parpadeos en barras de estado)
+      // 3. Bloquear transiciones temporalmente
       body.style.transition = 'none';
       root.style.transition = 'none';
 
       // 4. Aplicar Clases CSS al ROOT
-      // Limpiamos todas las clases posibles anteriores
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'dark');
       
-      // Mapeamos system -> light/dark explícito en CSS (variables CSS)
       const classTheme = effectiveTheme === 'oled' ? 'oled' : (effectiveTheme === 'light' ? 'light' : 'dark');
       root.classList.add(`${classTheme}-theme`);
 
-      // ACTIVAR MODO OSCURO DE TAILWIND (para modificadores dark:...)
-      // Tanto 'dark' como 'oled' se consideran modos oscuros para Tailwind.
       if (effectiveTheme !== 'light') {
         root.classList.add('dark');
       }
@@ -114,7 +111,19 @@ export const useAppTheme = () => {
         document.head.appendChild(metaStatus);
       }
 
-      // 7. Restaurar transiciones
+      // 7. Navigation Bar Nativa (Android) - SOLUCIÓN AL PROBLEMA DE FONDO BLANCO
+      if (Capacitor.isNativePlatform()) {
+        const isLight = effectiveTheme === 'light';
+        // CORRECCIÓN: Llamamos a la función desde el objeto importado
+        NavigationBar.setNavigationBarColor({ 
+            color: color, 
+            darkButtons: isLight 
+        }).catch((err) => {
+            console.warn("Error setting NavigationBar color:", err);
+        });
+      }
+
+      // 8. Restaurar transiciones
       setTimeout(() => {
         body.style.transition = '';
         root.style.transition = '';
@@ -150,7 +159,7 @@ export const useAppTheme = () => {
     setTheme, 
     accent, 
     setAccent, 
-    resolvedTheme, // Exportamos el tema real (light/dark/oled)
-    themeColor     // Exportamos el color hex exacto
+    resolvedTheme, 
+    themeColor     
   };
 };

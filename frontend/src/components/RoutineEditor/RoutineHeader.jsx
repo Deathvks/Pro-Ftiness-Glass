@@ -9,9 +9,11 @@ import {
     Folder,
     ChevronDown,
     Plus,
-    Check
+    Check,
+    Search
 } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
+import PixabayModal from './PixabayModal';
 
 // Colores/Degradados predefinidos
 const PREDEFINED_BACKGROUNDS = [
@@ -40,6 +42,7 @@ const RoutineHeader = ({
     const fileInputRef = useRef(null);
     const folderWrapperRef = useRef(null);
     const [isFolderOpen, setIsFolderOpen] = useState(false);
+    const [isPixabayOpen, setIsPixabayOpen] = useState(false);
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
     // Obtener carpetas únicas del store
@@ -89,6 +92,11 @@ const RoutineHeader = ({
     const handleSelectFolder = (selectedFolder) => {
         setFolder(selectedFolder);
         setIsFolderOpen(false);
+    };
+
+    const handlePixabaySelect = (url) => {
+        setImageUrl(url);
+        setIsPixabayOpen(false);
     };
 
     return (
@@ -156,17 +164,27 @@ const RoutineHeader = ({
 
                     {/* Controles Imagen */}
                     <div className="flex-1 w-full space-y-4">
-                        <div>
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center justify-center sm:justify-start w-full sm:w-auto gap-2 px-4 py-2 bg-glass-highlight border border-glass-border rounded-lg hover:bg-glass-heavy hover:border-accent/50 transition-all text-sm font-medium"
+                                className="flex items-center justify-center sm:justify-start flex-1 sm:flex-none gap-2 px-4 py-2 bg-glass-highlight border border-glass-border rounded-lg hover:bg-glass-heavy hover:border-accent/50 transition-all text-sm font-medium"
                                 disabled={isUploadingImage}
                             >
                                 <Upload size={16} />
-                                {isUploadingImage ? 'Subiendo...' : 'Subir desde Galería'}
+                                {isUploadingImage ? 'Subiendo...' : 'Subir foto'}
                             </button>
+                            
+                            <button
+                                onClick={() => setIsPixabayOpen(true)}
+                                className="flex items-center justify-center sm:justify-start flex-1 sm:flex-none gap-2 px-4 py-2 bg-glass-highlight border border-glass-border rounded-lg hover:bg-glass-heavy hover:border-accent/50 transition-all text-sm font-medium"
+                            >
+                                <Search size={16} />
+                                Buscar en Pixabay
+                            </button>
+                            
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                         </div>
+
                         <div className="text-center sm:text-left">
                             <span className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-2 block">
                                 O elige un estilo
@@ -287,6 +305,13 @@ const RoutineHeader = ({
                     className="w-full px-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent placeholder-text-tertiary"
                 />
             </div>
+
+            {/* Modal de Pixabay */}
+            <PixabayModal 
+                isOpen={isPixabayOpen} 
+                onClose={() => setIsPixabayOpen(false)} 
+                onSelectImage={handlePixabaySelect} 
+            />
         </>
     );
 };
