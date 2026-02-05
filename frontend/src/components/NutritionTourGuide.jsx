@@ -1,21 +1,21 @@
-/* frontend/src/components/TourGuide.jsx */
+/* frontend/src/components/NutritionTourGuide.jsx */
 import { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import useAppStore from '../store/useAppStore';
 
-const TourGuide = () => {
-  const { tourCompleted, completeTour } = useAppStore(state => ({
-    tourCompleted: state.tourCompleted,
-    completeTour: state.completeTour
+const NutritionTourGuide = () => {
+  const { nutritionTourCompleted, completeNutritionTour } = useAppStore(state => ({
+    nutritionTourCompleted: state.nutritionTourCompleted,
+    completeNutritionTour: state.completeNutritionTour
   }));
 
   const driverRef = useRef(null);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
-    // --- Inyección de Estilos Personalizados (Glassmorphism Theme) ---
-    const styleId = 'driver-js-custom-theme';
+    // --- Inyección de Estilos Personalizados (Tema Glassmorphism Ajustado) ---
+    const styleId = 'driver-js-nutrition-theme';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
       style.id = styleId;
@@ -34,13 +34,9 @@ const TourGuide = () => {
         }
 
         /* --- FLECHAS CON BORDE (Técnica de doble triángulo) --- */
-        
-        /* 1. Base de la flecha (actúa como el borde) */
         .driver-popover-arrow {
           border-width: 8px !important;
         }
-        
-        /* 2. Pseudo-elemento para el relleno (color de fondo) */
         .driver-popover-arrow::after {
           content: "";
           position: absolute;
@@ -186,69 +182,76 @@ const TourGuide = () => {
       document.head.appendChild(style);
     }
 
-    if (tourCompleted) return;
+    if (nutritionTourCompleted) return;
 
     // Configuración del Driver
     driverRef.current = driver({
       showProgress: true,
       animate: true,
       allowClose: true,
-      doneBtnText: '¡A entrenar!',
+      doneBtnText: '¡Entendido!',
       nextBtnText: 'Siguiente',
       prevBtnText: 'Atrás',
       progressText: '{{current}} / {{total}}',
       steps: [
         {
-          element: '#tour-gamification',
+          element: '#nutrition-header',
           popover: {
-            title: 'Nivel y Racha',
-            description: 'Tu progreso gamificado. ¡Mantén la llama encendida entrenando o registrando datos cada día para subir de nivel!'
+            title: 'Tu Panel de Nutrición',
+            description: 'Gestiona tus comidas diarias, controla tus macros y mantén tu hidratación al día desde aquí.',
+            side: 'bottom',
+            align: 'start'
           }
         },
         {
-          element: '#tour-stats',
+          element: '#date-navigator',
           popover: {
-            title: 'Resumen Semanal',
-            description: 'Un vistazo rápido a tus sesiones, calorías quemadas y cumplimiento de tu meta calórica diaria.'
+            title: 'Viaja en el Tiempo',
+            description: 'Usa las flechas para revisar registros pasados o planificar tus comidas de los próximos días.',
+            side: 'bottom'
           }
         },
         {
-          element: '#tour-nutrition',
+          element: '#calories-ring',
           popover: {
-            title: 'Nutrición Rápida',
-            description: 'Toca los anillos para registrar calorías, proteínas, agua o creatina al instante. ¡Todo cuenta!'
+            title: 'Objetivo de Calorías',
+            description: 'Este anillo te muestra visualmente cuántas calorías has consumido y cuántas te quedan para llegar a tu meta.',
+            side: 'bottom'
           }
         },
         {
-          element: '#tour-routines',
+          element: '#macro-stats',
           popover: {
-            title: 'Tus Rutinas',
-            description: 'Aquí aparecen tus rutinas creadas. Pulsa "Play" para iniciar el Modo Entrenamiento.'
+            title: 'Tus Macros',
+            description: 'Desglose detallado de Proteínas, Carbohidratos y Grasas. Toca las tarjetas para ver más detalles si están disponibles.',
+            side: 'top'
           }
         },
         {
-          element: '#tour-quick-cardio',
+          element: '#water-tracker',
           popover: {
-            title: 'Cardio Exprés',
-            description: '¿Solo vas a correr o usar la bici? Inicia una sesión rápida sin necesidad de configurar una rutina compleja.'
+            title: 'Control de Agua',
+            description: 'Registra tu consumo de agua rápidamente. ¡La hidratación es clave para tu rendimiento!',
+            side: 'top'
           }
         },
         {
-          element: '#tour-weight',
+          element: '#add-food-btn',
           popover: {
-            title: 'Control de Peso',
-            description: 'Registra tu peso corporal regularmente para ver tu tendencia y gráfica de progreso aquí mismo.'
+            title: 'Añadir Alimentos',
+            description: 'El botón principal para registrar desayunos, comidas, cenas y snacks. Escanea códigos o busca en la base de datos.',
+            side: 'top',
+            align: 'end'
           }
         }
       ],
       onDestroyed: () => {
-        completeTour();
+        completeNutritionTour();
       }
     });
 
     // Función recursiva para iniciar el tour solo si no hay modales activos
     const checkModalsAndStart = () => {
-      // Buscamos elementos que cumplan el patrón de modales de la app
       const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
         const className = el.className || '';
         return typeof className === 'string' && className.includes('z-') && !className.includes('-z-');
@@ -261,7 +264,6 @@ const TourGuide = () => {
       }
     };
 
-    // Iniciamos la comprobación
     timeoutRef.current = setTimeout(checkModalsAndStart, 1500);
 
     return () => {
@@ -270,9 +272,10 @@ const TourGuide = () => {
         driverRef.current.destroy();
       }
     };
-  }, [tourCompleted, completeTour]);
+
+  }, [nutritionTourCompleted, completeNutritionTour]);
 
   return null;
 };
 
-export default TourGuide;
+export default NutritionTourGuide;

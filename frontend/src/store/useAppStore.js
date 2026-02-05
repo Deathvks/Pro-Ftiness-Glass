@@ -38,7 +38,7 @@ const useAppStore = create((set, get) => ({
         set({ hapticsEnabled: enabled });
     },
 
-    // --- Configuración Global: Tour Guiado ---
+    // --- Configuración Global: Tour Guiado General ---
     tourCompleted: (() => {
         try {
             return localStorage.getItem('tourCompleted') === 'true';
@@ -56,12 +56,36 @@ const useAppStore = create((set, get) => ({
         set({ tourCompleted: true });
     },
 
-    // Acción útil para desarrollo o para un botón de "Ver tutorial de nuevo"
     resetTour: () => {
         try {
             localStorage.removeItem('tourCompleted');
         } catch (e) { }
         set({ tourCompleted: false });
+    },
+
+    // --- Configuración Global: Tour Nutrición ---
+    nutritionTourCompleted: (() => {
+        try {
+            return localStorage.getItem('nutritionTourCompleted') === 'true';
+        } catch (e) {
+            return false;
+        }
+    })(),
+
+    completeNutritionTour: () => {
+        try {
+            localStorage.setItem('nutritionTourCompleted', 'true');
+        } catch (e) {
+            console.warn(e);
+        }
+        set({ nutritionTourCompleted: true });
+    },
+
+    resetNutritionTour: () => {
+        try {
+            localStorage.removeItem('nutritionTourCompleted');
+        } catch (e) { }
+        set({ nutritionTourCompleted: false });
     }
 }));
 

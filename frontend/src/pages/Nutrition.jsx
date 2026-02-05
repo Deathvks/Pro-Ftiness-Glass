@@ -11,6 +11,7 @@ import NutritionLogModal from '../components/NutritionLogModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CreatinaTracker from '../components/CreatinaTracker';
 import SugarTargetModal from '../components/SugarTargetModal';
+import NutritionTourGuide from '../components/NutritionTourGuide';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
 
@@ -31,7 +32,7 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
     const formattedDate = dateString.charAt(0).toUpperCase() + dateString.slice(1);
 
     return (
-        <div className="flex items-center justify-between mb-8 mt-6 sm:mt-0">
+        <div id="date-navigator" className="flex items-center justify-between mb-8 mt-6 sm:mt-0">
             <button onClick={() => changeDay(-1)} className="p-2 rounded-full hover:bg-white/10 transition">
                 <ChevronLeft />
             </button>
@@ -418,13 +419,15 @@ const Nutrition = ({ setView }) => {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
 
+            <NutritionTourGuide />
+
             <Helmet>
                 <title>Registro de Nutrición - Pro Fitness Glass</title>
                 <meta name="description" content="Registra tus comidas (desayuno, almuerzo, cena, snacks), agua y suplementos. Controla tus calorías y macronutrientes diarios." />
             </Helmet>
 
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 mt-10 md:mt-0 gap-4">
-                <h1 className="hidden md:block text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">Nutrición</h1>
+                <h1 id="nutrition-header" className="hidden md:block text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">Nutrición</h1>
             </div>
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
@@ -439,20 +442,24 @@ const Nutrition = ({ setView }) => {
                                 <h2 className="text-xl font-bold">Resumen del Día</h2>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <StatCard 
-                                    icon={<Flame size={24} className="text-orange-500" />} 
-                                    title="Calorías" 
-                                    value={totals.calories.toLocaleString('es-ES')} 
-                                    unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} 
-                                    className="border-transparent dark:border dark:border-white/10"
-                                />
-                                <StatCard 
-                                    icon={<Beef size={24} className="text-red" />} 
-                                    title="Proteínas" 
-                                    value={totals.protein.toFixed(1)} 
-                                    unit={`/ ${proteinTarget} g`} 
-                                    className="border-transparent dark:border dark:border-white/10"
-                                />
+                                <div id="calories-ring" className="h-full">
+                                    <StatCard 
+                                        icon={<Flame size={24} className="text-orange-500" />} 
+                                        title="Calorías" 
+                                        value={totals.calories.toLocaleString('es-ES')} 
+                                        unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} 
+                                        className="h-full border-transparent dark:border dark:border-white/10"
+                                    />
+                                </div>
+                                <div id="macro-stats" className="h-full">
+                                    <StatCard 
+                                        icon={<Beef size={24} className="text-red" />} 
+                                        title="Proteínas" 
+                                        value={totals.protein.toFixed(1)} 
+                                        unit={`/ ${proteinTarget} g`} 
+                                        className="h-full border-transparent dark:border dark:border-white/10"
+                                    />
+                                </div>
                                 <StatCard 
                                     icon={<Wheat size={24} className="text-blue-500" />} 
                                     title="Carbs" 
@@ -487,6 +494,7 @@ const Nutrition = ({ setView }) => {
                         <div className="lg:col-span-2 space-y-4">
                             {/* Tarjeta de Agua Rediseñada */}
                             <GlassCard 
+                                id="water-tracker"
                                 className="p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-colors border-transparent dark:border dark:border-white/10"
                                 onClick={() => setModal({ type: 'water', data: null })}
                             >
@@ -599,6 +607,7 @@ const Nutrition = ({ setView }) => {
                                             </button>
                                         )}
                                         <button
+                                            id={mealType === 'breakfast' ? 'add-food-btn' : undefined}
                                             onClick={() => setModal({ type: 'food', data: { mealType } })}
                                             className="p-1.5 rounded-full text-accent hover:bg-accent-transparent transition"
                                             title="Añadir comida"

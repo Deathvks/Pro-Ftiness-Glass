@@ -5,7 +5,7 @@ import {
   Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
   Bike, Activity, Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy, Check, Crown,
-  LayoutGrid, IceCream, TriangleAlert, Info
+  LayoutGrid, IceCream, TriangleAlert, Info, Utensils
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import BodyWeightModal from '../components/BodyWeightModal';
@@ -264,6 +264,7 @@ const Dashboard = ({ setView }) => {
 
         {/* TARJETA DE GAMIFICACIÓN */}
         <GlassCard
+          id="tour-gamification"
           className="w-full lg:w-auto p-5 flex items-center gap-6 bg-bg-secondary/40 rounded-3xl relative overflow-hidden group border-transparent dark:border dark:border-white/10 hover:bg-bg-secondary transition-all cursor-pointer"
           onClick={() => setShowXPModal(true)}
         >
