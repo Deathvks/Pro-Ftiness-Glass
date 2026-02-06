@@ -1,3 +1,4 @@
+/* backend/config/config.cjs */
 require('dotenv').config();
 
 module.exports = {
@@ -8,6 +9,7 @@ module.exports = {
     host: process.env.DB_HOST,
     dialect: "mysql",
     timezone: '+00:00',
+    logging: false, // Menos ruido en desarrollo
   },
   test: {
     username: "root",
@@ -16,6 +18,7 @@ module.exports = {
     host: "127.0.0.1",
     dialect: "mysql",
     timezone: '+00:00',
+    logging: false,
   },
   production: {
     username: process.env.MYSQL_USERNAME,
@@ -25,6 +28,8 @@ module.exports = {
     port: process.env.MYSQL_PORT,
     dialect: "mysql",
     timezone: '+00:00',
+    // OPTIMIZACIÓN: Desactiva logs SQL para ahorrar I/O y CPU en Zeabur
+    logging: false,
     dialectOptions: {
       ssl: {
         require: true,

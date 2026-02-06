@@ -7,7 +7,7 @@ import { deleteFile } from '../services/imageService.js';
 const { Story, User, StoryLike, StoryView, Friendship } = models;
 
 /**
- * Helper para obtener los IDs de los amigos del usuario actual
+ * Helper para obtener IDs de amigos (Optimizado: solo devuelve array de enteros)
  */
 const getFriendIds = async (userId) => {
     if (!userId) return [];
@@ -17,13 +17,13 @@ const getFriendIds = async (userId) => {
             status: 'accepted',
             [Op.or]: [{ requester_id: userId }, { addressee_id: userId }]
         },
-        attributes: ['requester_id', 'addressee_id']
+        attributes: ['requester_id', 'addressee_id'],
+        raw: true // Ahorro de memoria
     });
 
-    const friendIds = friendships.map(f => 
+    return friendships.map(f => 
         f.requester_id === userId ? f.addressee_id : f.requester_id
     );
-    return friendIds;
 };
 
 export const createStory = async (req, res) => {
@@ -35,49 +35,42 @@ export const createStory = async (req, res) => {
             return res.status(400).json({ error: 'No se ha subido ningún archivo' });
         }
 
-        // Convertimos el string 'true'/'false' del FormData a booleano real
         const isHDRBoolean = isHDR === 'true';
 
-        // Procesar archivo:
-        // Pasamos la preferencia del usuario (isHDRBoolean) a la función de procesado.
-        // Si es false, el servicio forzará la conversión a SDR (colores estándar).
+        // 1. Procesar archivo (Compresión y NSFW)
         let processedResult;
         try {
             processedResult = await processUploadedFile(req.file, isHDRBoolean);
         } catch (uploadError) {
+            // Si falla el procesado (ej: NSFW), borramos el temporal si quedó
+            if (req.file) await deleteFile(req.file.path).catch(() => {});
+            
             if (uploadError.message && (uploadError.message.includes('rechazada') || uploadError.message.includes('inapropiado'))) {
-                return res.status(400).json({ 
-                    error: uploadError.message 
-                });
+                return res.status(400).json({ error: uploadError.message });
             }
             throw uploadError;
         }
         
         const isVideo = req.file.mimetype.startsWith('video/');
-        
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
 
-        // Usamos el flag isHDR FINAL devuelto por el servicio.
-        // Esto asegura que la BD diga la verdad: si el usuario pidió HDR pero la imagen no era compatible,
-        // el servicio devolvió false y aquí guardamos false.
-        const finalIsHDR = processedResult.isHDR;
-
+        // 2. Crear registro en BD
         const newStory = await Story.create({
             user_id: userId,
             url: processedResult.url,
             type: isVideo ? 'video' : 'image',
             privacy: privacy,
-            is_hdr: finalIsHDR, 
+            is_hdr: processedResult.isHDR, 
             expires_at: expiresAt
         });
 
-        // Recuperar datos del usuario para enviarlos en el evento de Socket
+        // 3. Preparar respuesta optimizada
         const user = await User.findByPk(userId, {
-            attributes: ['id', 'username', 'profile_image_url']
+            attributes: ['id', 'username', 'profile_image_url'],
+            raw: true
         });
 
-        // Estructura completa para el tiempo real
         const storyResponse = {
             id: newStory.id,
             url: newStory.url,
@@ -89,13 +82,12 @@ export const createStory = async (req, res) => {
             likes: [], 
             isLiked: false,
             viewed: false,
-            // Datos del usuario para que el frontend actualice la burbuja inmediatamente
             userId: user.id,
             username: user.username,
             avatar: user.profile_image_url
         };
 
-        // --- SOCKET.IO: EMITIR EVENTO REAL-TIME ---
+        // 4. Emitir evento Socket (Solo si hay clientes escuchando)
         const io = req.app.get('io');
         if (io) {
             io.emit('new_story', {
@@ -121,17 +113,19 @@ export const getStories = async (req, res) => {
         const userId = req.user.userId;
         const now = new Date();
 
+        // Obtener IDs de amigos y añadir al propio usuario para ver sus historias
         const friendIds = await getFriendIds(userId);
-
+        
+        // Optimización: Traer solo historias válidas con eager loading controlado
         const stories = await Story.findAll({
             where: {
                 expires_at: { [Op.gt]: now },
                 [Op.or]: [
-                    { user_id: userId },
-                    { privacy: 'public' },
+                    { user_id: userId }, // Mis historias
+                    { privacy: 'public' }, // Públicas de todos
                     { 
                         privacy: 'friends', 
-                        user_id: { [Op.in]: friendIds }
+                        user_id: { [Op.in]: friendIds } // De amigos
                     }
                 ]
             },
@@ -144,6 +138,7 @@ export const getStories = async (req, res) => {
                 {
                     model: StoryLike,
                     as: 'likes',
+                    attributes: ['user_id'], // Solo necesitamos IDs para contar y ver si di like
                     include: [{
                         model: User,
                         as: 'user',
@@ -153,18 +148,21 @@ export const getStories = async (req, res) => {
                 {
                     model: StoryView,
                     as: 'views',
+                    attributes: ['user_id'],
                     where: { user_id: userId },
                     required: false 
                 }
             ],
-            order: [['created_at', 'ASC']] 
+            order: [['created_at', 'ASC']]
         });
 
+        // Agrupación en memoria (CPU bound, rápido en Node)
         const groupedStories = {};
 
-        stories.forEach(story => {
+        for (const story of stories) {
             const u = story.user;
-            
+            if (!u) continue; // Skip si usuario borrado
+
             if (!groupedStories[u.id]) {
                 groupedStories[u.id] = {
                     userId: u.id,
@@ -200,10 +198,11 @@ export const getStories = async (req, res) => {
                 isLiked: isLiked,
                 viewed: isViewed
             });
-        });
+        }
 
         const responseData = Object.values(groupedStories);
 
+        // Ordenar: Yo primero -> Con no vistas -> Resto
         responseData.sort((a, b) => {
             if (a.userId === userId) return -1;
             if (b.userId === userId) return 1;
@@ -227,13 +226,15 @@ export const deleteStory = async (req, res) => {
         const story = await Story.findOne({ where: { id, user_id: userId } });
 
         if (!story) {
-            return res.status(404).json({ error: 'Historia no encontrada o no tienes permiso' });
+            return res.status(404).json({ error: 'Historia no encontrada' });
         }
 
-        deleteFile(story.url);
+        // 1. Borrado físico (Asíncrono)
+        await deleteFile(story.url);
+        
+        // 2. Borrado lógico
         await story.destroy();
 
-        // Notificar eliminación en tiempo real
         const io = req.app.get('io');
         if (io) {
             io.emit('delete_story', { storyId: id, userId });
@@ -252,8 +253,9 @@ export const toggleLikeStory = async (req, res) => {
         const userId = req.user.userId;
         const { id } = req.params;
 
-        const story = await Story.findByPk(id);
-        if (!story) return res.status(404).json({ error: 'Historia no encontrada' });
+        // Comprobar existencia (ligero)
+        const storyExists = await Story.count({ where: { id } });
+        if (!storyExists) return res.status(404).json({ error: 'Historia no encontrada' });
 
         const existingLike = await StoryLike.findOne({
             where: { story_id: id, user_id: userId }
@@ -269,6 +271,7 @@ export const toggleLikeStory = async (req, res) => {
             isLiked = true;
         }
 
+        // Devolver lista actualizada optimizada
         const updatedLikes = await StoryLike.findAll({
             where: { story_id: id },
             include: [{
@@ -301,11 +304,15 @@ export const viewStory = async (req, res) => {
         const userId = req.user.userId;
         const { id } = req.params;
 
-        const story = await Story.findByPk(id);
+        // Validación rápida: si es mi historia, no cuenta como vista nueva
+        // Pero verificamos si existe para no llenar DB de basura
+        const story = await Story.findByPk(id, { attributes: ['user_id'] });
+        
         if (!story || story.user_id === userId) {
             return res.status(200).end();
         }
 
+        // findOrCreate es atómico y seguro
         await StoryView.findOrCreate({
             where: { story_id: id, user_id: userId }
         });

@@ -1,5 +1,5 @@
 /* backend/services/imageService.js */
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import models from '../models/index.js';
@@ -7,121 +7,142 @@ import models from '../models/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Asumimos que la carpeta public está en backend/public
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
-const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
+// CORRECCIÓN CRÍTICA: Apuntamos a 'images' para coincidir con tu volumen persistente de Zeabur
+const UPLOADS_DIR = path.join(PUBLIC_DIR, 'images');
 
-// CORRECCIÓN: Añadir Story a los modelos
-const { User, FavoriteMeal, NutritionLog, Exercise, Routine, Story } = models;
+const { User, FavoriteMeal, NutritionLog, Routine, Story, BugReport } = models;
 
 /**
- * Borra un archivo del sistema de archivos dada su ruta relativa (ej: /uploads/perfil/foto.jpg)
+ * Borra un archivo de forma asíncrona (No bloquea el servidor).
  */
-export const deleteFile = (relativePath) => {
+export const deleteFile = async (relativePath) => {
     if (!relativePath) return;
 
-    // Ignorar URLs externas (ej: fotos de Google)
     if (relativePath.startsWith('http') || relativePath.startsWith('//')) {
         return;
     }
 
     try {
-        // Normalizar ruta para evitar problemas de barras
         const fullPath = path.join(PUBLIC_DIR, relativePath);
 
-        // Verificar seguridad: asegurar que el archivo está dentro de public
+        // Seguridad: Evitar Path Traversal (intentar borrar archivos fuera de public)
         if (!fullPath.startsWith(PUBLIC_DIR)) {
-            console.warn(`Intento de borrado fuera de public: ${fullPath}`);
+            console.warn(`[Security] Intento de borrado fuera de public: ${fullPath}`);
             return;
         }
 
-        if (fs.existsSync(fullPath)) {
-            fs.unlinkSync(fullPath);
-            console.log(`🗑️ Archivo eliminado: ${relativePath}`);
+        // Verificamos si existe antes de intentar borrar
+        try {
+            await fs.access(fullPath); // Check if exists
+            await fs.unlink(fullPath); // Delete
+            // console.log(`🗑️ Archivo eliminado: ${relativePath}`);
+        } catch (e) {
+            // Si el archivo no existe, no hacemos nada (evita errores en logs)
         }
     } catch (error) {
-        console.error(`Error al eliminar archivo ${relativePath}:`, error);
+        console.error(`Error al eliminar archivo ${relativePath}:`, error.message);
     }
 };
 
 /**
- * Escanea la carpeta 'uploads' y elimina archivos que no estén en la base de datos.
+ * Función auxiliar recursiva para listar archivos (Async)
  */
-export const cleanOrphanedImages = async () => {
-    console.log('🧹 Iniciando limpieza de imágenes huérfanas...');
-
-    if (!fs.existsSync(UPLOADS_DIR)) {
-        console.log('Carpeta uploads no existe, omitiendo limpieza.');
-        return;
-    }
-
+async function getFilesRecursively(dir) {
+    let results = [];
     try {
-        // 1. Recolectar todas las imágenes en uso en la BD
-        const activeImages = new Set();
-
-        const users = await User.findAll({ attributes: ['profile_image_url'] });
-        users.forEach(u => u.profile_image_url && activeImages.add(path.normalize(u.profile_image_url)));
-
-        const meals = await FavoriteMeal.findAll({ attributes: ['image_url'] });
-        meals.forEach(m => m.image_url && activeImages.add(path.normalize(m.image_url)));
-
-        const logs = await NutritionLog.findAll({ attributes: ['image_url'] });
-        logs.forEach(l => l.image_url && activeImages.add(path.normalize(l.image_url)));
-
-        // --- Rutinas ---
-        const routines = await Routine.findAll({ attributes: ['image_url'] });
-        routines.forEach(r => r.image_url && activeImages.add(path.normalize(r.image_url)));
-
-        // --- CORRECCIÓN: Historias (Stories) ---
-        // Importante: Las historias tienen campo 'url', no 'image_url'
-        const stories = await Story.findAll({ attributes: ['url'] });
-        stories.forEach(s => s.url && activeImages.add(path.normalize(s.url)));
-
-        // 2. Obtener todos los archivos físicos en uploads (recursivo)
-        const filesOnDisk = getAllFiles(UPLOADS_DIR);
-
-        // 3. Comparar y eliminar
-        let deletedCount = 0;
-        filesOnDisk.forEach(fullPath => {
-            // Convertir ruta absoluta a relativa para comparar con la BD (ej: /uploads/users/img.jpg)
-            const relativePath = fullPath.replace(PUBLIC_DIR, '');
-            const normalizedRelative = path.normalize(relativePath);
-
-            // Windows/Linux compatibilidad de barras
-            const isUsed = [...activeImages].some(activePath => {
-                // Normalizar ambas para comparar
-                return activePath.includes(normalizedRelative) || normalizedRelative.includes(activePath);
-            });
-
-            if (!isUsed) {
-                fs.unlinkSync(fullPath);
-                console.log(`🗑️ Huérfano eliminado: ${relativePath}`);
-                deletedCount++;
+        const list = await fs.readdir(dir, { withFileTypes: true });
+        
+        const promises = list.map(async (dirent) => {
+            const res = path.resolve(dir, dirent.name);
+            if (dirent.isDirectory()) {
+                const subFiles = await getFilesRecursively(res);
+                results = results.concat(subFiles);
+            } else {
+                results.push(res);
             }
         });
 
-        console.log(`✅ Limpieza completada. ${deletedCount} archivos eliminados.`);
+        await Promise.all(promises);
+    } catch (err) {
+        // Si el directorio 'images' no existe aún, no pasa nada
+        if (err.code !== 'ENOENT') console.error(`Error leyendo directorio ${dir}:`, err.message);
+    }
+    return results;
+}
+
+/**
+ * Limpieza de imágenes optimizada (RAM eficiente)
+ */
+export const cleanOrphanedImages = async () => {
+    console.log('🧹 [Mantenimiento] Iniciando limpieza de imágenes huérfanas...');
+
+    try {
+        // 1. Recolectar URLs en uso (Paralelo y RAW para ahorrar RAM)
+        // Añadimos BugReport para no borrar capturas de errores reportados
+        const [users, meals, logs, routines, stories, bugs] = await Promise.all([
+            User.findAll({ attributes: ['profile_image_url'], where: { profile_image_url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
+            FavoriteMeal.findAll({ attributes: ['image_url'], where: { image_url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
+            NutritionLog.findAll({ attributes: ['image_url'], where: { image_url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
+            Routine.findAll({ attributes: ['image_url'], where: { image_url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
+            Story.findAll({ attributes: ['url'], where: { url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
+            BugReport.findAll({ attributes: ['image_url'], where: { image_url: { [models.Sequelize.Op.ne]: null } }, raw: true })
+        ]);
+
+        const activeImages = new Set();
+        
+        // Helper para normalizar rutas y añadirlas al Set
+        const addToSet = (list, key) => list.forEach(item => {
+            if (item[key]) {
+                // Normalizamos a minúsculas y formato path para comparar
+                activeImages.add(path.normalize(item[key]).toLowerCase());
+            }
+        });
+
+        addToSet(users, 'profile_image_url');
+        addToSet(meals, 'image_url');
+        addToSet(logs, 'image_url');
+        addToSet(routines, 'image_url');
+        addToSet(stories, 'url');
+        addToSet(bugs, 'image_url');
+
+        // 2. Escanear disco físico
+        const filesOnDisk = await getFilesRecursively(UPLOADS_DIR);
+
+        // 3. Comparar y eliminar
+        let deletedCount = 0;
+        const deletePromises = filesOnDisk.map(async (fullPath) => {
+            // Convertir ruta absoluta de disco a relativa web
+            // Ej: /src/public/images/file.jpg -> /images/file.jpg
+            let relativePath = fullPath.replace(PUBLIC_DIR, '');
+            
+            // Asegurar que empieza con /
+            if (!relativePath.startsWith(path.sep)) relativePath = path.sep + relativePath;
+
+            const normalizedRelative = path.normalize(relativePath).toLowerCase();
+
+            // Si la imagen en disco NO está en la lista de activas -> Borrar
+            if (!activeImages.has(normalizedRelative)) {
+                try {
+                    await fs.unlink(fullPath);
+                    deletedCount++;
+                } catch (e) {
+                    console.error(`Error borrando ${relativePath}`, e.message);
+                }
+            }
+        });
+
+        await Promise.all(deletePromises);
+
+        if (deletedCount > 0) {
+            console.log(`✅ Limpieza completada. ${deletedCount} archivos eliminados (Espacio recuperado).`);
+        } else {
+            console.log(`✅ Limpieza completada. No se encontraron archivos huérfanos.`);
+        }
 
     } catch (error) {
-        console.error('Error durante la limpieza de imágenes:', error);
+        console.error('Error crítico en limpieza de imágenes:', error);
     }
-};
-
-// Helper para listar archivos recursivamente
-const getAllFiles = (dirPath, arrayOfFiles) => {
-    const files = fs.readdirSync(dirPath);
-    arrayOfFiles = arrayOfFiles || [];
-
-    files.forEach(file => {
-        const fullPath = path.join(dirPath, file);
-        if (fs.statSync(fullPath).isDirectory()) {
-            arrayOfFiles = getAllFiles(fullPath, arrayOfFiles);
-        } else {
-            arrayOfFiles.push(fullPath);
-        }
-    });
-
-    return arrayOfFiles;
 };
 
 export default { deleteFile, cleanOrphanedImages };

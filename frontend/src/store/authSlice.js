@@ -129,7 +129,8 @@ export const createAuthSlice = (set, get) => ({
     // Cierra sesión (LOGOUT MANUAL)
     handleLogout: () => {
         clearAuthStorage();
-        get().clearWorkoutState(); // Borra el estado del workout explícitamente al salir manual
+        // MODIFICACIÓN: No limpiamos el estado del workout para que persista
+        // get().clearWorkoutState(); 
         get().clearDataState();
         set({
             isAuthenticated: false,

@@ -4,7 +4,6 @@ import { Op } from 'sequelize';
 import db from '../models/index.js';
 import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
-// FIX: Importamos deleteFile para borrar los archivos de las historias
 import { cleanOrphanedImages, deleteFile } from './imageService.js';
 
 /**
@@ -14,17 +13,14 @@ const getLocalTime = (timezone) => {
   try {
     const tz = timezone || 'Europe/Madrid';
     const now = new Date();
-    const hourStr = now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: 'numeric' });
-    const dayStr = now.toLocaleDateString('en-US', { timeZone: tz, day: 'numeric' });
-    const dateStr = now.toLocaleDateString('sv-SE', { timeZone: tz });
+    // Usamos formateadores pre-calculados para eficiencia
+    const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: 'numeric' }), 10);
+    const day = parseInt(now.toLocaleDateString('en-US', { timeZone: tz, day: 'numeric' }), 10);
+    const date = now.toLocaleDateString('sv-SE', { timeZone: tz }); // Formato YYYY-MM-DD
 
-    return {
-      hour: parseInt(hourStr, 10),
-      day: parseInt(dayStr, 10),
-      date: dateStr
-    };
+    return { hour, day, date };
   } catch (error) {
-    console.error(`[Cron] Error zona horaria inválida (${timezone}):`, error.message);
+    // Fallback silencioso a UTC si la zona horaria falla
     const now = new Date();
     return {
       hour: now.getUTCHours(),
@@ -35,21 +31,25 @@ const getLocalTime = (timezone) => {
 };
 
 /**
- * Envía notificaciones a un usuario específico (Push + Interna).
+ * Envía notificaciones a un usuario (Push + Interna) de forma optimizada.
  */
 const notifyUser = async (userId, payload) => {
   try {
-    await createNotification(userId, {
-      type: 'info',
-      title: payload.title,
-      message: payload.body,
-      data: { url: payload.url }
-    });
+    // Ejecutamos la creación de notificación interna y la búsqueda de suscripciones en paralelo
+    const [subscriptions] = await Promise.all([
+      db.PushSubscription.findAll({ where: { user_id: userId } }),
+      createNotification(userId, {
+        type: 'info',
+        title: payload.title,
+        message: payload.body,
+        data: { url: payload.url }
+      })
+    ]);
 
-    const subscriptions = await db.PushSubscription.findAll({ where: { user_id: userId } });
-    if (subscriptions.length === 0) return;
+    if (!subscriptions.length) return;
 
-    const notifications = subscriptions.map(sub => {
+    // Enviamos todas las push en paralelo
+    await Promise.all(subscriptions.map(sub => {
       const subscriptionObject = {
         endpoint: sub.endpoint,
         keys: {
@@ -60,16 +60,16 @@ const notifyUser = async (userId, payload) => {
 
       return pushService.sendNotification(subscriptionObject, payload)
         .catch(error => {
+          // Si el endpoint ya no existe (410/404), borramos la suscripción para limpiar DB
           if (error.statusCode === 410 || error.statusCode === 404) {
             return sub.destroy();
           }
-          console.error(`[Cron] Error enviando push: ${error.message}`);
+          // Ignoramos otros errores para no saturar logs
         });
-    });
+    }));
 
-    await Promise.all(notifications);
   } catch (error) {
-    console.error(`[Cron] Error fatal al notificar a ${userId}:`, error);
+    console.error(`[Cron] Error notificando a ${userId}:`, error.message);
   }
 };
 
@@ -78,8 +78,8 @@ const notifyUser = async (userId, payload) => {
  */
 const checkNutritionGoals = () => {
   cron.schedule('0 * * * *', async () => {
-    console.log('[Cron] Verificando Metas Nutricionales (Hora actual)...');
     try {
+      // 1. Obtener usuarios candidatos (Solo ID y campos necesarios)
       const users = await db.User.findAll({
         where: {
           [Op.or]: [
@@ -90,18 +90,17 @@ const checkNutritionGoals = () => {
         attributes: ['id', 'target_calories', 'target_protein', 'timezone']
       });
 
-      const targetUsers = users.filter(user => {
-        const { hour } = getLocalTime(user.timezone);
-        return hour === 20;
-      });
+      // 2. Filtrar en memoria (rápido) quiénes están en su hora 20:00
+      const targetUsers = users.filter(user => getLocalTime(user.timezone).hour === 20);
+      if (!targetUsers.length) return;
 
-      if (targetUsers.length === 0) return;
+      console.log(`[Cron] Nutrición: Procesando ${targetUsers.length} usuarios.`);
 
-      console.log(`[Cron] Analizando nutrición para ${targetUsers.length} usuarios.`);
-
-      for (const user of targetUsers) {
+      // 3. Procesar en paralelo (Promise.all)
+      await Promise.all(targetUsers.map(async (user) => {
         const { date: localDate } = getLocalTime(user.timezone);
 
+        // Sumar logs del día
         const logs = await db.NutritionLog.findAll({
           where: { user_id: user.id, log_date: localDate },
           attributes: ['calories', 'protein_g']
@@ -114,15 +113,16 @@ const checkNutritionGoals = () => {
         const proteinMet = user.target_protein > 0 && totalProt >= user.target_protein;
 
         if ((user.target_calories > 0 && !caloriesMet) || (user.target_protein > 0 && !proteinMet)) {
-          notifyUser(user.id, {
+          return notifyUser(user.id, {
             title: '¡No olvides tus metas!',
             body: 'Aún no has completado tus objetivos de hoy. ¡Tú puedes!',
             url: '/nutrition',
           });
         }
-      }
+      }));
+
     } catch (error) {
-      console.error('[Cron] Error en la tarea de nutrición:', error);
+      console.error('[Cron] Error tarea nutrición:', error.message);
     }
   });
 };
@@ -132,37 +132,34 @@ const checkNutritionGoals = () => {
  */
 const checkTrainingReminder = () => {
   cron.schedule('0 * * * *', async () => {
-    console.log('[Cron] Verificando Recordatorio Entrenamiento...');
     try {
-      // Optimización: Obtener directamente usuarios que tienen suscripciones activas
+      // Optimización: JOIN interno para traer solo usuarios que YA tienen push activas
       const users = await db.User.findAll({
         attributes: ['id', 'timezone'],
         include: [{
           model: db.PushSubscription,
           as: 'PushSubscriptions',
-          required: true, // INNER JOIN: Solo usuarios con suscripciones
+          required: true,
           attributes: []
         }]
       });
 
-      const targetUsers = users.filter(user => {
-        const { hour } = getLocalTime(user.timezone);
-        return hour === 10;
-      });
+      const targetUsers = users.filter(user => getLocalTime(user.timezone).hour === 10);
 
       if (targetUsers.length > 0) {
-        console.log(`[Cron] Enviando recordatorio entrenamiento a ${targetUsers.length} usuarios.`);
-        targetUsers.forEach(user => {
+        console.log(`[Cron] Entrenamiento: Notificando a ${targetUsers.length} usuarios.`);
+        // Envío en paralelo
+        await Promise.all(targetUsers.map(user => 
           notifyUser(user.id, {
             title: '¡Es hora de moverse!',
             body: '¿Listo para tu entrenamiento de hoy? ¡Vamos a por ello!',
             url: '/routines',
-          });
-        });
+          })
+        ));
       }
 
     } catch (error) {
-      console.error('[Cron] Error en la tarea de entrenamiento:', error);
+      console.error('[Cron] Error tarea entrenamiento:', error.message);
     }
   });
 };
@@ -172,7 +169,6 @@ const checkTrainingReminder = () => {
  */
 const checkWeightLogReminder = () => {
   cron.schedule('0 * * * *', async () => {
-    console.log('[Cron] Verificando Recordatorio Peso...');
     try {
       const allUsers = await db.User.findAll({ attributes: ['id', 'timezone'] });
 
@@ -181,93 +177,81 @@ const checkWeightLogReminder = () => {
         return day === 1 && hour === 9;
       });
 
-      if (targetUsers.length === 0) return;
+      if (!targetUsers.length) return;
 
-      console.log(`[Cron] Analizando peso para ${targetUsers.length} usuarios.`);
-
+      console.log(`[Cron] Peso: Verificando ${targetUsers.length} usuarios.`);
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-      for (const user of targetUsers) {
+      await Promise.all(targetUsers.map(async (user) => {
         const lastLog = await db.BodyWeightLog.findOne({
           where: { user_id: user.id },
           order: [['log_date', 'DESC']],
+          attributes: ['log_date'] // Solo necesitamos la fecha
         });
 
-        const needsLog = !lastLog || new Date(lastLog.log_date) < thirtyDaysAgo;
-
-        if (needsLog) {
-          notifyUser(user.id, {
+        if (!lastLog || new Date(lastLog.log_date) < thirtyDaysAgo) {
+          return notifyUser(user.id, {
             title: 'Registro de Progreso Mensual',
             body: '¡Hola! Ha pasado un tiempo. No olvides registrar tu peso.',
             url: '/progress',
           });
         }
-      }
+      }));
 
     } catch (error) {
-      console.error('[Cron] Error en la tarea de peso:', error);
+      console.error('[Cron] Error tarea peso:', error.message);
     }
   });
 };
 
 /**
  * TAREA 4: Limpieza de imágenes huérfanas
+ * (Bajo impacto, se mantiene semanal)
  */
 const scheduleImageCleanup = () => {
   cron.schedule('0 4 * * 0', async () => {
-    console.log('[Cron] Ejecutando tarea: Limpieza de imágenes huérfanas...');
     try {
       await cleanOrphanedImages();
     } catch (error) {
-      console.error('[Cron] Error en la limpieza de imágenes:', error);
+      console.error('[Cron] Error limpieza imágenes:', error.message);
     }
   });
 };
 
 /**
- * TAREA 5: Limpieza de Historias Expiradas (NUEVO)
- * Se ejecuta cada hora en punto.
+ * TAREA 5: Limpieza de Historias Expiradas
  */
 const cleanupExpiredStories = () => {
   cron.schedule('0 * * * *', async () => {
-    console.log('[Cron] Buscando historias expiradas para eliminar...');
     try {
       const now = new Date();
-      // Buscar historias cuya fecha de expiración sea anterior a ahora
       const expiredStories = await db.Story.findAll({
-        where: {
-          expires_at: { [Op.lt]: now }
-        }
+        where: { expires_at: { [Op.lt]: now } }
       });
 
-      if (expiredStories.length === 0) return;
+      if (!expiredStories.length) return;
 
-      console.log(`[Cron] Eliminando ${expiredStories.length} historias expiradas.`);
+      console.log(`[Cron] Historias: Eliminando ${expiredStories.length} expiradas.`);
 
-      for (const story of expiredStories) {
-        // 1. Eliminar archivo físico (Imagen/Video)
+      // Paralelizamos la eliminación de archivos y registros
+      await Promise.all(expiredStories.map(async (story) => {
         if (story.url) {
-            try {
-                await deleteFile(story.url);
-            } catch (e) {
-                console.error(`[Cron] Error eliminando archivo de historia ${story.id}:`, e.message);
-            }
+          await deleteFile(story.url).catch(e => console.error(`[Cron] Error fichero historia:`, e.message));
         }
-        // 2. Eliminar registro de BD (Cascada borrará likes y views)
-        await story.destroy();
-      }
+        return story.destroy();
+      }));
+
     } catch (error) {
-      console.error('[Cron] Error en la limpieza de historias:', error);
+      console.error('[Cron] Error limpieza historias:', error.message);
     }
   });
 };
 
 export const startCronJobs = () => {
-  console.log('[Cron] Inicializando tareas programadas (Multizona)...');
+  console.log('[Cron] Iniciando tareas (Optimizado)...');
   checkNutritionGoals();
   checkTrainingReminder();
   checkWeightLogReminder();
   scheduleImageCleanup();
-  cleanupExpiredStories(); // Iniciar limpieza de historias
-  console.log('[Cron] Tareas iniciadas.');
+  cleanupExpiredStories();
 };

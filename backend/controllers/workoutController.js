@@ -39,6 +39,8 @@ export const getWorkoutHistory = async (req, res, next) => {
       };
     }
 
+    // CORRECCIÓN: Eliminamos 'attributes' explícitos para evitar errores de columnas faltantes.
+    // Sequelize traerá todo lo necesario automáticamente.
     const history = await WorkoutLog.findAll({
       where: whereCondition,
       include: [{
@@ -56,6 +58,7 @@ export const getWorkoutHistory = async (req, res, next) => {
 
     const plainHistory = history.map(log => log.get({ plain: true }));
 
+    // Cálculo de 1RM bajo demanda
     plainHistory.forEach(log => {
       if (log.WorkoutLogDetails) {
         log.WorkoutLogDetails.forEach(detail => {
@@ -67,7 +70,8 @@ export const getWorkoutHistory = async (req, res, next) => {
               detail.WorkoutLogSets.forEach(set => {
                 const weight = parseFloat(set.weight_kg) || 0;
                 const reps = parseInt(set.reps, 10) || 0;
-                const isWarmup = set.is_warmup;
+                // Normalizamos is_warmup
+                const isWarmup = set.is_warmup === true || set.is_warmup === 'true' || set.is_warmup === 1;
 
                 if (weight > 0 && reps > 0 && !isWarmup) {
                   if (weight > bestSetWeight) {
@@ -102,32 +106,28 @@ export const logWorkoutSession = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  // MODIFICACIÓN: Extraemos params robustamente (camelCase, snake_case y 'date' del frontend)
   const {
-    routineName, routine_name, // Frontend puede enviar cualquiera de los dos
-    workout_date, date,        // 'workout_date' (legacy/manual) o 'date' (nuevo desde workoutSlice)
+    routineName, routine_name,
+    workout_date, date,
     duration_seconds, calories_burned, details, exercises, notes, routineId
   } = req.body;
 
   const { userId } = req.user;
+  
+  // OPTIMIZACIÓN: Transacción para integridad de datos
   const t = await sequelize.transaction();
 
   try {
-    // Determinar la fecha del workout
     let finalDate;
-    // Priorizamos la fecha que venga en el cuerpo de la petición
     const incomingDate = workout_date || date;
 
     if (incomingDate) {
-      // Si el cliente envía fecha (ej. el startTime guardado), la usamos
       finalDate = new Date(incomingDate);
     } else {
-      // Si no, usamos fecha actual del servidor (fallback)
       const today = new Date();
       finalDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     }
 
-    // Unificamos el nombre de la rutina para usarlo tanto en el Log como en Gamificación
     const finalRoutineName = routineName || routine_name || 'Entrenamiento Sin Nombre';
 
     const newWorkoutLog = await WorkoutLog.create({
@@ -141,8 +141,6 @@ export const logWorkoutSession = async (req, res, next) => {
     }, { transaction: t });
 
     let newPRs = [];
-
-    // Unificamos la lista de ejercicios (soporta details, exercises o vacío para cardio puro)
     const exercisesToProcess = details || exercises || [];
 
     for (const exercise of exercisesToProcess) {
@@ -154,7 +152,7 @@ export const logWorkoutSession = async (req, res, next) => {
         exercise.setsDone.forEach(set => {
           const weight = parseFloat(set.weight_kg) || 0;
           const reps = parseInt(set.reps, 10) || 0;
-          const isWarmup = set.is_warmup === true || set.is_warmup === 'true';
+          const isWarmup = set.is_warmup === true || set.is_warmup === 'true' || set.is_warmup === 1;
 
           if (weight > 0 && reps > 0) {
             totalVolume += weight * reps;
@@ -187,6 +185,7 @@ export const logWorkoutSession = async (req, res, next) => {
       }, { transaction: t });
 
       if (exercise.setsDone && exercise.setsDone.length > 0) {
+        // Preparamos datos para BulkCreate
         const setsToCreate = exercise.setsDone
           .filter(set => (set.reps !== '' && set.reps !== null) || (set.weight_kg !== '' && set.weight_kg !== null))
           .map(set => ({
@@ -197,7 +196,9 @@ export const logWorkoutSession = async (req, res, next) => {
             is_dropset: set.is_dropset || false,
             is_warmup: set.is_warmup || false,
           }));
+        
         if (setsToCreate.length > 0) {
+          // OPTIMIZACIÓN: Inserción masiva en lugar de uno a uno
           await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
         }
       }
@@ -228,15 +229,15 @@ export const logWorkoutSession = async (req, res, next) => {
       }
     }
 
+    // COMMIT TEMPRANO: Liberamos DB antes de tareas pesadas (Gamificación/Notificaciones)
     await t.commit();
 
-    // CAMBIO: Pasamos el nombre de la actividad para personalizar la notificación de XP
+    // Procesamos gamificación fuera de la transacción
     const gamificationResult = await processWorkoutGamification(userId, finalDate, finalRoutineName);
 
     const gamificationEvents = [];
 
     if (gamificationResult.xpAdded > 0) {
-      // CAMBIO: El motivo en la respuesta ahora coincide con la notificación
       gamificationEvents.push({
         type: 'xp',
         amount: gamificationResult.xpAdded,
@@ -245,18 +246,18 @@ export const logWorkoutSession = async (req, res, next) => {
     }
 
     if (gamificationResult.limitReachedNow) {
-      await createNotification(userId, {
+      createNotification(userId, {
         type: 'warning',
         title: 'Límite de XP alcanzado',
         message: 'Has alcanzado el límite diario de XP por entrenamientos (2/2).',
         data: { type: 'xp_limit', reason: 'daily_workout_limit' }
-      });
+      }).catch(err => console.error("Error notificando límite XP:", err));
     }
 
     if (gamificationResult.reason === 'daily_limit_reached') {
       gamificationEvents.push({
         type: 'info',
-        message: 'Límite diario de experiencia por entrenamientos alcanzado (2/2).'
+        message: 'Límite diario de experiencia alcanzado.'
       });
     }
 
@@ -267,8 +268,9 @@ export const logWorkoutSession = async (req, res, next) => {
       xpAdded: gamificationResult?.xpAdded || 0,
       gamification: gamificationEvents
     });
+
   } catch (error) {
-    await t.rollback();
+    if (!t.finished) await t.rollback();
     next(error);
   }
 };
@@ -284,6 +286,7 @@ export const deleteWorkoutLog = async (req, res, next) => {
   const t = await sequelize.transaction();
 
   try {
+    // CORRECCIÓN: Eliminamos 'attributes' para evitar problemas en cascada
     const workoutLog = await WorkoutLog.findOne({
       where: { id: workoutId, user_id: userId },
       include: [{ model: WorkoutLogDetail, as: 'WorkoutLogDetails' }],
@@ -292,7 +295,7 @@ export const deleteWorkoutLog = async (req, res, next) => {
 
     if (!workoutLog) {
       await t.rollback();
-      return res.status(404).json({ error: 'Registro de entrenamiento no encontrado.' });
+      return res.status(404).json({ error: 'Registro no encontrado.' });
     }
 
     const exercisesInWorkout = [...workoutLog.WorkoutLogDetails];
@@ -316,7 +319,7 @@ export const deleteWorkoutLog = async (req, res, next) => {
             model: WorkoutLog,
             as: 'WorkoutLog',
             where: { user_id: userId },
-            attributes: []
+            attributes: [] // Aquí sí podemos optimizar porque es un WHERE interno
           }],
           where: { exercise_name: exerciseName },
           order: [['best_set_weight', 'DESC']],
@@ -324,7 +327,11 @@ export const deleteWorkoutLog = async (req, res, next) => {
         });
 
         if (newBestLogDetail) {
-          const newBestWorkout = await WorkoutLog.findByPk(newBestLogDetail.workout_log_id, { attributes: ['workout_date'], transaction: t });
+          // Necesitamos la fecha, así que hacemos fetch del padre
+          const newBestWorkout = await WorkoutLog.findByPk(newBestLogDetail.workout_log_id, { 
+            attributes: ['workout_date'], 
+            transaction: t 
+          });
           currentPR.weight_kg = newBestLogDetail.best_set_weight;
           currentPR.date = newBestWorkout.workout_date;
           await currentPR.save({ transaction: t });

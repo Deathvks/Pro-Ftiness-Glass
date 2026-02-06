@@ -2,9 +2,10 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { createServer } from 'http'; // Necesario para unir Express + Socket.io
-import { Server } from 'socket.io';  // Servidor de WebSockets
-import jwt from 'jsonwebtoken';      // Para autenticar conexiones socket
+import compression from 'compression'; // OPTIMIZACIÓN: Ahorro de ancho de banda (Gzip)
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
@@ -36,9 +37,12 @@ import storyRoutes from './routes/stories.js';
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
-const httpServer = createServer(app); // Envolvemos Express en un servidor HTTP
+const httpServer = createServer(app);
 
 app.set('trust proxy', 1);
+
+// OPTIMIZACIÓN: Compresión global antes de cualquier ruta o archivo estático
+app.use(compression());
 
 // --- Configuración CORS ---
 const isProduction = process.env.NODE_ENV === 'production';
@@ -71,41 +75,32 @@ app.use(cors(corsOptions));
 // --- INICIALIZACIÓN SOCKET.IO ---
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins, // Reutilizamos los orígenes permitidos
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
-// Middleware de autenticación para Socket.io (Seguridad)
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
-  if (!token) {
-    return next(new Error('Authentication error: Token required'));
-  }
+  if (!token) return next(new Error('Authentication error: Token required'));
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.user = decoded; // Adjuntamos usuario al socket
+    socket.user = decoded;
     next();
   } catch (err) {
     return next(new Error('Authentication error: Invalid token'));
   }
 });
 
-// Gestión de conexiones
 io.on('connection', (socket) => {
-  // console.log(`🔌 Cliente conectado: ${socket.user.userId} (${socket.id})`);
-  
-  socket.on('disconnect', () => {
-    // console.log(`🔌 Cliente desconectado: ${socket.id}`);
-  });
+  socket.on('disconnect', () => {});
 });
 
-// Hacemos 'io' accesible en toda la aplicación (Controladores)
 app.set('io', io);
 
-// Headers para Google Auth y Seguridad de Imágenes
+// Headers de seguridad
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
@@ -116,8 +111,6 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // --- ARCHIVOS ESTÁTICOS ---
-// Servimos la carpeta 'public'. Como 'images' ahora está dentro de 'public' (gracias al volumen de Zeabur),
-// las URLs tipo /images/stories/foto.webp funcionarán automáticamente.
 const staticPath = path.join(__dirname, 'public');
 app.use(express.static(staticPath));
 
@@ -149,13 +142,11 @@ const PORT = process.env.PORT || 3001;
 
 db.sequelize.sync()
   .then(() => {
-    // CAMBIO IMPORTANTE: Usamos httpServer.listen en lugar de app.listen para Sockets
     httpServer.listen(PORT, () => {
-      console.log(`✅ Server (HTTP + Socket.io) is running on port ${PORT}`);
-      console.log(`📂 Public folder serving at: http://localhost:${PORT}/`);
+      console.log(`✅ Server (HTTP + Socket.io) running on port ${PORT}`);
     });
     startCronJobs();
   })
   .catch(err => {
-    console.error('❌ Unable to connect to the database:', err);
+    console.error('❌ Database connection failed:', err);
   });

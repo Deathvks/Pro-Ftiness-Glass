@@ -4,8 +4,12 @@
   "description": "Backend for Pro Ftiness Glass",
   "main": "server.js",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "start": "npx sequelize-cli db:migrate --env production && npx sequelize-cli db:seed:all --env production && node server.js",
+    "start": "npx sequelize-cli db:migrate --env production && node server.js",
+    "seed": "npx sequelize-cli db:seed:all --env production",
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,6 +20,7 @@
     "@tensorflow/tfjs": "^4.22.0",
     "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
