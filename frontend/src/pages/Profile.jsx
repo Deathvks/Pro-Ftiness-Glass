@@ -48,8 +48,8 @@ const BADGE_DETAILS = {
     name: 'Imparable',
     desc: 'Racha de 7 días',
     icon: Flame,
-    color: 'text-red-500',
-    bg: 'bg-red-500/10'
+    color: 'text-red', // Usando var(--color-red)
+    bg: 'bg-red/10'
   },
   streak_30: {
     name: 'Leyenda',
@@ -162,9 +162,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // --- MODIFICACIÓN: Validación más robusta para Android ---
-      // A veces Android no reporta el MIME type correcto o lo deja vacío.
-      // Verificamos si empieza por 'image/' O si la extensión es válida.
       const isValidType = file.type.startsWith('image/') || /\.(jpe?g|png|webp)$/i.test(file.name);
 
       if (!isValidType) {
@@ -172,8 +169,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
         return;
       }
 
-      // --- MODIFICACIÓN: Límite aumentado a 5MB ---
-      // Las fotos de cámara móvil suelen pesar más de 2MB.
       if (file.size > 5 * 1024 * 1024) {
         addToast('La imagen es demasiado grande (máx 5MB).', 'error');
         return;
@@ -181,7 +176,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
 
       setProfileImageFile(file);
       
-      // Limpiamos la URL anterior si era un blob
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
       }
@@ -324,21 +318,16 @@ const Profile = ({ onCancel, setView, navigate }) => {
     }
   };
 
-  // --- Helper para URL de imagen segura ---
   const getProcessedImageUrl = (url) => {
     if (!url) return null;
-    // Si es un Blob local (previsualización), devolverlo directo
     if (typeof url === 'string' && url.startsWith('blob:')) return url;
 
     let finalUrl = url;
-    // Si es ruta relativa, añadir backend
     if (typeof finalUrl === 'string' && !finalUrl.startsWith('http')) {
-      // Aseguramos que no haya doble slash si BACKEND_BASE_URL termina en /
       const separator = finalUrl.startsWith('/') ? '' : '/';
       finalUrl = `${BACKEND_BASE_URL}${separator}${finalUrl}`;
     }
 
-    // Forzar HTTPS para URLs externas (Google, etc) si no estamos en localhost
     const isLocalhost = typeof finalUrl === 'string' && (finalUrl.includes('localhost') || finalUrl.includes('127.0.0.1'));
     if (!isLocalhost && typeof finalUrl === 'string' && finalUrl.startsWith('http:')) {
       finalUrl = finalUrl.replace('http:', 'https:');
@@ -366,7 +355,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
           Volver
         </button>
 
-        {/* CORRECCIÓN: 'w-fit' para ajustar el ancho del degradado al texto y 'to-text-muted' para más contraste */}
         <h1 className="hidden md:block w-fit text-4xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-muted">
           Perfil
         </h1>
@@ -396,11 +384,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     alt={`Foto de perfil de ${formData.username || 'usuario'}`}
                     className="w-32 h-32 rounded-full object-cover"
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                       // Fallback simple si falla
-                       e.target.onerror = null; 
-                       // Podríamos poner una imagen placeholder aquí si quisiéramos
-                    }}
+                    onError={(e) => { e.target.onerror = null; }}
                   />
                 ) : (
                   <div className="w-32 h-32 rounded-full bg-bg-secondary flex items-center justify-center border border-glass-border">
@@ -551,7 +535,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
           </button>
         </GlassCard>
 
-        {/* --- Sección de Insignias (Con Paginación Responsiva) --- */}
+        {/* --- Sección de Insignias --- */}
         <GlassCard className="p-6 mt-8">
           <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
             <Trophy size={20} className="text-accent" />
@@ -569,7 +553,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
 
               return (
                 <div className="relative px-8">
-                  {/* Flechas de Navegación */}
                   {totalPages > 1 && (
                     <>
                       <button
@@ -591,7 +574,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     </>
                   )}
 
-                  {/* Grid de Insignias (Adaptable: 1 columna en móvil, 3 en escritorio) */}
                   <div className={`grid gap-4 ${itemsPerPage === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
                     {currentBadges.map((badgeId) => {
                       const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
@@ -607,7 +589,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     })}
                   </div>
 
-                  {/* Indicadores de Página */}
                   {totalPages > 1 && (
                     <div className="flex justify-center gap-2 mt-4">
                       {Array.from({ length: totalPages }).map((_, i) => (
@@ -628,10 +609,11 @@ const Profile = ({ onCancel, setView, navigate }) => {
             </div>
           )}
         </GlassCard>
-        {/* --- FIN Sección de Insignias --- */}
 
-        <GlassCard className="p-6 mt-8 border border-red-500/50">
-          <h3 className="text-xl font-bold text-red-500 mb-4 flex items-center gap-2">
+        {/* --- Zona de Peligro --- */}
+        {/* USANDO EL COLOR 'red' PERSONALIZADO */}
+        <GlassCard className="p-6 mt-8 border border-red/50">
+          <h3 className="text-xl font-bold text-red mb-4 flex items-center gap-2">
             <AlertTriangle size={20} />
             Zona de Peligro
           </h3>
@@ -658,7 +640,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
               <button
                 type="button"
                 onClick={() => setModalAction('deleteAccount')}
-                className="w-full sm:w-auto px-4 py-2 rounded-md bg-red-600/20 text-red-400 font-semibold border border-red-500/50 hover:bg-red-600/30 transition"
+                className="w-full sm:w-auto px-4 py-2 rounded-md bg-red/20 text-red font-semibold border border-red/50 hover:bg-red/30 transition"
               >
                 Borrar Cuenta
               </button>
@@ -720,7 +702,7 @@ const DeleteConfirmationModal = ({
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-[fade-in_0.2s_ease-out]">
       <GlassCard className="w-full max-w-md p-6 sm:p-8">
         <h3
-          className={`text-2xl font-bold mb-4 ${isDeleteAccount ? 'text-red-500' : 'text-accent'
+          className={`text-2xl font-bold mb-4 ${isDeleteAccount ? 'text-red' : 'text-accent'
             }`}
         >
           {title}
@@ -758,19 +740,17 @@ const DeleteConfirmationModal = ({
           >
             Cancelar
           </button>
+          
+          {/* USANDO bg-red Y text-white PARA ASEGURAR EL COLOR ROJO */}
           <button
             onClick={handleModalConfirm}
             disabled={isModalLoading}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition w-full sm:w-auto ${isDeleteAccount
-              ? 'bg-red-600 text-white hover:bg-red-700'
-              : 'bg-accent text-bg-secondary hover:opacity-90'
-              }`}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition w-full sm:w-auto bg-red text-white hover:opacity-90 disabled:opacity-50"
           >
             {isModalLoading ? (
-              <Spinner size={18} />
+              <Spinner size={18} color="#fff" />
             ) : (
-              `Confirmar ${isDeleteAccount ? 'Borrado de Cuenta' : 'Borrado de Datos'
-              }`
+              `Confirmar ${isDeleteAccount ? 'Borrado de Cuenta' : 'Borrado de Datos'}`
             )}
           </button>
         </div>

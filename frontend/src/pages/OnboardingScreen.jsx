@@ -348,7 +348,7 @@ const OnboardingScreen = () => {
               <BigTitle className="text-center">Tu Objetivo</BigTitle>
               <SubText className="text-center mx-auto">Definiremos tus calorías y macronutrientes basándonos en esta elección.</SubText>
 
-              <div className="flex flex-col gap-4 w-full">
+              <div className="flex flex-col gap-4 w-full pb-24">
                 <BigOptionButton
                   selected={formData.goal === 'lose'}
                   onClick={() => setFormData({ ...formData, goal: 'lose' })}
@@ -411,7 +411,7 @@ const OnboardingScreen = () => {
                 <button onClick={() => setStep(2)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group border-b border-black/20 text-center active:bg-white/10">
                   <div className="flex flex-col items-center transition-transform group-hover:scale-105">
                     <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">MEDIDAS</p>
-                    <p className="font-bold text-text-primary text-xl">{formData.height} cm  •  {formData.weight} kg</p>
+                    <p className="font-bold text-text-primary text-xl">{formData.height} cm  •  {formData.weight} kg</p>
                   </div>
                   <div className="absolute right-6 p-2 rounded-full bg-bg-primary/50 text-accent opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-sm">
                     <Edit size={18} />

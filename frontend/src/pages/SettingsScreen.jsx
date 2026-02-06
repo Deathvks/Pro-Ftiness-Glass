@@ -101,17 +101,18 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
 
 const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, loading }) => (
   <div className={`flex items-center justify-between p-3 rounded-2xl transition ${disabled ? 'opacity-50' : 'hover:bg-bg-secondary/30'}`}>
-    <div className="flex items-center gap-4">
-      {/* Contenedor de icono */}
+    {/* MODIFICACIÓN: Añadido flex-1 y min-w-0 para evitar desbordamiento */}
+    <div className="flex items-center gap-4 flex-1 min-w-0">
+      {/* Contenedor de icono con shrink-0 */}
       <div className={`
-        p-2.5 rounded-xl border border-transparent
+        p-2.5 rounded-xl border border-transparent shrink-0
         ${checked ? 'bg-accent/10 text-accent dark:border-accent/20' : 'bg-text-muted/10 text-text-muted dark:border-white/10 [.oled-theme_&]:bg-transparent'}
       `}>
         <Icon size={22} />
       </div>
-      <div>
-        <div className="text-sm font-bold">{title}</div>
-        <div className="text-xs font-medium text-text-secondary">{subtitle}</div>
+      <div className="min-w-0">
+        <div className="text-sm font-bold truncate">{title}</div>
+        <div className="text-xs font-medium text-text-secondary truncate">{subtitle}</div>
       </div>
     </div>
     {loading ? <Spinner size={20} /> : (
@@ -120,7 +121,7 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
         aria-checked={checked}
         onClick={onChange}
         disabled={disabled}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg]
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg] ml-3
         ${checked ? 'bg-accent' : 'bg-bg-secondary [.light-theme_&]:bg-zinc-300'} 
         ${disabled ? 'cursor-not-allowed' : ''}
         `}
@@ -388,6 +389,88 @@ export default function SettingsScreen({
 
   const glassCardClass = "p-6 border-transparent dark:border dark:border-white/10";
 
+  // --- CONTENIDO DE LA TARJETA SOPORTE (Extraído para reutilización) ---
+  const soporteCard = (
+    <GlassCard className={glassCardClass}>
+      <SectionTitle icon={Info} title="Soporte y General" />
+      <div className="flex flex-col gap-1">
+        <a
+          href={apkDownloadUrl || "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk"}
+          className="no-underline"
+        >
+          <SettingsItem
+            icon={Smartphone}
+            title="Descargar App Android"
+            subtitle="Instalar APK nativo"
+            action={<Download size={18} className="text-accent" />}
+          />
+        </a>
+
+        <SettingsItem
+          icon={Bug}
+          title="Reportar un problema"
+          subtitle="¿Algo no funciona bien?"
+          onClick={() => setShowBugModal(true)}
+        />
+
+        <a href="mailto:profitnessglass@gmail.com" className="no-underline">
+          <SettingsItem icon={Mail} title="Contactar Soporte" subtitle="profitnessglass@gmail.com" />
+        </a>
+
+        <div className="my-3 h-px bg-[--glass-border]" />
+
+        <SectionTitle icon={Share2} title="Síguenos" />
+        <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
+          <SettingsItem
+            icon={Instagram}
+            title="Instagram"
+            subtitle="@pro_fitness_glass"
+            action={<ChevronRight size={18} className="text-text-muted" />}
+          />
+        </a>
+        <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="no-underline">
+          <SettingsItem
+            icon={TikTokIcon}
+            title="TikTok"
+            subtitle="@pro_fitness_glass"
+            action={<ChevronRight size={18} className="text-text-muted" />}
+          />
+        </a>
+        <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="no-underline">
+          <SettingsItem
+            icon={Youtube}
+            title="YouTube"
+            subtitle="@ProFitnessGlass"
+            action={<ChevronRight size={18} className="text-text-muted" />}
+          />
+        </a>
+
+        <div className="my-3 h-px bg-[--glass-border]" />
+
+        <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
+          <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
+        </a>
+
+        <div className="flex md:hidden items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
+          <Binary size={22} className="text-accent" />
+          <div className="flex-1 text-left">
+            <div className="text-sm font-bold">Versión de App</div>
+            <div className="text-xs text-text-secondary font-medium">v{APP_VERSION}</div>
+          </div>
+        </div>
+
+        <div className="my-3 h-px bg-[--glass-border]" />
+
+        <SettingsItem
+          icon={LogOut}
+          title="Cerrar Sesión"
+          onClick={onLogoutClick}
+          danger
+        />
+      </div>
+    </GlassCard>
+  );
+
   return (
     // CAMBIO: Añadido pt-6 para separar del borde superior en móvil
     <div className="px-4 pt-6 pb-24 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
@@ -402,8 +485,12 @@ export default function SettingsScreen({
         </h1>
       </div>
 
-      {/* LAYOUT: Grid responsivo de 1, 2 o 3 columnas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
+      {/* MODIFICACIÓN: Grid ajustado para Tablets (805px+).
+        - 1 columna por defecto (móvil y tablet vertical/cuadrada)
+        - 2 columnas a partir de 'lg' (1024px, tablet horizontal/laptop pequeña)
+        - 3 columnas a partir de 'xl' (1280px, desktop)
+      */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
 
         {/* --- COLUMNA 1 --- */}
         <div className="flex flex-col gap-8">
@@ -498,6 +585,13 @@ export default function SettingsScreen({
               />
             </div>
           </GlassCard>
+
+          {/* MODIFICACIÓN: Tarjeta Soporte visible en Col 1 hasta 'xl' (3 columnas).
+            Esto cubre Móvil y Tablet/Laptop (1 o 2 columnas) manteniendo la posición "debajo de Apariencia" (o arriba en la columna izquierda).
+          */}
+          <div className="block xl:hidden">
+            {soporteCard}
+          </div>
 
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={BellRing} title="Notificaciones" />
@@ -680,87 +774,9 @@ export default function SettingsScreen({
           </GlassCard>
         </div>
 
-        {/* --- COLUMNA 3 (Ahora solo Soporte) --- */}
-        {/* Ajustado: span-2 en tablet para ocupar el ancho completo abajo, o normal en Desktop */}
-        <div className="flex flex-col gap-8 md:col-span-2 lg:col-span-1">
-          <GlassCard className={glassCardClass}>
-            <SectionTitle icon={Info} title="Soporte y General" />
-            <div className="flex flex-col gap-1">
-              <a
-                href={apkDownloadUrl || "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk"}
-                className="no-underline"
-              >
-                <SettingsItem
-                  icon={Smartphone}
-                  title="Descargar App Android"
-                  subtitle="Instalar APK nativo"
-                  action={<Download size={18} className="text-accent" />}
-                />
-              </a>
-
-              <SettingsItem
-                icon={Bug}
-                title="Reportar un problema"
-                subtitle="¿Algo no funciona bien?"
-                onClick={() => setShowBugModal(true)}
-              />
-
-              <a href="mailto:profitnessglass@gmail.com" className="no-underline">
-                <SettingsItem icon={Mail} title="Contactar Soporte" subtitle="profitnessglass@gmail.com" />
-              </a>
-
-              <div className="my-3 h-px bg-[--glass-border]" />
-
-              <SectionTitle icon={Share2} title="Síguenos" />
-              <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
-                <SettingsItem
-                  icon={Instagram}
-                  title="Instagram"
-                  subtitle="@pro_fitness_glass"
-                  action={<ChevronRight size={18} className="text-text-muted" />}
-                />
-              </a>
-              <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="no-underline">
-                <SettingsItem
-                  icon={TikTokIcon}
-                  title="TikTok"
-                  subtitle="@pro_fitness_glass"
-                  action={<ChevronRight size={18} className="text-text-muted" />}
-                />
-              </a>
-              <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="no-underline">
-                <SettingsItem
-                  icon={Youtube}
-                  title="YouTube"
-                  subtitle="@ProFitnessGlass"
-                  action={<ChevronRight size={18} className="text-text-muted" />}
-                />
-              </a>
-
-              <div className="my-3 h-px bg-[--glass-border]" />
-
-              <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
-                <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
-              </a>
-
-              <div className="flex md:hidden items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
-                <Binary size={22} className="text-accent" />
-                <div className="flex-1 text-left">
-                  <div className="text-sm font-bold">Versión de App</div>
-                  <div className="text-xs text-text-secondary font-medium">v{APP_VERSION}</div>
-                </div>
-              </div>
-
-              <div className="my-3 h-px bg-[--glass-border]" />
-
-              <SettingsItem
-                icon={LogOut}
-                title="Cerrar Sesión"
-                onClick={onLogoutClick}
-                danger
-              />
-            </div>
-          </GlassCard>
+        {/* --- COLUMNA 3 (Ahora solo visible en Desktop muy grande 'xl') --- */}
+        <div className="hidden xl:flex flex-col gap-8">
+          {soporteCard}
         </div>
       </div>
 

@@ -270,7 +270,10 @@ export default function App() {
       return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
     }
 
-    if (isLoading && isInitialLoad) {
+    // MODIFICADO: Evitamos flash de Onboarding.
+    // Si isLoading está activo o es carga inicial, y no tenemos un perfil completo (con goal),
+    // mostramos el esqueleto para evitar saltar al Onboarding erróneamente.
+    if ((isLoading || isInitialLoad) && (!userProfile || !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
     }
 
@@ -278,6 +281,7 @@ export default function App() {
       return <AuthScreens authView={authView} setAuthView={setAuthView} />;
     }
 
+    // Ahora es seguro verificar goal. Si llegamos aquí y no hay goal, es que realmente es un usuario nuevo.
     if (userProfile && !userProfile.goal) {
       return <OnboardingScreen />;
     }

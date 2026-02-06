@@ -73,7 +73,11 @@ const Routines = ({ setView }) => {
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
-  const [selectedFolder, setSelectedFolder] = useState('all');
+  
+  // --- MODIFICACIÓN: Persistencia de carpeta seleccionada ---
+  const [selectedFolder, setSelectedFolder] = useState(() => {
+    return localStorage.getItem('routinesSelectedFolder') || 'all';
+  });
 
   // Estado para el modal de compartir
   const [shareData, setShareData] = useState(null);
@@ -108,6 +112,11 @@ const Routines = ({ setView }) => {
   useEffect(() => {
     localStorage.setItem('routinesActiveTab', activeTab);
   }, [activeTab]);
+
+  // Guardar carpeta seleccionada
+  useEffect(() => {
+    localStorage.setItem('routinesSelectedFolder', selectedFolder);
+  }, [selectedFolder]);
 
   useEffect(() => {
     if (editingRoutine) {
