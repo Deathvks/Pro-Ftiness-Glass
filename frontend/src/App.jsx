@@ -259,43 +259,43 @@ export default function App() {
     { id: 'settings', label: t('Ajustes', { defaultValue: 'Ajustes' }), icon: <Settings size={24} /> },
   ];
 
-  // --- Lógica de renderizado principal (CORREGIDA) ---
+  // --- Lógica de renderizado principal ---
   const content = useMemo(() => {
     // 0. Rutas especiales externas
     if (window.location.pathname === '/reset-password') {
       return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
     }
 
+    // Ruta pública de privacidad
+    if (window.location.pathname === '/privacy' || view === 'privacyPolicy') {
+      return <PrivacyPolicy onBack={handleBackFromPolicy} />;
+    }
+
     if (view === 'active-cardio') {
       return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
     }
 
-    // 1. Carga inicial crítica (comprobación de token local)
+    // 1. Carga inicial crítica
     if (isInitialLoad) {
       return <InitialLoadingSkeleton />;
     }
 
-    // 2. Comprobación de Auth (PRIORITARIA)
-    // Si no está autenticado, mostramos login INMEDIATAMENTE.
-    // Esto evita que si isLoading se queda pegado en true tras un error, veamos el skeleton.
+    // 2. Comprobación de Auth
     if (!isAuthenticated) {
       return <AuthScreens authView={authView} setAuthView={setAuthView} />;
     }
 
     // 3. Usuario Autenticado pero datos no listos
-    // Si no hay perfil, o si estamos cargando y falta el objetivo (para evitar flash de onboarding),
-    // mostramos skeleton.
-    // Nota: Si isLoading es true pero ya tenemos perfil completo (ej: refresh), dejamos pasar.
     if (!userProfile || (isLoading && !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
     }
 
-    // 4. Onboarding (Usuario nuevo sin objetivos)
+    // 4. Onboarding
     if (!userProfile.goal) {
       return <OnboardingScreen />;
     }
 
-    // 5. App Principal (Usuario listo)
+    // 5. App Principal
     const userProfileWithStory = {
         ...userProfile,
         hasStories: myStories && myStories.length > 0
@@ -346,6 +346,9 @@ export default function App() {
 
   // --- LÓGICA SEO ---
   const shouldRenderGlobalSEO = useMemo(() => {
+    // Si la ruta es pública, renderizamos SEO específico en el componente
+    if (window.location.pathname === '/privacy') return false;
+    
     if (!isAuthenticated) return false;
     const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy'];
     return !viewsWithInternalSEO.includes(view);

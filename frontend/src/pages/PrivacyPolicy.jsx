@@ -41,9 +41,9 @@ const PrivacyPolicy = ({ onBack }) => {
     <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto custom-scrollbar">
       {/* SEO Head: Página pública e importante para Google */}
       <SEOHead 
-        title="Política de Privacidad - Pro Fitness Glass" 
-        description="Conoce cómo protegemos tus datos, tu privacidad y tus derechos en Pro Fitness Glass."
-        route="politica-privacidad" // Aseguramos URL limpia
+        title="Política de Privacidad y Eliminación de Datos - Pro Fitness Glass" 
+        description="Conoce cómo protegemos tus datos y los pasos para solicitar la eliminación de tu cuenta."
+        route="politica-privacidad" 
       />
 
       <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
@@ -64,7 +64,7 @@ const PrivacyPolicy = ({ onBack }) => {
             Tu Privacidad Importa
           </h1>
           <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-            En <strong>Pro Fitness Glass</strong>, queremos que te sientas como en casa. Aquí te explicamos de forma sencilla y transparente cómo cuidamos tus datos.
+            En <strong>Pro Fitness Glass</strong>, queremos que te sientas como en casa. Aquí te explicamos de forma sencilla y transparente cómo cuidamos tus datos y cómo puedes ejercer tus derechos.
           </p>
         </div>
 
@@ -111,7 +111,7 @@ const PrivacyPolicy = ({ onBack }) => {
               </div>
             </PolicyCard>
 
-            {/* --- TARJETA: GPS y Cardio (CORREGIDO) --- */}
+            {/* --- TARJETA: GPS y Cardio --- */}
             <PolicyCard>
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
@@ -198,15 +198,44 @@ const PrivacyPolicy = ({ onBack }) => {
                 <PolicyCard>
                     <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
                         <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
                                 <Trash2 size={24} />
                                 </div>
-                                <h2 className="text-xl font-bold text-text-primary">Control Total de tus Datos</h2>
+                                <h2 className="text-xl font-bold text-text-primary">Eliminación de Cuenta y Datos</h2>
                             </div>
-                            <p className="text-text-secondary text-sm leading-relaxed">
-                                Tus datos son tuyos. Puedes eliminar tu cuenta y borrar absolutamente todo (historial, fotos, perfil) instantáneamente desde la sección <strong>Perfil</strong>. Sin preguntas, sin esperas.
-                            </p>
+                            
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="font-bold text-text-primary mb-2">Opción 1: Desde la App (Instantáneo)</h3>
+                                    <p className="text-text-secondary text-sm mb-2">
+                                        Si tienes la aplicación instalada, sigue estos pasos para borrar tu cuenta y todos tus datos (historial, fotos, perfil) de forma inmediata e irreversible:
+                                    </p>
+                                    <ol className="list-decimal list-inside text-sm text-text-secondary space-y-1 ml-2">
+                                        <li>Abre <strong>Pro Fitness Glass</strong> y ve a tu <strong>Perfil</strong>.</li>
+                                        <li>Toca el botón de <strong>Ajustes (⚙️)</strong> o <strong>Editar Perfil</strong>.</li>
+                                        <li>Baja hasta el final y selecciona <strong>"Eliminar Cuenta"</strong>.</li>
+                                        <li>Confirma la acción.</li>
+                                    </ol>
+                                </div>
+
+                                <div className="border-t border-gray-200 dark:border-white/10 pt-4">
+                                    <h3 className="font-bold text-text-primary mb-2">Opción 2: Solicitud Web (Sin acceso a la App)</h3>
+                                    <p className="text-text-secondary text-sm mb-2">
+                                        Si ya no tienes la aplicación o no puedes acceder, puedes solicitar la eliminación manual de tus datos:
+                                    </p>
+                                    <ul className="text-sm text-text-secondary space-y-2 ml-2">
+                                        <li>
+                                            Envía un correo a <a href="mailto:profitnessglass@gmail.com" className="text-accent hover:underline font-bold">profitnessglass@gmail.com</a>
+                                        </li>
+                                        <li>Asunto: <strong>"Solicitud de Eliminación de Datos"</strong></li>
+                                        <li>Incluye tu nombre de usuario o el email con el que te registraste.</li>
+                                    </ul>
+                                    <p className="text-xs text-text-tertiary mt-2 italic">
+                                        Procesaremos tu solicitud y eliminaremos todos tus datos en un plazo máximo de 30 días, confirmándote por correo cuando se haya completado.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </PolicyCard>
