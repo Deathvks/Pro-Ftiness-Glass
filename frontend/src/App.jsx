@@ -259,8 +259,9 @@ export default function App() {
     { id: 'settings', label: t('Ajustes', { defaultValue: 'Ajustes' }), icon: <Settings size={24} /> },
   ];
 
-  // Lógica de renderizado de contenido
+  // --- Lógica de renderizado principal (CORREGIDA) ---
   const content = useMemo(() => {
+    // 0. Rutas especiales externas
     if (window.location.pathname === '/reset-password') {
       return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
     }
@@ -269,22 +270,32 @@ export default function App() {
       return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
     }
 
-    if ((isLoading || isInitialLoad) && (!userProfile || !userProfile.goal)) {
+    // 1. Carga inicial crítica (comprobación de token local)
+    if (isInitialLoad) {
       return <InitialLoadingSkeleton />;
     }
 
+    // 2. Comprobación de Auth (PRIORITARIA)
+    // Si no está autenticado, mostramos login INMEDIATAMENTE.
+    // Esto evita que si isLoading se queda pegado en true tras un error, veamos el skeleton.
     if (!isAuthenticated) {
       return <AuthScreens authView={authView} setAuthView={setAuthView} />;
     }
 
-    if (userProfile && !userProfile.goal) {
+    // 3. Usuario Autenticado pero datos no listos
+    // Si no hay perfil, o si estamos cargando y falta el objetivo (para evitar flash de onboarding),
+    // mostramos skeleton.
+    // Nota: Si isLoading es true pero ya tenemos perfil completo (ej: refresh), dejamos pasar.
+    if (!userProfile || (isLoading && !userProfile.goal)) {
+      return <InitialLoadingSkeleton />;
+    }
+
+    // 4. Onboarding (Usuario nuevo sin objetivos)
+    if (!userProfile.goal) {
       return <OnboardingScreen />;
     }
 
-    if (!userProfile) {
-      return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
-    }
-
+    // 5. App Principal (Usuario listo)
     const userProfileWithStory = {
         ...userProfile,
         hasStories: myStories && myStories.length > 0
@@ -333,34 +344,24 @@ export default function App() {
     isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick
   ]);
 
-  // --- LÓGICA SEO INTELIGENTE ---
-  // Determinamos si debemos renderizar el SEOHead global o si la página actual ya lo maneja internamente.
+  // --- LÓGICA SEO ---
   const shouldRenderGlobalSEO = useMemo(() => {
-    // Si no está autenticado, AuthScreens (Login/Register) manejan su SEO.
     if (!isAuthenticated) return false;
-
-    // Vistas que ya tienen <SEOHead /> interno
     const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy'];
-    
-    // Si la vista actual ya tiene SEO interno, NO renderizamos el global.
     return !viewsWithInternalSEO.includes(view);
   }, [isAuthenticated, view]);
 
   return (
     <>
-      {/* Si renderizamos el global (para páginas privadas como Settings, Routines, etc.),
-        forzamos noIndex={true} para evitar indexar contenido privado/genérico.
-      */}
       {shouldRenderGlobalSEO && (
         <SEOHead 
             title={fullPageTitle} 
             description={currentDescription} 
             route={view} 
-            noIndex={true} // Siempre privado para el fallback global
+            noIndex={true} 
         />
       )}
 
-      {/* Helmet Global para metadatos técnicos generales */}
       <Helmet>
         <html lang="es" />
         <meta charSet="UTF-8" />
