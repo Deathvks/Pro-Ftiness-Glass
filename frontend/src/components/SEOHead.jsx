@@ -4,27 +4,25 @@ import { Helmet } from 'react-helmet-async';
 
 const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 
-export default function SEOHead({ title, description, route }) {
-    // CORRECCIÓN: Usar la ruta real del navegador (window.location.pathname)
-    // Esto asegura que la etiqueta canónica coincida exactamente con la URL que Google está rastreando,
-    // evitando el error "Google ha elegido una versión canónica diferente".
-    let path = typeof window !== 'undefined' ? window.location.pathname : '';
-
-    // Fallback: Si por alguna razón no hay window (raro en SPA), usamos el prop 'route'
-    if (!path && route) {
-        path = (route === 'dashboard') ? '/' : `/${route}`;
+export default function SEOHead({ title, description, route, noIndex = false }) {
+    // 1. Priorizamos 'route' explícito para forzar la URL limpia (solución canónica).
+    // Si no viene, usamos window.location pero limpiamos query params (?id=...)
+    let path = route;
+    
+    if (!path && typeof window !== 'undefined') {
+        path = window.location.pathname;
     }
 
-    // Aseguramos que path empiece con / para concatenar correctamente
+    // 2. Aseguramos barra inicial
     if (path && !path.startsWith('/')) {
         path = `/${path}`;
     }
 
-    // Construcción de la URL completa
-    // Replace corrige dobles barras accidentales (ej: .app//dashboard -> .app/dashboard)
-    let canonicalUrl = `${BASE_URL}${path}`.replace(/([^:]\/)\/+/g, '$1');
+    // 3. Construcción URL: Base + Path (sin query params)
+    // El replace limpia dobles barras accidentales (ej: .app//ruta)
+    let canonicalUrl = `${BASE_URL}${path || ''}`.split('?')[0].replace(/([^:]\/)\/+/g, '$1');
 
-    // Opcional: Quitar barra final (trailing slash) si no es la raíz, para consistencia SEO
+    // 4. Quitar trailing slash final para consistencia (evita duplicidad /ruta/ vs /ruta)
     if (canonicalUrl.endsWith('/') && canonicalUrl !== `${BASE_URL}/`) {
         canonicalUrl = canonicalUrl.slice(0, -1);
     }
@@ -33,6 +31,14 @@ export default function SEOHead({ title, description, route }) {
         <Helmet>
             {title && <title>{title}</title>}
             {description && <meta name="description" content={description} />}
+            
+            {/* Control de indexación para páginas privadas */}
+            {noIndex ? (
+                <meta name="robots" content="noindex, nofollow" />
+            ) : (
+                <meta name="robots" content="index, follow" />
+            )}
+
             <link rel="canonical" href={canonicalUrl} />
             <meta property="og:url" content={canonicalUrl} />
         </Helmet>

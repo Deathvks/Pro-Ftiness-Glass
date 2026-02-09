@@ -26,8 +26,8 @@ import { useToast } from '../hooks/useToast';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import UserAvatar from '../components/UserAvatar';
-import { Helmet } from 'react-helmet-async';
 import StoryViewer from '../components/StoryViewer';
+import SEOHead from '../components/SEOHead'; // Importamos SEOHead
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -309,11 +309,18 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
             {/* --- SEO & STRUCTURED DATA --- */}
             {profile && (
-                <Helmet>
-                    <title>{`${profile.username} - Perfil en Pro Fitness Glass`}</title>
-                    <meta name="description" content={`Mira el perfil de fitness de ${profile.username}. Nivel ${profile.level}, ${profile.workoutsCount} entrenamientos completados.`} />
-                    {structuredData && <script type="application/ld+json">{structuredData}</script>}
-                </Helmet>
+                <>
+                    {/* Sustituimos Helmet por nuestro SEOHead */}
+                    <SEOHead 
+                        title={`${profile.username} - Perfil en Pro Fitness Glass`}
+                        description={`Mira el perfil de fitness de ${profile.username}. Nivel ${profile.level}, ${profile.workoutsCount} entrenamientos completados.`}
+                        route={`profile/${profile.id}`}
+                    />
+                    {/* Mantenemos el JSON-LD en Helmet si es necesario, o lo podemos inyectar como script */}
+                    {structuredData && (
+                        <script type="application/ld+json">{structuredData}</script>
+                    )}
+                </>
             )}
 
             {/* --- HEADER DESKTOP --- */}

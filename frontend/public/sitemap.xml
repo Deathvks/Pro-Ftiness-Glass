@@ -4,44 +4,30 @@
 
   <url>
     <loc>https://pro-fitness-glass.zeabur.app/</loc>
-    <lastmod>2025-12-01</lastmod>
-    <changefreq>daily</changefreq>
+    <lastmod>2025-06-07</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
-    <loc>https://pro-fitness-glass.zeabur.app/nutrition</loc>
-    <lastmod>2025-12-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://pro-fitness-glass.zeabur.app/progress</loc>
-    <lastmod>2025-12-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://pro-fitness-glass.zeabur.app/routines</loc>
-    <lastmod>2025-12-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://pro-fitness-glass.zeabur.app/settings</loc>
-    <lastmod>2025-12-01</lastmod>
+    <loc>https://pro-fitness-glass.zeabur.app/login</loc>
+    <lastmod>2025-06-07</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://pro-fitness-glass.zeabur.app/privacyPolicy</loc>
-    <lastmod>2025-12-01</lastmod>
+    <loc>https://pro-fitness-glass.zeabur.app/register</loc>
+    <lastmod>2025-06-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/politica-privacidad</loc>
+    <lastmod>2025-06-07</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.5</priority>
   </url>
 
 </urlset>

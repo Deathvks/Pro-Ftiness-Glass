@@ -1,11 +1,10 @@
 /* frontend/src/pages/Dashboard.jsx */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Helmet } from 'react-helmet-async';
 import {
   Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
   Bike, Activity, Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy, Check, Crown,
-  LayoutGrid, IceCream, TriangleAlert, Info, Utensils
+  LayoutGrid, IceCream, TriangleAlert, Info
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import BodyWeightModal from '../components/BodyWeightModal';
@@ -21,6 +20,7 @@ import TourGuide from '../components/TourGuide';
 import * as nutritionService from '../services/nutritionService';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
+import SEOHead from '../components/SEOHead'; // Importamos SEOHead
 
 // --- Helper: Lógica de Tendencia de Peso ---
 const getWeightTrendData = (current, previous, goal) => {
@@ -53,7 +53,7 @@ const getWeightTrendData = (current, previous, goal) => {
   };
 };
 
-// --- COMPONENTE: Bento Stat Card (Corregido: Fondos y Bordes) ---
+// --- COMPONENTE: Bento Stat Card ---
 const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconColor = "text-accent" }) => (
   <GlassCard
     onClick={onClick}
@@ -65,11 +65,6 @@ const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconC
     "
   >
     <div className="flex justify-between items-start relative z-10">
-      {/* CORRECCIÓN VISUAL:
-          - Light: bg-transparent, sin sombra, sin borde.
-          - Dark: bg-white/5, sombra suave, borde blanco/20 visible.
-          - OLED: bg-transparent FORZADO.
-      */}
       <div className={`
         p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110
         ${iconColor}
@@ -136,7 +131,6 @@ const Dashboard = ({ setView }) => {
     if (checkStreak && !streakCheckedRef.current) {
       checkStreak(new Date().toISOString().split('T')[0]);
       streakCheckedRef.current = true;
-      // Si el usuario entra al dashboard, cancelamos el recordatorio de login de hoy
       cancelLoginReminder();
     }
   }, [checkStreak, cancelLoginReminder]);
@@ -239,9 +233,15 @@ const Dashboard = ({ setView }) => {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-24 md:p-10 animate-[fade-in_0.5s_ease-out]">
-      <Helmet>
-        <title>Dashboard - Pro Fitness Glass</title>
-      </Helmet>
+      {/* Añadimos SEOHead con noIndex={true} porque el Dashboard es privado.
+        También definimos 'route' explícitamente para evitar canonicals raros.
+      */}
+      <SEOHead 
+        title="Dashboard - Pro Fitness Glass" 
+        description="Panel de control de usuario."
+        route="dashboard"
+        noIndex={true}
+      />
 
       <TourGuide />
 
@@ -289,11 +289,11 @@ const Dashboard = ({ setView }) => {
                 {levelData.progress} / {levelData.needed} XP
               </span>
             </div>
-            {/* --- INICIO MODIFICACIÓN: Borde en la barra de progreso --- */}
+            
             <div className="h-2.5 w-full sm:w-48 bg-bg-primary rounded-full overflow-hidden border border-black/5 dark:border-white/10">
               <div className="h-full bg-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]" style={{ width: `${levelData.percentage}%` }} />
             </div>
-            {/* --- FIN MODIFICACIÓN --- */}
+            
           </div>
 
           <div className="flex flex-col items-center justify-center pl-6 border-l border-white/5 flex-shrink-0">
@@ -311,11 +311,6 @@ const Dashboard = ({ setView }) => {
         {/* 1. SESIONES */}
         <GlassCard className="p-5 flex flex-col justify-between h-full min-h-[160px] border-transparent dark:border dark:border-white/10 hover:shadow-lg relative overflow-hidden group hover:bg-bg-secondary transition-all">
           <div className="flex justify-between items-start mb-4">
-            {/* ICONO SESIONES:
-               Light: Transparente absoluto.
-               Dark: Borde visible blanco/20, fondo sutil.
-               OLED: Transparente absoluto (sin fondo).
-            */}
             <div className="p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 text-accent bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent">
               <Dumbbell size={24} />
             </div>
@@ -381,7 +376,6 @@ const Dashboard = ({ setView }) => {
 
               <div className="flex items-center justify-between mb-10 relative z-10">
                 <div className="flex items-center gap-4">
-                  {/* ICONO NUTRICIÓN PRINCIPAL */}
                   <div className="p-3.5 rounded-2xl text-accent transition-transform bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent">
                     <Activity size={26} />
                   </div>
@@ -451,7 +445,6 @@ const Dashboard = ({ setView }) => {
                     onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }}
                     className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all"
                   >
-                    {/* ICONOS CARDIO */}
                     <div className="p-3.5 rounded-full text-accent group-hover:scale-110 transition-all bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent">
                       <item.icon size={30} />
                     </div>
@@ -464,7 +457,6 @@ const Dashboard = ({ setView }) => {
                   onClick={() => setView('quickCardio')}
                   className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all"
                 >
-                  {/* ICONO EXPLORAR */}
                   <div className="p-3.5 rounded-full text-accent group-hover:scale-110 transition-transform bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent">
                     <LayoutGrid size={30} />
                   </div>
@@ -514,7 +506,6 @@ const Dashboard = ({ setView }) => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 overflow-hidden">
-                        {/* ICONO RUTINA */}
                         <div className={`
                           w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors border-none
                           ${isActive

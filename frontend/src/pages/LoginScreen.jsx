@@ -10,6 +10,7 @@ import GoogleTermsModal from '../components/GoogleTermsModal';
 import PrivacyPolicy from './PrivacyPolicy';
 import { useGoogleLogin } from '@react-oauth/google';
 import { resend2FACode } from '../services/authService';
+import SEOHead from '../components/SEOHead'; // Importamos SEOHead
 
 const LoginScreen = ({ showRegister, showForgotPassword }) => {
     // Store hooks
@@ -219,6 +220,13 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         const isEmailMethod = twoFactorPending.method === 'email';
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
+                {/* SEO Head para el modal de 2FA - Privado */}
+                <SEOHead 
+                    title="Verificación en Dos Pasos - Pro Fitness Glass" 
+                    route="2fa-verify"
+                    noIndex={true} // El 2FA nunca se indexa
+                />
+                
                 <div className="w-full max-w-sm text-center">
                     <div className="mx-auto text-accent mb-4 flex justify-center">
                         {isEmailMethod ? <Mail size={48} /> : <Smartphone size={48} />}
@@ -271,6 +279,13 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     // --- RENDERIZADO LOGIN ---
     return (
         <>
+            {/* SEO Head para Login - Público */}
+            <SEOHead 
+                title="Iniciar Sesión - Pro Fitness Glass" 
+                description="Accede a tu cuenta de Pro Fitness Glass para gestionar tus entrenamientos y nutrición."
+                route="login"
+            />
+        
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-sm text-center">
                     <Dumbbell size={48} className="mx-auto text-accent mb-4" />

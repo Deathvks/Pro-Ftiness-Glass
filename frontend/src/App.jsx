@@ -24,7 +24,7 @@ import VersionUpdater from './components/VersionUpdater';
 import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
 import SEOHead from './components/SEOHead';
-import StoryViewer from './components/StoryViewer'; // Importamos StoryViewer
+import StoryViewer from './components/StoryViewer';
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
@@ -94,7 +94,7 @@ export default function App() {
     fetchInitialData,
     isResting,
     restTimerMode,
-    myStories, // Obtenemos mis historias
+    myStories,
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -168,17 +168,15 @@ export default function App() {
     navigate('twoFactorSetup');
   };
 
-  // Acción al hacer clic en el avatar del header
   const handleHeaderAvatarClick = useCallback(() => {
-    // Si tengo historias activas, las abro
     if (myStories && myStories.length > 0) {
       setViewingMyStory(true);
     } else {
-      // Si no, voy al perfil (comportamiento normal)
       navigate('profile');
     }
   }, [myStories, navigate]);
 
+  // Títulos dinámicos
   const currentTitle = useMemo(() => {
     const titleMap = {
       dashboard: { key: 'Dashboard', default: 'Dashboard' },
@@ -261,6 +259,7 @@ export default function App() {
     { id: 'settings', label: t('Ajustes', { defaultValue: 'Ajustes' }), icon: <Settings size={24} /> },
   ];
 
+  // Lógica de renderizado de contenido
   const content = useMemo(() => {
     if (window.location.pathname === '/reset-password') {
       return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
@@ -270,9 +269,6 @@ export default function App() {
       return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
     }
 
-    // MODIFICADO: Evitamos flash de Onboarding.
-    // Si isLoading está activo o es carga inicial, y no tenemos un perfil completo (con goal),
-    // mostramos el esqueleto para evitar saltar al Onboarding erróneamente.
     if ((isLoading || isInitialLoad) && (!userProfile || !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
     }
@@ -281,7 +277,6 @@ export default function App() {
       return <AuthScreens authView={authView} setAuthView={setAuthView} />;
     }
 
-    // Ahora es seguro verificar goal. Si llegamos aquí y no hay goal, es que realmente es un usuario nuevo.
     if (userProfile && !userProfile.goal) {
       return <OnboardingScreen />;
     }
@@ -290,7 +285,6 @@ export default function App() {
       return <div className="fixed inset-0 flex items-center justify-center bg-bg-primary">Cargando perfil...</div>;
     }
 
-    // Preparar objeto de usuario con info de historia para MainAppLayout
     const userProfileWithStory = {
         ...userProfile,
         hasStories: myStories && myStories.length > 0
@@ -312,7 +306,6 @@ export default function App() {
           handleShowPolicy={handleShowPolicy}
           fetchInitialData={fetchInitialData}
           {...verificationProps}
-          // Pasamos el handler del avatar y el perfil enriquecido
           onHeaderAvatarClick={handleHeaderAvatarClick}
           userProfile={userProfileWithStory}
         />
@@ -325,8 +318,6 @@ export default function App() {
             onConfigure={handleConfigure2FA}
           />
         )}
-        
-        {/* Visor de mi historia (desde header) */}
         {viewingMyStory && (
             <StoryViewer 
                 userId={userProfile.id} 
@@ -342,10 +333,34 @@ export default function App() {
     isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick
   ]);
 
+  // --- LÓGICA SEO INTELIGENTE ---
+  // Determinamos si debemos renderizar el SEOHead global o si la página actual ya lo maneja internamente.
+  const shouldRenderGlobalSEO = useMemo(() => {
+    // Si no está autenticado, AuthScreens (Login/Register) manejan su SEO.
+    if (!isAuthenticated) return false;
+
+    // Vistas que ya tienen <SEOHead /> interno
+    const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy'];
+    
+    // Si la vista actual ya tiene SEO interno, NO renderizamos el global.
+    return !viewsWithInternalSEO.includes(view);
+  }, [isAuthenticated, view]);
+
   return (
     <>
-      <SEOHead title={fullPageTitle} description={currentDescription} route={view} />
+      {/* Si renderizamos el global (para páginas privadas como Settings, Routines, etc.),
+        forzamos noIndex={true} para evitar indexar contenido privado/genérico.
+      */}
+      {shouldRenderGlobalSEO && (
+        <SEOHead 
+            title={fullPageTitle} 
+            description={currentDescription} 
+            route={view} 
+            noIndex={true} // Siempre privado para el fallback global
+        />
+      )}
 
+      {/* Helmet Global para metadatos técnicos generales */}
       <Helmet>
         <html lang="es" />
         <meta charSet="UTF-8" />

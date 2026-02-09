@@ -11,6 +11,7 @@ import EmailVerification from '../components/EmailVerification';
 import GoogleTermsModal from '../components/GoogleTermsModal';
 import PrivacyPolicy from './PrivacyPolicy';
 import { GoogleLogin } from '@react-oauth/google';
+import SEOHead from '../components/SEOHead'; // Importamos SEOHead
 
 const RegisterScreen = ({ showLogin }) => {
     const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
@@ -163,11 +164,19 @@ const RegisterScreen = ({ showLogin }) => {
 
     if (showVerification) {
         return (
-            <EmailVerification 
-                email={registeredEmail}
-                onBack={handleBackToRegister}
-                onSuccess={handleVerificationSuccess}
-            />
+            <>
+                {/* SEO Head para el paso de verificación (No indexar para evitar duplicados raros) */}
+                <SEOHead 
+                    title="Verificar Email - Pro Fitness Glass" 
+                    route="register/verify"
+                    noIndex={true}
+                />
+                <EmailVerification 
+                    email={registeredEmail}
+                    onBack={handleBackToRegister}
+                    onSuccess={handleVerificationSuccess}
+                />
+            </>
         );
     }
 
@@ -178,6 +187,13 @@ const RegisterScreen = ({ showLogin }) => {
 
     return (
         <>
+            {/* SEO Head para Registro - Público e Indexable */}
+            <SEOHead 
+                title="Registrarse - Pro Fitness Glass" 
+                description="Crea tu cuenta gratis en Pro Fitness Glass. Únete a la mejor plataforma de entrenamiento y nutrición."
+                route="register"
+            />
+
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease_out]">
                 <div className="w-full max-w-sm text-center">
                     <Dumbbell size={48} className="mx-auto text-accent mb-4" />
