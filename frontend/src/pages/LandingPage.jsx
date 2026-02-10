@@ -5,7 +5,6 @@ import {
   LineChart, Users, Zap, Smartphone, Trophy, ArrowRight
 } from 'lucide-react';
 
-// Importación dinámica de la versión
 import packageJson from '../../package.json'; 
 
 const LandingPage = ({ onLogin, onRegister }) => {
@@ -13,22 +12,19 @@ const LandingPage = ({ onLogin, onRegister }) => {
   const appVersion = packageJson.version; 
   
   const [isVisible, setIsVisible] = useState(false);
-  const [isDocked, setIsDocked] = useState(false); // Estado para saber si el robot debe "seguirte"
+  const [isDocked, setIsDocked] = useState(false);
   const containerRef = useRef(null);
 
-  // Efecto de entrada
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // Manejador de Scroll para activar el modo "Seguimiento"
   const handleScroll = (e) => {
     const scrollTop = e.target.scrollTop;
-    // Si bajamos más de 100px, el robot se acopla a la esquina
     setIsDocked(scrollTop > 100);
   };
 
-  // --- MASCOTA: GymBot (Inteligente) ---
+  // --- MASCOTA: GymBot ---
   const GymBot = () => (
     <div 
         className={`fixed z-50 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none sm:pointer-events-auto
@@ -151,20 +147,25 @@ const LandingPage = ({ onLogin, onRegister }) => {
             </div>
             
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* CAMBIO: Enlace de Privacidad añadido AQUÍ para visibilidad inmediata (Requisito Google) */}
+              {/* Enlace de Privacidad VISIBLE (Ruta relativa) */}
               <a 
-                href="https://pro-fitness-glass.zeabur.app/privacy" 
-                className="hidden md:flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent transition-colors mr-2"
+                href="/privacy" 
+                className="flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent transition-colors mr-1"
+                title="Política de Privacidad"
               >
-                <Shield size={14} /> Privacidad
+                <Shield size={16} className="md:hidden" /> 
+                <span className="hidden md:inline">Privacidad</span>
               </a>
 
+              {/* Botones de Acción (onClick = Local; href = Navegación externa) */}
               <button 
                 onClick={onLogin}
                 className="text-sm font-semibold text-text-secondary hover:text-accent transition-colors px-3 py-2"
               >
                 Iniciar Sesión
               </button>
+              
+              {/* Botón Empezar (Siempre visible, sin 'hidden') */}
               <button 
                 onClick={onRegister}
                 className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 flex items-center gap-2"
@@ -201,7 +202,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
             </p>
           </div>
 
-          <div className={`flex flex-col sm:flex-row gap-4 mt-10 mb-20 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className={`flex flex-col sm:flex-row gap-4 mt-10 mb-8 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <button 
               onClick={onRegister}
               className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20"
@@ -215,6 +216,16 @@ const LandingPage = ({ onLogin, onRegister }) => {
             >
               Ya tengo cuenta
             </button>
+          </div>
+          
+          {/* Enlace EXTRA visible bajo los botones principales (Ruta relativa) */}
+          <div className={`mb-12 transition-all duration-700 delay-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+             <a 
+                href="/privacy"
+                className="text-sm text-text-tertiary hover:text-accent underline decoration-dotted underline-offset-4"
+             >
+                Política de Privacidad
+             </a>
           </div>
 
           {/* --- SECCIÓN 1: BENTO GRID --- */}
@@ -347,11 +358,13 @@ const LandingPage = ({ onLogin, onRegister }) => {
         {/* --- FOOTER LEGAL --- */}
         <footer className="p-8 pb-12 text-center border-t border-glass-border bg-glass-base/30 backdrop-blur-md">
             <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-medium mb-6">
-            <a href="https://pro-fitness-glass.zeabur.app/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+            {/* Enlace de Privacidad VISIBLE (Ruta relativa) */}
+            <a href="/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                 <Shield size={14} /> Política de Privacidad
             </a>
             <span className="hidden sm:block text-text-secondary/20">|</span>
-            <a href="https://pro-fitness-glass.zeabur.app/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+            {/* Enlace de Términos VISIBLE (Ruta relativa) */}
+            <a href="/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                 <Activity size={14} /> Términos del Servicio
             </a>
             </div>
