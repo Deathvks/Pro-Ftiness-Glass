@@ -49,16 +49,39 @@ const AuthScreens = ({ authView, setAuthView }) => {
   };
 
   // Envolvemos todo en Suspense para manejar la carga asíncrona
+  // Y añadimos un wrapper flex para poner los enlaces legales al final
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen w-full items-center justify-center bg-bg-primary">
-          <Spinner size={40} />
+    <div className="flex flex-col min-h-screen bg-bg-primary">
+      <div className="flex-grow">
+        <Suspense
+          fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-bg-primary">
+              <Spinner size={40} />
+            </div>
+          }
+        >
+          {renderContent()}
+        </Suspense>
+      </div>
+
+      {/* --- SECCIÓN NUEVA: Links Legales para Verificación de Google --- */}
+      <footer className="py-6 text-center bg-bg-primary z-10">
+        <div className="flex justify-center space-x-6">
+          <a 
+            href="/privacy" 
+            className="text-xs text-text-secondary hover:text-accent transition-colors underline"
+          >
+            Política de Privacidad
+          </a>
+          <a 
+            href="/terms" 
+            className="text-xs text-text-secondary hover:text-accent transition-colors underline"
+          >
+            Términos del Servicio
+          </a>
         </div>
-      }
-    >
-      {renderContent()}
-    </Suspense>
+      </footer>
+    </div>
   );
 };
 
