@@ -2,6 +2,9 @@
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import apiClient from './apiClient';
 
+// ID de Cliente Web explícito para forzar la configuración en Android
+const GOOGLE_CLIENT_ID = '459101292666-53tga4c1l8u2se5k21gsf5rk85825udq.apps.googleusercontent.com';
+
 export const loginUser = (credentials) => {
     return apiClient('/auth/login', { body: credentials, method: 'POST' });
 };
@@ -63,8 +66,13 @@ export const googleLogin = (token) => {
 // --- GOOGLE AUTH PLUGIN (Nativo + Web) ---
 
 export const initGoogleAuth = () => {
-    // Inicializa el plugin. En web usa meta-tags o config, en nativo usa google-services.json
-    GoogleAuth.initialize();
+    // Inicializa el plugin pasando explícitamente el Client ID
+    // Esto asegura que Android use este ID y no otro, solucionando el Error 10
+    GoogleAuth.initialize({
+        clientId: GOOGLE_CLIENT_ID,
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+    });
 };
 
 export const signInWithGoogle = async () => {
