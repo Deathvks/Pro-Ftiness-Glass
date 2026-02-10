@@ -58,10 +58,14 @@ export default function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
   
-  // --- ESTADO NUEVO: Controla si mostramos la Landing o el Login ---
+  // Estado para controlar la Landing Page
   const [showLanding, setShowLanding] = useState(true);
 
   const [viewingMyStory, setViewingMyStory] = useState(false);
+
+  // Detectar rutas estáticas al inicio para renderizado condicional rápido
+  const isPrivacyRoute = window.location.pathname === '/privacy';
+  const isTermsRoute = window.location.pathname === '/terms';
 
   const {
     view,
@@ -155,10 +159,9 @@ export default function App() {
     }
   }, [isAuthenticated, userProfile, isLoading]);
 
-  // Efecto para saltar la landing si ya estamos autenticados o hay una ruta específica
+  // Efecto para saltar la landing si ya estamos autenticados
   useEffect(() => {
-    // Si viene de una ruta específica como /privacy o /terms, o si ya tiene token
-    if (window.location.pathname !== '/' || isAuthenticated) {
+    if (isAuthenticated) {
         setShowLanding(false);
     }
   }, [isAuthenticated]);
@@ -168,7 +171,9 @@ export default function App() {
   const confirmLogout = useCallback(() => {
     performLogout();
     setShowLogoutConfirm(false);
-    setShowLanding(true); // Al salir, volvemos a la landing
+    setShowLanding(true);
+    // Forzamos redirección a la raíz para mostrar la Landing limpia
+    window.history.pushState({}, '', '/');
   }, [performLogout]);
 
   const handleClose2FAPromo = () => {
@@ -274,18 +279,30 @@ export default function App() {
     { id: 'settings', label: t('Ajustes', { defaultValue: 'Ajustes' }), icon: <Settings size={24} /> },
   ];
 
-  // --- Lógica de renderizado principal ---
+  // --- LOGICA DE RENDERIZADO PRINCIPAL ---
   const content = useMemo(() => {
-    // Rutas especiales externas
+    // 1. BYPASS DE RUTAS PÚBLICAS (Legal & Reset Password)
+    // Esto asegura que Google vea contenido diferente en /privacy y /terms
+    // y no sea redirigido a login ni a landing.
+    if (isPrivacyRoute) {
+       return (
+         <React.Suspense fallback={<InitialLoadingSkeleton />}>
+            {/* onBack redirige a la home para salir del modo "solo legal" */}
+            <PrivacyPolicy onBack={() => window.location.href = '/'} />
+         </React.Suspense>
+       );
+    }
+    if (isTermsRoute) {
+        return (
+          <React.Suspense fallback={<InitialLoadingSkeleton />}>
+             <TermsPage />
+          </React.Suspense>
+        );
+     }
     if (window.location.pathname === '/reset-password') {
       return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
     }
-    if (window.location.pathname === '/privacy' || view === 'privacyPolicy') {
-      return <PrivacyPolicy onBack={handleBackFromPolicy} />;
-    }
-    if (window.location.pathname === '/terms' || view === 'terms') {
-      return <TermsPage />;
-    }
+
     if (view === 'active-cardio') {
       return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
     }
@@ -294,9 +311,9 @@ export default function App() {
       return <InitialLoadingSkeleton />;
     }
 
-    // --- LÓGICA MODIFICADA PARA LANDING PAGE ---
+    // 2. ESTADO NO AUTENTICADO
     if (!isAuthenticated) {
-        // Si no está autenticado y la bandera showLanding es true, mostramos Landing
+        // Landing Page por defecto (Requisito Google: Info sin login)
         if (showLanding) {
             return (
                 <LandingPage 
@@ -311,10 +328,11 @@ export default function App() {
                 />
             );
         }
-        // Si pasó la Landing, mostramos AuthScreens
+        // Auth Screens solo si el usuario hizo clic en "Iniciar Sesión"
         return <AuthScreens authView={authView} setAuthView={setAuthView} />;
     }
 
+    // 3. ESTADO AUTENTICADO (App Completa)
     if (!userProfile || (isLoading && !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
     }
@@ -369,18 +387,18 @@ export default function App() {
     mainContentRef, currentTitle, currentViewComponent, navItems, handleLogoutClick,
     showLogoutConfirm, confirmLogout, handleShowPolicy, fetchInitialData, verificationProps,
     isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick,
-    showLanding
+    showLanding, isPrivacyRoute, isTermsRoute // Dependencias añadidas
   ]);
 
   const shouldRenderGlobalSEO = useMemo(() => {
-    if (window.location.pathname === '/privacy') return false;
-    if (window.location.pathname === '/terms') return false;
-    if (!isAuthenticated && showLanding) return true; // SEO en landing
+    // No SEO global en páginas legales porque ya tienen su propio contenido
+    if (isPrivacyRoute || isTermsRoute) return false;
+    if (!isAuthenticated && showLanding) return true; 
     
     if (!isAuthenticated) return false;
     const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms'];
     return !viewsWithInternalSEO.includes(view);
-  }, [isAuthenticated, view, showLanding]);
+  }, [isAuthenticated, view, showLanding, isPrivacyRoute, isTermsRoute]);
 
   return (
     <>

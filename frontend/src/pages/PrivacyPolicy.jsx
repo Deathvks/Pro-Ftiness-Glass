@@ -7,8 +7,10 @@ import {
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
 
-const PrivacyPolicy = () => {
+const PrivacyPolicy = ({ onBack }) => {
+  // Permitimos usar la prop onBack si se pasa (para el bypass en App.jsx) o useNavigate por defecto
   const navigate = useNavigate();
+  const handleBack = onBack || (() => navigate(-1));
 
   // Fecha actual formateada en español
   const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -53,7 +55,7 @@ const PrivacyPolicy = () => {
         
         {/* Botón Volver */}
         <button 
-          onClick={() => navigate(-1)} 
+          onClick={handleBack} 
           className="group flex items-center gap-2 text-text-secondary font-bold hover:text-accent transition-all mb-6 px-2 outline-none focus:outline-none"
         >
           <div className="p-1.5 rounded-full bg-gray-200 dark:bg-white/5 group-hover:bg-accent/20 transition-colors">
