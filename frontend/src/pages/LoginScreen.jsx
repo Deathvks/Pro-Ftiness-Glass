@@ -99,9 +99,13 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 }
             } catch (error) {
                 console.error('Google Sign-In Native Error:', error);
+                
+                // --- DEBUG: Alerta para ver el error real en el móvil ---
+                alert('Debug Error Google: ' + JSON.stringify(error));
+
                 // No mostramos error si el usuario simplemente cerró el popup (cancelado)
                 if (error?.message && !error.message.includes('Canceled')) {
-                    addToast('Error al iniciar con Google', 'error');
+                    addToast(`Error: ${error.message || JSON.stringify(error)}`, 'error');
                 }
             }
         } else {
