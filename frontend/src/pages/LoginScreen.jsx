@@ -100,6 +100,10 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             } catch (error) {
                 console.error('Google Sign-In Native Error:', error);
                 
+                // --- DEBUG: Alerta para ver el error real ---
+                // Mantenemos esto hasta que funcione
+                alert('Debug Google Error: ' + JSON.stringify(error));
+
                 // No mostramos error si el usuario simplemente cerró el popup (cancelado)
                 if (error?.message && !error.message.includes('Canceled')) {
                     addToast('Error al iniciar con Google', 'error');
