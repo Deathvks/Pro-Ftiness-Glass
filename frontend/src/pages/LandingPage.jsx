@@ -4,9 +4,8 @@ import {
   Dumbbell, Activity, Shield, ChevronRight, Utensils, 
   LineChart, Users, Zap, Smartphone, Trophy, ArrowRight
 } from 'lucide-react';
-// No olvides importar Link si decides usarlo, aunque para Google los <a> absolutos son mejores en el footer
-import { Link } from 'react-router-dom'; 
 
+// Importación dinámica de la versión
 import packageJson from '../../package.json'; 
 
 const LandingPage = ({ onLogin, onRegister }) => {
@@ -14,15 +13,18 @@ const LandingPage = ({ onLogin, onRegister }) => {
   const appVersion = packageJson.version; 
   
   const [isVisible, setIsVisible] = useState(false);
-  const [isDocked, setIsDocked] = useState(false);
+  const [isDocked, setIsDocked] = useState(false); // Estado para saber si el robot debe "seguirte"
   const containerRef = useRef(null);
 
+  // Efecto de entrada
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
+  // Manejador de Scroll para activar el modo "Seguimiento"
   const handleScroll = (e) => {
     const scrollTop = e.target.scrollTop;
+    // Si bajamos más de 100px, el robot se acopla a la esquina
     setIsDocked(scrollTop > 100);
   };
 
@@ -117,6 +119,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
         onScroll={handleScroll}
         className="fixed inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth"
     >
+      
+      {/* --- FONDO DINÁMICO --- */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden select-none">
         <div 
           className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-20 dark:opacity-20 animate-[pulse_8s_ease-in-out_infinite]"
@@ -136,18 +140,37 @@ const LandingPage = ({ onLogin, onRegister }) => {
         {/* --- NAVBAR --- */}
         <nav className={`sticky top-0 z-40 transition-all duration-700 backdrop-blur-lg border-b border-glass-border ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
           <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })} >
+            <div 
+                className="flex items-center gap-3 cursor-pointer group" 
+                onClick={() => containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               <img src="/logo.webp" alt="Logo" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl shadow-lg ring-1 ring-glass-border group-hover:scale-105 transition-transform" />
               <span className="font-black text-lg sm:text-xl tracking-tighter hidden sm:block bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary group-hover:to-accent transition-all">
                 PRO FITNESS GLASS
               </span>
             </div>
-            <div className="flex gap-3 sm:gap-4">
-              <button onClick={onLogin} className="text-sm font-semibold text-text-secondary hover:text-accent transition-colors px-3 py-2" >
+            
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* CAMBIO: Enlace de Privacidad añadido AQUÍ para visibilidad inmediata (Requisito Google) */}
+              <a 
+                href="https://pro-fitness-glass.zeabur.app/privacy" 
+                className="hidden md:flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent transition-colors mr-2"
+              >
+                <Shield size={14} /> Privacidad
+              </a>
+
+              <button 
+                onClick={onLogin}
+                className="text-sm font-semibold text-text-secondary hover:text-accent transition-colors px-3 py-2"
+              >
                 Iniciar Sesión
               </button>
-              <button onClick={onRegister} className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 flex items-center gap-2" >
-                Empezar <ChevronRight size={16} />
+              <button 
+                onClick={onRegister}
+                className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 flex items-center gap-2"
+              >
+                Empezar
+                <ChevronRight size={16} />
               </button>
             </div>
           </div>
@@ -155,6 +178,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
         {/* --- HERO SECTION --- */}
         <main className="flex-grow flex flex-col items-center px-4 pt-10 pb-24 text-center w-full max-w-7xl mx-auto">
+          
           <div className="h-40 w-full mb-36 sm:mb-24 pointer-events-none"></div>
 
           <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-glass-base border border-accent/20 mb-6 backdrop-blur-md shadow-sm transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -178,25 +202,20 @@ const LandingPage = ({ onLogin, onRegister }) => {
           </div>
 
           <div className={`flex flex-col sm:flex-row gap-4 mt-10 mb-20 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <button onClick={onRegister} className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20" >
+            <button 
+              onClick={onRegister}
+              className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20"
+            >
               Crear Cuenta Gratis
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
-            <button onClick={onLogin} className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-glass-base hover:bg-glass-border text-text-primary rounded-2xl font-bold text-lg transition-all border border-glass-border hover:border-accent/30" >
+            <button 
+              onClick={onLogin}
+              className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-glass-base hover:bg-glass-border text-text-primary rounded-2xl font-bold text-lg transition-all border border-glass-border hover:border-accent/30"
+            >
               Ya tengo cuenta
             </button>
           </div>
-
-          {/* --- DESCRIPCIÓN DEL PROPÓSITO (REQUERIDO POR GOOGLE) --- */}
-          {/* Añadido para explicar explícitamente qué hace la app */}
-          <section className={`w-full max-w-4xl mx-auto mb-20 text-center px-4 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <h2 className="text-2xl font-bold text-text-primary mb-4">¿Qué es Pro Fitness Glass?</h2>
-            <p className="text-lg text-text-secondary leading-relaxed">
-              Pro Fitness Glass es una plataforma integral de bienestar diseñada para atletas y entusiastas del fitness. 
-              Nuestra aplicación permite registrar detalladamente rutinas de ejercicio, planificar y monitorear la nutrición 
-              y analizar el progreso físico mediante herramientas visuales, todo con el objetivo de optimizar tu rendimiento y salud.
-            </p>
-          </section>
 
           {/* --- SECCIÓN 1: BENTO GRID --- */}
           <div className="w-full mt-10">
@@ -210,7 +229,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left">
               
-              {/* Card 1 */}
               <div className={`md:col-span-2 p-8 rounded-3xl bg-gradient-to-br from-glass-base to-transparent border border-glass-border backdrop-blur-md transition-all duration-700 delay-300 hover:border-accent/20 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                  <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Dumbbell size={28} />
@@ -226,7 +244,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </div>
               </div>
 
-              {/* Card 2 */}
               <div className={`p-8 rounded-3xl bg-gradient-to-br from-glass-base to-transparent border border-glass-border backdrop-blur-md transition-all duration-700 delay-400 hover:border-accent/20 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                  <div className="w-12 h-12 bg-green-500/20 text-green-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Utensils size={28} />
@@ -237,7 +254,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </p>
               </div>
 
-              {/* Card 3 */}
               <div className={`p-8 rounded-3xl bg-gradient-to-br from-glass-base to-transparent border border-glass-border backdrop-blur-md transition-all duration-700 delay-500 hover:border-accent/20 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                  <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <LineChart size={28} />
@@ -248,7 +264,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </p>
               </div>
 
-              {/* Card 4 */}
               <div className={`md:col-span-2 p-8 rounded-3xl bg-gradient-to-br from-glass-base to-transparent border border-glass-border backdrop-blur-md transition-all duration-700 delay-600 hover:border-accent/20 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                  <div className="w-12 h-12 bg-orange-500/20 text-orange-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Users size={28} />
@@ -330,7 +345,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
         </main>
 
         {/* --- FOOTER LEGAL --- */}
-        {/* Enlaces ABSOLUTOS para validación estricta de Google */}
         <footer className="p-8 pb-12 text-center border-t border-glass-border bg-glass-base/30 backdrop-blur-md">
             <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-medium mb-6">
             <a href="https://pro-fitness-glass.zeabur.app/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
