@@ -41,9 +41,12 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
 
-    // Inicializar Google Auth en nativo
+    // --- CORRECCIÓN ERROR 10 ---
+    // Inicializar Google Auth SOLO en Web.
+    // En Nativo (Android/iOS), el plugin lee la configuración de capacitor.config.json automáticamente.
+    // Llamar a initialize() aquí en nativo causaba el conflicto.
     useEffect(() => {
-        if (Capacitor.isNativePlatform()) {
+        if (!Capacitor.isNativePlatform()) {
             initGoogleAuth();
         }
     }, []);
@@ -100,13 +103,9 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             } catch (error) {
                 console.error('Google Sign-In Native Error:', error);
                 
-                // --- DEBUG: Alerta para ver el error real ---
-                // Mantenemos esto hasta que funcione
-                alert('Debug Google Error: ' + JSON.stringify(error));
-
-                // No mostramos error si el usuario simplemente cerró el popup (cancelado)
+                // Muestra el mensaje crudo para depurar si sigue fallando
                 if (error?.message && !error.message.includes('Canceled')) {
-                    addToast('Error al iniciar con Google', 'error');
+                    addToast(`Error Google: ${JSON.stringify(error)}`, 'error');
                 }
             }
         } else {
