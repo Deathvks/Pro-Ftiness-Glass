@@ -28,6 +28,7 @@ import StoryViewer from './components/StoryViewer';
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
+import LandingPage from './pages/LandingPage'; // <--- Importación de la Landing
 
 // Lazy loading de páginas
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -40,7 +41,7 @@ const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
 const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const TermsPage = lazy(() => import('./pages/TermsPage')); // <--- NUEVO
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 const Profile = lazy(() => import('./pages/Profile'));
 const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
 const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
@@ -57,7 +58,9 @@ export default function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
   
-  // Estado para ver mi propia historia desde el header
+  // --- ESTADO NUEVO: Controla si mostramos la Landing o el Login ---
+  const [showLanding, setShowLanding] = useState(true);
+
   const [viewingMyStory, setViewingMyStory] = useState(false);
 
   const {
@@ -107,7 +110,7 @@ export default function App() {
     myStories: state.myStories,
   }));
 
-  // --- Sincronización de Tema con UI Nativa ---
+  // Sincronización de Tema
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       const applyNativeTheme = async () => {
@@ -126,7 +129,7 @@ export default function App() {
     document.body.style.backgroundColor = themeColor;
   }, [themeColor, resolvedTheme]);
 
-  // --- Inicialización de Notificaciones ---
+  // Init Notificaciones
   useEffect(() => {
     if (isAuthenticated && !isLoading && Capacitor.isNativePlatform()) {
       const initNotifications = async () => {
@@ -152,11 +155,20 @@ export default function App() {
     }
   }, [isAuthenticated, userProfile, isLoading]);
 
+  // Efecto para saltar la landing si ya estamos autenticados o hay una ruta específica
+  useEffect(() => {
+    // Si viene de una ruta específica como /privacy o /terms, o si ya tiene token
+    if (window.location.pathname !== '/' || isAuthenticated) {
+        setShowLanding(false);
+    }
+  }, [isAuthenticated]);
+
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
 
   const confirmLogout = useCallback(() => {
     performLogout();
     setShowLogoutConfirm(false);
+    setShowLanding(true); // Al salir, volvemos a la landing
   }, [performLogout]);
 
   const handleClose2FAPromo = () => {
@@ -190,7 +202,7 @@ export default function App() {
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
       adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
-      terms: { key: 'Términos del Servicio', default: 'Términos del Servicio' }, // <--- NUEVO
+      terms: { key: 'Términos del Servicio', default: 'Términos del Servicio' },
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
       templateDiets: { key: 'Dietas Plantilla', default: 'Dietas Plantilla' },
@@ -246,7 +258,7 @@ export default function App() {
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigate} />;
       case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigate('settings')} /> : <Dashboard setView={navigate} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
-      case 'terms': return <TermsPage />; // <--- NUEVO
+      case 'terms': return <TermsPage />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigate} />;
       case 'notifications': return <NotificationsScreen setView={navigate} />;
       default: return <Dashboard setView={navigate} />;
@@ -264,46 +276,53 @@ export default function App() {
 
   // --- Lógica de renderizado principal ---
   const content = useMemo(() => {
-    // 0. Rutas especiales externas
+    // Rutas especiales externas
     if (window.location.pathname === '/reset-password') {
       return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
     }
-
-    // Ruta pública de privacidad
     if (window.location.pathname === '/privacy' || view === 'privacyPolicy') {
       return <PrivacyPolicy onBack={handleBackFromPolicy} />;
     }
-
-    // Ruta pública de términos (NUEVO)
     if (window.location.pathname === '/terms' || view === 'terms') {
       return <TermsPage />;
     }
-
     if (view === 'active-cardio') {
       return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
     }
 
-    // 1. Carga inicial crítica
     if (isInitialLoad) {
       return <InitialLoadingSkeleton />;
     }
 
-    // 2. Comprobación de Auth
+    // --- LÓGICA MODIFICADA PARA LANDING PAGE ---
     if (!isAuthenticated) {
-      return <AuthScreens authView={authView} setAuthView={setAuthView} />;
+        // Si no está autenticado y la bandera showLanding es true, mostramos Landing
+        if (showLanding) {
+            return (
+                <LandingPage 
+                    onLogin={() => {
+                        setAuthView('login');
+                        setShowLanding(false);
+                    }}
+                    onRegister={() => {
+                        setAuthView('register');
+                        setShowLanding(false);
+                    }}
+                />
+            );
+        }
+        // Si pasó la Landing, mostramos AuthScreens
+        return <AuthScreens authView={authView} setAuthView={setAuthView} />;
     }
 
-    // 3. Usuario Autenticado pero datos no listos
     if (!userProfile || (isLoading && !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
     }
 
-    // 4. Onboarding
     if (!userProfile.goal) {
       return <OnboardingScreen />;
     }
 
-    // 5. App Principal
     const userProfileWithStory = {
         ...userProfile,
         hasStories: myStories && myStories.length > 0
@@ -349,19 +368,19 @@ export default function App() {
     authView, isInitialLoad, isLoading, isAuthenticated, userProfile, view, navigate,
     mainContentRef, currentTitle, currentViewComponent, navItems, handleLogoutClick,
     showLogoutConfirm, confirmLogout, handleShowPolicy, fetchInitialData, verificationProps,
-    isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick
+    isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick,
+    showLanding // Agregado a dependencias
   ]);
 
-  // --- LÓGICA SEO ---
   const shouldRenderGlobalSEO = useMemo(() => {
-    // Si la ruta es pública, renderizamos SEO específico en el componente
     if (window.location.pathname === '/privacy') return false;
-    if (window.location.pathname === '/terms') return false; // <--- NUEVO
+    if (window.location.pathname === '/terms') return false;
+    if (!isAuthenticated && showLanding) return true; // SEO en landing
     
     if (!isAuthenticated) return false;
     const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms'];
     return !viewsWithInternalSEO.includes(view);
-  }, [isAuthenticated, view]);
+  }, [isAuthenticated, view, showLanding]);
 
   return (
     <>
