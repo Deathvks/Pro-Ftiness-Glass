@@ -40,6 +40,7 @@ const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
 const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsPage = lazy(() => import('./pages/TermsPage')); // <--- NUEVO
 const Profile = lazy(() => import('./pages/Profile'));
 const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
 const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
@@ -189,6 +190,7 @@ export default function App() {
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
       adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
+      terms: { key: 'Términos del Servicio', default: 'Términos del Servicio' }, // <--- NUEVO
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
       templateDiets: { key: 'Dietas Plantilla', default: 'Dietas Plantilla' },
@@ -244,6 +246,7 @@ export default function App() {
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigate} />;
       case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigate('settings')} /> : <Dashboard setView={navigate} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
+      case 'terms': return <TermsPage />; // <--- NUEVO
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigate} />;
       case 'notifications': return <NotificationsScreen setView={navigate} />;
       default: return <Dashboard setView={navigate} />;
@@ -269,6 +272,11 @@ export default function App() {
     // Ruta pública de privacidad
     if (window.location.pathname === '/privacy' || view === 'privacyPolicy') {
       return <PrivacyPolicy onBack={handleBackFromPolicy} />;
+    }
+
+    // Ruta pública de términos (NUEVO)
+    if (window.location.pathname === '/terms' || view === 'terms') {
+      return <TermsPage />;
     }
 
     if (view === 'active-cardio') {
@@ -348,9 +356,10 @@ export default function App() {
   const shouldRenderGlobalSEO = useMemo(() => {
     // Si la ruta es pública, renderizamos SEO específico en el componente
     if (window.location.pathname === '/privacy') return false;
+    if (window.location.pathname === '/terms') return false; // <--- NUEVO
     
     if (!isAuthenticated) return false;
-    const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy'];
+    const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms'];
     return !viewsWithInternalSEO.includes(view);
   }, [isAuthenticated, view]);
 
