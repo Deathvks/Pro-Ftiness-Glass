@@ -76,12 +76,12 @@
       --glass-border-opacity: 0.3;
     }
 
-    /* SPLASH SCREEN CONTAINER MODIFICADO PARA FLEX */
     .app-splash-screen {
       display: flex;
       flex-direction: column;
       align-items: center;
-      /* Eliminamos justify-content: center para usar flex-grow en el hijo */
+      /* Distribuimos el espacio para empujar el footer abajo */
+      justify-content: space-between; 
       position: fixed;
       top: 0;
       left: 0;
@@ -93,18 +93,17 @@
       color: #ffffff;
       opacity: 1;
       transition: opacity 0.3s ease;
-      padding: 20px;
-      box-sizing: border-box; /* Importante para el padding */
+      /* Padding superior para centrar visualmente el logo */
+      padding-top: 35vh; 
+      padding-bottom: 20px;
+      box-sizing: border-box;
     }
 
-    /* CONTENEDOR CENTRAL DEL LOGO */
     .splash-content {
-      flex: 1; /* Ocupa todo el espacio disponible empujando el footer abajo */
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 100%;
     }
 
     .app-splash-spinner {
@@ -148,35 +147,33 @@
       letter-spacing: 0.1em;
       padding: 0.5rem 1.5rem;
       border-radius: 1rem;
-      
       background-image: 
         linear-gradient(rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.20), rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.20)),
         linear-gradient(rgba(var(--glass-base), var(--glass-opacity)), rgba(var(--glass-base), var(--glass-opacity)));
-        
       border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), var(--glass-border-opacity));
       border-top-color: rgba(255, 255, 255, 0.3);
-      
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      
       box-shadow: 
         0 4px 6px -1px rgba(0, 0, 0, 0.1),
         0 2px 4px -1px rgba(0, 0, 0, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        
       color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
       text-transform: uppercase;
     }
 
-    /* FOOTER INTEGRADO EN SPLASH */
+    /* FOOTER VISIBLE DENTRO DEL SPLASH */
     .app-splash-footer {
       width: 100%;
       text-align: center;
-      font-size: 0.75rem; /* 12px equiv */
-      padding-bottom: 1rem;
+      font-size: 0.75rem;
       opacity: 0.7;
-      position: relative; 
-      z-index: 10000; /* Por encima de todo */
+      /* Asegura que los enlaces sean clicables y visibles */
+      pointer-events: auto;
+    }
+
+    .app-splash-footer nav {
+      margin-bottom: 8px;
     }
 
     .app-splash-footer a {
@@ -293,9 +290,9 @@
 
       <footer class="app-splash-footer">
         <nav>
-          <a href="/privacy">Política de Privacidad</a>
+          <a href="https://pro-fitness-glass.zeabur.app/privacy">Política de Privacidad</a>
           <span style="opacity: 0.4; margin: 0 5px;">|</span>
-          <a href="/terms">Términos del Servicio</a>
+          <a href="https://pro-fitness-glass.zeabur.app/terms">Términos del Servicio</a>
         </nav>
         <div style="margin-top: 8px; opacity: 0.5; font-size: 0.9em;">
            © 2026 Pro Fitness Glass
