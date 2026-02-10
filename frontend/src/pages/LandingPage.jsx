@@ -4,8 +4,9 @@ import {
   Dumbbell, Activity, Shield, ChevronRight, Utensils, 
   LineChart, Users, Zap, Smartphone, Trophy, ArrowRight
 } from 'lucide-react';
+// No olvides importar Link si decides usarlo, aunque para Google los <a> absolutos son mejores en el footer
+import { Link } from 'react-router-dom'; 
 
-// Importación dinámica de la versión
 import packageJson from '../../package.json'; 
 
 const LandingPage = ({ onLogin, onRegister }) => {
@@ -13,18 +14,15 @@ const LandingPage = ({ onLogin, onRegister }) => {
   const appVersion = packageJson.version; 
   
   const [isVisible, setIsVisible] = useState(false);
-  const [isDocked, setIsDocked] = useState(false); // Estado para saber si el robot debe "seguirte"
+  const [isDocked, setIsDocked] = useState(false);
   const containerRef = useRef(null);
 
-  // Efecto de entrada
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // Manejador de Scroll para activar el modo "Seguimiento"
   const handleScroll = (e) => {
     const scrollTop = e.target.scrollTop;
-    // Si bajamos más de 100px, el robot se acopla a la esquina
     setIsDocked(scrollTop > 100);
   };
 
@@ -34,15 +32,12 @@ const LandingPage = ({ onLogin, onRegister }) => {
         className={`fixed z-50 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none sm:pointer-events-auto
             ${isDocked 
                 ? 'top-[85%] left-[80%] sm:left-[90%] -translate-x-1/2 -translate-y-1/2 scale-50 sm:scale-60' 
-                // CAMBIO: top-[33%] en móvil (más bajo para no tocar header), sm:top-[25%] en escritorio
                 : 'top-[33%] sm:top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100'
             }
         `}
     >
-        {/* Estilos de animación inyectados localmente */}
         <style>{`
             @keyframes gymbot-roam {
-                /* Movimiento suave horizontal, reducido en vertical para no chocar */
                 0% { transform: translate(0, 0) rotate(0deg); }
                 25% { transform: translate(120px, -5px) rotate(5deg); }
                 50% { transform: translate(0, 10px) rotate(0deg); }
@@ -60,34 +55,23 @@ const LandingPage = ({ onLogin, onRegister }) => {
             }
         `}</style>
 
-        {/* Contenedor que "se pasea" */}
         <div 
             className="w-40 h-40 relative group cursor-pointer perspective-1000"
             style={{ animation: 'gymbot-roam 12s infinite ease-in-out' }}
         >
-            {/* Contenedor flotante (rebote vertical local) */}
             <div className="w-full h-full relative animate-[bounce_3s_infinite_ease-in-out] group-hover:[animation-play-state:paused]">
-                
-                {/* Cuerpo del Robot (Glassmorphism) */}
                 <div className={`absolute inset-4 bg-gradient-to-br from-glass-base to-glass-bg border border-glass-border rounded-[2.5rem] shadow-[0_0_40px_-10px_rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.3)] backdrop-blur-xl flex flex-col items-center justify-center z-20 transition-transform duration-300 group-hover:scale-110 ${isDocked ? 'shadow-accent/40' : ''}`}>
-                    
-                    {/* Antena */}
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-1 h-6 bg-glass-border"></div>
                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-accent animate-pulse shadow-[0_0_15px_currentColor]"></div>
-
-                    {/* Cara */}
                     <div className="relative w-full px-6 py-2 flex flex-col items-center gap-3">
-                        {/* Ojos (Parpadeo) */}
                         <div className="flex gap-6 w-full justify-center">
                             <div className="w-3 h-4 bg-accent rounded-full animate-[pulse_3s_infinite]"></div>
                             <div className="w-3 h-4 bg-accent rounded-full animate-[pulse_3s_infinite] delay-75"></div>
                         </div>
-                        {/* Boca (Sonrisa) */}
                         <div className="w-8 h-1.5 bg-text-primary/40 rounded-full group-hover:bg-accent/80 transition-colors"></div>
                     </div>
                 </div>
 
-                {/* Brazo Izquierdo (Levantando pesa) */}
                 <div className="absolute top-1/2 -left-6 w-12 h-12 flex items-center justify-center origin-right animate-[spin_3s_ease-in-out_infinite_alternate]">
                     <div className="w-full h-2 bg-glass-border absolute right-0 rounded-full"></div>
                     <div className="absolute left-0 p-1.5 bg-accent rounded-lg shadow-lg text-bg-primary transform -rotate-90">
@@ -95,7 +79,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     </div>
                 </div>
 
-                {/* Brazo Derecho (Levantando pesa - desfasado) */}
                 <div className="absolute top-1/2 -right-6 w-12 h-12 flex items-center justify-center origin-left animate-[spin_3s_ease-in-out_infinite_alternate-reverse]">
                     <div className="w-full h-2 bg-glass-border absolute left-0 rounded-full"></div>
                     <div className="absolute right-0 p-1.5 bg-accent rounded-lg shadow-lg text-bg-primary transform rotate-90">
@@ -103,10 +86,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     </div>
                 </div>
 
-                {/* Sombra en el suelo */}
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-4 bg-black/20 blur-lg rounded-[100%] animate-[pulse_3s_infinite_ease-in-out]"></div>
                 
-                {/* Bocadillo de diálogo (Solo visible cuando está acoplado y hover) */}
                 <div className={`absolute -top-16 -left-20 bg-glass-base border border-glass-border px-4 py-2 rounded-xl text-xs font-bold text-accent transition-all duration-300 pointer-events-none whitespace-nowrap
                     ${isDocked ? 'opacity-0 group-hover:opacity-100 -translate-y-2 group-hover:translate-y-0' : 'opacity-0'}
                 `}>
@@ -117,7 +98,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
     </div>
   );
 
-  // Componente interno para las tarjetas
   const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
     <div 
       className={`p-6 rounded-3xl bg-glass-base border border-glass-border backdrop-blur-md flex flex-col items-center text-center hover:border-accent/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:shadow-accent/10 group ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
@@ -132,14 +112,11 @@ const LandingPage = ({ onLogin, onRegister }) => {
   );
 
   return (
-    // CONTENEDOR PRINCIPAL: Evento onScroll añadido aquí
     <div 
         ref={containerRef}
         onScroll={handleScroll}
         className="fixed inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth"
     >
-      
-      {/* --- FONDO DINÁMICO --- */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden select-none">
         <div 
           className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-20 dark:opacity-20 animate-[pulse_8s_ease-in-out_infinite]"
@@ -152,7 +129,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
         <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       </div>
 
-      {/* --- GYMBOT: Fuera del flujo normal para poder moverse libremente --- */}
       <GymBot />
 
       <div className="relative z-10 flex flex-col min-h-full">
@@ -160,28 +136,18 @@ const LandingPage = ({ onLogin, onRegister }) => {
         {/* --- NAVBAR --- */}
         <nav className={`sticky top-0 z-40 transition-all duration-700 backdrop-blur-lg border-b border-glass-border ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
           <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full">
-            <div 
-                className="flex items-center gap-3 cursor-pointer group" 
-                onClick={() => containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })}
-            >
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })} >
               <img src="/logo.webp" alt="Logo" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl shadow-lg ring-1 ring-glass-border group-hover:scale-105 transition-transform" />
               <span className="font-black text-lg sm:text-xl tracking-tighter hidden sm:block bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary group-hover:to-accent transition-all">
                 PRO FITNESS GLASS
               </span>
             </div>
             <div className="flex gap-3 sm:gap-4">
-              <button 
-                onClick={onLogin}
-                className="text-sm font-semibold text-text-secondary hover:text-accent transition-colors px-3 py-2"
-              >
+              <button onClick={onLogin} className="text-sm font-semibold text-text-secondary hover:text-accent transition-colors px-3 py-2" >
                 Iniciar Sesión
               </button>
-              <button 
-                onClick={onRegister}
-                className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 flex items-center gap-2"
-              >
-                Empezar
-                <ChevronRight size={16} />
+              <button onClick={onRegister} className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 flex items-center gap-2" >
+                Empezar <ChevronRight size={16} />
               </button>
             </div>
           </div>
@@ -189,11 +155,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
         {/* --- HERO SECTION --- */}
         <main className="flex-grow flex flex-col items-center px-4 pt-10 pb-24 text-center w-full max-w-7xl mx-auto">
-          
-          {/* CAMBIO: Espaciador aumentado a mb-36 en móvil para dar sitio al robot (que ahora está en 33%) */}
           <div className="h-40 w-full mb-36 sm:mb-24 pointer-events-none"></div>
 
-          {/* Badge Versión */}
           <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-glass-base border border-accent/20 mb-6 backdrop-blur-md shadow-sm transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
@@ -202,7 +165,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
             <span className="text-xs font-bold text-accent tracking-wide uppercase">Versión {appVersion}</span>
           </div>
 
-          {/* Titular */}
           <div className={`space-y-4 max-w-5xl mx-auto transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <h1 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter leading-[1.1] mb-6">
               Tu Cuerpo, <br className="md:hidden" />
@@ -215,22 +177,26 @@ const LandingPage = ({ onLogin, onRegister }) => {
             </p>
           </div>
 
-          {/* Botones CTA */}
           <div className={`flex flex-col sm:flex-row gap-4 mt-10 mb-20 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <button 
-              onClick={onRegister}
-              className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20"
-            >
+            <button onClick={onRegister} className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20" >
               Crear Cuenta Gratis
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
-            <button 
-              onClick={onLogin}
-              className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-glass-base hover:bg-glass-border text-text-primary rounded-2xl font-bold text-lg transition-all border border-glass-border hover:border-accent/30"
-            >
+            <button onClick={onLogin} className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-glass-base hover:bg-glass-border text-text-primary rounded-2xl font-bold text-lg transition-all border border-glass-border hover:border-accent/30" >
               Ya tengo cuenta
             </button>
           </div>
+
+          {/* --- DESCRIPCIÓN DEL PROPÓSITO (REQUERIDO POR GOOGLE) --- */}
+          {/* Añadido para explicar explícitamente qué hace la app */}
+          <section className={`w-full max-w-4xl mx-auto mb-20 text-center px-4 transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <h2 className="text-2xl font-bold text-text-primary mb-4">¿Qué es Pro Fitness Glass?</h2>
+            <p className="text-lg text-text-secondary leading-relaxed">
+              Pro Fitness Glass es una plataforma integral de bienestar diseñada para atletas y entusiastas del fitness. 
+              Nuestra aplicación permite registrar detalladamente rutinas de ejercicio, planificar y monitorear la nutrición 
+              y analizar el progreso físico mediante herramientas visuales, todo con el objetivo de optimizar tu rendimiento y salud.
+            </p>
+          </section>
 
           {/* --- SECCIÓN 1: BENTO GRID --- */}
           <div className="w-full mt-10">
