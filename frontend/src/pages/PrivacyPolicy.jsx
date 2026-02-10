@@ -1,12 +1,15 @@
 /* frontend/src/pages/PrivacyPolicy.jsx */
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, Cookie, Camera, Shield, Bell, Globe, Trash2, 
   Mail, Clock, Users, HeartHandshake, MapPin 
 } from 'lucide-react';
-import SEOHead from '../components/SEOHead'; // Importamos SEOHead
+import SEOHead from '../components/SEOHead';
 
-const PrivacyPolicy = ({ onBack }) => {
+const PrivacyPolicy = () => {
+  const navigate = useNavigate();
+
   // Fecha actual formateada en español
   const currentDate = new Date().toLocaleDateString('es-ES', {
     year: 'numeric',
@@ -50,7 +53,7 @@ const PrivacyPolicy = ({ onBack }) => {
         
         {/* Botón Volver */}
         <button 
-          onClick={onBack} 
+          onClick={() => navigate(-1)} 
           className="group flex items-center gap-2 text-text-secondary font-bold hover:text-accent transition-all mb-6 px-2 outline-none focus:outline-none"
         >
           <div className="p-1.5 rounded-full bg-gray-200 dark:bg-white/5 group-hover:bg-accent/20 transition-colors">

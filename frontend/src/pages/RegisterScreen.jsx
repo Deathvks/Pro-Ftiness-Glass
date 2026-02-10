@@ -33,9 +33,6 @@ const RegisterScreen = ({ showLogin }) => {
     const [hasConsented, setHasConsented] = useState(false);
 
     // --- CORRECCIÓN CRASH ANDROID ---
-    // Inicializamos SIEMPRE. 
-    // Evita el cierre inesperado de la app en Android por plugin no inicializado.
-    // Con el ID fijado en authService, esto funcionará correctamente.
     useEffect(() => {
         initGoogleAuth();
     }, []);
@@ -52,8 +49,6 @@ const RegisterScreen = ({ showLogin }) => {
     }, []);
 
     // --- LÓGICA GOOGLE UNIFICADA ---
-
-    // Procesa el token (sea Access Token o ID Token)
     const processGoogleToken = async (token) => {
         setShowGoogleModal(false);
         setIsLoading(true);
@@ -61,7 +56,6 @@ const RegisterScreen = ({ showLogin }) => {
         try {
             if (handleGoogleLogin) {
                 await handleGoogleLogin(token);
-                // No necesitamos setIsLoading(false) aquí si handleGoogleLogin redirige o desmonta
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -73,19 +67,15 @@ const RegisterScreen = ({ showLogin }) => {
         }
     };
 
-    // Hook para el Popup de Google (Access Token) - SOLO WEB
     const loginWithGoogle = useGoogleLogin({
         onSuccess: (tokenResponse) => processGoogleToken(tokenResponse.access_token),
         onError: () => addToast('No se pudo conectar con Google.', 'error'),
     });
 
-    // Manejador del clic en el botón
     const handleGoogleClick = async () => {
         if (Capacitor.isNativePlatform()) {
-            // Lógica NATIVA (Android/iOS)
             try {
                 const user = await signInWithGoogle();
-                // El plugin devuelve user.authentication.idToken
                 const token = user.authentication?.idToken;
                 
                 if (token) {
@@ -100,7 +90,6 @@ const RegisterScreen = ({ showLogin }) => {
                 }
             }
         } else {
-            // Lógica WEB
             if (hasConsented) {
                 loginWithGoogle();
             } else {
@@ -109,7 +98,6 @@ const RegisterScreen = ({ showLogin }) => {
         }
     };
 
-    // Adaptador para el Modal (si el modal devuelve Credential Response)
     const onModalSuccess = (credentialResponse) => {
         if (credentialResponse.credential) {
             processGoogleToken(credentialResponse.credential);
@@ -122,7 +110,6 @@ const RegisterScreen = ({ showLogin }) => {
     };
 
     // --- LÓGICA FORMULARIO REGISTRO ---
-
     const validateForm = () => {
         const newErrors = {};
         if (!username.trim()) {
@@ -228,7 +215,8 @@ const RegisterScreen = ({ showLogin }) => {
                 route="register"
             />
 
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease_out]">
+            {/* CAMBIO: Layout flexible en lugar de fixed para permitir footer */}
+            <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-sm text-center">
                     <Dumbbell size={48} className="mx-auto text-accent mb-4" />
                     <h1 className="text-4xl font-extrabold">Pro Fitness Glass</h1>

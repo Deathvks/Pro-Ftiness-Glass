@@ -42,9 +42,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [hasConsented, setHasConsented] = useState(false);
 
     // --- CORRECCIÓN CRASH ANDROID ---
-    // Volvemos a inicializar SIEMPRE. 
-    // Como ya hemos verificado que el ID en authService.js es el "Web Client ID" correcto,
-    // esto evitará el crash por falta de inicialización y debería funcionar sin Error 10.
     useEffect(() => {
         initGoogleAuth();
     }, []);
@@ -61,8 +58,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     }, []);
 
     // --- LÓGICA GOOGLE UNIFICADA ---
-
-    // Procesa el token (sea Access Token o ID Token)
     const processGoogleToken = async (token) => {
         setShowGoogleModal(false);
         setIsLoading(true);
@@ -78,19 +73,15 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         }
     };
 
-    // Hook para el Popup de Google (Access Token) - SOLO WEB
     const loginWithGoogle = useGoogleLogin({
         onSuccess: (tokenResponse) => processGoogleToken(tokenResponse.access_token),
         onError: () => addToast('No se pudo conectar con Google.', 'error'),
     });
 
-    // Manejador del clic en el botón
     const handleGoogleClick = async () => {
         if (Capacitor.isNativePlatform()) {
-            // Lógica NATIVA (Android/iOS)
             try {
                 const user = await signInWithGoogle();
-                // El plugin devuelve user.authentication.idToken
                 const token = user.authentication?.idToken;
                 
                 if (token) {
@@ -100,13 +91,11 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 }
             } catch (error) {
                 console.error('Google Sign-In Native Error:', error);
-                // Si hay error, mostramos el mensaje para depurar
                 if (error?.message && !error.message.includes('Canceled')) {
                     addToast(`Error Google: ${JSON.stringify(error)}`, 'error');
                 }
             }
         } else {
-            // Lógica WEB
             if (hasConsented) {
                 loginWithGoogle();
             } else {
@@ -115,7 +104,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         }
     };
 
-    // Adaptador para el Modal (si el modal devuelve Credential Response)
     const onModalSuccess = (credentialResponse) => {
         if (credentialResponse.credential) {
             processGoogleToken(credentialResponse.credential);
@@ -128,7 +116,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     };
 
     // --- LÓGICA 2FA Y FORMULARIO ---
-
     useEffect(() => {
         if (twoFactorPending && inputRefs.current[0]) {
             inputRefs.current[0].focus();
@@ -247,13 +234,13 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     // --- RENDERIZADO 2FA ---
     if (twoFactorPending) {
         const isEmailMethod = twoFactorPending.method === 'email';
+        // CAMBIO: Quitamos 'fixed inset-0' para que fluya con el footer de AuthScreens
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
-                {/* SEO Head para el modal de 2FA - Privado */}
+            <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                 <SEOHead 
                     title="Verificación en Dos Pasos - Pro Fitness Glass" 
                     route="2fa-verify"
-                    noIndex={true} // El 2FA nunca se indexa
+                    noIndex={true}
                 />
                 
                 <div className="w-full max-w-sm text-center">
@@ -308,14 +295,14 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     // --- RENDERIZADO LOGIN ---
     return (
         <>
-            {/* SEO Head para Login - Público */}
             <SEOHead 
                 title="Iniciar Sesión - Pro Fitness Glass" 
                 description="Accede a tu cuenta de Pro Fitness Glass para gestionar tus entrenamientos y nutrición."
                 route="login"
             />
         
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
+            {/* CAMBIO: Contenedor flexible para centrar y permitir footer */}
+            <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-sm text-center">
                     <Dumbbell size={48} className="mx-auto text-accent mb-4" />
                     <h1 className="text-4xl font-extrabold">Pro Fitness Glass</h1>
@@ -343,7 +330,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                             <div className="flex-grow border-t border-glass-border"></div>
                         </div>
 
-                        {/* Botón de Google Unificado */}
                         <button
                             onClick={handleGoogleClick}
                             disabled={isLoading}

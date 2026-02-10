@@ -97,17 +97,17 @@ const LandingPage = ({ onLogin, onRegister }) => {
             </div>
         </main>
 
-        {/* Footer Legal - SIN SUBRAYADOS */}
+        {/* Footer Legal - SIN SUBRAYADOS y con Rutas Relativas */}
         <footer className="p-8 pb-12 text-center border-t border-white/5 bg-glass-base/50 backdrop-blur-md mt-auto">
             <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 text-xs text-text-secondary font-medium mb-4">
             <a 
-                href="https://pro-fitness-glass.zeabur.app/privacy" 
+                href="/privacy" 
                 className="hover:text-accent transition-colors"
             >
                 Política de Privacidad
             </a>
             <a 
-                href="https://pro-fitness-glass.zeabur.app/terms" 
+                href="/terms" 
                 className="hover:text-accent transition-colors"
             >
                 Términos del Servicio

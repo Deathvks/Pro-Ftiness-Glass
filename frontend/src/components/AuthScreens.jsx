@@ -69,13 +69,13 @@ const AuthScreens = ({ authView, setAuthView }) => {
         <div className="flex justify-center space-x-6">
           <a 
             href="/privacy" 
-            className="text-xs text-text-secondary hover:text-accent transition-colors underline"
+            className="text-xs text-text-secondary hover:text-accent transition-colors"
           >
             Política de Privacidad
           </a>
           <a 
             href="/terms" 
-            className="text-xs text-text-secondary hover:text-accent transition-colors underline"
+            className="text-xs text-text-secondary hover:text-accent transition-colors"
           >
             Términos del Servicio
           </a>
