@@ -1,20 +1,22 @@
 /* frontend/src/pages/RegisterScreen.jsx */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dumbbell } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import { useToast } from '../hooks/useToast';
-import { registerUser } from '../services/authService'; 
+import { registerUser, signInWithGoogle, initGoogleAuth } from '../services/authService'; 
 import useAppStore from '../store/useAppStore';
 import EmailVerification from '../components/EmailVerification';
 import GoogleTermsModal from '../components/GoogleTermsModal';
 import PrivacyPolicy from './PrivacyPolicy';
-import { GoogleLogin } from '@react-oauth/google';
-import SEOHead from '../components/SEOHead'; // Importamos SEOHead
+import { useGoogleLogin } from '@react-oauth/google';
+import SEOHead from '../components/SEOHead';
+import { Capacitor } from '@capacitor/core';
 
 const RegisterScreen = ({ showLogin }) => {
     const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
+    const fetchInitialData = useAppStore(state => state.fetchInitialData);
     
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -24,41 +26,101 @@ const RegisterScreen = ({ showLogin }) => {
     const [showVerification, setShowVerification] = useState(false);
     const [registeredEmail, setRegisteredEmail] = useState('');
     const { addToast } = useToast();
-    const fetchInitialData = useAppStore(state => state.fetchInitialData);
 
     // Estados para modales y consentimiento
     const [showGoogleModal, setShowGoogleModal] = useState(false);
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
 
-    // Refs para el botón de Google
-    const googleParentRef = useRef(null);
-    const [googleBtnWidth, setGoogleBtnWidth] = useState('300');
+    // Inicializar Google Auth en nativo al montar
+    useEffect(() => {
+        if (Capacitor.isNativePlatform()) {
+            initGoogleAuth();
+        }
+    }, []);
 
-    // Verificar consentimiento al montar
+    // Verificar consentimiento al montar (Web)
     useEffect(() => {
         const checkConsent = () => {
-            // Solo marcamos como "consentido" si explícitamente es 'accepted'.
-            // Si es 'declined' o null, mostramos el modal propio.
-            setHasConsented(localStorage.getItem('cookie_consent') === 'accepted');
+            const consent = localStorage.getItem('cookie_consent');
+            setHasConsented(consent === 'accepted');
         };
         checkConsent();
         window.addEventListener('storage', checkConsent);
         return () => window.removeEventListener('storage', checkConsent);
     }, []);
 
-    // Calcular ancho del botón Google
-    useEffect(() => {
-        const updateWidth = () => {
-            if (googleParentRef.current) {
-                const width = googleParentRef.current.offsetWidth;
-                setGoogleBtnWidth(width > 400 ? '400' : width.toString());
+    // --- LÓGICA GOOGLE UNIFICADA ---
+
+    // Procesa el token (sea Access Token o ID Token)
+    const processGoogleToken = async (token) => {
+        setShowGoogleModal(false);
+        setIsLoading(true);
+        setErrors({});
+        try {
+            if (handleGoogleLogin) {
+                await handleGoogleLogin(token);
+                // No necesitamos setIsLoading(false) aquí si handleGoogleLogin redirige o desmonta
+            } else {
+                throw new Error("Error de configuración interna.");
             }
-        };
-        updateWidth();
-        window.addEventListener('resize', updateWidth);
-        return () => window.removeEventListener('resize', updateWidth);
-    }, []);
+        } catch (err) {
+            const msg = err.message || 'Error con Google.';
+            addToast(msg, 'error');
+            setErrors({ api: msg });
+            setIsLoading(false);
+        }
+    };
+
+    // Hook para el Popup de Google (Access Token) - SOLO WEB
+    const loginWithGoogle = useGoogleLogin({
+        onSuccess: (tokenResponse) => processGoogleToken(tokenResponse.access_token),
+        onError: () => addToast('No se pudo conectar con Google.', 'error'),
+    });
+
+    // Manejador del clic en el botón
+    const handleGoogleClick = async () => {
+        if (Capacitor.isNativePlatform()) {
+            // Lógica NATIVA (Android/iOS)
+            try {
+                const user = await signInWithGoogle();
+                // El plugin devuelve user.authentication.idToken
+                const token = user.authentication?.idToken;
+                
+                if (token) {
+                    await processGoogleToken(token);
+                } else {
+                    addToast('No se recibió el token de identificación.', 'error');
+                }
+            } catch (error) {
+                console.error('Google Sign-In Native Error:', error);
+                if (error?.message && !error.message.includes('Canceled')) {
+                    addToast('Error al registrarse con Google', 'error');
+                }
+            }
+        } else {
+            // Lógica WEB
+            if (hasConsented) {
+                loginWithGoogle();
+            } else {
+                setShowGoogleModal(true);
+            }
+        }
+    };
+
+    // Adaptador para el Modal (si el modal devuelve Credential Response)
+    const onModalSuccess = (credentialResponse) => {
+        if (credentialResponse.credential) {
+            processGoogleToken(credentialResponse.credential);
+        }
+    };
+
+    const onModalError = () => {
+        setShowGoogleModal(false);
+        addToast('No se pudo conectar con Google.', 'error');
+    };
+
+    // --- LÓGICA FORMULARIO REGISTRO ---
 
     const validateForm = () => {
         const newErrors = {};
@@ -123,32 +185,6 @@ const RegisterScreen = ({ showLogin }) => {
         }
     };
 
-    const onGoogleSuccess = async (credentialResponse) => {
-        setShowGoogleModal(false); // Cerramos el modal
-        if (!credentialResponse.credential) return;
-        
-        setIsLoading(true);
-        setErrors({});
-
-        try {
-            if (handleGoogleLogin) {
-                await handleGoogleLogin(credentialResponse.credential);
-            } else {
-                throw new Error("Error de configuración interna.");
-            }
-        } catch (err) {
-            const errorMessage = err.message || 'Error al registrarse con Google.';
-            addToast(errorMessage, 'error');
-            setErrors({ api: errorMessage });
-            setIsLoading(false);
-        }
-    };
-
-    const onGoogleError = () => {
-        setShowGoogleModal(false);
-        addToast('Error al conectar con Google.', 'error');
-    };
-
     const handleVerificationSuccess = async () => {
         try {
             await fetchInitialData();
@@ -165,7 +201,6 @@ const RegisterScreen = ({ showLogin }) => {
     if (showVerification) {
         return (
             <>
-                {/* SEO Head para el paso de verificación (No indexar para evitar duplicados raros) */}
                 <SEOHead 
                     title="Verificar Email - Pro Fitness Glass" 
                     route="register/verify"
@@ -180,14 +215,12 @@ const RegisterScreen = ({ showLogin }) => {
         );
     }
 
-    // Si el usuario quiere ver la política desde el modal
     if (showPolicy) {
         return <PrivacyPolicy onBack={() => setShowPolicy(false)} />;
     }
 
     return (
         <>
-            {/* SEO Head para Registro - Público e Indexable */}
             <SEOHead 
                 title="Registrarse - Pro Fitness Glass" 
                 description="Crea tu cuenta gratis en Pro Fitness Glass. Únete a la mejor plataforma de entrenamiento y nutrición."
@@ -254,42 +287,17 @@ const RegisterScreen = ({ showLogin }) => {
                             <div className="flex-grow border-t border-glass-border"></div>
                         </div>
 
-                        {/* Botón Híbrido de Google */}
-                        <div 
-                            className="relative w-full h-11 flex justify-center items-center group" 
-                            ref={googleParentRef}
+                        {/* Botón de Google Unificado */}
+                        <button
+                            onClick={handleGoogleClick}
+                            disabled={isLoading}
+                            className="w-full h-11 bg-accent text-bg-secondary rounded-md flex items-center justify-center gap-3 font-semibold shadow transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {/* Capa Visual */}
-                            <div className="absolute inset-0 w-full h-full bg-accent text-bg-secondary rounded-md flex items-center justify-center gap-3 font-semibold shadow transition group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-accent/20 pointer-events-none z-0">
-                                <div className="bg-white rounded-full p-1 flex items-center justify-center">
-                                    <FcGoogle size={18} />
-                                </div>
-                                <span>Registrarse con Google</span>
+                            <div className="bg-white rounded-full p-1 flex items-center justify-center">
+                                <FcGoogle size={18} />
                             </div>
-
-                            {/* Capa Funcional */}
-                            {hasConsented ? (
-                                <div className="absolute inset-0 w-full h-full opacity-0 z-10 overflow-hidden flex justify-center items-center">
-                                    <GoogleLogin
-                                        onSuccess={onGoogleSuccess}
-                                        onError={onGoogleError}
-                                        width={googleBtnWidth}
-                                        text="signup_with"
-                                        shape="rectangular"
-                                        locale="es"
-                                    />
-                                </div>
-                            ) : (
-                                <button 
-                                    type="button"
-                                    onClick={() => setShowGoogleModal(true)}
-                                    disabled={isLoading}
-                                    className="absolute inset-0 w-full h-full z-10 cursor-pointer opacity-0"
-                                >
-                                    Abrir Modal Google
-                                </button>
-                            )}
-                        </div>
+                            <span>Registrarse con Google</span>
+                        </button>
 
                     </GlassCard>
 
@@ -299,12 +307,12 @@ const RegisterScreen = ({ showLogin }) => {
                 </div>
             </div>
 
-            {/* Modal de Términos de Google */}
+            {/* Modal de Términos de Google (Fallback Web) */}
             <GoogleTermsModal 
                 isOpen={showGoogleModal}
                 onClose={() => setShowGoogleModal(false)}
-                onSuccess={onGoogleSuccess}
-                onError={onGoogleError}
+                onSuccess={onModalSuccess}
+                onError={onModalError}
                 onShowPolicy={() => setShowPolicy(true)}
             />
         </>

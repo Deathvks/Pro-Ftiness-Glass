@@ -1,4 +1,5 @@
 /* frontend/src/services/authService.js */
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import apiClient from './apiClient';
 
 export const loginUser = (credentials) => {
@@ -14,6 +15,12 @@ export const verifyEmail = (verificationData) => {
 };
 
 export const logoutUser = () => {
+    // Intentamos cerrar sesión también en el plugin de Google por seguridad
+    try {
+        GoogleAuth.signOut();
+    } catch (e) {
+        console.error('Error signing out from Google:', e);
+    }
     return apiClient('/auth/logout', { method: 'POST' });
 };
 
@@ -45,11 +52,24 @@ export const resetPassword = (resetData) => {
   });
 };
 
+// Esta función envía el token al backend para verificarlo y crear sesión
 export const googleLogin = (token) => {
   return apiClient('/auth/google-login', {
     method: 'POST',
     body: { token },
   });
+};
+
+// --- GOOGLE AUTH PLUGIN (Nativo + Web) ---
+
+export const initGoogleAuth = () => {
+    // Inicializa el plugin. En web usa meta-tags o config, en nativo usa google-services.json
+    GoogleAuth.initialize();
+};
+
+export const signInWithGoogle = async () => {
+    // Abre el popup o flujo nativo de Google y retorna el usuario con el idToken
+    return await GoogleAuth.signIn();
 };
 
 // --- FUNCIONES 2FA (Login) ---

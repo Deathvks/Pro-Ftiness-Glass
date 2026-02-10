@@ -9,8 +9,9 @@ import { useToast } from '../hooks/useToast';
 import GoogleTermsModal from '../components/GoogleTermsModal';
 import PrivacyPolicy from './PrivacyPolicy';
 import { useGoogleLogin } from '@react-oauth/google';
-import { resend2FACode } from '../services/authService';
-import SEOHead from '../components/SEOHead'; // Importamos SEOHead
+import { resend2FACode, initGoogleAuth, signInWithGoogle } from '../services/authService';
+import SEOHead from '../components/SEOHead';
+import { Capacitor } from '@capacitor/core';
 
 const LoginScreen = ({ showRegister, showForgotPassword }) => {
     // Store hooks
@@ -40,7 +41,14 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
 
-    // Verificar consentimiento al montar
+    // Inicializar Google Auth en nativo
+    useEffect(() => {
+        if (Capacitor.isNativePlatform()) {
+            initGoogleAuth();
+        }
+    }, []);
+
+    // Verificar consentimiento al montar (Web)
     useEffect(() => {
         const checkConsent = () => {
             const consent = localStorage.getItem('cookie_consent');
@@ -69,18 +77,40 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         }
     };
 
-    // Hook para el Popup de Google (Access Token)
+    // Hook para el Popup de Google (Access Token) - SOLO WEB
     const loginWithGoogle = useGoogleLogin({
         onSuccess: (tokenResponse) => processGoogleToken(tokenResponse.access_token),
         onError: () => addToast('No se pudo conectar con Google.', 'error'),
     });
 
     // Manejador del clic en el botón
-    const handleGoogleClick = () => {
-        if (hasConsented) {
-            loginWithGoogle();
+    const handleGoogleClick = async () => {
+        if (Capacitor.isNativePlatform()) {
+            // Lógica NATIVA (Android/iOS)
+            try {
+                const user = await signInWithGoogle();
+                // El plugin devuelve user.authentication.idToken
+                const token = user.authentication?.idToken;
+                
+                if (token) {
+                    await processGoogleToken(token);
+                } else {
+                    addToast('No se recibió el token de identificación.', 'error');
+                }
+            } catch (error) {
+                console.error('Google Sign-In Native Error:', error);
+                // No mostramos error si el usuario simplemente cerró el popup (cancelado)
+                if (error?.message && !error.message.includes('Canceled')) {
+                    addToast('Error al iniciar con Google', 'error');
+                }
+            }
         } else {
-            setShowGoogleModal(true);
+            // Lógica WEB
+            if (hasConsented) {
+                loginWithGoogle();
+            } else {
+                setShowGoogleModal(true);
+            }
         }
     };
 
@@ -296,12 +326,10 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                             {errors.api && <p className="text-center text-red">{errors.api}</p>}
                             <div>
-                                {/* MODIFICADO: Eliminado focus:ring-accent/50 focus:ring-2 */}
                                 <input type="email" placeholder="Email" className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent outline-none transition" value={email} onChange={(e) => setEmail(e.target.value)} />
                                 {errors.email && <p className="form-error-text text-left">{errors.email}</p>}
                             </div>
                             <div>
-                                {/* MODIFICADO: Eliminado focus:ring-accent/50 focus:ring-2 */}
                                 <input type="password" placeholder="Contraseña" className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent outline-none transition" value={password} onChange={(e) => setPassword(e.target.value)} />
                                 {errors.password && <p className="form-error-text text-left">{errors.password}</p>}
                             </div>
@@ -316,7 +344,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                             <div className="flex-grow border-t border-glass-border"></div>
                         </div>
 
-                        {/* Botón de Google Simplificado y Seguro */}
+                        {/* Botón de Google Unificado */}
                         <button
                             onClick={handleGoogleClick}
                             disabled={isLoading}
