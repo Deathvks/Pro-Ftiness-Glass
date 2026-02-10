@@ -28,7 +28,7 @@ import StoryViewer from './components/StoryViewer';
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
-import LandingPage from './pages/LandingPage'; // <--- Importación de la Landing
+import LandingPage from './pages/LandingPage'; 
 
 // Lazy loading de páginas
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -369,7 +369,7 @@ export default function App() {
     mainContentRef, currentTitle, currentViewComponent, navItems, handleLogoutClick,
     showLogoutConfirm, confirmLogout, handleShowPolicy, fetchInitialData, verificationProps,
     isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick,
-    showLanding // Agregado a dependencias
+    showLanding
   ]);
 
   const shouldRenderGlobalSEO = useMemo(() => {
