@@ -41,14 +41,12 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
 
-    // --- CORRECCIÓN ERROR 10 ---
-    // Inicializar Google Auth SOLO en Web.
-    // En Nativo (Android/iOS), el plugin lee la configuración de capacitor.config.json automáticamente.
-    // Llamar a initialize() aquí en nativo causaba el conflicto.
+    // --- CORRECCIÓN CRASH ANDROID ---
+    // Volvemos a inicializar SIEMPRE. 
+    // Como ya hemos verificado que el ID en authService.js es el "Web Client ID" correcto,
+    // esto evitará el crash por falta de inicialización y debería funcionar sin Error 10.
     useEffect(() => {
-        if (!Capacitor.isNativePlatform()) {
-            initGoogleAuth();
-        }
+        initGoogleAuth();
     }, []);
 
     // Verificar consentimiento al montar (Web)
@@ -102,8 +100,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 }
             } catch (error) {
                 console.error('Google Sign-In Native Error:', error);
-                
-                // Muestra el mensaje crudo para depurar si sigue fallando
+                // Si hay error, mostramos el mensaje para depurar
                 if (error?.message && !error.message.includes('Canceled')) {
                     addToast(`Error Google: ${JSON.stringify(error)}`, 'error');
                 }
@@ -132,14 +129,12 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     // --- LÓGICA 2FA Y FORMULARIO ---
 
-    // Enfocar el primer input de 2FA
     useEffect(() => {
         if (twoFactorPending && inputRefs.current[0]) {
             inputRefs.current[0].focus();
         }
     }, [twoFactorPending]);
 
-    // Sincronizar limpieza de OTP
     useEffect(() => {
         if (verificationCode === '') {
             setOtp(new Array(6).fill(""));

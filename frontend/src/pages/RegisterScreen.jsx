@@ -32,13 +32,12 @@ const RegisterScreen = ({ showLogin }) => {
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
 
-    // --- CORRECCIÓN ERROR 10 ---
-    // Inicializar Google Auth SOLO en Web.
-    // En Nativo, confiamos en capacitor.config.json para evitar conflictos.
+    // --- CORRECCIÓN CRASH ANDROID ---
+    // Inicializamos SIEMPRE. 
+    // Evita el cierre inesperado de la app en Android por plugin no inicializado.
+    // Con el ID fijado en authService, esto funcionará correctamente.
     useEffect(() => {
-        if (!Capacitor.isNativePlatform()) {
-            initGoogleAuth();
-        }
+        initGoogleAuth();
     }, []);
 
     // Verificar consentimiento al montar (Web)
