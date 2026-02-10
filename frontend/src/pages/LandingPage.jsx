@@ -34,8 +34,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
         className={`fixed z-50 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none sm:pointer-events-auto
             ${isDocked 
                 ? 'top-[85%] left-[80%] sm:left-[90%] -translate-x-1/2 -translate-y-1/2 scale-50 sm:scale-60' 
-                // Posición inicial ajustada para flotar seguro entre header y contenido
-                : 'top-[28%] left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100'
+                // CAMBIO: top-[33%] en móvil (más bajo para no tocar header), sm:top-[25%] en escritorio
+                : 'top-[33%] sm:top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100'
             }
         `}
     >
@@ -190,8 +190,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
         {/* --- HERO SECTION --- */}
         <main className="flex-grow flex flex-col items-center px-4 pt-10 pb-24 text-center w-full max-w-7xl mx-auto">
           
-          {/* Espaciador invisible para empujar el contenido y evitar choque con robot */}
-          <div className="h-40 w-full mb-24 pointer-events-none"></div>
+          {/* CAMBIO: Espaciador aumentado a mb-36 en móvil para dar sitio al robot (que ahora está en 33%) */}
+          <div className="h-40 w-full mb-36 sm:mb-24 pointer-events-none"></div>
 
           {/* Badge Versión */}
           <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-glass-base border border-accent/20 mb-6 backdrop-blur-md shadow-sm transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -364,13 +364,14 @@ const LandingPage = ({ onLogin, onRegister }) => {
         </main>
 
         {/* --- FOOTER LEGAL --- */}
+        {/* Enlaces ABSOLUTOS para validación estricta de Google */}
         <footer className="p-8 pb-12 text-center border-t border-glass-border bg-glass-base/30 backdrop-blur-md">
             <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-medium mb-6">
-            <a href="/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+            <a href="https://pro-fitness-glass.zeabur.app/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                 <Shield size={14} /> Política de Privacidad
             </a>
             <span className="hidden sm:block text-text-secondary/20">|</span>
-            <a href="/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+            <a href="https://pro-fitness-glass.zeabur.app/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                 <Activity size={14} /> Términos del Servicio
             </a>
             </div>
