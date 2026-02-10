@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "459101292666-b2coe3ch0e04o940ahcacdq9f5r6qm62.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.profitnessglass.app",
+            "certificate_hash": "6cead1c672edb46acad11d62109e77d7366cd02f"
+          }
+        },
+        {
           "client_id": "459101292666-53tga4c1l8u2se5k21gsf5rk85825udq.apps.googleusercontent.com",
           "client_type": 3
         }
