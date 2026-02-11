@@ -8,6 +8,10 @@ import {
 import packageJson from '../../package.json'; 
 import socialService from '../services/socialService';
 
+// Configuración de URL base para imágenes
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+
 const LandingPage = ({ onLogin, onRegister }) => {
   const currentYear = new Date().getFullYear();
   const appVersion = packageJson.version; 
@@ -25,10 +29,16 @@ const LandingPage = ({ onLogin, onRegister }) => {
         const response = await socialService.getLeaderboard();
         const usersList = Array.isArray(response) ? response : (response.data || []);
         
+        // Filtramos usuarios con foto y construimos la URL correcta
         const validUsers = usersList
-            .filter(user => user.profilePicture) 
+            .filter(user => user.profile_image_url) 
             .slice(0, 5)
-            .map(user => user.profilePicture); 
+            .map(user => {
+                if (user.profile_image_url.startsWith('http')) {
+                    return user.profile_image_url;
+                }
+                return `${BACKEND_BASE_URL}${user.profile_image_url}`;
+            }); 
             
         setCommunityUsers(validUsers);
       } catch (error) {
@@ -44,9 +54,10 @@ const LandingPage = ({ onLogin, onRegister }) => {
     setIsDocked(scrollTop > 100);
   };
 
-  // --- MASCOTA: GymBot ---
+  // --- MASCOTA: GymBot (Decorativo) ---
   const GymBot = () => (
     <div 
+        aria-hidden="true"
         className={`fixed z-50 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none sm:pointer-events-auto
             ${isDocked 
                 ? 'top-[85%] left-[80%] sm:left-[90%] -translate-x-1/2 -translate-y-1/2 scale-50 sm:scale-60' 
@@ -137,7 +148,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
     >
       
       {/* --- FONDO DINÁMICO --- */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden select-none">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
         <div 
           className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-20 dark:opacity-20 animate-[pulse_8s_ease-in-out_infinite]"
           style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }}
@@ -154,13 +165,13 @@ const LandingPage = ({ onLogin, onRegister }) => {
       <div className="relative z-10 flex flex-col min-h-full">
         
         {/* --- NAVBAR --- */}
-        <nav className="sticky top-0 z-40 backdrop-blur-lg border-b border-glass-border">
+        <nav className="sticky top-0 z-40 backdrop-blur-lg border-b border-glass-border" aria-label="Navegación principal">
           <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full">
             <div 
                 className="flex items-center gap-3 cursor-pointer group" 
                 onClick={() => containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })}
             >
-              <img src="/logo.webp" alt="Logo" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl shadow-lg ring-1 ring-glass-border group-hover:scale-105 transition-transform" />
+              <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl shadow-lg ring-1 ring-glass-border group-hover:scale-105 transition-transform" />
               <span className="font-black text-lg sm:text-xl tracking-tighter hidden sm:block bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary group-hover:to-accent transition-all">
                 PRO FITNESS GLASS
               </span>
@@ -197,7 +208,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
         {/* --- HERO SECTION --- */}
         <main className="flex-grow flex flex-col items-center px-4 pt-10 pb-24 text-center w-full max-w-7xl mx-auto">
           
-          <div className="h-40 w-full mb-36 sm:mb-24 pointer-events-none"></div>
+          <div className="h-40 w-full mb-36 sm:mb-24 pointer-events-none" aria-hidden="true"></div>
 
           <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-glass-base border border-accent/20 mb-6 backdrop-blur-md shadow-sm transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <span className="relative flex h-2.5 w-2.5">
@@ -262,7 +273,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </div>
                  <h3 className="text-2xl font-bold text-text-primary mb-3">Rutinas Avanzadas</h3>
                  <p className="text-text-secondary mb-6 max-w-md">
-                    Diseña entrenamientos con superseries, dropsets y descansos personalizados. Registra pesos, RPE y notas en tiempo real.
+                   Diseña entrenamientos con superseries, dropsets y descansos personalizados. Registra pesos, RPE y notas en tiempo real.
                  </p>
                  <div className="flex gap-2 flex-wrap">
                     <span className="px-3 py-1 bg-white/5 rounded-lg text-xs font-mono text-text-tertiary border border-glass-border group-hover:border-blue-500/30 transition-colors">Superseries</span>
@@ -277,7 +288,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </div>
                  <h3 className="text-xl font-bold text-text-primary mb-3">Nutrición & Macros</h3>
                  <p className="text-sm text-text-secondary mb-4 leading-relaxed">
-                    Base de datos verificada. Escanea códigos de barras y controla tus calorías diarias sin estrés ni complicaciones.
+                   Base de datos verificada. Escanea códigos de barras y controla tus calorías diarias sin estrés ni complicaciones.
                  </p>
               </div>
 
@@ -287,7 +298,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </div>
                  <h3 className="text-xl font-bold text-text-primary mb-3">Análisis Visual</h3>
                  <p className="text-sm text-text-secondary mb-4 leading-relaxed">
-                    Gráficos interactivos de tu peso corporal, volumen de carga y medidas corporales para ver tu evolución real.
+                   Gráficos interactivos de tu peso corporal, volumen de carga y medidas corporales para ver tu evolución real.
                  </p>
               </div>
 
@@ -297,7 +308,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </div>
                  <h3 className="text-2xl font-bold text-text-primary mb-3">Comunidad Fitness</h3>
                  <p className="text-text-secondary mb-6 max-w-md">
-                    Comparte tus logros, sube historias efímeras de tus entrenos y encuentra motivación con tus amigos reales.
+                   Comparte tus logros, sube historias efímeras de tus entrenos y encuentra motivación con tus amigos reales.
                  </p>
                  
                  <div className="flex items-center gap-4">
@@ -309,7 +320,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     {userImage ? (
                                         <img 
                                           src={userImage} 
-                                          alt="Usuario" 
+                                          alt={`Usuario de la comunidad ${index + 1}`}
                                           className="w-full h-full object-cover"
                                           onError={(e) => {
                                               e.target.style.display = 'none'; 
@@ -336,7 +347,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
           {/* --- SECCIÓN 2: CARACTERÍSTICAS TÉCNICAS --- */}
           <div className="w-full mt-24">
              <h2 className="text-3xl md:text-4xl font-black text-center mb-12">
-                Diseñado para <span className="text-accent">Rendir</span>
+               Diseñado para <span className="text-accent">Rendir</span>
              </h2>
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FeatureCard 

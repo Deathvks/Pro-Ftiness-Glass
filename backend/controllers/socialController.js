@@ -7,6 +7,7 @@ const { User, Friendship, WorkoutLog } = models;
 
 export const searchUsers = async (req, res) => {
     try {
+        // Esta ruta está protegida, req.user existe
         const { query } = req.query;
         if (!query || query.length < 3) return res.json([]);
 
@@ -25,13 +26,14 @@ export const searchUsers = async (req, res) => {
             where: {
                 [Op.and]: [
                     { id: { [Op.ne]: req.user.userId } }, // No mostrarse a sí mismo
-                    { [Op.or]: searchConditions }
+                    { [Op.or]: searchConditions },
+                    { is_public_profile: true } // Solo buscar usuarios que sean públicos (Opcional, según preferencia)
                 ]
             },
-            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp']
+            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp'],
+            limit: 20 // Limitar resultados por seguridad/rendimiento
         });
 
-        // Mapeamos para respetar la privacidad
         const results = users.map(user => ({
             id: user.id,
             username: user.username,
@@ -233,39 +235,64 @@ export const getFriends = async (req, res) => {
 export const getPublicProfile = async (req, res) => {
     try {
         const { userId } = req.params;
-        const viewerId = req.user.userId;
+        
+        // Manejo seguro de viewerId (puede ser null si es acceso público)
+        const viewerId = req.user ? req.user.userId : null;
 
         const user = await User.findByPk(userId);
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-        const friendship = await Friendship.findOne({
-            where: {
-                [Op.or]: [
-                    { requester_id: viewerId, addressee_id: userId },
-                    { requester_id: userId, addressee_id: viewerId }
-                ],
-                status: 'accepted'
+        let isFriend = false;
+        let isMe = false;
+
+        // Solo verificamos amistad si hay un usuario logueado
+        if (viewerId) {
+            isMe = parseInt(userId) === viewerId;
+
+            if (!isMe) {
+                const friendship = await Friendship.findOne({
+                    where: {
+                        [Op.or]: [
+                            { requester_id: viewerId, addressee_id: userId },
+                            { requester_id: userId, addressee_id: viewerId }
+                        ],
+                        status: 'accepted'
+                    }
+                });
+                isFriend = !!friendship;
+            } else {
+                // Si soy yo, técnicamente no soy mi "amigo", pero tengo acceso total
+                isFriend = true; 
             }
-        });
+        }
 
-        const isFriend = !!friendship;
-        const isMe = parseInt(userId) === viewerId;
-
-        // Si es privado y no soy yo ni mi amigo, error
+        // Reglas de acceso:
+        // 1. Si el perfil es público -> Acceso permitido
+        // 2. Si soy yo -> Acceso permitido
+        // 3. Si somos amigos -> Acceso permitido
+        // Si no se cumple ninguna -> Acceso denegado
         if (!user.is_public_profile && !isFriend && !isMe) {
-            return res.status(403).json({ error: 'Perfil privado' });
+            return res.status(403).json({ error: 'Este perfil es privado' });
         }
 
         const data = {
             id: user.id,
             username: user.username,
             profile_image_url: user.profile_image_url,
-            is_friend: isFriend,
+            is_friend: isFriend && !isMe, // Para mostrar botón "Amigo" o no
+            is_me: isMe,
             bio: user.bio,
             createdAt: user.created_at,
             lastSeen: user.updated_at,
-            show_level_xp: !!(user.show_level_xp || isMe),
-            show_badges: !!(user.show_badges || isMe)
+            show_level_xp: !!(user.show_level_xp || isMe), // Yo siempre veo mi XP
+            show_badges: !!(user.show_badges || isMe),     // Yo siempre veo mis insignias
+            
+            // Datos condicionales
+            level: null,
+            xp: null,
+            streak: null,
+            workoutsCount: 0,
+            unlocked_badges: []
         };
 
         if (data.show_level_xp) {
@@ -273,25 +300,32 @@ export const getPublicProfile = async (req, res) => {
             data.xp = user.xp;
             data.streak = user.streak || 0;
 
-            // Contamos los entrenamientos directamente de la tabla WorkoutLog
+            // Contamos los entrenamientos de forma segura
             data.workoutsCount = await WorkoutLog.count({
                 where: { user_id: user.id }
             });
         }
 
         if (data.show_badges) {
-            data.unlocked_badges = JSON.parse(user.unlocked_badges || '[]');
+            try {
+                data.unlocked_badges = typeof user.unlocked_badges === 'string' 
+                    ? JSON.parse(user.unlocked_badges) 
+                    : (user.unlocked_badges || []);
+            } catch (e) {
+                data.unlocked_badges = [];
+            }
         }
 
         res.json(data);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error("Error en getPublicProfile:", error);
+        res.status(500).json({ error: 'Error al obtener perfil' });
     }
 };
 
 export const getLeaderboard = async (req, res) => {
     try {
-        // Solo usuarios públicos que muestren su nivel
+        // Solo usuarios públicos que muestren su nivel explícitamente
         const users = await User.findAll({
             where: {
                 is_public_profile: true,

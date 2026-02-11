@@ -1,6 +1,6 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense, useEffect, useState } from 'react';
-import { User, Zap, Bell } from 'lucide-react';
+import React, { Suspense, useEffect } from 'react';
+import { User, Zap, Bell, Settings } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
@@ -17,7 +17,6 @@ import EmailVerification from './EmailVerification';
 import CookieConsentBanner from './CookieConsentBanner';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
-import StoryViewer from './StoryViewer'; // Importamos StoryViewer
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -80,8 +79,6 @@ export default function MainAppLayout({
     clearGamificationEvents,
     // Solicitudes sociales para el badge del navbar
     socialRequests,
-    // Historias
-    myStories,
   } = useAppStore(state => ({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
@@ -98,19 +95,10 @@ export default function MainAppLayout({
     gamificationEvents: state.gamification?.gamificationEvents,
     clearGamificationEvents: state.clearGamificationEvents,
     socialRequests: state.socialRequests,
-    // Historias
-    myStories: state.myStories,
   }));
-
-  // Estado local para ver mi historia desde el header
-  const [viewingStory, setViewingStory] = useState(false);
 
   // Calculamos el contador de no leídas localmente para asegurar consistencia
   const unreadCount = notifications.filter(n => !n.is_read).length;
-
-  // Lógica de Historias (Igual que en Sidebar)
-  const hasStories = myStories && myStories.length > 0;
-  const hasUnseen = hasStories && myStories.some(s => !s.viewed);
 
   // Cargar notificaciones al inicio
   useEffect(() => {
@@ -151,38 +139,12 @@ export default function MainAppLayout({
     };
   }, [cookieConsent, handleAcceptCookies]);
 
-  // --- Helper para URL de imagen de perfil con cache busting ---
-  const getProfileImgSrc = () => {
-    if (!userProfile?.profile_image_url) return null;
-
-    const rawUrl = userProfile.profile_image_url.startsWith('http')
-      ? userProfile.profile_image_url
-      : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`;
-
-    if (userProfile.updated_at) {
-      const separator = rawUrl.includes('?') ? '&' : '?';
-      return `${rawUrl}${separator}v=${new Date(userProfile.updated_at).getTime()}`;
-    }
-
-    return rawUrl;
-  };
-
-  const profileImgSrc = getProfileImgSrc();
-
   // Renderizado del layout principal
   return (
     <div className="relative flex w-full h-full overflow-hidden">
 
       {/* Fondo decorativo */}
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
-
-      {/* Visor de Historia (Overlay) */}
-      {viewingStory && userProfile && (
-        <StoryViewer 
-            userId={userProfile.id} 
-            onClose={() => setViewingStory(false)} 
-        />
-      )}
 
       {/* Sidebar (Desktop) */}
       <Sidebar
@@ -224,7 +186,7 @@ export default function MainAppLayout({
             )}
           </div>
 
-          {/* Botones de Header (Notif + Perfil) */}
+          {/* Botones de Header (Notif + Ajustes) */}
           <div className="flex items-center">
 
             {/* Botón de Notificaciones */}
@@ -250,50 +212,23 @@ export default function MainAppLayout({
               </button>
             </div>
 
-            {/* Botón de Perfil (Con lógica de Historia) */}
+            {/* Botón de Ajustes (Reemplaza Perfil) */}
             <div
               className={`
                     flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
-                    ${view === 'profile'
+                    ${view === 'settings'
                   ? 'w-0 opacity-0 ml-0 translate-x-4'
-                  : 'w-auto opacity-100 ml-3 translate-x-0' // w-auto para acomodar el anillo si existe
+                  : 'w-10 opacity-100 ml-2 translate-x-0' // Un poco de margen a la izquierda
                 }
                 `}
             >
               <button
-                onClick={() => {
-                    // Si tiene historias -> Ver historia. Si no -> Ir a perfil
-                    if (hasStories) {
-                        setViewingStory(true);
-                    } else {
-                        navigate('profile');
-                    }
-                }}
-                // Ajustamos clases del contenedor del botón
-                className={`
-                    rounded-full flex items-center justify-center overflow-hidden shrink-0 active:scale-95 transition-transform duration-200 outline-none focus:outline-none relative
-                    ${hasStories 
-                        ? (hasUnseen 
-                            ? 'w-11 h-11 p-[2.5px] bg-accent shadow-md shadow-accent/40 animate-pulse-slow' // Nuevo: Acento + Glow + Pulso
-                            : 'w-11 h-11 p-[2.5px] bg-gray-400 dark:bg-white/20' // Visto: Gris/Desactivado
-                          )
-                        : 'w-10 h-10 bg-bg-secondary border border-glass-border' // Normal
-                    }
-                `}
+                onClick={() => navigate('settings')}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-label="Ajustes"
               >
-                {/* Contenedor interno para recortar la imagen redonda dentro del anillo */}
-                <div className={`w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center ${hasStories ? 'border-[1.5px] border-bg-primary' : ''}`}>
-                    {profileImgSrc ? (
-                    <img
-                        src={profileImgSrc}
-                        alt={`Foto de perfil de ${userProfile?.username || 'usuario'}`}
-                        className="w-full h-full object-cover"
-                    />
-                    ) : (
-                    <User size={24} className="text-text-secondary" />
-                    )}
-                </div>
+                <Settings size={24} />
               </button>
             </div>
           </div>

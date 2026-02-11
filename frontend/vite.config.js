@@ -52,19 +52,18 @@ export default defineConfig({
     Sitemap({
       hostname: 'https://pro-fitness-glass.zeabur.app',
       readable: true,
+      // Solo incluimos las rutas que App.jsx maneja explícitamente como públicas
       dynamicRoutes: [
-        '/',
-        '/login',
-        '/register',
-        '/social',
-        '/explore',
-        '/privacy-policy'
+        '/',          // Landing Page
+        '/privacy',   // Política de privacidad (Corregido: coincidía con App.jsx)
+        '/terms'      // Términos y condiciones
       ],
       robots: [
         {
           userAgent: '*',
           allow: '/',
-          disallow: ['/admin', '/settings']
+          // Bloqueamos explícitamente las rutas internas para que Google no intente entrar
+          disallow: ['/admin', '/settings', '/dashboard', '/profile']
         }
       ]
     }),
@@ -113,8 +112,6 @@ export default defineConfig({
   ],
   build: {
     sourcemap: false,
-    chunkSizeWarningLimit: 1500, // Subimos el límite para que no avise, ya que haremos un solo bundle grande
-    // Hemos eliminado 'rollupOptions' con 'manualChunks'. 
-    // Dejamos que Vite decida cómo dividir el código, que es lo más seguro.
+    chunkSizeWarningLimit: 1500, 
   },
 });

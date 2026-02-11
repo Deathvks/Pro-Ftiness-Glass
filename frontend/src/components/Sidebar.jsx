@@ -1,6 +1,6 @@
 /* frontend/src/components/Sidebar.jsx */
 import React, { useState } from 'react';
-import { User, LogOut, Bell } from 'lucide-react';
+import { User, LogOut, Bell, Settings } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import StoryViewer from './StoryViewer';
 
@@ -92,9 +92,9 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 : 'bg-gray-400 dark:bg-white/20'
             }
         `}>
-           <div className="w-full h-full rounded-full border-[2px] border-bg-primary overflow-hidden bg-bg-primary">
+            <div className="w-full h-full rounded-full border-[2px] border-bg-primary overflow-hidden bg-bg-primary">
               {InnerContent}
-           </div>
+            </div>
         </div>
       );
     }
@@ -124,7 +124,8 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
         </button>
 
         <div className="flex flex-col gap-2 lg:gap-4 flex-shrink-0">
-            {navItems.map(item => (
+            {/* Filtramos 'profile' para que no salga duplicado en la lista principal */}
+            {navItems.filter(item => item.id !== 'profile').map(item => (
             <SidebarItem
                 key={item.id}
                 label={item.label}
@@ -137,6 +138,13 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
         </div>
 
         <div className="mt-auto flex flex-col gap-2 flex-shrink-0 pt-4">
+            <SidebarItem
+                label="Ajustes"
+                icon={<Settings size={24} />}
+                isActive={view === 'settings'}
+                onClick={() => navigate('settings')}
+            />
+
             <SidebarItem
                 label="Notificaciones"
                 icon={<Bell size={24} />}

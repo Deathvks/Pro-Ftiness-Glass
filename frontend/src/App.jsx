@@ -1,7 +1,7 @@
 /* frontend/src/App.jsx */
 import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Home, Dumbbell, BarChart2, Settings, Utensils, Users } from 'lucide-react';
+import { Home, Dumbbell, BarChart2, Settings, Utensils, Users, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -52,6 +52,8 @@ const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 export default function App() {
   // --- BLOQUEO DE EMERGENCIA PARA RUTAS PÚBLICAS (FIX GOOGLE) ---
@@ -293,14 +295,41 @@ export default function App() {
     }
   }, [view, navigate, theme, resolvedTheme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
 
-  const navItems = [
+  // Helper para URL de imagen de perfil
+  const profileImgSrc = useMemo(() => {
+    if (!userProfile?.profile_image_url) return null;
+    const rawUrl = userProfile.profile_image_url.startsWith('http')
+      ? userProfile.profile_image_url
+      : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`;
+    
+    if (userProfile.updated_at) {
+       // Cache busting
+       const separator = rawUrl.includes('?') ? '&' : '?';
+       return `${rawUrl}${separator}v=${new Date(userProfile.updated_at).getTime()}`;
+    }
+    return rawUrl;
+  }, [userProfile]);
+
+  const navItems = useMemo(() => [
     { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
     { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: <Users size={24} /> },
     { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: <Utensils size={24} /> },
     { id: 'progress', label: t('Progreso', { defaultValue: 'Progreso' }), icon: <BarChart2 size={24} /> },
     { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: <Dumbbell size={24} /> },
-    { id: 'settings', label: t('Ajustes', { defaultValue: 'Ajustes' }), icon: <Settings size={24} /> },
-  ];
+    { 
+      id: 'profile', 
+      label: t('Perfil', { defaultValue: 'Perfil' }), 
+      icon: profileImgSrc ? (
+        <img 
+          src={profileImgSrc} 
+          alt="Perfil" 
+          className="w-6 h-6 rounded-full object-cover" 
+        />
+      ) : (
+        <User size={24} /> 
+      )
+    },
+  ], [t, profileImgSrc]);
 
   // --- LOGICA DE RENDERIZADO PRINCIPAL ---
   const content = useMemo(() => {
@@ -392,23 +421,45 @@ export default function App() {
     showLanding 
   ]);
 
+  // --- CONFIGURACIÓN SEO DINÁMICA ---
+  const isLandingPage = !isAuthenticated && showLanding;
+
   const shouldRenderGlobalSEO = useMemo(() => {
-    // No SEO global en páginas legales porque ya tienen su propio contenido
-    if (!isAuthenticated && showLanding) return true; 
+    // Si es landing page, SI queremos SEO (para que salga en Google)
+    if (isLandingPage) return true;
     
+    // Si no está autenticado y no es landing, no mostramos SEO global (login/register)
     if (!isAuthenticated) return false;
+
     const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms'];
     return !viewsWithInternalSEO.includes(view);
-  }, [isAuthenticated, view, showLanding]);
+  }, [isAuthenticated, view, isLandingPage]);
+
+  // Definimos props de SEO según el estado (Landing vs App Privada)
+  const seoConfig = useMemo(() => {
+    if (isLandingPage) {
+        return {
+            title: "Pro Fitness Glass - Tu Entrenador Personal Inteligente",
+            description: "Alcanza tus objetivos fitness con rutinas personalizadas, seguimiento de nutrición y análisis de progreso. Únete a la comunidad Pro Fitness Glass hoy mismo.",
+            noIndex: false // ¡IMPORTANTE! False = Indexable por Google
+        };
+    }
+    return {
+        title: fullPageTitle,
+        description: currentDescription,
+        noIndex: true // App privada = No indexar
+    };
+  }, [isLandingPage, fullPageTitle, currentDescription]);
+
 
   return (
     <>
       {shouldRenderGlobalSEO && (
         <SEOHead 
-            title={fullPageTitle} 
-            description={currentDescription} 
+            title={seoConfig.title} 
+            description={seoConfig.description} 
             route={view} 
-            noIndex={true} 
+            noIndex={seoConfig.noIndex} 
         />
       )}
 
