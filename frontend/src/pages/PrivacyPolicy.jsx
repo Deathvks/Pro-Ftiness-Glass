@@ -23,15 +23,15 @@ const PrivacyPolicy = ({ onBack }) => {
   const PolicyCard = ({ children, className = "", highlight = false }) => {
     return (
       <div className={`
-        rounded-3xl p-6 transition-colors
+        rounded-3xl p-6 transition-all border backdrop-blur-md
         ${highlight 
-          ? 'bg-accent/10 dark:bg-accent/10' // Destacado (Historias)
-          : 'bg-gray-100 dark:bg-white/5'    // Normal (Claro: Gris suave / Oscuro: Transparencia)
+          // Usamos var(--glass-border) para consistencia total en el borde externo
+          ? 'bg-accent/10 border-[var(--glass-border)]' 
+          : 'bg-glass-base border-[var(--glass-border)] shadow-sm' 
         }
         
-        /* Estilos específicos OLED (clase global .oled-theme) */
+        /* Estilos específicos OLED */
         [.oled-theme_&]:bg-black 
-        [.oled-theme_&]:border 
         [.oled-theme_&]:border-white/10
         
         ${className}
@@ -43,7 +43,7 @@ const PrivacyPolicy = ({ onBack }) => {
 
   return (
     // z-[110] para estar por encima de todo
-    <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto custom-scrollbar">
+    <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto custom-scrollbar transition-colors duration-300">
       {/* SEO Head: Página pública e importante para Google */}
       <SEOHead 
         title="Política de Privacidad y Eliminación de Datos - Pro Fitness Glass" 
@@ -58,7 +58,7 @@ const PrivacyPolicy = ({ onBack }) => {
           onClick={handleBack} 
           className="group flex items-center gap-2 text-text-secondary font-bold hover:text-accent transition-all mb-6 px-2 outline-none focus:outline-none"
         >
-          <div className="p-1.5 rounded-full bg-gray-200 dark:bg-white/5 group-hover:bg-accent/20 transition-colors">
+          <div className="p-1.5 rounded-full bg-glass-base border border-[var(--glass-border)] group-hover:border-accent/50 group-hover:text-accent transition-colors">
             <ChevronLeft size={20} />
           </div>
           <span>Volver</span>
@@ -89,7 +89,8 @@ const PrivacyPolicy = ({ onBack }) => {
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-transparent dark:border-white/5">
+                {/* CAMBIO: Aplicado border-[var(--glass-border)] a las tarjetas internas */}
+                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-[var(--glass-border)] transition-colors">
                     <div className="flex items-center gap-2 mb-2 text-accent font-bold">
                         <Clock size={18} /> Duración 24h
                     </div>
@@ -97,7 +98,8 @@ const PrivacyPolicy = ({ onBack }) => {
                         Todo lo que subas se <strong>autodestruye</strong> de nuestros servidores tras 24 horas. Sin copias ocultas.
                     </p>
                 </div>
-                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-transparent dark:border-white/5">
+                
+                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-[var(--glass-border)] transition-colors">
                     <div className="flex items-center gap-2 mb-2 text-accent font-bold">
                         <Users size={18} /> Tú Decides
                     </div>
@@ -105,7 +107,8 @@ const PrivacyPolicy = ({ onBack }) => {
                         Elige antes de publicar: <strong>"Público"</strong> para motivar a todos o <strong>"Solo Amigos"</strong> para tu círculo cercano.
                     </p>
                 </div>
-                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-transparent dark:border-white/5">
+                
+                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-[var(--glass-border)] transition-colors">
                     <div className="flex items-center gap-2 mb-2 text-accent font-bold">
                         <HeartHandshake size={18} /> Respeto
                     </div>
@@ -179,9 +182,9 @@ const PrivacyPolicy = ({ onBack }) => {
                 Solo te avisaremos para ayudarte a cumplir tus metas. Puedes desactivarlas cuando quieras.
               </p>
               <div className="flex flex-wrap gap-2">
-                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-transparent dark:border-white/5">Recordatorios</span>
-                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-transparent dark:border-white/5">Temporizador</span>
-                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-transparent dark:border-white/5">Logros</span>
+                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-[var(--glass-border)]">Recordatorios</span>
+                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-[var(--glass-border)]">Temporizador</span>
+                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-[var(--glass-border)]">Logros</span>
               </div>
             </PolicyCard>
 
@@ -224,7 +227,7 @@ const PrivacyPolicy = ({ onBack }) => {
                                     </ol>
                                 </div>
 
-                                <div className="border-t border-gray-200 dark:border-white/10 pt-4">
+                                <div className="border-t border-[var(--glass-border)] pt-4">
                                     <h3 className="font-bold text-text-primary mb-2">Opción 2: Solicitud Web (Sin acceso a la App)</h3>
                                     <p className="text-text-secondary text-sm mb-2">
                                         Si ya no tienes la aplicación o no puedes acceder, puedes solicitar la eliminación manual de tus datos:
@@ -260,7 +263,7 @@ const PrivacyPolicy = ({ onBack }) => {
             </PolicyCard>
 
             {/* --- TARJETA: Contacto --- */}
-            <div className="bg-gradient-to-br from-bg-secondary to-bg-primary border border-white/5 rounded-3xl p-6 flex flex-col justify-center items-center text-center hover:border-accent/30 transition-colors [.oled-theme_&]:bg-black [.oled-theme_&]:border-white/10">
+            <div className="bg-gradient-to-br from-bg-secondary to-bg-primary border border-[var(--glass-border)] rounded-3xl p-6 flex flex-col justify-center items-center text-center hover:border-accent/30 transition-colors [.oled-theme_&]:bg-black [.oled-theme_&]:border-white/20">
               <div className="p-3 bg-accent/20 text-accent rounded-full mb-3">
                 <Mail size={24} />
               </div>

@@ -55,9 +55,9 @@ const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
 
 export default function App() {
   // --- BLOQUEO DE EMERGENCIA PARA RUTAS PÚBLICAS (FIX GOOGLE) ---
-  // Esto debe ir ANTES de cualquier hook de estado complejo para evitar
-  // que Google piense que hay un login o que el contenido es igual.
-  const path = window.location.pathname;
+  // Normalizamos la ruta eliminando slash final para evitar errores de duplicidad
+  // Ejemplo: '/privacy/' se convierte en '/privacy'
+  const path = window.location.pathname.replace(/\/+$/, '');
 
   if (path === '/privacy') {
     return (
