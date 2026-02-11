@@ -1,5 +1,5 @@
 /* frontend/src/App.jsx */
-import React, { useState, lazy, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Home, Dumbbell, BarChart2, Settings, Utensils, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -54,6 +54,33 @@ const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
 
 export default function App() {
+  // --- BLOQUEO DE EMERGENCIA PARA RUTAS PÚBLICAS (FIX GOOGLE) ---
+  // Esto debe ir ANTES de cualquier hook de estado complejo para evitar
+  // que Google piense que hay un login o que el contenido es igual.
+  const path = window.location.pathname;
+
+  if (path === '/privacy') {
+    return (
+      <Suspense fallback={<div className="p-10">Cargando política...</div>}>
+         {/* Renderizamos directo, sin layout de app, sin auth checks */}
+         <PrivacyPolicy onBack={() => window.location.href = '/'} />
+      </Suspense>
+    );
+  }
+
+  if (path === '/terms') {
+    return (
+      <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
+         <TermsPage />
+      </Suspense>
+    );
+  }
+
+  if (path === '/reset-password') {
+     return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
+  }
+  // -------------------------------------------------------------
+
   const [authView, setAuthView] = useState('login');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
@@ -62,10 +89,6 @@ export default function App() {
   const [showLanding, setShowLanding] = useState(true);
 
   const [viewingMyStory, setViewingMyStory] = useState(false);
-
-  // Detectar rutas estáticas al inicio para renderizado condicional rápido
-  const isPrivacyRoute = window.location.pathname === '/privacy';
-  const isTermsRoute = window.location.pathname === '/terms';
 
   const {
     view,
@@ -281,28 +304,7 @@ export default function App() {
 
   // --- LOGICA DE RENDERIZADO PRINCIPAL ---
   const content = useMemo(() => {
-    // 1. BYPASS DE RUTAS PÚBLICAS (Legal & Reset Password)
-    // Esto asegura que Google vea contenido diferente en /privacy y /terms
-    // y no sea redirigido a login ni a landing.
-    if (isPrivacyRoute) {
-       return (
-         <React.Suspense fallback={<InitialLoadingSkeleton />}>
-            {/* onBack redirige a la home para salir del modo "solo legal" */}
-            <PrivacyPolicy onBack={() => window.location.href = '/'} />
-         </React.Suspense>
-       );
-    }
-    if (isTermsRoute) {
-        return (
-          <React.Suspense fallback={<InitialLoadingSkeleton />}>
-             <TermsPage />
-          </React.Suspense>
-        );
-     }
-    if (window.location.pathname === '/reset-password') {
-      return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
-    }
-
+    
     if (view === 'active-cardio') {
       return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
     }
@@ -387,18 +389,17 @@ export default function App() {
     mainContentRef, currentTitle, currentViewComponent, navItems, handleLogoutClick,
     showLogoutConfirm, confirmLogout, handleShowPolicy, fetchInitialData, verificationProps,
     isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick,
-    showLanding, isPrivacyRoute, isTermsRoute // Dependencias añadidas
+    showLanding 
   ]);
 
   const shouldRenderGlobalSEO = useMemo(() => {
     // No SEO global en páginas legales porque ya tienen su propio contenido
-    if (isPrivacyRoute || isTermsRoute) return false;
     if (!isAuthenticated && showLanding) return true; 
     
     if (!isAuthenticated) return false;
     const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms'];
     return !viewsWithInternalSEO.includes(view);
-  }, [isAuthenticated, view, showLanding, isPrivacyRoute, isTermsRoute]);
+  }, [isAuthenticated, view, showLanding]);
 
   return (
     <>

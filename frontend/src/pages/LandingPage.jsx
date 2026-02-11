@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 
 import packageJson from '../../package.json'; 
+// Importamos el servicio social para obtener usuarios reales
+import socialService from '../services/socialService';
 
 const LandingPage = ({ onLogin, onRegister }) => {
   const currentYear = new Date().getFullYear();
@@ -13,10 +15,29 @@ const LandingPage = ({ onLogin, onRegister }) => {
   
   const [isVisible, setIsVisible] = useState(false);
   const [isDocked, setIsDocked] = useState(false);
+  const [communityUsers, setCommunityUsers] = useState([]); 
   const containerRef = useRef(null);
 
   useEffect(() => {
     setIsVisible(true);
+
+    const fetchCommunityPreview = async () => {
+      try {
+        const response = await socialService.getLeaderboard();
+        const usersList = Array.isArray(response) ? response : (response.data || []);
+        
+        const validUsers = usersList
+            .filter(user => user.profilePicture) 
+            .slice(0, 5)
+            .map(user => user.profilePicture); 
+            
+        setCommunityUsers(validUsers);
+      } catch (error) {
+        console.log('Modo vista previa: No se pudieron cargar avatares reales.', error);
+      }
+    };
+
+    fetchCommunityPreview();
   }, []);
 
   const handleScroll = (e) => {
@@ -133,8 +154,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
       <div className="relative z-10 flex flex-col min-h-full">
         
-        {/* --- NAVBAR --- */}
-        <nav className={`sticky top-0 z-40 transition-all duration-700 backdrop-blur-lg border-b border-glass-border ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
+        {/* --- NAVBAR (VISIBLE SIEMPRE) --- */}
+        <nav className="sticky top-0 z-40 backdrop-blur-lg border-b border-glass-border">
           <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full">
             <div 
                 className="flex items-center gap-3 cursor-pointer group" 
@@ -147,7 +168,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
             </div>
             
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Enlace de Privacidad VISIBLE (Ruta relativa) */}
+              {/* Enlace de Privacidad VISIBLE SIEMPRE */}
               <a 
                 href="/privacy" 
                 className="flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent transition-colors mr-1"
@@ -157,7 +178,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 <span className="hidden md:inline">Privacidad</span>
               </a>
 
-              {/* Botones de Acción (onClick = Local; href = Navegación externa) */}
+              {/* Botones de Acción */}
               <button 
                 onClick={onLogin}
                 className="text-sm font-semibold text-text-secondary hover:text-accent transition-colors px-3 py-2"
@@ -165,7 +186,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 Iniciar Sesión
               </button>
               
-              {/* Botón Empezar (Siempre visible, sin 'hidden') */}
               <button 
                 onClick={onRegister}
                 className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 flex items-center gap-2"
@@ -218,8 +238,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
             </button>
           </div>
           
-          {/* Enlace EXTRA visible bajo los botones principales (Ruta relativa) */}
-          <div className={`mb-12 transition-all duration-700 delay-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+          {/* Enlace EXTRA visible bajo los botones principales (VISIBILIDAD CORREGIDA) */}
+          <div className="mb-12">
              <a 
                 href="/privacy"
                 className="text-sm text-text-tertiary hover:text-accent underline decoration-dotted underline-offset-4"
@@ -284,13 +304,32 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     Comparte tus logros, sube historias efímeras de tus entrenos y encuentra motivación con tus amigos reales.
                  </p>
                  
+                 {/* ZONA DE AVATARES REALES */}
                  <div className="flex items-center gap-4">
                      <div className="flex -space-x-3">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                            <div key={i} className="w-10 h-10 rounded-full bg-glass-border border-2 border-bg-primary flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-1 hover:z-10">
-                                 <Users size={16} className="text-text-tertiary" />
-                            </div>
-                        ))}
+                        {/* Iteramos 5 veces para asegurar el diseño */}
+                        {[0, 1, 2, 3, 4].map((index) => {
+                            const userImage = communityUsers[index]; // Puede ser undefined si no hay suficientes
+                            return (
+                                <div key={index} className="w-10 h-10 rounded-full bg-glass-border border-2 border-bg-primary flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-1 hover:z-10 relative">
+                                    {userImage ? (
+                                        <img 
+                                          src={userImage} 
+                                          alt="Usuario" 
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                              e.target.style.display = 'none'; 
+                                              e.target.nextSibling.style.display = 'flex'; 
+                                          }}
+                                        />
+                                    ) : null}
+                                    {/* Icono de respaldo */}
+                                    <div style={{ display: userImage ? 'none' : 'flex' }} className="w-full h-full items-center justify-center bg-glass-base">
+                                       <Users size={16} className="text-text-tertiary" />
+                                    </div>
+                                </div>
+                            );
+                        })}
                      </div>
                      <span className="text-xs text-text-secondary font-medium px-3 py-1 bg-white/5 rounded-full border border-glass-border">
                         Únete a nosotros
@@ -355,15 +394,15 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
         </main>
 
-        {/* --- FOOTER LEGAL --- */}
+        {/* --- FOOTER LEGAL (SIN ANIMACIÓN DE VISIBILIDAD) --- */}
         <footer className="p-8 pb-12 text-center border-t border-glass-border bg-glass-base/30 backdrop-blur-md">
             <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-medium mb-6">
-            {/* Enlace de Privacidad VISIBLE (Ruta relativa) */}
+            {/* Enlace de Privacidad VISIBLE SIEMPRE */}
             <a href="/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                 <Shield size={14} /> Política de Privacidad
             </a>
             <span className="hidden sm:block text-text-secondary/20">|</span>
-            {/* Enlace de Términos VISIBLE (Ruta relativa) */}
+            {/* Enlace de Términos VISIBLE SIEMPRE */}
             <a href="/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                 <Activity size={14} /> Términos del Servicio
             </a>
