@@ -282,6 +282,8 @@ export default function App() {
             setAccent={setAccent}
             setView={navigate}
             onLogoutClick={handleLogoutClick}
+            // FIX: Pasamos el parámetro highlight para el scroll automático
+            highlight={navParams?.highlight}
           />
         );
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />;
@@ -310,6 +312,10 @@ export default function App() {
     return rawUrl;
   }, [userProfile]);
 
+  // Lógica para el borde de historias en el avatar del navbar
+  const hasStories = useMemo(() => myStories && myStories.length > 0, [myStories]);
+  const hasUnseen = useMemo(() => hasStories && myStories.some(s => !s.viewed), [hasStories, myStories]);
+
   const navItems = useMemo(() => [
     { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
     { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: <Users size={24} /> },
@@ -320,16 +326,23 @@ export default function App() {
       id: 'profile', 
       label: t('Perfil', { defaultValue: 'Perfil' }), 
       icon: profileImgSrc ? (
-        <img 
-          src={profileImgSrc} 
-          alt="Perfil" 
-          className="w-6 h-6 rounded-full object-cover" 
-        />
+        <div className={`rounded-full flex items-center justify-center transition-all duration-300 
+            ${hasStories 
+                ? `w-8 h-8 p-[2px] ${hasUnseen ? 'bg-accent' : 'bg-gray-400 dark:bg-gray-600'}` 
+                : 'w-8 h-8'
+            }
+        `}>
+            <img 
+              src={profileImgSrc} 
+              alt="Perfil" 
+              className={`w-full h-full rounded-full object-cover ${hasStories ? 'border-[2px] border-bg-primary' : ''}`} 
+            />
+        </div>
       ) : (
         <User size={24} /> 
       )
     },
-  ], [t, profileImgSrc]);
+  ], [t, profileImgSrc, hasStories, hasUnseen]);
 
   // --- LOGICA DE RENDERIZADO PRINCIPAL ---
   const content = useMemo(() => {

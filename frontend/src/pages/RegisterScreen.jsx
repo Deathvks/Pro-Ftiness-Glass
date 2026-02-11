@@ -145,7 +145,14 @@ const RegisterScreen = ({ showLogin }) => {
         setIsLoading(true);
 
         try {
-            const response = await registerUser({ username, email, password });
+            // MODIFICADO: Añadido social_privacy: 'private' por defecto
+            const response = await registerUser({ 
+                username, 
+                email, 
+                password,
+                social_privacy: 'private' 
+            });
+            
             addToast(response.message, 'success');
             setRegisteredEmail(email);
             setShowVerification(true);

@@ -1,5 +1,5 @@
 /* frontend/src/pages/SettingsScreen.jsx */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
@@ -156,7 +156,8 @@ export default function SettingsScreen({
   accent = 'green',
   setAccent,
   setView,
-  onLogoutClick
+  onLogoutClick,
+  highlight // AÑADIDO: Prop para recibir la sección a resaltar
 }) {
   const { resolvedTheme } = useAppTheme();
 
@@ -185,6 +186,10 @@ export default function SettingsScreen({
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
   const [pendingTheme, setPendingTheme] = useState(null);
 
+  // Estados y Refs para Highlighting
+  const [highlightedSection, setHighlightedSection] = useState(null);
+  const socialPrivacyRef = useRef(null);
+
   const [autoTimezone, setAutoTimezone] = useState(() => {
     return localStorage.getItem('settings_auto_timezone') === 'true';
   });
@@ -208,6 +213,26 @@ export default function SettingsScreen({
     isSupported: isPushSupported,
     permission: pushPermission
   } = usePushNotifications();
+
+  // --- EFECTO DE SCROLL Y RESALTADO ---
+  useEffect(() => {
+    if (highlight === 'social_privacy' && socialPrivacyRef.current) {
+        // 1. Scroll suave hacia la sección
+        setTimeout(() => {
+            socialPrivacyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+
+        // 2. Activar efecto visual
+        setHighlightedSection('social_privacy');
+
+        // 3. Quitar efecto visual después de 2.5 segundos
+        const timer = setTimeout(() => {
+            setHighlightedSection(null);
+        }, 2500);
+
+        return () => clearTimeout(timer);
+    }
+  }, [highlight]);
 
   useEffect(() => {
     const fetchVersionInfo = async () => {
@@ -738,35 +763,41 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
 
-          <GlassCard className={glassCardClass}>
-            <SectionTitle icon={Users} title="Privacidad Social" />
-            <div className="flex flex-col gap-3">
-              <SwitchItem
-                icon={Eye}
-                title="Perfil Público"
-                subtitle="Aparecer en búsquedas y ranking"
-                checked={!!userProfile?.is_public_profile}
-                onChange={() => handleTogglePrivacy('is_public_profile', 'Perfil público')}
-                disabled={isUpdatingPrivacy}
-              />
-              <SwitchItem
-                icon={Trophy}
-                title="Mostrar Nivel y XP"
-                subtitle="Visible para otros usuarios"
-                checked={!!userProfile?.show_level_xp}
-                onChange={() => handleTogglePrivacy('show_level_xp', 'Nivel y XP')}
-                disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
-              />
-              <SwitchItem
-                icon={Medal}
-                title="Mostrar Insignias"
-                subtitle="Compartir tus logros"
-                checked={!!userProfile?.show_badges}
-                onChange={() => handleTogglePrivacy('show_badges', 'Insignias')}
-                disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
-              />
-            </div>
-          </GlassCard>
+          {/* Wrapper para el Ref de Scroll y Highlight */}
+          <div 
+            ref={socialPrivacyRef} 
+            className={`rounded-2xl transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-lg shadow-accent/20 scale-[1.02]' : ''}`}
+          >
+            <GlassCard className={glassCardClass}>
+                <SectionTitle icon={Users} title="Privacidad Social" />
+                <div className="flex flex-col gap-3">
+                <SwitchItem
+                    icon={Eye}
+                    title="Perfil Público"
+                    subtitle="Aparecer en búsquedas y ranking"
+                    checked={!!userProfile?.is_public_profile}
+                    onChange={() => handleTogglePrivacy('is_public_profile', 'Perfil público')}
+                    disabled={isUpdatingPrivacy}
+                />
+                <SwitchItem
+                    icon={Trophy}
+                    title="Mostrar Nivel y XP"
+                    subtitle="Visible para otros usuarios"
+                    checked={!!userProfile?.show_level_xp}
+                    onChange={() => handleTogglePrivacy('show_level_xp', 'Nivel y XP')}
+                    disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
+                />
+                <SwitchItem
+                    icon={Medal}
+                    title="Mostrar Insignias"
+                    subtitle="Compartir tus logros"
+                    checked={!!userProfile?.show_badges}
+                    onChange={() => handleTogglePrivacy('show_badges', 'Insignias')}
+                    disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
+                />
+                </div>
+            </GlassCard>
+          </div>
 
           {/* CORRECCIÓN: Usar GlassCard estándar sin lógica especial de transparencia */}
           <GlassCard className={glassCardClass}>

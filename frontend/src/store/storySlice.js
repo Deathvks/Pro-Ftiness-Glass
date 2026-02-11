@@ -29,9 +29,26 @@ export const createStorySlice = (set, get) => ({
       const myStoriesData = storiesData.find(s => s.userId === myId);
       const otherStories = storiesData.filter(s => s.userId !== myId);
 
+      // PROCESAMIENTO SEGURO DE MIS HISTORIAS:
+      // Verificamos si realmente las he visto basándonos en la lista de 'views' si está disponible.
+      // Esto corrige el bug donde el backend podría devolver viewed:true por defecto al creador.
+      let myCleanStories = [];
+      if (myStoriesData && Array.isArray(myStoriesData.items)) {
+          myCleanStories = myStoriesData.items.map(item => {
+              // Si el backend nos da la lista de espectadores, esa es la fuente de verdad
+              if (Array.isArray(item.views)) {
+                  const amIInViews = item.views.some(v => v.userId === myId || v.id === myId);
+                  return { ...item, viewed: amIInViews };
+              }
+              // Si no hay lista de views, confiamos en la propiedad viewed, 
+              // pero si viene undefined asumimos falso.
+              return item;
+          });
+      }
+
       set({ 
         stories: otherStories || [], 
-        myStories: myStoriesData ? myStoriesData.items : [], 
+        myStories: myCleanStories, 
         isStoriesLoading: false 
       });
 
@@ -153,6 +170,8 @@ export const createStorySlice = (set, get) => ({
 
       const newStory = response.story || response;
       if (!Array.isArray(newStory.likes)) newStory.likes = [];
+      // Aseguramos que viewed sea false al subirla
+      newStory.viewed = false;
 
       // Actualización segura evitando duplicados si el socket llegó primero
       set(state => {
@@ -281,13 +300,14 @@ export const createStorySlice = (set, get) => ({
       return { stories: newStories };
     });
 
-    // Solo llamamos a la API si la historia NO es mía
-    if (targetUserId !== myId) {
-        try {
-          await api(`/stories/${storyId}/view`, { method: 'POST' });
-        } catch (error) {
-          console.error("Error marcando vista:", error);
-        }
+    // Llamamos SIEMPRE a la API, incluso si es mi historia.
+    // Esto asegura que el backend registre que la he visto y lo devuelva correctamente
+    // en futuras cargas (fetchStories).
+    try {
+      await api(`/stories/${storyId}/view`, { method: 'POST' });
+    } catch (error) {
+      // Si falla silenciosamente no pasa nada crítico, ya se actualizó localmente
+      console.warn("Error marcando vista en backend:", error);
     }
   },
 

@@ -4,7 +4,8 @@ import { useSearchParams } from 'react-router-dom';
 import {
     Users, UserPlus, Trophy, Search, UserX, Check, X, Medal,
     ChevronRight, ChevronLeft, Plus, Camera, Image as ImageIcon,
-    Globe, Zap, ShieldAlert, Clock, Lock, Video as VideoIcon
+    Globe, Zap, ShieldAlert, Clock, Lock, Video as VideoIcon,
+    Info, Settings
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -25,6 +26,65 @@ const getFullImageUrl = (path) => {
     if (path.startsWith('blob:')) return path; 
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `${SERVER_URL}${cleanPath}`;
+};
+
+// --- Subcomponente: Banner de Estado de Privacidad ---
+const PrivacyBanner = ({ privacy, onNavigate }) => {
+    const isPublic = privacy === 'public';
+
+    return (
+        <div 
+            className="mb-6 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 shadow-sm backdrop-blur-sm transition-all animate-[fade-in_0.3s_ease-out]"
+            style={{
+                background: 'linear-gradient(to bottom right, var(--color-accent-border), var(--color-accent-transparent))'
+            }}
+        >
+            <div 
+                className="p-2.5 rounded-full text-white shrink-0 mt-0.5"
+                style={{ backgroundColor: 'var(--color-accent-border)' }}
+            >
+                {isPublic ? <Globe size={20} /> : <Lock size={20} />}
+            </div>
+            
+            <div className="flex-1">
+                <h4 className="text-sm font-bold text-accent mb-1 flex items-center gap-2">
+                    {isPublic ? 'Tu perfil es VISIBLE (Público)' : 'Tu perfil es PRIVADO'}
+                </h4>
+                
+                <div className="text-xs text-text-secondary leading-relaxed mb-3 space-y-1">
+                    {isPublic ? (
+                        <>
+                            <p>
+                                Actualmente <strong>todo el mundo puede ver tu perfil</strong> y estadísticas.
+                            </p>
+                            <p className="flex items-start gap-1.5 opacity-80">
+                                <Check size={12} className="mt-0.5 text-accent" />
+                                <span>Apareces en el <strong>Ranking Global</strong> y búsquedas públicas.</span>
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <p>
+                                Actualmente <strong>solo tus amigos</strong> pueden ver tu actividad.
+                            </p>
+                            <p className="flex items-start gap-1.5 opacity-80">
+                                <X size={12} className="mt-0.5 text-accent" />
+                                <span><strong>No apareces</strong> en el Ranking Global ni en búsquedas públicas.</span>
+                            </p>
+                        </>
+                    )}
+                </div>
+
+                <button 
+                    onClick={onNavigate}
+                    className="text-xs font-bold bg-accent/10 hover:bg-accent/20 text-accent px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                    <Settings size={12} />
+                    Cambiar configuración
+                </button>
+            </div>
+        </div>
+    );
 };
 
 // --- Subcomponente: Burbuja de Historia ---
@@ -865,6 +925,13 @@ export default function Social({ setView }) {
                     </div>
                 </div>
             </header>
+
+            {/* Banner de Estado de Privacidad (NUEVO) */}
+            {/* Se envía 'social_privacy' como highlight para que la página de ajustes haga scroll automático */}
+            <PrivacyBanner 
+                privacy={userProfile?.is_public_profile ? 'public' : 'private'} 
+                onNavigate={() => setView('settings', { highlight: 'social_privacy' })} 
+            />
 
             {/* --- Carrusel de Historias --- */}
             <section className="mb-8 overflow-x-auto no-scrollbar pb-2">
