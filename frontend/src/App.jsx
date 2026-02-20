@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { NavigationBar } from '@capgo/capacitor-navigation-bar';
+import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'; 
 import useAppStore from './store/useAppStore';
 
 import { useAppNavigation } from './hooks/useAppNavigation';
@@ -56,40 +57,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 export default function App() {
-  // --- BLOQUEO DE EMERGENCIA PARA RUTAS PÚBLICAS (FIX GOOGLE) ---
-  // Normalizamos la ruta eliminando slash final para evitar errores de duplicidad
-  // Ejemplo: '/privacy/' se convierte en '/privacy'
-  const path = window.location.pathname.replace(/\/+$/, '');
+  const location = useLocation();
+  const navigate = useNavigate();
+  // El path actual se usa para SEO y lógica interna, pero el Router maneja la navegación principal
+  const currentPath = location.pathname;
 
-  if (path === '/privacy') {
-    return (
-      <Suspense fallback={<div className="p-10">Cargando política...</div>}>
-         {/* Renderizamos directo, sin layout de app, sin auth checks */}
-         <PrivacyPolicy onBack={() => window.location.href = '/'} />
-      </Suspense>
-    );
-  }
-
-  if (path === '/terms') {
-    return (
-      <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
-         <TermsPage />
-      </Suspense>
-    );
-  }
-
-  if (path === '/reset-password') {
-     return <ResetPasswordScreen showLogin={() => { window.location.href = '/'; }} />;
-  }
-  // -------------------------------------------------------------
-
-  const [authView, setAuthView] = useState('login');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
-  
-  // Estado para controlar la Landing Page
-  const [showLanding, setShowLanding] = useState(true);
-
   const [viewingMyStory, setViewingMyStory] = useState(false);
 
   const {
@@ -97,7 +71,7 @@ export default function App() {
     setView,
     navParams,
     mainContentRef,
-    navigate,
+    navigate: navigateInternal,
     handleBackFromPolicy,
     handleCancelProfile,
     handleShowPolicy
@@ -117,7 +91,11 @@ export default function App() {
   const {
     isInitialLoad,
     ...verificationProps
-  } = useAppInitialization({ setView, setAuthView, view });
+  } = useAppInitialization({ 
+      setView, 
+      setAuthView: (v) => navigate(`/${v}`), 
+      view 
+  });
 
   const {
     isAuthenticated,
@@ -184,22 +162,14 @@ export default function App() {
     }
   }, [isAuthenticated, userProfile, isLoading]);
 
-  // Efecto para saltar la landing si ya estamos autenticados
-  useEffect(() => {
-    if (isAuthenticated) {
-        setShowLanding(false);
-    }
-  }, [isAuthenticated]);
-
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
 
   const confirmLogout = useCallback(() => {
     performLogout();
     setShowLogoutConfirm(false);
-    setShowLanding(true);
-    // Forzamos redirección a la raíz para mostrar la Landing limpia
-    window.history.pushState({}, '', '/');
-  }, [performLogout]);
+    localStorage.removeItem('temp_onboarding_data');
+    navigate('/login'); // MODIFICADO: Ahora redirige al login
+  }, [performLogout, navigate]);
 
   const handleClose2FAPromo = () => {
     setShow2FAPromo(false);
@@ -208,16 +178,16 @@ export default function App() {
 
   const handleConfigure2FA = () => {
     handleClose2FAPromo();
-    navigate('twoFactorSetup');
+    navigateInternal('twoFactorSetup');
   };
 
   const handleHeaderAvatarClick = useCallback(() => {
     if (myStories && myStories.length > 0) {
       setViewingMyStory(true);
     } else {
-      navigate('profile');
+      navigateInternal('profile');
     }
-  }, [myStories, navigate]);
+  }, [myStories, navigateInternal]);
 
   // Títulos dinámicos
   const currentTitle = useMemo(() => {
@@ -263,16 +233,16 @@ export default function App() {
 
   const currentViewComponent = useMemo(() => {
     switch (view) {
-      case 'dashboard': return <Dashboard setView={navigate} />;
+      case 'dashboard': return <Dashboard setView={navigateInternal} />;
       case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} />;
-      case 'routines': return <Routines setView={navigate} />;
-      case 'workout': return <Workout timer={timer} setView={navigate} />;
-      case 'nutrition': return <Nutrition setView={navigate} />;
-      case 'templateDiets': return <TemplateDiets setView={navigate} />;
-      case 'social': return <Social setView={navigate} />;
-      case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigate('social')} />;
-      case 'quickCardio': return <QuickCardio onBack={() => navigate('dashboard')} setView={navigate} />;
-      case 'active-cardio': return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
+      case 'routines': return <Routines setView={navigateInternal} />;
+      case 'workout': return <Workout timer={timer} setView={navigateInternal} />;
+      case 'nutrition': return <Nutrition setView={navigateInternal} />;
+      case 'templateDiets': return <TemplateDiets setView={navigateInternal} />;
+      case 'social': return <Social setView={navigateInternal} />;
+      case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} />;
+      case 'quickCardio': return <QuickCardio onBack={() => navigateInternal('dashboard')} setView={navigateInternal} />;
+      case 'active-cardio': return <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />;
       case 'settings':
         return (
           <SettingsScreen
@@ -280,24 +250,22 @@ export default function App() {
             setTheme={setTheme}
             accent={accent}
             setAccent={setAccent}
-            setView={navigate}
+            setView={navigateInternal}
             onLogoutClick={handleLogoutClick}
-            // FIX: Pasamos el parámetro highlight para el scroll automático
             highlight={navParams?.highlight}
           />
         );
-      case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigate('settings')} />;
-      case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigate} />;
-      case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigate('settings')} /> : <Dashboard setView={navigate} />;
+      case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigateInternal('settings')} />;
+      case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigateInternal} />;
+      case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('settings')} /> : <Dashboard setView={navigateInternal} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       case 'terms': return <TermsPage />;
-      case 'twoFactorSetup': return <TwoFactorSetup setView={navigate} />;
-      case 'notifications': return <NotificationsScreen setView={navigate} />;
-      default: return <Dashboard setView={navigate} />;
+      case 'twoFactorSetup': return <TwoFactorSetup setView={navigateInternal} />;
+      case 'notifications': return <NotificationsScreen setView={navigateInternal} />;
+      default: return <Dashboard setView={navigateInternal} />;
     }
-  }, [view, navigate, theme, resolvedTheme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
+  }, [view, navigateInternal, theme, resolvedTheme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
 
-  // Helper para URL de imagen de perfil
   const profileImgSrc = useMemo(() => {
     if (!userProfile?.profile_image_url) return null;
     const rawUrl = userProfile.profile_image_url.startsWith('http')
@@ -305,14 +273,12 @@ export default function App() {
       : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`;
     
     if (userProfile.updated_at) {
-       // Cache busting
        const separator = rawUrl.includes('?') ? '&' : '?';
        return `${rawUrl}${separator}v=${new Date(userProfile.updated_at).getTime()}`;
     }
     return rawUrl;
   }, [userProfile]);
 
-  // Lógica para el borde de historias en el avatar del navbar
   const hasStories = useMemo(() => myStories && myStories.length > 0, [myStories]);
   const hasUnseen = useMemo(() => hasStories && myStories.some(s => !s.viewed), [hasStories, myStories]);
 
@@ -344,45 +310,20 @@ export default function App() {
     },
   ], [t, profileImgSrc, hasStories, hasUnseen]);
 
-  // --- LOGICA DE RENDERIZADO PRINCIPAL ---
-  const content = useMemo(() => {
-    
-    if (view === 'active-cardio') {
-      return <ActiveCardioSession activityId={navParams?.activityId} setView={navigate} />;
-    }
-
-    if (isInitialLoad) {
-      return <InitialLoadingSkeleton />;
-    }
-
-    // 2. ESTADO NO AUTENTICADO
-    if (!isAuthenticated) {
-        // Landing Page por defecto (Requisito Google: Info sin login)
-        if (showLanding) {
-            return (
-                <LandingPage 
-                    onLogin={() => {
-                        setAuthView('login');
-                        setShowLanding(false);
-                    }}
-                    onRegister={() => {
-                        setAuthView('register');
-                        setShowLanding(false);
-                    }}
-                />
-            );
-        }
-        // Auth Screens solo si el usuario hizo clic en "Iniciar Sesión"
-        return <AuthScreens authView={authView} setAuthView={setAuthView} />;
-    }
-
-    // 3. ESTADO AUTENTICADO (App Completa)
+  // --- CONTENIDO AUTENTICADO ---
+  const AuthenticatedAppContent = useMemo(() => {
     if (!userProfile || (isLoading && !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
     }
 
+    // SI EL USUARIO NO TIENE OBJETIVO DEFINIDO, VAMOS AL ONBOARDING TÉCNICO DIRECTAMENTE
+    // El OnboardingScreen se encargará de pre-llenar datos si existen en localStorage (del test emocional)
     if (!userProfile.goal) {
       return <OnboardingScreen />;
+    }
+
+    if (view === 'active-cardio') {
+      return <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />;
     }
 
     const userProfileWithStory = {
@@ -394,7 +335,7 @@ export default function App() {
       <>
         <MainAppLayout
           view={view}
-          navigate={navigate}
+          navigate={navigateInternal}
           mainContentRef={mainContentRef}
           currentTitle={currentTitle}
           currentViewComponent={currentViewComponent}
@@ -427,43 +368,44 @@ export default function App() {
       </>
     );
   }, [
-    authView, isInitialLoad, isLoading, isAuthenticated, userProfile, view, navigate,
-    mainContentRef, currentTitle, currentViewComponent, navItems, handleLogoutClick,
-    showLogoutConfirm, confirmLogout, handleShowPolicy, fetchInitialData, verificationProps,
-    isResting, restTimerMode, show2FAPromo, navParams, myStories, viewingMyStory, handleHeaderAvatarClick,
-    showLanding 
+    userProfile, isLoading, view, navParams, navigateInternal,
+    performLogout, mainContentRef, currentTitle, currentViewComponent,
+    navItems, handleLogoutClick, showLogoutConfirm, confirmLogout, handleShowPolicy,
+    fetchInitialData, verificationProps, handleHeaderAvatarClick, myStories,
+    isResting, restTimerMode, show2FAPromo, viewingMyStory, hasStories
   ]);
 
   // --- CONFIGURACIÓN SEO DINÁMICA ---
-  const isLandingPage = !isAuthenticated && showLanding;
+  const isLandingPage = !isAuthenticated && currentPath === '/';
 
   const shouldRenderGlobalSEO = useMemo(() => {
-    // Si es landing page, SI queremos SEO (para que salga en Google)
     if (isLandingPage) return true;
-    
-    // Si no está autenticado y no es landing, no mostramos SEO global (login/register)
     if (!isAuthenticated) return false;
 
     const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms'];
     return !viewsWithInternalSEO.includes(view);
   }, [isAuthenticated, view, isLandingPage]);
 
-  // Definimos props de SEO según el estado (Landing vs App Privada)
   const seoConfig = useMemo(() => {
     if (isLandingPage) {
         return {
             title: "Pro Fitness Glass - Tu Entrenador Personal Inteligente",
             description: "Alcanza tus objetivos fitness con rutinas personalizadas, seguimiento de nutrición y análisis de progreso. Únete a la comunidad Pro Fitness Glass hoy mismo.",
-            noIndex: false // ¡IMPORTANTE! False = Indexable por Google
+            noIndex: false
         };
     }
     return {
         title: fullPageTitle,
         description: currentDescription,
-        noIndex: true // App privada = No indexar
+        noIndex: true
     };
   }, [isLandingPage, fullPageTitle, currentDescription]);
 
+
+  // --- RENDERIZADO PRINCIPAL CON ROUTER ---
+  if (isInitialLoad) {
+    return <InitialLoadingSkeleton />;
+  }
 
   return (
     <>
@@ -493,7 +435,66 @@ export default function App() {
       <APKUpdater />
       <AndroidDownloadPrompt />
 
-      {content}
+      <Routes>
+        {/* --- RUTAS PÚBLICAS --- */}
+        <Route path="/privacy" element={
+            <Suspense fallback={<div className="p-10">Cargando política...</div>}>
+                <PrivacyPolicy onBack={() => navigate('/')} />
+            </Suspense>
+        } />
+        <Route path="/terms" element={
+            <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
+                <TermsPage />
+            </Suspense>
+        } />
+        <Route path="/reset-password" element={
+             <ResetPasswordScreen showLogin={() => navigate('/login')} />
+        } />
+
+        {/* --- RUTAS DE AUTENTICACIÓN (Solo accesibles si NO estás autenticado) --- */}
+        <Route path="/" element={
+            !isAuthenticated ? (
+                <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+            ) : (
+                <Navigate to="/dashboard" replace />
+            )
+        } />
+
+        <Route path="/login" element={
+            !isAuthenticated ? (
+                <AuthScreens authView="login" setAuthView={(v) => navigate(`/${v}`)} onBack={() => navigate('/')} />
+            ) : (
+                <Navigate to="/dashboard" replace />
+            )
+        } />
+
+        <Route path="/register" element={
+            !isAuthenticated ? (
+                <AuthScreens authView="register" setAuthView={(v) => navigate(`/${v}`)} onBack={() => navigate('/')} />
+            ) : (
+                <Navigate to="/dashboard" replace />
+            )
+        } />
+
+        <Route path="/forgotPassword" element={
+            !isAuthenticated ? (
+                <AuthScreens authView="forgotPassword" setAuthView={(v) => navigate(`/${v}`)} onBack={() => navigate('/')} />
+            ) : (
+                <Navigate to="/dashboard" replace />
+            )
+        } />
+         <Route path="/forgot-password" element={<Navigate to="/forgotPassword" replace />} />
+
+
+        {/* --- RUTAS PRIVADAS (App principal) --- */}
+        <Route path="/*" element={
+            isAuthenticated ? (
+                AuthenticatedAppContent
+            ) : (
+                <Navigate to="/login" replace /> // MODIFICADO: Redirige a /login si no está autenticado
+            )
+        } />
+      </Routes>
     </>
   );
 }

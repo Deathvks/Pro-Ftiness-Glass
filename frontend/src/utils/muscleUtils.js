@@ -7,7 +7,7 @@ export const DB_TO_HEATMAP_MAP = {
     'pectoral mayor': ['chest'],
     'pectoral': ['chest'],
     'pecho': ['chest'],
-    'pechos': ['chest'], // Plural
+    'pechos': ['chest'], 
     'serratus anterior': ['chest', 'obliques'],
     'serrato anterior': ['chest', 'obliques'],
 
@@ -20,49 +20,49 @@ export const DB_TO_HEATMAP_MAP = {
     'dorsal ancho': ['upper-back'],
     'dorsal': ['upper-back'],
 
-    // Trapecios (Singular y Plural)
+    // Trapecios
     'traps': ['trapezius'],
     'trapecios': ['trapezius'],
-    'trapecio': ['trapezius'], // AÑADIDO
+    'trapecio': ['trapezius'], 
     'trapezius': ['trapezius'],
 
     'lower back': ['lower-back'],
     'lumbares': ['lower-back'],
-    'lumbar': ['lower-back'], // AÑADIDO
+    'lumbar': ['lower-back'], 
     'upper back': ['upper-back'],
-    'espalda alta': ['upper-back'], // AÑADIDO
-    'espalda baja': ['lower-back'], // AÑADIDO
+    'espalda alta': ['upper-back'], 
+    'espalda baja': ['lower-back'], 
 
     // Torso - Hombros
     'shoulders': ['front-deltoids', 'back-deltoids'],
-    'shoulder': ['front-deltoids', 'back-deltoids'], // AÑADIDO
+    'shoulder': ['front-deltoids', 'back-deltoids'], 
     'hombros': ['front-deltoids', 'back-deltoids'],
-    'hombro': ['front-deltoids', 'back-deltoids'], // AÑADIDO
+    'hombro': ['front-deltoids', 'back-deltoids'], 
     'deltoids': ['front-deltoids', 'back-deltoids'],
     'deltoides': ['front-deltoids', 'back-deltoids'],
     'anterior deltoid': ['front-deltoids'],
     'deltoides anterior': ['front-deltoids'],
-    'deltoides posterior': ['back-deltoids'], // AÑADIDO
-    'posterior deltoid': ['back-deltoids'], // AÑADIDO
+    'deltoides posterior': ['back-deltoids'], 
+    'posterior deltoid': ['back-deltoids'], 
 
-    // Torso - Abs
+    // Torso - Abs y Oblicuos
     'abs': ['abs'],
     'abdominales': ['abs'],
-    'abdominal': ['abs'], // AÑADIDO
+    'abdominal': ['abs'], 
     'abdominals': ['abs'],
     'rectus abdominis': ['abs'],
     'recto abdominal': ['abs'],
     'obliques': ['obliques'],
     'oblicuos': ['obliques'],
-    'oblicuo': ['obliques'], // AÑADIDO
+    'oblicuo': ['obliques'], 
     'obliquus externus abdominis': ['obliques'],
     'oblicuos externos': ['obliques'],
-    'core': ['abs', 'obliques'],
+    'core': ['abs'], 
 
     // Brazos
     'arms': ['biceps', 'triceps'],
     'brazos': ['biceps', 'triceps'],
-    'brazo': ['biceps', 'triceps'], // AÑADIDO
+    'brazo': ['biceps', 'triceps'], 
     'biceps': ['biceps'],
     'bíceps': ['biceps'],
     'biceps brachii': ['biceps'],
@@ -73,7 +73,7 @@ export const DB_TO_HEATMAP_MAP = {
     'tríceps braquial': ['triceps'],
     'forearms': ['forearm'],
     'antebrazos': ['forearm'],
-    'antebrazo': ['forearm'], // AÑADIDO
+    'antebrazo': ['forearm'], 
     'forearm': ['forearm'],
     'brachialis': ['biceps'],
     'braquial': ['biceps'],
@@ -83,38 +83,38 @@ export const DB_TO_HEATMAP_MAP = {
     // Piernas
     'legs': ['quadriceps', 'hamstring', 'gluteal', 'calves'],
     'piernas': ['quadriceps', 'hamstring', 'gluteal', 'calves'],
-    'pierna': ['quadriceps', 'hamstring', 'gluteal', 'calves'], // AÑADIDO
+    'pierna': ['quadriceps', 'hamstring', 'gluteal', 'calves'], 
     'quads': ['quadriceps'],
     'cuádriceps': ['quadriceps'],
-    'cuadriceps': ['quadriceps'], // Sin tilde
+    'cuadriceps': ['quadriceps'], 
     'quadriceps': ['quadriceps'],
     'quadriceps femoris': ['quadriceps'],
     'hamstrings': ['hamstring'],
     'isquios': ['hamstring'],
     'isquiotibiales': ['hamstring'],
     'femorales': ['hamstring'],
-    'femoral': ['hamstring'], // AÑADIDO
+    'femoral': ['hamstring'], 
     'biceps femoris': ['hamstring'],
     'glutes': ['gluteal'],
     'glúteos': ['gluteal'],
-    'gluteos': ['gluteal'], // Sin tilde
+    'gluteos': ['gluteal'], 
     'gluteal': ['gluteal'],
     'gluteus maximus': ['gluteal'],
-    'glúteo': ['gluteal'], // AÑADIDO
-    'gluteo': ['gluteal'], // Sin tilde
+    'glúteo': ['gluteal'], 
+    'gluteo': ['gluteal'], 
     'calves': ['calves'],
     'gemelos': ['calves'],
-    'gemelo': ['calves'], // AÑADIDO
+    'gemelo': ['calves'], 
     'pantorrillas': ['calves'],
-    'pantorrilla': ['calves'], // AÑADIDO
+    'pantorrilla': ['calves'], 
     'gastrocnemius': ['calves'],
     'soleus': ['calves'],
     'adductors': ['adductor'],
     'aductores': ['adductor'],
-    'aductor': ['adductor'], // AÑADIDO
+    'aductor': ['adductor'], 
     'abductors': ['abductors'],
     'abductores': ['abductors'],
-    'abductor': ['abductors'], // AÑADIDO
+    'abductor': ['abductors'], 
 
     // Otros
     'cardio': [],
@@ -130,42 +130,68 @@ export const DB_TO_HEATMAP_MAP = {
 
 export const guessMuscleFromText = (text) => {
     if (!text) return [];
-    const t = text.toLowerCase();
+    
+    // Normalizamos para quitar tildes y mayúsculas
+    const t = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // Prioridad a Espalda (Jalón/Remo) sobre Pecho
+    // 1. EXCEPCIONES Y COMPUESTOS ESPECÍFICOS (Se comprueban antes)
+    if (t.includes('face pull')) return ['back-deltoids', 'trapezius'];
+    if (t.includes('upright row') || t.includes('remo al menton') || t.includes('remo al cuello')) return ['front-deltoids', 'trapezius'];
+    if (t.includes('peso muerto') || t.includes('deadlift')) return ['lower-back', 'hamstring', 'gluteal'];
+    if (t.includes('leg press') || t.includes('prensa')) return ['quadriceps', 'gluteal'];
+    if (t.includes('leg curl') || t.includes('curl femoral') || t.includes('curl de isquios')) return ['hamstring'];
+    if (t.includes('leg extension') || t.includes('extension de pierna')) return ['quadriceps'];
+    if (t.includes('hip thrust') || t.includes('puente') || t.includes('bridge')) return ['gluteal'];
+    if (t.includes('reverse curl') || t.includes('curl invertido')) return ['forearm'];
+    
+    // Core "Engañoso" (Lumbares/Estabilidad)
+    if (t.includes('bird dog') || t.includes('pajaro perro') || t.includes('perro pajaro')) return ['lower-back', 'gluteal'];
+    if (t.includes('good morning') || t.includes('buenos dias')) return ['lower-back', 'hamstring'];
 
-    // Espalda Alta (Jalones, Dominadas)
-    if (t.includes('jalon') || t.includes('jalón') || t.includes('dominada') || t.includes('chin') || t.includes('lat') || t.includes('pull-down') || t.includes('pulldown')) return ['upper-back'];
+    // Evitamos falsos positivos con "raise/elevacion" y "flexion"
+    if (t.includes('calf raise') || t.includes('elevacion de gemelo') || t.includes('talon') || t.includes('plantar')) return ['calves'];
+    if (t.includes('leg raise') || t.includes('elevacion de pierna')) return ['abs'];
+    if (t.includes('flexion de rodilla') || t.includes('knee flexion')) return ['hamstring'];
+    
+    // Oblicuos específicos
+    if (t.includes('twist') || t.includes('giro') || t.includes('leñador') || t.includes('woodchopper') || t.includes('oblique') || t.includes('oblicuo')) return ['obliques'];
+    
+    // Trapecios aislados
+    if (t.includes('shrug') || t.includes('encogimiento')) return ['trapezius'];
 
-    // Espalda General (Remos)
+    // 2. BÚSQUEDAS GENERALES
+    // Espalda Alta
+    if (t.includes('jalon') || t.includes('dominada') || t.includes('chin') || t.includes('lat') || t.includes('pull-down') || t.includes('pulldown')) return ['upper-back'];
+
+    // Espalda General
     if (t.includes('row') || t.includes('remo') || t.includes('pull') || t.includes('dorsal') || t.includes('back') || t.includes('espalda')) return ['upper-back', 'lower-back'];
 
-    // Espalda Baja / Isquios (Peso Muerto)
-    if (t.includes('deadlift') || t.includes('peso muerto') || t.includes('lumbar')) return ['lower-back', 'hamstring'];
+    // Lumbares
+    if (t.includes('lumbar') || t.includes('hiperextension')) return ['lower-back'];
 
-    // Pecho
-    if (t.includes('bench') || t.includes('banca') || t.includes('chest') || t.includes('pecho') || t.includes('pectoral') || t.includes('push-up') || t.includes('flexiones') || t.includes('pec deck') || t.includes('fly') || t.includes('aperturas') || t.includes('dips') || t.includes('fondos')) return ['chest'];
+    // Pecho 
+    if (t.includes('bench') || t.includes('banca') || t.includes('chest') || t.includes('pecho') || t.includes('pectoral') || t.includes('push-up') || t.includes('push up') || t.includes('flexiones') || t.includes('pec deck') || t.includes('fly') || t.includes('apertura') || t.includes('dip') || t.includes('fondo')) return ['chest'];
 
-    // Hombros
+    // Hombros 
     if (t.includes('press') && (t.includes('shoulder') || t.includes('hombro') || t.includes('militar') || t.includes('military') || t.includes('overhead'))) return ['front-deltoids'];
-    if (t.includes('raise') || t.includes('elevacion') || t.includes('lateral') || t.includes('pajaros') || t.includes('face pull')) return ['back-deltoids', 'front-deltoids'];
+    if (t.includes('lateral') || t.includes('pajaro') || t.includes('deltoid') || t.includes('hombro')) return ['front-deltoids', 'back-deltoids'];
+    if ((t.includes('raise') || t.includes('elevacion')) && (t.includes('frontal') || t.includes('lateral'))) return ['front-deltoids', 'back-deltoids'];
 
     // Antebrazos
-    if (t.includes('wrist') || t.includes('muñeca') || t.includes('forearm') || t.includes('antebrazo') || t.includes('reverse curl') || t.includes('curl invertido') || t.includes('brachioradialis') || t.includes('braquiorradial')) return ['forearm'];
+    if (t.includes('wrist') || t.includes('muñeca') || t.includes('forearm') || t.includes('antebrazo') || t.includes('brachioradialis') || t.includes('braquiorradial') || t.includes('apreton') || t.includes('hand grip') || t.includes('handgrip')) return ['forearm'];
 
     // Brazos
     if (t.includes('curl') || t.includes('bicep')) return ['biceps'];
     if (t.includes('extension') || t.includes('tricep') || t.includes('skull') || t.includes('copa') || t.includes('patada') || t.includes('pushdown')) return ['triceps'];
 
     // Piernas
-    if (t.includes('squat') || t.includes('sentadilla') || t.includes('leg press') || t.includes('prensa') || t.includes('lunge') || t.includes('zancada') || t.includes('step') || t.includes('extension')) return ['quadriceps', 'gluteal'];
-    if (t.includes('curl') && t.includes('leg')) return ['hamstring'];
+    if (t.includes('squat') || t.includes('sentadilla') || t.includes('lunge') || t.includes('zancada') || t.includes('step')) return ['quadriceps', 'gluteal'];
     if (t.includes('femoral') || t.includes('isko') || t.includes('isquio')) return ['hamstring'];
-    if (t.includes('glute') || t.includes('glúteo') || t.includes('hip') || t.includes('cadera') || t.includes('bridge') || t.includes('puente')) return ['gluteal'];
+    if (t.includes('glute') || t.includes('cadera')) return ['gluteal'];
     if (t.includes('calf') || t.includes('gemelo') || t.includes('pantorrilla')) return ['calves'];
 
     // Abs
-    if (t.includes('abs') || t.includes('crunch') || t.includes('plank') || t.includes('plancha') || t.includes('abdominal') || t.includes('sit-up') || t.includes('leg raise')) return ['abs'];
+    if (t.includes('abs') || t.includes('crunch') || t.includes('plank') || t.includes('plancha') || t.includes('abdominal') || t.includes('sit-up')) return ['abs'];
 
     return [];
 };
@@ -192,7 +218,6 @@ export const SUGGESTED_EXERCISES = {
     'head': null
 };
 
-// Actualizado para incluir claves faltantes y unificar a "Dorsal"
 export const MUSCLE_NAMES_ES = {
     'chest': 'Pecho',
     'upper-back': 'Espalda Alta',
@@ -205,7 +230,7 @@ export const MUSCLE_NAMES_ES = {
     'triceps': 'Tríceps',
     'forearm': 'Antebrazos',
     'quadriceps': 'Cuádriceps',
-    'hamstring': 'Femoral', // CAMBIADO: Antes Isquiotibiales
+    'hamstring': 'Femoral', 
     'gluteal': 'Glúteos',
     'calves': 'Gemelos',
     'trapezius': 'Trapecios',
@@ -220,8 +245,8 @@ export const MUSCLE_NAMES_ES = {
     'dorsal ancho': 'Dorsal',
 
     'serratus anterior': 'Serrato anterior',
-    'soleus': 'Gemelos', // CAMBIADO: Antes Sóleo
-    'gastrocnemius': 'Gemelos', // CAMBIADO: Antes Gastrocnemio
+    'soleus': 'Gemelos', 
+    'gastrocnemius': 'Gemelos', 
     'brachialis': 'Braquial',
     'biceps femoris': 'Femoral',
     'rectus abdominis': 'Abdominales',

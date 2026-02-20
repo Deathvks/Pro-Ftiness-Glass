@@ -8,9 +8,14 @@ const DRAFT_KEY = 'routineEditorDraft';
  * Carga el estado inicial.
  * Intenta cargar un borrador desde localStorage si coincide con la rutina
  * que se intenta editar (por ID) o si es una nueva rutina.
+ * * FIX: Si initialRoutine ya trae 'exercises' (ej: generado por IA o al duplicar),
+ * esos ejercicios deben ser la prioridad absoluta sobre cualquier borrador.
  */
 const getInitialState = (initialRoutine) => {
   const savedDraft = localStorage.getItem(DRAFT_KEY);
+
+  // 1. Verificamos si la rutina inicial ya trae ejercicios (ej: de la IA o de Duplicar)
+  const hasInitialExercises = initialRoutine?.exercises && initialRoutine.exercises.length > 0;
 
   if (savedDraft) {
     try {
@@ -18,8 +23,8 @@ const getInitialState = (initialRoutine) => {
       const draftId = draft.id || null;
       const routineId = initialRoutine?.id || null;
 
-      // Si el ID del borrador coincide con el de la rutina, o si ambos son 'null' (Nueva Rutina)
-      if (draftId === routineId) {
+      // Si el ID del borrador coincide con el de la rutina, y NO nos están forzando ejercicios nuevos por props
+      if (draftId === routineId && !hasInitialExercises) {
         // Cargar el borrador guardado
         return {
           ...draft,
@@ -36,14 +41,15 @@ const getInitialState = (initialRoutine) => {
     }
   }
 
-  // Si no hay borrador o no coincide, empezar de cero
+  // Si no hay borrador o no coincide, o tenemos ejercicios forzados (IA)
   return {
     id: initialRoutine?.id || null, // Guardar el ID de lo que estamos editando
     routineName: initialRoutine?.name || '',
     description: initialRoutine?.description || '',
-    // Nota: El backend usa snake_case (image_url), aquí normalizamos a camelCase para el estado
-    imageUrl: initialRoutine?.image_url || null,
-    exercises: [], // Empezar vacío. useRoutineLoader lo llenará si no hay borrador
+    // FIX: Manejar ambos formatos de image_url por si acaso
+    imageUrl: initialRoutine?.image_url || initialRoutine?.imageUrl || null,
+    // FIX: Cargamos los ejercicios que mandó la IA o el duplicado
+    exercises: initialRoutine?.exercises || [], 
     isLoading: false,
     isSaving: false,
     isDeleting: false,
@@ -71,23 +77,24 @@ export const useRoutineState = (initialRoutine) => {
   // 2. Inicializar todos los estados desde initialState
   const [routineName, setRoutineName] = useState(initialState.routineName);
   const [description, setDescription] = useState(initialState.description);
-  const [imageUrl, setImageUrl] = useState(initialState.imageUrl); // <-- Nueva imagen
-  const [exercises, setExercises] = useState(initialState.exercises); // <-- Se carga desde el borrador
+  const [imageUrl, setImageUrl] = useState(initialState.imageUrl); 
+  // FIX: Ahora initialState.exercises contendrá los de la IA si están presentes
+  const [exercises, setExercises] = useState(initialState.exercises); 
 
   // Estados de carga y guardado
   const [isLoading, setIsLoading] = useState(initialState.isLoading);
   const [isSaving, setIsSaving] = useState(initialState.isSaving);
   const [isDeleting, setIsDeleting] = useState(initialState.isDeleting);
-  const [isUploadingImage, setIsUploadingImage] = useState(initialState.isUploadingImage); // <-- Estado de carga de imagen
+  const [isUploadingImage, setIsUploadingImage] = useState(initialState.isUploadingImage);
 
   // Estados de UI (modales, validación)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(initialState.showDeleteConfirm);
   const [validationError, setValidationError] = useState(initialState.validationError);
-  const [showExerciseSearch, setShowExerciseSearch] = useState(initialState.showExerciseSearch); // <-- Se carga desde el borrador
+  const [showExerciseSearch, setShowExerciseSearch] = useState(initialState.showExerciseSearch);
 
   // Estados de UI (ejercicios específicos)
   const [activeDropdownTempId, setActiveDropdownTempId] = useState(initialState.activeDropdownTempId);
-  const [replacingExerciseTempId, setReplacingExerciseTempId] = useState(initialState.replacingExerciseTempId); // <-- Se carga desde el borrador
+  const [replacingExerciseTempId, setReplacingExerciseTempId] = useState(initialState.replacingExerciseTempId);
 
   // 3. Efecto para guardar el borrador en CADA cambio de estado
   useEffect(() => {

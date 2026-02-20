@@ -25,7 +25,7 @@ precacheAndRoute(self.__WB_MANIFEST || []);
 
 // --- 3. ESTRATEGIAS DE CACHÉ (RUNTIME) ---
 
-// A. Fuentes de Google
+// A. Fuentes de Google (Cacheamos explícitamente porque son assets estáticos de UI)
 registerRoute(
   ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
   new StaleWhileRevalidate({
@@ -36,19 +36,22 @@ registerRoute(
   })
 );
 
-// B. Imágenes estáticas locales (logo, iconos, etc.)
-// IMPORTANTE: Excluimos '/uploads/' y VÍDEOS para evitar errores de CORS/Range en Safari.
+// B. Imágenes estáticas LOCALES (logo, iconos, etc.)
+// IMPORTANTE: Excluimos '/uploads/', VÍDEOS y ORÍGENES EXTERNOS para evitar errores de CORS/Opaque.
 registerRoute(
   ({ request, url }) => {
-    // 1. Si viene de /uploads/, ignorar (Backend)
+    // 1. EXCLUSIÓN CRÍTICA: Si la imagen NO es de nuestro propio dominio, IGNORAR.
+    // Esto soluciona el error "opaque response" con imágenes de Google/lh3.googleusercontent.com
+    if (url.origin !== self.location.origin) return false;
+
+    // 2. Si viene de /uploads/ (imágenes subidas por usuarios), ignorar (suelen ser dinámicas o requieren auth fresca)
     if (url.pathname.startsWith('/uploads/')) return false;
 
-    // 2. CRÍTICO: Si es un video (.mp4, .mov, etc.), IGNORAR.
-    // Safari requiere 'Range Requests' (206 Partial Content) para videos.
-    // Si el SW intercepta y devuelve 200 OK desde caché, Safari falla y muestra "Content not available".
+    // 3. CRÍTICO: Si es un video (.mp4, .mov, etc.), IGNORAR.
+    // Safari requiere 'Range Requests' (206 Partial Content).
     if (url.pathname.match(/\.(mp4|mov|webm|mkv)$/i)) return false;
 
-    // 3. Interceptamos solo imágenes reales
+    // 4. Interceptamos solo imágenes reales del propio sitio
     return request.destination === 'image' || url.pathname.startsWith('/images/');
   },
   new StaleWhileRevalidate({

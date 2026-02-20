@@ -37,7 +37,13 @@ const Routine = sequelize.define(
       defaultValue: false,
       allowNull: false
     },
-    folder: { // Nuevo campo para organizar carpetas
+    // Añadimos el campo visibility explícitamente
+    visibility: {
+      type: DataTypes.STRING(20), // 'private', 'friends', 'public'
+      allowNull: false,
+      defaultValue: 'private'
+    },
+    folder: { 
       type: DataTypes.STRING(255),
       allowNull: true,
       defaultValue: null

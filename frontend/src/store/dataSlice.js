@@ -3,12 +3,13 @@ import * as userService from '../services/userService';
 import * as routineService from '../services/routineService';
 import * as workoutService from '../services/workoutService';
 import * as bodyWeightService from '../services/bodyweightService';
-import * as bodyMeasurementService from '../services/bodyMeasurementService'; // --- NUEVO IMPORT ---
+import * as bodyMeasurementService from '../services/bodyMeasurementService';
 import * as nutritionService from '../services/nutritionService';
 import * as favoriteMealService from '../services/favoriteMealService';
 import * as templateRoutineService from '../services/templateRoutineService';
 import * as creatinaService from '../services/creatinaService';
 import * as exerciseService from '../services/exerciseService';
+import * as personalRecordService from '../services/personalRecordService';
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
@@ -16,7 +17,7 @@ const initialState = {
   routines: [],
   workoutLog: [],
   bodyWeightLog: [],
-  bodyMeasurementsLog: [], // --- NUEVO ESTADO ---
+  bodyMeasurementsLog: [],
   prNotification: null,
   nutritionLog: [],
   waterLog: { quantity_ml: 0 },
@@ -28,6 +29,7 @@ const initialState = {
   todaysCreatineLog: [],
   creatineStats: null,
   allExercises: [],
+  personalRecords: [], // Estado inicial array vacío
 };
 
 export const createDataSlice = (set, get) => ({
@@ -36,6 +38,38 @@ export const createDataSlice = (set, get) => ({
   showPRNotification: (newPRs) => {
     set({ prNotification: newPRs });
     setTimeout(() => set({ prNotification: null }), 7000);
+  },
+
+  // --- NUEVA ACCIÓN: Inyectar PRs localmente (Instantáneo) ---
+  addLocalPersonalRecords: (newRecords) => {
+      if (!newRecords || newRecords.length === 0) return;
+      
+      set(state => {
+          // Aseguramos que state.personalRecords sea un array
+          const currentRecords = Array.isArray(state.personalRecords) ? state.personalRecords : [];
+          
+          // Combinamos los nuevos con los existentes, evitando duplicados si fuera necesario
+          // (Aunque para la UI de "Último Récord", simplemente añadirlo al principio o final basta, 
+          //  ya que el Dashboard los ordena por fecha).
+          return {
+              personalRecords: [...newRecords, ...currentRecords]
+          };
+      });
+  },
+
+  fetchPersonalRecords: async () => {
+      try {
+          const response = await personalRecordService.getPersonalRecords(1, 'all');
+          // BLINDAJE: La respuesta viene paginada { records: [], totalPages: ... }
+          // Buscamos response.records, o fallback a array directo si la API cambiara
+          const records = response?.records || (Array.isArray(response) ? response : []);
+          
+          set({ personalRecords: records });
+      } catch (error) {
+          console.error("Error actualizando récords personales:", error);
+          // No sobrescribimos con vacío si falla, para mantener lo que ya tengamos localmente
+          if (!get().personalRecords) set({ personalRecords: [] });
+      }
   },
 
   fetchInitialData: async () => {
@@ -78,32 +112,38 @@ export const createDataSlice = (set, get) => ({
           routines,
           workouts,
           bodyweight,
-          measurements, // --- NUEVO DATO ---
+          measurements,
           nutrition,
           favoriteMeals,
           recentMeals,
           templateRoutines,
           todaysCreatine,
           creatineStats,
-          exercises
+          exercises,
+          prsResponse
         ] = await Promise.all([
           routineService.getRoutines(),
           workoutService.getWorkouts(),
           bodyWeightService.getHistory(),
-          bodyMeasurementService.getHistory(), // --- CARGA DEL HISTORIAL ---
+          bodyMeasurementService.getHistory(),
           nutritionService.getNutritionLogsByDate(today),
           favoriteMealService.getFavoriteMeals(),
           nutritionService.getRecentMeals(),
           templateRoutineService.getTemplateRoutines(),
           creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
           creatinaService.getCreatinaStats(),
-          exerciseService.getExerciseList()
+          exerciseService.getExerciseList(),
+          personalRecordService.getPersonalRecords(1, 'all').catch(() => [])
         ]);
+        
+        // BLINDAJE: Detectamos estructura paginada { records: [...] }
+        const safePRs = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
+
         set({
           routines,
           workoutLog: workouts,
           bodyWeightLog: bodyweight,
-          bodyMeasurementsLog: measurements || [], // --- SET STATE ---
+          bodyMeasurementsLog: measurements || [],
           nutritionLog: nutrition.nutrition || [],
           waterLog: nutrition.water || { quantity_ml: 0 },
           favoriteMeals,
@@ -111,7 +151,8 @@ export const createDataSlice = (set, get) => ({
           templateRoutines,
           todaysCreatineLog: todaysCreatine.data || [],
           creatineStats: creatineStats.data || null,
-          allExercises: exercises || []
+          allExercises: exercises || [],
+          personalRecords: safePRs
         });
       }
     } catch (error) {
@@ -320,12 +361,10 @@ export const createDataSlice = (set, get) => ({
       const history = await bodyMeasurementService.getHistory();
       set({ bodyMeasurementsLog: history });
 
-      // Solo sumamos XP si el backend indicó que se ganó (xpAdded > 0)
       if (response && response.xpAdded > 0) {
         if (get().addXp) get().addXp(response.xpAdded);
       }
 
-      // Mensaje condicional dependiendo de si se ganó XP o no
       const message = (response && response.xpAdded > 0)
         ? 'Medida registrada con éxito.'
         : 'Medida registrada. Límite diario de XP por músculo alcanzado.';

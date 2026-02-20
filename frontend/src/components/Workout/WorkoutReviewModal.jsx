@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import useAppStore from '../../store/useAppStore';
 
 const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
-    // CORRECCIÓN: Cargamos también el namespace 'exercise_names'
     const { t } = useTranslation(['exercise_ui', 'exercise_names']);
     
     const { activeWorkout, updateActiveWorkoutSet } = useAppStore(state => ({
@@ -33,7 +32,8 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                 
                 <div className="p-4 border-b border-glass-border flex justify-between items-center bg-bg-secondary/95 sticky top-0 z-10">
                     <div>
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        {/* CAMBIO: text-white -> text-text-primary para que se vea en modo claro */}
+                        <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
                             <Edit2 size={20} className="text-accent" />
                             {t('exercise_ui:review_data', 'Revisar Datos')}
                         </h2>
@@ -55,7 +55,6 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                         exercisesWithData.map((exercise) => (
                             <div key={exercise.id || exercise.name} className="bg-bg-primary/30 rounded-xl p-4 border border-glass-border">
                                 <h3 className="font-bold text-accent mb-3 text-sm uppercase tracking-wider">
-                                    {/* CORRECCIÓN: Traducción del nombre del ejercicio */}
                                     {t(`exercise_names:${exercise.name}`, exercise.name)}
                                 </h3>
                                 <div className="space-y-2">
@@ -72,20 +71,22 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                                                 </span>
                                             </div>
                                             <div className="col-span-4">
+                                                {/* CAMBIO: text-white -> text-text-primary */}
                                                 <input
                                                     type="number"
                                                     value={set.weight_kg}
                                                     onChange={(e) => handleUpdate(exercise.originalIndex, set.originalSetIndex, 'weight_kg', e.target.value)}
-                                                    className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-white font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-text-primary font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     placeholder="0"
                                                 />
                                             </div>
                                             <div className="col-span-4">
+                                                {/* CAMBIO: text-white -> text-text-primary */}
                                                 <input
                                                     type="number"
                                                     value={set.reps}
                                                     onChange={(e) => handleUpdate(exercise.originalIndex, set.originalSetIndex, 'reps', e.target.value)}
-                                                    className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-white font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-text-primary font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     placeholder="0"
                                                 />
                                             </div>

@@ -52,10 +52,9 @@ export default defineConfig({
     Sitemap({
       hostname: 'https://pro-fitness-glass.zeabur.app',
       readable: true,
-      // Solo incluimos las rutas que App.jsx maneja explícitamente como públicas
+      // MODIFICADO: Eliminamos '/' para evitar que salga duplicada (el plugin ya la incluye por defecto)
       dynamicRoutes: [
-        '/',          // Landing Page
-        '/privacy',   // Política de privacidad (Corregido: coincidía con App.jsx)
+        '/privacy',   // Política de privacidad
         '/terms'      // Términos y condiciones
       ],
       robots: [
@@ -72,7 +71,7 @@ export default defineConfig({
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.webp'],
       manifest: {
         name: 'Pro Fitness Glass',
-        short_name: 'FitTrack-Pro',
+        short_name: 'Pro Fitness Glass', // CORREGIDO: Cambiado de FitTrack-Pro a Pro Fitness Glass
         description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
         display: 'standalone',
         scope: '/',

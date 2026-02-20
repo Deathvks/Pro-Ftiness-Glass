@@ -45,10 +45,11 @@ const PrivacyPolicy = ({ onBack }) => {
     // z-[110] para estar por encima de todo
     <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto custom-scrollbar transition-colors duration-300">
       {/* SEO Head: Página pública e importante para Google */}
+      {/* CORRECCIÓN: La ruta debe coincidir con la URL real (/privacy-policy) para evitar el aviso de canónica alternativa */}
       <SEOHead 
         title="Política de Privacidad y Eliminación de Datos - Pro Fitness Glass" 
         description="Conoce cómo protegemos tus datos y los pasos para solicitar la eliminación de tu cuenta."
-        route="politica-privacidad" 
+        route="privacy-policy" 
       />
 
       <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">

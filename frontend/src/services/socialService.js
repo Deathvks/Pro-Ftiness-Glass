@@ -46,6 +46,46 @@ const socialService = {
     // Obtener perfil público de un usuario
     getPublicProfile: async (userId) => {
         return await apiClient(`/social/profile/${userId}`);
+    },
+
+    // --- SQUADS / CLANES ---
+
+    // Crear un nuevo squad
+    createSquad: async (data) => {
+        return await apiClient('/squads', {
+            body: data
+        });
+    },
+
+    // Unirse a un squad mediante código
+    joinSquad: async (invite_code) => {
+        return await apiClient('/squads/join', {
+            body: { invite_code }
+        });
+    },
+
+    // Obtener la lista de squads del usuario
+    getMySquads: async () => {
+        return await apiClient('/squads/my-squads');
+    },
+
+    // Obtener el ranking de un squad específico
+    getSquadLeaderboard: async (squadId) => {
+        return await apiClient(`/squads/${squadId}/leaderboard`);
+    },
+
+    // Abandonar un squad (solo para miembros)
+    leaveSquad: async (squadId) => {
+        return await apiClient(`/squads/${squadId}/leave`, {
+            method: 'DELETE'
+        });
+    },
+
+    // Eliminar un squad (solo para el admin)
+    deleteSquad: async (squadId) => {
+        return await apiClient(`/squads/${squadId}`, {
+            method: 'DELETE'
+        });
     }
 };
 

@@ -16,7 +16,13 @@ import {
   Clock,
   Folder,
   FolderOpen,
-  Share2
+  Share2,
+  Globe,
+  Copy,
+  Users,
+  Lock,
+  X,
+  Sparkles
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -27,6 +33,158 @@ import useAppStore from '../store/useAppStore';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
+import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal'; // Importamos el generador IA
+
+// --- COMPONENTE MODAL DE COMPARTIR ---
+const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
+  const { addToast } = useToast();
+  const [visibility, setVisibility] = useState(routine.visibility || 'private');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    if (routine.visibility) {
+      setVisibility(routine.visibility);
+    }
+  }, [routine.visibility]);
+
+  const shareUrl = `${window.location.origin}/share/routine/${routine.id}`;
+
+  const handleVisibilityChange = async (newVisibility) => {
+    if (newVisibility === visibility) return;
+    
+    setVisibility(newVisibility); 
+    setIsUpdating(true);
+    try {
+      await onUpdate(routine.id, { ...routine, visibility: newVisibility });
+      addToast('Visibilidad actualizada correctamente', 'success');
+    } catch (error) {
+      console.error(error);
+      addToast('Error al actualizar visibilidad', 'error');
+      setVisibility(routine.visibility || 'private');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    addToast('Enlace copiado al portapapeles', 'success');
+  };
+
+  const getOptionClasses = (optionKey) => {
+    const isSelected = visibility === optionKey;
+    return `flex items-center gap-4 p-4 rounded-xl border transition-all text-left group cursor-pointer relative overflow-hidden
+      ${isSelected 
+        ? 'bg-accent/10 border-accent shadow-[0_0_15px_-3px_rgba(var(--accent-rgb),0.3)]' 
+        : 'bg-glass-base border-glass-border hover:border-accent/30 hover:bg-glass-base/80'
+      }`;
+  };
+
+  const getIconContainerClasses = (optionKey) => {
+    const isSelected = visibility === optionKey;
+    return `transition-colors flex items-center justify-center
+      ${isSelected 
+        ? 'text-accent' 
+        : 'text-text-secondary group-hover:text-text-primary'
+      }`;
+  };
+
+  const getTextClasses = (optionKey) => {
+    const isSelected = visibility === optionKey;
+    return `block font-bold text-lg transition-colors ${isSelected ? 'text-accent' : 'text-text-primary'}`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+      <GlassCard 
+        className="w-full max-w-md p-0 relative flex flex-col overflow-hidden animate-scale-in border border-glass-border shadow-2xl" 
+        style={{ backgroundColor: 'var(--bg-primary)' }}
+      >
+        <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent">
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-glass-base text-text-secondary transition-colors z-10"
+          >
+            <X size={20} />
+          </button>
+
+          <div className="flex flex-col items-center text-center gap-3 mt-2">
+            <div className="text-accent mb-1">
+              <Share2 size={36} strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-text-primary">Compartir Rutina</h2>
+              <p className="text-sm text-text-secondary mt-1 px-4">
+                Configura la privacidad para <strong>{routine.name}</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 pt-2 space-y-6">
+          <div className="grid grid-cols-1 gap-3">
+            <button onClick={() => handleVisibilityChange('private')} className={getOptionClasses('private')}>
+              <div className={getIconContainerClasses('private')}><Lock size={26} strokeWidth={1.5} /></div>
+              <div>
+                <span className={getTextClasses('private')}>Privada</span>
+                <span className="text-xs text-text-secondary block mt-0.5">Solo tú puedes ver esta rutina.</span>
+              </div>
+              {visibility === 'private' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
+            </button>
+
+            <button onClick={() => handleVisibilityChange('friends')} className={getOptionClasses('friends')}>
+              <div className={getIconContainerClasses('friends')}><Users size={26} strokeWidth={1.5} /></div>
+              <div>
+                <span className={getTextClasses('friends')}>Solo Amigos</span>
+                <span className="text-xs text-text-secondary block mt-0.5">Accesible para tus amigos agregados.</span>
+              </div>
+              {visibility === 'friends' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
+            </button>
+
+            <button onClick={() => handleVisibilityChange('public')} className={getOptionClasses('public')}>
+              <div className={getIconContainerClasses('public')}><Globe size={26} strokeWidth={1.5} /></div>
+              <div>
+                <span className={getTextClasses('public')}>Pública</span>
+                <span className="text-xs text-text-secondary block mt-0.5">Cualquiera con el enlace puede verla.</span>
+              </div>
+              {visibility === 'public' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
+            </button>
+          </div>
+
+          <div className={`transition-all duration-300 overflow-hidden ${visibility !== 'private' ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="p-4 rounded-xl bg-glass-base border border-glass-border space-y-2">
+              <label className="text-[10px] font-bold text-accent uppercase tracking-wider flex items-center gap-1">
+                 <Link2 size={10} /> Enlace para compartir
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-bg-primary rounded-lg px-3 py-2 border border-glass-border text-xs text-text-secondary font-mono truncate select-all">
+                  {shareUrl}
+                </div>
+                <button 
+                  onClick={copyLink}
+                  className="p-2 bg-accent text-bg-primary hover:brightness-110 rounded-lg transition-colors shadow-lg shadow-accent/20"
+                  title="Copiar enlace"
+                >
+                  <Copy size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-6 pt-0">
+             <button 
+                onClick={onClose}
+                className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
+             >
+                Cerrar
+             </button>
+        </div>
+      </GlassCard>
+    </div>
+  );
+};
+
 
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
@@ -40,6 +198,7 @@ const Routines = ({ setView }) => {
     startWorkout,
     deleteRoutine,
     createRoutine,
+    updateRoutine,
     activeWorkout,
     completedRoutineIdsToday,
     fetchTodaysCompletedRoutines,
@@ -50,19 +209,22 @@ const Routines = ({ setView }) => {
     startWorkout: state.startWorkout,
     deleteRoutine: state.deleteRoutine,
     createRoutine: state.createRoutine,
+    updateRoutine: state.updateRoutine,
     activeWorkout: state.activeWorkout,
     completedRoutineIdsToday: state.completedRoutineIdsToday,
     fetchTodaysCompletedRoutines: state.fetchTodaysCompletedRoutines,
   }));
 
+  const LS_KEY_EDITING = 'routinesEditingState_v2';
+
   const [editingRoutine, setEditingRoutine] = useState(() => {
-    const savedEditingRoutine = localStorage.getItem('routinesEditingState');
+    const savedEditingRoutine = localStorage.getItem(LS_KEY_EDITING);
     if (savedEditingRoutine) {
       try {
         return JSON.parse(savedEditingRoutine);
       } catch (e) {
         console.error('Error al parsear rutina guardada:', e);
-        localStorage.removeItem('routinesEditingState');
+        localStorage.removeItem(LS_KEY_EDITING);
         return null;
       }
     }
@@ -70,16 +232,22 @@ const Routines = ({ setView }) => {
   });
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false); // Estado para el modal de IA
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
   
-  // --- MODIFICACIÓN: Persistencia de carpeta seleccionada ---
+  const [sharingRoutineId, setSharingRoutineId] = useState(null);
+  const sharingRoutine = useMemo(() => {
+     if (!sharingRoutineId) return null;
+     return routines.find(r => r.id === sharingRoutineId);
+  }, [routines, sharingRoutineId]);
+
+
   const [selectedFolder, setSelectedFolder] = useState(() => {
     return localStorage.getItem('routinesSelectedFolder') || 'all';
   });
 
-  // Estado para el modal de compartir
   const [shareData, setShareData] = useState(null);
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -91,7 +259,6 @@ const Routines = ({ setView }) => {
     return localStorage.getItem('routinesActiveTab') || 'myRoutines';
   });
 
-  // --- Helpers para Imagen ---
   const isCssBackground = (value) => {
     return value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
   };
@@ -104,7 +271,6 @@ const Routines = ({ setView }) => {
     return path;
   };
 
-  // --- EFECTOS ---
   useEffect(() => {
     fetchTodaysCompletedRoutines();
   }, [fetchTodaysCompletedRoutines]);
@@ -113,23 +279,18 @@ const Routines = ({ setView }) => {
     localStorage.setItem('routinesActiveTab', activeTab);
   }, [activeTab]);
 
-  // Guardar carpeta seleccionada
   useEffect(() => {
     localStorage.setItem('routinesSelectedFolder', selectedFolder);
   }, [selectedFolder]);
 
   useEffect(() => {
     if (editingRoutine) {
-      localStorage.setItem(
-        'routinesEditingState',
-        JSON.stringify(editingRoutine)
-      );
+      localStorage.setItem(LS_KEY_EDITING, JSON.stringify(editingRoutine));
     } else {
-      localStorage.removeItem('routinesEditingState');
+      localStorage.removeItem(LS_KEY_EDITING);
     }
   }, [editingRoutine]);
 
-  // --- MEMOS ---
   const lastUsedMap = useMemo(() => {
     const map = new Map();
     (workoutLog || []).forEach((log) => {
@@ -142,7 +303,6 @@ const Routines = ({ setView }) => {
     return map;
   }, [workoutLog]);
 
-  // Extraer carpetas únicas
   const uniqueFolders = useMemo(() => {
     if (!routines) return [];
     const folders = routines
@@ -189,10 +349,7 @@ const Routines = ({ setView }) => {
       setEditingRoutine(null);
       await fetchInitialData();
     } catch (error) {
-      addToast(
-        error.message || 'Ocurrió un error al refrescar las rutinas.',
-        'error'
-      );
+      addToast(error.message || 'Ocurrió un error al refrescar las rutinas.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -200,48 +357,37 @@ const Routines = ({ setView }) => {
 
   const handleEditClick = (routine) => {
     if (activeWorkout && activeWorkout.routineId === routine.id) {
-      addToast(
-        'No puedes editar una rutina que está en curso. Finaliza o descarta el entrenamiento primero.',
-        'warning'
-      );
+      addToast('No puedes editar una rutina que está en curso. Finaliza o descarta el entrenamiento primero.', 'warning');
     } else {
-      setEditingRoutine(routine);
+      const exercises = routine.exercises || routine.RoutineExercises || [];
+      const normalizedRoutine = {
+        ...routine,
+        exercises: exercises.map(ex => ({ ...ex }))
+      };
+      setEditingRoutine(normalizedRoutine);
     }
   };
 
-  // --- Función para compartir rutina completada ---
   const handleShareClick = (routine) => {
     if (!workoutLog) return;
-
     const today = new Date().toDateString();
 
-    // Buscamos el log de ESTA rutina que se haya hecho HOY.
     const todaysLog = workoutLog
       .filter(log => log.routine_id === routine.id)
       .sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date))
       .find(log => new Date(log.workout_date).toDateString() === today);
 
     if (todaysLog) {
-      // Obtenemos los detalles, usando el fallback si 'details' no existe
       const rawDetails = todaysLog.details || todaysLog.WorkoutLogDetails || [];
-
       const normalizedDetails = rawDetails.map((ex) => {
-        // Intentamos encontrar las series en varias propiedades comunes
-        // AÑADIDO: ex.WorkoutLogSets que es donde vienen los datos reales
         let rawSets = ex.setsDone || ex.sets_done || ex.sets || ex.Sets || ex.WorkoutLogSets || [];
 
-        // Si es un string (JSON), lo parseamos
         if (typeof rawSets === 'string') {
-          try {
-            rawSets = JSON.parse(rawSets);
-          } catch (e) {
-            rawSets = [];
-          }
+          try { rawSets = JSON.parse(rawSets); } 
+          catch (e) { rawSets = []; }
         }
 
-        if (!Array.isArray(rawSets)) {
-          rawSets = [];
-        }
+        if (!Array.isArray(rawSets)) rawSets = [];
 
         const normalizedSets = rawSets.map(s => ({
           weight_kg: parseFloat(s.weight_kg || s.weight || 0),
@@ -252,15 +398,10 @@ const Routines = ({ setView }) => {
         }));
 
         const exName = ex.exercise_name || ex.exerciseName || ex.name || "Ejercicio";
-
-        return {
-          exerciseName: exName,
-          setsDone: normalizedSets
-        };
+        return { exerciseName: exName, setsDone: normalizedSets };
       });
 
       setShareData({
-        // CAMBIO: Priorizamos routine.name (nombre actual) sobre todaysLog.routine_name (nombre histórico)
         routineName: routine.name || todaysLog.routine_name,
         duration_seconds: todaysLog.duration_seconds || 0,
         calories_burned: todaysLog.calories_burned || 0,
@@ -282,7 +423,6 @@ const Routines = ({ setView }) => {
     setIsLoading(true);
     try {
       const result = await deleteRoutine(routineToDelete);
-
       if (result.success) {
         addToast(result.message, 'success');
         setShowDeleteModal(false);
@@ -304,17 +444,17 @@ const Routines = ({ setView }) => {
         name: `${routine.name} (Copia)`,
         description: routine.description,
         folder: routine.folder,
+        image_url: routine.image_url || routine.imageUrl,
+        imageUrl: routine.imageUrl || routine.image_url,
         exercises: (routine.RoutineExercises || routine.exercises || []).map(
           ({ ...ex }) => ({
             ...ex,
-            exercise_order:
-              ex.exercise_order !== undefined ? ex.exercise_order : 0,
+            exercise_order: ex.exercise_order !== undefined ? ex.exercise_order : 0,
           })
         ),
       };
 
       const result = await createRoutine(copy);
-
       if (result.success) {
         addToast('Rutina duplicada.', 'success');
       } else {
@@ -336,7 +476,6 @@ const Routines = ({ setView }) => {
     setIsLoading(true);
     try {
       const result = await startWorkout(routine);
-
       if (result && result.success === false) {
         addToast(result.message, 'error');
         setIsLoading(false);
@@ -345,10 +484,8 @@ const Routines = ({ setView }) => {
 
       let attempts = 0;
       const maxAttempts = 10;
-
       const checkAndNavigate = () => {
         const currentActive = useAppStore.getState().activeWorkout;
-
         if (currentActive) {
           setIsLoading(false);
           setView('workout');
@@ -363,7 +500,6 @@ const Routines = ({ setView }) => {
       };
 
       checkAndNavigate();
-
     } catch (error) {
       console.error("Error al iniciar entrenamiento:", error);
       addToast("No se pudo iniciar el entrenamiento. Inténtalo de nuevo.", "error");
@@ -409,37 +545,43 @@ const Routines = ({ setView }) => {
     );
   }
 
-  const baseButtonClasses =
-    'px-4 py-2 rounded-full font-semibold transition-colors flex items-center gap-2';
+  const baseButtonClasses = 'px-4 py-2 rounded-full font-semibold transition-colors flex items-center gap-2';
   const activeModeClasses = 'bg-accent text-bg-secondary';
-  const inactiveModeClasses =
-    'bg-bg-secondary hover:bg-white/10 text-text-secondary';
+  const inactiveModeClasses = 'bg-bg-secondary hover:bg-white/10 text-text-secondary';
 
-  const CreateRoutineButton = ({ className = '' }) => (
-    <button
-      onClick={() => {
-        setEditingRoutine({
-          name: '',
-          description: '',
-          exercises: [],
-          folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
-        });
-      }}
-      className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 ${className}`}
-    >
-      <Plus size={18} />
-      Crear Rutina
-    </button>
+  // --- BOTONES DE CREACIÓN ACTUALIZADOS (IA + Manual) ---
+  const RoutineActionButtons = ({ className = '' }) => (
+    <div className={`flex gap-2 ${className}`}>
+      <button
+        onClick={() => setShowAIGenerator(true)}
+        className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-accent/10 text-accent font-semibold transition hover:scale-105 border border-accent/30"
+        title="Generar rutina con IA"
+      >
+        <Sparkles size={18} />
+        <span className="hidden sm:inline">IA</span>
+      </button>
+      <button
+        onClick={() => {
+          setEditingRoutine({
+            name: '',
+            description: '',
+            exercises: [],
+            folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
+          });
+        }}
+        className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 flex-1 md:flex-none"
+      >
+        <Plus size={18} />
+        Crear Rutina
+      </button>
+    </div>
   );
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 pb-4 md:p-8 animate-[fade-in_0.5s_ease_out]">
       <Helmet>
         <title>
-          {activeTab === 'myRoutines'
-            ? 'Mis Rutinas'
-            : 'Explorar Plantillas'}{' '}
-          - Pro Fitness Glass
+          {activeTab === 'myRoutines' ? 'Mis Rutinas' : 'Explorar Plantillas'} - Pro Fitness Glass
         </title>
         <meta
           name="description"
@@ -455,38 +597,33 @@ const Routines = ({ setView }) => {
         <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
           Rutinas
         </h1>
-        {activeTab === 'myRoutines' && <CreateRoutineButton />}
+        {activeTab === 'myRoutines' && <RoutineActionButtons />}
       </div>
 
       <div className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit mt-6 md:mt-0`}>
         <button
           onClick={() => setActiveTab('myRoutines')}
-          className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses
-            }`}
+          className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses}`}
         >
           <BookCopy size={16} /> Mis Rutinas
         </button>
         <button
           onClick={() => setActiveTab('explore')}
-          className={`${baseButtonClasses} ${activeTab === 'explore' ? activeModeClasses : inactiveModeClasses
-            }`}
+          className={`${baseButtonClasses} ${activeTab === 'explore' ? activeModeClasses : inactiveModeClasses}`}
         >
           <Compass size={16} /> Explorar
         </button>
       </div>
 
       {activeTab === 'myRoutines' && (
-        <CreateRoutineButton className="flex md:hidden w-full mb-6" />
+        <RoutineActionButtons className="flex md:hidden w-full mb-6" />
       )}
 
       {activeTab === 'myRoutines' && (
         <>
           <div className="mb-6 flex flex-col gap-4">
             <div className="max-w-md relative">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
-                size={16}
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -547,6 +684,17 @@ const Routines = ({ setView }) => {
                 const totalExercises = exercisesToGroup.length;
                 const imageSrc = routine.imageUrl || routine.image_url;
 
+                let visibilityIcon = <Lock size={12} />;
+                let visibilityText = 'Privada';
+                
+                if (routine.visibility === 'public') {
+                  visibilityIcon = <Globe size={12} />;
+                  visibilityText = 'Pública';
+                } else if (routine.visibility === 'friends') {
+                  visibilityIcon = <Users size={12} />;
+                  visibilityText = 'Amigos';
+                }
+
                 return (
                   <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group relative border-transparent dark:border dark:border-white/10">
                     {imageSrc && (
@@ -576,44 +724,25 @@ const Routines = ({ setView }) => {
                     )}
 
                     <div className="p-5 flex-1 flex flex-col">
-                      <div className="flex justify-between items-start gap-3 mb-2">
-                        <div className="flex flex-col gap-1 min-w-0">
-                          {!imageSrc && routine.folder && (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-text-muted mb-0.5">
-                              <Folder size={12} /> {routine.folder}
+                      <div className="flex flex-col gap-1 min-w-0 mb-3">
+                        {!imageSrc && routine.folder && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-text-muted mb-0.5">
+                            <Folder size={12} /> {routine.folder}
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* AÑADIDO: break-words max-w-full para evitar que se desborde si es muy largo */}
+                          <h2 className="text-lg md:text-xl font-bold text-text-primary leading-tight break-words max-w-full">
+                            {routine.name}
+                          </h2>
+                          {isActive && (
+                            <span className="px-2 py-0.5 rounded-full bg-accent-transparent text-accent text-[10px] uppercase font-bold shrink-0 border border-transparent">
+                              Activo
                             </span>
                           )}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h2 className="text-lg md:text-xl font-bold text-text-primary leading-tight truncate">
-                              {routine.name}
-                            </h2>
-                            {isActive && (
-                              <span className="px-2 py-0.5 rounded-full bg-accent-transparent text-accent text-[10px] uppercase font-bold shrink-0 border border-accent/20">
-                                Activo
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 flex items-center gap-1 -mt-1">
-                          {isCompleted && (
-                            <button
-                              onClick={() => handleShareClick(routine)}
-                              className="p-2 rounded-full text-text-secondary hover:text-accent hover:bg-bg-secondary border border-transparent hover:border-glass-border transition-all"
-                              title="Compartir resultado de hoy"
-                            >
-                              <Share2 size={16} />
-                            </button>
-                          )}
-                          <button onClick={() => handleEditClick(routine)} className="p-2 rounded-full text-text-secondary hover:bg-bg-secondary border border-transparent hover:border-glass-border transition-all" title="Editar">
-                            <Edit size={16} />
-                          </button>
-                          <button onClick={() => duplicateRoutine(routine)} className="p-2 rounded-full text-text-secondary hover:bg-bg-secondary border border-transparent hover:border-glass-border transition-all" title="Duplicar">
-                            <Plus size={16} />
-                          </button>
-                          <button onClick={() => handleDeleteClick(routine.id)} className="p-2 rounded-full text-text-muted hover:text-red hover:bg-red/10 border border-transparent hover:border-red/20 transition-all" title="Eliminar">
-                            <Trash2 size={16} />
-                          </button>
+                          <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] uppercase font-bold shrink-0 border border-transparent flex items-center gap-1">
+                              {visibilityIcon} {visibilityText}
+                          </span>
                         </div>
                       </div>
 
@@ -623,21 +752,63 @@ const Routines = ({ setView }) => {
                         </p>
                       )}
 
-                      {/* --- MODIFICADO: Eliminados borders inferiores y de chips --- */}
-                      <div className="flex flex-wrap items-center gap-2 mb-4">
+                      {/* STATS SIN BACKGROUND */}
+                      <div className="flex flex-wrap items-center gap-3 mb-4 text-xs font-medium text-text-secondary">
                         {isCompleted && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-bg-secondary text-xs font-semibold">
-                            <CheckCircle size={12} /> Completada
+                          <span className="inline-flex items-center gap-1 text-accent font-semibold">
+                            <CheckCircle size={14} /> Completada
                           </span>
                         )}
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-bg-secondary text-text-secondary text-xs font-medium">
-                          <Dumbbell size={12} /> {totalExercises} ejercicios
+                        <span className="inline-flex items-center gap-1">
+                          <Dumbbell size={14} /> {totalExercises} ejercicios
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-bg-secondary text-text-secondary text-xs font-medium">
-                          <CalendarClock size={12} /> {lastUsed ? new Date(lastUsed).toLocaleDateString('es-ES') : 'Sin uso'}
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarClock size={14} /> {lastUsed ? new Date(lastUsed).toLocaleDateString('es-ES') : 'Sin uso'}
                         </span>
                       </div>
-                      {/* --- FIN MODIFICACIÓN --- */}
+
+                      <div className="flex flex-wrap items-center gap-3 mb-4 mt-2">
+                        <button 
+                          onClick={() => setSharingRoutineId(routine.id)} 
+                          className="text-text-secondary hover:text-accent transition-colors p-1" 
+                          title="Privacidad"
+                        >
+                          <Globe size={20} />
+                        </button>
+                        {isCompleted && (
+                          <button 
+                            onClick={() => handleShareClick(routine)} 
+                            className="text-text-secondary hover:text-accent transition-colors p-1" 
+                            title="Compartir"
+                          >
+                            <Share2 size={20} />
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleEditClick(routine)} 
+                          className="text-text-secondary hover:text-accent transition-colors p-1" 
+                          title="Editar"
+                        >
+                          <Edit size={20} />
+                        </button>
+                        <button 
+                          onClick={() => duplicateRoutine(routine)} 
+                          className="text-text-secondary hover:text-accent transition-colors p-1" 
+                          title="Duplicar"
+                        >
+                          <Copy size={20} />
+                        </button>
+                        
+                        <div className="flex-1"></div>
+                        
+                        <button 
+                          onClick={() => handleDeleteClick(routine.id)} 
+                          className="text-text-muted hover:text-red transition-colors p-1" 
+                          title="Eliminar"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
 
                       {exerciseGroups.length > 0 && (
                         <div className="mb-4">
@@ -655,7 +826,8 @@ const Routines = ({ setView }) => {
                                       <span className="truncate font-medium text-text-primary pr-2">
                                         {t(ex.name)}
                                       </span>
-                                      <span className="text-text-muted text-xs whitespace-nowrap bg-bg-secondary px-1.5 py-0.5 rounded">
+                                      {/* SERIES SIN BACKGROUND */}
+                                      <span className="text-text-muted text-xs whitespace-nowrap">
                                         {ex.sets}×{ex.reps}
                                       </span>
                                     </li>
@@ -725,6 +897,14 @@ const Routines = ({ setView }) => {
 
       {activeTab === 'explore' && <TemplateRoutines setView={setView} />}
 
+      {sharingRoutine && (
+        <ShareSettingsModal
+          routine={sharingRoutine}
+          onClose={() => setSharingRoutineId(null)}
+          onUpdate={updateRoutine}
+        />
+      )}
+
       {showDeleteModal && (
         <ConfirmationModal
           isOpen={showDeleteModal}
@@ -737,7 +917,6 @@ const Routines = ({ setView }) => {
         />
       )}
 
-      {/* MODAL DE COMPARTIR - Añadido isShareMode para generar imagen auto */}
       {shareData && (
         <WorkoutSummaryModal
           workoutData={shareData}
@@ -745,6 +924,13 @@ const Routines = ({ setView }) => {
           isShareMode={true}
         />
       )}
+
+      {/* --- MODAL DEL GENERADOR IA --- */}
+      <RoutineAIGeneratorModal 
+        isOpen={showAIGenerator}
+        onClose={() => setShowAIGenerator(false)}
+        onGenerate={(generatedRoutine) => setEditingRoutine(generatedRoutine)}
+      />
 
       {isLoading && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/30">

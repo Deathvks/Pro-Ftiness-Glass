@@ -13,14 +13,12 @@ const getLocalTime = (timezone) => {
   try {
     const tz = timezone || 'Europe/Madrid';
     const now = new Date();
-    // Usamos formateadores pre-calculados para eficiencia
     const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: 'numeric' }), 10);
     const day = parseInt(now.toLocaleDateString('en-US', { timeZone: tz, day: 'numeric' }), 10);
     const date = now.toLocaleDateString('sv-SE', { timeZone: tz }); // Formato YYYY-MM-DD
 
     return { hour, day, date };
   } catch (error) {
-    // Fallback silencioso a UTC si la zona horaria falla
     const now = new Date();
     return {
       hour: now.getUTCHours(),
@@ -35,7 +33,6 @@ const getLocalTime = (timezone) => {
  */
 const notifyUser = async (userId, payload) => {
   try {
-    // Ejecutamos la creación de notificación interna y la búsqueda de suscripciones en paralelo
     const [subscriptions] = await Promise.all([
       db.PushSubscription.findAll({ where: { user_id: userId } }),
       createNotification(userId, {
@@ -48,7 +45,6 @@ const notifyUser = async (userId, payload) => {
 
     if (!subscriptions.length) return;
 
-    // Enviamos todas las push en paralelo
     await Promise.all(subscriptions.map(sub => {
       const subscriptionObject = {
         endpoint: sub.endpoint,
@@ -60,14 +56,11 @@ const notifyUser = async (userId, payload) => {
 
       return pushService.sendNotification(subscriptionObject, payload)
         .catch(error => {
-          // Si el endpoint ya no existe (410/404), borramos la suscripción para limpiar DB
           if (error.statusCode === 410 || error.statusCode === 404) {
             return sub.destroy();
           }
-          // Ignoramos otros errores para no saturar logs
         });
     }));
-
   } catch (error) {
     console.error(`[Cron] Error notificando a ${userId}:`, error.message);
   }
@@ -79,7 +72,6 @@ const notifyUser = async (userId, payload) => {
 const checkNutritionGoals = () => {
   cron.schedule('0 * * * *', async () => {
     try {
-      // 1. Obtener usuarios candidatos (Solo ID y campos necesarios)
       const users = await db.User.findAll({
         where: {
           [Op.or]: [
@@ -90,17 +82,14 @@ const checkNutritionGoals = () => {
         attributes: ['id', 'target_calories', 'target_protein', 'timezone']
       });
 
-      // 2. Filtrar en memoria (rápido) quiénes están en su hora 20:00
       const targetUsers = users.filter(user => getLocalTime(user.timezone).hour === 20);
       if (!targetUsers.length) return;
 
       console.log(`[Cron] Nutrición: Procesando ${targetUsers.length} usuarios.`);
 
-      // 3. Procesar en paralelo (Promise.all)
       await Promise.all(targetUsers.map(async (user) => {
         const { date: localDate } = getLocalTime(user.timezone);
 
-        // Sumar logs del día
         const logs = await db.NutritionLog.findAll({
           where: { user_id: user.id, log_date: localDate },
           attributes: ['calories', 'protein_g']
@@ -120,7 +109,6 @@ const checkNutritionGoals = () => {
           });
         }
       }));
-
     } catch (error) {
       console.error('[Cron] Error tarea nutrición:', error.message);
     }
@@ -133,7 +121,6 @@ const checkNutritionGoals = () => {
 const checkTrainingReminder = () => {
   cron.schedule('0 * * * *', async () => {
     try {
-      // Optimización: JOIN interno para traer solo usuarios que YA tienen push activas
       const users = await db.User.findAll({
         attributes: ['id', 'timezone'],
         include: [{
@@ -148,7 +135,6 @@ const checkTrainingReminder = () => {
 
       if (targetUsers.length > 0) {
         console.log(`[Cron] Entrenamiento: Notificando a ${targetUsers.length} usuarios.`);
-        // Envío en paralelo
         await Promise.all(targetUsers.map(user => 
           notifyUser(user.id, {
             title: '¡Es hora de moverse!',
@@ -157,7 +143,6 @@ const checkTrainingReminder = () => {
           })
         ));
       }
-
     } catch (error) {
       console.error('[Cron] Error tarea entrenamiento:', error.message);
     }
@@ -186,7 +171,7 @@ const checkWeightLogReminder = () => {
         const lastLog = await db.BodyWeightLog.findOne({
           where: { user_id: user.id },
           order: [['log_date', 'DESC']],
-          attributes: ['log_date'] // Solo necesitamos la fecha
+          attributes: ['log_date']
         });
 
         if (!lastLog || new Date(lastLog.log_date) < thirtyDaysAgo) {
@@ -197,7 +182,6 @@ const checkWeightLogReminder = () => {
           });
         }
       }));
-
     } catch (error) {
       console.error('[Cron] Error tarea peso:', error.message);
     }
@@ -206,7 +190,6 @@ const checkWeightLogReminder = () => {
 
 /**
  * TAREA 4: Limpieza de imágenes huérfanas
- * (Bajo impacto, se mantiene semanal)
  */
 const scheduleImageCleanup = () => {
   cron.schedule('0 4 * * 0', async () => {
@@ -233,16 +216,82 @@ const cleanupExpiredStories = () => {
 
       console.log(`[Cron] Historias: Eliminando ${expiredStories.length} expiradas.`);
 
-      // Paralelizamos la eliminación de archivos y registros
       await Promise.all(expiredStories.map(async (story) => {
         if (story.url) {
           await deleteFile(story.url).catch(e => console.error(`[Cron] Error fichero historia:`, e.message));
         }
         return story.destroy();
       }));
-
     } catch (error) {
       console.error('[Cron] Error limpieza historias:', error.message);
+    }
+  });
+};
+
+/**
+ * TAREA 6: Streak Wars (Notificar a amigos si pierdes la racha)
+ * OPTIMIZACIÓN: Solo trae usuarios con racha y verifica localmente si es de noche (20:00).
+ */
+const checkStreakWars = () => {
+  cron.schedule('0 * * * *', async () => {
+    try {
+      // 1. Obtener solo usuarios con racha activa
+      const users = await db.User.findAll({
+        where: { streak: { [Op.gt]: 0 } },
+        attributes: ['id', 'username', 'streak', 'last_active', 'timezone']
+      });
+
+      // 2. Filtrar a los que se les acaba el día (20:00h) y no han entrenado hoy
+      const targetUsers = users.filter(user => {
+        const { hour, date: localDate } = getLocalTime(user.timezone);
+        if (hour !== 20 || !user.last_active) return false;
+        
+        // Si el último registro de actividad es anterior a hoy, está en peligro
+        const lastActiveDate = new Date(user.last_active).toISOString().split('T')[0];
+        return lastActiveDate < localDate;
+      });
+
+      if (!targetUsers.length) return;
+      console.log(`[Cron] Streak Wars: ${targetUsers.length} usuarios en peligro de perder racha.`);
+
+      // 3. Obtener redes sociales de estos usuarios y notificar en paralelo
+      await Promise.all(targetUsers.map(async (dangerUser) => {
+        const [friendships, squadMemberships] = await Promise.all([
+          db.Friendship.findAll({
+            where: { [Op.or]: [{ requester_id: dangerUser.id }, { addressee_id: dangerUser.id }] },
+            attributes: ['requester_id', 'addressee_id']
+          }),
+          db.SquadMember.findAll({
+            where: { user_id: dangerUser.id },
+            attributes: ['squad_id']
+          })
+        ]);
+
+        const friendIds = friendships.map(f => f.requester_id === dangerUser.id ? f.addressee_id : f.requester_id);
+        const squadIds = squadMemberships.map(s => s.squad_id);
+        
+        let squadMateIds = [];
+        if (squadIds.length > 0) {
+          const mates = await db.SquadMember.findAll({
+            where: { squad_id: { [Op.in]: squadIds }, user_id: { [Op.ne]: dangerUser.id } },
+            attributes: ['user_id']
+          });
+          squadMateIds = mates.map(m => m.user_id);
+        }
+
+        // Set unifica IDs repetidos (por si son amigos y del mismo squad)
+        const usersToNotify = [...new Set([...friendIds, ...squadMateIds])];
+
+        await Promise.all(usersToNotify.map(notifyId => 
+          notifyUser(notifyId, {
+            title: '🔥 ¡Racha en peligro!',
+            body: `Tu amigo ${dangerUser.username || 'alguien de tu equipo'} está a punto de perder su racha de ${dangerUser.streak} días. ¡Empújale a entrenar!`,
+            url: `/social`,
+          })
+        ));
+      }));
+    } catch (error) {
+      console.error('[Cron] Error tarea Streak Wars:', error.message);
     }
   });
 };
@@ -254,4 +303,5 @@ export const startCronJobs = () => {
   checkWeightLogReminder();
   scheduleImageCleanup();
   cleanupExpiredStories();
+  checkStreakWars(); // Nueva función añadida
 };

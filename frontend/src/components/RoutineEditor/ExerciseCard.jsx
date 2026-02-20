@@ -1,6 +1,6 @@
 /* frontend/src/components/RoutineEditor/ExerciseCard.jsx */
 import React from 'react';
-import { Trash2, GripVertical, Repeat, Image as ImageIcon } from 'lucide-react';
+import { Trash2, GripVertical, Repeat, Image as ImageIcon, Sparkles } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import ExerciseSearchInput from '../ExerciseSearchInput';
 import { useTranslation } from 'react-i18next';
@@ -182,6 +182,15 @@ const ExerciseCard = ({
             </div>
 
           </div>
+
+          {/* --- NUEVO: Explicación de la IA para este ejercicio --- */}
+          {exercise.ai_reason && (
+            <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 flex gap-2 items-start w-full">
+              <Sparkles className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+              <p className="text-xs text-text-primary/90 text-left">{exercise.ai_reason}</p>
+            </div>
+          )}
+
         </div>
 
         {/* Columna de Acciones (Reemplazar, Eliminar) */}

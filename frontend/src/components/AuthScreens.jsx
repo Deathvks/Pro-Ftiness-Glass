@@ -1,30 +1,31 @@
 /* frontend/src/components/AuthScreens.jsx */
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Spinner from './Spinner';
 
-// --- INICIO DE LA MODIFICACIÓN: Lazy Loading ---
-// En lugar de importar todo al principio, importamos bajo demanda.
-// Esto evita que el usuario descargue código de pantallas que no está viendo.
+// Lazy loading para optimizar carga inicial
 const LoginScreen = lazy(() => import('../pages/LoginScreen'));
 const RegisterScreen = lazy(() => import('../pages/RegisterScreen'));
 const ForgotPasswordScreen = lazy(() => import('../pages/ForgotPasswordScreen'));
+// ResetPasswordScreen se maneja independientemente en App.jsx por ruta directa,
+// pero lo mantenemos aquí como fallback de seguridad.
 const ResetPasswordScreen = lazy(() => import('../pages/ResetPasswordScreen'));
-// --- FIN DE LA MODIFICACIÓN ---
 
 /**
  * Componente que gestiona qué pantalla de autenticación mostrar.
- * Utiliza Lazy Loading para mejorar el rendimiento inicial.
+ * Ahora actúa principalmente como un renderizador condicional basado en la prop 'authView'.
  */
 const AuthScreens = ({ authView, setAuthView }) => {
 
+  useEffect(() => {
+    // Depuración: Verifica qué vista está solicitando el router
+    console.debug("AuthScreens renderizando vista:", authView);
+  }, [authView]);
+
+  // Funciones de navegación que invocan la actualización de ruta en App.jsx
   const showLogin = () => setAuthView('login');
   const showRegister = () => setAuthView('register');
   const showForgotPassword = () => setAuthView('forgotPassword');
-
-  const showLoginFromReset = () => {
-    window.history.pushState({}, '', '/');
-    setAuthView('login');
-  };
 
   // Función auxiliar para renderizar el componente correcto
   const renderContent = () => {
@@ -36,8 +37,9 @@ const AuthScreens = ({ authView, setAuthView }) => {
         return <ForgotPasswordScreen showLogin={showLogin} />;
 
       case 'resetPassword':
-        return <ResetPasswordScreen showLogin={showLoginFromReset} />;
+        return <ResetPasswordScreen showLogin={showLogin} />;
 
+      case 'login':
       default:
         return (
           <LoginScreen
@@ -48,11 +50,9 @@ const AuthScreens = ({ authView, setAuthView }) => {
     }
   };
 
-  // Envolvemos todo en Suspense para manejar la carga asíncrona
-  // Y añadimos un wrapper flex para poner los enlaces legales al final
   return (
-    <div className="flex flex-col min-h-screen bg-bg-primary">
-      <div className="flex-grow">
+    <div className="flex flex-col min-h-screen bg-bg-primary animate-fade-in">
+      <div className="flex-grow flex flex-col">
         <Suspense
           fallback={
             <div className="flex h-screen w-full items-center justify-center bg-bg-primary">
@@ -64,21 +64,21 @@ const AuthScreens = ({ authView, setAuthView }) => {
         </Suspense>
       </div>
 
-      {/* --- SECCIÓN NUEVA: Links Legales para Verificación de Google --- */}
+      {/* Links Legales - Usamos Link para evitar recarga completa */}
       <footer className="py-6 text-center bg-bg-primary z-10">
         <div className="flex justify-center space-x-6">
-          <a 
-            href="/privacy" 
+          <Link 
+            to="/privacy" 
             className="text-xs text-text-secondary hover:text-accent transition-colors"
           >
             Política de Privacidad
-          </a>
-          <a 
-            href="/terms" 
+          </Link>
+          <Link 
+            to="/terms" 
             className="text-xs text-text-secondary hover:text-accent transition-colors"
           >
             Términos del Servicio
-          </a>
+          </Link>
         </div>
       </footer>
     </div>

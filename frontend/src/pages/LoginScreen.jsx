@@ -63,6 +63,11 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         setIsLoading(true);
         setErrors({});
         try {
+            // LIMPIEZA DE SEGURIDAD TOTAL:
+            localStorage.removeItem('temp_onboarding_data');
+            localStorage.removeItem('onboarding_data');
+            localStorage.removeItem('onboarding_step');
+
             await handleGoogleLogin(token);
             setIsLoading(false);
         } catch (err) {
@@ -147,6 +152,11 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         setErrors({});
         setIsLoading(true);
         try {
+            // LIMPIEZA DE SEGURIDAD TOTAL
+            localStorage.removeItem('temp_onboarding_data');
+            localStorage.removeItem('onboarding_data');
+            localStorage.removeItem('onboarding_step');
+
             await handleLogin({ email, password });
             setIsLoading(false);
         } catch (err) {
@@ -234,7 +244,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     // --- RENDERIZADO 2FA ---
     if (twoFactorPending) {
         const isEmailMethod = twoFactorPending.method === 'email';
-        // CAMBIO: Quitamos 'fixed inset-0' para que fluya con el footer de AuthScreens
         return (
             <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                 <SEOHead 
@@ -301,7 +310,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 route="login"
             />
         
-            {/* CAMBIO: Contenedor flexible para centrar y permitir footer */}
             <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-sm text-center">
                     <Dumbbell size={48} className="mx-auto text-accent mb-4" />
@@ -333,6 +341,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         <button
                             onClick={handleGoogleClick}
                             disabled={isLoading}
+                            type="button" // IMPORTANTE: tipo botón para evitar submit
                             className="w-full h-11 bg-accent text-bg-secondary rounded-md flex items-center justify-center gap-3 font-semibold shadow transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             <div className="bg-white rounded-full p-1 flex items-center justify-center">
@@ -342,11 +351,27 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         </button>
 
                         <div className="text-center mt-6 text-sm">
-                            <button onClick={showForgotPassword} className="text-accent hover:opacity-80 transition-opacity font-medium">
+                            <button 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    console.log('Navegando a recuperar contraseña...');
+                                    showForgotPassword();
+                                }} 
+                                type="button" // IMPORTANTE
+                                className="text-accent hover:opacity-80 transition-opacity font-medium"
+                            >
                                 ¿Olvidaste tu contraseña?
                             </button>
                             <span className="text-text-muted mx-2">|</span>
-                            <button onClick={showRegister} className="text-accent hover:opacity-80 transition-opacity font-medium">
+                            <button 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    console.log('Navegando a registro...');
+                                    showRegister();
+                                }} 
+                                type="button" // IMPORTANTE
+                                className="text-accent hover:opacity-80 transition-opacity font-medium"
+                            >
                                 Regístrate
                             </button>
                         </div>

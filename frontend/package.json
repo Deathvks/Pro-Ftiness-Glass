@@ -47,6 +47,7 @@
     "recharts": "^3.1.0",
     "remotion": "^4.0.400",
     "serve": "^14.2.3",
+    "sileo": "^0.1.3",
     "socket.io-client": "^4.8.3",
     "uuid": "^13.0.0",
     "zustand": "^4.5.7"

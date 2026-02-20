@@ -1,5 +1,6 @@
 /* frontend/src/pages/RoutineEditor.jsx */
-import React from 'react';
+import React, { useState } from 'react';
+import { Sparkles } from 'lucide-react';
 
 // Importamos el hook y los componentes
 import { useRoutineEditor } from '../hooks/useRoutineEditor';
@@ -7,8 +8,12 @@ import RoutineHeader from '../components/RoutineEditor/RoutineHeader';
 import ExerciseList from '../components/RoutineEditor/ExerciseList';
 import RoutineActions from '../components/RoutineEditor/RoutineActions';
 import Spinner from '../components/Spinner';
+import RoutineAnalysisModal from '../components/RoutineEditor/RoutineAnalysisModal';
 
 const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCancel, initialFolder }) => {
+
+  // Estado local para el modal de análisis IA
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   // Usamos el hook para toda la lógica
   const {
@@ -16,7 +21,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
     routineName, setRoutineName,
     description, setDescription,
     imageUrl, setImageUrl,
-    folder, setFolder, // <-- NUEVO: Estado de carpeta
+    folder, setFolder,
     exercises,
     isLoading,
     isSaving,
@@ -73,9 +78,20 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
         setImageUrl={setImageUrl}
         onImageUpload={handleImageUpload}
         isUploadingImage={isUploadingImage}
-        folder={folder} // <-- Pasar prop
-        setFolder={setFolder} // <-- Pasar prop
+        folder={folder}
+        setFolder={setFolder}
       />
+
+      {/* --- NUEVO: Mostrar la explicación general de la IA --- */}
+      {initialRoutine?.ai_explanation && (
+        <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <Sparkles className="w-6 h-6 text-accent shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-bold text-accent mb-1">Nota del Entrenador IA</h4>
+            <p className="text-sm text-text-primary/90">{initialRoutine.ai_explanation}</p>
+          </div>
+        </div>
+      )}
 
       <ExerciseList
         groupedExercises={groupedExercises}
@@ -94,6 +110,9 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
       <RoutineActions
         onShowSearch={handleOpenSearchForAdd}
         onAddManual={addExercise}
+        
+        // Acción para analizar
+        onAnalyze={() => setShowAnalysis(true)}
 
         // Guardar/Eliminar
         id={id}
@@ -118,6 +137,12 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
         isReplacing={replacingExerciseTempId !== null}
         onExerciseSelectForReplace={handleSelectExerciseForReplace}
         onAddCustomExercise={handleAddCustomExerciseForReplace}
+      />
+
+      <RoutineAnalysisModal 
+        isOpen={showAnalysis}
+        onClose={() => setShowAnalysis(false)}
+        exercises={exercises}
       />
 
     </div>

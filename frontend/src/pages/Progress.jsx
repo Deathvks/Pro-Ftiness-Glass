@@ -39,7 +39,7 @@ const Progress = ({ darkMode }) => {
         getOrFetchAllExercises: state.getOrFetchAllExercises
     }));
 
-    // --- CAMBIO: Inicializar estado desde localStorage ---
+    // Inicializar estado desde localStorage
     const [viewType, setViewType] = useState(() => {
         try {
             return localStorage.getItem('progressViewType') || 'heatmap';
@@ -48,7 +48,7 @@ const Progress = ({ darkMode }) => {
         }
     });
 
-    // --- CAMBIO: Guardar estado en localStorage al cambiar ---
+    // Guardar estado en localStorage al cambiar
     useEffect(() => {
         try {
             localStorage.setItem('progressViewType', viewType);
@@ -164,28 +164,58 @@ const Progress = ({ darkMode }) => {
             .sort(() => 0.5 - Math.random())
             .map(muscleKey => {
                 const possibleExercises = exercises.filter(ex => {
-                    if (!ex.muscle_group) return false;
-                    const groups = ex.muscle_group.split(',').map(g => g.trim().toLowerCase());
-                    return groups.some(g => {
-                        const mapped = DB_TO_HEATMAP_MAP[g];
-                        return mapped && mapped.includes(muscleKey);
-                    });
+                    let matches = false;
+                    const tName = ex.name ? ex.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : '';
+
+                    if (ex.muscle_group) {
+                        const groups = ex.muscle_group.split(',').map(g => g.trim().toLowerCase());
+                        matches = groups.some(g => {
+                            const mapped = DB_TO_HEATMAP_MAP[g];
+                            return mapped && mapped.includes(muscleKey);
+                        });
+                    }
+                    
+                    if (!matches && ex.name) {
+                        const guessed = guessMuscleFromText(ex.name);
+                        matches = guessed.includes(muscleKey);
+                    }
+
+                    // --- FILTRO INTELIGENTE ANTI-FALSOS AMIGOS ---
+                    if (matches) {
+                        // Un jalón o remo NUNCA es de pecho
+                        if (muscleKey === 'chest' && (tName.includes('jalon') || tName.includes('pulldown') || tName.includes('remo') || tName.includes('row') || tName.includes('face pull') || tName.includes('espalda'))) {
+                            matches = false; 
+                        }
+                        // Elevaciones de piernas o gemelos NUNCA son de hombros
+                        if ((muscleKey === 'front-deltoids' || muscleKey === 'back-deltoids') && (tName.includes('gemelo') || tName.includes('calf') || tName.includes('pierna') || tName.includes('leg'))) {
+                            matches = false; 
+                        }
+                        // Un ejercicio de pecho NUNCA es de piernas
+                        if ((muscleKey === 'quadriceps' || muscleKey === 'hamstring' || muscleKey === 'gluteal' || muscleKey === 'calves') && (tName.includes('banca') || tName.includes('bench') || tName.includes('pecho') || tName.includes('chest') || tName.includes('push-up') || tName.includes('flexiones'))) {
+                            matches = false;
+                        }
+                        // Un ejercicio de agarre o antebrazo NUNCA es de bíceps ni tríceps
+                        if ((muscleKey === 'biceps' || muscleKey === 'triceps') && (tName.includes('apreton') || tName.includes('hand grip') || tName.includes('handgrip') || tName.includes('muñeca') || tName.includes('wrist') || tName.includes('antebrazo') || tName.includes('forearm'))) {
+                            matches = false;
+                        }
+                        // NUEVA REGLA: Ejercicios de core de estabilización (lumbares/glúteos) NUNCA son primarios de abdomen (tableta)
+                        if (muscleKey === 'abs' && (tName.includes('bird dog') || tName.includes('pajaro') || tName.includes('perro') || tName.includes('good morning') || tName.includes('buenos dias') || tName.includes('lumbar') || tName.includes('hiperextension') || tName.includes('remo') || tName.includes('row'))) {
+                            matches = false;
+                        }
+                    }
+
+                    return matches;
                 });
 
-                let selectedExerciseName = null;
                 if (possibleExercises.length > 0) {
                     const randomEx = possibleExercises[Math.floor(Math.random() * possibleExercises.length)];
-                    selectedExerciseName = randomEx.name;
-                } else {
-                    selectedExerciseName = SUGGESTED_EXERCISES[muscleKey];
+                    return {
+                        muscle: MUSCLE_NAMES_ES[muscleKey] || muscleKey,
+                        exercise: randomEx.name
+                    };
                 }
 
-                if (!selectedExerciseName) return null;
-
-                return {
-                    muscle: MUSCLE_NAMES_ES[muscleKey] || muscleKey,
-                    exercise: selectedExerciseName
-                };
+                return null;
             })
             .filter(Boolean);
 

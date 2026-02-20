@@ -209,7 +209,6 @@ export const createWorkoutSlice = (set, get) => ({
           is_dropset: false,
         })),
         exercise_list_id: fullDetails?.id || null,
-        // --- CORRECCIÓN: Prioridad a ex.muscle_group para ejercicios manuales ---
         muscle_group: ex.muscle_group || fullDetails?.muscle_group || null,
         last_performance: lastPerformance,
       };
@@ -220,7 +219,7 @@ export const createWorkoutSlice = (set, get) => ({
         routineId: routine.id || null,
         routineName: routine.name,
         exercises,
-        startTime: new Date().toISOString(), // Guardamos la hora de INICIO
+        startTime: new Date().toISOString(), 
       },
       workoutStartTime: null,
       isWorkoutPaused: true,
@@ -236,7 +235,7 @@ export const createWorkoutSlice = (set, get) => ({
         routineId: null,
         routineName: workoutName,
         exercises: [],
-        startTime: new Date().toISOString(), // Guardamos la hora de INICIO
+        startTime: new Date().toISOString(), 
       },
       workoutStartTime: null,
       isWorkoutPaused: true,
@@ -540,14 +539,12 @@ export const createWorkoutSlice = (set, get) => ({
 
   logWorkout: async (workoutData) => {
     try {
-      // Usamos el startTime guardado en el estado (momento de inicio) como fecha del entreno.
-      // Si no existe (legacy), usamos la fecha actual (comportamiento anterior).
       const state = get();
       const workoutDate = state.activeWorkout?.startTime || new Date().toISOString();
 
       const finalWorkoutData = {
         ...workoutData,
-        date: workoutDate, // Forzamos la fecha de inicio
+        date: workoutDate, 
       };
 
       const responseData = await workoutService.logWorkout(finalWorkoutData);
@@ -559,7 +556,6 @@ export const createWorkoutSlice = (set, get) => ({
         }
       }
 
-      // 1. Actualizar XP global si se ganó algo
       if (get().addXp && responseData.xpAdded > 0) {
         get().addXp(responseData.xpAdded);
       }
@@ -571,14 +567,22 @@ export const createWorkoutSlice = (set, get) => ({
       if (responseData.newPRs && responseData.newPRs.length > 0) {
         get().showPRNotification(responseData.newPRs);
         get()._showLocalPRNotification(responseData.newPRs);
+        
+        // --- CORRECCIÓN CRÍTICA: INYECTAR FECHA MANUALMENTE ---
+        // Si el PR viene sin fecha del servidor, le ponemos la fecha actual
+        // para que el Dashboard no lo filtre y salga al instante.
+        if (get().addLocalPersonalRecords) {
+            const recordsWithDate = responseData.newPRs.map(pr => ({
+                ...pr,
+                date: pr.date || workoutDate // Usar fecha del entreno o ahora
+            }));
+            get().addLocalPersonalRecords(recordsWithDate);
+        }
       }
 
-      // --- CAMBIO: Limpiamos localStorage inmediatamente tras guardar con éxito ---
-      // Esto evita que, si se recarga la página, el usuario vuelva a entrar en el entrenamiento.
       clearWorkoutInStorage();
       clearRestTimerInStorage();
 
-      // 2. DETECTAR LÍMITE DE XP: Si xpAdded viene en la respuesta y es 0, enviamos el mensaje de advertencia.
       if (responseData.xpAdded !== undefined && responseData.xpAdded === 0) {
         return {
           success: true,

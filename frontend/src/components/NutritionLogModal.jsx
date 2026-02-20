@@ -17,7 +17,6 @@ import SearchResultItem from './nutrition/logModal/SearchResultItem';
 
 import FoodDetailView from './nutrition/logModal/FoodDetailView';
 
-// CORRECCIÓN: Añadida prop isLoading para deshabilitar botón
 const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) => {
 
     const {
@@ -63,14 +62,13 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
     const handleSelectSearchResult = (food) => {
         const foodData = {
-            id: food.id, // Preservamos ID si viene de la API
-            name: food.name || food.description || 'Alimento', // --- CORRECCIÓN: 'name' es obligatorio para favoritesService
+            id: food.id,
+            name: food.name || food.description || 'Alimento',
             description: food.name || food.description || 'Alimento',
             calories: food.calories || 0,
             protein_g: food.protein_g || food.protein || 0,
             carbs_g: food.carbs_g || food.carbs || 0,
             fats_g: food.fats_g || food.fat || 0,
-            // --- CORRECCIÓN SUGAR: Mapear azúcar explícitamente ---
             sugars_g: food.sugars_g || food.sugars || 0,
             
             weight_g: food.weight_g || 100,
@@ -82,7 +80,6 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
             protein_per_100g: food.protein_per_100g,
             carbs_per_100g: food.carbs_per_100g,
             fat_per_100g: food.fat_per_100g,
-            // --- CORRECCIÓN SUGAR: Mapear azúcar por 100g ---
             sugars_per_100g: food.sugars_per_100g || food.sugars_per_100,
 
             calories_per_serving: food.calories_per_serving,
@@ -104,6 +101,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
     if (selectedDetailItem) {
         return (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s]">
+                {/* CAMBIO: Se asegura bg-bg-primary y bordes consistentes para modo claro/oscuro */}
                 <div className="relative w-11/12 max-w-md overflow-hidden m-4 bg-bg-primary rounded-2xl border border-glass-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
                     <FoodDetailView
                         food={selectedDetailItem}
@@ -176,7 +174,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                         }}
                         onSaveEdit={handleSaveEdit}
                         onSaveListItem={handleSaveListItem}
-                        isLoading={isLoading} // También pasamos isLoading aquí si es necesario
+                        isLoading={isLoading}
                         isEditing={isEditingLog || !!editingFavorite}
                         editingListItem={itemsToAdd.find(item => item.tempId === editingListItemId)}
                         showFavoriteToggle={!editingFavorite}
@@ -274,7 +272,6 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                                     <SelectedItem key={item.tempId} item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />
                                 )}
                             </div>
-                            {/* CORRECCIÓN: Botón deshabilitado si isLoading es true */}
                             <button
                                 onClick={async () => {
                                     await handleSaveList();

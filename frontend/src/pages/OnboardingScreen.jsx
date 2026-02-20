@@ -3,11 +3,14 @@ import React, { useState, useEffect } from 'react';
 import {
   ArrowDown, Minus, ArrowUp, Edit, ChevronRight,
   Check, Activity, Scale, User, Target, ChevronLeft, Sparkles,
-  Coffee, Footprints, Dumbbell, Trophy
+  Coffee, Footprints, Dumbbell, Trophy, Loader2
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
+import { createRoutine } from '../services/routineService';
+// import { getTemplateRoutines } from '../services/templateRoutineService'; 
+import { getExerciseList } from '../services/exerciseService';
 
 // --- ESTILOS (Animaciones) ---
 const styles = `
@@ -35,7 +38,91 @@ const styles = `
   .delay-500 { animation-delay: 500ms; opacity: 0; animation-fill-mode: forwards; }
 `;
 
-// --- COMPONENTES UI (DEFINIDOS FUERA) ---
+// --- CONFIGURACIÓN DE RUTINAS DIVIDIDAS (3 DÍAS) ---
+const SPLIT_ROUTINES_CONFIG = {
+    lose: [
+        {
+            name: 'Día 1: Circuito Metabólico A',
+            description: 'Alta intensidad enfocada en tren inferior y cardio.',
+            keywords: ['Squat', 'Sentadilla', 'Zancada', 'Lunge', 'Burpee', 'Jumping', 'Comba'],
+            sets: 4, reps: '15-20'
+        },
+        {
+            name: 'Día 2: Circuito Metabólico B',
+            description: 'Enfoque en tren superior y core para quemar calorías.',
+            keywords: ['Push Up', 'Flexiones', 'Plank', 'Plancha', 'Row', 'Remo', 'Mountain', 'Escalador'],
+            sets: 4, reps: '12-15'
+        },
+        {
+            name: 'Día 3: Full Body Burn',
+            description: 'Rutina de cuerpo completo para maximizar el gasto energético semanal.',
+            keywords: ['Deadlift', 'Peso Muerto', 'Press', 'Thruster', 'Swing', 'Kettlebell', 'Cardio'],
+            sets: 3, reps: '15'
+        }
+    ],
+    gain: [
+        {
+            name: 'Día 1: Empuje (Push)',
+            description: 'Pecho, Hombros y Tríceps. Enfoque en fuerza e hipertrofia.',
+            keywords: ['Bench Press', 'Press de Banca', 'Overhead', 'Militar', 'Push Up', 'Flexiones', 'Triceps', 'Lateral', 'Aperturas', 'Fly'],
+            sets: 3, reps: '8-12'
+        },
+        {
+            name: 'Día 2: Tracción (Pull)',
+            description: 'Espalda y Bíceps. Construcción de la cadena posterior.',
+            keywords: ['Pull Up', 'Dominada', 'Row', 'Remo', 'Deadlift', 'Peso Muerto', 'Curl', 'Jalón', 'Lat'],
+            sets: 3, reps: '8-12'
+        },
+        {
+            name: 'Día 3: Pierna (Legs)',
+            description: 'Entrenamiento completo de tren inferior.',
+            keywords: ['Squat', 'Sentadilla', 'Leg Press', 'Prensa', 'Lunge', 'Zancada', 'Extension', 'Curl Femoral', 'Calf', 'Gemelo'],
+            sets: 4, reps: '10-12'
+        }
+    ],
+    recomp: [
+        {
+            name: 'Día 1: Torso Pesado',
+            description: 'Fuerza para la parte superior del cuerpo.',
+            keywords: ['Press de Banca', 'Bench', 'Row', 'Remo', 'Militar', 'Overhead', 'Pull Up', 'Dominada'],
+            sets: 4, reps: '6-8'
+        },
+        {
+            name: 'Día 2: Pierna Pesada',
+            description: 'Fuerza y potencia para el tren inferior.',
+            keywords: ['Squat', 'Sentadilla', 'Deadlift', 'Peso Muerto', 'Prensa', 'Leg Press', 'Hip Thrust'],
+            sets: 4, reps: '6-8'
+        },
+        {
+            name: 'Día 3: Full Body Hipertrofia',
+            description: 'Volumen y bombeo para todo el cuerpo.',
+            keywords: ['Curl', 'Extension', 'Lateral', 'Fly', 'Aperturas', 'Zancada', 'Lunge', 'Face Pull'],
+            sets: 3, reps: '12-15'
+        }
+    ],
+    maintain: [
+        {
+            name: 'Día 1: Full Body A',
+            description: 'Ejercicios compuestos básicos.',
+            keywords: ['Squat', 'Sentadilla', 'Bench', 'Press de Banca', 'Row', 'Remo'],
+            sets: 3, reps: '10'
+        },
+        {
+            name: 'Día 2: Movilidad y Core',
+            description: 'Recuperación activa, abdominales y estabilidad.',
+            keywords: ['Plank', 'Plancha', 'Crunch', 'Abdominal', 'Stretch', 'Estiramiento', 'Yoga', 'Bird Dog'],
+            sets: 3, reps: '15'
+        },
+        {
+            name: 'Día 3: Full Body B',
+            description: 'Variaciones de ejercicios compuestos.',
+            keywords: ['Deadlift', 'Peso Muerto', 'Militar', 'Press', 'Lunge', 'Zancada', 'Dominada', 'Pull Up'],
+            sets: 3, reps: '10'
+        }
+    ]
+};
+
+// --- COMPONENTES UI ---
 
 const AnimContainer = ({ children, direction }) => (
   <div className={direction === 'right' ? 'animate-slide-right' : 'animate-slide-left'}>
@@ -108,13 +195,18 @@ const GiantInput = ({ value, onChange, placeholder, unit, autoFocus }) => (
   </div>
 );
 
-const FloatingFab = ({ onClick, disabled, isLoading, text }) => (
+const FloatingFab = ({ onClick, disabled, isLoading, text, loadingText }) => (
   <button
     onClick={onClick}
     disabled={disabled || isLoading}
     className="fixed bottom-8 right-6 bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none z-50 text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
   >
-    {isLoading ? <Spinner size={24} color="#fff" /> : (
+    {isLoading ? (
+        <>
+            <Loader2 size={24} className="animate-spin" /> 
+            {loadingText && <span className="text-base font-medium ml-1">{loadingText}</span>}
+        </>
+    ) : (
       <>
         {text} <ChevronRight size={24} strokeWidth={3} />
       </>
@@ -140,9 +232,9 @@ const OnboardingScreen = () => {
   }));
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('');
   const [direction, setDirection] = useState('right');
 
-  // Inicializar estado desde localStorage o valores por defecto
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem('onboarding_step');
     return saved ? parseInt(saved, 10) : 1;
@@ -150,25 +242,44 @@ const OnboardingScreen = () => {
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem('onboarding_data');
-    return saved ? JSON.parse(saved) : {
+    if (saved) return JSON.parse(saved);
+
+    const quizDataString = localStorage.getItem('temp_onboarding_data');
+    let prefilled = {};
+    
+    if (quizDataString) {
+        try {
+            const quizData = JSON.parse(quizDataString);
+            if (quizData.currentWeight) prefilled.weight = quizData.currentWeight;
+            if (quizData.targetWeight) prefilled.targetWeight = quizData.targetWeight; 
+            
+            if (quizData.goal === 'muscle') prefilled.goal = 'gain';
+            else if (quizData.goal === 'hybrid') prefilled.goal = 'recomp'; 
+            else if (quizData.goal === 'lose') prefilled.goal = 'lose';
+            
+        } catch (e) {
+            console.error("Error parsing quiz data", e);
+        }
+    }
+
+    return {
       gender: 'male',
       age: '',
       weight: '',
       height: '',
       activityLevel: 1.55,
-      goal: 'lose'
+      goal: 'lose',
+      ...prefilled
     };
   });
 
   const totalSteps = 5;
 
-  // Persistir cambios en localStorage
   useEffect(() => {
     localStorage.setItem('onboarding_data', JSON.stringify(formData));
     localStorage.setItem('onboarding_step', step.toString());
   }, [formData, step]);
 
-  // Scroll al top al cambiar paso
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
 
   const validateStep = (s) => {
@@ -199,15 +310,146 @@ const OnboardingScreen = () => {
     setFormData(p => ({ ...p, [key]: clean }));
   };
 
+  // --- LÓGICA DE GENERACIÓN DE RUTINA MEJORADA (3 DÍAS) ---
   const handleComplete = async () => {
     setIsLoading(true);
-    const result = await updateUserProfile(formData);
-    if (!result.success) {
-      addToast(result.message, 'error');
-      setIsLoading(false);
-    } else {
-      localStorage.removeItem('onboarding_data');
-      localStorage.removeItem('onboarding_step');
+    
+    try {
+        setLoadingText('Analizando biotipo...');
+        await new Promise(r => setTimeout(r, 800));
+
+        // --- MODIFICACIÓN: VERIFICAR SI EXISTE EL TEST INTERACTIVO ---
+        const hasQuizData = localStorage.getItem('temp_onboarding_data');
+
+        if (hasQuizData) {
+            setLoadingText('Diseñando plan de 3 días...');
+            
+            // 1. OBTENER LISTA DE EJERCICIOS
+            const allExercises = await getExerciseList();
+            
+            // 2. SELECCIONAR CONFIGURACIÓN SEGÚN OBJETIVO (O FALLBACK)
+            const routinesToCreate = SPLIT_ROUTINES_CONFIG[formData.goal] || SPLIT_ROUTINES_CONFIG.maintain;
+            let createdCount = 0;
+
+            // 3. GENERAR LAS 3 RUTINAS SECUENCIALMENTE
+            if (allExercises && allExercises.length > 0) {
+                for (const routineConfig of routinesToCreate) {
+                    
+                    setLoadingText(`Creando ${routineConfig.name}...`);
+
+                    // Buscar ejercicios que coincidan con las keywords del día
+                    const dayExercises = [];
+                    const foundIds = new Set();
+                    
+                    // Mezclar keywords para variedad si hay muchas
+                    routineConfig.keywords.forEach(keyword => {
+                        const matches = allExercises.filter(ex => 
+                            ex.name.toLowerCase().includes(keyword.toLowerCase()) && 
+                            !foundIds.has(ex.id)
+                        );
+
+                        // Tomar 1 o 2 ejercicios por keyword para no llenar demasiado
+                        // (Lógica simple: tomamos el primero que encontramos)
+                        if (matches.length > 0) {
+                             const match = matches[0]; // Podríamos hacer random aquí
+                             foundIds.add(match.id);
+                             dayExercises.push({
+                                exercise_id: match.id,
+                                name: match.name,
+                                sets: routineConfig.sets,
+                                reps: routineConfig.reps,
+                                weight: 0,
+                                rest_seconds: 60
+                            });
+                        }
+                    });
+
+                    // Si encontramos ejercicios, creamos la rutina
+                    if (dayExercises.length > 0) {
+                         // Limitamos a 6-7 ejercicios por día para que sea realista
+                         const limitedExercises = dayExercises.slice(0, 7);
+
+                         await createRoutine({
+                            name: routineConfig.name,
+                            description: routineConfig.description,
+                            exercises: limitedExercises,
+                            is_public: false
+                        });
+                        createdCount++;
+                    }
+                }
+            }
+
+            if (createdCount > 0) {
+                 addToast(`¡Plan de entrenamiento de ${createdCount} días generado!`, 'success');
+            } else {
+                 // Fallback total si no hay ejercicios
+                 await createRoutine({
+                    name: `Plan Base: ${getGoalLabel(formData.goal)}`,
+                    description: "Rutina inicial. ¡Añade tus ejercicios favoritos!",
+                    exercises: [],
+                    is_public: false
+                });
+                addToast('Rutina base creada. ¡Personalízala ahora!', 'info');
+            }
+        }
+        // SI NO HAY QUIZ DATA, NO SE CREA NINGUNA RUTINA (NI BASE NI CUSTOM)
+
+        // 4. GUARDADO DE PERFIL
+        setLoadingText('Finalizando...');
+        
+        const currentWeight = parseFloat(formData.weight);
+        let safeTargetWeight = currentWeight;
+        let safeGoal = formData.goal;
+        
+        // Mapeo seguro para backend si no soporta 'recomp'
+        if (safeGoal === 'recomp') {
+            safeGoal = 'maintain';
+        }
+
+        if (safeGoal === 'lose') {
+            safeTargetWeight = Math.max(40, currentWeight - 2.5); 
+        } else if (safeGoal === 'gain') {
+            safeTargetWeight = currentWeight + 2.5;
+        } else {
+            safeTargetWeight = currentWeight;
+        }
+        
+        safeTargetWeight = Math.round(safeTargetWeight * 10) / 10;
+
+        const cleanProfileData = {
+            gender: formData.gender,
+            age: parseInt(formData.age, 10),
+            weight: currentWeight,
+            height: parseInt(formData.height, 10),
+            activityLevel: parseFloat(formData.activityLevel),
+            activity_level: parseFloat(formData.activityLevel),
+            goal: safeGoal,
+            targetWeight: safeTargetWeight, 
+            target_weight: safeTargetWeight
+        };
+
+        const result = await updateUserProfile(cleanProfileData);
+        
+        if (!result.success) {
+            console.error("Error backend:", result.message);
+            throw new Error(result.message);
+        }
+
+        // Limpieza completa al terminar
+        localStorage.removeItem('onboarding_data');
+        localStorage.removeItem('onboarding_step');
+        localStorage.removeItem('temp_onboarding_data'); 
+
+    } catch (err) {
+        console.error("Error en onboarding:", err);
+        localStorage.removeItem('onboarding_data');
+        localStorage.removeItem('onboarding_step');
+        localStorage.removeItem('temp_onboarding_data'); 
+        window.location.href = '/dashboard';
+    } finally {
+        setIsLoading(false);
+        setLoadingText('');
     }
   };
 
@@ -278,6 +520,7 @@ const OnboardingScreen = () => {
                   onChange={(e) => handleInput('age', e.target.value, 'int')}
                   placeholder="25"
                   unit="años"
+                  autoFocus // Focus en edad, ya que género es clic
                 />
               </div>
             </div>
@@ -310,6 +553,7 @@ const OnboardingScreen = () => {
                     onChange={(e) => handleInput('weight', e.target.value, 'decimal')}
                     placeholder="70.5"
                     unit="kg"
+                    // No autofocus aquí para no molestar si ya viene relleno del paso anterior
                   />
                 </div>
               </div>
@@ -431,7 +675,15 @@ const OnboardingScreen = () => {
                 <button onClick={() => setStep(4)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group text-center active:bg-white/10">
                   <div className="flex flex-col items-center transition-transform group-hover:scale-105">
                     <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">OBJETIVO</p>
-                    <p className="font-black text-accent text-xl uppercase tracking-tight shadow-accent drop-shadow-sm">{getGoalLabel(formData.goal)}</p>
+                    <div className="flex flex-col items-center">
+                        <p className="font-black text-accent text-xl uppercase tracking-tight shadow-accent drop-shadow-sm">{getGoalLabel(formData.goal)}</p>
+                        {/* MOSTRAR META DEL ONBOARDING EMOCIONAL SI EXISTE */}
+                        {formData.targetWeight && (
+                            <span className="text-xs font-bold text-text-secondary mt-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                                Meta: {formData.targetWeight} kg
+                            </span>
+                        )}
+                    </div>
                   </div>
                   <div className="absolute right-6 p-2 rounded-full bg-bg-primary/50 text-accent opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-sm">
                     <Edit size={18} />
@@ -470,6 +722,7 @@ const OnboardingScreen = () => {
           onClick={step === totalSteps ? handleComplete : handleNext}
           disabled={step === 1 && !formData.age}
           isLoading={isLoading}
+          loadingText={loadingText}
           text={step === totalSteps ? 'Empezar' : 'Siguiente'}
         />
       </div>

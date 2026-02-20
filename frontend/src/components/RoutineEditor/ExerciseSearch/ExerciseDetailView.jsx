@@ -1,9 +1,10 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseDetailView.jsx */
 import React, { useState } from 'react';
-import { ChevronLeft, Plus, Check, Repeat, Dumbbell } from 'lucide-react';
+import { ChevronLeft, Plus, Check, Repeat, Dumbbell, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { useAppTheme } from '../../../hooks/useAppTheme';
 // Importamos la función centralizada
 import { normalizeText } from '../../../utils/helpers';
+import { askTrainerAI } from '../../../services/aiService';
 
 const ExerciseDetailView = ({
   exercise,
@@ -17,6 +18,12 @@ const ExerciseDetailView = ({
   const [reps, setReps] = useState('8-12');
   const [rest, setRest] = useState(60);
   const { theme } = useAppTheme();
+
+  // Estados para la IA
+  const [aiExplanation, setAiExplanation] = useState(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+  const [remainingUses, setRemainingUses] = useState(null);
 
   const handleAddClick = () => {
     if (isReplacing) {
@@ -33,7 +40,6 @@ const ExerciseDetailView = ({
   });
 
   // 2. Traducir grupo muscular
-  // --- CORRECCIÓN 1: Detección ampliada para ejercicios manuales ---
   const rawMuscleGroup = exercise.muscle_group || exercise.muscles || exercise.target || exercise.category || 'Other';
   const translatedMuscle = rawMuscleGroup
     .split(',')
@@ -61,12 +67,8 @@ const ExerciseDetailView = ({
 
   // 4. Traducir la descripción
   const defaultDescription = exercise.description || t('exercise_ui:no_description_available', 'No hay descripción disponible.');
-
-  // Usamos la función importada para generar la clave limpia
   const descriptionKey = normalizeText(exercise.description);
 
-  // Añadimos nsSeparator: false y keySeparator: false para que los puntos y dos puntos
-  // en la descripción no rompan la búsqueda de la clave.
   const translatedDescription = t(descriptionKey, {
     ns: 'exercise_descriptions',
     defaultValue: defaultDescription,
@@ -79,6 +81,32 @@ const ExerciseDetailView = ({
   const hasVideo = !!exercise.video_url;
   const hasImages = !!exercise.image_url_start;
   const mediaBgClass = (!hasVideo && !hasImages && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
+
+  const isLimitReached = remainingUses === 0;
+
+  const handleAskAI = async () => {
+    if (isLimitReached) return;
+    
+    setIsAiLoading(true);
+    setAiError(null);
+    try {
+      const prompt = `Actúa como un entrenador experto. Explica detalladamente el ejercicio "${translatedName}". 
+      Incluye una breve descripción de la técnica correcta paso a paso, músculos principales y secundarios implicados, los 2 errores más comunes al realizarlo y un "Pro Tip" final. 
+      Sé directo y usa un formato limpio y fácil de leer.`;
+      
+      const res = await askTrainerAI(prompt);
+      setAiExplanation(res.response);
+      setRemainingUses(res.remaining);
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || error.message || "Error al conectar con la IA.";
+      setAiError(errorMsg);
+      if (errorMsg.includes('agotado') || errorMsg.includes('Límite')) {
+        setRemainingUses(0);
+      }
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -121,7 +149,6 @@ const ExerciseDetailView = ({
               />
             </div>
           ) : (
-            // --- CORRECCIÓN 2: Mostrar icono si no hay medios ---
             <div className="flex items-center justify-center text-text-muted">
               <Dumbbell size={64} opacity={0.5} />
             </div>
@@ -144,13 +171,74 @@ const ExerciseDetailView = ({
           </div>
         </div>
 
-        {/* Descripción */}
+        {/* Descripción Original */}
         <div className="pb-4">
           <h3 className="text-lg font-semibold mb-2">{t('exercise_ui:description', 'Descripción')}</h3>
           <p className="text-text-secondary whitespace-pre-line leading-relaxed">
             {translatedDescription}
           </p>
         </div>
+
+        {/* Sección del Entrenador IA */}
+        <div className="mt-4 pt-6 border-t border-glass-border space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold flex items-center gap-2 text-text-primary">
+              <Sparkles className="w-5 h-5 text-accent" />
+              Técnica y Consejos IA
+            </h3>
+            {remainingUses !== null && (
+              <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-text-secondary'}`}>
+                Usos hoy: {remainingUses}
+              </span>
+            )}
+          </div>
+
+          {!aiExplanation && !isAiLoading && (
+            <button
+              onClick={handleAskAI}
+              disabled={isLimitReached}
+              className={`w-full p-4 rounded-xl border flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold ${
+                isLimitReached
+                  ? 'bg-gray-500/10 border-transparent text-text-muted cursor-not-allowed'
+                  : 'border-accent/30 bg-accent/10 text-accent hover:bg-accent/20'
+              }`}
+            >
+              {isLimitReached ? (
+                <>
+                  <AlertCircle className="w-5 h-5" />
+                  Límite Diario Alcanzado
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Pedir explicación experta
+                </>
+              )}
+            </button>
+          )}
+
+          {isAiLoading && (
+            <div className="p-6 rounded-xl border border-glass-border bg-bg-secondary flex flex-col items-center justify-center gap-3">
+              <Loader2 className="w-6 h-6 text-accent animate-spin" />
+              <span className="text-sm text-text-secondary">Analizando biomecánica del ejercicio...</span>
+            </div>
+          )}
+
+          {aiError && (
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-3 items-start">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-500">{aiError}</p>
+            </div>
+          )}
+
+          {aiExplanation && (
+            <div className="p-5 rounded-xl border border-accent/20 bg-accent/5 space-y-2 text-sm leading-relaxed whitespace-pre-wrap text-text-primary">
+              {aiExplanation}
+            </div>
+          )}
+        </div>
+        {/* Espacio extra al final para scroll cómodo */}
+        <div className="h-6"></div>
       </div>
 
       {/* Footer */}

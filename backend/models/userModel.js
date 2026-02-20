@@ -192,6 +192,17 @@ User.init({
     type: DataTypes.JSON,
     allowNull: true,
     defaultValue: {}
+  },
+
+  // --- Entrenador IA ---
+  ai_requests_count: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false
+  },
+  last_ai_request_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
   }
 
 }, {

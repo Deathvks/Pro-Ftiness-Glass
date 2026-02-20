@@ -1,5 +1,5 @@
 /* frontend/src/hooks/useRoutineLoader.js */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 // Importamos los servicios necesarios
 import { getRoutineById } from '../services/routineService';
 import { getExerciseList } from '../services/exerciseService';
@@ -35,6 +35,19 @@ export const useRoutineLoader = ({
   exercises, // 1. Recibimos el array de ejercicios (posiblemente del borrador)
   // --- FIN DE LA MODIFICACIÓN (Persistencia de Borrador) ---
 }) => {
+  
+  // --- FIX BUCLE INFINITO ---
+  // Usamos una referencia para saber si ya hemos intentado cargar esta rutina.
+  // Esto evita que si la rutina está vacía (0 ejercicios), el useEffect entre en bucle.
+  const hasLoadedRef = useRef(false);
+  const lastIdRef = useRef(null);
+
+  // Si cambia el ID (ej: navegamos a otra rutina), reseteamos el flag de carga
+  if (lastIdRef.current !== id) {
+    hasLoadedRef.current = false;
+    lastIdRef.current = id;
+  }
+
   useEffect(() => {
     const loadRoutine = async () => {
       // Si no hay ID, es una rutina nueva, no hay nada que cargar.
@@ -43,9 +56,16 @@ export const useRoutineLoader = ({
         return;
       }
 
+      // Si ya hemos cargado los datos para este ID, no volvemos a llamar a la API
+      // aunque cambien las dependencias (como 'exercises').
+      if (hasLoadedRef.current) {
+        return;
+      }
+
       // --- INICIO DE LA MODIFICACIÓN (Persistencia de Borrador) ---
       // 2. Si ya hay ejercicios cargados (desde el borrador), no sobrescribir.
       if (exercises && exercises.length > 0) {
+        hasLoadedRef.current = true;
         setIsLoading(false); // Ya está cargado (el borrador)
         return;
       }
@@ -124,6 +144,9 @@ export const useRoutineLoader = ({
 
         // 4. Actualizamos el estado de los ejercicios
         setExercises(formattedExercises);
+        
+        // ¡IMPORTANTE! Marcamos como cargado para evitar re-entradas
+        hasLoadedRef.current = true;
 
       } catch (error) {
         addToast(error.message || 'Error al cargar la rutina', 'error');

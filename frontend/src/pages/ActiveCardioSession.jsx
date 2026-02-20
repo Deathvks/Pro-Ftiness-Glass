@@ -28,16 +28,17 @@ const LS_KEY = 'active_cardio_session';
 // Color exacto del tema oscuro de la web (extraído de index.css)
 const DARK_THEME_COLOR = '#0c111b';
 
-const createUserIcon = () => {
+// Función auxiliar para generar el icono con el color dinámico
+const createUserIcon = (color) => {
   return L.divIcon({
     className: 'custom-user-marker',
     html: `<div style="
-      background-color: #22c55e;
+      background-color: ${color};
       width: 16px;
       height: 16px;
       border-radius: 50%;
       border: 2px solid white;
-      box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+      box-shadow: 0 0 10px ${color}80; /* 50% de opacidad aprox */
     "></div>`,
     iconSize: [16, 16],
     iconAnchor: [8, 8]
@@ -66,8 +67,11 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
     logWorkout: state.logWorkout
   }));
 
-  // --- TEMA PARA EL MAPA ---
-  const { theme } = useAppTheme();
+  // --- TEMA PARA EL MAPA Y ACENTOS ---
+  const { theme, accent } = useAppTheme();
+
+  // Icono de usuario dinámico basado en el color de acento
+  const userIcon = useMemo(() => createUserIcon(accent), [accent]);
 
   // Lógica para determinar el estilo del mapa
   const mapConfig = useMemo(() => {
@@ -397,8 +401,10 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
               opacity={mapConfig.opacity}
               className={mapConfig.className}
             />
-            <Polyline positions={path} pathOptions={{ color: '#22c55e', weight: 5, opacity: 0.8 }} />
-            <Marker position={position} icon={createUserIcon()} />
+            {/* CORRECCIÓN: Ruta de color dinámico */}
+            <Polyline positions={path} pathOptions={{ color: accent, weight: 5, opacity: 0.8 }} />
+            {/* CORRECCIÓN: Marcador de usuario con color dinámico */}
+            <Marker position={position} icon={userIcon} />
             <MapRecenter position={position} follow={followUser} />
           </MapContainer>
         ) : (
@@ -456,20 +462,34 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
         <div className="flex justify-center items-center gap-6">
           {status === 'idle' && (
-            <button onClick={() => startSession()} className="w-20 h-20 bg-accent rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:scale-105 transition-transform">
+            <button 
+              onClick={() => startSession()} 
+              // CORRECCIÓN: Sombras dinámicas usando el acento
+              className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+              style={{ boxShadow: `0 0 30px ${accent}66` }}
+            >
               <Play size={32} className="text-bg-secondary ml-1" fill="currentColor" />
             </button>
           )}
 
           {status === 'running' && (
-            <button onClick={pauseSession} className="w-20 h-20 bg-accent rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:scale-105 transition-transform">
+            <button 
+              onClick={pauseSession} 
+              // CORRECCIÓN: Sombras dinámicas usando el acento
+              className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+              style={{ boxShadow: `0 0 30px ${accent}66` }}
+            >
               <Pause size={32} className="text-bg-secondary" fill="currentColor" />
             </button>
           )}
 
           {status === 'paused' && (
             <>
-              <button onClick={resumeSession} className="w-16 h-16 bg-accent rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+              <button 
+                onClick={resumeSession} 
+                className="w-16 h-16 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+                style={{ boxShadow: `0 0 20px ${accent}66` }}
+              >
                 <Play size={24} className="text-bg-secondary ml-1" fill="currentColor" />
               </button>
               <button onClick={handleFinishClick} disabled={isSaving} className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform disabled:opacity-50">

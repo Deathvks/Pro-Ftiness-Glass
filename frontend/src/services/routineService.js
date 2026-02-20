@@ -16,7 +16,14 @@ export const getRoutineById = (routineId) => {
     return apiClient(`/routines/${routineId}`);
 };
 
-// --- INICIO DE LA MODIFICACIÓN ---
+/**
+ * Obtiene una rutina PÚBLICA o COMPARTIDA por su ID (para vista previa).
+ * Este endpoint debería no requerir ser el dueño, pero sí respetar la visibilidad.
+ * @param {string} routineId - El ID de la rutina compartida.
+ */
+export const getPublicRoutine = (routineId) => {
+    return apiClient(`/routines/public/${routineId}`);
+};
 
 /**
  * Crea una nueva rutina.
@@ -35,10 +42,22 @@ export const createRoutine = (routineData) => {
 };
 
 /**
+ * Clona/Importa una rutina compartida al perfil del usuario actual.
+ * @param {string} sourceRoutineId - ID de la rutina original.
+ * @param {string} folderName - Nombre de la carpeta (ej: "Compartido de X").
+ */
+export const forkRoutine = (sourceRoutineId, folderName) => {
+    return apiClient(`/routines/${sourceRoutineId}/fork`, {
+        method: 'POST',
+        body: { folder: folderName }
+    });
+};
+
+/**
  * Actualiza una rutina existente por su ID.
  * (Asumimos que el backend devuelve la rutina actualizada)
  * @param {string} routineId - El ID de la rutina a actualizar.
- * @param {object} routineData - Los nuevos datos para la rutina.
+ * @param {object} routineData - Los nuevos datos para la rutina (incluye visibility).
  */
 export const updateRoutine = (routineId, routineData) => {
     // Quitamos el 'id' del body para evitar conflictos, usamos el de la URL
@@ -75,5 +94,3 @@ export const uploadRoutineImage = (file) => {
 export const deleteRoutine = (routineId) => {
     return apiClient(`/routines/${routineId}`, { method: 'DELETE' });
 };
-
-// --- FIN DE LA MODIFICACIÓN ---

@@ -1,6 +1,7 @@
 /* frontend/src/pages/PublicProfile.jsx */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; // Hook de traducción
 import {
     User,
     Trophy,
@@ -16,7 +17,13 @@ import {
     Shield,
     Clock,
     Construction,
-    Lock
+    Lock,
+    Globe,
+    Users,
+    Download,
+    Folder,
+    X,
+    Play
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import GlassCard from '../components/GlassCard';
@@ -27,19 +34,24 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
-import SEOHead from '../components/SEOHead'; // Importamos SEOHead
+import SEOHead from '../components/SEOHead';
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
 
-// Helper para corregir URLs de imágenes (Avatar)
+// Helper para corregir URLs de imágenes (Avatar/Ejercicios)
 const getFullImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path; 
     if (path.startsWith('blob:')) return path; 
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `${SERVER_URL}${cleanPath}`;
+};
+
+// Helper para detectar si es gradiente CSS
+const isCssBackground = (value) => {
+    return value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
 };
 
 // --- DICCIONARIO DE INSIGNIAS ---
@@ -82,9 +94,12 @@ const resolveBadge = (badge) => {
 };
 
 export default function PublicProfile({ userId: propUserId, onBack, setView }) {
+    // Cargar explícitamente el namespace 'exercise_names'
+    const { t } = useTranslation(['translation', 'exercise_names']); 
+    
     const { userId: paramUserId } = useParams();
     const navigate = useNavigate();
-    const { showToast } = useToast();
+    const { showToast, addToast } = useToast();
 
     const userId = propUserId || paramUserId;
 
@@ -101,7 +116,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         userProfile: myProfile,
         gamification,
         stories, 
-        fetchStories
+        fetchStories,
+        token // Necesario para la descarga manual
     } = useAppStore();
 
     const [badgePage, setBadgePage] = useState(0);
@@ -109,9 +125,13 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeletingFriend, setIsDeletingFriend] = useState(false);
+    const [downloadingRoutineId, setDownloadingRoutineId] = useState(null);
     
     // Estado para visor de historia
     const [viewingStory, setViewingStory] = useState(false);
+
+    // Estado para el modal de detalles de rutina
+    const [viewingRoutine, setViewingRoutine] = useState(null);
 
     useEffect(() => {
         if (userId) {
@@ -183,7 +203,21 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         const hasUnseen = validStories.some(item => !item.viewed);
 
         return { ...storyGroup, items: validStories, hasUnseen };
-    }, [stories, profile, relationshipStatus]); // Dependencia clave: stories (se actualiza al verlas)
+    }, [stories, profile, relationshipStatus]);
+
+
+    // --- LÓGICA DE FILTRADO DE RUTINAS ---
+    const visibleRoutines = useMemo(() => {
+        if (!profile || !profile.routines) return [];
+        
+        const isFriendOrMe = relationshipStatus === 'friend' || relationshipStatus === 'me';
+        
+        return profile.routines.filter(routine => {
+            if (routine.visibility === 'public') return true;
+            if (isFriendOrMe && routine.visibility === 'friends') return true;
+            return false;
+        });
+    }, [profile, relationshipStatus]);
 
 
     const structuredData = useMemo(() => {
@@ -235,11 +269,45 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         }
     };
 
+    const handleDownloadRoutine = async (routineId) => {
+        if (downloadingRoutineId) return;
+        setDownloadingRoutineId(routineId);
+        
+        try {
+            const response = await fetch(`${API_URL}/routines/${routineId}/download`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${useAppStore.getState().token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.error || 'Error al descargar');
+            
+            addToast('Rutina importada a tu colección', 'success');
+        } catch (error) {
+            console.error(error);
+            addToast(error.message, 'error');
+        } finally {
+            setDownloadingRoutineId(null);
+        }
+    };
+
     const handleGoBack = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         if (onBack) { onBack(); return; }
         if (setView) { setView('social'); return; }
         window.location.href = '/social';
+    };
+
+    // Función auxiliar para traducir nombres de ejercicios usando el namespace correcto
+    const getTranslatedExerciseName = (name) => {
+        if (!name) return "";
+        // Busca en el namespace 'exercise_names' la clave que coincide con el nombre en inglés
+        // Si no la encuentra, devuelve el nombre original (defaultValue)
+        return t(name, { ns: 'exercise_names', defaultValue: name });
     };
 
     if (isSocialLoading) {
@@ -262,7 +330,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             <div className="p-8 flex flex-col items-center justify-center text-center">
                 {isPrivate ? (
                     <>
-                        <Lock size={64} className="text-accent-primary mb-4 opacity-50" />
+                        <Lock size={64} className="text-accent mb-4 opacity-50" />
                         <h2 className="text-xl font-bold text-text-primary mb-2">Perfil Privado</h2>
                         <p className="text-text-tertiary mb-6">Este perfil es privado. Debes añadir a este usuario a tus amigos para ver su actividad.</p>
                     </>
@@ -307,16 +375,130 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 />
             )}
 
+            {/* --- MODAL DETALLES RUTINA --- */}
+            {viewingRoutine && (
+                <div 
+                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+                    onClick={() => setViewingRoutine(null)}
+                >
+                    <GlassCard 
+                        className="w-full max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl animate-scale-up"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header Modal */}
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-bg-secondary/80 backdrop-blur-md sticky top-0 z-10">
+                            <div className="flex flex-col">
+                                <h3 className="font-bold text-lg text-text-primary line-clamp-1 flex items-center gap-2">
+                                    <Dumbbell size={18} className="text-accent" />
+                                    {viewingRoutine.name}
+                                </h3>
+                                {viewingRoutine.folder && (
+                                    <span className="text-[10px] text-text-secondary flex items-center gap-1 mt-0.5">
+                                        <Folder size={10} /> {viewingRoutine.folder}
+                                    </span>
+                                )}
+                            </div>
+                            <button 
+                                onClick={() => setViewingRoutine(null)} 
+                                className="p-2 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Content Modal */}
+                        <div className="overflow-y-auto p-4 space-y-5 custom-scrollbar">
+                            {viewingRoutine.description && (
+                                <div className="bg-bg-primary/20 p-3 rounded-lg border border-white/5">
+                                    <p className="text-sm text-text-secondary italic">"{viewingRoutine.description}"</p>
+                                </div>
+                            )}
+
+                            <div>
+                                <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    Lista de Ejercicios <span className="bg-white/10 px-1.5 rounded-md text-text-primary">{viewingRoutine.exercises.length}</span>
+                                </h4>
+                                <div className="space-y-3">
+                                    {viewingRoutine.exercises.map((ex, i) => {
+                                        const mediaSrc = ex.gif_url || ex.image || ex.image_url;
+                                        const videoSrc = ex.video || ex.video_url;
+                                        // Usamos la función helper para traducir el nombre
+                                        const translatedName = getTranslatedExerciseName(ex.name);
+
+                                        return (
+                                            <GlassCard key={i} className="p-3 flex gap-4 items-center bg-bg-primary/30 border-white/5 hover:border-accent/30 transition group">
+                                                {/* Media Container */}
+                                                <div className="w-24 h-24 shrink-0 rounded-lg bg-bg-secondary overflow-hidden border border-white/10 flex items-center justify-center relative shadow-lg">
+                                                    {videoSrc ? (
+                                                        <>
+                                                            <video
+                                                                src={getFullImageUrl(videoSrc)}
+                                                                className="w-full h-full object-cover"
+                                                                muted loop autoPlay playsInline
+                                                            />
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition">
+                                                                <Play size={20} className="text-white opacity-80 drop-shadow-md" fill="currentColor" />
+                                                            </div>
+                                                        </>
+                                                    ) : mediaSrc ? (
+                                                        <img 
+                                                            src={getFullImageUrl(mediaSrc)} 
+                                                            alt={ex.name}
+                                                            className="w-full h-full object-cover"
+                                                            loading="lazy"
+                                                        />
+                                                    ) : (
+                                                        <Dumbbell size={32} className="text-text-muted opacity-30" />
+                                                    )}
+                                                    
+                                                    {/* Badge Orden */}
+                                                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur px-1.5 py-0.5 rounded text-[10px] font-bold text-white">
+                                                        #{i + 1}
+                                                    </div>
+                                                </div>
+
+                                                {/* Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-text-primary text-sm line-clamp-2 mb-1">{translatedName}</p>
+                                                    <span className="inline-block text-[10px] px-2 py-0.5 bg-white/5 rounded text-text-secondary">
+                                                        Ver detalle al importar
+                                                    </span>
+                                                </div>
+                                            </GlassCard>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer Modal */}
+                        <div className="p-4 border-t border-white/10 bg-bg-secondary/50 backdrop-blur-md">
+                             <button 
+                                onClick={() => { handleDownloadRoutine(viewingRoutine.id); setViewingRoutine(null); }}
+                                disabled={downloadingRoutineId === viewingRoutine.id}
+                                className="w-full py-3 rounded-xl bg-accent hover:opacity-90 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 active:scale-[0.98]"
+                             >
+                                {downloadingRoutineId === viewingRoutine.id ? (
+                                    <Spinner size="small" color="white" />
+                                ) : (
+                                    <>
+                                        <Download size={20} /> Importar esta Rutina
+                                    </>
+                                )}
+                             </button>
+                        </div>
+                    </GlassCard>
+                </div>
+            )}
+
             {/* --- SEO & STRUCTURED DATA --- */}
             {profile && (
                 <>
-                    {/* Sustituimos Helmet por nuestro SEOHead */}
                     <SEOHead 
                         title={`${profile.username} - Perfil en Pro Fitness Glass`}
                         description={`Mira el perfil de fitness de ${profile.username}. Nivel ${profile.level}, ${profile.workoutsCount} entrenamientos completados.`}
                         route={`profile/${profile.id}`}
                     />
-                    {/* Mantenemos el JSON-LD en Helmet si es necesario, o lo podemos inyectar como script */}
                     {structuredData && (
                         <script type="application/ld+json">{structuredData}</script>
                     )}
@@ -353,26 +535,23 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
             {/* --- PROFILE CARD PRINCIPAL --- */}
             <GlassCard className="relative overflow-hidden p-6 flex flex-col items-center text-center gap-4">
-                <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent-primary/20 to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent/20 to-transparent pointer-events-none" />
 
-                {/* Avatar con anillo de historia (si tiene) */}
+                {/* Avatar con anillo de historia */}
                 <div 
                     className={`relative z-10 w-32 h-32 rounded-full p-1 transition-all duration-300
                         ${userStory 
                             ? (userStory.hasUnseen 
-                                // FIX: Usar bg-accent sólido para anillo "nuevo"
                                 ? 'bg-accent shadow-xl shadow-accent/40 cursor-pointer animate-pulse-slow' 
-                                // FIX: Estilo para historias vistas (gris/transparente)
                                 : 'bg-gray-300 dark:bg-white/20 cursor-pointer'
                               )
-                            : 'bg-gradient-to-br from-accent-primary to-accent-secondary shadow-xl shadow-accent-primary/20'
+                            : 'bg-gradient-to-br from-accent to-accent shadow-xl shadow-accent/20'
                         }
                     `}
                     onClick={() => {
                         if (userStory) setViewingStory(true);
                     }}
                 >
-                    {/* FIX: Pasar profile completo que ya tiene profile_image_url corregido */}
                     <UserAvatar
                         user={profile} 
                         size="full"
@@ -380,7 +559,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     />
 
                     {profile.show_level_xp && (
-                        <div className="absolute -bottom-2 -right-2 bg-bg-primary border-2 border-accent-primary rounded-full w-10 h-10 flex items-center justify-center font-black text-sm text-text-primary shadow-lg">
+                        <div className="absolute -bottom-2 -right-2 bg-bg-primary border-2 border-accent rounded-full w-10 h-10 flex items-center justify-center font-black text-sm text-text-primary shadow-lg">
                             {profile.level || 1}
                         </div>
                     )}
@@ -413,7 +592,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         {relationshipStatus === 'none' && (
                             <button
                                 onClick={handleSendRequest}
-                                className="flex items-center gap-2 px-6 py-2 bg-accent-primary/10 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/20 transition-all active:scale-95 outline-none focus:outline-none"
+                                className="flex items-center gap-2 px-6 py-2 bg-accent/10 text-accent font-bold rounded-xl hover:bg-accent/20 transition-all active:scale-95 outline-none focus:outline-none"
                             >
                                 <UserPlus size={18} />
                                 Añadir Amigo
@@ -447,7 +626,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         )}
 
                         {relationshipStatus === 'pending_received' && (
-                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-2 bg-accent-primary/10 text-accent-primary font-bold rounded-xl hover:bg-accent-primary/20 transition-all outline-none focus:outline-none">
+                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-2 bg-accent/10 text-accent font-bold rounded-xl hover:bg-accent/20 transition-all outline-none focus:outline-none">
                                 <UserCheck size={18} />
                                 Responder Solicitud
                             </button>
@@ -492,15 +671,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 </GlassCard>
             )}
 
-            {/* --- INSIGNIAS (PAGINADAS) --- */}
+            {/* --- INSIGNIAS --- */}
             {profile.show_badges && badges.length > 0 && (
                 <div className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                         <h3 className="text-lg font-bold text-text-primary flex items-center gap-2 whitespace-nowrap">
-                            <Medal size={20} className="text-accent-primary" />
+                            <Medal size={20} className="text-accent" />
                             Insignias Desbloqueadas
                         </h3>
-                        {/* Controles de Paginación */}
                         {badges.length > BADGES_PER_PAGE && (
                             <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-lg p-1 border border-glass-border">
                                 <button
@@ -540,22 +718,152 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 </div>
             )}
 
-            {/* --- RUTINAS PÚBLICAS --- */}
+            {/* --- RUTINAS PÚBLICAS Y DE AMIGOS --- */}
             <div className="space-y-4">
                 <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
-                    <Dumbbell size={20} className="text-accent-primary" />
-                    Rutinas Públicas
+                    <Dumbbell size={20} className="text-accent" />
+                    Rutinas de {profile.username}
                 </h3>
 
-                <GlassCard className="p-8 flex flex-col items-center justify-center gap-3">
-                    <div className="p-3 rounded-full bg-accent/10">
-                        <Construction size={24} className="text-accent" />
+                {visibleRoutines.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {visibleRoutines.map((routine) => {
+                            const imageSrc = routine.imageUrl || routine.image_url;
+                            const isPublic = routine.visibility === 'public';
+                            
+                            return (
+                                <GlassCard 
+                                    key={routine.id} 
+                                    className="p-0 overflow-hidden flex flex-col group relative border-transparent hover:border-white/10 transition-all cursor-pointer hover:shadow-lg hover:shadow-accent/10"
+                                    onClick={() => setViewingRoutine(routine)}
+                                >
+                                    {/* Imagen de fondo */}
+                                    <div className="h-28 w-full relative shrink-0 overflow-hidden bg-bg-secondary">
+                                        {imageSrc ? (
+                                            isCssBackground(imageSrc) ? (
+                                                <div className="w-full h-full" style={{ background: imageSrc }} />
+                                            ) : (
+                                                <img 
+                                                    src={getFullImageUrl(imageSrc)} 
+                                                    alt={routine.name}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                                />
+                                            )
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-bg-secondary to-bg-primary flex items-center justify-center text-text-muted">
+                                                <Dumbbell size={32} opacity={0.2} />
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-bg-secondary/20 to-transparent" />
+                                        
+                                        {/* Badge de Carpeta */}
+                                        {routine.folder && (
+                                            <div className="absolute top-2 right-2 z-20">
+                                                <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-medium text-white flex items-center gap-1">
+                                                    <Folder size={10} /> {routine.folder}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Contenido */}
+                                    <div className="p-4 flex-1 flex flex-col">
+                                        <div className="flex justify-between items-start gap-2 mb-1">
+                                            <h4 className="font-bold text-text-primary line-clamp-1 group-hover:text-accent transition-colors">{routine.name}</h4>
+                                            {isPublic ? (
+                                                <span className="shrink-0 text-[10px] bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                    <Globe size={10} /> Pública
+                                                </span>
+                                            ) : (
+                                                <span className="shrink-0 text-[10px] bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                    <Users size={10} /> Amigos
+                                                </span>
+                                            )}
+                                        </div>
+                                        
+                                        {routine.description && (
+                                            <p className="text-xs text-text-secondary line-clamp-2 mb-3">
+                                                {routine.description}
+                                            </p>
+                                        )}
+
+                                        {/* PREVIEW DE EJERCICIOS (MINI) */}
+                                        {routine.exercises && routine.exercises.length > 0 && (
+                                            <div className="mb-3 space-y-2 bg-bg-primary/30 p-2 rounded-lg border border-white/5">
+                                                <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-1">
+                                                    Ejercicios ({routine.exercises.length})
+                                                </p>
+                                                {routine.exercises.slice(0, 3).map((ex, i) => {
+                                                    const mediaSrc = ex.gif_url || ex.image || ex.image_url;
+                                                    const videoSrc = ex.video || ex.video_url;
+                                                    // Traducción del nombre
+                                                    const translatedName = getTranslatedExerciseName(ex.name);
+
+                                                    return (
+                                                        <div key={i} className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-md bg-bg-secondary shrink-0 overflow-hidden border border-white/10 flex items-center justify-center relative">
+                                                                {mediaSrc ? (
+                                                                    <img 
+                                                                        src={getFullImageUrl(mediaSrc)} 
+                                                                        alt={ex.name}
+                                                                        className="w-full h-full object-cover"
+                                                                        loading="lazy"
+                                                                    />
+                                                                ) : videoSrc ? (
+                                                                    <video
+                                                                        src={getFullImageUrl(videoSrc)}
+                                                                        className="w-full h-full object-cover"
+                                                                        muted loop autoPlay playsInline
+                                                                    />
+                                                                ) : (
+                                                                    <Dumbbell size={16} className="text-text-muted opacity-50" />
+                                                                )}
+                                                            </div>
+                                                            <span className="text-xs text-text-secondary font-medium truncate flex-1">
+                                                                {translatedName}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {routine.exercises.length > 3 && (
+                                                    <p className="text-[10px] text-text-muted pl-1">
+                                                        ... y {routine.exercises.length - 3} más
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="mt-auto pt-2">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Evitar abrir modal al descargar
+                                                    handleDownloadRoutine(routine.id);
+                                                }}
+                                                disabled={downloadingRoutineId === routine.id}
+                                                // CAMBIO: Cambiado a color de acento
+                                                className="w-full py-2 rounded-lg bg-accent hover:opacity-90 text-xs font-bold text-white flex items-center justify-center gap-2 transition-colors shadow-md shadow-accent/20"
+                                            >
+                                                {downloadingRoutineId === routine.id ? (
+                                                    <Spinner size="small" color="white" />
+                                                ) : (
+                                                    <>
+                                                        <Download size={14} /> Importar Rutina
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </GlassCard>
+                            );
+                        })}
                     </div>
-                    <span className="text-xl font-bold text-accent">Próximamente</span>
-                    <p className="text-sm text-text-tertiary text-center max-w-xs">
-                        Estamos trabajando para que pronto puedas explorar y copiar las rutinas de <span className="font-bold text-accent-primary">{profile.username}</span>.
-                    </p>
-                </GlassCard>
+                ) : (
+                    <GlassCard className="p-8 flex flex-col items-center justify-center text-center opacity-60">
+                         <Dumbbell size={32} className="text-text-tertiary mb-2" />
+                         <p className="text-text-secondary">Este usuario no tiene rutinas visibles para ti.</p>
+                    </GlassCard>
+                )}
             </div>
 
             {/* --- MODAL CONFIRMACIÓN ELIMINAR AMIGO --- */}

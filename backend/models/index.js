@@ -1,6 +1,6 @@
 /* backend/models/index.js */
 import sequelize from "../db.js";
-import { DataTypes } from 'sequelize'; // Necesario para inicializar los modelos de historias
+import { DataTypes } from 'sequelize';
 
 // 1. Importa todos los modelos existentes
 import User from './userModel.js';
@@ -25,8 +25,11 @@ import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
 
+// Nuevos modelos de Squads
+import Squad from './squadModel.js';
+import SquadMember from './squadMemberModel.js';
+
 // 2. Importa las factorías de los nuevos modelos de Historias
-// Nota: Usamos una importación por defecto que traerá la función constructora
 import storyFactory from './storyModel.js';
 import storyLikeFactory from './storyLikeModel.js';
 import storyViewFactory from './storyViewModel.js';
@@ -107,22 +110,27 @@ User.hasMany(Friendship, { foreignKey: 'addressee_id', as: 'ReceivedRequests' })
 Friendship.belongsTo(User, { foreignKey: 'requester_id', as: 'Requester' });
 Friendship.belongsTo(User, { foreignKey: 'addressee_id', as: 'Addressee' });
 
-// --- HISTORIAS (Nuevas Asociaciones) ---
-// Usuario tiene muchas historias
+// --- HISTORIAS ---
 User.hasMany(Story, { foreignKey: 'user_id', as: 'stories', onDelete: 'CASCADE' });
 Story.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-// Likes en Historias
 Story.hasMany(StoryLike, { foreignKey: 'story_id', as: 'likes', onDelete: 'CASCADE' });
 StoryLike.belongsTo(Story, { foreignKey: 'story_id', as: 'story' });
 User.hasMany(StoryLike, { foreignKey: 'user_id', as: 'likedStories' });
 StoryLike.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-// Vistas en Historias
 Story.hasMany(StoryView, { foreignKey: 'story_id', as: 'views', onDelete: 'CASCADE' });
 StoryView.belongsTo(Story, { foreignKey: 'story_id', as: 'story' });
 User.hasMany(StoryView, { foreignKey: 'user_id', as: 'viewedStories' });
 StoryView.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// --- SQUADS / CLANES (Nuevas Asociaciones) ---
+User.belongsToMany(Squad, { through: SquadMember, foreignKey: 'user_id', as: 'Squads' });
+Squad.belongsToMany(User, { through: SquadMember, foreignKey: 'squad_id', as: 'Members' });
+Squad.hasMany(SquadMember, { foreignKey: 'squad_id', as: 'SquadMemberships' });
+SquadMember.belongsTo(Squad, { foreignKey: 'squad_id' });
+User.hasMany(SquadMember, { foreignKey: 'user_id', as: 'UserSquadMemberships' });
+SquadMember.belongsTo(User, { foreignKey: 'user_id' });
 
 const models = {
     sequelize,
@@ -147,10 +155,11 @@ const models = {
     UserSession,
     Friendship,
     BugReport,
-    // Nuevos modelos
     Story,
     StoryLike,
-    StoryView
+    StoryView,
+    Squad,
+    SquadMember
 };
 
 export default models;

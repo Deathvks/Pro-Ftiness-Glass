@@ -5,7 +5,7 @@ import {
     Users, UserPlus, Trophy, Search, UserX, Check, X, Medal,
     ChevronRight, ChevronLeft, Plus, Camera, Image as ImageIcon,
     Globe, Zap, ShieldAlert, Clock, Lock, Video as VideoIcon,
-    Info, Settings
+    Info, Settings, Shield, PlusCircle, Hash, Copy, ArrowLeft, LogOut, Trash2
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -14,6 +14,7 @@ import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
+import socialService from '../services/socialService';
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -34,7 +35,7 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
 
     return (
         <div 
-            className="mb-6 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 shadow-sm backdrop-blur-sm transition-all animate-[fade-in_0.3s_ease-out]"
+            className="mb-6 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 shadow-sm backdrop-blur-sm transition-all animate-[fade-in_0.3s_ease-out] max-w-3xl mx-auto"
             style={{
                 background: 'linear-gradient(to bottom right, var(--color-accent-border), var(--color-accent-transparent))'
             }}
@@ -134,7 +135,7 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
     );
 };
 
-// --- Subcomponente: Modal de Aviso Legal (NUEVO) ---
+// --- Subcomponente: Modal de Aviso Legal ---
 const StoryTermsModal = ({ onAccept, onReject }) => {
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-[fade-in_0.3s_ease-out]">
@@ -207,10 +208,8 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [privacy, setPrivacy] = useState('friends'); 
-    
-    // Estados para control HDR
-    const [canUseHDR, setCanUseHDR] = useState(false); // ¿El archivo es compatible?
-    const [isHDR, setIsHDR] = useState(false);         // ¿El usuario quiere activarlo?
+    const [canUseHDR, setCanUseHDR] = useState(false);
+    const [isHDR, setIsHDR] = useState(false);
     
     const galleryInputRef = useRef(null);
     const cameraPhotoInputRef = useRef(null);
@@ -222,30 +221,25 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         if (selected) {
             setFile(selected);
             setPreview(URL.createObjectURL(selected));
-            
-            // Reiniciar estados de detección
             setCanUseHDR(false);
             setIsHDR(false);
 
-            // 1. Detección por extensión para Imágenes (HEIC/AVIF suelen ser HDR)
             if (selected.type.startsWith('image/')) {
                 const isPotentialHDRImage = /\.(heic|heif|avif)$/i.test(selected.name);
                 if (isPotentialHDRImage) {
                     setCanUseHDR(true);
-                    setIsHDR(true); // Activar por defecto si se detecta
+                    setIsHDR(true);
                 }
             }
         }
     };
 
-    // Limpiar URL object para evitar fugas de memoria y asegurar refresco
     useEffect(() => {
         return () => {
             if (preview) URL.revokeObjectURL(preview);
         };
     }, [preview]);
 
-    // Efecto para forzar el frame en iOS/Safari
     useEffect(() => {
         if (preview && file?.type?.startsWith('video') && previewVideoRef.current) {
             const vid = previewVideoRef.current;
@@ -255,12 +249,9 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         }
     }, [preview, file]);
 
-    // 2. Detección avanzada para Vídeos al cargar metadatos
     const handleVideoLoad = (e) => {
         const video = e.target;
-        if (video.currentTime < 0.1) {
-            video.currentTime = 0.1;
-        }
+        if (video.currentTime < 0.1) video.currentTime = 0.1;
 
         if (video.colorSpace) {
             const { transfer, primaries } = video.colorSpace;
@@ -281,7 +272,6 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         setIsHDR(!isHDR);
     };
 
-    // Función para limpiar el input antes de abrirlo (fuerza al OS a refrescar el picker)
     const onInputClick = (e) => {
         e.target.value = null;
     };
@@ -289,8 +279,6 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
             <div className="w-full max-w-md bg-bg-secondary border border-glass-border rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-                
-                {/* Header */}
                 <div className="p-4 border-b border-white/10 flex justify-between items-center">
                     <h3 className="font-bold text-text-primary">Nueva Historia</h3>
                     <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full">
@@ -298,12 +286,9 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                     </button>
                 </div>
 
-                {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center min-h-[300px]">
                     {!preview ? (
                         <div className="grid grid-cols-3 gap-3 w-full h-full">
-                            
-                            {/* Opción 1: Cámara FOTO (Solo Imagen) */}
                             <div 
                                 onClick={() => cameraPhotoInputRef.current?.click()}
                                 className="aspect-square border-2 border-dashed border-accent/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-accent/10 transition-colors group"
@@ -314,7 +299,6 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 <p className="text-accent font-bold text-xs">Foto</p>
                             </div>
 
-                            {/* Opción 2: Cámara VÍDEO (Solo Vídeo) */}
                             <div 
                                 onClick={() => cameraVideoInputRef.current?.click()}
                                 className="aspect-square border-2 border-dashed border-red-500/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-500/10 transition-colors group"
@@ -325,7 +309,6 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 <p className="text-red-400 font-bold text-xs">Vídeo</p>
                             </div>
 
-                            {/* Opción 3: Galería (Ambos) */}
                             <div 
                                 onClick={() => galleryInputRef.current?.click()}
                                 className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-colors group"
@@ -347,24 +330,16 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     ref={previewVideoRef}
                                     src={preview} 
                                     className="max-w-full max-h-full w-auto h-auto outline-none" 
-                                    controls 
-                                    playsInline
-                                    webkit-playsinline="true"
-                                    preload="auto"
-                                    muted
+                                    controls playsInline webkit-playsinline="true" preload="auto" muted
                                     onLoadedMetadata={handleVideoLoad}
-                                    style={{ 
-                                        filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
-                                    }}
+                                    style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
                                 />
                             ) : (
                                 <img 
                                     src={preview} 
                                     alt="Preview" 
                                     className="max-w-full max-h-full w-auto h-auto shadow-sm mx-auto"
-                                    style={{ 
-                                        filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none',
-                                    }}
+                                    style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
                                 />
                             )}
                             <button 
@@ -376,45 +351,12 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         </div>
                     )}
                     
-                    {/* INPUT 1: GALERÍA (MODIFICADO)
-                        - multiple={false} (implícito al borrarlo): Solo deja seleccionar una.
-                        - accept="image/*,video/*": La configuración más simple es la que mejor funciona para activar el picker "bueno" de iOS.
-                    */}
-                    <input 
-                        type="file" 
-                        accept="image/*,video/*"
-                        ref={galleryInputRef} 
-                        className="hidden" 
-                        onChange={handleFileChange} 
-                        onClick={onInputClick}
-                    />
-                    
-                    {/* INPUT 2: CÁMARA FOTOS */}
-                    <input 
-                        type="file" 
-                        accept="image/*" 
-                        capture="environment"
-                        ref={cameraPhotoInputRef} 
-                        className="hidden" 
-                        onChange={handleFileChange} 
-                        onClick={onInputClick}
-                    />
-
-                    {/* INPUT 3: CÁMARA VÍDEO */}
-                    <input 
-                        type="file" 
-                        accept="video/*" 
-                        capture="environment"
-                        ref={cameraVideoInputRef} 
-                        className="hidden" 
-                        onChange={handleFileChange} 
-                        onClick={onInputClick}
-                    />
+                    <input type="file" accept="image/*,video/*" ref={galleryInputRef} className="hidden" onChange={handleFileChange} onClick={onInputClick} />
+                    <input type="file" accept="image/*" capture="environment" ref={cameraPhotoInputRef} className="hidden" onChange={handleFileChange} onClick={onInputClick} />
+                    <input type="file" accept="video/*" capture="environment" ref={cameraVideoInputRef} className="hidden" onChange={handleFileChange} onClick={onInputClick} />
                 </div>
 
-                {/* Footer / Controls */}
                 <div className="p-4 border-t border-white/10 space-y-4 bg-bg-secondary">
-                    
                     <div className="flex gap-2 justify-center">
                         <button 
                             onClick={() => setPrivacy('friends')}
@@ -424,8 +366,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
                                 }`}
                         >
-                            <Users size={14} />
-                            <span>Solo Amigos</span>
+                            <Users size={14} /><span>Solo Amigos</span>
                         </button>
 
                         <button 
@@ -436,11 +377,9 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
                                 }`}
                         >
-                            <Globe size={14} />
-                            <span>Público</span>
+                            <Globe size={14} /><span>Público</span>
                         </button>
 
-                        {/* Botón Inteligente HDR */}
                         {canUseHDR && (
                             <button 
                                 onClick={toggleHDR}
@@ -474,16 +413,16 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
     <button
         onClick={() => onClick(id)}
-        className={`flex-1 flex md:flex-row flex-col items-center md:justify-start justify-center py-3 md:px-4 md:gap-3 gap-1 text-xs md:text-sm font-medium transition-colors relative md:rounded-xl
+        className={`flex items-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm whitespace-nowrap transition-all flex-shrink-0 border active:scale-95
         ${isActive
-                ? 'text-accent border-b-2 md:border-b-0 border-accent md:bg-accent/10'
-                : 'text-text-secondary hover:text-text-primary md:hover:bg-white/5'
-            }`}
+            ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
+            : 'bg-white/5 text-text-secondary border-transparent hover:bg-white/10 hover:text-text-primary hover:border-white/20'
+        }`}
     >
-        <Icon size={20} className="md:w-5 md:h-5" />
+        <Icon size={18} />
         <span>{label}</span>
         {badge > 0 && (
-            <span className="absolute top-2 right-2 md:static md:ml-auto bg-red-500 text-white text-[10px] md:text-xs font-bold w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-full shadow-sm">
+            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm ml-1">
                 {badge}
             </span>
         )}
@@ -543,8 +482,22 @@ export default function Social({ setView }) {
     // --- Estados para Historias ---
     const [viewingStoryUserId, setViewingStoryUserId] = useState(null); 
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [showTermsModal, setShowTermsModal] = useState(false); // NUEVO
+    const [showTermsModal, setShowTermsModal] = useState(false);
     const [isUploadingStory, setIsUploadingStory] = useState(false);
+
+    // --- Estados para Grupos ---
+    const [mySquads, setMySquads] = useState([]);
+    const [selectedSquad, setSelectedSquad] = useState(null);
+    const [isSquadsLoading, setIsSquadsLoading] = useState(false);
+    const [showCreateSquadModal, setShowCreateSquadModal] = useState(false);
+    const [showJoinSquadModal, setShowJoinSquadModal] = useState(false);
+    const [squadForm, setSquadForm] = useState({ name: '', description: '', invite_code: '' });
+    
+    const [leaveSquadConfirmation, setLeaveSquadConfirmation] = useState({ isOpen: false, squadId: null });
+    const [isLeavingSquad, setIsLeavingSquad] = useState(false);
+
+    const [deleteSquadConfirmation, setDeleteSquadConfirmation] = useState({ isOpen: false, squadId: null });
+    const [isDeletingSquad, setIsDeletingSquad] = useState(false);
 
     const { showToast } = useToast();
 
@@ -562,12 +515,11 @@ export default function Social({ setView }) {
         respondFriendRequest,
         removeFriend,
         fetchLeaderboard,
-        
         stories,
         myStories,
         fetchStories,
         uploadStory,
-        subscribeToStories, // <-- Añadido
+        subscribeToStories,
     } = useAppStore();
 
     useEffect(() => {
@@ -575,14 +527,14 @@ export default function Social({ setView }) {
         fetchFriendRequests();
         fetchLeaderboard();
         fetchStories(); 
-        subscribeToStories(); // <-- Añadido: Activa la escucha de eventos en tiempo real
+        subscribeToStories(); 
     }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories, subscribeToStories]);
 
     // Manejo de params
     useEffect(() => {
         const tab = searchParams.get('tab');
         const highlight = searchParams.get('highlight');
-        if (tab && ['friends', 'requests', 'search', 'leaderboard'].includes(tab)) setActiveTab(tab);
+        if (tab && ['friends', 'requests', 'search', 'leaderboard', 'squads'].includes(tab)) setActiveTab(tab);
         if (highlight) {
             setHighlightedId(parseInt(highlight));
             const timer = setTimeout(() => setHighlightedId(null), 5000);
@@ -614,9 +566,101 @@ export default function Social({ setView }) {
         }
     };
 
-    // --- Lógica de Historias ---
+    // --- Lógica de Grupos ---
+    useEffect(() => {
+        if (activeTab === 'squads') {
+            loadMySquads();
+        }
+    }, [activeTab]);
 
-    // Función para intentar iniciar la subida
+    const loadMySquads = async () => {
+        setIsSquadsLoading(true);
+        try {
+            const data = await socialService.getMySquads();
+            setMySquads(data || []);
+        } catch (err) {
+            showToast('Error al cargar grupos', 'error');
+        } finally {
+            setIsSquadsLoading(false);
+        }
+    };
+
+    const loadSquadLeaderboard = async (squadId) => {
+        setIsSquadsLoading(true);
+        try {
+            const data = await socialService.getSquadLeaderboard(squadId);
+            setSelectedSquad(data);
+        } catch (err) {
+            showToast('Error al cargar ranking', 'error');
+        } finally {
+            setIsSquadsLoading(false);
+        }
+    };
+
+    const handleCreateSquad = async (e) => {
+        e.preventDefault();
+        try {
+            await socialService.createSquad({ name: squadForm.name, description: squadForm.description });
+            showToast('Grupo creado', 'success');
+            setShowCreateSquadModal(false);
+            setSquadForm({ name: '', description: '', invite_code: '' });
+            loadMySquads();
+        } catch (err) {
+            showToast('Error al crear el grupo', 'error');
+        }
+    };
+
+    const handleJoinSquad = async (e) => {
+        e.preventDefault();
+        try {
+            await socialService.joinSquad(squadForm.invite_code);
+            showToast('Te has unido al grupo', 'success');
+            setShowJoinSquadModal(false);
+            setSquadForm({ name: '', description: '', invite_code: '' });
+            loadMySquads();
+        } catch (err) {
+            showToast(err.response?.data?.error || 'Error al unirse', 'error');
+        }
+    };
+
+    const confirmLeaveSquad = async () => {
+        if (!leaveSquadConfirmation.squadId) return;
+        setIsLeavingSquad(true);
+        try {
+            await socialService.leaveSquad(leaveSquadConfirmation.squadId);
+            showToast('Has abandonado el grupo', 'success');
+            setSelectedSquad(null);
+            loadMySquads();
+        } catch (err) {
+            showToast(err.response?.data?.error || 'Error al abandonar el grupo', 'error');
+        } finally {
+            setIsLeavingSquad(false);
+            setLeaveSquadConfirmation({ isOpen: false, squadId: null });
+        }
+    };
+
+    const confirmDeleteSquad = async () => {
+        if (!deleteSquadConfirmation.squadId) return;
+        setIsDeletingSquad(true);
+        try {
+            await socialService.deleteSquad(deleteSquadConfirmation.squadId);
+            showToast('Grupo eliminado', 'success');
+            setSelectedSquad(null);
+            loadMySquads();
+        } catch (err) {
+            showToast(err.response?.data?.error || 'Error al eliminar el grupo', 'error');
+        } finally {
+            setIsDeletingSquad(false);
+            setDeleteSquadConfirmation({ isOpen: false, squadId: null });
+        }
+    };
+
+    const copyInviteCode = (code) => {
+        navigator.clipboard.writeText(code);
+        showToast('Código copiado', 'success');
+    };
+
+    // --- Lógica de Historias ---
     const initiateStoryUpload = () => {
         const termsAccepted = localStorage.getItem('story_terms_accepted');
         if (termsAccepted === 'true') {
@@ -626,29 +670,24 @@ export default function Social({ setView }) {
         }
     };
 
-    // Al aceptar los términos
     const handleAcceptTerms = () => {
         localStorage.setItem('story_terms_accepted', 'true');
         setShowTermsModal(false);
         setShowUploadModal(true);
     };
 
-    // Al rechazar los términos
     const handleRejectTerms = () => {
         setShowTermsModal(false);
-        // No guardamos nada, así la próxima vez sale de nuevo
     };
 
     const handleUploadStory = async (file, privacy, isHDR) => {
         setIsUploadingStory(true);
         try {
             const result = await uploadStory(file, privacy, isHDR);
-            
             if (result && result.success) {
                 showToast('Historia subida con éxito', 'success');
                 setShowUploadModal(false);
             } else {
-                // Mostramos el mensaje específico que viene del backend (NSFW, formato, etc.)
                 showToast(result?.error || 'Error al subir historia', 'error');
             }
         } catch (error) {
@@ -663,11 +702,10 @@ export default function Social({ setView }) {
         if (myStories.length > 0) {
             setViewingStoryUserId(userProfile.id);
         } else {
-            initiateStoryUpload(); // Usar la nueva lógica
+            initiateStoryUpload();
         }
     };
 
-    // Filtrado de Historias
     const visibleStories = useMemo(() => {
         return stories.filter(storyUser => {
             const isFriend = socialFriends.some(f => f.id === storyUser.userId);
@@ -676,13 +714,11 @@ export default function Social({ setView }) {
         });
     }, [stories, socialFriends]);
 
-    // Calcular si tengo historias sin ver
     const myStoriesUnseen = useMemo(() => {
         return myStories && myStories.some(s => !s.viewed);
     }, [myStories]);
 
-    // --- Renderers ---
-
+    // --- Acciones de Amigos ---
     const handleSendRequest = async (e, targetUserId) => {
         e.stopPropagation();
         const success = await sendFriendRequest(targetUserId);
@@ -715,6 +751,7 @@ export default function Social({ setView }) {
         else setView('publicProfile', { userId });
     };
 
+    // --- Renderers de Contenido ---
     const renderFriends = () => {
         const totalFriends = socialFriends.length;
         const totalPages = Math.ceil(totalFriends / FRIENDS_PER_PAGE);
@@ -797,7 +834,7 @@ export default function Social({ setView }) {
         const paginatedResults = socialSearchResults.slice((searchPage - 1) * ITEMS_PER_PAGE, searchPage * ITEMS_PER_PAGE);
 
         return (
-            <div className="space-y-4 max-w-xl w-full">
+            <div className="space-y-4 mx-auto w-full">
                 <form onSubmit={handleSearch}>
                     <GlassCard className="flex items-center px-3 py-2 gap-2 focus-within:border-accent/50 transition-colors [.oled-theme_&]:border-white/10">
                         <Search size={20} className="text-text-tertiary ml-1" />
@@ -870,6 +907,137 @@ export default function Social({ setView }) {
         </GlassCard>
     );
 
+    const renderSquads = () => {
+        if (isSquadsLoading) {
+            return <div className="flex justify-center py-10"><Spinner size={30} /></div>;
+        }
+
+        if (selectedSquad) {
+            const myMembership = selectedSquad.Members?.find(m => m.id === userProfile?.id);
+            const amIAdmin = myMembership?.SquadMember?.role === 'admin';
+
+            return (
+                <GlassCard className="overflow-hidden [.oled-theme_&]:border-white/10 animate-[fade-in_0.3s_ease-out]">
+                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => setSelectedSquad(null)} className="p-1 hover:bg-white/10 rounded-full text-text-secondary">
+                                <ArrowLeft size={20} />
+                            </button>
+                            <div>
+                                <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                                    <Shield className="text-accent" size={20} /> {selectedSquad.name}
+                                </h3>
+                                {selectedSquad.description && <p className="text-xs text-text-tertiary">{selectedSquad.description}</p>}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => copyInviteCode(selectedSquad.invite_code)} 
+                                className="text-xs font-bold text-text-primary bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+                            >
+                                <Copy size={14} /> Código
+                            </button>
+                            {!amIAdmin ? (
+                                <button 
+                                    onClick={() => setLeaveSquadConfirmation({ isOpen: true, squadId: selectedSquad.id })}
+                                    className="text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+                                >
+                                    <LogOut size={14} /> Salir
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={() => setDeleteSquadConfirmation({ isOpen: true, squadId: selectedSquad.id })}
+                                    className="text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+                                >
+                                    <Trash2 size={14} /> Eliminar
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex flex-col">
+                        <div className="flex text-xs text-text-tertiary p-3 border-b border-white/5 uppercase tracking-wider font-bold bg-white/5">
+                            <span className="w-10 text-center">#</span><span className="flex-1 pl-2">Miembro</span><span className="w-24 text-right">Racha</span><span className="w-24 text-right">XP</span>
+                        </div>
+                        {selectedSquad.Members?.map((user, index) => {
+                            const isMe = user.id === userProfile?.id;
+                            const fixedUser = { ...user, avatar: getFullImageUrl(user.profile_image_url || user.avatar) };
+
+                            return (
+                                <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 border-b border-white/5 last:border-0 cursor-pointer transition-colors hover:bg-white/10 ${isMe ? 'bg-accent/10 border-l-4 border-l-accent pl-2' : ''}`}>
+                                    <div className="w-10 flex justify-center font-bold text-text-secondary text-lg">
+                                        {index + 1 === 1 ? <Medal size={20} className="text-yellow-400" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-300" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
+                                    </div>
+                                    <div className="flex-1 flex items-center gap-3 min-w-0 pl-2">
+                                        <UserAvatar user={fixedUser} size={9} className="w-9 h-9" />
+                                        <div className="flex flex-col">
+                                            <span className={`truncate text-sm ${isMe ? 'text-accent font-bold' : 'text-text-primary font-medium'}`}>{user.username} {isMe && "(Tú)"}</span>
+                                            <span className="text-[10px] text-text-tertiary capitalize">{user.SquadMember?.role}</span>
+                                        </div>
+                                    </div>
+                                    <div className="w-24 text-right text-sm text-orange-400 font-bold flex items-center justify-end gap-1">
+                                        🔥 {user.streak || 0}
+                                    </div>
+                                    <div className="w-24 text-right text-sm text-text-primary font-mono font-semibold tracking-tight">{user.xp?.toLocaleString() || 0}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </GlassCard>
+            );
+        }
+
+        return (
+            <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <button 
+                        onClick={() => setShowCreateSquadModal(true)}
+                        className="flex-1 py-3 bg-accent text-white font-bold rounded-xl hover:opacity-90 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
+                    >
+                        <PlusCircle size={18} className="shrink-0" /> <span className="truncate">Crear Grupo</span>
+                    </button>
+                    <button 
+                        onClick={() => setShowJoinSquadModal(true)}
+                        className="flex-1 py-3 bg-white/10 text-text-primary font-bold rounded-xl hover:bg-white/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    >
+                        <Hash size={18} className="shrink-0" /> <span className="truncate">Unirse a Grupo</span>
+                    </button>
+                </div>
+
+                <GlassCard className="[.oled-theme_&]:border-white/10">
+                    <h3 className="text-lg font-bold text-text-primary mb-4 px-4 pt-4 border-b border-white/5 pb-2">Mis Grupos</h3>
+                    {mySquads.length === 0 ? (
+                        <div className="text-center py-12 text-text-tertiary">
+                            <Shield size={48} className="mx-auto mb-4 opacity-20" />
+                            <p>No perteneces a ningún grupo.</p>
+                            <p className="text-xs mt-2">Crea uno o únete para competir con tus amigos.</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col">
+                            {mySquads.map((squad) => (
+                                <div
+                                    key={squad.id}
+                                    onClick={() => loadSquadLeaderboard(squad.id)}
+                                    className="flex items-center justify-between p-4 border-b border-white/10 last:border-0 hover:bg-white/5 transition-colors cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center text-accent">
+                                            <Shield size={24} />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-text-primary">{squad.name}</p>
+                                            <p className="text-xs text-text-secondary">{squad.description || 'Sin descripción'}</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight size={20} className="text-white/20" />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </GlassCard>
+            </div>
+        );
+    };
+
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-24 md:pb-8 animate-[fade-in_0.5s_ease-out]">
             
@@ -885,32 +1053,72 @@ export default function Social({ setView }) {
                 />
             )}
 
-            {/* Modal de Aviso Legal (Primero) */}
-            {showTermsModal && (
-                <StoryTermsModal 
-                    onAccept={handleAcceptTerms}
-                    onReject={handleRejectTerms}
+            {leaveSquadConfirmation.isOpen && (
+                <ConfirmationModal
+                    message="¿Seguro que quieres abandonar este grupo?"
+                    onConfirm={confirmLeaveSquad}
+                    onCancel={() => setLeaveSquadConfirmation({ isOpen: false, squadId: null })}
+                    confirmText="Abandonar"
+                    cancelText="Cancelar"
+                    isLoading={isLeavingSquad}
                 />
             )}
 
-            {/* Modal de Subida (Segundo) */}
-            {showUploadModal && (
-                <UploadStoryModal 
-                    onClose={() => setShowUploadModal(false)}
-                    onUpload={handleUploadStory}
-                    isUploading={isUploadingStory}
+            {deleteSquadConfirmation.isOpen && (
+                <ConfirmationModal
+                    message="¿Seguro que quieres eliminar este grupo permanentemente? Esta acción no se puede deshacer."
+                    onConfirm={confirmDeleteSquad}
+                    onCancel={() => setDeleteSquadConfirmation({ isOpen: false, squadId: null })}
+                    confirmText="Eliminar Grupo"
+                    cancelText="Cancelar"
+                    isLoading={isDeletingSquad}
                 />
             )}
 
-            {viewingStoryUserId && (
-                <StoryViewer 
-                    userId={viewingStoryUserId}
-                    onClose={() => setViewingStoryUserId(null)}
-                />
+            {showTermsModal && <StoryTermsModal onAccept={handleAcceptTerms} onReject={handleRejectTerms} />}
+            {showUploadModal && <UploadStoryModal onClose={() => setShowUploadModal(false)} onUpload={handleUploadStory} isUploading={isUploadingStory} />}
+            {viewingStoryUserId && <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />}
+
+            {/* Modal Crear Grupo */}
+            {showCreateSquadModal && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl relative">
+                        <button onClick={() => setShowCreateSquadModal(false)} className="absolute top-4 right-4 p-1 text-text-secondary hover:text-white"><X size={20} /></button>
+                        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2"><Shield className="text-accent"/> Crear Grupo</h3>
+                        <form onSubmit={handleCreateSquad} className="space-y-4">
+                            <div>
+                                <label className="block text-xs text-text-secondary mb-1">Nombre del Grupo</label>
+                                <input required type="text" maxLength={50} value={squadForm.name} onChange={e => setSquadForm({...squadForm, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors"/>
+                            </div>
+                            <div>
+                                <label className="block text-xs text-text-secondary mb-1">Descripción (Opcional)</label>
+                                <input type="text" maxLength={100} value={squadForm.description} onChange={e => setSquadForm({...squadForm, description: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors"/>
+                            </div>
+                            <button type="submit" disabled={!squadForm.name.trim()} className="w-full bg-accent text-white font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all mt-4">Crear</button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Unirse a Grupo */}
+            {showJoinSquadModal && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl relative">
+                        <button onClick={() => setShowJoinSquadModal(false)} className="absolute top-4 right-4 p-1 text-text-secondary hover:text-white"><X size={20} /></button>
+                        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2"><Hash className="text-accent"/> Unirse a un Grupo</h3>
+                        <form onSubmit={handleJoinSquad} className="space-y-4">
+                            <div>
+                                <label className="block text-xs text-text-secondary mb-1">Código de Invitación</label>
+                                <input required type="text" placeholder="Ej: A1B2C3D4" value={squadForm.invite_code} onChange={e => setSquadForm({...squadForm, invite_code: e.target.value.toUpperCase()})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors font-mono uppercase tracking-widest text-center"/>
+                            </div>
+                            <button type="submit" disabled={!squadForm.invite_code.trim()} className="w-full bg-accent text-white font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all mt-4">Unirse</button>
+                        </form>
+                    </div>
+                </div>
             )}
 
             {/* --- Header --- */}
-            <header className="mb-6">
+            <header className="mb-6 max-w-3xl mx-auto w-full">
                 <div className="flex justify-between items-end">
                     <div>
                         <div className="hidden md:flex items-center gap-3">
@@ -926,15 +1134,14 @@ export default function Social({ setView }) {
                 </div>
             </header>
 
-            {/* Banner de Estado de Privacidad (NUEVO) */}
-            {/* Se envía 'social_privacy' como highlight para que la página de ajustes haga scroll automático */}
+            {/* Banner de Estado de Privacidad */}
             <PrivacyBanner 
                 privacy={userProfile?.is_public_profile ? 'public' : 'private'} 
                 onNavigate={() => setView('settings', { highlight: 'social_privacy' })} 
             />
 
             {/* --- Carrusel de Historias --- */}
-            <section className="mb-8 overflow-x-auto no-scrollbar pb-2">
+            <section className="mb-8 overflow-x-auto no-scrollbar pb-2 max-w-3xl mx-auto">
                 <div className="flex items-start gap-4 px-1">
                     {/* Mi Historia / Subir */}
                     <StoryBubble 
@@ -946,7 +1153,7 @@ export default function Social({ setView }) {
                         hasStories={myStories.length > 0} 
                         hasUnseen={myStoriesUnseen} 
                         onClick={handleMyStoryClick} 
-                        onAdd={initiateStoryUpload} // Usamos la nueva función con validación
+                        onAdd={initiateStoryUpload}
                     />
 
                     {/* Historias de Amigos */}
@@ -977,22 +1184,22 @@ export default function Social({ setView }) {
                 </div>
             </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="md:col-span-1">
-                    <GlassCard className="flex md:flex-col overflow-hidden md:p-2 sticky md:top-24 md:z-10 [.oled-theme_&]:border-white/10">
-                        <TabButton id="friends" icon={Users} label="Amigos" isActive={activeTab === 'friends'} onClick={changeTab} />
-                        <TabButton id="requests" icon={UserPlus} label="Solicitudes" badge={socialRequests?.received?.length || 0} isActive={activeTab === 'requests'} onClick={changeTab} />
-                        <TabButton id="search" icon={Search} label="Buscar" isActive={activeTab === 'search'} onClick={changeTab} />
-                        <TabButton id="leaderboard" icon={Trophy} label="Ranking" isActive={activeTab === 'leaderboard'} onClick={changeTab} />
-                    </GlassCard>
-                </div>
+            {/* --- Pestañas Horizontales --- */}
+            <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 py-2 px-1 md:justify-center">
+                <TabButton id="friends" icon={Users} label="Amigos" isActive={activeTab === 'friends'} onClick={changeTab} />
+                <TabButton id="squads" icon={Shield} label="Grupos" isActive={activeTab === 'squads'} onClick={changeTab} />
+                <TabButton id="requests" icon={UserPlus} label="Solicitudes" badge={socialRequests?.received?.length || 0} isActive={activeTab === 'requests'} onClick={changeTab} />
+                <TabButton id="search" icon={Search} label="Buscar" isActive={activeTab === 'search'} onClick={changeTab} />
+                <TabButton id="leaderboard" icon={Trophy} label="Ranking" isActive={activeTab === 'leaderboard'} onClick={changeTab} />
+            </div>
 
-                <div className="md:col-span-3 min-h-[400px]">
-                    {activeTab === 'friends' && renderFriends()}
-                    {activeTab === 'requests' && renderRequests()}
-                    {activeTab === 'search' && renderSearch()}
-                    {activeTab === 'leaderboard' && renderLeaderboard()}
-                </div>
+            {/* --- Contenido Principal --- */}
+            <div className="min-h-[400px] max-w-3xl mx-auto w-full">
+                {activeTab === 'friends' && renderFriends()}
+                {activeTab === 'squads' && renderSquads()}
+                {activeTab === 'requests' && renderRequests()}
+                {activeTab === 'search' && renderSearch()}
+                {activeTab === 'leaderboard' && renderLeaderboard()}
             </div>
         </div>
     );

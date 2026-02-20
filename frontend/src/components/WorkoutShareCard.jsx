@@ -13,14 +13,15 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
     const { routineName, duration_seconds, calories_burned, details } = workoutData;
     const safeName = routineName || "Entrenamiento Libre";
 
-    // --- MODIFICACIÓN: Truncado agresivo a 12 caracteres ---
-    // La fuente text-7xl uppercase ocupa mucho. Reducimos a 12 para asegurar que los "..." se vean.
-    const MAX_TITLE_CHARS = 12;
-    const displayName = safeName.length > MAX_TITLE_CHARS
-        ? safeName.substring(0, MAX_TITLE_CHARS).trim() + '...'
-        : safeName;
+    // Ajuste dinámico de fuente para el título
+    const getTitleClass = (text) => {
+        const len = text.length;
+        if (len > 60) return 'text-4xl';
+        if (len > 30) return 'text-5xl';
+        if (len > 15) return 'text-6xl';
+        return 'text-7xl';
+    };
 
-    // FECHA CORTA: "LUN, 12 ENE 2026"
     const dateStr = new Date().toLocaleDateString('es-ES', {
         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
     }).toUpperCase().replace('.', '');
@@ -48,13 +49,10 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
         if (!sets || sets.length === 0) return "Sin peso";
 
         const validSets = sets.filter(s => parseFloat(s.reps) > 0);
-
-        // Contadores separados
         const effectiveCount = validSets.filter(s => !s.is_warmup && !s.is_dropset).length;
         const dropCount = validSets.filter(s => s.is_dropset).length;
         const warmupCount = validSets.filter(s => s.is_warmup).length;
 
-        // Construir array de partes (ej: ["3 Series", "1 Drop"])
         const parts = [];
         if (effectiveCount > 0) parts.push(`${effectiveCount} Series`);
         if (dropCount > 0) parts.push(`${dropCount} Drop`);
@@ -62,7 +60,6 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
 
         if (parts.length === 0) return "Sin series";
 
-        // Calcular peso máximo solo de series efectivas (para consistencia con el chip lateral)
         const effectiveWeights = validSets
             .filter(s => !s.is_warmup && !s.is_dropset)
             .map(s => parseFloat(s.weight_kg) || 0);
@@ -83,15 +80,27 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
     };
 
     const getMaxWeight = (sets) => {
-        if (!sets || sets.length === 0) return 0;
+        // Si no hay sets o array vacío -> null (mostrar "-")
+        if (!sets || sets.length === 0) return null;
+
+        // Filtramos solo series efectivas (con repeticiones, sin calentar, sin dropset)
         const workingSets = sets.filter(s =>
             parseFloat(s.reps) > 0 &&
             !s.is_warmup &&
             !s.is_dropset
         );
-        if (workingSets.length === 0) return 0;
-        const weights = workingSets.map(s => parseFloat(s.weight_kg) || 0);
-        return Math.max(...weights, 0);
+
+        // Si no hay series efectivas -> null (mostrar "-")
+        if (workingSets.length === 0) return null;
+
+        // Obtenemos pesos. Si es NaN (campo vacío) asumimos 0.
+        const weights = workingSets.map(s => {
+            const val = parseFloat(s.weight_kg);
+            return isNaN(val) ? 0 : val;
+        });
+
+        // Devolvemos el máximo, permitiendo que sea 0.
+        return Math.max(...weights);
     };
 
     return (
@@ -99,12 +108,12 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
             ref={ref}
             className="relative w-[1080px] min-h-[1920px] h-auto bg-black text-white flex flex-col font-sans"
         >
-            {/* --- FONDOS --- */}
+            {/* FONDOS */}
             <div className="absolute top-[-250px] left-1/2 -translate-x-1/2 w-[1200px] h-[800px] rounded-full blur-[150px]" style={{ background: accent, opacity: 0.6 }} />
             <div className="absolute bottom-[-200px] right-[-200px] w-[900px] h-[900px] rounded-full blur-[180px]" style={{ background: accent, opacity: 0.4 }} />
             <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
-            {/* ================= CONTENIDO ================= */}
+            {/* CONTENIDO */}
             <div className="relative z-10 flex-1 flex flex-col p-12 pt-20">
 
                 {/* HEADER */}
@@ -116,21 +125,37 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                         <div className="h-2 w-32 rounded-full mt-1" style={{ background: accent }} />
                     </div>
 
-                    <div className="bg-white/10 backdrop-blur-md border border-white/10 px-6 h-16 rounded-2xl flex items-center justify-center">
-                        <span className="text-gray-300 font-bold tracking-widest text-xl uppercase leading-none pb-[10px]">
-                            {dateStr}
-                        </span>
+                    {/* FECHA: SOLUCIÓN SVG PARA CENTRADO PERFECTO */}
+                    <div className="bg-white/10 backdrop-blur-md border border-white/10 h-16 rounded-2xl overflow-hidden relative w-[280px]">
+                        <svg
+                            className="w-full h-full"
+                            viewBox="0 0 280 64"
+                            preserveAspectRatio="xMidYMid meet"
+                        >
+                            <text
+                                x="50%"
+                                y="55%"
+                                dominantBaseline="middle"
+                                textAnchor="middle"
+                                fill="#d1d5db"
+                                fontSize="20"
+                                fontWeight="bold"
+                                letterSpacing="0.1em"
+                                style={{ fontFamily: 'sans-serif' }}
+                            >
+                                {dateStr}
+                            </text>
+                        </svg>
                     </div>
                 </div>
 
                 {/* TÍTULO RUTINA */}
-                <div className="mb-10">
+                <div className="mb-10 w-full">
                     <span className="font-bold tracking-[0.2em] uppercase text-2xl mb-3 block" style={{ color: accent }}>
                         Sesión Completada
                     </span>
-                    {/* Quitamos truncate de CSS para confiar en el truncado JS (12 chars) y asegurar que se vean los puntos */}
-                    <h2 className="text-7xl font-black text-white leading-normal uppercase w-full pb-4 -mb-4 whitespace-nowrap overflow-hidden">
-                        {displayName}
+                    <h2 className={`${getTitleClass(safeName)} font-black text-white leading-tight uppercase w-full break-words`}>
+                        {safeName}
                     </h2>
                 </div>
 
@@ -173,25 +198,34 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                                             {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
                                         </span>
 
-                                        {/* SUBTÍTULO: Usando FaBolt de Font Awesome */}
                                         <div className="flex items-center gap-2 text-gray-500 pb-5">
-                                            {/* Translate ligero para centrado óptico, FaBolt es sólido y seguro */}
-                                            <FaBolt
-                                                size={20}
-                                                className="shrink-0 translate-y-[2px]"
-                                            />
-
+                                            <FaBolt size={20} className="shrink-0 translate-y-[2px]" />
                                             <div className="text-xl font-medium leading-none">
                                                 {getSetsSummary(ex.setsDone)}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* CHIP PESO */}
-                                    <div className="shrink-0 min-w-[140px] h-16 px-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                        <span className="text-2xl font-bold text-white whitespace-nowrap leading-none pb-4">
-                                            {maxWeight > 0 ? `${maxWeight} kg` : '-'}
-                                        </span>
+                                    {/* CHIP PESO: SOLUCIÓN SVG */}
+                                    <div className="shrink-0 min-w-[140px] h-16 bg-white/5 border border-white/10 rounded-xl overflow-hidden relative">
+                                        <svg
+                                            className="w-full h-full"
+                                            viewBox="0 0 140 64"
+                                            preserveAspectRatio="xMidYMid meet"
+                                        >
+                                            <text
+                                                x="50%"
+                                                y="55%"
+                                                dominantBaseline="middle"
+                                                textAnchor="middle"
+                                                fill="white"
+                                                fontSize="24"
+                                                fontWeight="bold"
+                                                style={{ fontFamily: 'sans-serif' }}
+                                            >
+                                                {maxWeight !== null ? `${maxWeight} kg` : '-'}
+                                            </text>
+                                        </svg>
                                     </div>
                                 </div>
                             );

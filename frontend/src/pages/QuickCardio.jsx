@@ -8,7 +8,7 @@ import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import CustomSelect from '../components/CustomSelect';
-// Importamos el hook de tema para controlar el color de fondo del slider
+// Importamos el hook de tema para controlar el color de fondo del slider y sombras
 import { useAppTheme } from '../hooks/useAppTheme';
 
 const INTENSITY_OPTIONS = [
@@ -24,8 +24,12 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
   const [duration, setDuration] = useState(30);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Obtenemos el tema para el color de fondo del track
-  const { theme } = useAppTheme();
+  // Estados para controlar el hover y aplicar sombras dinámicas
+  const [isGpsHovered, setIsGpsHovered] = useState(false);
+  const [isSaveHovered, setIsSaveHovered] = useState(false);
+
+  // Obtenemos el tema y el acento actual
+  const { theme, accent } = useAppTheme();
 
   const estimatedCalories = useMemo(() => {
     if (!activity) return 0;
@@ -46,6 +50,21 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
   
   // Color de fondo de la parte vacía del slider según el tema
   const trackColor = theme === 'light' ? '#e5e7eb' : 'rgba(255, 255, 255, 0.1)';
+
+  // Estilos dinámicos para las sombras (Glow) usando el color de acento
+  // Usamos notación HEX con opacidad: 4D = ~30%, 80 = ~50%
+  const gpsShadowStyle = {
+    boxShadow: isGpsHovered 
+      ? `0 0 25px ${accent}80` 
+      : `0 0 15px ${accent}4D`
+  };
+
+  // El botón de guardar solo lleva sombra si NO hay GPS (es la acción principal destacada)
+  const saveShadowStyle = !activity.hasGPS ? {
+    boxShadow: isSaveHovered
+      ? `0 0 25px ${accent}80` 
+      : `0 0 15px ${accent}4D`
+  } : {};
 
   if (!activity) return null;
 
@@ -78,7 +97,12 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
               <div className="mb-4">
                 <button
                   onClick={() => onStartGPS(activity)}
-                  className="w-full py-4 rounded-xl font-bold text-lg bg-accent text-bg-primary hover:bg-white hover:text-black transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:shadow-[0_0_25px_rgba(0,255,136,0.5)] flex items-center justify-center gap-2"
+                  onMouseEnter={() => setIsGpsHovered(true)}
+                  onMouseLeave={() => setIsGpsHovered(false)}
+                  style={gpsShadowStyle}
+                  // CORRECCIÓN: Eliminado hover:bg-white hover:text-black
+                  // Usamos hover:brightness-110 para iluminar el color de acento sin cambiarlo a blanco
+                  className="w-full py-4 rounded-xl font-bold text-lg bg-accent text-bg-primary hover:brightness-110 transition-all flex items-center justify-center gap-2"
                 >
                   <MapPin size={24} />
                   Iniciar Ruta GPS
@@ -97,7 +121,6 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
                 <span className="text-xl font-bold text-accent font-mono">{duration} min</span>
               </div>
               
-              {/* CORRECCIÓN: Estilos específicos para el "thumb" (círculo) en Webkit y Firefox */}
               <input
                 type="range"
                 min={min}
@@ -123,7 +146,7 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
                   [&::-moz-range-thumb]:transition-all
                 `}
                 style={{
-                  background: `linear-gradient(to right, var(--app-accent) ${percentage}%, ${trackColor} ${percentage}%)`
+                  background: `linear-gradient(to right, ${accent} ${percentage}%, ${trackColor} ${percentage}%)`
                 }}
               />
               
@@ -147,10 +170,14 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
             <button
               onClick={handleSaveInternal}
               disabled={isSubmitting}
+              onMouseEnter={() => setIsSaveHovered(true)}
+              onMouseLeave={() => setIsSaveHovered(false)}
+              style={saveShadowStyle}
+              // CORRECCIÓN: Aplicada la misma lógica al botón de guardar cuando es la acción principal
               className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed
                             ${activity.hasGPS
                   ? 'bg-bg-primary text-text-primary border border-white/10 hover:bg-white/5'
-                  : 'bg-accent text-bg-primary hover:bg-white hover:text-black shadow-[0_0_15px_rgba(0,255,136,0.3)]'
+                  : 'bg-accent text-bg-primary hover:brightness-110'
                 }`}
             >
               {isSubmitting ? <Spinner size={24} color="border-current" /> : (

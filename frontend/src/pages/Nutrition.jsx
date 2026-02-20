@@ -717,9 +717,11 @@ const Nutrition = ({ setView }) => {
             {viewLog && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
                     <div className="absolute inset-0" onClick={() => setViewLog(null)} />
-                    <GlassCard className="w-full max-w-md p-0 overflow-hidden relative z-10 animate-scale-in flex flex-col max-h-[85vh] sm:max-h-[90vh] border-transparent dark:border dark:border-white/10">
+                    {/* CAMBIO AQUÍ: Fondo blanco forzado en modo claro */}
+                    <GlassCard className="w-full max-w-md p-0 overflow-hidden relative z-10 animate-scale-in flex flex-col max-h-[85vh] sm:max-h-[90vh] bg-white dark:bg-bg-primary border-transparent dark:border dark:border-white/10">
 
-                        <div className="relative h-64 bg-black/50 flex items-center justify-center shrink-0">
+                        {/* CAMBIO: Fondo cabecera imagen */}
+                        <div className="relative h-64 bg-gray-100 dark:bg-black/50 flex items-center justify-center shrink-0">
                             {getLogImage(viewLog) ? (
                                 <img
                                     src={getLogImage(viewLog)}
@@ -763,28 +765,29 @@ const Nutrition = ({ setView }) => {
                             <h4 className="font-semibold text-text-primary mb-4">Macronutrientes</h4>
                             
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center border-transparent dark:border dark:border-white/10">
+                                {/* CAMBIO: Cards internas en gris muy claro */}
+                                <div className="bg-gray-50 dark:bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center border-transparent dark:border dark:border-white/10">
                                     <div className="p-2 rounded-full bg-red-500/10 mb-2">
                                         <Beef size={20} className="text-red" />
                                     </div>
                                     <span className="text-2xl font-bold text-red">{viewLog.protein_g || 0}g</span>
                                     <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Proteína</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center border-transparent dark:border dark:border-white/10">
+                                <div className="bg-gray-50 dark:bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center border-transparent dark:border dark:border-white/10">
                                     <div className="p-2 rounded-full bg-blue-500/10 mb-2">
                                         <Wheat size={20} className="text-blue-500" />
                                     </div>
                                     <span className="text-2xl font-bold text-blue-500">{viewLog.carbs_g || 0}g</span>
                                     <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Carbos</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center border-transparent dark:border dark:border-white/10">
+                                <div className="bg-gray-50 dark:bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center border-transparent dark:border dark:border-white/10">
                                     <div className="p-2 rounded-full bg-yellow-500/10 mb-2">
                                         <Salad size={20} className="text-yellow-500" />
                                     </div>
                                     <span className="text-2xl font-bold text-yellow-500">{viewLog.fats_g || 0}g</span>
                                     <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Grasas</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center border-transparent dark:border dark:border-white/10">
+                                <div className="bg-gray-50 dark:bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center border-transparent dark:border dark:border-white/10">
                                     <div className="p-2 rounded-full bg-pink-500/10 mb-2">
                                         <IceCream size={20} className="text-pink-500" />
                                     </div>
@@ -794,10 +797,11 @@ const Nutrition = ({ setView }) => {
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-glass-border bg-bg-secondary/30 shrink-0">
+                        {/* CAMBIO: Footer fondo claro */}
+                        <div className="p-4 border-t border-glass-border bg-gray-50 dark:bg-bg-secondary/30 shrink-0">
                             <button
                                 onClick={() => setViewLog(null)}
-                                className="w-full py-3 rounded-xl bg-bg-secondary hover:bg-white/5 border border-glass-border font-semibold transition-colors"
+                                className="w-full py-3 rounded-xl bg-white dark:bg-bg-secondary hover:bg-gray-100 dark:hover:bg-white/5 border border-glass-border font-semibold transition-colors shadow-sm"
                             >
                                 Cerrar
                             </button>

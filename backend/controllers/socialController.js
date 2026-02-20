@@ -3,7 +3,7 @@ import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { createNotification } from '../services/notificationService.js';
 
-const { User, Friendship, WorkoutLog } = models;
+const { User, Friendship, WorkoutLog, Routine, RoutineExercise } = models;
 
 export const searchUsers = async (req, res) => {
     try {
@@ -239,7 +239,27 @@ export const getPublicProfile = async (req, res) => {
         // Manejo seguro de viewerId (puede ser null si es acceso público)
         const viewerId = req.user ? req.user.userId : null;
 
-        const user = await User.findByPk(userId);
+        // Añadimos Routine y sus ejercicios a la búsqueda
+        const user = await User.findByPk(userId, {
+            include: [
+                { 
+                    model: Routine, 
+                    as: 'Routines', 
+                    // No filtramos aquí drásticamente porque queremos aplicar lógica "OR" compleja (public OR friends)
+                    // y Sequelize a veces es complicado con includes condicionales anidados.
+                    // Traemos las rutinas y las filtramos en JS.
+                    required: false,
+                    include: [
+                        {
+                            model: RoutineExercise,
+                            as: 'RoutineExercises',
+                            attributes: ['id', 'name', 'image_url_start', 'exercise_order']
+                        }
+                    ]
+                }
+            ]
+        });
+
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
         let isFriend = false;
@@ -267,13 +287,36 @@ export const getPublicProfile = async (req, res) => {
         }
 
         // Reglas de acceso:
-        // 1. Si el perfil es público -> Acceso permitido
-        // 2. Si soy yo -> Acceso permitido
-        // 3. Si somos amigos -> Acceso permitido
-        // Si no se cumple ninguna -> Acceso denegado
         if (!user.is_public_profile && !isFriend && !isMe) {
             return res.status(403).json({ error: 'Este perfil es privado' });
         }
+
+        // --- FILTRADO DE RUTINAS ---
+        const visibleRoutines = (user.Routines || []).filter(routine => {
+            // 1. Siempre mostrar públicas
+            if (routine.visibility === 'public') return true;
+            // 2. Mostrar "solo amigos" si soy amigo o yo mismo
+            if ((isFriend || isMe) && routine.visibility === 'friends') return true;
+            // 3. Privadas solo si soy yo (aunque en perfil público quizá no deberían salir nunca, 
+            // pero si es "mi vista previa" sí). Asumamos que en "Perfil Público" NO se ven privadas ajenas.
+            return false;
+        }).map(r => ({
+            id: r.id,
+            name: r.name,
+            description: r.description,
+            image_url: r.image_url,
+            folder: r.folder,
+            visibility: r.visibility,
+            downloads_count: r.downloads_count,
+            // Incluimos ejercicios ordenados
+            exercises: (r.RoutineExercises || [])
+                .sort((a, b) => (a.exercise_order || 0) - (b.exercise_order || 0))
+                .map(ex => ({
+                    name: ex.name,
+                    image: ex.image_url_start
+                }))
+        }));
+
 
         const data = {
             id: user.id,
@@ -292,7 +335,10 @@ export const getPublicProfile = async (req, res) => {
             xp: null,
             streak: null,
             workoutsCount: 0,
-            unlocked_badges: []
+            unlocked_badges: [],
+            
+            // Rutinas filtradas con ejercicios
+            routines: visibleRoutines
         };
 
         if (data.show_level_xp) {

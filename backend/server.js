@@ -34,6 +34,8 @@ import sessionRoutes from './routes/sessionRoutes.js';
 import socialRoutes from './routes/social.js';
 import reportRoutes from './routes/reports.js';
 import storyRoutes from './routes/stories.js';
+import squadRoutes from './routes/squads.js';
+import aiRoutes from './routes/ai.js'; // Nueva ruta IA importada
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
@@ -135,6 +137,8 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/stories', storyRoutes);
+app.use('/api/squads', squadRoutes);
+app.use('/api/ai', aiRoutes); // Nueva ruta IA registrada
 
 app.use(errorHandler);
 

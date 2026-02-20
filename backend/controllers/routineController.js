@@ -44,7 +44,9 @@ export const getRoutineById = async (req, res, next) => {
         id: req.params.id,
         [Op.or]: [
           { user_id: req.user.userId },
-          { is_public: true }
+          { is_public: true },
+          // Si implementamos lógica de amigos en el futuro, aquí iría
+          { visibility: 'public' } 
         ]
       },
       include: [
@@ -144,7 +146,8 @@ export const createRoutine = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, description, is_public = false, exercises = [], image_url, folder } = req.body;
+  // --- MODIFICADO: Extraemos visibility ---
+  const { name, description, is_public = false, exercises = [], image_url, folder, visibility } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -164,8 +167,9 @@ export const createRoutine = async (req, res, next) => {
         name,
         description,
         user_id: userId,
-        is_public,
-        folder: folder || null, // --- NUEVO: Guardar carpeta ---
+        is_public, // Mantenemos compatibilidad hacia atrás
+        visibility: visibility || 'private', // Guardamos el nuevo campo (default private)
+        folder: folder || null,
         downloads_count: 0,
         image_url: image_url || null
       },
@@ -207,7 +211,8 @@ export const updateRoutine = async (req, res, next) => {
   }
 
   const { id } = req.params;
-  const { name, description, is_public, exercises = [], image_url, folder } = req.body;
+  // --- MODIFICADO: Extraemos visibility ---
+  const { name, description, is_public, exercises = [], image_url, folder, visibility } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -243,8 +248,11 @@ export const updateRoutine = async (req, res, next) => {
     // Actualizamos campos
     const updateData = { name, description };
     if (typeof is_public !== 'undefined') updateData.is_public = is_public;
+    // --- MODIFICADO: Actualizamos visibility ---
+    if (typeof visibility !== 'undefined') updateData.visibility = visibility;
+    
     if (typeof image_url !== 'undefined') updateData.image_url = image_url;
-    if (typeof folder !== 'undefined') updateData.folder = folder; // --- NUEVO: Actualizar carpeta ---
+    if (typeof folder !== 'undefined') updateData.folder = folder;
 
     await routine.update(updateData, { transaction: t });
 
@@ -416,9 +424,16 @@ export const togglePublicStatus = async (req, res, next) => {
     if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' });
 
     routine.is_public = !routine.is_public;
+    // Sincronizar también visibility si se usa este toggle antiguo
+    if (routine.is_public) {
+       routine.visibility = 'public';
+    } else {
+       routine.visibility = 'private';
+    }
+
     await routine.save();
 
-    res.json({ success: true, is_public: routine.is_public });
+    res.json({ success: true, is_public: routine.is_public, visibility: routine.visibility });
   } catch (error) {
     next(error);
   }
@@ -429,7 +444,14 @@ export const getPublicRoutines = async (req, res, next) => {
   try {
     const { sort = 'popular', query } = req.query; // sort: popular | recent
 
-    const whereClause = { is_public: true };
+    // --- MODIFICADO: Soporte para visibility 'public' ---
+    const whereClause = { 
+       [Op.or]: [
+          { is_public: true },
+          { visibility: 'public' }
+       ]
+    };
+
     if (query) {
       whereClause.name = { [Op.like]: `%${query}%` };
     }
@@ -477,7 +499,9 @@ export const downloadRoutine = async (req, res, next) => {
       return res.status(404).json({ error: 'Rutina original no encontrada' });
     }
 
-    if (!sourceRoutine.is_public && sourceRoutine.user_id !== userId) {
+    const isAccessible = sourceRoutine.is_public || sourceRoutine.visibility === 'public' || sourceRoutine.user_id === userId;
+
+    if (!isAccessible) {
       await t.rollback();
       return res.status(403).json({ error: 'Esta rutina es privada' });
     }
@@ -488,6 +512,7 @@ export const downloadRoutine = async (req, res, next) => {
       description: sourceRoutine.description,
       user_id: userId,
       is_public: false,
+      visibility: 'private',
       folder: null, // Las descargas van a la raíz por defecto
       downloads_count: 0,
       image_url: null // Iniciamos sin imagen
