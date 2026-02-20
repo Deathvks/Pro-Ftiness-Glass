@@ -8,8 +8,9 @@ import {
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
-  // Forzamos "v6" en la vista aunque la configuración interna sea otra
-  const appVersion = `v6.0.0`;
+  // Tomamos la versión completa y extraemos solo el número mayor (ej: de "6.0.1" sacamos "6")
+  const appVersion = `v${APP_VERSION}`;
+  const majorVersion = APP_VERSION.split('.')[0];
 
   const handleGetStarted = () => {
     if (onClose) {
@@ -30,15 +31,15 @@ const WelcomeModal = ({ onClose }) => {
         {/* Scroll interno */}
         <div className="overflow-y-auto custom-scrollbar p-6 flex flex-col h-full relative z-10">
 
-          {/* --- Cabecera V6 --- */}
+          {/* --- Cabecera Dinámica --- */}
           <div className="text-center mb-8 flex flex-col items-center mt-2">
             <div className="mb-4 relative group">
               <div className="absolute inset-0 bg-accent/40 blur-xl rounded-full group-hover:bg-accent/60 transition-all duration-500"></div>
               
-              {/* Contenedor del Icono V6 */}
+              {/* Contenedor del Icono Dinámico */}
               <div className="relative w-24 h-24 bg-gradient-to-br from-bg-secondary to-bg-primary rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-500 border border-black/10 dark:border-white/10">
                 <span className="text-5xl font-black text-accent drop-shadow-lg">
-                  v6
+                  v{majorVersion}
                 </span>
               </div>
               
@@ -212,7 +213,7 @@ const WelcomeModal = ({ onClose }) => {
               onClick={handleGetStarted}
               className="group w-full py-4 px-6 bg-gradient-to-r from-accent to-accent-secondary hover:to-accent text-bg-primary font-black rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent/20 flex items-center justify-center gap-3"
             >
-              <span className="tracking-wide text-sm">DESCUBRIR LA V6</span>
+              <span className="tracking-wide text-sm">DESCUBRIR LA V{majorVersion}</span>
               <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
 

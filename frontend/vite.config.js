@@ -69,11 +69,11 @@ export default defineConfig({
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.webp'],
       manifest: {
         name: 'Pro Fitness Glass',
-        short_name: 'Pro Fitness', // Reducido ligeramente para evitar avisos de longitud
+        short_name: 'Pro Fitness',
         description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
         display: 'standalone',
-        theme_color: '#000000', // REQUERIDO PARA PWA 100
-        background_color: '#121212', // REQUERIDO PARA PWA 100
+        theme_color: '#000000',
+        background_color: '#121212',
         scope: '/',
         start_url: '/',
         icons: [
@@ -114,20 +114,20 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500, 
     rollupOptions: {
       output: {
-        // Separamos las librerías pesadas en archivos independientes para mejorar el rendimiento (Performance 100)
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            if (id.includes('leaflet') || id.includes('react-leaflet')) {
+            // Se especifica exactamente el path de la librería para evitar solapamientos (ej. lucide-react)
+            if (id.includes('/node_modules/leaflet/') || id.includes('/node_modules/react-leaflet/')) {
               return 'vendor-leaflet';
             }
-            if (id.includes('recharts') || id.includes('d3')) {
+            if (id.includes('/node_modules/recharts/') || id.includes('/node_modules/d3')) {
               return 'vendor-charts';
+            }
+            if (id.includes('/node_modules/lucide-react/')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/react-router')) {
+              return 'vendor-react';
             }
             return 'vendor'; // Resto de dependencias
           }

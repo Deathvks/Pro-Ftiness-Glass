@@ -537,15 +537,16 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             <GlassCard className="relative overflow-hidden p-6 flex flex-col items-center text-center gap-4">
                 <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent/20 to-transparent pointer-events-none" />
 
-                {/* Avatar con anillo de historia */}
+                {/* Avatar con anillo de historia modificado */}
                 <div 
-                    className={`relative z-10 w-32 h-32 rounded-full p-1 transition-all duration-300
+                    className={`relative z-10 w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300
                         ${userStory 
-                            ? (userStory.hasUnseen 
-                                ? 'bg-accent shadow-xl shadow-accent/40 cursor-pointer animate-pulse-slow' 
-                                : 'bg-gray-300 dark:bg-white/20 cursor-pointer'
-                              )
-                            : 'bg-gradient-to-br from-accent to-accent shadow-xl shadow-accent/20'
+                            ? `p-[3px] cursor-pointer ${
+                                userStory.hasUnseen 
+                                ? 'bg-accent shadow-xl shadow-accent/40 animate-pulse-slow' 
+                                : 'bg-gray-400 dark:bg-gray-600'
+                              }`
+                            : 'shadow-xl shadow-accent/20'
                         }
                     `}
                     onClick={() => {
@@ -555,11 +556,11 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     <UserAvatar
                         user={profile} 
                         size="full"
-                        className="w-full h-full border-none bg-bg-primary"
+                        className={`w-full h-full rounded-full object-cover bg-bg-primary ${userStory ? 'border-[4px] border-bg-primary !border-bg-primary' : '!border-none'}`}
                     />
 
                     {profile.show_level_xp && (
-                        <div className="absolute -bottom-2 -right-2 bg-bg-primary border-2 border-accent rounded-full w-10 h-10 flex items-center justify-center font-black text-sm text-text-primary shadow-lg">
+                        <div className="absolute -bottom-2 -right-2 bg-bg-primary border-2 border-accent rounded-full w-10 h-10 flex items-center justify-center font-black text-sm text-text-primary shadow-lg z-20">
                             {profile.level || 1}
                         </div>
                     )}

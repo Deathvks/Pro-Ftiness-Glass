@@ -554,7 +554,7 @@ const Routines = ({ setView }) => {
     <div className={`flex gap-2 ${className}`}>
       <button
         onClick={() => setShowAIGenerator(true)}
-        className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-accent/10 text-accent font-semibold transition hover:scale-105 border border-accent/30"
+        className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-accent/10 text-accent font-semibold transition hover:scale-105 border border-accent/30 dark:border-white/10"
         title="Generar rutina con IA"
       >
         <Sparkles size={18} />
