@@ -52,16 +52,14 @@ export default defineConfig({
     Sitemap({
       hostname: 'https://pro-fitness-glass.zeabur.app',
       readable: true,
-      // MODIFICADO: Eliminamos '/' para evitar que salga duplicada (el plugin ya la incluye por defecto)
       dynamicRoutes: [
-        '/privacy',   // Política de privacidad
-        '/terms'      // Términos y condiciones
+        '/privacy',   
+        '/terms'      
       ],
       robots: [
         {
           userAgent: '*',
           allow: '/',
-          // Bloqueamos explícitamente las rutas internas para que Google no intente entrar
           disallow: ['/admin', '/settings', '/dashboard', '/profile']
         }
       ]
@@ -71,9 +69,11 @@ export default defineConfig({
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.webp'],
       manifest: {
         name: 'Pro Fitness Glass',
-        short_name: 'Pro Fitness Glass', // CORREGIDO: Cambiado de FitTrack-Pro a Pro Fitness Glass
+        short_name: 'Pro Fitness', // Reducido ligeramente para evitar avisos de longitud
         description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
         display: 'standalone',
+        theme_color: '#000000', // REQUERIDO PARA PWA 100
+        background_color: '#121212', // REQUERIDO PARA PWA 100
         scope: '/',
         start_url: '/',
         icons: [
@@ -112,5 +112,27 @@ export default defineConfig({
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 1500, 
+    rollupOptions: {
+      output: {
+        // Separamos las librerías pesadas en archivos independientes para mejorar el rendimiento (Performance 100)
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-react';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('leaflet') || id.includes('react-leaflet')) {
+              return 'vendor-leaflet';
+            }
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'vendor-charts';
+            }
+            return 'vendor'; // Resto de dependencias
+          }
+        }
+      }
+    }
   },
 });

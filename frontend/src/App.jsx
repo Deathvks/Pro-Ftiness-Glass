@@ -28,7 +28,6 @@ import SEOHead from './components/SEOHead';
 import StoryViewer from './components/StoryViewer';
 
 import OnboardingScreen from './pages/OnboardingScreen';
-import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import LandingPage from './pages/LandingPage'; 
 
 // Lazy loading de páginas
@@ -50,6 +49,7 @@ const Social = lazy(() => import('./pages/Social'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const QuickCardio = lazy(() => import('./pages/QuickCardio'));
 const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
+const ResetPasswordScreen = lazy(() => import('./pages/ResetPasswordScreen'));
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
@@ -168,7 +168,7 @@ export default function App() {
     performLogout();
     setShowLogoutConfirm(false);
     localStorage.removeItem('temp_onboarding_data');
-    navigate('/login'); // MODIFICADO: Ahora redirige al login
+    navigate('/login');
   }, [performLogout, navigate]);
 
   const handleClose2FAPromo = () => {
@@ -317,7 +317,6 @@ export default function App() {
     }
 
     // SI EL USUARIO NO TIENE OBJETIVO DEFINIDO, VAMOS AL ONBOARDING TÉCNICO DIRECTAMENTE
-    // El OnboardingScreen se encargará de pre-llenar datos si existen en localStorage (del test emocional)
     if (!userProfile.goal) {
       return <OnboardingScreen />;
     }
@@ -448,10 +447,12 @@ export default function App() {
             </Suspense>
         } />
         <Route path="/reset-password" element={
-             <ResetPasswordScreen showLogin={() => navigate('/login')} />
+            <Suspense fallback={<InitialLoadingSkeleton />}>
+                 <ResetPasswordScreen showLogin={() => navigate('/login')} />
+            </Suspense>
         } />
 
-        {/* --- RUTAS DE AUTENTICACIÓN (Solo accesibles si NO estás autenticado) --- */}
+        {/* --- RUTAS DE AUTENTICACIÓN --- */}
         <Route path="/" element={
             !isAuthenticated ? (
                 <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
@@ -486,12 +487,12 @@ export default function App() {
          <Route path="/forgot-password" element={<Navigate to="/forgotPassword" replace />} />
 
 
-        {/* --- RUTAS PRIVADAS (App principal) --- */}
+        {/* --- RUTAS PRIVADAS --- */}
         <Route path="/*" element={
             isAuthenticated ? (
                 AuthenticatedAppContent
             ) : (
-                <Navigate to="/login" replace /> // MODIFICADO: Redirige a /login si no está autenticado
+                <Navigate to="/login" replace />
             )
         } />
       </Routes>

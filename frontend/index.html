@@ -19,26 +19,27 @@
       connect-src * 'self' 'unsafe-inline';
     " />
 
-  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
-
+  <title>Pro Fitness Glass - Tu App de Fitness</title>
+  <meta name="description" content="Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass." />
+  <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
+  <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/" />
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-
   <meta name="theme-color" content="#000000" />
+
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.webp" />
+  <link rel="manifest" href="/manifest.webmanifest" />
 
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Pro Fitness Glass" />
+  <meta name="apple-mobile-web-app-title" content="Pro Fitness" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <title>Pro Fitness Glass - Tu App de Fitness</title>
-  <meta name="description"
-    content="Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass." />
-  <meta name="keywords"
-    content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
+  <link rel="preconnect" href="https://accounts.google.com" crossorigin />
+  <link rel="dns-prefetch" href="https://accounts.google.com" />
 
-  <link rel="apple-touch-icon" href="/apple-touch-icon.webp">
   <meta name="google-site-verification" content="ARC8lM_i6d5sVoiyNVFvw28qpbyy-Xr7xI5eZBHmaSo" />
-
-  <link rel="preconnect" href="https://accounts.google.com" />
 
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Pro Fitness Glass - Tu App de Fitness" />
@@ -59,7 +60,7 @@
       --accent-b: 94; 
       
       /* Base Glass Colors */
-      --glass-base: 26, 35, 53; /* Dark Blue Gray */
+      --glass-base: 26, 35, 53;
       --glass-opacity: 0.65;
       --glass-border-opacity: 0.2;
     }
@@ -80,7 +81,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      /* Distribuimos el espacio para empujar el footer abajo */
       justify-content: space-between; 
       position: fixed;
       top: 0;
@@ -93,7 +93,6 @@
       color: #ffffff;
       opacity: 1;
       transition: opacity 0.3s ease;
-      /* Padding superior para centrar visualmente el logo */
       padding-top: 35vh; 
       padding-bottom: 20px;
       box-sizing: border-box;
@@ -162,13 +161,11 @@
       text-transform: uppercase;
     }
 
-    /* FOOTER VISIBLE DENTRO DEL SPLASH */
     .app-splash-footer {
       width: 100%;
       text-align: center;
       font-size: 0.75rem;
       opacity: 0.7;
-      /* Asegura que los enlaces sean clicables y visibles */
       pointer-events: auto;
     }
 
