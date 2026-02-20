@@ -114,23 +114,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500, 
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            // Se especifica exactamente el path de la librería para evitar solapamientos (ej. lucide-react)
-            if (id.includes('/node_modules/leaflet/') || id.includes('/node_modules/react-leaflet/')) {
-              return 'vendor-leaflet';
-            }
-            if (id.includes('/node_modules/recharts/') || id.includes('/node_modules/d3')) {
-              return 'vendor-charts';
-            }
-            if (id.includes('/node_modules/lucide-react/')) {
-              return 'vendor-icons';
-            }
-            if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/react-router')) {
-              return 'vendor-react';
-            }
-            return 'vendor'; // Resto de dependencias
-          }
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-recharts': ['recharts'], // <-- Eliminado 'd3'
+          'vendor-leaflet': ['leaflet', 'react-leaflet'],
+          'vendor-icons': ['lucide-react']
         }
       }
     }
