@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "6.0.4",
+  "version": "6.0.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -29,6 +29,7 @@
     "@remotion/cli": "^4.0.400",
     "date-fns": "^4.1.0",
     "driver.js": "^1.4.0",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
     "i18next": "^23.12.2",

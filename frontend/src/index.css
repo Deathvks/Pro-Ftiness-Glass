@@ -443,3 +443,10 @@
     }
   }
 }
+
+/* Prevenir auto-zoom en inputs en iOS (iPhone/iPad) */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}

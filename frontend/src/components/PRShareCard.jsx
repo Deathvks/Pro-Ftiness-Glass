@@ -1,129 +1,194 @@
 /* frontend/src/components/PRShareCard.jsx */
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaTrophy, FaArrowUp, FaCrown, FaUser, FaCalendarAlt } from 'react-icons/fa';
+import { TrendingUp, Crown } from 'lucide-react';
+import { FaTrophy, FaCalendarAlt, FaDumbbell, FaUserCircle } from 'react-icons/fa';
 
-const PRShareCard = forwardRef(({ prData, userName }, ref) => {
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+
+const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
     const { t, i18n } = useTranslation(['translation', 'exercise_names']);
+
+    // Formateo seguro de la imagen del perfil para evitar errores CORS en html-to-image
+    const profileImgSrc = useMemo(() => {
+        if (!userImage) return null;
+        let url = userImage;
+
+        if (!url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
+             const separator = url.startsWith('/') ? '' : '/';
+             url = `${BACKEND_HOST}${separator}${url}`;
+        }
+
+        const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
+        if (!isLocalhost && url.startsWith('http:')) {
+            url = url.replace('http:', 'https:');
+        }
+
+        return url;
+    }, [userImage]);
 
     if (!prData) return null;
 
     const { exerciseName, oldWeight, newWeight, date } = prData;
     
-    // Calcular mejora
-    const improvement = (parseFloat(newWeight) - parseFloat(oldWeight || 0)).toFixed(1);
-    const hasImprovement = parseFloat(improvement) > 0;
+    const formatWeight = (weight) => {
+        if (!weight) return 0;
+        return Number(parseFloat(weight).toFixed(2));
+    };
 
-    // Traducir nombre del ejercicio
-    const translatedExerciseName = t(exerciseName, { ns: 'exercise_names', defaultValue: exerciseName || t('Ejercicio') });
+    const displayNewWeight = formatWeight(newWeight);
+    const displayOldWeight = formatWeight(oldWeight);
+    
+    const improvementVal = formatWeight(displayNewWeight - displayOldWeight);
+    const hasImprovement = improvementVal > 0;
 
-    // Formato de fecha localizado
+    const translatedName = t(exerciseName, { ns: 'exercise_names', defaultValue: exerciseName || t('Ejercicio') });
+    const safeUserName = userName ? (userName.length > 20 ? userName.substring(0, 20) + '...' : userName) : t('Atleta');
+    
     const dateStr = new Date(date || Date.now()).toLocaleDateString(i18n.language, {
-        day: 'numeric', month: 'long', year: 'numeric'
-    }).toUpperCase();
+        day: '2-digit', month: 'short', year: 'numeric'
+    }).toUpperCase().replace('.', '');
+
+    const getTitleClass = (text) => {
+        const len = text.length;
+        if (len > 30) return 'text-4xl';
+        if (len > 15) return 'text-5xl';
+        return 'text-6xl';
+    };
 
     return (
         <div
             ref={ref}
-            // Dimensiones 1080x1920 (9:16 Vertical Story Format)
-            className="relative w-[1080px] h-[1920px] bg-black text-white flex flex-col items-center justify-center font-sans overflow-hidden"
+            className="relative w-[1080px] h-[1920px] bg-black text-white flex flex-col font-sans overflow-hidden"
         >
-            {/* --- FONDOS DEGRADADOS --- */}
-            <div className="absolute top-[-10%] left-[-20%] w-[1000px] h-[1000px] bg-yellow-600/30 rounded-full blur-[150px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[900px] h-[900px] bg-purple-900/40 rounded-full blur-[150px]" />
-            <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#444 1px, transparent 1px), linear-gradient(90deg, #444 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
+            <div className="absolute top-[-10%] left-[-20%] w-[1400px] h-[1400px] bg-yellow-500/20 rounded-full blur-[200px]" />
+            <div className="absolute bottom-[-10%] right-[-20%] w-[1400px] h-[1400px] bg-amber-500/20 rounded-full blur-[200px]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/90 z-0" />
 
-            {/* --- TARJETA CENTRAL --- */}
-            <div className="relative z-10 w-[900px] h-[1600px] bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[4rem] shadow-2xl flex flex-col items-center p-16 justify-between">
+            <div className="relative z-10 flex flex-col h-full p-12 pt-24 w-full">
                 
-                {/* HEADER: TROFEO Y TÍTULO */}
-                <div className="flex flex-col items-center gap-10 mt-8 w-full">
-                    <div className="relative group">
-                        <div className="absolute inset-0 bg-yellow-500 blur-[60px] opacity-40 rounded-full animate-pulse" />
-                        <FaTrophy size={160} className="text-yellow-400 relative z-10 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]" />
+                {/* Cabecera con Avatar */}
+                <div className="flex justify-between items-center w-full mb-16 px-4">
+                    <div className="flex items-center gap-6">
+                        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#222] shadow-[0_0_20px_rgba(250,204,21,0.2)] shrink-0 bg-[#111] flex items-center justify-center">
+                            {profileImgSrc ? (
+                                <img 
+                                    src={profileImgSrc} 
+                                    alt={safeUserName} 
+                                    className="w-full h-full object-cover" 
+                                    crossOrigin="anonymous" 
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <FaUserCircle className="w-full h-full text-gray-600" />
+                            )}
+                        </div>
+                        <div className="flex flex-col whitespace-nowrap">
+                            <h2 className="text-5xl font-black text-white tracking-tight drop-shadow-lg uppercase m-0 p-0">
+                                {safeUserName}
+                            </h2>
+                            <span className="text-xl text-yellow-500 font-bold uppercase tracking-[0.2em] mt-2 block">
+                                {t('Nuevo Récord')}
+                            </span>
+                        </div>
                     </div>
-                    <div className="flex flex-col items-center gap-4 w-full px-4">
-                        <span className="text-3xl font-bold tracking-[0.4em] text-yellow-500 uppercase">
-                            {t('Nuevo Récord', { defaultValue: 'Nuevo Récord' })}
+
+                    <div className="flex items-center bg-white/5 border border-white/10 px-8 py-5 rounded-full shadow-2xl whitespace-nowrap shrink-0">
+                        <FaCalendarAlt className="text-gray-400 mr-4 shrink-0" size={28} />
+                        <span className="text-3xl font-bold text-gray-100 uppercase tracking-widest font-mono m-0 p-0">
+                            {dateStr}
                         </span>
-                        <h1 className="text-7xl font-black text-white text-center leading-tight uppercase max-w-[850px] drop-shadow-md break-words">
-                            {translatedExerciseName}
-                        </h1>
                     </div>
                 </div>
 
-                {/* DATO PRINCIPAL (PESO) */}
-                <div className="flex-1 flex flex-col items-center justify-center w-full py-8">
-                    <div className="flex items-baseline justify-center gap-6 flex-wrap">
-                        <span className="text-[14rem] leading-none font-black text-white tracking-tighter drop-shadow-2xl">
-                            {newWeight}
+                {/* Zona Central */}
+                <div className="flex-1 w-full flex flex-col items-center justify-center text-center">
+                    <div className="relative mb-12 flex items-center justify-center shrink-0">
+                        <div className="absolute w-[300px] h-[300px] bg-yellow-500 blur-[80px] opacity-20 rounded-full" />
+                        <FaTrophy size={200} className="text-yellow-500 relative z-10 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)]" />
+                    </div>
+
+                    <h3 className={`${getTitleClass(translatedName)} font-bold text-gray-100 uppercase tracking-[0.2em] mb-12 px-10 w-full text-center leading-tight m-0`}>
+                        {translatedName}
+                    </h3>
+                    
+                    <div className="flex items-baseline justify-center w-full mb-12 whitespace-nowrap gap-6">
+                        <span 
+                            className="text-[140px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-yellow-200 leading-none m-0 p-0 mr-8 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+                            style={{ paddingRight: '20px' }}
+                        >
+                            {displayNewWeight}
                         </span>
-                        <span className="text-7xl font-bold text-white/60 uppercase">
-                            kg
+                        <span className="text-[60px] font-bold text-yellow-500 uppercase leading-none m-0 p-0 ml-4">
+                            KG
                         </span>
                     </div>
-                    
-                    {/* MEJORA (Badge) */}
+
                     {hasImprovement && (
-                        <div className="flex items-center gap-4 bg-green-500/20 border border-green-500/30 px-10 py-5 rounded-full mt-10 backdrop-blur-md">
-                            <FaArrowUp size={40} className="text-green-400" />
-                            <span className="text-5xl font-bold text-green-400">+{improvement} kg</span>
+                        <div className="inline-flex items-center justify-center bg-emerald-950/80 border border-emerald-500/50 px-12 py-6 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.2)] whitespace-nowrap">
+                            <TrendingUp size={45} className="text-emerald-400 mr-6 shrink-0" strokeWidth={2.5} />
+                            <span 
+                                className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400 font-black text-5xl m-0 p-0"
+                                style={{ paddingRight: '10px' }}
+                            >
+                                +{improvementVal} KG
+                            </span>
                         </div>
                     )}
                 </div>
 
-                {/* COMPARATIVA ANTERIOR */}
-                <div className="w-full grid grid-cols-2 gap-10 mb-12">
-                    <div className="bg-black/40 rounded-[3rem] p-10 flex flex-col items-center border border-white/5 justify-center">
-                        <span className="text-gray-400 text-2xl font-bold uppercase tracking-wider mb-3">
-                            {t('Anterior', { defaultValue: 'Anterior' })}
-                        </span>
-                        <span className="text-6xl font-bold text-gray-200 tracking-tight">{oldWeight || 0} <span className="text-3xl text-gray-500">kg</span></span>
-                    </div>
-                    <div className="bg-white/10 rounded-[3rem] p-10 flex flex-col items-center border border-white/10 relative overflow-hidden justify-center">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/20 to-transparent" />
-                        <div className="flex items-center gap-4 mb-3 z-10">
-                            <FaCrown size={28} className="text-yellow-400" />
-                            <span className="text-yellow-400 text-2xl font-bold uppercase tracking-wider">
-                                {t('Nuevo PR', { defaultValue: 'Nuevo PR' })}
+                {/* Grid Inferior de Comparativa */}
+                <div className="grid grid-cols-2 gap-10 w-full px-4 mb-16">
+                    <div className="bg-[#111] border border-white/10 rounded-[3rem] p-12 flex flex-col items-center justify-center relative overflow-hidden text-center shadow-2xl whitespace-nowrap">
+                        <div className="w-24 h-24 rounded-full bg-gray-500/10 flex items-center justify-center mb-8 border border-gray-500/20 shrink-0">
+                            <FaDumbbell size={45} className="text-gray-400" />
+                        </div>
+                        <div className="flex items-baseline justify-center w-full mb-4 gap-4">
+                            <span 
+                                className="text-7xl font-black text-white m-0 p-0 leading-none mr-4"
+                                style={{ paddingRight: '10px' }}
+                            >
+                                {displayOldWeight}
                             </span>
+                            <span className="text-3xl text-gray-500 font-bold m-0 p-0 leading-none ml-2">kg</span>
                         </div>
-                        <span className="text-6xl font-bold text-white z-10 tracking-tight">{newWeight} <span className="text-3xl text-white/60">kg</span></span>
+                        <span className="text-2xl text-gray-400 uppercase font-bold tracking-widest m-0 p-0 block">{t('Anterior')}</span>
+                    </div>
+
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-[3rem] p-12 flex flex-col items-center justify-center relative overflow-hidden text-center shadow-2xl whitespace-nowrap">
+                        <div className="w-24 h-24 rounded-full bg-yellow-500/20 flex items-center justify-center mb-8 border border-yellow-500/40 shrink-0">
+                            <Crown size={45} className="text-yellow-400" />
+                        </div>
+                        <div className="flex items-baseline justify-center w-full mb-4 gap-4">
+                            <span 
+                                className="text-7xl font-black text-white drop-shadow-[0_10px_10px_rgba(250,204,21,0.3)] m-0 p-0 leading-none mr-4"
+                                style={{ paddingRight: '10px' }}
+                            >
+                                {displayNewWeight}
+                            </span>
+                            <span className="text-3xl text-yellow-200/50 font-bold m-0 p-0 leading-none ml-2">kg</span>
+                        </div>
+                        <span className="text-2xl text-yellow-400 uppercase font-bold tracking-widest m-0 p-0 block">{t('Nuevo PR')}</span>
                     </div>
                 </div>
 
-                {/* FOOTER */}
-                <div className="w-full border-t border-white/10 pt-10 flex justify-between items-end opacity-90 gap-8">
+                {/* Footer */}
+                <div className="w-full flex justify-between items-center border-t border-white/10 pt-10 pb-4 px-4 opacity-90 whitespace-nowrap">
+                    <div className="flex flex-col">
+                        <span className="text-sm text-gray-500 font-bold uppercase tracking-[0.4em] mb-2 block">Generado por</span>
+                        <div className="flex items-center">
+                            <img src="/logo.webp" alt="Pro Fitness Glass" className="w-14 h-14 object-contain drop-shadow-2xl mr-4 shrink-0" crossOrigin="anonymous" />
+                            <span className="text-3xl font-black text-white tracking-wide m-0 p-0 pr-2">Pro Fitness Glass</span>
+                        </div>
+                    </div>
                     
-                    {/* IZQUIERDA: USUARIO (Truncado para evitar overflow) */}
-                    <div className="flex flex-col gap-2 min-w-0 flex-1">
-                        <div className="flex items-center gap-3 text-yellow-500/80 mb-1">
-                            <FaUser size={20} className="shrink-0" />
-                            <span className="text-xl font-bold uppercase tracking-widest shrink-0">{t('Atleta', { defaultValue: 'Atleta' })}</span>
-                        </div>
-                        {/* TRUNCATE AQUÍ */}
-                        <span className="text-5xl font-black text-white tracking-wide truncate">
-                            {userName || t('Yo')}
-                        </span>
-                    </div>
-
-                    {/* DERECHA: LOGO Y FECHA (Fija, no encoge) */}
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                        <div className="flex items-center gap-3 text-gray-400 mb-2">
-                             <FaCalendarAlt size={20} />
-                             <span className="text-xl font-bold uppercase tracking-widest">{dateStr}</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                             <img 
-                                src="/logo.webp" 
-                                alt="Pro Fitness Glass" 
-                                className="w-14 h-14 object-contain drop-shadow-md" 
-                                crossOrigin="anonymous"
-                            />
-                            <span className="text-3xl text-white font-bold tracking-tight">Pro Fitness Glass</span>
-                        </div>
+                    <div className="flex flex-col items-end text-right">
+                        <span className="text-5xl font-black text-white tracking-widest mb-1 m-0 p-0 block pr-1">PRO</span>
+                        <span className="text-xl text-yellow-500 font-bold uppercase tracking-wider m-0 p-0 block pr-1">FITNESS GLASS</span>
                     </div>
                 </div>
+
             </div>
         </div>
     );

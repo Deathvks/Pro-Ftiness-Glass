@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
-import html2canvas from 'html2canvas';
+import { toBlob } from 'html-to-image';
 import {
   Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
   Bike, Activity, Droplet, Beef, Zap, CheckCircle, XCircle,
@@ -30,7 +30,6 @@ import SEOHead from '../components/SEOHead';
 import WeeklyRecapCard from '../components/WeeklyRecapCard';
 import PRShareCard from '../components/PRShareCard';
 
-// --- COMPONENTE INTERNO: ESCALADO AUTOMÁTICO (ScaleToFit) ---
 const ScaleToFit = ({ children, width = 1080, height = 1920 }) => {
     const containerRef = useRef(null);
     const [scale, setScale] = useState(1);
@@ -78,7 +77,6 @@ const ScaleToFit = ({ children, width = 1080, height = 1920 }) => {
     );
 };
 
-// --- Helper: Lógica de Tendencia de Peso ---
 const getWeightTrendData = (current, previous, goal) => {
   if (!previous && previous !== 0) return null;
   const diff = current - previous;
@@ -101,32 +99,16 @@ const getWeightTrendData = (current, previous, goal) => {
     bg = isPositiveContext ? 'bg-transparent dark:bg-green-500/10' : 'bg-transparent dark:bg-red-500/10';
   }
 
-  return {
-    icon: isGaining ? ArrowUp : ArrowDown,
-    color,
-    bg
-  };
+  return { icon: isGaining ? ArrowUp : ArrowDown, color, bg };
 };
 
-// --- COMPONENTE: Bento Stat Card ---
 const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconColor = "text-accent" }) => (
   <GlassCard
     onClick={onClick}
-    className="
-      p-5 relative overflow-hidden group cursor-pointer
-      hover:bg-bg-secondary transition-all duration-300
-      flex flex-col justify-between h-full min-h-[160px]
-      border-transparent dark:border dark:border-white/10 hover:shadow-lg
-    "
+    className="p-5 relative overflow-hidden group cursor-pointer hover:bg-bg-secondary transition-all duration-300 flex flex-col justify-between h-full min-h-[160px] border-transparent dark:border dark:border-white/10 hover:shadow-lg"
   >
     <div className="flex justify-between items-start relative z-10">
-      <div className={`
-        p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110
-        ${iconColor}
-        bg-transparent shadow-none border-none
-        dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20
-        [.oled-theme_&]:bg-transparent
-      `}>
+      <div className={`p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 ${iconColor} bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent`}>
         <Icon size={24} />
       </div>
     </div>
@@ -150,12 +132,8 @@ const Dashboard = ({ setView }) => {
     routines, workoutLog, bodyWeightLog, userProfile, logBodyWeight,
     updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
     waterLog, todaysCreatineLog, fetchDataForDate,
-    completedRoutineIdsToday,
-    activeWorkout,
-    gamification,
-    checkStreak,
-    addXp,
-    personalRecords
+    completedRoutineIdsToday, activeWorkout, gamification,
+    checkStreak, addXp, personalRecords
   } = useAppStore(useShallow(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
@@ -183,30 +161,22 @@ const Dashboard = ({ setView }) => {
   const [showXPModal, setShowXPModal] = useState(false);
   const [showSugarModal, setShowSugarModal] = useState(false);
   const [modal, setModal] = useState({ type: null });
-
-  // Estados visuales (Stories)
   const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
-  
-  // Estado para lista múltiple de PRs
   const [showPRList, setShowPRList] = useState(false);
   const [selectedPR, setSelectedPR] = useState(null);
-
   const [isSharing, setIsSharing] = useState(false);
 
-  // Referencias para la captura de imagen
   const prCardRef = useRef(null);
   const weeklyRecapRef = useRef(null);
-
   const streakCheckedRef = useRef(false);
 
-  // --- CONTADOR DOMINGO ---
   const [timeUntilSunday, setTimeUntilSunday] = useState(null);
 
   useEffect(() => {
     const updateTimer = () => {
         const now = new Date();
-        const day = now.getDay(); // 0 es Domingo
+        const day = now.getDay();
         
         if (day === 0) {
             setTimeUntilSunday(null);
@@ -296,12 +266,7 @@ const Dashboard = ({ setView }) => {
       weeklySessions: logs.length,
       weeklyCalories: calories,
       weeklyTimeDisplay: seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`,
-      weeklyRecapData: {
-        totalVolume: volume,
-        totalWorkouts: logs.length,
-        totalDuration: seconds,
-        totalCalories: calories
-      }
+      weeklyRecapData: { totalVolume: volume, totalWorkouts: logs.length, totalDuration: seconds, totalCalories: calories }
     };
   }, [workoutLog]);
 
@@ -309,28 +274,20 @@ const Dashboard = ({ setView }) => {
   const isWeeklyRecapUnlocked = timeUntilSunday === null;
   const canOpenWeeklyRecap = hasWeeklyData && isWeeklyRecapUnlocked;
 
-  // --- LÓGICA DE RÉCORDS MÚLTIPLES ---
   const latestPRs = useMemo(() => {
     if (!Array.isArray(personalRecords) || personalRecords.length === 0) return [];
     
-    // 1. Filtrar solo los que tienen fecha
     const validRecords = personalRecords.filter(r => r.date);
     if (validRecords.length === 0) return [];
 
-    // 2. Ordenar por fecha descendente
     const sorted = [...validRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    // 3. Obtener la fecha del más reciente
     const latestDate = sorted[0].date.split('T')[0];
 
-    // 4. Devolver TODOS los records que coincidan con esa fecha
     return sorted.filter(r => r.date.split('T')[0] === latestDate);
   }, [personalRecords]);
 
-  // Datos para la tarjeta de compartir
   const prShareData = useMemo(() => {
     const targetPR = selectedPR || (latestPRs.length === 1 ? latestPRs[0] : null);
-
     if (!targetPR) return null;
 
     const previousRecord = personalRecords.find(r => 
@@ -349,7 +306,6 @@ const Dashboard = ({ setView }) => {
 
   const handlePRCardClick = () => {
       if (latestPRs.length === 0) return;
-
       if (latestPRs.length === 1) {
           setSelectedPR(latestPRs[0]);
           setShowPRModal(true);
@@ -406,58 +362,55 @@ const Dashboard = ({ setView }) => {
     setIsSharing(true);
 
     try {
-        const canvas = await html2canvas(ref.current, {
-            scale: 2,
-            useCORS: true,
+        const blob = await toBlob(ref.current, {
+            pixelRatio: 1,
             backgroundColor: '#000000',
-            logging: false
+            width: 1080,
+            height: 1920
         });
 
-        canvas.toBlob(async (blob) => {
-            if (!blob) {
-                setIsSharing(false);
-                return;
-            }
-
-            const file = new File([blob], `share-${Date.now()}.png`, { type: 'image/png' });
-
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: title || t('Mi Progreso', { defaultValue: 'Mi Progreso' }),
-                        text: t('¡Mira mi progreso en Pro Fitness Glass!', { defaultValue: '¡Mira mi progreso en Pro Fitness Glass!' })
-                    });
-                    addToast(t('¡Compartido con éxito!', { defaultValue: '¡Compartido con éxito!' }), 'success');
-                } catch (error) {
-                    if (error.name !== 'AbortError') {
-                        console.error('Error sharing:', error);
-                        downloadFallback(canvas);
-                    }
-                }
-            } else {
-                downloadFallback(canvas);
-            }
+        if (!blob) {
             setIsSharing(false);
-        }, 'image/png');
+            return;
+        }
+
+        const file = new File([blob], `share-${Date.now()}.png`, { type: 'image/png' });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: title || t('Mi Progreso', { defaultValue: 'Mi Progreso' })
+                });
+                addToast(t('¡Compartido con éxito!', { defaultValue: '¡Compartido con éxito!' }), 'success');
+            } catch (error) {
+                if (error.name !== 'AbortError') downloadFallback(blob);
+            }
+        } else {
+            downloadFallback(blob);
+        }
     } catch (error) {
         console.error('Error generating image:', error);
         addToast(t('Error al generar la imagen', { defaultValue: 'Error al generar la imagen' }), 'error');
+    } finally {
         setIsSharing(false);
     }
   };
 
-  const downloadFallback = (canvas) => {
+  const downloadFallback = (blob) => {
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
+      link.href = url;
       link.download = `share-${Date.now()}.png`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       addToast(t('Imagen descargada', { defaultValue: 'Imagen descargada' }), 'success');
   };
 
   const handleSharePR = () => shareImage(prCardRef, t('Nuevo Récord', { defaultValue: 'Nuevo Récord' }));
   const handleShareRecap = () => shareImage(weeklyRecapRef, t('Resumen Semanal', { defaultValue: 'Resumen Semanal' }));
-
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-24 md:p-10 animate-[fade-in_0.5s_ease-out]">
@@ -470,7 +423,6 @@ const Dashboard = ({ setView }) => {
 
       <TourGuide />
 
-      {/* HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-8 items-start">
         <div className="space-y-2">
           <h1 className="hidden md:block text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
@@ -487,7 +439,6 @@ const Dashboard = ({ setView }) => {
           </p>
         </div>
 
-        {/* TARJETA DE GAMIFICACIÓN */}
         <GlassCard
           id="tour-gamification"
           className="w-full lg:w-auto p-5 flex items-center gap-6 bg-bg-secondary/40 rounded-3xl relative overflow-hidden group border-transparent dark:border dark:border-white/10 hover:bg-bg-secondary transition-all cursor-pointer"
@@ -520,7 +471,6 @@ const Dashboard = ({ setView }) => {
             <div className="h-2.5 w-full sm:w-48 bg-bg-primary rounded-full overflow-hidden border border-black/5 dark:border-white/10">
               <div className="h-full bg-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]" style={{ width: `${levelData.percentage}%` }} />
             </div>
-            
           </div>
 
           <div className="flex flex-col items-center justify-center pl-6 border-l border-white/5 flex-shrink-0">
@@ -534,25 +484,15 @@ const Dashboard = ({ setView }) => {
         </GlassCard>
       </div>
 
-      {/* --- SECCIÓN HIGHLIGHTS (STORIES/PR) --- */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        
-        {/* Weekly Recap Button */}
         <GlassCard
             onClick={() => canOpenWeeklyRecap && setShowWeeklyRecap(true)}
-            className={`
-                group relative p-4 rounded-2xl overflow-hidden border-transparent dark:border dark:border-white/10 min-h-28 h-full flex items-center bg-gradient-to-br from-accent/20 to-blue-600/10
-                ${canOpenWeeklyRecap ? 'cursor-pointer' : 'cursor-default opacity-80'}
-            `}
+            className={`group relative p-4 rounded-2xl overflow-hidden border-transparent dark:border dark:border-white/10 min-h-28 h-full flex items-center bg-gradient-to-br from-accent/20 to-blue-600/10 ${canOpenWeeklyRecap ? 'cursor-pointer' : 'cursor-default opacity-80'}`}
         >
             <div className="absolute inset-0 bg-gradient-to-br from-accent/30 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             
             <div className="relative z-10 flex items-center gap-4 w-full">
-                <div className={`
-                    w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white shadow-lg transition-transform duration-300
-                    ${canOpenWeeklyRecap ? 'bg-gradient-to-tr from-accent to-blue-600 group-hover:scale-110' : 'bg-gray-500/50'}
-                `}>
-                    {/* Icono cambia si está bloqueado */}
+                <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white shadow-lg transition-transform duration-300 ${canOpenWeeklyRecap ? 'bg-gradient-to-tr from-accent to-blue-600 group-hover:scale-110' : 'bg-gray-500/50'}`}>
                     {isWeeklyRecapUnlocked ? <FaChartPie size={20} /> : <Lock size={20} />}
                 </div>
                 <div className="min-w-0">
@@ -572,21 +512,14 @@ const Dashboard = ({ setView }) => {
             </div>
         </GlassCard>
 
-        {/* Share PR Button */}
         <GlassCard
             onClick={handlePRCardClick}
-            className={`
-                group relative p-4 rounded-2xl overflow-hidden border-transparent dark:border dark:border-white/10 min-h-28 h-full flex items-center bg-gradient-to-br from-accent/20 to-yellow-600/10
-                ${latestPRs.length > 0 ? 'cursor-pointer' : 'opacity-80 cursor-default'}
-            `}
+            className={`group relative p-4 rounded-2xl overflow-hidden border-transparent dark:border dark:border-white/10 min-h-28 h-full flex items-center bg-gradient-to-br from-accent/20 to-yellow-600/10 ${latestPRs.length > 0 ? 'cursor-pointer' : 'opacity-80 cursor-default'}`}
         >
             <div className="absolute inset-0 bg-gradient-to-br from-accent/30 to-yellow-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
             <div className="relative z-10 flex items-center gap-4 w-full">
-                <div className={`
-                    w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white shadow-lg transition-transform duration-300
-                    ${latestPRs.length > 0 ? 'bg-gradient-to-tr from-accent to-yellow-600 group-hover:scale-110' : 'bg-gray-500/50'}
-                `}>
+                <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white shadow-lg transition-transform duration-300 ${latestPRs.length > 0 ? 'bg-gradient-to-tr from-accent to-yellow-600 group-hover:scale-110' : 'bg-gray-500/50'}`}>
                     <FaTrophy size={20} />
                 </div>
                 <div className="min-w-0">
@@ -607,10 +540,7 @@ const Dashboard = ({ setView }) => {
         </GlassCard>
       </div>
 
-      {/* GRID DE ESTADÍSTICAS */}
       <div id="tour-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-
-        {/* 1. SESIONES */}
         <GlassCard className="p-5 flex flex-col justify-between h-full min-h-[160px] border-transparent dark:border dark:border-white/10 hover:shadow-lg relative overflow-hidden group hover:bg-bg-secondary transition-all">
           <div className="flex justify-between items-start mb-4">
             <div className="p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 text-accent bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent">
@@ -627,9 +557,7 @@ const Dashboard = ({ setView }) => {
               return (
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all 
-                  ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-transparent dark:bg-bg-primary/50 text-transparent'}
-                  `}>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-transparent dark:bg-bg-primary/50 text-transparent'}`}>
                     {hasWorkout && <Check size={10} strokeWidth={4} />}
                   </div>
                 </div>
@@ -638,56 +566,23 @@ const Dashboard = ({ setView }) => {
           </div>
         </GlassCard>
 
-        {/* 2. META CALÓRICA */}
-        <BentoStatCard
-          title={t('Meta Calórica', { defaultValue: 'Meta Calórica' })}
-          value={targets.calories.toLocaleString()}
-          unit="kcal"
-          icon={Target}
-          iconColor="text-accent"
-          subtext={t('Objetivo diario', { defaultValue: 'Objetivo diario' })}
-        />
-
-        {/* 3. TIEMPO ACTIVO */}
-        <BentoStatCard
-          title={t('Tiempo Activo', { defaultValue: 'Tiempo Activo' })}
-          value={weeklyTimeDisplay}
-          icon={Clock}
-          iconColor="text-accent"
-          subtext={t('Total semanal', { defaultValue: 'Total semanal' })}
-        />
-
-        {/* 4. QUEMADAS */}
-        <BentoStatCard
-          title={t('Quemadas', { defaultValue: 'Quemadas' })}
-          value={weeklyCalories.toLocaleString()}
-          unit="kcal"
-          icon={Flame}
-          iconColor="text-accent"
-          subtext={t('Total estimado', { defaultValue: 'Total estimado' })}
-        />
+        <BentoStatCard title={t('Meta Calórica', { defaultValue: 'Meta Calórica' })} value={targets.calories.toLocaleString()} unit="kcal" icon={Target} subtext={t('Objetivo diario', { defaultValue: 'Objetivo diario' })} />
+        <BentoStatCard title={t('Tiempo Activo', { defaultValue: 'Tiempo Activo' })} value={weeklyTimeDisplay} icon={Clock} subtext={t('Total semanal', { defaultValue: 'Total semanal' })} />
+        <BentoStatCard title={t('Quemadas', { defaultValue: 'Quemadas' })} value={weeklyCalories.toLocaleString()} unit="kcal" icon={Flame} subtext={t('Total estimado', { defaultValue: 'Total estimado' })} />
       </div>
 
-      {/* LAYOUT PRINCIPAL */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-
-        {/* COLUMNA IZQUIERDA (NUTRICIÓN) */}
         <div className="lg:col-span-2 space-y-8">
           <section id="tour-nutrition">
             <GlassCard className="p-8 relative overflow-hidden rounded-[2rem] border-transparent dark:border dark:border-white/10 transition-all">
-
               <div className="flex items-center justify-between mb-10 relative z-10">
                 <div className="flex items-center gap-4">
                   <div className="p-3.5 rounded-2xl text-accent transition-transform bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent">
                     <Activity size={26} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-white">
-                      {t('Nutrición', { defaultValue: 'Nutrición' })}
-                    </h2>
-                    <p className="text-xs text-text-muted font-medium mt-0.5">
-                      {t('Resumen del día', { defaultValue: 'Resumen del día' })}
-                    </p>
+                    <h2 className="text-2xl font-bold text-white">{t('Nutrición', { defaultValue: 'Nutrición' })}</h2>
+                    <p className="text-xs text-text-muted font-medium mt-0.5">{t('Resumen del día', { defaultValue: 'Resumen del día' })}</p>
                   </div>
                 </div>
                 <button onClick={() => setView('nutrition')} className="text-xs font-bold bg-bg-secondary hover:bg-bg-secondary/80 px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2 text-text-primary">
@@ -703,26 +598,13 @@ const Dashboard = ({ setView }) => {
                   <CircularProgress value={parseFloat(nutritionTotals.protein.toFixed(1))} maxValue={targets.protein} label={t('Proteína', { defaultValue: 'Proteína' })} icon={Beef} color="#fb7185" size={90} strokeWidth={8} />
                 </button>
 
-                <button
-                  onClick={() => isSugarExceeded ? setShowSugarModal(true) : setView('nutrition')}
-                  className="group/item flex flex-col items-center gap-4 transition-transform hover:scale-105 relative"
-                >
+                <button onClick={() => isSugarExceeded ? setShowSugarModal(true) : setView('nutrition')} className="group/item flex flex-col items-center gap-4 transition-transform hover:scale-105 relative">
                   {isSugarExceeded && (
                     <div className="absolute -top-3 -right-2 z-20 animate-pulse drop-shadow-md">
                       <TriangleAlert size={24} strokeWidth={3} color="#ef4444" />
                     </div>
                   )}
-                  <CircularProgress
-                    value={parseFloat(nutritionTotals.sugar.toFixed(1))}
-                    maxValue={targets.sugar}
-                    label={t('Azúcar', { defaultValue: 'Azúcar' })}
-                    icon={isSugarExceeded ? TriangleAlert : IceCream}
-                    color={isSugarExceeded ? "#ef4444" : "#f472b6"}
-                    displayText={`${Math.round(nutritionTotals.sugar)}/${targets.sugar}`}
-                    pulse={isSugarExceeded}
-                    size={90}
-                    strokeWidth={8}
-                  />
+                  <CircularProgress value={parseFloat(nutritionTotals.sugar.toFixed(1))} maxValue={targets.sugar} label={t('Azúcar', { defaultValue: 'Azúcar' })} icon={isSugarExceeded ? TriangleAlert : IceCream} color={isSugarExceeded ? "#ef4444" : "#f472b6"} displayText={`${Math.round(nutritionTotals.sugar)}/${targets.sugar}`} pulse={isSugarExceeded} size={90} strokeWidth={8} />
                 </button>
 
                 <button onClick={() => setModal({ type: 'water' })} className="group/item flex flex-col items-center gap-4 transition-transform hover:scale-105">
@@ -735,61 +617,40 @@ const Dashboard = ({ setView }) => {
             </GlassCard>
           </section>
 
-          {/* ACCESO RÁPIDO - CARDIO */}
           <section id="tour-quick-cardio">
             <div className="flex items-center gap-3 mb-6 px-1">
               <Zap size={24} className="text-accent" />
-              <h2 className="text-xl font-bold">
-                {t('Cardio Rápido', { defaultValue: 'Cardio Rápido' })}
-              </h2>
+              <h2 className="text-xl font-bold">{t('Cardio Rápido', { defaultValue: 'Cardio Rápido' })}</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               {[{ name: 'Cinta', key: 'Cinta', icon: Footprints }, { name: 'Bici', key: 'Bici', icon: Bike }, { name: 'Elíptica', key: 'Elíptica', icon: Activity }].map(item => (
-                <GlassCard
-                  key={item.key}
-                  className="relative p-0 overflow-hidden rounded-[1.5rem] group hover:-translate-y-1 transition-all h-36 cursor-pointer border-transparent dark:border dark:border-white/10 bg-bg-secondary/40 hover:bg-bg-secondary"
-                >
-                  <button
-                    onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }}
-                    className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all"
-                  >
+                <GlassCard key={item.key} className="relative p-0 overflow-hidden rounded-[1.5rem] group hover:-translate-y-1 transition-all h-36 cursor-pointer border-transparent dark:border dark:border-white/10 bg-bg-secondary/40 hover:bg-bg-secondary">
+                  <button onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }} className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all">
                     <div className="p-3.5 rounded-full text-accent group-hover:scale-110 transition-all bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent">
                       <item.icon size={30} />
                     </div>
-                    <span className="text-sm font-bold text-text-secondary group-hover:text-white transition-colors">
-                      {t(item.name, { defaultValue: item.name })}
-                    </span>
+                    <span className="text-sm font-bold text-text-secondary group-hover:text-white transition-colors">{t(item.name, { defaultValue: item.name })}</span>
                   </button>
                 </GlassCard>
               ))}
               <GlassCard className="relative p-0 overflow-hidden rounded-[1.5rem] group hover:-translate-y-1 transition-all h-36 cursor-pointer border-transparent dark:border dark:border-white/10 bg-transparent dark:bg-accent/5 hover:bg-accent/10">
-                <button
-                  onClick={() => setView('quickCardio')}
-                  className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all"
-                >
+                <button onClick={() => setView('quickCardio')} className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all">
                   <div className="p-3.5 rounded-full text-accent group-hover:scale-110 transition-transform bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent">
                     <LayoutGrid size={30} />
                   </div>
-                  <span className="text-sm font-bold text-accent">
-                    {t('Explorar', { defaultValue: 'Explorar' })}
-                  </span>
+                  <span className="text-sm font-bold text-accent">{t('Explorar', { defaultValue: 'Explorar' })}</span>
                 </button>
               </GlassCard>
             </div>
           </section>
         </div>
 
-        {/* COLUMNA DERECHA (RUTINAS Y PESO) */}
         <div className="flex flex-col gap-8">
-
-          {/* RUTINAS */}
           <section id="tour-routines">
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-3">
                 <Dumbbell size={24} className="text-accent" />
-                <h2 className="text-xl font-bold">
-                  {t('Mis Rutinas', { defaultValue: 'Mis Rutinas' })}
-                </h2>
+                <h2 className="text-xl font-bold">{t('Mis Rutinas', { defaultValue: 'Mis Rutinas' })}</h2>
               </div>
               <button onClick={() => setView('routines', { forceTab: 'myRoutines' })} className="p-2 rounded-full hover:bg-bg-secondary text-text-secondary hover:text-white transition-colors">
                 <ChevronRight size={20} />
@@ -808,65 +669,38 @@ const Dashboard = ({ setView }) => {
                       if (isActive) { setView('workout'); return; }
                       if (!isCompleted) { await startWorkout(routine); setView('workout'); }
                     }}
-                    className={`
-                      group relative p-5 rounded-[1.5rem] transition-all cursor-pointer border-transparent dark:border dark:border-white/5
-                      ${isActive
-                        ? '!bg-accent !border-accent text-white shadow-lg shadow-accent/20 scale-[1.02]'
-                        : isCompleted
-                          ? '!bg-transparent dark:!bg-green-500/10 opacity-70 hover:opacity-100 !border-transparent'
-                          : 'bg-bg-secondary/40 hover:bg-bg-secondary hover:shadow-md'
-                      }
-                    `}
+                    className={`group relative p-5 rounded-[1.5rem] transition-all cursor-pointer border-transparent dark:border dark:border-white/5 ${isActive ? '!bg-accent !border-accent text-white shadow-lg shadow-accent/20 scale-[1.02]' : isCompleted ? '!bg-transparent dark:!bg-green-500/10 opacity-70 hover:opacity-100 !border-transparent' : 'bg-bg-secondary/40 hover:bg-bg-secondary hover:shadow-md'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 overflow-hidden">
-                        <div className={`
-                          w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors border-none
-                          ${isActive
-                            ? 'bg-white/20'
-                            : 'bg-transparent dark:bg-white/5 dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent'
-                          }
-                        `}>
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors border-none ${isActive ? 'bg-white/20' : 'bg-transparent dark:bg-white/5 dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent'}`}>
                           {isActive ? <Clock size={24} /> : (isCompleted ? <CheckCircle size={24} className="text-green-500" /> : <Play size={24} className={isActive ? 'text-white' : 'text-accent'} fill="currentColor" />)}
                         </div>
                         <div className="min-w-0">
                           <h3 className={`font-bold text-base truncate ${isActive ? 'text-white' : 'text-text-primary'}`}>{routine.name}</h3>
                           <p className={`text-xs truncate font-medium mt-0.5 ${isActive ? 'text-white/80' : 'text-text-secondary'}`}>
-                            {isActive 
-                              ? t('En curso', { defaultValue: 'En curso' }) 
-                              : (isCompleted 
-                                  ? t('Completada', { defaultValue: 'Completada' }) 
-                                  : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
+                            {isActive ? t('En curso', { defaultValue: 'En curso' }) : (isCompleted ? t('Completada', { defaultValue: 'Completada' }) : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
                           </p>
                         </div>
                       </div>
-                      {!isActive && !isCompleted && (
-                        <ChevronRight size={18} className="text-text-muted group-hover:text-accent transition-colors -mr-1" />
-                      )}
+                      {!isActive && !isCompleted && <ChevronRight size={18} className="text-text-muted group-hover:text-accent transition-colors -mr-1" />}
                     </div>
                   </GlassCard>
                 );
               }) : (
                 <div className="p-8 rounded-[2rem] bg-bg-secondary/20 border border-dashed border-white/10 text-center flex flex-col items-center gap-3">
-                  <p className="text-sm text-text-muted">
-                    {t('Sin rutinas creadas.', { defaultValue: 'Sin rutinas creadas.' })}
-                  </p>
-                  <button onClick={() => setView('routines')} className="text-xs font-bold text-accent bg-transparent dark:bg-accent/10 px-4 py-2 rounded-xl hover:bg-accent/20 transition-colors border border-accent/20">
-                    {t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}
-                  </button>
+                  <p className="text-sm text-text-muted">{t('Sin rutinas creadas.', { defaultValue: 'Sin rutinas creadas.' })}</p>
+                  <button onClick={() => setView('routines')} className="text-xs font-bold text-accent bg-transparent dark:bg-accent/10 px-4 py-2 rounded-xl hover:bg-accent/20 transition-colors border border-accent/20">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
                 </div>
               )}
             </div>
           </section>
 
-          {/* PESO CORPORAL */}
           <section id="tour-weight">
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-3">
                 <TrophyLucide size={24} className="text-accent" />
-                <h2 className="text-xl font-bold">
-                  {t('Peso', { defaultValue: 'Peso' })}
-                </h2>
+                <h2 className="text-xl font-bold">{t('Peso', { defaultValue: 'Peso' })}</h2>
               </div>
               <button onClick={() => setShowWeightModal(true)} className="p-2 rounded-full hover:bg-bg-secondary text-text-secondary hover:text-accent transition-colors">
                 {todaysWeightLog ? <Edit size={20} /> : <Plus size={20} />}
@@ -876,13 +710,9 @@ const Dashboard = ({ setView }) => {
             <GlassCard className="p-6 rounded-[2rem] border-transparent dark:border dark:border-white/10 relative overflow-hidden group hover:bg-bg-secondary/80 transition-all duration-300">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <p className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">
-                    {t('Peso Actual', { defaultValue: 'Peso Actual' })}
-                  </p>
+                  <p className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">{t('Peso Actual', { defaultValue: 'Peso Actual' })}</p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-black text-text-primary tracking-tighter">
-                      {latestWeight ? latestWeight.toFixed(1) : '--'}
-                    </span>
+                    <span className="text-5xl font-black text-text-primary tracking-tighter">{latestWeight ? latestWeight.toFixed(1) : '--'}</span>
                     <span className="text-xl font-bold text-text-muted">kg</span>
                   </div>
                 </div>
@@ -893,7 +723,6 @@ const Dashboard = ({ setView }) => {
                 )}
               </div>
 
-              {/* Mini lista historial */}
               <div className="space-y-3 relative z-10">
                 {sortedWeightLog.length > 0 ? (
                   sortedWeightLog.slice(0, 3).map((log, index) => {
@@ -912,67 +741,40 @@ const Dashboard = ({ setView }) => {
               </div>
             </GlassCard>
           </section>
-
         </div>
       </div>
 
       {showXPModal && <XPGuideModal onClose={() => setShowXPModal(false)} />}
-
-      {/* Modal de Objetivo de Azúcar */}
-      {showSugarModal && (
-        <SugarTargetModal
-          isOpen={showSugarModal}
-          onClose={() => setShowSugarModal(false)}
-          currentSugar={nutritionTotals.sugar}
-          maxSugar={targets.sugar}
-        />
-      )}
-
+      {showSugarModal && <SugarTargetModal isOpen={showSugarModal} onClose={() => setShowSugarModal(false)} currentSugar={nutritionTotals.sugar} maxSugar={targets.sugar} />}
       {showWeightModal && <BodyWeightModal onClose={() => setShowWeightModal(false)} onSave={todaysWeightLog ? updateTodayBodyWeight : logBodyWeight} existingLog={todaysWeightLog} />}
       {modal.type === 'water' && <WaterLogModal initialQuantity={waterLog?.quantity_ml || 0} onSave={handleSaveWater} onClose={() => setModal({ type: null })} isLoading={modal.type === 'submitting'} />}
       {modal.type === 'creatine' && <CreatinaTracker onClose={() => { setModal({ type: null }); fetchDataForDate(new Date().toISOString().split('T')[0]); }} selectedDate={new Date().toISOString().split('T')[0]} />}
 
-      {/* --- OVERLAYS DE STORIES/PR (USANDO SCALETOFIT) --- */}
-      
-      {/* 1. WEEKLY RECAP STORY */}
+      <div style={{ position: 'fixed', left: '-20000px', top: '-20000px' }}>
+         <div ref={weeklyRecapRef} style={{ width: '1080px', height: '1920px' }}>
+             {showWeeklyRecap && <WeeklyRecapCard weeklyData={weeklyRecapData} userProfile={userProfile} />}
+         </div>
+         <div ref={prCardRef} style={{ width: '1080px', height: '1920px' }}>
+             {/* AQUÍ INYECTAMOS LA FOTO AL RENDER OCULTO */}
+             {showPRModal && prShareData && <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />}
+         </div>
+      </div>
+
       {showWeeklyRecap && (
-          <div 
-              className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
-              onClick={() => setShowWeeklyRecap(false)}
-          >
-             {/* Container: altura máx 85vh para dejar espacio y que se vea bien */}
-             <div 
-               className="relative w-full max-w-xl h-[85vh] flex flex-col items-center justify-between"
-               onClick={(e) => e.stopPropagation()}
-             >
-                 {/* Botón Cerrar (Flotante) */}
-                 <button
-                     onClick={() => setShowWeeklyRecap(false)}
-                     className="absolute top-0 right-0 z-50 p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10 translate-x-2 -translate-y-2"
-                 >
+          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]" onClick={() => setShowWeeklyRecap(false)}>
+             <div className="relative w-full max-w-xl h-[85vh] flex flex-col items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                 <button onClick={() => setShowWeeklyRecap(false)} className="absolute top-0 right-0 z-50 p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10 translate-x-2 -translate-y-2">
                      <X size={24} />
                  </button>
-
-                 {/* Card Content (ScaleToFit) - flex-1 para que ocupe el espacio central y escale */}
-                 <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center">
+                 <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center pointer-events-none">
                       <ScaleToFit width={1080} height={1920}>
-                          <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10">
-                              <WeeklyRecapCard
-                                  ref={weeklyRecapRef}
-                                  weeklyData={weeklyRecapData}
-                                  userProfile={userProfile}
-                              />
+                          <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 pointer-events-auto">
+                              <WeeklyRecapCard weeklyData={weeklyRecapData} userProfile={userProfile} />
                           </div>
                       </ScaleToFit>
                  </div>
-
-                 {/* Share Button (shrink-0 para que no se aplaste) */}
                  <div className="shrink-0 mb-2">
-                      <button
-                          onClick={handleShareRecap}
-                          disabled={isSharing}
-                          className="bg-white text-black px-8 py-4 rounded-full flex items-center gap-3 shadow-lg shadow-white/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
-                      >
+                      <button onClick={handleShareRecap} disabled={isSharing} className="bg-white text-black px-8 py-4 rounded-full flex items-center gap-3 shadow-lg shadow-white/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100">
                           {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />}
                           <span className="font-black text-lg tracking-tight">{t('Compartir Resumen', { defaultValue: 'Compartir Resumen' })}</span>
                       </button>
@@ -981,48 +783,22 @@ const Dashboard = ({ setView }) => {
           </div>
       )}
 
-      {/* --- NUEVO: MODAL LISTA DE PRs --- */}
       {showPRList && (
-          <div 
-              className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
-              onClick={() => setShowPRList(false)}
-          >
-              <div 
-                  className="w-full max-w-sm bg-bg-secondary rounded-2xl border border-glass-border shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10"
-                  onClick={(e) => e.stopPropagation()}
-              >
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowPRList(false)}>
+              <div className="w-full max-w-sm bg-bg-secondary rounded-2xl border border-glass-border shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10" onClick={(e) => e.stopPropagation()}>
                   <div className="p-4 border-b border-glass-border flex justify-between items-center bg-bg-primary">
-                      <h3 className="font-bold text-text-primary">
-                          {t('Nuevos Récords', { defaultValue: 'Nuevos Récords' })} ({latestPRs.length})
-                      </h3>
-                      <button onClick={() => setShowPRList(false)} className="p-1 rounded-full hover:bg-bg-secondary text-text-secondary hover:text-text-primary">
-                          <X size={20} />
-                      </button>
+                      <h3 className="font-bold text-text-primary">{t('Nuevos Récords', { defaultValue: 'Nuevos Récords' })} ({latestPRs.length})</h3>
+                      <button onClick={() => setShowPRList(false)} className="p-1 rounded-full hover:bg-bg-secondary text-text-secondary hover:text-text-primary"><X size={20} /></button>
                   </div>
                   <div className="p-2 max-h-[60vh] overflow-y-auto">
                       {latestPRs.map(record => (
-                          <button
-                              key={record.id}
-                              onClick={() => {
-                                  setSelectedPR(record);
-                                  setShowPRList(false);
-                                  setShowPRModal(true);
-                              }}
-                              className="w-full flex items-center justify-between p-3 hover:bg-bg-primary rounded-xl transition-colors group"
-                          >
-                              {/* AQUÍ: Corregido truncate y min-w-0 para evitar doble línea */}
+                          <button key={record.id} onClick={() => { setSelectedPR(record); setShowPRList(false); setShowPRModal(true); }} className="w-full flex items-center justify-between p-3 hover:bg-bg-primary rounded-xl transition-colors group">
                               <div className="flex flex-col items-start min-w-0 flex-1 pr-4">
-                                  <span className="font-semibold text-text-primary text-sm text-left w-full break-words">
-                                      {t(record.exercise_name || record.exerciseName, { ns: 'exercise_names', defaultValue: record.exercise_name || record.exerciseName })}
-                                  </span>
-                                  <span className="text-xs text-text-secondary">
-                                      {new Date(record.date).toLocaleDateString()}
-                                  </span>
+                                  <span className="font-semibold text-text-primary text-sm text-left w-full break-words">{t(record.exercise_name || record.exerciseName, { ns: 'exercise_names', defaultValue: record.exercise_name || record.exerciseName })}</span>
+                                  <span className="text-xs text-text-secondary">{new Date(record.date).toLocaleDateString()}</span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                  <span className="font-bold text-accent text-lg">
-                                      {record.weight_kg || record.weight} kg
-                                  </span>
+                                  <span className="font-bold text-accent text-lg">{record.weight_kg || record.weight} kg</span>
                                   <ChevronRight size={16} className="text-text-muted group-hover:text-accent" />
                               </div>
                           </button>
@@ -1032,52 +808,28 @@ const Dashboard = ({ setView }) => {
           </div>
       )}
 
-      {/* 2. PR SHARE MODAL (Tarjeta Individual) */}
       {showPRModal && prShareData && (
-          <div 
-              className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
-              onClick={() => setShowPRModal(false)}
-          >
-             <div 
-               className="relative w-full max-w-xl h-[85vh] flex flex-col items-center justify-between"
-               onClick={(e) => e.stopPropagation()}
-             >
-                 <button
-                     onClick={() => setShowPRModal(false)}
-                     className="absolute top-0 right-0 z-50 p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10 translate-x-2 -translate-y-2"
-                 >
-                     <X size={24} />
-                 </button>
-
-                 <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center">
+          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]" onClick={() => setShowPRModal(false)}>
+             <div className="relative w-full max-w-xl h-[85vh] flex flex-col items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                 <button onClick={() => setShowPRModal(false)} className="absolute top-0 right-0 z-50 p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10 translate-x-2 -translate-y-2"><X size={24} /></button>
+                 <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center pointer-events-none">
                       <ScaleToFit width={1080} height={1920}>
-                          <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10">
-                              <PRShareCard
-                                  ref={prCardRef}
-                                  prData={prShareData}
-                                  userName={userProfile?.username}
-                              />
+                          <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 pointer-events-auto">
+                              {/* AQUÍ INYECTAMOS LA FOTO AL OVERLAY VISIBLE */}
+                              <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />
                           </div>
                       </ScaleToFit>
                  </div>
-                 
-                 <div className="shrink-0 mb-2 flex gap-3">
+                 <div className="shrink-0 mb-2 flex items-center justify-center gap-2 sm:gap-3 px-2 w-full max-w-sm">
                       {latestPRs.length > 1 && (
-                          <button
-                              onClick={() => { setShowPRModal(false); setShowPRList(true); }}
-                              className="bg-gray-800 text-white px-6 py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all"
-                          >
-                              <List size={20} />
-                              <span className="font-bold text-sm">{t('Ver Lista', { defaultValue: 'Ver Lista' })}</span>
+                          <button onClick={() => { setShowPRModal(false); setShowPRList(true); }} className="bg-gray-800 text-white px-4 md:px-6 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all">
+                              <List size={20} className="shrink-0" />
+                              <span className="font-bold text-xs sm:text-sm whitespace-nowrap">{t('Ver Lista', { defaultValue: 'Ver Lista' })}</span>
                           </button>
                       )}
-                      <button
-                          onClick={handleSharePR}
-                          disabled={isSharing}
-                          className="bg-white text-black px-8 py-4 rounded-full flex items-center gap-3 shadow-lg shadow-white/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
-                      >
-                          {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />}
-                          <span className="font-black text-lg tracking-tight">{t('Compartir Logro', { defaultValue: 'Compartir Logro' })}</span>
+                      <button onClick={handleSharePR} disabled={isSharing} className="bg-white text-black px-5 md:px-8 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg shadow-white/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100">
+                          {isSharing ? <Loader2 size={20} className="animate-spin shrink-0" /> : <Share2 size={20} className="shrink-0" />}
+                          <span className="font-black text-sm sm:text-lg tracking-tight whitespace-nowrap">{t('Compartir Logro', { defaultValue: 'Compartir Logro' })}</span>
                       </button>
                  </div>
              </div>
