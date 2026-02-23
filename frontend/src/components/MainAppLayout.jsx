@@ -160,16 +160,15 @@ export default function MainAppLayout({
       {/* Contenido Principal */}
       <main
         ref={mainContentRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden md:pb-0 
-                   pb-[calc(7rem+env(safe-area-inset-bottom))]"
+        className="flex-1 overflow-y-auto overflow-x-hidden md:pb-0"
+        style={{ paddingBottom: 'calc(6rem + max(env(safe-area-inset-bottom), 1.5rem))' }}
       >
 
-        {/* Header (Móvil) */}
-        <div className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50
-                        px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]
-                        sm:px-6 sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]
-                        border-0 shadow-none 
-                        [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10">
+        {/* Header (Móvil) - Usando style inline para asegurar que el padding se aplica siempre */}
+        <div 
+          className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50 px-4 pb-4 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 2.5rem)' }}
+        >
 
           {/* Animación Título Header */}
           <div className="flex items-center gap-2">
@@ -242,13 +241,15 @@ export default function MainAppLayout({
 
       </main>
 
-      {/* Navbar (Móvil) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50
-                      pb-[env(safe-area-inset-bottom)] 
-                      pl-[max(env(safe-area-inset-left),_0.5rem)] 
-                      pr-[max(env(safe-area-inset-right),_0.5rem)]
-                      border-0 shadow-none
-                      [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10">
+      {/* Navbar (Móvil) - Usando style inline para proteger contra recortes del navegador */}
+      <nav 
+        className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10"
+        style={{
+          paddingBottom: 'max(env(safe-area-inset-bottom), 1.5rem)',
+          paddingLeft: 'max(env(safe-area-inset-left), 0.5rem)',
+          paddingRight: 'max(env(safe-area-inset-right), 0.5rem)'
+        }}
+      >
         {navItems.map((item, index) => {
           const isActive = view === item.id;
           const isSocial = item.id === 'social';
@@ -259,7 +260,7 @@ export default function MainAppLayout({
               key={item.id}
               onClick={() => navigate(item.id)}
               className={`
-                group flex flex-col items-center justify-center h-20 flex-grow 
+                group flex flex-col items-center justify-center h-[4.5rem] flex-grow 
                 transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
                 outline-none focus:outline-none ring-0
                 ${isActive ? 'text-accent' : 'text-text-secondary'}
@@ -310,8 +311,8 @@ export default function MainAppLayout({
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => navigate('workout')}
-          className="fixed right-4 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105
-                      bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10"
+          className="fixed right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105 md:bottom-10"
+          style={{ bottom: 'calc(5rem + max(env(safe-area-inset-bottom), 1.5rem))' }}
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>

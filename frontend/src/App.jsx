@@ -126,7 +126,9 @@ export default function App() {
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
           await NavigationBar.setColor({ color: themeColor });
-          await StatusBar.setOverlaysWebView({ overlay: false });
+          
+          // CAMBIO: Overlay en true para que Capacitor respete el env(safe-area-inset-*)
+          await StatusBar.setOverlaysWebView({ overlay: true });
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
         }
