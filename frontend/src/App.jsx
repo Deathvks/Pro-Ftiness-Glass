@@ -125,7 +125,9 @@ export default function App() {
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
           await NavigationBar.setColor({ color: themeColor });
-          await StatusBar.setOverlaysWebView({ overlay: true });
+          
+          // CAMBIO: Overlay en false para que el SO maneje las áreas seguras y no la web
+          await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
         }
