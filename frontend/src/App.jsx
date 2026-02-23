@@ -59,7 +59,6 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  // El path actual se usa para SEO y lógica interna, pero el Router maneja la navegación principal
   const currentPath = location.pathname;
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -126,8 +125,6 @@ export default function App() {
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
           await NavigationBar.setColor({ color: themeColor });
-          
-          // CAMBIO: Overlay en true para que Capacitor respete el env(safe-area-inset-*)
           await StatusBar.setOverlaysWebView({ overlay: true });
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
@@ -318,7 +315,6 @@ export default function App() {
       return <InitialLoadingSkeleton />;
     }
 
-    // SI EL USUARIO NO TIENE OBJETIVO DEFINIDO, VAMOS AL ONBOARDING TÉCNICO DIRECTAMENTE
     if (!userProfile.goal) {
       return <OnboardingScreen />;
     }

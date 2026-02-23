@@ -160,15 +160,11 @@ export default function MainAppLayout({
       {/* Contenido Principal */}
       <main
         ref={mainContentRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden md:pb-0"
-        style={{ paddingBottom: 'calc(6rem + max(env(safe-area-inset-bottom), 1.5rem))' }}
+        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 md:pb-0"
       >
 
-        {/* Header (Móvil) - Usando style inline para asegurar que el padding se aplica siempre */}
-        <div 
-          className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50 px-4 pb-4 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
-          style={{ paddingTop: 'max(env(safe-area-inset-top), 2.5rem)' }}
-        >
+        {/* Header (Móvil) - Padding normal gestionado por Tailwind */}
+        <div className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50 p-4 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10">
 
           {/* Animación Título Header */}
           <div className="flex items-center gap-2">
@@ -217,7 +213,7 @@ export default function MainAppLayout({
                     flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
                     ${view === 'settings'
                   ? 'w-0 opacity-0 ml-0 translate-x-4'
-                  : 'w-10 opacity-100 ml-2 translate-x-0' // Un poco de margen a la izquierda
+                  : 'w-10 opacity-100 ml-2 translate-x-0'
                 }
                 `}
             >
@@ -241,15 +237,8 @@ export default function MainAppLayout({
 
       </main>
 
-      {/* Navbar (Móvil) - Usando style inline para proteger contra recortes del navegador */}
-      <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10"
-        style={{
-          paddingBottom: 'max(env(safe-area-inset-bottom), 1.5rem)',
-          paddingLeft: 'max(env(safe-area-inset-left), 0.5rem)',
-          paddingRight: 'max(env(safe-area-inset-right), 0.5rem)'
-        }}
-      >
+      {/* Navbar (Móvil) - Altura fija estandar, sin cálculos de área segura */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 flex justify-evenly h-[4.5rem] bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10">
         {navItems.map((item, index) => {
           const isActive = view === item.id;
           const isSocial = item.id === 'social';
@@ -260,7 +249,7 @@ export default function MainAppLayout({
               key={item.id}
               onClick={() => navigate(item.id)}
               className={`
-                group flex flex-col items-center justify-center h-[4.5rem] flex-grow 
+                group flex flex-col items-center justify-center flex-grow 
                 transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
                 outline-none focus:outline-none ring-0
                 ${isActive ? 'text-accent' : 'text-text-secondary'}
@@ -311,8 +300,7 @@ export default function MainAppLayout({
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => navigate('workout')}
-          className="fixed right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105 md:bottom-10"
-          style={{ bottom: 'calc(5rem + max(env(safe-area-inset-bottom), 1.5rem))' }}
+          className="fixed right-4 bottom-24 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>
