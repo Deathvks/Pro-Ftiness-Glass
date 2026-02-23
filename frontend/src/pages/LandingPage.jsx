@@ -303,11 +303,13 @@ const LandingPage = ({ onLogin, onRegister }) => {
     <div 
         ref={containerRef}
         onScroll={handleScroll}
-        className="fixed inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth perspective-1000"
+        /* CAMBIO APLICADO: fixed por absolute para que respete el contenedor seguro */
+        className="absolute inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth perspective-1000"
     >
       
       {/* --- FONDO DINÁMICO --- */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
+      {/* CAMBIO APLICADO: fixed por absolute para que no se salga por arriba ni por abajo */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
         <div 
           className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite]"
           style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }}

@@ -30,7 +30,12 @@ const TourGuide = () => {
           padding: 20px !important;
           backdrop-filter: blur(12px) !important;
           -webkit-backdrop-filter: blur(12px) !important;
-          max-width: 320px !important;
+          max-width: calc(100vw - 32px) !important;
+          
+          /* FIX: Forzar respeto por las áreas seguras del móvil (Notch y Gestos) */
+          margin-top: env(safe-area-inset-top, 16px) !important;
+          margin-bottom: env(safe-area-inset-bottom, 16px) !important;
+          z-index: 999999 !important;
         }
 
         /* --- FLECHAS CON BORDE (Técnica de doble triángulo) --- */
