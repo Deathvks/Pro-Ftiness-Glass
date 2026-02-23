@@ -10,7 +10,6 @@ const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) 
 const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
     const { t, i18n } = useTranslation(['translation', 'exercise_names']);
 
-    // Formateo seguro de la imagen del perfil para evitar errores CORS en html-to-image
     const profileImgSrc = useMemo(() => {
         if (!userImage) return null;
         let url = userImage;
@@ -27,6 +26,8 @@ const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
 
         return url;
     }, [userImage]);
+
+    const logoUrl = `${window.location.origin}/logo.webp`;
 
     if (!prData) return null;
 
@@ -68,7 +69,6 @@ const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
 
             <div className="relative z-10 flex flex-col h-full p-12 pt-24 w-full">
                 
-                {/* Cabecera con Avatar */}
                 <div className="flex justify-between items-center w-full mb-16 px-4">
                     <div className="flex items-center gap-6">
                         <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#222] shadow-[0_0_20px_rgba(250,204,21,0.2)] shrink-0 bg-[#111] flex items-center justify-center">
@@ -102,7 +102,6 @@ const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
                     </div>
                 </div>
 
-                {/* Zona Central */}
                 <div className="flex-1 w-full flex flex-col items-center justify-center text-center">
                     <div className="relative mb-12 flex items-center justify-center shrink-0">
                         <div className="absolute w-[300px] h-[300px] bg-yellow-500 blur-[80px] opacity-20 rounded-full" />
@@ -113,14 +112,11 @@ const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
                         {translatedName}
                     </h3>
                     
-                    <div className="flex items-baseline justify-center w-full mb-12 whitespace-nowrap gap-6">
-                        <span 
-                            className="text-[140px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-yellow-200 leading-none m-0 p-0 mr-8 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
-                            style={{ paddingRight: '20px' }}
-                        >
+                    <div className="flex items-baseline justify-center w-full mb-12 whitespace-nowrap gap-4">
+                        <span className="text-[140px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-yellow-200 leading-none m-0 p-0 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] pr-4">
                             {displayNewWeight}
                         </span>
-                        <span className="text-[60px] font-bold text-yellow-500 uppercase leading-none m-0 p-0 ml-4">
+                        <span className="text-[60px] font-bold text-yellow-500 uppercase leading-none m-0 p-0">
                             KG
                         </span>
                     </div>
@@ -128,30 +124,23 @@ const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
                     {hasImprovement && (
                         <div className="inline-flex items-center justify-center bg-emerald-950/80 border border-emerald-500/50 px-12 py-6 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.2)] whitespace-nowrap">
                             <TrendingUp size={45} className="text-emerald-400 mr-6 shrink-0" strokeWidth={2.5} />
-                            <span 
-                                className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400 font-black text-5xl m-0 p-0"
-                                style={{ paddingRight: '10px' }}
-                            >
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400 font-black text-5xl m-0 p-0 pr-2">
                                 +{improvementVal} KG
                             </span>
                         </div>
                     )}
                 </div>
 
-                {/* Grid Inferior de Comparativa */}
                 <div className="grid grid-cols-2 gap-10 w-full px-4 mb-16">
                     <div className="bg-[#111] border border-white/10 rounded-[3rem] p-12 flex flex-col items-center justify-center relative overflow-hidden text-center shadow-2xl whitespace-nowrap">
                         <div className="w-24 h-24 rounded-full bg-gray-500/10 flex items-center justify-center mb-8 border border-gray-500/20 shrink-0">
                             <FaDumbbell size={45} className="text-gray-400" />
                         </div>
-                        <div className="flex items-baseline justify-center w-full mb-4 gap-4">
-                            <span 
-                                className="text-7xl font-black text-white m-0 p-0 leading-none mr-4"
-                                style={{ paddingRight: '10px' }}
-                            >
+                        <div className="flex items-baseline justify-center w-full mb-4 gap-2">
+                            <span className="text-7xl font-black text-white m-0 p-0 leading-none pr-2">
                                 {displayOldWeight}
                             </span>
-                            <span className="text-3xl text-gray-500 font-bold m-0 p-0 leading-none ml-2">kg</span>
+                            <span className="text-3xl text-gray-500 font-bold m-0 p-0 leading-none">kg</span>
                         </div>
                         <span className="text-2xl text-gray-400 uppercase font-bold tracking-widest m-0 p-0 block">{t('Anterior')}</span>
                     </div>
@@ -160,25 +149,21 @@ const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
                         <div className="w-24 h-24 rounded-full bg-yellow-500/20 flex items-center justify-center mb-8 border border-yellow-500/40 shrink-0">
                             <Crown size={45} className="text-yellow-400" />
                         </div>
-                        <div className="flex items-baseline justify-center w-full mb-4 gap-4">
-                            <span 
-                                className="text-7xl font-black text-white drop-shadow-[0_10px_10px_rgba(250,204,21,0.3)] m-0 p-0 leading-none mr-4"
-                                style={{ paddingRight: '10px' }}
-                            >
+                        <div className="flex items-baseline justify-center w-full mb-4 gap-2">
+                            <span className="text-7xl font-black text-white drop-shadow-[0_10px_10px_rgba(250,204,21,0.3)] m-0 p-0 leading-none pr-2">
                                 {displayNewWeight}
                             </span>
-                            <span className="text-3xl text-yellow-200/50 font-bold m-0 p-0 leading-none ml-2">kg</span>
+                            <span className="text-3xl text-yellow-200/50 font-bold m-0 p-0 leading-none">kg</span>
                         </div>
                         <span className="text-2xl text-yellow-400 uppercase font-bold tracking-widest m-0 p-0 block">{t('Nuevo PR')}</span>
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="w-full flex justify-between items-center border-t border-white/10 pt-10 pb-4 px-4 opacity-90 whitespace-nowrap">
                     <div className="flex flex-col">
                         <span className="text-sm text-gray-500 font-bold uppercase tracking-[0.4em] mb-2 block">Generado por</span>
                         <div className="flex items-center">
-                            <img src="/logo.webp" alt="Pro Fitness Glass" className="w-14 h-14 object-contain drop-shadow-2xl mr-4 shrink-0" crossOrigin="anonymous" />
+                            <img src={logoUrl} alt="Pro Fitness Glass" className="w-14 h-14 object-contain drop-shadow-2xl mr-4 shrink-0" crossOrigin="anonymous" />
                             <span className="text-3xl font-black text-white tracking-wide m-0 p-0 pr-2">Pro Fitness Glass</span>
                         </div>
                     </div>
