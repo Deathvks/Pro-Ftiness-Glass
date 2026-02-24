@@ -208,9 +208,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         const isMe = relationshipStatus === 'me';
         
         return profile.routines.filter(routine => {
-            if (isMe) return true; // Si soy yo, veo todas mis rutinas siempre
             if (routine.visibility === 'public') return true;
-            if (isFriend && routine.visibility === 'friends') return true;
+            if ((isFriend || isMe) && routine.visibility === 'friends') return true;
             return false;
         });
     }, [profile, relationshipStatus]);
