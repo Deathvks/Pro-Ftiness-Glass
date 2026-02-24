@@ -287,7 +287,10 @@ export default function MainAppLayout({
       </main>
 
       {/* Navbar (Móvil) - ABSOLUTE hace que respete los bordes de la app (padding del body) en lugar del fixed que ignora la pantalla */}
-      <nav className="md:hidden absolute bottom-0 left-0 right-0 flex justify-evenly h-[4.5rem] bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10">
+      <nav 
+        className="md:hidden absolute bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10"
+        style={{ height: 'calc(4.5rem + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         {navItems.map((item, index) => {
           const isActive = view === item.id;
           const isSocial = item.id === 'social';
