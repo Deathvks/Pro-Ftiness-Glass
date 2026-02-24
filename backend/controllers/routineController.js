@@ -8,7 +8,8 @@ import { deleteFile } from '../services/imageService.js';
 const {
   sequelize,
   ExerciseList,
-  User
+  User,
+  Friendship
 } = models;
 
 // OBTENER TODAS LAS RUTINAS (Personales del usuario)
@@ -24,7 +25,7 @@ export const getAllRoutines = async (req, res, next) => {
         },
       ],
       order: [
-        ['folder', 'ASC'], // Ordenar también por carpeta si quieres que salgan agrupadas
+        ['folder', 'ASC'],
         ['id', 'ASC'],
         ['RoutineExercises', 'exercise_order', 'ASC'],
         ['RoutineExercises', 'id', 'ASC'],
@@ -45,7 +46,6 @@ export const getRoutineById = async (req, res, next) => {
         [Op.or]: [
           { user_id: req.user.userId },
           { is_public: true },
-          // Si implementamos lógica de amigos en el futuro, aquí iría
           { visibility: 'public' } 
         ]
       },
@@ -56,7 +56,7 @@ export const getRoutineById = async (req, res, next) => {
         },
         {
           model: User,
-          attributes: ['id', 'username']
+          attributes: ['id', 'username', 'profile_image_url']
         }
       ],
       order: [
@@ -100,15 +100,33 @@ const processAndSaveExercises = async (
         if (!muscleGroup) muscleGroup = "Varios";
       } else if (exerciseListId && !isNaN(parseInt(exerciseListId))) {
         try {
-          const exerciseFromList = await ExerciseList.findByPk(parseInt(exerciseListId), { transaction });
+          let exerciseFromList = await ExerciseList.findByPk(parseInt(exerciseListId), { transaction });
+          
+          if (!exerciseFromList) {
+            exerciseFromList = await ExerciseList.findOne({
+              where: { wger_id: parseInt(exerciseListId) },
+              transaction
+            });
+          }
+
+          if (!exerciseFromList && exerciseName) {
+            exerciseFromList = await ExerciseList.findOne({
+              where: { name: exerciseName },
+              transaction
+            });
+          }
+
           if (exerciseFromList) {
+            exerciseListId = exerciseFromList.id; 
             exerciseName = exerciseFromList.name;
             muscleGroup = exerciseFromList.muscle_group;
           } else {
-            console.warn(`Ejercicio con ID ${exerciseListId} no encontrado en ExerciseList.`);
+            console.warn(`Ejercicio '${exerciseName}' no encontrado en la biblioteca bajo el ID ${exerciseListId}.`);
+            exerciseListId = null; 
           }
         } catch (findError) {
-          console.error(`Error buscando ExerciseList ID ${exerciseListId}:`, findError);
+          console.error(`Error buscando ExerciseList:`, findError);
+          exerciseListId = null;
         }
       } else {
         exerciseListId = null;
@@ -146,7 +164,6 @@ export const createRoutine = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  // --- MODIFICADO: Extraemos visibility ---
   const { name, description, is_public = false, exercises = [], image_url, folder, visibility } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
@@ -167,8 +184,8 @@ export const createRoutine = async (req, res, next) => {
         name,
         description,
         user_id: userId,
-        is_public, // Mantenemos compatibilidad hacia atrás
-        visibility: visibility || 'private', // Guardamos el nuevo campo (default private)
+        is_public, 
+        visibility: visibility || 'private', 
         folder: folder || null,
         downloads_count: 0,
         image_url: image_url || null
@@ -211,7 +228,6 @@ export const updateRoutine = async (req, res, next) => {
   }
 
   const { id } = req.params;
-  // --- MODIFICADO: Extraemos visibility ---
   const { name, description, is_public, exercises = [], image_url, folder, visibility } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
@@ -242,28 +258,22 @@ export const updateRoutine = async (req, res, next) => {
       return res.status(404).json({ error: 'Rutina no encontrada' });
     }
 
-    // Manejo de eliminación de imagen antigua si cambia
     const oldImageUrl = routine.image_url;
 
-    // Actualizamos campos
     const updateData = { name, description };
     if (typeof is_public !== 'undefined') updateData.is_public = is_public;
-    // --- MODIFICADO: Actualizamos visibility ---
     if (typeof visibility !== 'undefined') updateData.visibility = visibility;
-    
     if (typeof image_url !== 'undefined') updateData.image_url = image_url;
     if (typeof folder !== 'undefined') updateData.folder = folder;
 
     await routine.update(updateData, { transaction: t });
 
-    // Si la imagen ha cambiado y la antigua era una subida (no predefinida), borrarla
     if (image_url !== undefined && oldImageUrl && oldImageUrl !== image_url) {
       if (oldImageUrl.includes('/uploads/')) {
         deleteFile(oldImageUrl);
       }
     }
 
-    // Actualización de ejercicios
     const oldExercises = routine.RoutineExercises;
     const renamedExercises = [];
     exercises.forEach((newEx) => {
@@ -278,7 +288,6 @@ export const updateRoutine = async (req, res, next) => {
     await sequelize.models.RoutineExercise.destroy({ where: { routine_id: id }, transaction: t });
     await processAndSaveExercises(exercises, id, userId, t);
 
-    // Actualizar nombres en Logs y PRs
     if (renamedExercises.length > 0) {
       for (const rename of renamedExercises) {
         const workoutLogsForRoutine = await sequelize.models.WorkoutLog.findAll({
@@ -358,12 +367,10 @@ export const deleteRoutine = async (req, res, next) => {
 
     await routine.destroy({ transaction: t });
 
-    // Eliminar imagen si era una subida
     if (imageUrl && imageUrl.includes('/uploads/')) {
       deleteFile(imageUrl);
     }
 
-    // Recálculo de PRs
     for (const exerciseName of affectedExercises) {
       const currentPR = await sequelize.models.PersonalRecord.findOne({
         where: { user_id: userId, exercise_name: exerciseName },
@@ -424,7 +431,6 @@ export const togglePublicStatus = async (req, res, next) => {
     if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' });
 
     routine.is_public = !routine.is_public;
-    // Sincronizar también visibility si se usa este toggle antiguo
     if (routine.is_public) {
        routine.visibility = 'public';
     } else {
@@ -442,9 +448,8 @@ export const togglePublicStatus = async (req, res, next) => {
 // OBTENER RUTINAS PÚBLICAS (COMUNIDAD)
 export const getPublicRoutines = async (req, res, next) => {
   try {
-    const { sort = 'popular', query } = req.query; // sort: popular | recent
+    const { sort = 'popular', query } = req.query;
 
-    // --- MODIFICADO: Soporte para visibility 'public' ---
     const whereClause = { 
        [Op.or]: [
           { is_public: true },
@@ -482,9 +487,86 @@ export const getPublicRoutines = async (req, res, next) => {
   }
 };
 
+// OBTENER RUTINA PÚBLICA POR ID (Para vista previa)
+export const getPublicRoutineById = async (req, res, next) => {
+  try {
+    const routine = await sequelize.models.Routine.findByPk(req.params.id, {
+      include: [
+        {
+          model: sequelize.models.RoutineExercise,
+          as: 'RoutineExercises',
+          include: [
+            {
+              model: sequelize.models.ExerciseList,
+              attributes: ['image_url_start', 'video_url']
+            }
+          ]
+        },
+        {
+          model: User,
+          attributes: ['id', 'username', 'profile_image_url']
+        }
+      ],
+      order: [
+        ['RoutineExercises', 'exercise_order', 'ASC'],
+        ['RoutineExercises', 'id', 'ASC']
+      ],
+    });
+
+    if (!routine) {
+      return res.status(404).json({ error: 'Rutina no encontrada.' });
+    }
+
+    const isPublic = routine.is_public || routine.visibility === 'public';
+    const isOwner = req.user && routine.user_id === req.user.userId;
+    const isFriendsOnly = routine.visibility === 'friends';
+
+    let hasAccess = isPublic || isOwner;
+
+    // Lógica para rutinas de "Solo amigos"
+    if (!hasAccess && isFriendsOnly && req.user) {
+      const friendship = await sequelize.models.Friendship.findOne({
+        where: {
+          status: 'accepted',
+          [Op.or]: [
+            { user_id: req.user.userId, friend_id: routine.user_id },
+            { user_id: routine.user_id, friend_id: req.user.userId }
+          ]
+        }
+      });
+      if (friendship) {
+        hasAccess = true;
+      }
+    }
+
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'No tienes permiso para ver esta rutina. Es privada o solo para amigos.' });
+    }
+
+    // Transformar los datos
+    const routineData = routine.toJSON();
+    routineData.creatorName = routineData.User ? routineData.User.username : 'Usuario Desconocido';
+    routineData.creatorProfileImage = routineData.User ? routineData.User.profile_image_url : null;
+    
+    // Si el ejercicio no tiene imagen propia, le asignamos la del ExerciseList global
+    routineData.exercises = routineData.RoutineExercises.map(ex => {
+        if (!ex.image_url_start && ex.ExerciseList) {
+            ex.image_url_start = ex.ExerciseList.image_url_start;
+            ex.video_url = ex.ExerciseList.video_url;
+        }
+        return ex;
+    });
+
+    res.json(routineData);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // DESCARGAR (COPIAR) RUTINA DE OTRO USUARIO
 export const downloadRoutine = async (req, res, next) => {
   const { id } = req.params;
+  const { folder } = req.body; 
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -506,16 +588,28 @@ export const downloadRoutine = async (req, res, next) => {
       return res.status(403).json({ error: 'Esta rutina es privada' });
     }
 
-    // Crear la copia (Nota: No copiamos la imagen por defecto para evitar enlaces rotos si el dueño la borra)
+    const newRoutineName = `${sourceRoutine.name} (Copia)`;
+
+    // Comprobar si ya existe una rutina con este nombre para evitar duplicados
+    const existingRoutine = await sequelize.models.Routine.findOne({
+      where: { name: newRoutineName, user_id: userId },
+      transaction: t
+    });
+
+    if (existingRoutine) {
+      await t.rollback();
+      return res.status(409).json({ error: 'Ya tienes esta rutina importada. Elimínala si deseas volver a descargarla.' });
+    }
+
     const newRoutine = await sequelize.models.Routine.create({
-      name: `${sourceRoutine.name} (Copia)`,
+      name: newRoutineName,
       description: sourceRoutine.description,
       user_id: userId,
       is_public: false,
       visibility: 'private',
-      folder: null, // Las descargas van a la raíz por defecto
+      folder: folder || null, 
       downloads_count: 0,
-      image_url: null // Iniciamos sin imagen
+      image_url: sourceRoutine.image_url 
     }, { transaction: t });
 
     const exercisesToCopy = sourceRoutine.RoutineExercises.map(ex => ({
@@ -558,6 +652,7 @@ const routineController = {
   deleteRoutine,
   togglePublicStatus,
   getPublicRoutines,
+  getPublicRoutineById,
   downloadRoutine
 };
 

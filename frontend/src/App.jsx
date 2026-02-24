@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { NavigationBar } from '@capgo/capacitor-navigation-bar';
+import { App as CapApp } from '@capacitor/app';
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'; 
 import useAppStore from './store/useAppStore';
 
@@ -50,6 +51,7 @@ const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const QuickCardio = lazy(() => import('./pages/QuickCardio'));
 const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
 const ResetPasswordScreen = lazy(() => import('./pages/ResetPasswordScreen'));
+const SharedRoutinePreview = lazy(() => import('./pages/SharedRoutinePreview'));
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
@@ -116,6 +118,25 @@ export default function App() {
     myStories: state.myStories,
   }));
 
+  // Deep Linking (Abrir app desde enlaces)
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      const listener = CapApp.addListener('appUrlOpen', data => {
+        try {
+          const url = new URL(data.url);
+          if (url.pathname && url.pathname !== '/') {
+            navigate(url.pathname + url.search);
+          }
+        } catch (e) {
+          console.error('Error parseando deep link:', e);
+        }
+      });
+      return () => {
+        listener.then(l => l.remove());
+      };
+    }
+  }, [navigate]);
+
   // Sincronización de Tema
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -126,7 +147,6 @@ export default function App() {
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
           await NavigationBar.setColor({ color: themeColor });
           
-          // CAMBIO: Overlay en false para que el SO maneje las áreas seguras y no la web
           await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
@@ -449,6 +469,13 @@ export default function App() {
         <Route path="/reset-password" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>
                  <ResetPasswordScreen showLogin={() => navigate('/login')} />
+            </Suspense>
+        } />
+        
+        {/* AÑADIDO: Ruta pública para la previsualización de rutinas */}
+        <Route path="/share/routine/:id" element={
+            <Suspense fallback={<InitialLoadingSkeleton />}>
+                <SharedRoutinePreview />
             </Suspense>
         } />
 

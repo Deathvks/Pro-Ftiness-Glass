@@ -69,7 +69,7 @@ export default defineConfig({
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.webp'],
       manifest: {
         name: 'Pro Fitness Glass',
-        short_name: 'Pro Fitness',
+        short_name: 'Pro Fitness Glass',
         description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
         display: 'standalone',
         theme_color: '#000000',

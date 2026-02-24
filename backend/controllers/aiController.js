@@ -17,9 +17,20 @@ export const askAI = async (req, res) => {
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
-    const today = new Date().toISOString().split('T')[0];
+    // Extraer la fecha de hoy basándonos de forma estricta en la zona horaria del usuario
+    const tz = user.timezone || 'Europe/Madrid';
+    const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: tz }); // Formato YYYY-MM-DD
     
-    if (user.last_ai_request_date === today) {
+    // Manejar correctamente el formato de fecha que devuelve la base de datos
+    let lastReqDateStr = user.last_ai_request_date;
+    if (lastReqDateStr instanceof Date) {
+        lastReqDateStr = lastReqDateStr.toISOString().split('T')[0];
+    } else if (typeof lastReqDateStr === 'string') {
+        lastReqDateStr = lastReqDateStr.split('T')[0];
+    }
+
+    // Comprobar límite diario
+    if (lastReqDateStr === todayStr) {
       if (user.ai_requests_count >= DAILY_LIMIT) {
         return res.status(429).json({ 
           error: 'Has agotado tus consultas de IA hoy. Vuelve mañana.',
@@ -28,12 +39,14 @@ export const askAI = async (req, res) => {
         });
       }
     } else {
-      user.last_ai_request_date = today;
+      // Si la fecha no coincide (es un día nuevo), reseteamos la fecha y el contador
+      user.last_ai_request_date = todayStr;
       user.ai_requests_count = 0;
     }
 
     const advice = await getTrainerAdvice(prompt, context || '');
 
+    // Incrementamos el uso
     user.ai_requests_count += 1;
     await user.save();
 
@@ -45,6 +58,9 @@ export const askAI = async (req, res) => {
 
   } catch (error) {
     console.error('Error en askAI:', error);
+    if (error.message && error.message.includes('Límite de IA alcanzado')) {
+        return res.status(503).json({ error: 'El servidor de IA está saturado temporalmente.' });
+    }
     res.status(500).json({ error: 'Error al consultar la IA.' });
   }
 };

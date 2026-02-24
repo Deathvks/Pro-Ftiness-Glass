@@ -1,5 +1,5 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseDetailView.jsx */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Check, Repeat, Dumbbell, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { useAppTheme } from '../../../hooks/useAppTheme';
 // Importamos la función centralizada
@@ -23,7 +23,36 @@ const ExerciseDetailView = ({
   const [aiExplanation, setAiExplanation] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
-  const [remainingUses, setRemainingUses] = useState(null);
+  
+  // Guardamos y leemos de localStorage para que el límite se muestre al instante
+  const [remainingUses, setRemainingUses] = useState(() => {
+    const saved = localStorage.getItem('ai_remaining_uses');
+    return saved !== null ? parseInt(saved, 10) : null;
+  });
+
+  const [dailyLimit, setDailyLimit] = useState(() => {
+    const saved = localStorage.getItem('ai_daily_limit');
+    return saved !== null ? parseInt(saved, 10) : null;
+  });
+
+  // --- NUEVA LÓGICA: Comprobación de cambio de día ---
+  useEffect(() => {
+    const lastDate = localStorage.getItem('ai_last_date');
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }); // Formato YYYY-MM-DD
+
+    if (lastDate && lastDate !== today) {
+      // Ha cambiado de día, borramos los límites del frontend
+      localStorage.removeItem('ai_remaining_uses');
+      localStorage.removeItem('ai_daily_limit');
+      setRemainingUses(null);
+      setDailyLimit(null);
+      setAiError(null);
+    }
+    
+    // Actualizamos la fecha
+    localStorage.setItem('ai_last_date', today);
+  }, []);
+  // --- FIN DE NUEVA LÓGICA ---
 
   const handleAddClick = () => {
     if (isReplacing) {
@@ -82,7 +111,7 @@ const ExerciseDetailView = ({
   const hasImages = !!exercise.image_url_start;
   const mediaBgClass = (!hasVideo && !hasImages && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
 
-  const isLimitReached = remainingUses === 0;
+  const isLimitReached = remainingUses === 0 || (aiError && aiError.toLowerCase().includes('agotado'));
 
   const handleAskAI = async () => {
     if (isLimitReached) return;
@@ -96,12 +125,31 @@ const ExerciseDetailView = ({
       
       const res = await askTrainerAI(prompt);
       setAiExplanation(res.response);
-      setRemainingUses(res.remaining);
+      
+      if (res.remaining !== undefined) {
+        setRemainingUses(res.remaining);
+        localStorage.setItem('ai_remaining_uses', res.remaining);
+      }
+      if (res.limit !== undefined) {
+        setDailyLimit(res.limit);
+        localStorage.setItem('ai_daily_limit', res.limit);
+      }
+
+      // Guardamos la fecha de la última petición exitosa
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+      localStorage.setItem('ai_last_date', today);
+
     } catch (error) {
-      const errorMsg = error.response?.data?.error || error.message || "Error al conectar con la IA.";
+      const data = error.response?.data || {};
+      const errorMsg = data.error || error.message || "Error al conectar con la IA.";
       setAiError(errorMsg);
       if (errorMsg.includes('agotado') || errorMsg.includes('Límite')) {
         setRemainingUses(0);
+        localStorage.setItem('ai_remaining_uses', '0');
+        if (data.limit !== undefined) {
+          setDailyLimit(data.limit);
+          localStorage.setItem('ai_daily_limit', data.limit);
+        }
       }
     } finally {
       setIsAiLoading(false);
@@ -187,9 +235,12 @@ const ExerciseDetailView = ({
               Técnica y Consejos IA
             </h3>
             {remainingUses !== null && (
-              <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-text-secondary'}`}>
-                Usos hoy: {remainingUses}
-              </span>
+              <div className="text-right">
+                <span className={`text-xs font-medium block ${isLimitReached ? 'text-red-500' : 'text-text-secondary'}`}>
+                  Usos restantes: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
+                </span>
+                <span className="text-[10px] text-text-muted block">Se restablece a medianoche</span>
+              </div>
             )}
           </div>
 

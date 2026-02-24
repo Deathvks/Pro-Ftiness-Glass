@@ -1,5 +1,5 @@
 /* frontend/src/components/RoutineAIGeneratorModal.jsx */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Sparkles, AlertCircle, Loader2, Wand2 } from 'lucide-react';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { askTrainerAI } from '../services/aiService';
@@ -25,13 +25,43 @@ const RoutineAIGeneratorModal = ({ isOpen, onClose, onGenerate }) => {
     return saved !== null ? parseInt(saved, 10) : null;
   });
 
+  // --- NUEVA LÓGICA: Comprobación de cambio de día ---
+  useEffect(() => {
+    if (isOpen) {
+      const lastDate = localStorage.getItem('ai_last_date');
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }); // Formato YYYY-MM-DD
+
+      if (lastDate && lastDate !== today) {
+        // Ha cambiado de día, borramos los límites del frontend para dejarle probar
+        localStorage.removeItem('ai_remaining_uses');
+        localStorage.removeItem('ai_daily_limit');
+        setRemainingUses(null);
+        setDailyLimit(null);
+        setError(null); // Limpiamos cualquier error de "Agotado" anterior
+      }
+      
+      // Actualizamos la fecha de la "última apertura"
+      localStorage.setItem('ai_last_date', today);
+    }
+  }, [isOpen]);
+  // --- FIN DE NUEVA LÓGICA ---
+
   if (!isOpen) return null;
 
   const isOled = resolvedTheme === 'oled';
   const isDark = resolvedTheme === 'dark';
   
-  const containerClass = `w-full max-w-md rounded-3xl shadow-2xl flex flex-col transition-colors duration-300 border ${isOled ? 'border-white/20 bg-black' : isDark ? 'border-white/10 bg-bg-secondary' : 'border-border bg-bg-secondary'}`;
-  const inputClass = `w-full p-4 rounded-2xl border resize-none h-32 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all ${isOled ? 'border-white/10 bg-white/5 text-white placeholder-gray-500' : isDark ? 'border-white/5 bg-bg-tertiary text-text-primary placeholder-text-muted' : 'border-border bg-bg-tertiary text-text-primary placeholder-text-muted'}`;
+  const containerClass = `w-full max-w-md rounded-3xl shadow-2xl flex flex-col transition-colors duration-300 border ${
+    isOled ? 'border-white/20 bg-black' : isDark ? 'border-white/10 bg-bg-primary' : 'border-border bg-bg-secondary'
+  }`;
+  
+  const inputClass = `w-full p-4 rounded-2xl border resize-none h-32 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all ${
+    isOled 
+      ? 'border-white/10 bg-white/5 text-white placeholder-gray-500' 
+      : isDark 
+        ? 'border-white/10 bg-bg-secondary text-text-primary placeholder-text-muted' 
+        : 'border-border bg-bg-tertiary text-text-primary placeholder-text-muted'
+  }`;
 
   const isLimitReached = remainingUses === 0 || (error && error.toLowerCase().includes('agotado'));
 
@@ -72,6 +102,10 @@ Formato:
         setDailyLimit(res.limit);
         localStorage.setItem('ai_daily_limit', res.limit);
       }
+
+      // Guardamos la fecha de la última petición exitosa
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+      localStorage.setItem('ai_last_date', today);
 
       const responseText = typeof res === 'string' ? res : (res.response || JSON.stringify(res));
       const jsonString = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -120,7 +154,7 @@ Formato:
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className={containerClass}>
         <div className={`p-5 border-b flex justify-between items-center ${isOled ? 'border-white/10' : isDark ? 'border-white/5' : 'border-border'}`}>
           <div className="flex items-center gap-3">

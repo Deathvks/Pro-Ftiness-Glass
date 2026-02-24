@@ -51,7 +51,6 @@ const routineValidationRules = [
     body('description').optional().trim(),
     body('folder').optional().trim(), 
     body('image_url').optional(),
-    // --- NUEVO: Validación para visibility ---
     body('visibility').optional().isIn(['private', 'friends', 'public']).withMessage('Visibilidad no válida.'),
     
     body('exercises.*.name').trim().notEmpty().withMessage('El nombre del ejercicio es requerido.'),
@@ -80,8 +79,14 @@ router.post('/upload-image', upload.single('image'), (req, res) => {
 // Obtener todas las rutinas públicas (Buscador/Feed)
 router.get('/public', routineController.getPublicRoutines);
 
+// NUEVO: Obtener una rutina compartida para vista previa (Pública o Amigos)
+router.get('/public/:id', routineController.getPublicRoutineById);
+
 // Descargar (copiar) una rutina pública a tu colección
 router.post('/:id/download', routineController.downloadRoutine);
+
+// NUEVO: Alias para coincidir con la petición '/fork' del frontend
+router.post('/:id/fork', routineController.downloadRoutine);
 
 // Alternar estado público/privado de una rutina propia
 router.put('/:id/toggle-public', routineController.togglePublicStatus);

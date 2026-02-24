@@ -1,6 +1,6 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense, useEffect } from 'react';
-import { User, Zap, Bell, Settings } from 'lucide-react';
+import React, { Suspense, useEffect, useState } from 'react';
+import { User, Zap, Bell, Settings, Sparkles } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
@@ -17,6 +17,7 @@ import EmailVerification from './EmailVerification';
 import CookieConsentBanner from './CookieConsentBanner';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
+import AIInfoModal from './AIInfoModal';
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -97,6 +98,10 @@ export default function MainAppLayout({
     socialRequests: state.socialRequests,
   }));
 
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiRemaining, setAiRemaining] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');
+  const [aiLimit, setAiLimit] = useState(() => localStorage.getItem('ai_daily_limit') || '5');
+
   // Calculamos el contador de no leídas localmente para asegurar consistencia
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -124,7 +129,7 @@ export default function MainAppLayout({
   }, [gamificationEvents, clearGamificationEvents, addToast]);
 
 
-  // --- Sincronización de Cookies ---
+  // --- Sincronización de Cookies e IA Automática ---
   useEffect(() => {
     const handleStorageChange = () => {
       if (localStorage.getItem('cookie_consent') === 'accepted' && cookieConsent !== 'accepted') {
@@ -132,12 +137,41 @@ export default function MainAppLayout({
       }
     };
 
+    const updateAILimits = () => {
+      setAiRemaining(localStorage.getItem('ai_remaining_uses') || '5');
+      setAiLimit(localStorage.getItem('ai_daily_limit') || '5');
+    };
+
+    // VIGILANTE SILENCIOSO: Cada minuto revisa si ya es medianoche en España
+    // Si la fecha cambia, resetea todo a 5 usos automáticamente.
+    const midnightChecker = setInterval(() => {
+      const lastDate = localStorage.getItem('ai_last_date');
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+      
+      if (lastDate && lastDate !== today) {
+        localStorage.removeItem('ai_remaining_uses');
+        localStorage.removeItem('ai_daily_limit');
+        localStorage.setItem('ai_last_date', today);
+        updateAILimits(); // Actualiza el header y sidebar instantáneamente
+        window.dispatchEvent(new Event('ai_limit_updated')); // Avisa a los modales si están abiertos
+      }
+    }, 60000); // 60.000 ms = 1 minuto
+
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('storage', updateAILimits);
+    window.addEventListener('focus', updateAILimits);
+    window.addEventListener('ai_limit_updated', updateAILimits);
 
     return () => {
+      clearInterval(midnightChecker);
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storage', updateAILimits);
+      window.removeEventListener('focus', updateAILimits);
+      window.removeEventListener('ai_limit_updated', updateAILimits);
     };
   }, [cookieConsent, handleAcceptCookies]);
+
+  const isAILimitReached = parseInt(aiRemaining, 10) === 0;
 
   // Renderizado del layout principal
   return (
@@ -181,8 +215,23 @@ export default function MainAppLayout({
             )}
           </div>
 
-          {/* Botones de Header (Notif + Ajustes) */}
+          {/* Botones de Header (IA + Notif + Ajustes) */}
           <div className="flex items-center">
+
+            {/* Nuevo Botón de IA */}
+            <div className="flex items-center justify-center mr-1 sm:mr-2">
+              <button
+                onClick={() => setShowAIModal(true)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${
+                    isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-accent/20'
+                }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+                title="Créditos IA"
+              >
+                <Sparkles size={14} />
+                <span>{aiRemaining}/{aiLimit}</span>
+              </button>
+            </div>
 
             {/* Botón de Notificaciones */}
             <div
@@ -213,7 +262,7 @@ export default function MainAppLayout({
                     flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
                     ${view === 'settings'
                   ? 'w-0 opacity-0 ml-0 translate-x-4'
-                  : 'w-10 opacity-100 ml-2 translate-x-0'
+                  : 'w-10 opacity-100 ml-0 sm:ml-2 translate-x-0'
                 }
                 `}
             >
@@ -279,6 +328,10 @@ export default function MainAppLayout({
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
 
+      {showAIModal && (
+        <AIInfoModal onClose={() => setShowAIModal(false)} />
+      )}
+
       {cookieConsent === null && (
         <CookieConsentBanner
           onAccept={handleAcceptCookies}
@@ -308,7 +361,7 @@ export default function MainAppLayout({
       )}
 
       {/* Versión (Desktop) */}
-      <div className="hidden md:block absolute bottom-4 right-4 z-50 bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">
+      <div className="hidden md:block absolute bottom-4 right-4 z-[60] bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">
         v{APP_VERSION}
       </div>
 

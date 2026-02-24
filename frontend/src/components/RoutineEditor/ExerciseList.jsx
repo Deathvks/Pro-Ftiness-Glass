@@ -32,6 +32,8 @@ const ExerciseList = ({
             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6 mb-6">
             {/* --- FIN DE LA MODIFICACIÓN (Revertir a Lista) --- */}
               {groupedExercises.map((group, groupIndex) => {
+                if (!group || group.length === 0) return null;
+
                 const isSuperset = group.length > 1;
                 const firstExerciseIndex = exercises.findIndex(ex => ex.tempId === group[0].tempId);
                 const isLastGroup = groupIndex === groupedExercises.length - 1;
@@ -40,10 +42,15 @@ const ExerciseList = ({
                   return null; 
                 }
 
+                // FIX: @hello-pangea/dnd requiere ESTRICTAMENTE que draggableId y key sean un string.
+                const dragId = group[0].superset_group_id 
+                  ? `superset-${group[0].superset_group_id}` 
+                  : `exercise-${group[0].tempId || groupIndex}`;
+
                 return (
                   <Draggable
-                    key={group[0].superset_group_id || group[0].tempId}
-                    draggableId={group[0].superset_group_id || group[0].tempId}
+                    key={dragId}
+                    draggableId={dragId}
                     index={firstExerciseIndex} // Índice del primer elemento del grupo
                     isDragDisabled={isSuperset} // Deshabilitar drag para superseries
                   >

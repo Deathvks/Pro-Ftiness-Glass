@@ -1,5 +1,5 @@
 /* frontend/src/components/RoutineEditor/RoutineAnalysisModal.jsx */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { X, Activity, Layers, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { analyzeRoutine } from '../../utils/trainerLogic'; 
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -23,6 +23,27 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
     const saved = localStorage.getItem('ai_daily_limit');
     return saved !== null ? parseInt(saved, 10) : null;
   });
+
+  // --- NUEVA LÓGICA: Comprobación de cambio de día ---
+  useEffect(() => {
+    if (isOpen) {
+      const lastDate = localStorage.getItem('ai_last_date');
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }); // Formato YYYY-MM-DD
+
+      if (lastDate && lastDate !== today) {
+        // Ha cambiado de día, borramos los límites del frontend
+        localStorage.removeItem('ai_remaining_uses');
+        localStorage.removeItem('ai_daily_limit');
+        setRemainingUses(null);
+        setDailyLimit(null);
+        setAiError(null);
+      }
+      
+      // Actualizamos la fecha
+      localStorage.setItem('ai_last_date', today);
+    }
+  }, [isOpen]);
+  // --- FIN DE NUEVA LÓGICA ---
 
   if (!isOpen) return null;
 
@@ -61,6 +82,11 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
         setDailyLimit(res.limit);
         localStorage.setItem('ai_daily_limit', res.limit);
       }
+
+      // Guardamos la fecha de la última petición exitosa
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+      localStorage.setItem('ai_last_date', today);
+
     } catch (error) {
       const data = error.response?.data || {};
       const errorMsg = data.error || error.message || "Error al conectar con el Entrenador IA.";
@@ -84,12 +110,15 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
     setAiError(null);
   };
 
+  const isLimitReached = remainingUses === 0 || (aiError && aiError.toLowerCase().includes('agotado'));
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className={`w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl flex flex-col transition-colors duration-300 border ${containerBorderClass} ${isOled ? 'bg-black' : 'bg-bg-secondary'}`}>
+    // Añadido pb-20 para asegurar que no se solape con navbars inferiores en móviles
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className={`w-full max-w-md max-h-[85vh] flex flex-col rounded-3xl shadow-2xl transition-colors duration-300 border overflow-hidden ${containerBorderClass} ${isOled ? 'bg-black' : 'bg-bg-secondary'}`}>
         
-        {/* Header */}
-        <div className={`p-5 border-b flex justify-between items-center sticky top-0 z-10 backdrop-blur-md ${isOled ? 'bg-black/80 border-white/10' : `bg-bg-secondary/95 ${isDark ? 'border-white/5' : 'border-border'}`}`}>
+        {/* Header - Fijo */}
+        <div className={`p-5 border-b flex justify-between items-center shrink-0 backdrop-blur-md ${isOled ? 'bg-black/80 border-white/10' : `bg-bg-secondary/95 ${isDark ? 'border-white/5' : 'border-border'}`}`}>
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-accent text-white shadow-lg shadow-accent/20">
               <Activity className="w-5 h-5" />
@@ -104,8 +133,8 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-5 space-y-6">
+        {/* Content - Scrolleable */}
+        <div className="p-5 space-y-6 overflow-y-auto flex-1 scrollbar-hide">
           {!analysis || exercises.length === 0 ? (
              <div className={`text-center py-8 ${isOled || isDark ? 'text-gray-500' : 'text-text-tertiary'}`}>
                <Layers className="w-12 h-12 mx-auto mb-3 opacity-20" />
@@ -156,7 +185,7 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
                   </h3>
                   {remainingUses !== null && (
                     <div className="text-right">
-                      <span className="text-xs font-medium text-text-secondary block">
+                      <span className={`text-xs font-bold block ${remainingUses === 0 ? 'text-red-500' : 'text-text-secondary'}`}>
                         Usos restantes: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
                       </span>
                       <span className="text-[10px] text-text-muted block">Se restablece a medianoche</span>
@@ -167,10 +196,18 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
                 {!aiResponse && !isLoadingAi && (
                   <button 
                     onClick={handleAskAI}
-                    className={`w-full p-4 rounded-2xl border border-accent/30 bg-accent/10 text-accent font-bold flex items-center justify-center gap-2 transition-transform active:scale-95`}
+                    disabled={isLimitReached}
+                    className={`w-full p-4 rounded-2xl border font-bold flex items-center justify-center gap-2 transition-transform ${
+                      isLimitReached
+                        ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed border-transparent'
+                        : 'border-accent/30 bg-accent/10 text-accent active:scale-95'
+                    }`}
                   >
-                    <Sparkles className="w-5 h-5" />
-                    Analizar con IA
+                    {isLimitReached ? (
+                      <><AlertCircle className="w-5 h-5" /> Límite Alcanzado</>
+                    ) : (
+                      <><Sparkles className="w-5 h-5" /> Analizar con IA</>
+                    )}
                   </button>
                 )}
 

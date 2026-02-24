@@ -33,9 +33,8 @@ import useAppStore from '../store/useAppStore';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
-import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal'; // Importamos el generador IA
+import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
 
-// --- COMPONENTE MODAL DE COMPARTIR ---
 const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   const { addToast } = useToast();
   const [visibility, setVisibility] = useState(routine.visibility || 'private');
@@ -55,7 +54,14 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
     setVisibility(newVisibility); 
     setIsUpdating(true);
     try {
-      await onUpdate(routine.id, { ...routine, visibility: newVisibility });
+      const currentExercises = routine.exercises || routine.RoutineExercises || [];
+      const payload = {
+        ...routine,
+        visibility: newVisibility,
+        exercises: currentExercises.map(ex => ({ ...ex }))
+      };
+
+      await onUpdate(routine.id, payload);
       addToast('Visibilidad actualizada correctamente', 'success');
     } catch (error) {
       console.error(error);
@@ -95,12 +101,15 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+    // Se ha subido el z-index a z-[100] (por si el navbar es muy alto) y se ha añadido pb-20 para asegurar que haya margen inferior en móviles
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-fade-in">
       <GlassCard 
-        className="w-full max-w-md p-0 relative flex flex-col overflow-hidden animate-scale-in border border-glass-border shadow-2xl" 
+        // Calculamos el alto máximo restando espacio para no chocar con bordes y navbars
+        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl" 
         style={{ backgroundColor: 'var(--bg-primary)' }}
       >
-        <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent">
+        {/* Cabecera fija (shrink-0) */}
+        <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent shrink-0">
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-full hover:bg-glass-base text-text-secondary transition-colors z-10"
@@ -121,7 +130,8 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
           </div>
         </div>
 
-        <div className="p-6 pt-2 space-y-6">
+        {/* Cuerpo scrolleable */}
+        <div className="p-6 pt-2 space-y-6 flex-1 overflow-y-auto scrollbar-hide">
           <div className="grid grid-cols-1 gap-3">
             <button onClick={() => handleVisibilityChange('private')} className={getOptionClasses('private')}>
               <div className={getIconContainerClasses('private')}><Lock size={26} strokeWidth={1.5} /></div>
@@ -172,7 +182,8 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
           </div>
         </div>
         
-        <div className="p-6 pt-0">
+        {/* Footer fijo (shrink-0) */}
+        <div className="p-6 pt-0 shrink-0">
              <button 
                 onClick={onClose}
                 className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
@@ -184,7 +195,6 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
     </div>
   );
 };
-
 
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
@@ -232,7 +242,7 @@ const Routines = ({ setView }) => {
   });
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showAIGenerator, setShowAIGenerator] = useState(false); // Estado para el modal de IA
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -242,7 +252,6 @@ const Routines = ({ setView }) => {
      if (!sharingRoutineId) return null;
      return routines.find(r => r.id === sharingRoutineId);
   }, [routines, sharingRoutineId]);
-
 
   const [selectedFolder, setSelectedFolder] = useState(() => {
     return localStorage.getItem('routinesSelectedFolder') || 'all';
@@ -549,7 +558,6 @@ const Routines = ({ setView }) => {
   const activeModeClasses = 'bg-accent text-bg-secondary';
   const inactiveModeClasses = 'bg-bg-secondary hover:bg-white/10 text-text-secondary';
 
-  // --- BOTONES DE CREACIÓN ACTUALIZADOS (IA + Manual) ---
   const RoutineActionButtons = ({ className = '' }) => (
     <div className={`flex gap-2 ${className}`}>
       <button
@@ -731,7 +739,6 @@ const Routines = ({ setView }) => {
                           </span>
                         )}
                         <div className="flex items-center gap-2 flex-wrap">
-                          {/* AÑADIDO: break-words max-w-full para evitar que se desborde si es muy largo */}
                           <h2 className="text-lg md:text-xl font-bold text-text-primary leading-tight break-words max-w-full">
                             {routine.name}
                           </h2>
@@ -752,7 +759,6 @@ const Routines = ({ setView }) => {
                         </p>
                       )}
 
-                      {/* STATS SIN BACKGROUND */}
                       <div className="flex flex-wrap items-center gap-3 mb-4 text-xs font-medium text-text-secondary">
                         {isCompleted && (
                           <span className="inline-flex items-center gap-1 text-accent font-semibold">
@@ -826,7 +832,6 @@ const Routines = ({ setView }) => {
                                       <span className="truncate font-medium text-text-primary pr-2">
                                         {t(ex.name)}
                                       </span>
-                                      {/* SERIES SIN BACKGROUND */}
                                       <span className="text-text-muted text-xs whitespace-nowrap">
                                         {ex.sets}×{ex.reps}
                                       </span>
@@ -925,7 +930,6 @@ const Routines = ({ setView }) => {
         />
       )}
 
-      {/* --- MODAL DEL GENERADOR IA --- */}
       <RoutineAIGeneratorModal 
         isOpen={showAIGenerator}
         onClose={() => setShowAIGenerator(false)}

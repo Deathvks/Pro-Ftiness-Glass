@@ -9,7 +9,7 @@ import i18n from '../i18n';
  * @param {Object} params
  * @param {Array} params.exercises - La lista actual de ejercicios.
  * @param {function} params.setExercises - Setter para la lista de ejercicios.
- * @param {string} params.replacingExerciseTempId - ID temporal del ejercicio a reemplazar.
+ * @param {string|number} params.replacingExerciseTempId - ID temporal o real del ejercicio a reemplazar.
  * @param {function} params.addToast - Función para mostrar notificaciones.
  * @param {function} params.handleSearchModalClose - Función para cerrar el modal de búsqueda.
  * @param {function} params.setActiveDropdownTempId - Setter para el dropdown activo.
@@ -46,33 +46,33 @@ export const useRoutineExerciseActions = ({
   };
 
   /**
-   * Elimina un ejercicio de la lista por su tempId.
+   * Elimina un ejercicio de la lista por su tempId o id.
    */
-  const removeExercise = (tempIdToRemove) => {
-    setExercises(prev => prev.filter(ex => ex.tempId !== tempIdToRemove));
+  const removeExercise = (identifier) => {
+    setExercises(prev => prev.filter(ex => (ex.tempId || ex.id) !== identifier));
   };
 
   /**
    * Actualiza un campo específico de un ejercicio.
-   * @param {string} tempId - ID temporal del ejercicio.
+   * @param {string|number} identifier - ID temporal o real del ejercicio.
    * @param {string} field - Nombre del campo a actualizar.
    * @param {*} value - Nuevo valor.
    */
-  const updateExerciseField = (tempId, field, value) => {
+  const updateExerciseField = (identifier, field, value) => {
     setExercises(prev =>
-      prev.map(ex => (ex.tempId === tempId ? { ...ex, [field]: value } : ex))
+      prev.map(ex => ((ex.tempId || ex.id) === identifier ? { ...ex, [field]: value } : ex))
     );
   };
 
   /**
    * Enlaza un ejercicio de la lista (dropdown) a un ejercicio existente.
-   * @param {string} tempId - ID temporal del ejercicio a actualizar.
+   * @param {string|number} identifier - ID temporal o real del ejercicio a actualizar.
    * @param {Object} selectedExercise - El ejercicio de la BD seleccionado.
    */
-  const linkExerciseFromList = (tempId, selectedExercise) => {
+  const linkExerciseFromList = (identifier, selectedExercise) => {
     setExercises(prev => {
       const newExercises = prev.map(ex =>
-        ex.tempId === tempId
+        (ex.tempId || ex.id) === identifier
           ? {
             ...ex, // Mantiene sets, reps, rest_seconds
             id: selectedExercise.id,
@@ -98,10 +98,10 @@ export const useRoutineExerciseActions = ({
   };
 
   /**
-   * Crea una superserie entre un ejercicio (por tempId) y el siguiente.
+   * Crea una superserie entre un ejercicio (por tempId o id) y el siguiente.
    */
-  const createSuperset = (tempId) => {
-    const index = exercises.findIndex(ex => ex.tempId === tempId);
+  const createSuperset = (identifier) => {
+    const index = exercises.findIndex(ex => (ex.tempId || ex.id) === identifier);
     // No se puede crear superserie si es el último ejercicio
     if (index === -1 || index >= exercises.length - 1) return;
 

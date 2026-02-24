@@ -33,6 +33,25 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     return saved !== null ? parseInt(saved, 10) : null;
   });
 
+  // --- NUEVA LÓGICA: Comprobación de cambio de día ---
+  useEffect(() => {
+    const lastDate = localStorage.getItem('ai_last_date');
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }); // Formato YYYY-MM-DD
+
+    if (lastDate && lastDate !== today) {
+      // Ha cambiado de día, borramos los límites del frontend
+      localStorage.removeItem('ai_remaining_uses');
+      localStorage.removeItem('ai_daily_limit');
+      setRemainingUses(null);
+      setDailyLimit(null);
+      setAiError(null);
+    }
+    
+    // Actualizamos la fecha
+    localStorage.setItem('ai_last_date', today);
+  }, []);
+  // --- FIN DE NUEVA LÓGICA ---
+
   const nameKey = exercise.name;
   const isDataMissing = (details) => {
     const missingDescription = !details.description && !details.description_es;
@@ -104,7 +123,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     .join(', ');
 
   // --- LÓGICA DE LA IA ---
-  const isLimitReached = remainingUses === 0;
+  const isLimitReached = remainingUses === 0 || (aiError && aiError.toLowerCase().includes('agotado'));
 
   const handleAskAI = async () => {
     if (isLimitReached) return;
@@ -127,6 +146,11 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         setDailyLimit(res.limit);
         localStorage.setItem('ai_daily_limit', res.limit);
       }
+
+      // Guardamos la fecha de la última petición exitosa
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+      localStorage.setItem('ai_last_date', today);
+
     } catch (error) {
       const data = error.response?.data || {};
       const errorMsg = data.error || error.message || "Error al conectar con la IA.";

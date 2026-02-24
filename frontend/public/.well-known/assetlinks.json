@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.profitnessglass.app",
+    "sha256_cert_fingerprints": [
+      "ED:BE:5A:E7:4D:88:B6:B6:1C:0E:4F:AC:F5:D0:A3:B0:71:DB:E4:EF:1C:A0:0D:8F:15:90:A1:44:10:BA:C7:A3"
+    ]
+  }
+}]

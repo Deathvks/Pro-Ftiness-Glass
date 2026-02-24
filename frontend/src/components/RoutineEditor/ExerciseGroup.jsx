@@ -46,11 +46,11 @@ const ExerciseGroup = ({
           </div>
         )}
 
-        {group.map(ex => {
+        {group.map((ex, index) => {
           const exIndex = editedExercises.findIndex(e => e.tempId === ex.tempId);
           return (
             <ExerciseCard
-              key={ex.tempId}
+              key={ex.tempId || ex.id || `fallback-key-${index}`}
               exercise={ex}
               exIndex={exIndex}
               // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---

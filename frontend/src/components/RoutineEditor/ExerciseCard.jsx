@@ -33,6 +33,9 @@ const ExerciseCard = ({
   const { t: tCommon } = useTranslation('translation');
   const { theme } = useAppTheme();
 
+  // --- SOLUCIÓN DEL BUG: Identificador universal para el ejercicio ---
+  const identifier = exercise.tempId || exercise.id;
+
   const translatedName = tName(exercise.name, { defaultValue: exercise.name });
 
   // --- INICIO DE LA MODIFICACIÓN (Traducción de Músculos Múltiples) ---
@@ -54,7 +57,7 @@ const ExerciseCard = ({
   // --- FIN DE LA MODIFICACIÓN ---
 
   const handleExerciseSelected = (selectedExercise) => {
-    onExerciseSelect(exercise.tempId, selectedExercise);
+    onExerciseSelect(identifier, selectedExercise);
   };
 
   const videoUrl = exercise.video_url || (exercise.exercise && exercise.exercise.video_url);
@@ -127,7 +130,7 @@ const ExerciseCard = ({
               // --- INICIO MODIFICACIÓN: Pasamos el string ya traducido ---
               initialValue={displayMuscleGroup || ''}
               // --- FIN MODIFICACIÓN ---
-              onSave={(newValue) => onFieldChange(exercise.tempId, 'muscle_group', newValue)}
+              onSave={(newValue) => onFieldChange(identifier, 'muscle_group', newValue)}
               isManual={exercise.is_manual}
             />
           </div>
@@ -145,7 +148,7 @@ const ExerciseCard = ({
                 min="1"
                 placeholder="3"
                 value={exercise.sets || ''}
-                onChange={(e) => onFieldChange(exercise.tempId, 'sets', e.target.value)}
+                onChange={(e) => onFieldChange(identifier, 'sets', e.target.value)}
                 className={baseInputClasses}
               />
               {errors?.sets && <p className="text-red text-xs mt-1">{errors.sets}</p>}
@@ -160,7 +163,7 @@ const ExerciseCard = ({
                 type="text"
                 placeholder="8-12"
                 value={exercise.reps || ''}
-                onChange={(e) => onFieldChange(exercise.tempId, 'reps', e.target.value)}
+                onChange={(e) => onFieldChange(identifier, 'reps', e.target.value)}
                 className={baseInputClasses}
               />
               {errors?.reps && <p className="text-red text-xs mt-1">{errors.reps}</p>}
@@ -176,7 +179,7 @@ const ExerciseCard = ({
                 min="0"
                 placeholder="60"
                 value={exercise.rest_seconds || ''}
-                onChange={(e) => onFieldChange(exercise.tempId, 'rest_seconds', e.target.value)}
+                onChange={(e) => onFieldChange(identifier, 'rest_seconds', e.target.value)}
                 className={baseInputClasses}
               />
             </div>
@@ -196,14 +199,14 @@ const ExerciseCard = ({
         {/* Columna de Acciones (Reemplazar, Eliminar) */}
         <div className="absolute top-3 right-3 sm:static flex sm:flex-col justify-end sm:justify-center gap-1 sm:gap-2">
           <button
-            onClick={() => onReplaceClick(exercise.tempId)}
+            onClick={() => onReplaceClick(identifier)}
             className="p-1 sm:p-2 rounded-md text-text-muted hover:bg-accent/20 hover:text-accent transition"
             title="Reemplazar ejercicio"
           >
             <Repeat size={18} />
           </button>
           <button
-            onClick={() => removeExercise(exercise.tempId)}
+            onClick={() => removeExercise(identifier)}
             className="p-1 sm:p-2 rounded-md text-text-muted hover:bg-red/20 hover:text-red transition"
             title="Eliminar ejercicio"
           >

@@ -4,18 +4,16 @@ import { ShieldCheck } from 'lucide-react';
 
 const CookieConsentBanner = ({ onAccept, onDecline, onShowPolicy }) => {
   return (
-    <div className="fixed bottom-0 inset-x-0 z-[100] p-4 animate-[fade-in-up_0.5s_ease-out]">
+    <div className="fixed bottom-0 inset-x-0 z-[100] p-4 pb-24 md:pb-6 animate-[fade-in-up_0.5s_ease-out]">
       <div className="max-w-4xl mx-auto rounded-2xl shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] p-5 md:p-6">
         <div className="flex flex-col md:flex-row items-center gap-5 md:gap-8">
           
-          {/* Icono con fondo sutil para destacar */}
           <div className="flex-shrink-0">
             <div className="p-3 bg-accent/10 rounded-full">
               <ShieldCheck size={32} className="text-accent" />
             </div>
           </div>
           
-          {/* Contenido de texto */}
           <div className="flex-grow text-center md:text-left space-y-2">
             <h3 className="font-bold text-text-primary text-lg">Tu privacidad es nuestra prioridad</h3>
             <p className="text-sm text-text-secondary leading-relaxed text-pretty">
@@ -24,7 +22,6 @@ const CookieConsentBanner = ({ onAccept, onDecline, onShowPolicy }) => {
             </p>
             <p className="text-xs text-text-muted">
               Podrás cambiar esta configuración siempre desde <strong>Ajustes</strong>. Consulta nuestra{' '}
-              {/* FIX: El punto se incluye dentro del botón para evitar saltos de línea huérfanos */}
               <button 
                 onClick={onShowPolicy} 
                 className="underline hover:text-accent transition font-medium outline-none focus:text-accent"
@@ -34,7 +31,6 @@ const CookieConsentBanner = ({ onAccept, onDecline, onShowPolicy }) => {
             </p>
           </div>
 
-          {/* Botones: Stack vertical en móvil (w-full), fila en tablet/desktop */}
           <div className="flex-shrink-0 flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
             <button
               onClick={onDecline}
