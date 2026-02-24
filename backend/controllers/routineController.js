@@ -24,25 +24,25 @@ const checkRoutineAccess = async (routine, user) => {
 
     if (isFriendsOnly && currentUserId) {
         try {
-            // Intentamos buscar con snake_case (user_id)
+            // Intentamos buscar con camelCase (lo estándar de Sequelize)
             let friendship = await sequelize.models.Friendship.findOne({
                 where: {
                     status: 'accepted',
                     [Op.or]: [
-                        { user_id: currentUserId, friend_id: routine.user_id },
-                        { user_id: routine.user_id, friend_id: currentUserId }
+                        { userId: currentUserId, friendId: routine.user_id },
+                        { userId: routine.user_id, friendId: currentUserId }
                     ]
                 }
-            });
+            }).catch(() => null); // Si da error por el nombre de la columna, no rompe la ejecución
 
-            // Fallback: si el modelo Friendship usa camelCase (userId)
+            // Fallback: si el modelo Friendship usa snake_case (user_id) en la definición
             if (!friendship) {
                 friendship = await sequelize.models.Friendship.findOne({
                     where: {
                         status: 'accepted',
                         [Op.or]: [
-                            { userId: currentUserId, friendId: routine.user_id },
-                            { userId: routine.user_id, friendId: currentUserId }
+                            { user_id: currentUserId, friend_id: routine.user_id },
+                            { user_id: routine.user_id, friend_id: currentUserId }
                         ]
                     }
                 }).catch(() => null); 
@@ -84,15 +84,9 @@ export const getAllRoutines = async (req, res, next) => {
 // OBTENER UNA RUTINA ESPECÍFICA POR ID
 export const getRoutineById = async (req, res, next) => {
   try {
+    // Quitamos la restricción SQL estricta para poder evaluar el "solo amigos" a través del helper
     const routine = await sequelize.models.Routine.findOne({
-      where: {
-        id: req.params.id,
-        [Op.or]: [
-          { user_id: req.user.userId },
-          { is_public: true },
-          { visibility: 'public' } 
-        ]
-      },
+      where: { id: req.params.id },
       include: [
         {
           model: sequelize.models.RoutineExercise,
@@ -110,8 +104,15 @@ export const getRoutineById = async (req, res, next) => {
     });
 
     if (!routine) {
-      return res.status(404).json({ error: 'Rutina no encontrada o acceso denegado' });
+      return res.status(404).json({ error: 'Rutina no encontrada.' });
     }
+
+    // Usamos el Helper unificado para comprobar si es suya, pública o sois amigos
+    const hasAccess = await checkRoutineAccess(routine, req.user);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Acceso denegado. La rutina es privada o solo para amigos.' });
+    }
+
     res.json(routine);
   } catch (error) {
     next(error);

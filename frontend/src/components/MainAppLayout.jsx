@@ -286,44 +286,44 @@ export default function MainAppLayout({
 
       </main>
 
-      {/* Navbar (Móvil) - Cambiado a FIXED para evitar bugs en iOS y asegurar que se ancla a la parte inferior física */}
+      {/* Navbar (Móvil) - Cambiado a FIXED y estructurado para estirar el background en la safe area de iOS Safari */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 w-full flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10"
-        style={{ 
-          minHeight: 'calc(4.5rem + env(safe-area-inset-bottom))', 
-          paddingBottom: 'env(safe-area-inset-bottom)' 
-        }}
+        className="md:hidden fixed bottom-0 left-0 w-full bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10 flex flex-col"
       >
-        {navItems.map((item, index) => {
-          const isActive = view === item.id;
-          const isSocial = item.id === 'social';
-          const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
+        <div className="flex justify-evenly w-full h-[4.5rem]">
+          {navItems.map((item, index) => {
+            const isActive = view === item.id;
+            const isSocial = item.id === 'social';
+            const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
 
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.id)}
-              className={`
-                group flex flex-col items-center justify-center flex-grow py-3
-                transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
-                outline-none focus:outline-none ring-0
-                ${isActive ? 'text-accent' : 'text-text-secondary'}
-              `}
-              style={{
-                animationDelay: `${index * 100}ms`,
-                animationFillMode: 'both',
-                WebkitTapHighlightColor: 'transparent'
-              }}
-            >
-              <div className={`transition-transform duration-300 ${isActive ? 'scale-125' : 'group-hover:scale-110'} relative`}>
-                {item.icon}
-                {pendingCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
-                )}
-              </div>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigate(item.id)}
+                className={`
+                  group flex flex-col items-center justify-center flex-grow h-full
+                  transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
+                  outline-none focus:outline-none ring-0
+                  ${isActive ? 'text-accent' : 'text-text-secondary'}
+                `}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animationFillMode: 'both',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
+              >
+                <div className={`transition-transform duration-300 ${isActive ? 'scale-125' : 'group-hover:scale-110'} relative`}>
+                  {item.icon}
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {/* Espaciador dedicado para la safe area de iOS */}
+        <div className="w-full" style={{ height: 'env(safe-area-inset-bottom)' }}></div>
       </nav>
 
       {/* --- Modales y Notificaciones --- */}
