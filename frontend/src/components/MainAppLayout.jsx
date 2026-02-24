@@ -194,7 +194,7 @@ export default function MainAppLayout({
       {/* Contenido Principal */}
       <main
         ref={mainContentRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden pb-24 md:pb-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-0"
       >
 
         {/* Header (Móvil) - Padding normal gestionado por Tailwind */}
@@ -286,10 +286,13 @@ export default function MainAppLayout({
 
       </main>
 
-      {/* Navbar (Móvil) - ABSOLUTE hace que respete los bordes de la app (padding del body) en lugar del fixed que ignora la pantalla */}
+      {/* Navbar (Móvil) - Cambiado a FIXED para evitar bugs en iOS y asegurar que se ancla a la parte inferior física */}
       <nav 
-        className="md:hidden absolute bottom-0 left-0 right-0 flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10"
-        style={{ height: 'calc(4.5rem + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="md:hidden fixed bottom-0 left-0 w-full flex justify-evenly bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10"
+        style={{ 
+          minHeight: 'calc(4.5rem + env(safe-area-inset-bottom))', 
+          paddingBottom: 'env(safe-area-inset-bottom)' 
+        }}
       >
         {navItems.map((item, index) => {
           const isActive = view === item.id;
@@ -301,7 +304,7 @@ export default function MainAppLayout({
               key={item.id}
               onClick={() => navigate(item.id)}
               className={`
-                group flex flex-col items-center justify-center flex-grow 
+                group flex flex-col items-center justify-center flex-grow py-3
                 transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
                 outline-none focus:outline-none ring-0
                 ${isActive ? 'text-accent' : 'text-text-secondary'}
@@ -352,11 +355,11 @@ export default function MainAppLayout({
         />
       )}
 
-      {/* Botón Flotante de "Volver al Entreno" - ABSOLUTE para respetar el contenedor */}
+      {/* Botón Flotante de "Volver al Entreno" */}
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => navigate('workout')}
-          className="absolute right-4 bottom-24 md:bottom-10 md:right-10 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 bottom-24 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>
