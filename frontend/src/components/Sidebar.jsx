@@ -161,14 +161,14 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
         <div className="mt-auto flex flex-col gap-2 flex-shrink-0 pt-4">
             
-            {/* Nuevo botón del estado de IA */}
+            {/* Nuevo botón del estado de IA con borde más sutil */}
             <div className="mb-2">
               <SidebarItem
                   label={`IA: ${aiRemaining}/${aiLimit}`}
                   icon={<Sparkles size={24} className={isAILimitReached ? 'text-text-muted' : 'text-accent'} />}
                   isActive={false}
                   onClick={() => setShowAIModal(true)}
-                  className={`border ${isAILimitReached ? 'border-glass-border opacity-70' : 'border-accent/20 bg-accent/5'}`}
+                  className={`border ${isAILimitReached ? 'border-glass-border opacity-70' : 'border-black/5 dark:border-white/10 bg-accent/5 text-accent'}`}
               />
             </div>
 

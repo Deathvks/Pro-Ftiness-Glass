@@ -31,7 +31,6 @@ import StoryViewer from './components/StoryViewer';
 import OnboardingScreen from './pages/OnboardingScreen';
 import LandingPage from './pages/LandingPage'; 
 
-// Lazy loading de páginas
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Progress = lazy(() => import('./pages/Progress'));
 const Routines = lazy(() => import('./pages/Routines'));
@@ -118,7 +117,10 @@ export default function App() {
     myStories: state.myStories,
   }));
 
-  // Deep Linking (Abrir app desde enlaces)
+  const isInstalledApp = useMemo(() => {
+    return Capacitor.isNativePlatform() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  }, []);
+
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       const listener = CapApp.addListener('appUrlOpen', data => {
@@ -137,7 +139,6 @@ export default function App() {
     }
   }, [navigate]);
 
-  // Sincronización de Tema
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       const applyNativeTheme = async () => {
@@ -146,7 +147,6 @@ export default function App() {
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
           await NavigationBar.setColor({ color: themeColor });
-          
           await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
@@ -157,7 +157,6 @@ export default function App() {
     document.body.style.backgroundColor = themeColor;
   }, [themeColor, resolvedTheme]);
 
-  // Init Notificaciones
   useEffect(() => {
     if (isAuthenticated && !isLoading && Capacitor.isNativePlatform()) {
       const initNotifications = async () => {
@@ -210,7 +209,6 @@ export default function App() {
     }
   }, [myStories, navigateInternal]);
 
-  // Títulos dinámicos
   const currentTitle = useMemo(() => {
     const titleMap = {
       dashboard: { key: 'Dashboard', default: 'Dashboard' },
@@ -331,7 +329,6 @@ export default function App() {
     },
   ], [t, profileImgSrc, hasStories, hasUnseen]);
 
-  // --- CONTENIDO AUTENTICADO ---
   const AuthenticatedAppContent = useMemo(() => {
     if (!userProfile || (isLoading && !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
@@ -394,7 +391,6 @@ export default function App() {
     isResting, restTimerMode, show2FAPromo, viewingMyStory, hasStories
   ]);
 
-  // --- CONFIGURACIÓN SEO DINÁMICA ---
   const isLandingPage = !isAuthenticated && currentPath === '/';
 
   const shouldRenderGlobalSEO = useMemo(() => {
@@ -421,7 +417,6 @@ export default function App() {
   }, [isLandingPage, fullPageTitle, currentDescription]);
 
 
-  // --- RENDERIZADO PRINCIPAL CON ROUTER ---
   if (isInitialLoad) {
     return <InitialLoadingSkeleton />;
   }
@@ -455,7 +450,6 @@ export default function App() {
       <AndroidDownloadPrompt />
 
       <Routes>
-        {/* --- RUTAS PÚBLICAS --- */}
         <Route path="/privacy" element={
             <Suspense fallback={<div className="p-10">Cargando política...</div>}>
                 <PrivacyPolicy onBack={() => navigate('/')} />
@@ -472,17 +466,15 @@ export default function App() {
             </Suspense>
         } />
         
-        {/* AÑADIDO: Ruta pública para la previsualización de rutinas */}
         <Route path="/share/routine/:id" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>
                 <SharedRoutinePreview />
             </Suspense>
         } />
 
-        {/* --- RUTAS DE AUTENTICACIÓN --- */}
         <Route path="/" element={
             !isAuthenticated ? (
-                <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+                isInstalledApp ? <Navigate to="/login" replace /> : <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
             ) : (
                 <Navigate to="/dashboard" replace />
             )
@@ -513,8 +505,6 @@ export default function App() {
         } />
          <Route path="/forgot-password" element={<Navigate to="/forgotPassword" replace />} />
 
-
-        {/* --- RUTAS PRIVADAS --- */}
         <Route path="/*" element={
             isAuthenticated ? (
                 AuthenticatedAppContent
