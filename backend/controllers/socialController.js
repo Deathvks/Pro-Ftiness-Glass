@@ -2,16 +2,15 @@
 import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { createNotification } from '../services/notificationService.js';
+import jwt from 'jsonwebtoken'; // AÑADIDO para leer el token manualmente si la ruta es pública
 
-const { User, Friendship, WorkoutLog, Routine, RoutineExercise } = models;
+const { User, Friendship, WorkoutLog, Routine, RoutineExercise, ExerciseList } = models;
 
 export const searchUsers = async (req, res) => {
     try {
-        // Esta ruta está protegida, req.user existe
         const { query } = req.query;
         if (!query || query.length < 3) return res.json([]);
 
-        // Permitir búsqueda flexible (con y sin espacios)
         const cleanQuery = query.replace(/\s+/g, '');
 
         const searchConditions = [
@@ -25,13 +24,13 @@ export const searchUsers = async (req, res) => {
         const users = await User.findAll({
             where: {
                 [Op.and]: [
-                    { id: { [Op.ne]: req.user.userId } }, // No mostrarse a sí mismo
+                    { id: { [Op.ne]: req.user.userId } },
                     { [Op.or]: searchConditions },
-                    { is_public_profile: true } // Solo buscar usuarios que sean públicos (Opcional, según preferencia)
+                    { is_public_profile: true } 
                 ]
             },
             attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp'],
-            limit: 20 // Limitar resultados por seguridad/rendimiento
+            limit: 20 
         });
 
         const results = users.map(user => ({
@@ -75,7 +74,6 @@ export const sendFriendRequest = async (req, res) => {
             status: 'pending'
         });
 
-        // Notificación al destinatario
         const requester = await User.findByPk(requesterId, { attributes: ['username'] });
         if (requester) {
             await createNotification(targetUserId, {
@@ -100,7 +98,6 @@ export const getFriendRequests = async (req, res) => {
     try {
         const userId = req.user.userId;
 
-        // 1. Obtener solicitudes RECIBIDAS (Alguien me añadió a mí)
         const received = await Friendship.findAll({
             where: {
                 addressee_id: userId,
@@ -113,7 +110,6 @@ export const getFriendRequests = async (req, res) => {
             }]
         });
 
-        // 2. Obtener solicitudes ENVIADAS (Yo añadí a alguien)
         const sent = await Friendship.findAll({
             where: {
                 requester_id: userId,
@@ -126,7 +122,6 @@ export const getFriendRequests = async (req, res) => {
             }]
         });
 
-        // Helper para sanitizar usuario
         const sanitizeUser = (user) => ({
             id: user.id,
             username: user.username,
@@ -165,7 +160,7 @@ export const getFriendRequests = async (req, res) => {
 
 export const respondFriendRequest = async (req, res) => {
     try {
-        const { requestId, action } = req.body; // 'accept' | 'reject'
+        const { requestId, action } = req.body; 
         const friendship = await Friendship.findOne({
             where: { id: requestId, addressee_id: req.user.userId, status: 'pending' }
         });
@@ -176,7 +171,6 @@ export const respondFriendRequest = async (req, res) => {
             friendship.status = 'accepted';
             await friendship.save();
 
-            // Notificación al solicitante original
             const acceptor = await User.findByPk(req.user.userId, { attributes: ['username'] });
             if (acceptor) {
                 await createNotification(friendship.requester_id, {
@@ -236,24 +230,37 @@ export const getPublicProfile = async (req, res) => {
     try {
         const { userId } = req.params;
         
-        // Manejo seguro de viewerId (puede ser null si es acceso público)
-        const viewerId = req.user ? req.user.userId : null;
+        // 1. OBTENER IDENTIDAD DEL VISITANTE (incluso en rutas públicas)
+        let viewerId = req.user ? (req.user.userId || req.user.id) : null;
+        
+        // Si no hay req.user pero hay token en el header, lo desencriptamos manualmente
+        if (!viewerId && req.headers.authorization) {
+            try {
+                const token = req.headers.authorization.split(' ')[1];
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+                viewerId = decoded.userId || decoded.id;
+            } catch (e) {
+                // Fallo de token silencioso (se trata como usuario público anónimo)
+            }
+        }
 
-        // Añadimos Routine y sus ejercicios a la búsqueda
         const user = await User.findByPk(userId, {
             include: [
                 { 
                     model: Routine, 
                     as: 'Routines', 
-                    // No filtramos aquí drásticamente porque queremos aplicar lógica "OR" compleja (public OR friends)
-                    // y Sequelize a veces es complicado con includes condicionales anidados.
-                    // Traemos las rutinas y las filtramos en JS.
                     required: false,
                     include: [
                         {
                             model: RoutineExercise,
                             as: 'RoutineExercises',
-                            attributes: ['id', 'name', 'image_url_start', 'exercise_order']
+                            attributes: ['id', 'name', 'image_url_start', 'video_url', 'exercise_order'],
+                            include: [
+                                {
+                                    model: ExerciseList,
+                                    attributes: ['image_url_start', 'video_url']
+                                }
+                            ]
                         }
                     ]
                 }
@@ -265,9 +272,9 @@ export const getPublicProfile = async (req, res) => {
         let isFriend = false;
         let isMe = false;
 
-        // Solo verificamos amistad si hay un usuario logueado
         if (viewerId) {
-            isMe = parseInt(userId) === viewerId;
+            // Comparación segura convirtiendo a String
+            isMe = String(userId) === String(viewerId);
 
             if (!isMe) {
                 const friendship = await Friendship.findOne({
@@ -281,24 +288,21 @@ export const getPublicProfile = async (req, res) => {
                 });
                 isFriend = !!friendship;
             } else {
-                // Si soy yo, técnicamente no soy mi "amigo", pero tengo acceso total
                 isFriend = true; 
             }
         }
 
-        // Reglas de acceso:
         if (!user.is_public_profile && !isFriend && !isMe) {
             return res.status(403).json({ error: 'Este perfil es privado' });
         }
 
         // --- FILTRADO DE RUTINAS ---
         const visibleRoutines = (user.Routines || []).filter(routine => {
-            // 1. Siempre mostrar públicas
+            // Si soy yo mismo, veo TODAS mis rutinas
+            if (isMe) return true;
             if (routine.visibility === 'public') return true;
-            // 2. Mostrar "solo amigos" si soy amigo o yo mismo
-            if ((isFriend || isMe) && routine.visibility === 'friends') return true;
-            // 3. Privadas solo si soy yo (aunque en perfil público quizá no deberían salir nunca, 
-            // pero si es "mi vista previa" sí). Asumamos que en "Perfil Público" NO se ven privadas ajenas.
+            if (isFriend && routine.visibility === 'friends') return true;
+            
             return false;
         }).map(r => ({
             id: r.id,
@@ -308,36 +312,31 @@ export const getPublicProfile = async (req, res) => {
             folder: r.folder,
             visibility: r.visibility,
             downloads_count: r.downloads_count,
-            // Incluimos ejercicios ordenados
             exercises: (r.RoutineExercises || [])
                 .sort((a, b) => (a.exercise_order || 0) - (b.exercise_order || 0))
                 .map(ex => ({
                     name: ex.name,
-                    image: ex.image_url_start
+                    image_url: ex.image_url_start || (ex.ExerciseList ? ex.ExerciseList.image_url_start : null),
+                    video_url: ex.video_url || (ex.ExerciseList ? ex.ExerciseList.video_url : null)
                 }))
         }));
-
 
         const data = {
             id: user.id,
             username: user.username,
             profile_image_url: user.profile_image_url,
-            is_friend: isFriend && !isMe, // Para mostrar botón "Amigo" o no
+            is_friend: isFriend && !isMe, 
             is_me: isMe,
             bio: user.bio,
             createdAt: user.created_at,
             lastSeen: user.updated_at,
-            show_level_xp: !!(user.show_level_xp || isMe), // Yo siempre veo mi XP
-            show_badges: !!(user.show_badges || isMe),     // Yo siempre veo mis insignias
-            
-            // Datos condicionales
+            show_level_xp: !!(user.show_level_xp || isMe), 
+            show_badges: !!(user.show_badges || isMe),     
             level: null,
             xp: null,
             streak: null,
             workoutsCount: 0,
             unlocked_badges: [],
-            
-            // Rutinas filtradas con ejercicios
             routines: visibleRoutines
         };
 
@@ -346,7 +345,6 @@ export const getPublicProfile = async (req, res) => {
             data.xp = user.xp;
             data.streak = user.streak || 0;
 
-            // Contamos los entrenamientos de forma segura
             data.workoutsCount = await WorkoutLog.count({
                 where: { user_id: user.id }
             });
@@ -371,7 +369,6 @@ export const getPublicProfile = async (req, res) => {
 
 export const getLeaderboard = async (req, res) => {
     try {
-        // Solo usuarios públicos que muestren su nivel explícitamente
         const users = await User.findAll({
             where: {
                 is_public_profile: true,

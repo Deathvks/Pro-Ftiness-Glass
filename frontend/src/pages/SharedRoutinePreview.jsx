@@ -93,7 +93,7 @@ const SharedRoutinePreview = () => {
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-bg-primary">
+      <div className="h-[100dvh] w-full flex items-center justify-center bg-bg-primary">
         <Spinner size="large" />
       </div>
     );
@@ -101,7 +101,7 @@ const SharedRoutinePreview = () => {
 
   if (error || !routine) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-bg-primary p-6 text-center">
+      <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-bg-primary p-6 text-center">
         <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 animate-bounce-slow">
           <AlertTriangle size={40} className="text-red-500" />
         </div>
@@ -150,7 +150,7 @@ const SharedRoutinePreview = () => {
   const coverImage = getMediaUrl(routine.image_url);
 
   return (
-    <div className="h-screen overflow-y-auto overflow-x-hidden bg-bg-primary pb-20 animate-fade-in w-full">
+    <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-bg-primary pb-32 animate-fade-in w-full">
       <Helmet>
         <title>{routine.name} - Rutina Compartida</title>
       </Helmet>
@@ -180,7 +180,6 @@ const SharedRoutinePreview = () => {
             </button>
         </div>
 
-        {/* Añadido pb-10 sm:pb-12 para dar espacio al margen negativo del siguiente contenedor */}
         <div className="relative z-10 w-full p-4 pb-10 sm:p-6 sm:pb-12 pt-16">
             <div className="max-w-4xl mx-auto w-full">
                 <div className="flex flex-wrap items-center gap-2 mb-3">

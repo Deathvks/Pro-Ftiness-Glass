@@ -1,7 +1,7 @@
 /* frontend/src/pages/PublicProfile.jsx */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next'; // Hook de traducción
+import { useTranslation } from 'react-i18next';
 import {
     User,
     Trophy,
@@ -35,12 +35,13 @@ import { es } from 'date-fns/locale';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
 import SEOHead from '../components/SEOHead';
+import ExerciseMedia from '../components/ExerciseMedia'; // AÑADIDO
 
-// --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
+// --- CONFIGURACIÓN DE PUERTO ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
 
-// Helper para corregir URLs de imágenes (Avatar/Ejercicios)
+// Helper para corregir URLs de imágenes (Avatar/Rutinas)
 const getFullImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path; 
@@ -94,7 +95,6 @@ const resolveBadge = (badge) => {
 };
 
 export default function PublicProfile({ userId: propUserId, onBack, setView }) {
-    // Cargar explícitamente el namespace 'exercise_names'
     const { t } = useTranslation(['translation', 'exercise_names']); 
     
     const { userId: paramUserId } = useParams();
@@ -117,7 +117,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         gamification,
         stories, 
         fetchStories,
-        token // Necesario para la descarga manual
+        token
     } = useAppStore();
 
     const [badgePage, setBadgePage] = useState(0);
@@ -127,16 +127,12 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const [isDeletingFriend, setIsDeletingFriend] = useState(false);
     const [downloadingRoutineId, setDownloadingRoutineId] = useState(null);
     
-    // Estado para visor de historia
     const [viewingStory, setViewingStory] = useState(false);
-
-    // Estado para el modal de detalles de rutina
     const [viewingRoutine, setViewingRoutine] = useState(null);
 
     useEffect(() => {
         if (userId) {
             fetchPublicProfile(userId);
-            // Cargar historias si no están cargadas
             if (stories.length === 0) fetchStories();
         }
         return () => clearViewedProfile();
@@ -183,7 +179,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         return baseProfile;
     }, [fetchedProfile, relationshipStatus, gamification]);
 
-    // Buscar si este usuario tiene historias activas
     const userStory = useMemo(() => {
         if (!profile) return null;
         const storyGroup = stories.find(s => s.userId === profile.id);
@@ -199,22 +194,23 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
         if (validStories.length === 0) return null;
 
-        // Calcular si hay historias no vistas
         const hasUnseen = validStories.some(item => !item.viewed);
 
         return { ...storyGroup, items: validStories, hasUnseen };
     }, [stories, profile, relationshipStatus]);
 
 
-    // --- LÓGICA DE FILTRADO DE RUTINAS ---
+    // --- LÓGICA DE FILTRADO DE RUTINAS CORREGIDA ---
     const visibleRoutines = useMemo(() => {
         if (!profile || !profile.routines) return [];
         
-        const isFriendOrMe = relationshipStatus === 'friend' || relationshipStatus === 'me';
+        const isFriend = relationshipStatus === 'friend';
+        const isMe = relationshipStatus === 'me';
         
         return profile.routines.filter(routine => {
+            if (isMe) return true; // Si soy yo, veo todas mis rutinas siempre
             if (routine.visibility === 'public') return true;
-            if (isFriendOrMe && routine.visibility === 'friends') return true;
+            if (isFriend && routine.visibility === 'friends') return true;
             return false;
         });
     }, [profile, relationshipStatus]);
@@ -302,11 +298,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         window.location.href = '/social';
     };
 
-    // Función auxiliar para traducir nombres de ejercicios usando el namespace correcto
     const getTranslatedExerciseName = (name) => {
         if (!name) return "";
-        // Busca en el namespace 'exercise_names' la clave que coincide con el nombre en inglés
-        // Si no la encuentra, devuelve el nombre original (defaultValue)
         return t(name, { ns: 'exercise_names', defaultValue: name });
     };
 
@@ -367,7 +360,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     return (
         <div className="pb-6 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
 
-            {/* --- VISOR DE HISTORIA --- */}
             {viewingStory && (
                 <StoryViewer 
                     userId={profile.id} 
@@ -385,7 +377,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         className="w-full max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl animate-scale-up"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* Header Modal */}
                         <div className="p-4 border-b border-white/10 flex justify-between items-center bg-bg-secondary/80 backdrop-blur-md sticky top-0 z-10">
                             <div className="flex flex-col">
                                 <h3 className="font-bold text-lg text-text-primary line-clamp-1 flex items-center gap-2">
@@ -406,7 +397,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                             </button>
                         </div>
 
-                        {/* Content Modal */}
                         <div className="overflow-y-auto p-4 space-y-5 custom-scrollbar">
                             {viewingRoutine.description && (
                                 <div className="bg-bg-primary/20 p-3 rounded-lg border border-white/5">
@@ -422,42 +412,24 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                     {viewingRoutine.exercises.map((ex, i) => {
                                         const mediaSrc = ex.gif_url || ex.image || ex.image_url;
                                         const videoSrc = ex.video || ex.video_url;
-                                        // Usamos la función helper para traducir el nombre
                                         const translatedName = getTranslatedExerciseName(ex.name);
 
                                         return (
                                             <GlassCard key={i} className="p-3 flex gap-4 items-center bg-bg-primary/30 border-white/5 hover:border-accent/30 transition group">
-                                                {/* Media Container */}
                                                 <div className="w-24 h-24 shrink-0 rounded-lg bg-bg-secondary overflow-hidden border border-white/10 flex items-center justify-center relative shadow-lg">
-                                                    {videoSrc ? (
-                                                        <>
-                                                            <video
-                                                                src={getFullImageUrl(videoSrc)}
-                                                                className="w-full h-full object-cover"
-                                                                muted loop autoPlay playsInline
-                                                            />
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition">
-                                                                <Play size={20} className="text-white opacity-80 drop-shadow-md" fill="currentColor" />
-                                                            </div>
-                                                        </>
-                                                    ) : mediaSrc ? (
-                                                        <img 
-                                                            src={getFullImageUrl(mediaSrc)} 
-                                                            alt={ex.name}
-                                                            className="w-full h-full object-cover"
-                                                            loading="lazy"
-                                                        />
-                                                    ) : (
-                                                        <Dumbbell size={32} className="text-text-muted opacity-30" />
-                                                    )}
-                                                    
-                                                    {/* Badge Orden */}
-                                                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur px-1.5 py-0.5 rounded text-[10px] font-bold text-white">
+                                                    <ExerciseMedia 
+                                                        details={{
+                                                            video_url: videoSrc,
+                                                            image_url: mediaSrc,
+                                                            name: translatedName
+                                                        }}
+                                                        className="w-full h-full object-cover" 
+                                                    />
+                                                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur px-1.5 py-0.5 rounded text-[10px] font-bold text-white z-10 pointer-events-none">
                                                         #{i + 1}
                                                     </div>
                                                 </div>
 
-                                                {/* Info */}
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-bold text-text-primary text-sm line-clamp-2 mb-1">{translatedName}</p>
                                                     <span className="inline-block text-[10px] px-2 py-0.5 bg-white/5 rounded text-text-secondary">
@@ -471,7 +443,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                             </div>
                         </div>
 
-                        {/* Footer Modal */}
                         <div className="p-4 border-t border-white/10 bg-bg-secondary/50 backdrop-blur-md">
                              <button 
                                 onClick={() => { handleDownloadRoutine(viewingRoutine.id); setViewingRoutine(null); }}
@@ -537,7 +508,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             <GlassCard className="relative overflow-hidden p-6 flex flex-col items-center text-center gap-4">
                 <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent/20 to-transparent pointer-events-none" />
 
-                {/* Avatar con anillo de historia modificado */}
                 <div 
                     className={`relative z-10 w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300
                         ${userStory 
@@ -738,7 +708,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                     className="p-0 overflow-hidden flex flex-col group relative border-transparent hover:border-white/10 transition-all cursor-pointer hover:shadow-lg hover:shadow-accent/10"
                                     onClick={() => setViewingRoutine(routine)}
                                 >
-                                    {/* Imagen de fondo */}
+                                    {/* Imagen de fondo de la rutina */}
                                     <div className="h-28 w-full relative shrink-0 overflow-hidden bg-bg-secondary">
                                         {imageSrc ? (
                                             isCssBackground(imageSrc) ? (
@@ -758,7 +728,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-bg-secondary/20 to-transparent" />
                                         
-                                        {/* Badge de Carpeta */}
                                         {routine.folder && (
                                             <div className="absolute top-2 right-2 z-20">
                                                 <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-medium text-white flex items-center gap-1">
@@ -798,28 +767,19 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                                 {routine.exercises.slice(0, 3).map((ex, i) => {
                                                     const mediaSrc = ex.gif_url || ex.image || ex.image_url;
                                                     const videoSrc = ex.video || ex.video_url;
-                                                    // Traducción del nombre
                                                     const translatedName = getTranslatedExerciseName(ex.name);
 
                                                     return (
                                                         <div key={i} className="flex items-center gap-3">
                                                             <div className="w-10 h-10 rounded-md bg-bg-secondary shrink-0 overflow-hidden border border-white/10 flex items-center justify-center relative">
-                                                                {mediaSrc ? (
-                                                                    <img 
-                                                                        src={getFullImageUrl(mediaSrc)} 
-                                                                        alt={ex.name}
-                                                                        className="w-full h-full object-cover"
-                                                                        loading="lazy"
-                                                                    />
-                                                                ) : videoSrc ? (
-                                                                    <video
-                                                                        src={getFullImageUrl(videoSrc)}
-                                                                        className="w-full h-full object-cover"
-                                                                        muted loop autoPlay playsInline
-                                                                    />
-                                                                ) : (
-                                                                    <Dumbbell size={16} className="text-text-muted opacity-50" />
-                                                                )}
+                                                                <ExerciseMedia 
+                                                                    details={{
+                                                                        video_url: videoSrc,
+                                                                        image_url: mediaSrc,
+                                                                        name: translatedName
+                                                                    }}
+                                                                    className="w-full h-full object-cover" 
+                                                                />
                                                             </div>
                                                             <span className="text-xs text-text-secondary font-medium truncate flex-1">
                                                                 {translatedName}
@@ -838,11 +798,10 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                         <div className="mt-auto pt-2">
                                             <button 
                                                 onClick={(e) => {
-                                                    e.stopPropagation(); // Evitar abrir modal al descargar
+                                                    e.stopPropagation();
                                                     handleDownloadRoutine(routine.id);
                                                 }}
                                                 disabled={downloadingRoutineId === routine.id}
-                                                // CAMBIO: Cambiado a color de acento
                                                 className="w-full py-2 rounded-lg bg-accent hover:opacity-90 text-xs font-bold text-white flex items-center justify-center gap-2 transition-colors shadow-md shadow-accent/20"
                                             >
                                                 {downloadingRoutineId === routine.id ? (

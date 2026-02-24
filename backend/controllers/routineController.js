@@ -12,6 +12,50 @@ const {
   Friendship
 } = models;
 
+// HELPER PARA COMPROBAR ACCESO SEGURO (Evita errores de tokens o nombres de columnas)
+const checkRoutineAccess = async (routine, user) => {
+    // Algunos middlewares guardan como userId y otros como id
+    const currentUserId = user ? (user.userId || user.id) : null;
+    const isPublic = routine.is_public || routine.visibility === 'public';
+    const isOwner = currentUserId && String(routine.user_id) === String(currentUserId);
+    const isFriendsOnly = routine.visibility === 'friends';
+
+    if (isPublic || isOwner) return true;
+
+    if (isFriendsOnly && currentUserId) {
+        try {
+            // Intentamos buscar con snake_case (user_id)
+            let friendship = await sequelize.models.Friendship.findOne({
+                where: {
+                    status: 'accepted',
+                    [Op.or]: [
+                        { user_id: currentUserId, friend_id: routine.user_id },
+                        { user_id: routine.user_id, friend_id: currentUserId }
+                    ]
+                }
+            });
+
+            // Fallback: si el modelo Friendship usa camelCase (userId)
+            if (!friendship) {
+                friendship = await sequelize.models.Friendship.findOne({
+                    where: {
+                        status: 'accepted',
+                        [Op.or]: [
+                            { userId: currentUserId, friendId: routine.user_id },
+                            { userId: routine.user_id, friendId: currentUserId }
+                        ]
+                    }
+                }).catch(() => null); 
+            }
+
+            if (friendship) return true;
+        } catch (err) {
+            console.error("Error comprobando amistad:", err);
+        }
+    }
+    return false;
+};
+
 // OBTENER TODAS LAS RUTINAS (Personales del usuario)
 export const getAllRoutines = async (req, res, next) => {
   try {
@@ -517,27 +561,8 @@ export const getPublicRoutineById = async (req, res, next) => {
       return res.status(404).json({ error: 'Rutina no encontrada.' });
     }
 
-    const isPublic = routine.is_public || routine.visibility === 'public';
-    const isOwner = req.user && routine.user_id === req.user.userId;
-    const isFriendsOnly = routine.visibility === 'friends';
-
-    let hasAccess = isPublic || isOwner;
-
-    // Lógica para rutinas de "Solo amigos"
-    if (!hasAccess && isFriendsOnly && req.user) {
-      const friendship = await sequelize.models.Friendship.findOne({
-        where: {
-          status: 'accepted',
-          [Op.or]: [
-            { user_id: req.user.userId, friend_id: routine.user_id },
-            { user_id: routine.user_id, friend_id: req.user.userId }
-          ]
-        }
-      });
-      if (friendship) {
-        hasAccess = true;
-      }
-    }
+    // Usamos el Helper
+    const hasAccess = await checkRoutineAccess(routine, req.user);
 
     if (!hasAccess) {
       return res.status(403).json({ error: 'No tienes permiso para ver esta rutina. Es privada o solo para amigos.' });
@@ -567,7 +592,7 @@ export const getPublicRoutineById = async (req, res, next) => {
 export const downloadRoutine = async (req, res, next) => {
   const { id } = req.params;
   const { folder } = req.body; 
-  const { userId } = req.user;
+  const currentUserId = req.user ? (req.user.userId || req.user.id) : null;
   const t = await sequelize.transaction();
 
   try {
@@ -581,18 +606,19 @@ export const downloadRoutine = async (req, res, next) => {
       return res.status(404).json({ error: 'Rutina original no encontrada' });
     }
 
-    const isAccessible = sourceRoutine.is_public || sourceRoutine.visibility === 'public' || sourceRoutine.user_id === userId;
+    // Usamos el Helper
+    const hasAccess = await checkRoutineAccess(sourceRoutine, req.user);
 
-    if (!isAccessible) {
+    if (!hasAccess) {
       await t.rollback();
-      return res.status(403).json({ error: 'Esta rutina es privada' });
+      return res.status(403).json({ error: 'Esta rutina es privada o no tienes permiso para importarla.' });
     }
 
     const newRoutineName = `${sourceRoutine.name} (Copia)`;
 
     // Comprobar si ya existe una rutina con este nombre para evitar duplicados
     const existingRoutine = await sequelize.models.Routine.findOne({
-      where: { name: newRoutineName, user_id: userId },
+      where: { name: newRoutineName, user_id: currentUserId },
       transaction: t
     });
 
@@ -604,7 +630,7 @@ export const downloadRoutine = async (req, res, next) => {
     const newRoutine = await sequelize.models.Routine.create({
       name: newRoutineName,
       description: sourceRoutine.description,
-      user_id: userId,
+      user_id: currentUserId,
       is_public: false,
       visibility: 'private',
       folder: folder || null, 
@@ -626,9 +652,9 @@ export const downloadRoutine = async (req, res, next) => {
       is_manual: ex.exercise_list_id === null
     }));
 
-    await processAndSaveExercises(exercisesToCopy, newRoutine.id, userId, t);
+    await processAndSaveExercises(exercisesToCopy, newRoutine.id, currentUserId, t);
 
-    if (sourceRoutine.user_id !== userId) {
+    if (String(sourceRoutine.user_id) !== String(currentUserId)) {
       await sourceRoutine.increment('downloads_count', { transaction: t });
       try {
         await addXp(sourceRoutine.user_id, 5, `Tu rutina "${sourceRoutine.name}" fue descargada`);
