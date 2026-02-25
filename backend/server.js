@@ -97,6 +97,12 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
+  // Unimos el socket a una sala única con su ID de usuario para poder enviarle eventos directos
+  const userId = socket.user?.userId || socket.user?.id;
+  if (userId) {
+    socket.join(userId.toString());
+  }
+
   socket.on('disconnect', () => {});
 });
 

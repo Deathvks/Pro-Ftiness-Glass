@@ -35,7 +35,7 @@ import { es } from 'date-fns/locale';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
 import SEOHead from '../components/SEOHead';
-import ExerciseMedia from '../components/ExerciseMedia'; // AÑADIDO
+import ExerciseMedia from '../components/ExerciseMedia';
 
 // --- CONFIGURACIÓN DE PUERTO ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -117,7 +117,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         gamification,
         stories, 
         fetchStories,
-        token
+        token,
+        refreshRoutines
     } = useAppStore();
 
     const [badgePage, setBadgePage] = useState(0);
@@ -200,19 +201,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     }, [stories, profile, relationshipStatus]);
 
 
-    // --- LÓGICA DE FILTRADO DE RUTINAS CORREGIDA ---
+    // --- LÓGICA DE FILTRADO CORREGIDA: CONFIAR EN EL BACKEND ---
     const visibleRoutines = useMemo(() => {
         if (!profile || !profile.routines) return [];
-        
-        const isFriend = relationshipStatus === 'friend';
-        const isMe = relationshipStatus === 'me';
-        
-        return profile.routines.filter(routine => {
-            if (routine.visibility === 'public') return true;
-            if ((isFriend || isMe) && routine.visibility === 'friends') return true;
-            return false;
-        });
-    }, [profile, relationshipStatus]);
+        // Si el backend ya nos ha devuelto la rutina en el JSON del perfil, 
+        // es porque ya ha comprobado la base de datos y sabemos que tenemos permiso
+        // (ya sea porque es pública o porque somos amigos reales).
+        return profile.routines;
+    }, [profile]);
 
 
     const structuredData = useMemo(() => {
@@ -269,12 +265,17 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         setDownloadingRoutineId(routineId);
         
         try {
+            // Se define la carpeta igual que en la vista de enlace
+            const folderName = profile?.username ? `Compartido de ${profile.username}` : 'Compartido';
+
             const response = await fetch(`${API_URL}/routines/${routineId}/download`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${useAppStore.getState().token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                // Enviamos la carpeta en el body
+                body: JSON.stringify({ folder: folderName })
             });
 
             const data = await response.json();
@@ -282,6 +283,11 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             if (!response.ok) throw new Error(data.error || 'Error al descargar');
             
             addToast('Rutina importada a tu colección', 'success');
+            
+            if (refreshRoutines) {
+                await refreshRoutines();
+            }
+
         } catch (error) {
             console.error(error);
             addToast(error.message, 'error');
@@ -699,7 +705,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {visibleRoutines.map((routine) => {
                             const imageSrc = routine.imageUrl || routine.image_url;
-                            const isPublic = routine.visibility === 'public';
+                            const isPublic = routine.visibility === 'public' || routine.is_public; // Comprobación tolerante
                             
                             return (
                                 <GlassCard 

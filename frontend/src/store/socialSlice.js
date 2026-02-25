@@ -1,10 +1,11 @@
 /* frontend/src/store/socialSlice.js */
 import socialService from '../services/socialService';
+import { getSocket } from '../services/socket';
 
 export const createSocialSlice = (set, get) => ({
     // --- Estado Inicial ---
     socialFriends: [],
-    socialRequests: { received: [], sent: [] }, // Estructura preparada para recibidas/enviadas
+    socialRequests: { received: [], sent: [] },
     socialSearchResults: [],
     socialLeaderboard: [],
     socialViewedProfile: null,
@@ -13,7 +14,6 @@ export const createSocialSlice = (set, get) => ({
 
     // --- Acciones ---
 
-    // Buscar usuarios
     searchUsers: async (query) => {
         set({ isSocialLoading: true, socialError: null });
         try {
@@ -24,108 +24,118 @@ export const createSocialSlice = (set, get) => ({
         }
     },
 
-    // Limpiar resultados de búsqueda
     clearSocialSearch: () => {
         set({ socialSearchResults: [] });
     },
 
-    // Obtener lista de amigos
     fetchFriends: async () => {
-        set({ isSocialLoading: true, socialError: null });
         try {
             const friends = await socialService.getFriends();
-            set({ socialFriends: friends, isSocialLoading: false });
+            set({ socialFriends: friends });
         } catch (error) {
-            set({ socialError: error.message, isSocialLoading: false });
+            set({ socialError: error.message });
         }
     },
 
-    // Obtener solicitudes pendientes (Recibidas y Enviadas)
     fetchFriendRequests: async () => {
-        // No activamos loading global para evitar parpadeos en actualizaciones de fondo
         try {
             const requests = await socialService.getFriendRequests();
-            // El backend devuelve: { received: [...], sent: [...] }
             set({ socialRequests: requests });
         } catch (error) {
             console.error("Error fetching requests:", error);
         }
     },
 
-    // Enviar solicitud de amistad
     sendFriendRequest: async (targetUserId) => {
-        set({ isSocialLoading: true, socialError: null });
         try {
             await socialService.sendFriendRequest(targetUserId);
-            // Actualizamos solicitudes para que aparezca inmediatamente en "Enviadas"
-            await get().fetchFriendRequests();
-            set({ isSocialLoading: false });
+            // Sincronización silenciosa
+            get().fetchFriendRequests();
             return true;
         } catch (error) {
-            set({ socialError: error.message, isSocialLoading: false });
+            set({ socialError: error.message });
             return false;
         }
     },
 
-    // Responder solicitud (aceptar/rechazar)
     respondFriendRequest: async (requestId, action) => {
-        set({ isSocialLoading: true, socialError: null });
+        // ACTUALIZACIÓN OPTIMISTA: Quitamos la solicitud de la vista al instante
+        const currentRequests = get().socialRequests;
+        const updatedReceived = currentRequests.received.filter(r => r.id !== requestId);
+        set({ socialRequests: { ...currentRequests, received: updatedReceived } });
+
         try {
             await socialService.respondFriendRequest(requestId, action);
-            await get().fetchFriendRequests();
+            
+            // Sincronizamos silenciosamente en segundo plano
+            get().fetchFriendRequests();
             if (action === 'accept') {
-                await get().fetchFriends();
+                get().fetchFriends();
             }
-            set({ isSocialLoading: false });
         } catch (error) {
-            set({ socialError: error.message, isSocialLoading: false });
+            set({ socialError: error.message });
+            // Si falla, revertimos el estado trayendo lo real
+            get().fetchFriendRequests();
         }
     },
 
-    // Eliminar amigo
     removeFriend: async (friendId) => {
-        set({ isSocialLoading: true, socialError: null });
+        // ACTUALIZACIÓN OPTIMISTA
+        const currentFriends = get().socialFriends;
+        set({ socialFriends: currentFriends.filter(f => f.id !== friendId) });
+
         try {
             await socialService.removeFriend(friendId);
-            // Actualización optimista
-            const currentFriends = get().socialFriends;
-            set({
-                socialFriends: currentFriends.filter(f => f.id !== friendId),
-                isSocialLoading: false
-            });
         } catch (error) {
-            set({ socialError: error.message, isSocialLoading: false });
-            // Si falla, recargamos la lista real
+            set({ socialError: error.message });
             get().fetchFriends();
         }
     },
 
-    // Obtener Leaderboard
     fetchLeaderboard: async () => {
-        set({ isSocialLoading: true, socialError: null });
         try {
             const leaderboard = await socialService.getLeaderboard();
-            set({ socialLeaderboard: leaderboard, isSocialLoading: false });
+            set({ socialLeaderboard: leaderboard });
         } catch (error) {
-            set({ socialError: error.message, isSocialLoading: false });
+            set({ socialError: error.message });
         }
     },
 
-    // Ver perfil público
     fetchPublicProfile: async (userId) => {
-        // Limpiamos el perfil anterior para evitar flasheos de datos viejos
         set({ isSocialLoading: true, socialError: null, socialViewedProfile: null });
         try {
             const profile = await socialService.getPublicProfile(userId);
-            // Ahora profile puede incluir { warning: "..." } si no son amigos
             set({ socialViewedProfile: profile, isSocialLoading: false });
         } catch (error) {
             set({ socialError: error.message, isSocialLoading: false });
         }
     },
 
-    // Limpiar perfil visto
     clearViewedProfile: () => {
         set({ socialViewedProfile: null });
+    },
+
+    // --- WEBSOCKETS (Tiempo Real) ---
+    subscribeToSocialEvents: () => {
+        const socket = getSocket();
+        if (!socket) return;
+
+        // Limpiar para evitar duplicados si se llama varias veces
+        socket.off('new_friend_request');
+        socket.off('friend_request_accepted');
+        socket.off('friend_removed');
+
+        socket.on('new_friend_request', () => {
+            get().fetchFriendRequests();
+        });
+
+        socket.on('friend_request_accepted', () => {
+            get().fetchFriends();
+            get().fetchFriendRequests();
+        });
+
+        socket.on('friend_removed', () => {
+            get().fetchFriends();
+        });
     }
 });

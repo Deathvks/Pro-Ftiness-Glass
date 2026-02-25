@@ -216,6 +216,16 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
+  // --- RECARGAR RUTINAS SILENCIOSAMENTE ---
+  refreshRoutines: async () => {
+    try {
+      const routines = await routineService.getRoutines();
+      set({ routines });
+    } catch (error) {
+      console.error("Error al actualizar la lista de rutinas:", error);
+    }
+  },
+
   // --- RUTINAS ---
 
   createRoutine: async (routineData) => {

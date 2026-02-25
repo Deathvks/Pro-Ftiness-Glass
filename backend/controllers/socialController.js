@@ -2,7 +2,7 @@
 import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { createNotification } from '../services/notificationService.js';
-import jwt from 'jsonwebtoken'; // AÑADIDO para leer el token manualmente si la ruta es pública
+import jwt from 'jsonwebtoken';
 
 const { User, Friendship, WorkoutLog, Routine, RoutineExercise, ExerciseList } = models;
 
@@ -86,6 +86,12 @@ export const sendFriendRequest = async (req, res) => {
                     url: `/social?tab=requests&highlight=${requesterId}`
                 }
             });
+        }
+
+        // --- WEBSOCKET: Avisar al usuario destino ---
+        const io = req.app.get('io');
+        if (io) {
+            io.to(targetUserId.toString()).emit('new_friend_request');
         }
 
         res.json({ success: true, message: 'Solicitud enviada' });
@@ -185,6 +191,12 @@ export const respondFriendRequest = async (req, res) => {
                 });
             }
 
+            // --- WEBSOCKET: Avisar al usuario que envió la solicitud ---
+            const io = req.app.get('io');
+            if (io) {
+                io.to(friendship.requester_id.toString()).emit('friend_request_accepted');
+            }
+
             res.json({ success: true, message: 'Amigo añadido' });
         } else {
             await friendship.destroy();
@@ -230,17 +242,14 @@ export const getPublicProfile = async (req, res) => {
     try {
         const { userId } = req.params;
         
-        // 1. OBTENER IDENTIDAD DEL VISITANTE (incluso en rutas públicas)
         let viewerId = req.user ? (req.user.userId || req.user.id) : null;
         
-        // Si no hay req.user pero hay token en el header, lo desencriptamos manualmente
         if (!viewerId && req.headers.authorization) {
             try {
                 const token = req.headers.authorization.split(' ')[1];
                 const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
                 viewerId = decoded.userId || decoded.id;
             } catch (e) {
-                // Fallo de token silencioso (se trata como usuario público anónimo)
             }
         }
 
@@ -273,7 +282,6 @@ export const getPublicProfile = async (req, res) => {
         let isMe = false;
 
         if (viewerId) {
-            // Comparación segura convirtiendo a String
             isMe = String(userId) === String(viewerId);
 
             if (!isMe) {
@@ -296,9 +304,7 @@ export const getPublicProfile = async (req, res) => {
             return res.status(403).json({ error: 'Este perfil es privado' });
         }
 
-        // --- FILTRADO DE RUTINAS ---
         const visibleRoutines = (user.Routines || []).filter(routine => {
-            // Si soy yo mismo, veo TODAS mis rutinas
             if (isMe) return true;
             if (routine.visibility === 'public') return true;
             if (isFriend && routine.visibility === 'friends') return true;
@@ -398,6 +404,13 @@ export const removeFriend = async (req, res) => {
                 status: 'accepted'
             }
         });
+
+        // --- WEBSOCKET: Avisar al usuario que ha sido eliminado para que su lista se limpie ---
+        const io = req.app.get('io');
+        if (io) {
+            io.to(friendId.toString()).emit('friend_removed');
+        }
+
         res.json({ success: true, message: 'Amigo eliminado' });
     } catch (error) {
         res.status(500).json({ error: error.message });

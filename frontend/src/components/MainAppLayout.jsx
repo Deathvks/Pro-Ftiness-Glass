@@ -78,8 +78,10 @@ export default function MainAppLayout({
     // Gamificación
     gamificationEvents,
     clearGamificationEvents,
-    // Solicitudes sociales para el badge del navbar
+    // Social y Sockets
     socialRequests,
+    fetchFriendRequests,
+    subscribeToSocialEvents,
   } = useAppStore(state => ({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
@@ -95,7 +97,10 @@ export default function MainAppLayout({
     // Gamificación
     gamificationEvents: state.gamification?.gamificationEvents,
     clearGamificationEvents: state.clearGamificationEvents,
+    // Social
     socialRequests: state.socialRequests,
+    fetchFriendRequests: state.fetchFriendRequests,
+    subscribeToSocialEvents: state.subscribeToSocialEvents,
   }));
 
   const [showAIModal, setShowAIModal] = useState(false);
@@ -105,12 +110,14 @@ export default function MainAppLayout({
   // Calculamos el contador de no leídas localmente para asegurar consistencia
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  // Cargar notificaciones al inicio
+  // Cargar notificaciones y suscribir a eventos de Sockets al inicio
   useEffect(() => {
     if (userProfile) {
       fetchNotifications();
+      fetchFriendRequests(); // Traer el estado inicial de solicitudes
+      subscribeToSocialEvents(); // Suscribirse a los avisos en tiempo real
     }
-  }, [fetchNotifications, userProfile]);
+  }, [fetchNotifications, fetchFriendRequests, subscribeToSocialEvents, userProfile]);
 
   // Efecto para detectar eventos de Gamificación y lanzar Toast
   useEffect(() => {

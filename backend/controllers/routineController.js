@@ -24,29 +24,16 @@ const checkRoutineAccess = async (routine, user) => {
 
     if (isFriendsOnly && currentUserId) {
         try {
-            // Intentamos buscar con camelCase (lo estándar de Sequelize)
-            let friendship = await sequelize.models.Friendship.findOne({
+            // El modelo Friendship usa requester_id y addressee_id, no user_id y friend_id
+            const friendship = await sequelize.models.Friendship.findOne({
                 where: {
                     status: 'accepted',
                     [Op.or]: [
-                        { userId: currentUserId, friendId: routine.user_id },
-                        { userId: routine.user_id, friendId: currentUserId }
+                        { requester_id: currentUserId, addressee_id: routine.user_id },
+                        { requester_id: routine.user_id, addressee_id: currentUserId }
                     ]
                 }
-            }).catch(() => null); // Si da error por el nombre de la columna, no rompe la ejecución
-
-            // Fallback: si el modelo Friendship usa snake_case (user_id) en la definición
-            if (!friendship) {
-                friendship = await sequelize.models.Friendship.findOne({
-                    where: {
-                        status: 'accepted',
-                        [Op.or]: [
-                            { user_id: currentUserId, friend_id: routine.user_id },
-                            { user_id: routine.user_id, friend_id: currentUserId }
-                        ]
-                    }
-                }).catch(() => null); 
-            }
+            });
 
             if (friendship) return true;
         } catch (err) {
@@ -615,7 +602,11 @@ export const downloadRoutine = async (req, res, next) => {
       return res.status(403).json({ error: 'Esta rutina es privada o no tienes permiso para importarla.' });
     }
 
-    const newRoutineName = `${sourceRoutine.name} (Copia)`;
+    // Validar si ya tiene (Copia) en el nombre para no duplicarlo
+    let newRoutineName = sourceRoutine.name;
+    if (!newRoutineName.endsWith(' (Copia)')) {
+        newRoutineName += ' (Copia)';
+    }
 
     // Comprobar si ya existe una rutina con este nombre para evitar duplicados
     const existingRoutine = await sequelize.models.Routine.findOne({

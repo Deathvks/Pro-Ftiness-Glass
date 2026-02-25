@@ -520,6 +520,7 @@ export default function Social({ setView }) {
         fetchStories,
         uploadStory,
         subscribeToStories,
+        subscribeToSocialEvents
     } = useAppStore();
 
     useEffect(() => {
@@ -528,7 +529,8 @@ export default function Social({ setView }) {
         fetchLeaderboard();
         fetchStories(); 
         subscribeToStories(); 
-    }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories, subscribeToStories]);
+        subscribeToSocialEvents(); // Inicializamos el escuchador de Sockets
+    }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories, subscribeToStories, subscribeToSocialEvents]);
 
     // Manejo de params
     useEffect(() => {
@@ -729,7 +731,7 @@ export default function Social({ setView }) {
     const handleRespond = async (e, requestId, action) => {
         e.stopPropagation();
         await respondFriendRequest(requestId, action);
-        showToast(action === 'accept' ? 'Solicitud aceptada' : 'Solicitud rechazada', 'success');
+        // Ahora el toast salta pero la UI ya se actualizó sola y sin "pantalla de carga"
     };
 
     const handleRemoveFriend = (e, friendId) => {
