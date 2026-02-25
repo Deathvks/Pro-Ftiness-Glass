@@ -761,11 +761,19 @@ const Dashboard = ({ setView }) => {
       </div>
 
       {showWeeklyRecap && (
-          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]" onClick={() => setShowWeeklyRecap(false)}>
-             <div className="relative w-full max-w-xl h-[85vh] flex flex-col items-center justify-between" onClick={(e) => e.stopPropagation()}>
-                 <button onClick={() => setShowWeeklyRecap(false)} className="absolute top-0 right-0 z-50 p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10 translate-x-2 -translate-y-2">
-                     <X size={24} />
-                 </button>
+          <div 
+             className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center px-4 animate-[fade-in_0.2s_ease-out]" 
+             style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+             onClick={() => setShowWeeklyRecap(false)}
+          >
+             <button 
+                 onClick={() => setShowWeeklyRecap(false)} 
+                 className="absolute z-[110] p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10"
+                 style={{ top: 'max(1rem, env(safe-area-inset-top))', right: '1rem' }}
+             >
+                 <X size={24} />
+             </button>
+             <div className="relative w-full max-w-xl h-full py-8 flex flex-col items-center justify-between" onClick={(e) => e.stopPropagation()}>
                  <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center pointer-events-none">
                       <ScaleToFit width={1080} height={1920}>
                           <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 pointer-events-auto">
@@ -773,7 +781,7 @@ const Dashboard = ({ setView }) => {
                           </div>
                       </ScaleToFit>
                  </div>
-                 <div className="shrink-0 mb-2">
+                 <div className="shrink-0 mb-4">
                       <button onClick={handleShareRecap} disabled={isSharing} className="bg-white text-black px-8 py-4 rounded-full flex items-center gap-3 shadow-lg shadow-white/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100">
                           {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />}
                           <span className="font-black text-lg tracking-tight">{t('Compartir Resumen', { defaultValue: 'Compartir Resumen' })}</span>
@@ -809,9 +817,19 @@ const Dashboard = ({ setView }) => {
       )}
 
       {showPRModal && prShareData && (
-          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]" onClick={() => setShowPRModal(false)}>
-             <div className="relative w-full max-w-xl h-[85vh] flex flex-col items-center justify-between" onClick={(e) => e.stopPropagation()}>
-                 <button onClick={() => setShowPRModal(false)} className="absolute top-0 right-0 z-50 p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10 translate-x-2 -translate-y-2"><X size={24} /></button>
+          <div 
+             className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center px-4 animate-[fade-in_0.2s_ease-out]" 
+             style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+             onClick={() => setShowPRModal(false)}
+          >
+             <button 
+                 onClick={() => setShowPRModal(false)} 
+                 className="absolute z-[110] p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10"
+                 style={{ top: 'max(1rem, env(safe-area-inset-top))', right: '1rem' }}
+             >
+                 <X size={24} />
+             </button>
+             <div className="relative w-full max-w-xl h-full py-8 flex flex-col items-center justify-between" onClick={(e) => e.stopPropagation()}>
                  <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center pointer-events-none">
                       <ScaleToFit width={1080} height={1920}>
                           <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 pointer-events-auto">
@@ -820,7 +838,7 @@ const Dashboard = ({ setView }) => {
                           </div>
                       </ScaleToFit>
                  </div>
-                 <div className="shrink-0 mb-2 flex items-center justify-center gap-2 sm:gap-3 px-2 w-full max-w-sm">
+                 <div className="shrink-0 mb-4 flex items-center justify-center gap-2 sm:gap-3 px-2 w-full max-w-sm">
                       {latestPRs.length > 1 && (
                           <button onClick={() => { setShowPRModal(false); setShowPRList(true); }} className="bg-gray-800 text-white px-4 md:px-6 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all">
                               <List size={20} className="shrink-0" />
