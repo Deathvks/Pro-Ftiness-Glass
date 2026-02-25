@@ -101,14 +101,11 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   };
 
   return (
-    // Se ha subido el z-index a z-[100] (por si el navbar es muy alto) y se ha añadido pb-20 para asegurar que haya margen inferior en móviles
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-fade-in">
       <GlassCard 
-        // Calculamos el alto máximo restando espacio para no chocar con bordes y navbars
         className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl" 
         style={{ backgroundColor: 'var(--bg-primary)' }}
       >
-        {/* Cabecera fija (shrink-0) */}
         <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent shrink-0">
           <button 
             onClick={onClose}
@@ -130,7 +127,6 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
           </div>
         </div>
 
-        {/* Cuerpo scrolleable */}
         <div className="p-6 pt-2 space-y-6 flex-1 overflow-y-auto scrollbar-hide">
           <div className="grid grid-cols-1 gap-3">
             <button onClick={() => handleVisibilityChange('private')} className={getOptionClasses('private')}>
@@ -182,7 +178,6 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
           </div>
         </div>
         
-        {/* Footer fijo (shrink-0) */}
         <div className="p-6 pt-0 shrink-0">
              <button 
                 onClick={onClose}
@@ -319,6 +314,15 @@ const Routines = ({ setView }) => {
       .filter(f => f && f.trim() !== '');
     return [...new Set(folders)].sort();
   }, [routines]);
+
+  // Rescate automático si la carpeta seleccionada fue eliminada o ya no existe
+  useEffect(() => {
+    if (selectedFolder !== 'all' && selectedFolder !== 'uncategorized') {
+      if (routines?.length > 0 && !uniqueFolders.includes(selectedFolder)) {
+        setSelectedFolder('all');
+      }
+    }
+  }, [uniqueFolders, selectedFolder, routines]);
 
   const groupExercises = (exercises) => {
     if (!exercises || exercises.length === 0) return [];
@@ -640,7 +644,8 @@ const Routines = ({ setView }) => {
               />
             </div>
 
-            {uniqueFolders.length > 0 && (
+            {/* Renderizamos las carpetas siempre que haya rutinas */}
+            {routines && routines.length > 0 && (
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                 <button
                   onClick={() => setSelectedFolder('all')}
