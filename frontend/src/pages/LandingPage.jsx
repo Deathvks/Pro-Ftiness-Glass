@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { 
   Dumbbell, Activity, Shield, ChevronRight, ChevronLeft, Utensils, 
   LineChart, Users, Zap, Smartphone, Trophy, ArrowRight,
-  Instagram, Youtube, Github, Globe, Download
+  Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check
 } from 'lucide-react';
 
 import packageJson from '../../package.json'; 
@@ -51,6 +51,83 @@ const useIntersectionObserver = (options = {}) => {
   
     return [elementRef, isIntersecting];
 };
+
+// --- ANIMACIONES SVG FLOTANTES (IA, COMIDA, ENTRENOS) ---
+const FloatingHeroElements = () => (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block" aria-hidden="true">
+        <style>{`
+            @keyframes float-1 {
+                0% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-20px) rotate(10deg); }
+                100% { transform: translateY(0px) rotate(0deg); }
+            }
+            @keyframes float-2 {
+                0% { transform: translateY(0px) rotate(0deg) scale(1); }
+                50% { transform: translateY(-15px) rotate(-8deg) scale(1.05); }
+                100% { transform: translateY(0px) rotate(0deg) scale(1); }
+            }
+            @keyframes float-3 {
+                0% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(15px) rotate(15deg); }
+                100% { transform: translateY(0px) rotate(0deg); }
+            }
+        `}</style>
+
+        {/* IA / Sparkles Float */}
+        <div 
+            className="absolute top-[10%] right-[15%] opacity-60 animate-[float-2_7s_ease-in-out_infinite]"
+        >
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="url(#ai-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_20px_rgba(139,92,246,0.6)]">
+                <defs>
+                    <linearGradient id="ai-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop stopColor="#8b5cf6" />
+                        <stop offset="1" stopColor="#ec4899" />
+                    </linearGradient>
+                </defs>
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                <circle cx="12" cy="12" r="4" className="animate-[spin_4s_linear_infinite]" />
+            </svg>
+        </div>
+
+        {/* Entrenamiento / Dumbbell Float */}
+        <div 
+            className="absolute bottom-[25%] left-[12%] opacity-50 animate-[float-1_6s_ease-in-out_infinite]"
+        >
+            <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="url(#workout-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] transform -rotate-12">
+                <defs>
+                    <linearGradient id="workout-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop stopColor="#3b82f6" />
+                        <stop offset="1" stopColor="#8b5cf6" />
+                    </linearGradient>
+                </defs>
+                <path d="m6.5 6.5 11 11" />
+                <path d="m21 21-1-1" />
+                <path d="m3 3 1 1" />
+                <path d="m18 22 4-4" />
+                <path d="m2 6 4-4" />
+                <path d="m3 10 7-7" />
+                <path d="m14 21 7-7" />
+            </svg>
+        </div>
+
+        {/* Nutrición / Food Float */}
+        <div 
+            className="absolute top-[20%] left-[20%] opacity-40 animate-[float-3_8s_ease-in-out_infinite]"
+        >
+            <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="url(#food-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] transform rotate-12">
+                <defs>
+                    <linearGradient id="food-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop stopColor="#10b981" />
+                        <stop offset="1" stopColor="#3b82f6" />
+                    </linearGradient>
+                </defs>
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
+                <path d="M12 4v-2c0-1.1.9-2 2-2" />
+                <path d="M12 12h.01" />
+            </svg>
+        </div>
+    </div>
+);
 
 const GymBot = ({ isDocked }) => (
     <div 
@@ -165,10 +242,18 @@ const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
     </ScrollRevealCard>
 );
 
-const BentoCard = ({ children, className = "", delay = 0 }) => (
+const BentoCard = ({ children, className = "", delay = 0, bgIcon: BgIcon, bgIconColor = "text-text-primary" }) => (
     <ScrollRevealCard delay={delay} className={className}>
-        <div className="h-full p-8 rounded-[2rem] bg-gradient-to-br from-glass-base via-glass-base/50 to-transparent border border-glass-border backdrop-blur-xl hover:border-accent/30 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/5 group relative overflow-hidden">
+        <div className="h-full p-8 rounded-[2rem] bg-gradient-to-br from-glass-base via-glass-base/50 to-transparent border border-glass-border backdrop-blur-xl hover:border-accent/30 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+            
+            {/* Fondo de marca de agua animada */}
+            {BgIcon && (
+                <div className={`absolute -bottom-10 -right-10 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 pointer-events-none ${bgIconColor}`}>
+                    <BgIcon size={240} />
+                </div>
+            )}
+            
             {children}
         </div>
     </ScrollRevealCard>
@@ -303,13 +388,11 @@ const LandingPage = ({ onLogin, onRegister }) => {
     <div 
         ref={containerRef}
         onScroll={handleScroll}
-        /* CAMBIO APLICADO: fixed por absolute para que respete el contenedor seguro */
         className="absolute inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth perspective-1000"
     >
       
-      {/* --- FONDO DINÁMICO --- */}
-      {/* CAMBIO APLICADO: fixed por absolute para que no se salga por arriba ni por abajo */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
+      {/* --- FONDO DINÁMICO Y ELEMENTOS FLOTANTES --- */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
         <div 
           className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite]"
           style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }}
@@ -321,6 +404,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
         <div className="absolute inset-0 opacity-[0.04] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       </div>
 
+      <FloatingHeroElements />
       <GymBot isDocked={isDocked} />
 
       <div className="relative z-10 flex flex-col min-h-full">
@@ -367,16 +451,16 @@ const LandingPage = ({ onLogin, onRegister }) => {
         </nav>
 
         {/* --- HERO SECTION --- */}
-        <main className="flex-grow flex flex-col items-center px-4 pt-12 pb-24 text-center w-full max-w-7xl mx-auto overflow-x-hidden">
+        <main className="flex-grow flex flex-col items-center px-4 pt-12 pb-24 text-center w-full max-w-7xl mx-auto overflow-x-hidden relative">
           
           <div className="h-32 sm:h-28 w-full mb-8 sm:mb-16 pointer-events-none" aria-hidden="true"></div>
 
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-glass-base border border-accent/20 mb-8 backdrop-blur-md shadow-sm transition-all duration-1000 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-glass-base border border-white/20 dark:border-white/10 mb-8 backdrop-blur-md shadow-sm transition-all duration-1000 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
             </span>
-            <span className="text-xs font-bold text-accent tracking-wide uppercase">Versión {appVersion}</span>
+            <span className="text-xs font-bold text-text-primary tracking-wide uppercase">Versión {appVersion}</span>
           </div>
 
           <div className={`space-y-6 max-w-5xl mx-auto transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
@@ -442,15 +526,16 @@ const LandingPage = ({ onLogin, onRegister }) => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left">
               
-              <BentoCard className="md:col-span-2" delay={100}>
-                 <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm">
+              {/* Rutinas (Ocupa 2 columnas) */}
+              <BentoCard className="md:col-span-2" delay={100} bgIcon={Dumbbell} bgIconColor="text-blue-500">
+                 <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <Dumbbell size={32} />
                  </div>
-                 <h3 className="text-3xl font-bold text-text-primary mb-3 group-hover:text-blue-400 transition-colors">Rutinas Avanzadas</h3>
-                 <p className="text-text-secondary mb-8 max-w-md text-lg leading-relaxed">
-                   Diseña entrenamientos con superseries, dropsets y descansos personalizados. Registra pesos, RPE y notas en tiempo real.
+                 <h3 className="text-3xl font-bold text-text-primary mb-3 group-hover:text-blue-400 transition-colors relative z-10">Rutinas Avanzadas</h3>
+                 <p className="text-text-secondary mb-8 max-w-md text-lg leading-relaxed relative z-10">
+                    Diseña entrenamientos con superseries, dropsets y descansos personalizados. Registra pesos, RPE y notas en tiempo real.
                  </p>
-                 <div className="flex gap-3 flex-wrap">
+                 <div className="flex gap-3 flex-wrap relative z-10">
                     {['Superseries', 'Historial', '1RM Estimado'].map(tag => (
                         <span key={tag} className="px-3 py-1.5 bg-bg-secondary/50 rounded-lg text-xs font-bold font-mono text-text-secondary border border-glass-border group-hover:border-blue-500/30 group-hover:text-blue-400 transition-colors">
                             {tag}
@@ -459,54 +544,67 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </div>
               </BentoCard>
 
-              <BentoCard delay={200}>
-                 <div className="w-14 h-14 bg-green-500/10 text-green-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300 shadow-sm">
+              {/* Inteligencia Artificial (1 Columna) */}
+              <BentoCard delay={200} bgIcon={Bot} bgIconColor="text-purple-500">
+                 <div className="w-14 h-14 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
+                    <Sparkles size={32} />
+                 </div>
+                 <h3 className="text-2xl font-bold text-text-primary mb-3 group-hover:text-purple-400 transition-colors relative z-10">IA Integrada</h3>
+                 <p className="text-text-secondary mb-4 leading-relaxed relative z-10">
+                    Asistente inteligente para generar entrenamientos personalizados desde cero con un solo clic.
+                 </p>
+                 <div className="flex gap-2 flex-wrap relative z-10 mt-auto">
+                     <span className="px-2 py-1 bg-purple-500/10 rounded-md text-[10px] font-bold text-purple-400 border border-purple-500/20">Auto-Ajuste</span>
+                 </div>
+              </BentoCard>
+
+              {/* Nutrición (1 Columna) */}
+              <BentoCard delay={300} bgIcon={Apple} bgIconColor="text-green-500">
+                 <div className="w-14 h-14 bg-green-500/10 text-green-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <Utensils size={32} />
                  </div>
-                 <h3 className="text-2xl font-bold text-text-primary mb-3 group-hover:text-green-400 transition-colors">Nutrición & Macros</h3>
-                 <p className="text-text-secondary mb-4 leading-relaxed">
-                   Base de datos verificada. Escanea códigos de barras y controla tus calorías diarias sin estrés.
+                 <h3 className="text-2xl font-bold text-text-primary mb-3 group-hover:text-green-400 transition-colors relative z-10">Nutrición & Macros</h3>
+                 <p className="text-text-secondary mb-4 leading-relaxed relative z-10">
+                    Base de datos verificada. Escanea códigos de barras y controla tus calorías diarias sin estrés.
                  </p>
               </BentoCard>
 
-              <BentoCard delay={300}>
-                 <div className="w-14 h-14 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300 shadow-sm">
+              {/* Análisis (1 Columna) */}
+              <BentoCard delay={400} bgIcon={LineChart} bgIconColor="text-yellow-500">
+                 <div className="w-14 h-14 bg-yellow-500/10 text-yellow-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-yellow-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <LineChart size={32} />
                  </div>
-                 <h3 className="text-2xl font-bold text-text-primary mb-3 group-hover:text-purple-400 transition-colors">Análisis Visual</h3>
-                 <p className="text-text-secondary mb-4 leading-relaxed">
-                   Gráficos interactivos de tu peso, volumen de carga y medidas para ver tu evolución real.
+                 <h3 className="text-2xl font-bold text-text-primary mb-3 group-hover:text-yellow-500 transition-colors relative z-10">Análisis Visual</h3>
+                 <p className="text-text-secondary mb-4 leading-relaxed relative z-10">
+                    Gráficos interactivos de tu peso, volumen de carga y medidas para ver tu evolución real.
                  </p>
               </BentoCard>
 
-              <BentoCard className="md:col-span-2" delay={400}>
-                 <div className="w-14 h-14 bg-orange-500/10 text-orange-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 shadow-sm">
+              {/* Comunidad (1 Columna) */}
+              <BentoCard delay={500} bgIcon={Globe} bgIconColor="text-orange-500">
+                 <div className="w-14 h-14 bg-orange-500/10 text-orange-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <Users size={32} />
                  </div>
-                 <h3 className="text-3xl font-bold text-text-primary mb-3 group-hover:text-orange-400 transition-colors">Comunidad Fitness</h3>
-                 <p className="text-text-secondary mb-8 max-w-md text-lg leading-relaxed">
-                   Comparte tus logros, sube historias efímeras de tus entrenos y encuentra motivación con tus amigos reales.
+                 <h3 className="text-2xl font-bold text-text-primary mb-3 group-hover:text-orange-400 transition-colors relative z-10">Comunidad</h3>
+                 <p className="text-text-secondary mb-6 leading-relaxed relative z-10">
+                   Comparte tus logros, sube historias de tus entrenos y encuentra motivación con tus amigos.
                  </p>
-                 
-                 <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-4 relative z-10">
                      <div className="flex -space-x-4 pl-2">
-                        {[0, 1, 2, 3, 4].map((index) => {
+                        {[0, 1, 2].map((index) => {
                             const userImage = communityUsers[index]; 
                             return (
-                                <div key={index} className="w-12 h-12 rounded-full bg-glass-border border-4 border-bg-primary flex items-center justify-center overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:z-10 relative shadow-md">
+                                <div key={index} className="w-10 h-10 rounded-full bg-glass-border border-2 border-bg-primary flex items-center justify-center overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:z-10 relative shadow-md">
                                     {userImage ? (
                                         <img 
                                           src={userImage} 
                                           alt={`Usuario ${index + 1}`}
                                           className="w-full h-full object-cover"
-                                          onError={(e) => {
-                                              e.target.style.display = 'none'; 
-                                              e.target.nextSibling.style.display = 'flex'; 
-                                          }}
+                                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                                         />
                                     ) : null}
                                     <div style={{ display: userImage ? 'none' : 'flex' }} className="w-full h-full items-center justify-center bg-glass-base">
-                                            <Users size={18} className="text-text-tertiary" />
+                                            <Users size={14} className="text-text-tertiary" />
                                     </div>
                                 </div>
                             );
@@ -554,8 +652,51 @@ const LandingPage = ({ onLogin, onRegister }) => {
              </div>
           </div>
 
+          {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS (Requisito Google) --- */}
+          <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left">
+              <ScrollRevealCard>
+                  <div className="p-8 md:p-12 rounded-[2rem] bg-glass-base border border-glass-border backdrop-blur-xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                          <Shield size={200} />
+                      </div>
+                      
+                      <div className="flex items-center gap-4 mb-8 relative z-10">
+                          <div className="p-3.5 bg-blue-500/20 text-blue-400 rounded-2xl">
+                              <Shield size={32} />
+                          </div>
+                          <h3 className="text-2xl md:text-3xl font-bold text-text-primary">Transparencia y Uso de Datos</h3>
+                      </div>
+                      
+                      <p className="text-text-secondary text-lg leading-relaxed mb-6 relative z-10">
+                          En <strong>Pro Fitness Glass</strong>, tu privacidad es fundamental. Solo solicitamos los datos estrictamente necesarios para ofrecerte la mejor experiencia posible:
+                      </p>
+                      
+                      <ul className="space-y-4 text-text-secondary mb-8 relative z-10">
+                          <li className="flex items-start gap-3">
+                              <Check size={20} className="text-green-400 shrink-0 mt-1" />
+                              <span><strong>Inicio de Sesión con Google:</strong> Solicitamos acceso a tu dirección de correo electrónico y nombre de perfil público. Esto se usa <em>exclusivamente</em> para crear tu cuenta, identificarte de forma segura y permitirte sincronizar tu progreso entre dispositivos.</span>
+                          </li>
+                          <li className="flex items-start gap-3">
+                              <Check size={20} className="text-green-400 shrink-0 mt-1" />
+                              <span><strong>Salud y Progreso:</strong> Tus rutinas, pesos y medidas se almacenan de forma segura en nuestros servidores para generar tus gráficas. Tú tienes el control absoluto sobre qué información haces pública en la comunidad.</span>
+                          </li>
+                          <li className="flex items-start gap-3">
+                              <Check size={20} className="text-green-400 shrink-0 mt-1" />
+                              <span><strong>Sin venta de datos:</strong> Tus datos te pertenecen. No vendemos ni compartimos tu información personal con terceros para fines publicitarios.</span>
+                          </li>
+                      </ul>
+
+                      <div className="relative z-10">
+                          <a href="/privacy" className="inline-flex items-center gap-2 text-accent font-bold px-5 py-2.5 bg-accent/10 hover:bg-accent/20 rounded-xl transition-colors">
+                              Leer la Política de Privacidad completa <ChevronRight size={18} />
+                          </a>
+                      </div>
+                  </div>
+              </ScrollRevealCard>
+          </div>
+
           {/* --- CTA FINAL --- */}
-          <div className="mt-40 w-full max-w-4xl">
+          <div className="mt-32 w-full max-w-4xl relative z-20">
              <ScrollRevealCard delay={200}>
                 <div className="p-1 rounded-[2.5rem] bg-gradient-to-r from-accent/50 via-purple-500/30 to-accent/50 animate-gradient-x shadow-2xl shadow-accent/20">
                     <div className="bg-bg-primary rounded-[2.2rem] p-12 md:p-20 text-center relative overflow-hidden group">

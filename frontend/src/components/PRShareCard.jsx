@@ -1,5 +1,5 @@
 /* frontend/src/components/PRShareCard.jsx */
-import React, { forwardRef, useMemo, useState, useEffect } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TrendingUp, Crown } from 'lucide-react';
 import { FaTrophy, FaCalendarAlt, FaDumbbell, FaUserCircle } from 'react-icons/fa';
@@ -9,19 +9,6 @@ const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) 
 
 const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
     const { t, i18n } = useTranslation(['translation', 'exercise_names']);
-    const [logoDataUrl, setLogoDataUrl] = useState(null);
-
-    // Convertimos el logo a Base64 para que html-to-image no falle al exportar (bug típico de Safari/Móvil)
-    useEffect(() => {
-        fetch(`${window.location.origin}/logo.webp`)
-            .then(res => res.blob())
-            .then(blob => {
-                const reader = new FileReader();
-                reader.onloadend = () => setLogoDataUrl(reader.result);
-                reader.readAsDataURL(blob);
-            })
-            .catch(err => console.error("Error cargando logo:", err));
-    }, []);
 
     const profileImgSrc = useMemo(() => {
         if (!userImage) return null;
@@ -174,10 +161,12 @@ const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
                     <div className="flex flex-col">
                         <span className="text-sm text-gray-500 font-bold uppercase tracking-[0.4em] mb-2 block">Generado por</span>
                         <div className="flex items-center">
-                            {/* Renderizado condicional esperando al Base64 */}
-                            {logoDataUrl && (
-                                <img src={logoDataUrl} alt="Pro Fitness Glass" className="w-14 h-14 object-contain drop-shadow-2xl mr-4 shrink-0" />
-                            )}
+                            <img 
+                                src={`${window.location.origin}/logo.webp`} 
+                                alt="Pro Fitness Glass" 
+                                className="w-14 h-14 object-contain drop-shadow-2xl mr-4 shrink-0" 
+                                crossOrigin="anonymous" 
+                            />
                             <span className="text-3xl font-black text-white tracking-wide m-0 p-0 pr-2">Pro Fitness Glass</span>
                         </div>
                     </div>
