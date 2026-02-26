@@ -16,7 +16,8 @@ const calculate1RM = (weight, reps) => {
   return Math.round(estimated1RM * 100) / 100;
 };
 
-const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, sequelize } = models;
+// AÑADIDO: User y Friendship para poder enviar las notificaciones a los amigos
+const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, User, Friendship, sequelize } = models;
 
 export const getWorkoutHistory = async (req, res, next) => {
   try {
@@ -110,7 +111,7 @@ export const logWorkoutSession = async (req, res, next) => {
     routineName, routine_name,
     workout_date, date,
     duration_seconds, calories_burned, details, exercises, notes, routineId,
-    visibility // NUEVO: Recibir visibilidad del frontend
+    visibility, notifyFriends // NUEVO: Recibir visibilidad y si debe notificar a amigos
   } = req.body;
 
   const { userId } = req.user;
@@ -268,6 +269,45 @@ export const logWorkoutSession = async (req, res, next) => {
       const io = req.app.get('io');
       if (io) {
           io.emit('feed_update');
+      }
+
+      // Lógica de notificaciones sociales
+      try {
+        // 1. Notificar al propio usuario
+        await createNotification(userId, {
+          type: 'success',
+          title: '¡Entrenamiento publicado!',
+          message: `Tu sesión "${finalRoutineName}" se ha subido al muro.`,
+          data: { url: '/social?tab=feed' }
+        });
+
+        // 2. Notificar a los amigos SOLO si notifyFriends es true
+        if (notifyFriends === true || notifyFriends === 'true') {
+          const currentUser = await User.findByPk(userId, { attributes: ['username'] });
+          if (currentUser) {
+            const friendships = await Friendship.findAll({
+              where: {
+                status: 'accepted',
+                [Op.or]: [{ requester_id: userId }, { addressee_id: userId }]
+              }
+            });
+
+            const friendIds = friendships.map(f => f.requester_id === userId ? f.addressee_id : f.requester_id);
+            
+            const notificationPromises = friendIds.map(friendId => 
+              createNotification(friendId, {
+                type: 'info',
+                title: 'Actividad de amigos',
+                message: `${currentUser.username} ha completado: ${finalRoutineName}.`,
+                data: { url: '/social?tab=feed' }
+              })
+            );
+            
+            await Promise.allSettled(notificationPromises);
+          }
+        }
+      } catch (notifErr) {
+        console.error("Error enviando notificaciones sociales de entrenamiento:", notifErr);
       }
     }
 

@@ -38,10 +38,11 @@ import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
 const GlobalPrivacyModal = ({ onClose }) => {
   const { addToast } = useToast();
   const [visibility, setVisibility] = useState(() => localStorage.getItem('globalWorkoutVisibility') || 'friends');
+  const [notifyFriends, setNotifyFriends] = useState(() => localStorage.getItem('globalNotifyFriends') !== 'false');
 
-  const handleVisibilityChange = (newVisibility) => {
-    setVisibility(newVisibility);
-    localStorage.setItem('globalWorkoutVisibility', newVisibility);
+  const handleSave = () => {
+    localStorage.setItem('globalWorkoutVisibility', visibility);
+    localStorage.setItem('globalNotifyFriends', notifyFriends.toString());
     addToast('Privacidad del muro actualizada', 'success');
     onClose();
   };
@@ -98,7 +99,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
 
         <div className="p-6 pt-2 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
           <div className="grid grid-cols-1 gap-3">
-            <button onClick={() => handleVisibilityChange('private')} className={getOptionClasses('private')}>
+            <button onClick={() => setVisibility('private')} className={getOptionClasses('private')}>
               <div className={getIconContainerClasses('private')}><Lock size={26} strokeWidth={1.5} /></div>
               <div>
                 <span className={getTextClasses('private')}>No subir</span>
@@ -107,7 +108,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
               {visibility === 'private' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
             </button>
 
-            <button onClick={() => handleVisibilityChange('friends')} className={getOptionClasses('friends')}>
+            <button onClick={() => setVisibility('friends')} className={getOptionClasses('friends')}>
               <div className={getIconContainerClasses('friends')}><Users size={26} strokeWidth={1.5} /></div>
               <div>
                 <span className={getTextClasses('friends')}>Solo Amigos</span>
@@ -116,7 +117,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
               {visibility === 'friends' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
             </button>
 
-            <button onClick={() => handleVisibilityChange('public')} className={getOptionClasses('public')}>
+            <button onClick={() => setVisibility('public')} className={getOptionClasses('public')}>
               <div className={getIconContainerClasses('public')}><Globe size={26} strokeWidth={1.5} /></div>
               <div>
                 <span className={getTextClasses('public')}>Todo el mundo</span>
@@ -125,14 +126,29 @@ const GlobalPrivacyModal = ({ onClose }) => {
               {visibility === 'public' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
             </button>
           </div>
+
+          {visibility !== 'private' && (
+            <div className="mt-4 p-4 rounded-xl bg-bg-secondary border border-glass-border flex items-center justify-between gap-4 animate-[fade-in_0.3s_ease-out]">
+              <div className="text-left">
+                <span className="block font-bold text-sm text-text-primary">Notificar a mis amigos</span>
+                <span className="text-xs text-text-secondary block mt-0.5">Avisarles cuando publiques un entrenamiento.</span>
+              </div>
+              <button
+                onClick={() => setNotifyFriends(!notifyFriends)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${notifyFriends ? 'bg-accent' : 'bg-gray-600'}`}
+              >
+                <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifyFriends ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="p-6 pt-0 shrink-0">
              <button 
-                onClick={onClose}
+                onClick={handleSave}
                 className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
              >
-                Cerrar
+                Guardar Cambios
              </button>
         </div>
       </GlassCard>
@@ -350,8 +366,8 @@ const Routines = ({ setView }) => {
   
   const [sharingRoutineId, setSharingRoutineId] = useState(null);
   const sharingRoutine = useMemo(() => {
-     if (!sharingRoutineId) return null;
-     return routines.find(r => r.id === sharingRoutineId);
+      if (!sharingRoutineId) return null;
+      return routines.find(r => r.id === sharingRoutineId);
   }, [routines, sharingRoutineId]);
 
   const [selectedFolder, setSelectedFolder] = useState(() => {

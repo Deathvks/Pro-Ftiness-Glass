@@ -546,6 +546,7 @@ export const createWorkoutSlice = (set, get) => ({
         ...workoutData,
         date: workoutDate, 
         visibility: localStorage.getItem('globalWorkoutVisibility') || 'friends', 
+        notifyFriends: localStorage.getItem('globalNotifyFriends') !== 'false' // Añadido
       };
 
       const responseData = await workoutService.logWorkout(finalWorkoutData);

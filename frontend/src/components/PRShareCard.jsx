@@ -162,10 +162,9 @@ const PRShareCard = forwardRef(({ prData, userName, userImage }, ref) => {
                         <span className="text-sm text-gray-500 font-bold uppercase tracking-[0.4em] mb-2 block">Generado por</span>
                         <div className="flex items-center">
                             <img 
-                                src={`${window.location.origin}/logo.webp`} 
+                                src="/logo.webp" 
                                 alt="Pro Fitness Glass" 
                                 className="w-14 h-14 object-contain drop-shadow-2xl mr-4 shrink-0" 
-                                crossOrigin="anonymous" 
                             />
                             <span className="text-3xl font-black text-white tracking-wide m-0 p-0 pr-2">Pro Fitness Glass</span>
                         </div>
