@@ -5,7 +5,8 @@ import {
     Users, UserPlus, Trophy, Search, UserX, Check, X, Medal,
     ChevronRight, ChevronLeft, Plus, Camera, Image as ImageIcon,
     Globe, Zap, ShieldAlert, Clock, Lock, Video as VideoIcon,
-    Info, Settings, Shield, PlusCircle, Hash, Copy, ArrowLeft, LogOut, Trash2
+    Settings, Shield, PlusCircle, Hash, Copy, ArrowLeft, LogOut, Trash2,
+    Activity
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
@@ -15,6 +16,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
 import socialService from '../services/socialService';
+import Feed from '../components/Feed'; // <-- Importamos el nuevo componente Muro
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -467,7 +469,8 @@ const UserListItem = ({ user, action, subtext, isHighlighted, onNavigate }) => {
 
 export default function Social({ setView }) {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'friends');
+    // 1. Establecer "feed" como la pestaña por defecto
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'feed');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchPage, setSearchPage] = useState(1);
@@ -529,14 +532,15 @@ export default function Social({ setView }) {
         fetchLeaderboard();
         fetchStories(); 
         subscribeToStories(); 
-        subscribeToSocialEvents(); // Inicializamos el escuchador de Sockets
+        subscribeToSocialEvents(); 
     }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories, subscribeToStories, subscribeToSocialEvents]);
 
     // Manejo de params
     useEffect(() => {
         const tab = searchParams.get('tab');
         const highlight = searchParams.get('highlight');
-        if (tab && ['friends', 'requests', 'search', 'leaderboard', 'squads'].includes(tab)) setActiveTab(tab);
+        // Añadido 'feed' a los tabs permitidos
+        if (tab && ['feed', 'friends', 'requests', 'search', 'leaderboard', 'squads'].includes(tab)) setActiveTab(tab);
         if (highlight) {
             setHighlightedId(parseInt(highlight));
             const timer = setTimeout(() => setHighlightedId(null), 5000);
@@ -731,7 +735,6 @@ export default function Social({ setView }) {
     const handleRespond = async (e, requestId, action) => {
         e.stopPropagation();
         await respondFriendRequest(requestId, action);
-        // Ahora el toast salta pero la UI ya se actualizó sola y sin "pantalla de carga"
     };
 
     const handleRemoveFriend = (e, friendId) => {
@@ -1188,6 +1191,7 @@ export default function Social({ setView }) {
 
             {/* --- Pestañas Horizontales --- */}
             <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 py-2 px-1 md:justify-center">
+                <TabButton id="feed" icon={Activity} label="Muro" isActive={activeTab === 'feed'} onClick={changeTab} />
                 <TabButton id="friends" icon={Users} label="Amigos" isActive={activeTab === 'friends'} onClick={changeTab} />
                 <TabButton id="squads" icon={Shield} label="Grupos" isActive={activeTab === 'squads'} onClick={changeTab} />
                 <TabButton id="requests" icon={UserPlus} label="Solicitudes" badge={socialRequests?.received?.length || 0} isActive={activeTab === 'requests'} onClick={changeTab} />
@@ -1197,6 +1201,7 @@ export default function Social({ setView }) {
 
             {/* --- Contenido Principal --- */}
             <div className="min-h-[400px] max-w-3xl mx-auto w-full">
+                {activeTab === 'feed' && <Feed setView={setView} />}
                 {activeTab === 'friends' && renderFriends()}
                 {activeTab === 'squads' && renderSquads()}
                 {activeTab === 'requests' && renderRequests()}

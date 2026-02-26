@@ -35,6 +35,111 @@ import TemplateRoutines from './TemplateRoutines';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
 
+const GlobalPrivacyModal = ({ onClose }) => {
+  const { addToast } = useToast();
+  const [visibility, setVisibility] = useState(() => localStorage.getItem('globalWorkoutVisibility') || 'friends');
+
+  const handleVisibilityChange = (newVisibility) => {
+    setVisibility(newVisibility);
+    localStorage.setItem('globalWorkoutVisibility', newVisibility);
+    addToast('Privacidad del muro actualizada', 'success');
+    onClose();
+  };
+
+  const getOptionClasses = (optionKey) => {
+    const isSelected = visibility === optionKey;
+    return `flex items-center gap-4 p-4 rounded-xl border transition-all text-left group cursor-pointer relative overflow-hidden
+      ${isSelected 
+        ? 'bg-accent/10 border-accent shadow-[0_0_15px_-3px_rgba(var(--accent-rgb),0.3)]' 
+        : 'bg-glass-base border-glass-border hover:border-accent/30 hover:bg-glass-base/80'
+      }`;
+  };
+
+  const getIconContainerClasses = (optionKey) => {
+    const isSelected = visibility === optionKey;
+    return `transition-colors flex items-center justify-center
+      ${isSelected 
+        ? 'text-accent' 
+        : 'text-text-secondary group-hover:text-text-primary'
+      }`;
+  };
+
+  const getTextClasses = (optionKey) => {
+    const isSelected = visibility === optionKey;
+    return `block font-bold text-lg transition-colors ${isSelected ? 'text-accent' : 'text-text-primary'}`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-fade-in">
+      <GlassCard 
+        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl" 
+        style={{ backgroundColor: 'var(--bg-primary)' }}
+      >
+        <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent shrink-0">
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-glass-base text-text-secondary transition-colors z-10"
+          >
+            <X size={20} />
+          </button>
+
+          <div className="flex flex-col items-center text-center gap-3 mt-2">
+            <div className="text-accent mb-1">
+              <Globe size={36} strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-text-primary">Privacidad del Muro</h2>
+              <p className="text-sm text-text-secondary mt-1 px-4">
+                ¿Quién puede ver tus entrenamientos al finalizarlos?
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 pt-2 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
+          <div className="grid grid-cols-1 gap-3">
+            <button onClick={() => handleVisibilityChange('private')} className={getOptionClasses('private')}>
+              <div className={getIconContainerClasses('private')}><Lock size={26} strokeWidth={1.5} /></div>
+              <div>
+                <span className={getTextClasses('private')}>No subir</span>
+                <span className="text-xs text-text-secondary block mt-0.5">Tus entrenamientos no aparecerán en el muro.</span>
+              </div>
+              {visibility === 'private' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
+            </button>
+
+            <button onClick={() => handleVisibilityChange('friends')} className={getOptionClasses('friends')}>
+              <div className={getIconContainerClasses('friends')}><Users size={26} strokeWidth={1.5} /></div>
+              <div>
+                <span className={getTextClasses('friends')}>Solo Amigos</span>
+                <span className="text-xs text-text-secondary block mt-0.5">Tus amigos agregados verán tu actividad.</span>
+              </div>
+              {visibility === 'friends' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
+            </button>
+
+            <button onClick={() => handleVisibilityChange('public')} className={getOptionClasses('public')}>
+              <div className={getIconContainerClasses('public')}><Globe size={26} strokeWidth={1.5} /></div>
+              <div>
+                <span className={getTextClasses('public')}>Todo el mundo</span>
+                <span className="text-xs text-text-secondary block mt-0.5">Cualquier usuario podrá ver tus entrenamientos.</span>
+              </div>
+              {visibility === 'public' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
+            </button>
+          </div>
+        </div>
+        
+        <div className="p-6 pt-0 shrink-0">
+             <button 
+                onClick={onClose}
+                className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
+             >
+                Cerrar
+             </button>
+        </div>
+      </GlassCard>
+    </div>
+  );
+};
+
 const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   const { addToast } = useToast();
   const [visibility, setVisibility] = useState(routine.visibility || 'private');
@@ -238,6 +343,7 @@ const Routines = ({ setView }) => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -315,7 +421,6 @@ const Routines = ({ setView }) => {
     return [...new Set(folders)].sort();
   }, [routines]);
 
-  // Rescate automático si la carpeta seleccionada fue eliminada o ya no existe
   useEffect(() => {
     if (selectedFolder !== 'all' && selectedFolder !== 'uncategorized') {
       if (routines?.length > 0 && !uniqueFolders.includes(selectedFolder)) {
@@ -565,6 +670,14 @@ const Routines = ({ setView }) => {
   const RoutineActionButtons = ({ className = '' }) => (
     <div className={`flex gap-2 ${className}`}>
       <button
+        onClick={() => setShowPrivacyModal(true)}
+        className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-glass-base text-text-primary font-semibold transition hover:scale-105 border border-glass-border shadow-sm"
+        title="Privacidad del Muro"
+      >
+        <Globe size={18} />
+        <span className="hidden sm:inline">Muro</span>
+      </button>
+      <button
         onClick={() => setShowAIGenerator(true)}
         className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-accent/10 text-accent font-semibold transition hover:scale-105 border border-accent/30 dark:border-white/10"
         title="Generar rutina con IA"
@@ -644,7 +757,6 @@ const Routines = ({ setView }) => {
               />
             </div>
 
-            {/* Renderizamos las carpetas siempre que haya rutinas */}
             {routines && routines.length > 0 && (
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                 <button
@@ -906,6 +1018,10 @@ const Routines = ({ setView }) => {
       )}
 
       {activeTab === 'explore' && <TemplateRoutines setView={setView} />}
+
+      {showPrivacyModal && (
+        <GlobalPrivacyModal onClose={() => setShowPrivacyModal(false)} />
+      )}
 
       {sharingRoutine && (
         <ShareSettingsModal

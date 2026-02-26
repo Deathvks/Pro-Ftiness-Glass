@@ -29,6 +29,10 @@ import BugReport from './bugReportModel.js';
 import Squad from './squadModel.js';
 import SquadMember from './squadMemberModel.js';
 
+// Nuevos modelos de Feed (Likes y Comentarios en Entrenamientos)
+import WorkoutLike from './workoutLikeModel.js';
+import WorkoutComment from './workoutCommentModel.js';
+
 // 2. Importa las factorías de los nuevos modelos de Historias
 import storyFactory from './storyModel.js';
 import storyLikeFactory from './storyLikeModel.js';
@@ -47,10 +51,21 @@ Routine.belongsTo(User, { foreignKey: 'user_id' });
 
 // --- Logs de Entrenamiento ---
 User.hasMany(WorkoutLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'WorkoutLogs' });
-WorkoutLog.belongsTo(User, { foreignKey: 'user_id' });
+WorkoutLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' }); // Añadido alias 'user' para el feed
 
 WorkoutLog.belongsTo(Routine, { foreignKey: 'routine_id', as: 'routine' });
 Routine.hasMany(WorkoutLog, { foreignKey: 'routine_id', as: 'workoutLogs' });
+
+// --- Feed: Likes y Comentarios en Entrenamientos ---
+WorkoutLog.hasMany(WorkoutLike, { foreignKey: 'workout_id', as: 'Likes', onDelete: 'CASCADE' });
+WorkoutLike.belongsTo(WorkoutLog, { foreignKey: 'workout_id', as: 'workout' });
+User.hasMany(WorkoutLike, { foreignKey: 'user_id', as: 'WorkoutLikes', onDelete: 'CASCADE' });
+WorkoutLike.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+WorkoutLog.hasMany(WorkoutComment, { foreignKey: 'workout_id', as: 'Comments', onDelete: 'CASCADE' });
+WorkoutComment.belongsTo(WorkoutLog, { foreignKey: 'workout_id', as: 'workout' });
+User.hasMany(WorkoutComment, { foreignKey: 'user_id', as: 'WorkoutComments', onDelete: 'CASCADE' });
+WorkoutComment.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // --- Métricas Corporales ---
 User.hasMany(BodyWeightLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'BodyWeightLogs' });
@@ -133,33 +148,35 @@ User.hasMany(SquadMember, { foreignKey: 'user_id', as: 'UserSquadMemberships' })
 SquadMember.belongsTo(User, { foreignKey: 'user_id' });
 
 const models = {
-    sequelize,
-    User,
-    Routine,
-    RoutineExercise,
-    WorkoutLog,
-    WorkoutLogDetail,
-    WorkoutLogSet,
-    BodyWeightLog,
-    BodyMeasurementLog,
-    ExerciseList,
-    PersonalRecord,
-    NutritionLog,
-    WaterLog,
-    FavoriteMeal,
-    TemplateRoutine,
-    TemplateRoutineExercise,
-    CreatinaLog,
-    PushSubscription,
-    Notification,
-    UserSession,
-    Friendship,
-    BugReport,
-    Story,
-    StoryLike,
-    StoryView,
-    Squad,
-    SquadMember
+  sequelize,
+  User,
+  Routine,
+  RoutineExercise,
+  WorkoutLog,
+  WorkoutLogDetail,
+  WorkoutLogSet,
+  BodyWeightLog,
+  BodyMeasurementLog,
+  ExerciseList,
+  PersonalRecord,
+  NutritionLog,
+  WaterLog,
+  FavoriteMeal,
+  TemplateRoutine,
+  TemplateRoutineExercise,
+  CreatinaLog,
+  PushSubscription,
+  Notification,
+  UserSession,
+  Friendship,
+  BugReport,
+  Story,
+  StoryLike,
+  StoryView,
+  Squad,
+  SquadMember,
+  WorkoutLike,
+  WorkoutComment
 };
 
 export default models;

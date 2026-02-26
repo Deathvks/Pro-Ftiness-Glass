@@ -9,24 +9,34 @@ import {
     getFriends,
     getPublicProfile,
     getLeaderboard,
-    removeFriend
+    removeFriend,
+    getFeed,
+    toggleLike,
+    addComment,
+    deleteComment
 } from '../controllers/socialController.js';
 
 const router = express.Router();
 
 // --- Rutas Públicas (Acceso sin login) ---
-// Necesarias para la Landing Page y vistas públicas
 router.get('/leaderboard', getLeaderboard);
 router.get('/profile/:userId', getPublicProfile);
 
 // --- Rutas Protegidas (Requieren autenticación) ---
 router.use(authenticateToken);
 
-router.get('/search', searchUsers); // ?query=nombre
-router.post('/request', sendFriendRequest); // { targetUserId }
+// Amigos y Búsqueda
+router.get('/search', searchUsers);
+router.post('/request', sendFriendRequest);
 router.get('/requests', getFriendRequests);
-router.post('/respond', respondFriendRequest); // { requestId, action: 'accept'|'reject' }
+router.post('/respond', respondFriendRequest);
 router.get('/friends', getFriends);
-router.post('/remove', removeFriend); // { friendId }
+router.post('/remove', removeFriend);
+
+// Feed y Muro
+router.get('/feed', getFeed);
+router.post('/workout/:workoutId/like', toggleLike);
+router.post('/workout/:workoutId/comment', addComment);
+router.delete('/comment/:commentId', deleteComment);
 
 export default router;

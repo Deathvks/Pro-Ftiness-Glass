@@ -52,6 +52,10 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
   // --- NUEVO: Estado para la carpeta ---
   // Inicializamos con la prop initialFolder o con lo que venga en la rutina si estamos editando
   const [folder, setFolder] = useState(initialFolder || initialRoutine?.folder || '');
+  
+  // --- NUEVO: Estado para la visibilidad ---
+  // Por defecto 'friends' según solicitud
+  const [visibility, setVisibility] = useState(initialRoutine?.visibility || 'friends');
 
   // 2. Hook de Carga (useEffect)
   useRoutineLoader({
@@ -89,6 +93,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     description,
     imageUrl,
     folder, // <-- Pasamos la carpeta para guardar
+    visibility, // <-- Pasamos la visibilidad para guardar
     exercises,
     addToast,
     handleSaveProp,
@@ -177,6 +182,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     description, setDescription,
     imageUrl, setImageUrl,
     folder, setFolder, // <-- Exportamos estado de carpeta
+    visibility, setVisibility, // <-- Exportamos estado de visibilidad
     exercises,
     isLoading,
     isSaving,

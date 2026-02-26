@@ -4,7 +4,10 @@ import { Op } from 'sequelize';
 import { createNotification } from '../services/notificationService.js';
 import jwt from 'jsonwebtoken';
 
-const { User, Friendship, WorkoutLog, Routine, RoutineExercise, ExerciseList } = models;
+const { 
+    User, Friendship, WorkoutLog, Routine, RoutineExercise, ExerciseList, 
+    WorkoutLike, WorkoutComment, WorkoutLogDetail, WorkoutLogSet 
+} = models;
 
 export const searchUsers = async (req, res) => {
     try {
@@ -88,7 +91,6 @@ export const sendFriendRequest = async (req, res) => {
             });
         }
 
-        // --- WEBSOCKET: Avisar al usuario destino ---
         const io = req.app.get('io');
         if (io) {
             io.to(targetUserId.toString()).emit('new_friend_request');
@@ -191,7 +193,6 @@ export const respondFriendRequest = async (req, res) => {
                 });
             }
 
-            // --- WEBSOCKET: Avisar al usuario que envió la solicitud ---
             const io = req.app.get('io');
             if (io) {
                 io.to(friendship.requester_id.toString()).emit('friend_request_accepted');
@@ -405,13 +406,263 @@ export const removeFriend = async (req, res) => {
             }
         });
 
-        // --- WEBSOCKET: Avisar al usuario que ha sido eliminado para que su lista se limpie ---
         const io = req.app.get('io');
         if (io) {
             io.to(friendId.toString()).emit('friend_removed');
         }
 
         res.json({ success: true, message: 'Amigo eliminado' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// ==========================================
+// NUEVAS FUNCIONES PARA EL FEED / MURO
+// ==========================================
+
+export const getFeed = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // 1. Obtener IDs de amigos aceptados
+        const friendships = await Friendship.findAll({
+            where: {
+                [Op.or]: [{ requester_id: userId }, { addressee_id: userId }],
+                status: 'accepted'
+            }
+        });
+
+        const friendIds = friendships.map(f => f.requester_id === userId ? f.addressee_id : f.requester_id);
+        
+        // Incluimos nuestros propios entrenamientos en el feed
+        const feedUserIds = [...friendIds, userId];
+
+        // 2. Buscar los logs de entrenamiento de esas personas
+        const logs = await WorkoutLog.findAll({
+            where: {
+                user_id: { [Op.in]: feedUserIds },
+                [Op.or]: [
+                    { visibility: 'friends' },
+                    { visibility: 'public' },
+                    { visibility: null } // Por retrocompatibilidad con los viejos
+                ]
+            },
+            order: [
+                ['workout_date', 'DESC'], 
+                [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC'] 
+            ],
+            limit: 30, // Paginación inicial
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'profile_image_url']
+                },
+                {
+                    model: Routine,
+                    as: 'routine',
+                    attributes: ['id', 'name', 'image_url', 'folder'],
+                    include: [{
+                        model: RoutineExercise,
+                        as: 'RoutineExercises',
+                        attributes: ['name', 'image_url_start'],
+                        include: [{
+                            model: ExerciseList,
+                            attributes: ['image_url_start']
+                        }]
+                    }]
+                },
+                {
+                    model: WorkoutLogDetail,
+                    as: 'WorkoutLogDetails',
+                    include: [{
+                        model: WorkoutLogSet,
+                        as: 'WorkoutLogSets'
+                    }]
+                },
+                {
+                    model: WorkoutLike,
+                    as: 'Likes',
+                    attributes: ['id', 'user_id']
+                },
+                {
+                    model: WorkoutComment,
+                    as: 'Comments',
+                    include: [{
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'username', 'profile_image_url']
+                    }]
+                }
+            ]
+        });
+
+        // 3. Formatear la respuesta
+        // Buscamos todas las imágenes del catálogo para emparejarlas de forma segura.
+        const allExercises = await ExerciseList.findAll({ attributes: ['name', 'image_url_start', 'video_url'] });
+
+        const formattedFeed = logs.map(log => {
+            const logData = log.toJSON();
+            const likes = logData.Likes || [];
+
+            // Añadir ejercicios, series e imágenes
+            if (logData.WorkoutLogDetails) {
+                logData.WorkoutLogDetails = logData.WorkoutLogDetails.map(detail => {
+                    let exerciseImage = null;
+                    let exerciseVideo = null;
+                    
+                    // Buscar la imagen en el catálogo completo asegurando ignorar mayúsculas
+                    const matchingEx = allExercises.find(ex => ex.name.toLowerCase() === detail.exercise_name.toLowerCase());
+                    
+                    if (matchingEx) {
+                        exerciseImage = matchingEx.image_url_start;
+                        exerciseVideo = matchingEx.video_url;
+                    }
+                    
+                    // Filtrar sets vacíos y ordenarlos
+                    let validSets = [];
+                    if (detail.WorkoutLogSets) {
+                        validSets = detail.WorkoutLogSets
+                            .filter(s => parseFloat(s.weight_kg) > 0 || parseInt(s.reps) > 0)
+                            .sort((a, b) => a.set_number - b.set_number);
+                    }
+
+                    return {
+                        ...detail,
+                        image_url: exerciseImage,
+                        video_url: exerciseVideo,
+                        WorkoutLogSets: validSets
+                    };
+                });
+            }
+
+            return {
+                ...logData,
+                likesCount: likes.length,
+                hasLiked: likes.some(like => like.user_id === userId)
+            };
+        });
+
+        res.json(formattedFeed);
+    } catch (error) {
+        console.error("Error en getFeed:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const toggleLike = async (req, res) => {
+    try {
+        const { workoutId } = req.params;
+        const userId = req.user.userId;
+        const io = req.app.get('io');
+
+        const existingLike = await WorkoutLike.findOne({
+            where: { user_id: userId, workout_id: workoutId }
+        });
+
+        if (existingLike) {
+            await existingLike.destroy();
+            if (io) io.emit('feed_update'); // Emisión WebSocket
+            return res.json({ success: true, liked: false });
+        } else {
+            await WorkoutLike.create({ user_id: userId, workout_id: workoutId });
+            
+            // Notificar al dueño del entrenamiento (si no soy yo mismo)
+            const workout = await WorkoutLog.findByPk(workoutId);
+            if (workout && workout.user_id !== userId) {
+                const liker = await User.findByPk(userId, { attributes: ['username'] });
+                await createNotification(workout.user_id, {
+                    type: 'success',
+                    title: '¡Nuevo Me gusta!',
+                    message: `A ${liker.username} le ha gustado tu entrenamiento.`,
+                    data: { url: `/social?tab=feed` }
+                });
+            }
+
+            if (io) io.emit('feed_update'); // Emisión WebSocket
+            return res.json({ success: true, liked: true });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const addComment = async (req, res) => {
+    try {
+        const { workoutId } = req.params;
+        const { comment } = req.body;
+        const userId = req.user.userId;
+        const io = req.app.get('io');
+
+        if (!comment || comment.trim() === '') {
+            return res.status(400).json({ error: 'El comentario no puede estar vacío' });
+        }
+
+        const newComment = await WorkoutComment.create({
+            user_id: userId,
+            workout_id: workoutId,
+            comment: comment.trim()
+        });
+
+        // Cargar usuario para devolver el comentario completo al frontend
+        const commentWithUser = await WorkoutComment.findByPk(newComment.id, {
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'profile_image_url']
+            }]
+        });
+
+        // Notificar al dueño
+        const workout = await WorkoutLog.findByPk(workoutId);
+        if (workout && workout.user_id !== userId) {
+            const commenter = await User.findByPk(userId, { attributes: ['username'] });
+            await createNotification(workout.user_id, {
+                type: 'info',
+                title: 'Nuevo comentario',
+                message: `${commenter.username} ha comentado en tu entrenamiento.`,
+                data: { url: `/social?tab=feed` }
+            });
+        }
+
+        if (io) io.emit('feed_update'); // Emisión WebSocket
+        res.json(commentWithUser);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const deleteComment = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const userId = req.user.userId;
+        const io = req.app.get('io');
+
+        const comment = await WorkoutComment.findOne({
+            where: { id: commentId }
+        });
+
+        if (!comment) {
+            return res.status(404).json({ error: 'Comentario no encontrado' });
+        }
+
+        // Permitir borrar si es el autor del comentario, o si es el dueño del entrenamiento
+        const workout = await WorkoutLog.findByPk(comment.workout_id);
+        const isWorkoutOwner = workout && workout.user_id === userId;
+
+        // Comprobación de si el usuario es administrador
+        const user = await User.findByPk(userId, { attributes: ['role'] });
+        const isAdmin = user && user.role === 'admin';
+
+        if (comment.user_id !== userId && !isWorkoutOwner && !isAdmin) {
+            return res.status(403).json({ error: 'No tienes permiso para borrar este comentario' });
+        }
+
+        await comment.destroy();
+        
+        if (io) io.emit('feed_update'); // Emisión WebSocket
+        res.json({ success: true, message: 'Comentario eliminado' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

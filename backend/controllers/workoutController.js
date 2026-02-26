@@ -109,7 +109,8 @@ export const logWorkoutSession = async (req, res, next) => {
   const {
     routineName, routine_name,
     workout_date, date,
-    duration_seconds, calories_burned, details, exercises, notes, routineId
+    duration_seconds, calories_burned, details, exercises, notes, routineId,
+    visibility // NUEVO: Recibir visibilidad del frontend
   } = req.body;
 
   const { userId } = req.user;
@@ -137,7 +138,8 @@ export const logWorkoutSession = async (req, res, next) => {
       workout_date: finalDate,
       duration_seconds,
       calories_burned,
-      notes
+      notes,
+      visibility: visibility || 'friends' // NUEVO: Guardar la visibilidad elegida (por defecto friends)
     }, { transaction: t });
 
     let newPRs = [];
@@ -261,6 +263,14 @@ export const logWorkoutSession = async (req, res, next) => {
       });
     }
 
+    // Emitir actualización de muro por WebSocket solo si NO es privado
+    if (newWorkoutLog.visibility !== 'private') {
+      const io = req.app.get('io');
+      if (io) {
+          io.emit('feed_update');
+      }
+    }
+
     res.status(201).json({
       message: 'Entrenamiento guardado con éxito',
       workoutId: newWorkoutLog.id,
@@ -342,6 +352,13 @@ export const deleteWorkoutLog = async (req, res, next) => {
     }
 
     await t.commit();
+
+    // Emitir actualización de muro por WebSocket (Nuevo)
+    const io = req.app.get('io');
+    if (io) {
+        io.emit('feed_update');
+    }
+
     res.json({ message: 'Entrenamiento eliminado y récords recalculados correctamente.' });
 
   } catch (error) {

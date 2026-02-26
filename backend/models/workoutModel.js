@@ -49,6 +49,11 @@ const WorkoutLog = sequelize.define(
       type: DataTypes.TEXT('long'),
       allowNull: true,
     },
+    visibility: {
+      type: DataTypes.STRING(20), // 'private', 'friends', 'public'
+      allowNull: false,
+      defaultValue: 'friends'
+    }
   },
   {
     tableName: 'workout_logs',

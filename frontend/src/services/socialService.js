@@ -86,6 +86,31 @@ const socialService = {
         return await apiClient(`/squads/${squadId}`, {
             method: 'DELETE'
         });
+    },
+
+    // --- FEED / MURO ---
+
+    getFeed: async () => {
+        return await apiClient('/social/feed');
+    },
+
+    toggleLike: async (workoutId) => {
+        return await apiClient(`/social/workout/${workoutId}/like`, {
+            method: 'POST'
+        });
+    },
+
+    addComment: async (workoutId, comment) => {
+        return await apiClient(`/social/workout/${workoutId}/comment`, {
+            method: 'POST',
+            body: { comment }
+        });
+    },
+
+    deleteComment: async (commentId) => {
+        return await apiClient(`/social/comment/${commentId}`, {
+            method: 'DELETE'
+        });
     }
 };
 

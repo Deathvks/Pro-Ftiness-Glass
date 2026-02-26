@@ -230,7 +230,6 @@ const cleanupExpiredStories = () => {
 
 /**
  * TAREA 6: Streak Wars (Notificar a amigos si pierdes la racha)
- * OPTIMIZACIÓN: Solo trae usuarios con racha y verifica localmente si es de noche (20:00).
  */
 const checkStreakWars = () => {
   cron.schedule('0 * * * *', async () => {
@@ -238,16 +237,16 @@ const checkStreakWars = () => {
       // 1. Obtener solo usuarios con racha activa
       const users = await db.User.findAll({
         where: { streak: { [Op.gt]: 0 } },
-        attributes: ['id', 'username', 'streak', 'last_active', 'timezone']
+        attributes: ['id', 'username', 'streak', 'last_activity_date', 'timezone']
       });
 
       // 2. Filtrar a los que se les acaba el día (20:00h) y no han entrenado hoy
       const targetUsers = users.filter(user => {
         const { hour, date: localDate } = getLocalTime(user.timezone);
-        if (hour !== 20 || !user.last_active) return false;
+        if (hour !== 20 || !user.last_activity_date) return false;
         
         // Si el último registro de actividad es anterior a hoy, está en peligro
-        const lastActiveDate = new Date(user.last_active).toISOString().split('T')[0];
+        const lastActiveDate = new Date(user.last_activity_date).toISOString().split('T')[0];
         return lastActiveDate < localDate;
       });
 
@@ -303,5 +302,5 @@ export const startCronJobs = () => {
   checkWeightLogReminder();
   scheduleImageCleanup();
   cleanupExpiredStories();
-  checkStreakWars(); // Nueva función añadida
+  checkStreakWars(); 
 };
