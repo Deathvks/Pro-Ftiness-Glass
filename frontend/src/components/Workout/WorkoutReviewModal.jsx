@@ -14,7 +14,6 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
 
     if (!activeWorkout) return null;
 
-    // Filtramos solo ejercicios que tengan al menos una serie con datos
     const exercisesWithData = activeWorkout.exercises.map((ex, exIndex) => ({
         ...ex,
         originalIndex: exIndex,
@@ -32,7 +31,6 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                 
                 <div className="p-4 border-b border-glass-border flex justify-between items-center bg-bg-secondary/95 sticky top-0 z-10">
                     <div>
-                        {/* CAMBIO: text-white -> text-text-primary para que se vea en modo claro */}
                         <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
                             <Edit2 size={20} className="text-accent" />
                             {t('exercise_ui:review_data', 'Revisar Datos')}
@@ -55,7 +53,8 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                         exercisesWithData.map((exercise) => (
                             <div key={exercise.id || exercise.name} className="bg-bg-primary/30 rounded-xl p-4 border border-glass-border">
                                 <h3 className="font-bold text-accent mb-3 text-sm uppercase tracking-wider">
-                                    {t(`exercise_names:${exercise.name}`, exercise.name)}
+                                    {/* Corrección de la traducción del nombre del ejercicio */}
+                                    {t(exercise.name, { ns: 'exercise_names', defaultValue: exercise.name })}
                                 </h3>
                                 <div className="space-y-2">
                                     <div className="grid grid-cols-10 gap-2 text-[10px] text-text-tertiary uppercase text-center font-bold mb-1">
@@ -71,7 +70,6 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                                                 </span>
                                             </div>
                                             <div className="col-span-4">
-                                                {/* CAMBIO: text-white -> text-text-primary */}
                                                 <input
                                                     type="number"
                                                     value={set.weight_kg}
@@ -81,7 +79,6 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                                                 />
                                             </div>
                                             <div className="col-span-4">
-                                                {/* CAMBIO: text-white -> text-text-primary */}
                                                 <input
                                                     type="number"
                                                     value={set.reps}
