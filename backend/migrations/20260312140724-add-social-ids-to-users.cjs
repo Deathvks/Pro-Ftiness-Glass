@@ -1,15 +1,18 @@
+/* backend/migrations/20260312140724-add-social-ids-to-users.cjs */
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('Users', 'facebook_id', {
+    // Cambiado 'Users' por 'users'
+    await queryInterface.addColumn('users', 'facebook_id', {
       type: Sequelize.STRING,
       allowNull: true,
       unique: true,
     });
 
-    await queryInterface.addColumn('Users', 'x_id', {
+    // Cambiado 'Users' por 'users'
+    await queryInterface.addColumn('users', 'x_id', {
       type: Sequelize.STRING,
       allowNull: true,
       unique: true,
@@ -17,7 +20,8 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn('Users', 'facebook_id');
-    await queryInterface.removeColumn('Users', 'x_id');
+    // Cambiado 'Users' por 'users'
+    await queryInterface.removeColumn('users', 'facebook_id');
+    await queryInterface.removeColumn('users', 'x_id');
   }
 };
