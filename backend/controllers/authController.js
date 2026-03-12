@@ -121,10 +121,25 @@ export const loginUser = async (req, res, next) => {
       return res.status(404).json({ error: 'La cuenta no existe.' });
     }
 
-    // --- CORRECCIÓN: Verificar si el usuario tiene contraseña (puede ser usuario de Google) ---
+    // --- CORRECCIÓN: Verificar si el usuario tiene contraseña ---
     if (!user.password_hash) {
       if (user.google_id) {
         return res.status(400).json({ error: 'Esta cuenta se creó con Google. Por favor, inicia sesión con Google.' });
+      }
+      if (user.discord_id) {
+        return res.status(400).json({ error: 'Esta cuenta se creó con Discord. Por favor, inicia sesión con Discord.' });
+      }
+      if (user.facebook_id) {
+        return res.status(400).json({ error: 'Esta cuenta se creó con Facebook. Por favor, inicia sesión con Facebook.' });
+      }
+      if (user.x_id) {
+        return res.status(400).json({ error: 'Esta cuenta se creó con X. Por favor, inicia sesión con X.' });
+      }
+      if (user.github_id) {
+        return res.status(400).json({ error: 'Esta cuenta se creó con GitHub. Por favor, inicia sesión con GitHub.' });
+      }
+      if (user.spotify_id) {
+        return res.status(400).json({ error: 'Esta cuenta se creó con Spotify. Por favor, inicia sesión con Spotify.' });
       }
       return res.status(400).json({ error: 'La cuenta no tiene contraseña configurada.' });
     }
@@ -366,6 +381,793 @@ export const googleLogin = async (req, res, next) => {
     res.status(401).json({ error: 'Fallo en la autenticación con Google.' });
   }
 };
+
+export const discordLogin = async (req, res, next) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Se requiere el token de Discord.' });
+  }
+
+  try {
+    const response = await fetch('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Token inválido');
+    }
+
+    const discordUser = await response.json();
+
+    if (!discordUser.email) {
+      return res.status(400).json({ error: 'Se requiere acceso al email de Discord.' });
+    }
+
+    const email = discordUser.email;
+    const discordId = discordUser.id;
+    const picture = discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordId}/${discordUser.avatar}.png` : null;
+
+    let user = await User.findOne({ where: { email } });
+
+    if (user) {
+      if (!user.discord_id) {
+        return res.status(409).json({
+          error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.'
+        });
+      }
+
+      let updated = false;
+
+      if (!user.is_verified) {
+        user.is_verified = true;
+        user.verification_code = null;
+        updated = true;
+      }
+      if (!user.profile_image_url && picture) {
+        user.profile_image_url = picture;
+        updated = true;
+      }
+
+      if (updated) await user.save();
+
+      // 2FA Check para Discord
+      if (user.two_factor_enabled) {
+        if (user.two_factor_method === 'email') {
+          const code = generateVerificationCode();
+          try {
+            await sendVerificationEmail(user.email, code);
+          } catch (emailError) {
+            console.error("Error enviando código 2FA (Discord Login):", emailError);
+          }
+
+          await user.update({
+            verification_code: code,
+            verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
+          });
+        }
+
+        return res.json({
+          requires2FA: true,
+          userId: user.id,
+          method: user.two_factor_method
+        });
+      }
+
+    } else {
+      // Registro nuevo
+      let baseUsername = (discordUser.global_name || discordUser.username).replace(/[^a-zA-Z0-9_.-]/g, '');
+      if(!baseUsername) baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '');
+      let username = baseUsername;
+      let counter = 1;
+
+      while (await User.findOne({ where: { username } })) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      user = await User.create({
+        name: discordUser.global_name || discordUser.username || baseUsername,
+        username: username,
+        email: email,
+        password_hash: null,
+        discord_id: discordId,
+        profile_image_url: picture,
+        is_verified: true,
+        role: 'user'
+      });
+
+      createNotification(user.id, {
+        type: 'success',
+        title: '¡Bienvenido!',
+        message: 'Gracias por registrarte en Pro Fitness Glass con Discord.'
+      });
+    }
+
+    const appPayload = { userId: user.id, role: user.role };
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+    await createUserSession(user.id, appToken, req);
+
+    // --- MODIFICACIÓN: Gamificación controlada ---
+    await handleDailyLoginGamification(user);
+    // --- FIN MODIFICACIÓN ---
+
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    createNotification(user.id, {
+      type: 'warning',
+      title: 'Inicio de sesión (Discord)',
+      message: 'Se ha iniciado sesión con Discord.',
+      data: { ip, userAgent, date: new Date() }
+    });
+
+    res.json({
+      message: 'Inicio de sesión con Discord exitoso.',
+      token: appToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+        is_verified: user.is_verified
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en Discord Login:', error);
+    res.status(401).json({ error: 'Fallo en la autenticación con Discord.' });
+  }
+};
+
+export const facebookLogin = async (req, res, next) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Se requiere el token de Facebook.' });
+  }
+
+  try {
+    const response = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${token}`);
+    
+    if (!response.ok) {
+      throw new Error('Token inválido');
+    }
+
+    const fbUser = await response.json();
+
+    if (!fbUser.email) {
+      return res.status(400).json({ error: 'Se requiere acceso al email de Facebook.' });
+    }
+
+    const email = fbUser.email;
+    const facebookId = fbUser.id;
+    const picture = fbUser.picture?.data?.url || null;
+
+    let user = await User.findOne({ where: { email } });
+
+    if (user) {
+      if (!user.facebook_id) {
+        return res.status(409).json({
+          error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.'
+        });
+      }
+
+      let updated = false;
+
+      if (!user.is_verified) {
+        user.is_verified = true;
+        user.verification_code = null;
+        updated = true;
+      }
+      if (!user.profile_image_url && picture) {
+        user.profile_image_url = picture;
+        updated = true;
+      }
+
+      if (updated) await user.save();
+
+      // 2FA Check para Facebook
+      if (user.two_factor_enabled) {
+        if (user.two_factor_method === 'email') {
+          const code = generateVerificationCode();
+          try {
+            await sendVerificationEmail(user.email, code);
+          } catch (emailError) {
+            console.error("Error enviando código 2FA (Facebook Login):", emailError);
+          }
+
+          await user.update({
+            verification_code: code,
+            verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
+          });
+        }
+
+        return res.json({
+          requires2FA: true,
+          userId: user.id,
+          method: user.two_factor_method
+        });
+      }
+
+    } else {
+      // Registro nuevo
+      let baseUsername = fbUser.name.replace(/[^a-zA-Z0-9_.-]/g, '');
+      if(!baseUsername) baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '');
+      let username = baseUsername;
+      let counter = 1;
+
+      while (await User.findOne({ where: { username } })) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      user = await User.create({
+        name: fbUser.name || baseUsername,
+        username: username,
+        email: email,
+        password_hash: null,
+        facebook_id: facebookId,
+        profile_image_url: picture,
+        is_verified: true,
+        role: 'user'
+      });
+
+      createNotification(user.id, {
+        type: 'success',
+        title: '¡Bienvenido!',
+        message: 'Gracias por registrarte en Pro Fitness Glass con Facebook.'
+      });
+    }
+
+    const appPayload = { userId: user.id, role: user.role };
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+    await createUserSession(user.id, appToken, req);
+
+    // --- MODIFICACIÓN: Gamificación controlada ---
+    await handleDailyLoginGamification(user);
+    // --- FIN MODIFICACIÓN ---
+
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    createNotification(user.id, {
+      type: 'warning',
+      title: 'Inicio de sesión (Facebook)',
+      message: 'Se ha iniciado sesión con Facebook.',
+      data: { ip, userAgent, date: new Date() }
+    });
+
+    res.json({
+      message: 'Inicio de sesión con Facebook exitoso.',
+      token: appToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+        is_verified: user.is_verified
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en Facebook Login:', error);
+    res.status(401).json({ error: 'Fallo en la autenticación con Facebook.' });
+  }
+};
+
+export const xLogin = async (req, res, next) => {
+  const { code, redirectUri, codeVerifier } = req.body;
+
+  if (!code) {
+    return res.status(400).json({ error: 'Se requiere el código de autorización de X.' });
+  }
+
+  try {
+    // 1. Intercambiar el código (code) por un access_token
+    const basicAuth = Buffer.from(`${process.env.X_CLIENT_ID}:${process.env.X_CLIENT_SECRET}`).toString('base64');
+    
+    const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${basicAuth}`
+      },
+      body: new URLSearchParams({
+        code,
+        grant_type: 'authorization_code',
+        client_id: process.env.X_CLIENT_ID,
+        redirect_uri: redirectUri,
+        code_verifier: codeVerifier || 'challenge'
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const err = await tokenResponse.json();
+      console.error('Error obteniendo token de X:', err);
+      throw new Error('El código de autorización es inválido o ha expirado.');
+    }
+
+    const { access_token } = await tokenResponse.json();
+
+    // 2. Obtener la información del perfil del usuario
+    const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+
+    if (!userResponse.ok) {
+      throw new Error('Error al obtener perfil de X');
+    }
+
+    const { data: xUser } = await userResponse.json();
+
+    // X (Twitter) OAuth 2.0 no devuelve el email. Usamos un email interno seguro como placeholder.
+    const email = `${xUser.username}@x-auth.local`;
+    const xId = xUser.id;
+    const picture = xUser.profile_image_url ? xUser.profile_image_url.replace('_normal', '') : null;
+
+    let user = await User.findOne({ where: { x_id: xId } });
+
+    if (!user) {
+      // Intentar buscar por el email placeholder por precaución
+      user = await User.findOne({ where: { email } });
+    }
+
+    if (user) {
+      if (!user.x_id) {
+        user.x_id = xId;
+        await user.save();
+      }
+
+      let updated = false;
+
+      if (!user.is_verified) {
+        user.is_verified = true;
+        user.verification_code = null;
+        updated = true;
+      }
+      if (!user.profile_image_url && picture) {
+        user.profile_image_url = picture;
+        updated = true;
+      }
+
+      if (updated) await user.save();
+
+      // 2FA Check para X
+      if (user.two_factor_enabled) {
+        if (user.two_factor_method === 'email') {
+          const codeStr = generateVerificationCode();
+          try {
+            // Nota: Aquí enviará un email al placeholder. Al ser placeholder, dará error de envío (silencioso).
+            // En un entorno real, si X es el método principal, el usuario debería registrar su email real desde ajustes.
+            await sendVerificationEmail(user.email, codeStr);
+          } catch (emailError) {
+            console.error("Error enviando código 2FA (X Login):", emailError);
+          }
+
+          await user.update({
+            verification_code: codeStr,
+            verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
+          });
+        }
+
+        return res.json({
+          requires2FA: true,
+          userId: user.id,
+          method: user.two_factor_method
+        });
+      }
+
+    } else {
+      // Registro nuevo
+      let baseUsername = xUser.username.replace(/[^a-zA-Z0-9_.-]/g, '');
+      let username = baseUsername;
+      let counter = 1;
+
+      while (await User.findOne({ where: { username } })) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      user = await User.create({
+        name: xUser.name || baseUsername,
+        username: username,
+        email: email, // Usamos el placeholder
+        password_hash: null,
+        x_id: xId,
+        profile_image_url: picture,
+        is_verified: true,
+        role: 'user'
+      });
+
+      createNotification(user.id, {
+        type: 'success',
+        title: '¡Bienvenido!',
+        message: 'Gracias por registrarte en Pro Fitness Glass con X.'
+      });
+    }
+
+    const appPayload = { userId: user.id, role: user.role };
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+    await createUserSession(user.id, appToken, req);
+
+    // --- MODIFICACIÓN: Gamificación controlada ---
+    await handleDailyLoginGamification(user);
+    // --- FIN MODIFICACIÓN ---
+
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    createNotification(user.id, {
+      type: 'warning',
+      title: 'Inicio de sesión (X)',
+      message: 'Se ha iniciado sesión con X.',
+      data: { ip, userAgent, date: new Date() }
+    });
+
+    res.json({
+      message: 'Inicio de sesión con X exitoso.',
+      token: appToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+        is_verified: user.is_verified
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en X Login:', error);
+    res.status(401).json({ error: 'Fallo en la autenticación con X.' });
+  }
+};
+
+export const githubLogin = async (req, res, next) => {
+  const { code } = req.body;
+
+  if (!code) {
+    return res.status(400).json({ error: 'Se requiere el código de autorización de GitHub.' });
+  }
+
+  try {
+    // 1. Intercambiar el código (code) por un access_token
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code
+      })
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (tokenData.error) {
+      throw new Error(tokenData.error_description || 'Error obteniendo token de GitHub');
+    }
+
+    const { access_token } = tokenData;
+
+    // 2. Obtener la información del perfil del usuario
+    const userResponse = await fetch('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+
+    if (!userResponse.ok) {
+      throw new Error('Error al obtener perfil de GitHub');
+    }
+
+    const githubUser = await userResponse.json();
+
+    // 3. Obtener el email (algunos usuarios lo tienen privado, por lo que requerimos buscar en sus emails)
+    let email = githubUser.email;
+    
+    if (!email) {
+      const emailsResponse = await fetch('https://api.github.com/user/emails', {
+        headers: { Authorization: `Bearer ${access_token}` }
+      });
+      const emails = await emailsResponse.json();
+      email = emails.find(e => e.primary)?.email || emails[0]?.email;
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: 'Se requiere acceso al email de GitHub.' });
+    }
+
+    const githubId = githubUser.id.toString();
+    const picture = githubUser.avatar_url || null;
+
+    let user = await User.findOne({ where: { email } });
+
+    if (user) {
+      if (!user.github_id) {
+        return res.status(409).json({
+          error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.'
+        });
+      }
+
+      let updated = false;
+
+      if (!user.is_verified) {
+        user.is_verified = true;
+        user.verification_code = null;
+        updated = true;
+      }
+      if (!user.profile_image_url && picture) {
+        user.profile_image_url = picture;
+        updated = true;
+      }
+
+      if (updated) await user.save();
+
+      // 2FA Check para GitHub
+      if (user.two_factor_enabled) {
+        if (user.two_factor_method === 'email') {
+          const codeStr = generateVerificationCode();
+          try {
+            await sendVerificationEmail(user.email, codeStr);
+          } catch (emailError) {
+            console.error("Error enviando código 2FA (GitHub Login):", emailError);
+          }
+
+          await user.update({
+            verification_code: codeStr,
+            verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
+          });
+        }
+
+        return res.json({
+          requires2FA: true,
+          userId: user.id,
+          method: user.two_factor_method
+        });
+      }
+
+    } else {
+      // Registro nuevo
+      let baseUsername = (githubUser.login || email.split('@')[0]).replace(/[^a-zA-Z0-9_.-]/g, '');
+      let username = baseUsername;
+      let counter = 1;
+
+      while (await User.findOne({ where: { username } })) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      user = await User.create({
+        name: githubUser.name || baseUsername,
+        username: username,
+        email: email,
+        password_hash: null,
+        github_id: githubId,
+        profile_image_url: picture,
+        is_verified: true,
+        role: 'user'
+      });
+
+      createNotification(user.id, {
+        type: 'success',
+        title: '¡Bienvenido!',
+        message: 'Gracias por registrarte en Pro Fitness Glass con GitHub.'
+      });
+    }
+
+    const appPayload = { userId: user.id, role: user.role };
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+    await createUserSession(user.id, appToken, req);
+
+    // Gamificación controlada
+    await handleDailyLoginGamification(user);
+
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    createNotification(user.id, {
+      type: 'warning',
+      title: 'Inicio de sesión (GitHub)',
+      message: 'Se ha iniciado sesión con GitHub.',
+      data: { ip, userAgent, date: new Date() }
+    });
+
+    res.json({
+      message: 'Inicio de sesión con GitHub exitoso.',
+      token: appToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+        is_verified: user.is_verified
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en GitHub Login:', error);
+    res.status(401).json({ error: 'Fallo en la autenticación con GitHub.' });
+  }
+};
+
+// --- INICIO DE LA MODIFICACIÓN: Nueva función Spotify Login ---
+export const spotifyLogin = async (req, res, next) => {
+  const { code, redirectUri } = req.body;
+
+  if (!code || !redirectUri) {
+    return res.status(400).json({ error: 'Se requiere el código de autorización y la URI de Spotify.' });
+  }
+
+  try {
+    const basicAuth = Buffer.from(`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`).toString('base64');
+
+    const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${basicAuth}`
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri
+      })
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (tokenData.error) {
+      throw new Error(tokenData.error_description || 'Error obteniendo token de Spotify');
+    }
+
+    const { access_token } = tokenData;
+
+    const userResponse = await fetch('https://api.spotify.com/v1/me', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+
+    if (!userResponse.ok) {
+      throw new Error('Error al obtener perfil de Spotify');
+    }
+
+    const spotifyUser = await userResponse.json();
+
+    const email = spotifyUser.email;
+    if (!email) {
+      return res.status(400).json({ error: 'Se requiere acceso al email de Spotify.' });
+    }
+
+    const spotifyId = spotifyUser.id;
+    const picture = spotifyUser.images && spotifyUser.images.length > 0 ? spotifyUser.images[0].url : null;
+    const name = spotifyUser.display_name;
+
+    let user = await User.findOne({ where: { email } });
+
+    if (user) {
+      if (!user.spotify_id) {
+        return res.status(409).json({
+          error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.'
+        });
+      }
+
+      let updated = false;
+
+      if (!user.is_verified) {
+        user.is_verified = true;
+        user.verification_code = null;
+        updated = true;
+      }
+      if (!user.profile_image_url && picture) {
+        user.profile_image_url = picture;
+        updated = true;
+      }
+
+      if (updated) await user.save();
+
+      // 2FA Check para Spotify
+      if (user.two_factor_enabled) {
+        if (user.two_factor_method === 'email') {
+          const codeStr = generateVerificationCode();
+          try {
+            await sendVerificationEmail(user.email, codeStr);
+          } catch (emailError) {
+            console.error("Error enviando código 2FA (Spotify Login):", emailError);
+          }
+
+          await user.update({
+            verification_code: codeStr,
+            verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
+          });
+        }
+
+        return res.json({
+          requires2FA: true,
+          userId: user.id,
+          method: user.two_factor_method
+        });
+      }
+
+    } else {
+      // Registro nuevo
+      let baseUsername = (name || email.split('@')[0]).replace(/[^a-zA-Z0-9_.-]/g, '');
+      let username = baseUsername;
+      let counter = 1;
+
+      while (await User.findOne({ where: { username } })) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      user = await User.create({
+        name: name || baseUsername,
+        username: username,
+        email: email,
+        password_hash: null,
+        spotify_id: spotifyId,
+        profile_image_url: picture,
+        is_verified: true,
+        role: 'user'
+      });
+
+      createNotification(user.id, {
+        type: 'success',
+        title: '¡Bienvenido!',
+        message: 'Gracias por registrarte en Pro Fitness Glass con Spotify.'
+      });
+    }
+
+    const appPayload = { userId: user.id, role: user.role };
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+    await createUserSession(user.id, appToken, req);
+
+    // Gamificación controlada
+    await handleDailyLoginGamification(user);
+
+    let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+    if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+
+    createNotification(user.id, {
+      type: 'warning',
+      title: 'Inicio de sesión (Spotify)',
+      message: 'Se ha iniciado sesión con Spotify.',
+      data: { ip, userAgent, date: new Date() }
+    });
+
+    res.json({
+      message: 'Inicio de sesión con Spotify exitoso.',
+      token: appToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        profile_image_url: user.profile_image_url,
+        is_verified: user.is_verified
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en Spotify Login:', error);
+    res.status(401).json({ error: 'Fallo en la autenticación con Spotify.' });
+  }
+};
+// --- FIN DE LA MODIFICACIÓN ---
 
 export const logoutUser = async (req, res) => {
   const authHeader = req.headers['authorization'];
@@ -685,6 +1487,11 @@ const authController = {
   verifyEmail,
   loginUser,
   googleLogin,
+  discordLogin,
+  facebookLogin,
+  xLogin,
+  githubLogin,
+  spotifyLogin, // Exportada nueva función
   logoutUser,
   resendVerificationEmail,
   updateEmailForVerification,

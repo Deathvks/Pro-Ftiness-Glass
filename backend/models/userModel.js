@@ -37,6 +37,33 @@ User.init({
     allowNull: true,
     unique: true
   },
+  discord_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
+  },
+  facebook_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
+  },
+  x_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
+  },
+  github_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
+  },
+  // --- INICIO DE LA MODIFICACIÓN: Añadido spotify_id ---
+  spotify_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
+  },
+  // --- FIN DE LA MODIFICACIÓN ---
   role: {
     type: DataTypes.STRING,
     defaultValue: 'user'
@@ -187,7 +214,6 @@ User.init({
     allowNull: true,
     defaultValue: '[]'
   },
-  // NUEVO CAMPO: Estado diario de gamificación (para evitar exploit de borrar logs)
   daily_gamification_state: {
     type: DataTypes.JSON,
     allowNull: true,

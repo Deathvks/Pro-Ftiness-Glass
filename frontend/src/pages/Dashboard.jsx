@@ -22,6 +22,9 @@ import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
 import XPGuideModal from '../components/XPGuideModal';
 import TourGuide from '../components/TourGuide';
+// --- INICIO MODIFICACIÓN: Importar LevelBadge ---
+import LevelBadge from '../components/LevelBadge';
+// --- FIN MODIFICACIÓN ---
 import * as nutritionService from '../services/nutritionService';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
@@ -444,14 +447,11 @@ const Dashboard = ({ setView }) => {
           className="w-full lg:w-auto p-5 flex items-center gap-6 bg-bg-secondary/40 rounded-3xl relative overflow-hidden group border-transparent dark:border dark:border-white/10 hover:bg-bg-secondary transition-all cursor-pointer"
           onClick={() => setShowXPModal(true)}
         >
+          {/* --- INICIO MODIFICACIÓN: Usar LevelBadge en lugar del renderizado manual --- */}
           <div className="relative flex-shrink-0">
-            <div className="w-16 h-16 rounded-full bg-bg-primary flex items-center justify-center border-2 border-accent text-accent font-black text-2xl shadow-[0_0_20px_rgba(var(--accent-rgb),0.2)]">
-              {levelData.level}
-            </div>
-            <div className="absolute -top-2 -right-2 bg-bg-primary rounded-full p-1.5 shadow-lg">
-              <Crown size={14} className="text-amber-400 fill-amber-400" />
-            </div>
+            <LevelBadge level={levelData.level} size="md" />
           </div>
+          {/* --- FIN MODIFICACIÓN --- */}
 
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

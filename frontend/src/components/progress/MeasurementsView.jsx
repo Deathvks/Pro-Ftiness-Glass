@@ -1,155 +1,111 @@
-/* frontend/src/components/progress/MeasurementsView.jsx */
 import React, { useState, useMemo } from 'react';
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer
-} from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Plus, Ruler } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import BodyMeasurementModal from '../BodyMeasurementModal';
 import CustomSelect from '../CustomSelect';
+import GlassCard from '../GlassCard';
 
-const MEASUREMENT_TYPES = [
-    { value: 'cintura', label: 'Cintura' },
-    { value: 'pecho', label: 'Pecho' },
-    { value: 'biceps', label: 'Bíceps' },
-    { value: 'muslos', label: 'Muslos' },
-    { value: 'caderas', label: 'Caderas' },
-    { value: 'hombros', label: 'Hombros' },
-    { value: 'gemelos', label: 'Gemelos' },
-    { value: 'cuello', label: 'Cuello' },
-    { value: 'antebrazos', label: 'Antebrazos' },
+const TYPES = [
+    { value: 'cintura', label: 'Cintura' }, { value: 'pecho', label: 'Pecho' },
+    { value: 'biceps', label: 'Bíceps' }, { value: 'muslos', label: 'Muslos' },
+    { value: 'caderas', label: 'Caderas' }, { value: 'hombros', label: 'Hombros' },
+    { value: 'gemelos', label: 'Gemelos' }, { value: 'cuello', label: 'Cuello' },
+    { value: 'antebrazos', label: 'Antebrazos' }
 ];
 
-const MeasurementsView = ({ axisColor }) => {
-    const { bodyMeasurementsLog, logBodyMeasurement } = useAppStore(state => ({
-        bodyMeasurementsLog: state.bodyMeasurementsLog || [],
-        logBodyMeasurement: state.logBodyMeasurement
-    }));
+const ModernTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const date = new Date(label).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+    
+    return (
+        <div className="bg-bg-secondary border border-white/5 rounded-lg shadow-xl p-3 text-sm">
+            <p className="font-semibold text-text-primary mb-2">{date}</p>
+            <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ background: payload[0].color || payload[0].fill }} />
+                <span className="text-text-secondary">Medida:</span>
+                <span className="font-medium text-text-primary">{payload[0].value} cm</span>
+            </div>
+        </div>
+    );
+};
 
-    const [selectedType, setSelectedType] = useState('cintura');
+const axisConfig = (color) => ({ stroke: color, fontSize: 11, tickLine: false, axisLine: false, tickMargin: 8 });
+const grid = <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />;
+
+const MeasurementsView = ({ axisColor }) => {
+    const { bodyMeasurementsLog = [], logBodyMeasurement } = useAppStore();
+    const [type, setType] = useState('cintura');
     const [showModal, setShowModal] = useState(false);
 
-    // Filtrar y ordenar datos para el gráfico
-    const chartData = useMemo(() => {
-        if (!bodyMeasurementsLog) return [];
+    const chartData = useMemo(() => 
+        bodyMeasurementsLog
+            .filter(l => l.measure_type === type)
+            .map(l => ({ timestamp: new Date(l.log_date).getTime(), value: parseFloat(l.value) }))
+            .sort((a, b) => a.timestamp - b.timestamp)
+    , [bodyMeasurementsLog, type]);
 
-        return bodyMeasurementsLog
-            .filter(log => log.measure_type === selectedType)
-            .map(log => ({
-                timestamp: new Date(log.log_date).getTime(),
-                value: parseFloat(log.value),
-                dateStr: new Date(log.log_date).toLocaleDateString()
-            }))
-            .sort((a, b) => a.timestamp - b.timestamp);
-    }, [bodyMeasurementsLog, selectedType]);
-
-    const handleSave = async (data) => {
-        await logBodyMeasurement(data);
-    };
-
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-bg-secondary p-3 border border-transparent dark:border dark:border-white/10 rounded-lg shadow-xl">
-                    <p className="text-text-primary font-bold">{new Date(label).toLocaleDateString()}</p>
-                    <p className="text-accent">
-                        {payload[0].value} cm
-                    </p>
-                </div>
-            );
-        }
-        return null;
-    };
+    const activeLabel = TYPES.find(t => t.value === type)?.label;
 
     return (
-        <div className="w-full flex flex-col items-center animate-fade-in gap-6">
-
-            {/* Controles: Selector y Botón Añadir */}
-            <div className="flex flex-wrap justify-center gap-4 w-full max-w-2xl bg-bg-secondary/50 p-4 rounded-xl border border-transparent dark:border dark:border-white/10 backdrop-blur-sm">
-                <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
-                    {/* Reemplazado select nativo por CustomSelect */}
-                    <div className="w-full sm:w-64 z-10">
-                        <CustomSelect
-                            value={selectedType}
-                            onChange={setSelectedType}
-                            options={MEASUREMENT_TYPES}
-                            placeholder="Filtrar por zona"
-                        />
-                    </div>
-
-                    <button
-                        onClick={() => setShowModal(true)}
-                        className="flex items-center gap-2 bg-accent text-bg-secondary px-6 py-2 rounded-xl font-bold hover:brightness-110 transition shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap"
-                    >
-                        <Plus size={18} />
-                        Registrar
-                    </button>
+        <div className="flex flex-col gap-4">
+            {/* Controles Superiores (Sin bordes ni fondos) */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+                <div className="w-full sm:w-64 z-10">
+                    <CustomSelect value={type} onChange={setType} options={TYPES} placeholder="Filtrar por zona" />
                 </div>
+                <button
+                    onClick={() => setShowModal(true)}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-accent text-bg-secondary px-5 py-2.5 rounded-lg font-bold hover:brightness-110 transition active:scale-95"
+                >
+                    <Plus size={18} /> Registrar
+                </button>
             </div>
 
             {/* Gráfico */}
-            <div className="w-full h-[300px] md:h-[400px] max-w-4xl bg-bg-secondary/30 rounded-2xl p-4 border border-transparent dark:border dark:border-white/10 shadow-sm backdrop-blur-sm relative z-0">
-                <h3 className="text-center text-text-secondary text-sm mb-4 font-medium uppercase tracking-wider">Evolución de {MEASUREMENT_TYPES.find(t => t.value === selectedType)?.label}</h3>
-
+            <GlassCard className="p-5 border-white/5 relative">
+                <h3 className="text-base font-semibold text-text-primary mb-4">Evolución de {activeLabel}</h3>
+                
                 {chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                        {/* CORRECCIÓN: Aumentado el margen inferior (bottom: 25) para que quepan las fechas */}
-                        <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 25, left: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={axisColor} opacity={0.1} vertical={false} />
-                            <XAxis
-                                dataKey="timestamp"
-                                stroke={axisColor}
-                                tick={{ fill: axisColor, fontSize: 10 }}
-                                tickFormatter={(unix) => new Date(unix).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
-                                domain={['dataMin', 'dataMax']}
-                                type="number"
-                                scale="time"
-                                tickMargin={8}
-                                minTickGap={30} // Evita que se solapen si hay muchos puntos
-                            />
-                            <YAxis
-                                stroke={axisColor}
-                                tick={{ fill: axisColor, fontSize: 10 }}
-                                domain={['auto', 'auto']}
-                                unit=" cm"
-                                tickMargin={10}
-                                axisLine={false}
-                            />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke="var(--color-accent)"
-                                strokeWidth={3}
-                                dot={{ fill: 'var(--color-bg-primary)', stroke: 'var(--color-accent)', strokeWidth: 2, r: 4 }}
-                                activeDot={{ r: 6, fill: 'var(--color-accent)' }}
-                                animationDuration={1000}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    <div className="h-52 w-full [&_*]:!outline-none">
+                        <ResponsiveContainer>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorMedida" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                {grid}
+                                <XAxis 
+                                    dataKey="timestamp" 
+                                    type="number" 
+                                    domain={['dataMin', 'dataMax']} 
+                                    tickFormatter={(t) => new Date(t).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })} 
+                                    {...axisConfig(axisColor)} 
+                                />
+                                <YAxis domain={['auto', 'auto']} {...axisConfig(axisColor)} />
+                                <Tooltip content={<ModernTooltip />} />
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="value" 
+                                    stroke="var(--color-accent)" 
+                                    strokeWidth={3} 
+                                    fill="url(#colorMedida)" 
+                                    activeDot={{ r: 6, strokeWidth: 0, fill: "var(--color-accent)" }} 
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
                 ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-text-tertiary gap-3">
-                        <div className="p-4 rounded-full bg-white/5">
-                            <Ruler size={32} className="opacity-40" />
-                        </div>
-                        <p>No hay registros de {selectedType} aún.</p>
+                    <div className="flex flex-col items-center justify-center h-52 text-text-muted text-sm gap-3">
+                        <div className="p-3 rounded-full bg-white/5"><Ruler size={24} className="opacity-50" /></div>
+                        <p>No hay registros de {type} aún.</p>
                     </div>
                 )}
-            </div>
+            </GlassCard>
 
-            {/* Modal */}
-            {showModal && (
-                <BodyMeasurementModal
-                    onSave={handleSave}
-                    onClose={() => setShowModal(false)}
-                />
-            )}
+            {showModal && <BodyMeasurementModal onSave={logBodyMeasurement} onClose={() => setShowModal(false)} />}
         </div>
     );
 };

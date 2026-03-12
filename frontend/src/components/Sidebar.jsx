@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User, LogOut, Bell, Settings, Sparkles } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import StoryViewer from './StoryViewer';
-import AIInfoModal from './AIInfoModal'; // Lo crearemos en el siguiente paso
+import AIInfoModal from './AIInfoModal';
 
 // Componente SidebarItem optimizado
 const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, isRed, shouldTruncate, className = '' }) => (
@@ -161,7 +161,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
         <div className="mt-auto flex flex-col gap-2 flex-shrink-0 pt-4">
             
-            {/* Nuevo botón del estado de IA con borde más sutil */}
+            {/* Botón del estado de IA con borde más sutil */}
             <div className="mb-2">
               <SidebarItem
                   label={`IA: ${aiRemaining}/${aiLimit}`}

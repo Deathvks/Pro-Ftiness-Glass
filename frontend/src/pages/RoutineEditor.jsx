@@ -1,4 +1,3 @@
-/* frontend/src/pages/RoutineEditor.jsx */
 import React, { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 
@@ -84,7 +83,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
 
       {/* --- NUEVO: Mostrar la explicación general de la IA --- */}
       {initialRoutine?.ai_explanation && (
-        <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+        <div className="bg-accent/5 border border-transparent dark:border-white/5 rounded-xl p-4 mb-6 flex items-start gap-3">
           <Sparkles className="w-6 h-6 text-accent shrink-0 mt-0.5" />
           <div>
             <h4 className="text-sm font-bold text-accent mb-1">Nota del Entrenador IA</h4>

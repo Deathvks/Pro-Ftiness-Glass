@@ -1,4 +1,3 @@
-/* frontend/src/components/RoutineEditor/ExerciseCard.jsx */
 import React from 'react';
 import { Trash2, GripVertical, Repeat, Image as ImageIcon, Sparkles } from 'lucide-react';
 import GlassCard from '../GlassCard';
@@ -188,7 +187,7 @@ const ExerciseCard = ({
 
           {/* --- NUEVO: Explicación de la IA para este ejercicio --- */}
           {exercise.ai_reason && (
-            <div className="mt-3 p-3 rounded-lg bg-accent/10 border border-accent/20 flex gap-2 items-start w-full">
+            <div className="mt-3 p-3 rounded-lg bg-accent/5 border border-transparent dark:border-white/5 flex gap-2 items-start w-full">
               <Sparkles className="w-4 h-4 text-accent shrink-0 mt-0.5" />
               <p className="text-xs text-text-primary/90 text-left">{exercise.ai_reason}</p>
             </div>

@@ -58,6 +58,38 @@ router.post('/google-login', authLimiter, [
 ], authController.googleLogin);
 // --- FIN DE LA MODIFICACIÓN ---
 
+// --- INICIO DE LA MODIFICACIÓN: Nueva ruta Discord Login ---
+router.post('/discord-login', authLimiter, [
+    body('token', 'El token de Discord es requerido').not().isEmpty()
+], authController.discordLogin);
+// --- FIN DE LA MODIFICACIÓN ---
+
+// --- INICIO DE LA MODIFICACIÓN: Nueva ruta Facebook Login ---
+router.post('/facebook-login', authLimiter, [
+    body('token', 'El token de Facebook es requerido').not().isEmpty()
+], authController.facebookLogin);
+// --- FIN DE LA MODIFICACIÓN ---
+
+// --- INICIO DE LA MODIFICACIÓN: Nueva ruta X Login ---
+router.post('/x-login', authLimiter, [
+    body('code', 'El código de X es requerido').not().isEmpty(),
+    body('redirectUri', 'La URI de redirección es requerida').not().isEmpty()
+], authController.xLogin);
+// --- FIN DE LA MODIFICACIÓN ---
+
+// --- INICIO DE LA MODIFICACIÓN: Nueva ruta GitHub Login ---
+router.post('/github-login', authLimiter, [
+    body('code', 'El código de GitHub es requerido').not().isEmpty()
+], authController.githubLogin);
+// --- FIN DE LA MODIFICACIÓN ---
+
+// --- INICIO DE LA MODIFICACIÓN: Nueva ruta Spotify Login ---
+router.post('/spotify-login', authLimiter, [
+    body('code', 'El código de Spotify es requerido').not().isEmpty(),
+    body('redirectUri', 'La URI de redirección es requerida').not().isEmpty()
+], authController.spotifyLogin);
+// --- FIN DE LA MODIFICACIÓN ---
+
 router.post('/logout', authController.logoutUser);
 
 // Rutas para reseteo de contraseña
@@ -73,6 +105,5 @@ router.post('/reset-password', authLimiter, [
     body('password', 'La nueva contraseña debe tener 6 o más caracteres').isLength({ min: 6 })
     // --- FIN MODIFICACIÓN ---
 ], authController.resetPassword);
-
 
 export default router;

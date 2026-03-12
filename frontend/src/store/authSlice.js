@@ -58,12 +58,12 @@ export const createAuthSlice = (set, get) => ({
 
         localStorage.removeItem('fittrack_token');
         localStorage.setItem('pro_fitness_token', token);
-        
+
         // Al establecer isAuthenticated: true, el componente MainAppLayout se montará.
         // Guardamos userProfile inmediatamente para tener la foto y datos disponibles.
-        set({ 
-            token, 
-            isAuthenticated: true, 
+        set({
+            token,
+            isAuthenticated: true,
             twoFactorPending: null,
             userProfile: user || null // Guardamos el usuario si existe
         });
@@ -93,13 +93,155 @@ export const createAuthSlice = (set, get) => ({
         localStorage.setItem('pro_fitness_token', token);
 
         // Guardamos userProfile inmediatamente (aquí suele venir la foto de Google)
-        set({ 
-            token, 
-            isAuthenticated: true, 
+        set({
+            token,
+            isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null 
+            userProfile: user || null
         });
     },
+
+    // --- INICIO MODIFICACIÓN DISCORD ---
+    handleDiscordLogin: async (discordToken) => {
+        const response = await authService.discordLogin(discordToken);
+
+        if (response.requires2FA) {
+            set({
+                twoFactorPending: {
+                    userId: response.userId,
+                    method: response.method
+                }
+            });
+            return;
+        }
+
+        const { token, user } = response;
+
+        localStorage.removeItem('fittrack_token');
+        localStorage.setItem('pro_fitness_token', token);
+
+        set({
+            token,
+            isAuthenticated: true,
+            twoFactorPending: null,
+            userProfile: user || null
+        });
+    },
+    // --- FIN MODIFICACIÓN DISCORD ---
+
+    // --- INICIO MODIFICACIÓN FACEBOOK ---
+    handleFacebookLogin: async (facebookToken) => {
+        const response = await authService.facebookLogin(facebookToken);
+
+        if (response.requires2FA) {
+            set({
+                twoFactorPending: {
+                    userId: response.userId,
+                    method: response.method
+                }
+            });
+            return;
+        }
+
+        const { token, user } = response;
+
+        localStorage.removeItem('fittrack_token');
+        localStorage.setItem('pro_fitness_token', token);
+
+        set({
+            token,
+            isAuthenticated: true,
+            twoFactorPending: null,
+            userProfile: user || null
+        });
+    },
+    // --- FIN MODIFICACIÓN FACEBOOK ---
+
+    // --- INICIO MODIFICACIÓN X ---
+    handleXLogin: async (payload) => {
+        // payload contiene { code, redirectUri, codeVerifier }
+        const response = await authService.xLogin(payload);
+
+        if (response.requires2FA) {
+            set({
+                twoFactorPending: {
+                    userId: response.userId,
+                    method: response.method
+                }
+            });
+            return;
+        }
+
+        const { token, user } = response;
+
+        localStorage.removeItem('fittrack_token');
+        localStorage.setItem('pro_fitness_token', token);
+
+        set({
+            token,
+            isAuthenticated: true,
+            twoFactorPending: null,
+            userProfile: user || null
+        });
+    },
+    // --- FIN MODIFICACIÓN X ---
+
+    // --- INICIO DE LA MODIFICACIÓN: Añadido GitHub Login ---
+    handleGithubLogin: async (code) => {
+        const response = await authService.githubLogin(code);
+
+        if (response.requires2FA) {
+            set({
+                twoFactorPending: {
+                    userId: response.userId,
+                    method: response.method
+                }
+            });
+            return;
+        }
+
+        const { token, user } = response;
+
+        localStorage.removeItem('fittrack_token');
+        localStorage.setItem('pro_fitness_token', token);
+
+        set({
+            token,
+            isAuthenticated: true,
+            twoFactorPending: null,
+            userProfile: user || null
+        });
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // --- INICIO DE LA MODIFICACIÓN: Añadido Spotify Login ---
+    handleSpotifyLogin: async (payload) => {
+        // payload contiene { code, redirectUri }
+        const response = await authService.spotifyLogin(payload);
+
+        if (response.requires2FA) {
+            set({
+                twoFactorPending: {
+                    userId: response.userId,
+                    method: response.method
+                }
+            });
+            return;
+        }
+
+        const { token, user } = response;
+
+        localStorage.removeItem('fittrack_token');
+        localStorage.setItem('pro_fitness_token', token);
+
+        set({
+            token,
+            isAuthenticated: true,
+            twoFactorPending: null,
+            userProfile: user || null
+        });
+    },
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // --- INICIO MODIFICACIÓN 2FA ---
     // Nueva acción para completar el login con el código 2FA
@@ -112,11 +254,11 @@ export const createAuthSlice = (set, get) => ({
         localStorage.setItem('pro_fitness_token', token);
 
         // Limpiamos el estado pendiente y marcamos autenticado.
-        set({ 
-            token, 
-            isAuthenticated: true, 
+        set({
+            token,
+            isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null 
+            userProfile: user || null
         });
     },
 
@@ -168,13 +310,11 @@ export const createAuthSlice = (set, get) => ({
         }
     },
 
-    // --- INICIO DE LA MODIFICACIÓN (FIX) ---
     // Acción para actualizar manualmente el estado del perfil localmente (sin llamada al backend)
     // Útil para actualizaciones optimistas o cambios simples.
     setUserProfile: (profile) => {
         set({ userProfile: profile });
     },
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // Comprueba si se debe mostrar el modal de bienvenida
     checkWelcomeModal: () => {

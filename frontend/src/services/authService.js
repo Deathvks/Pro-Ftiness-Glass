@@ -63,6 +63,47 @@ export const googleLogin = (token) => {
     });
 };
 
+export const discordLogin = (token) => {
+    return apiClient('/auth/discord-login', {
+        method: 'POST',
+        body: { token },
+    });
+};
+
+export const facebookLogin = (token) => {
+    return apiClient('/auth/facebook-login', {
+        method: 'POST',
+        body: { token },
+    });
+};
+
+export const xLogin = (payload) => {
+    // Payload debe contener { code, redirectUri, codeVerifier }
+    return apiClient('/auth/x-login', {
+        method: 'POST',
+        body: payload,
+    });
+};
+
+// --- INICIO DE LA MODIFICACIÓN: Añadido githubLogin ---
+export const githubLogin = (code) => {
+    return apiClient('/auth/github-login', {
+        method: 'POST',
+        body: { code },
+    });
+};
+// --- FIN DE LA MODIFICACIÓN ---
+
+// --- INICIO DE LA MODIFICACIÓN: Añadido spotifyLogin ---
+export const spotifyLogin = (payload) => {
+    // Payload debe contener { code, redirectUri }
+    return apiClient('/auth/spotify-login', {
+        method: 'POST',
+        body: payload,
+    });
+};
+// --- FIN DE LA MODIFICACIÓN ---
+
 // --- GOOGLE AUTH PLUGIN ---
 
 export const initGoogleAuth = () => {

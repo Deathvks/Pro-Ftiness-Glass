@@ -149,9 +149,8 @@ export default function MainAppLayout({
       setAiLimit(localStorage.getItem('ai_daily_limit') || '5');
     };
 
-    // VIGILANTE SILENCIOSO: Cada minuto revisa si ya es medianoche en España
-    // Si la fecha cambia, resetea todo a 5 usos automáticamente.
-    const midnightChecker = setInterval(() => {
+    // Función para comprobar si hemos cambiado de día y resetear si es necesario
+    const checkMidnightReset = () => {
       const lastDate = localStorage.getItem('ai_last_date');
       const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
       
@@ -161,20 +160,31 @@ export default function MainAppLayout({
         localStorage.setItem('ai_last_date', today);
         updateAILimits(); // Actualiza el header y sidebar instantáneamente
         window.dispatchEvent(new Event('ai_limit_updated')); // Avisa a los modales si están abiertos
+      } else {
+        updateAILimits(); // Por si venimos de un focus o evento y solo queremos sincronizar
       }
-    }, 60000); // 60.000 ms = 1 minuto
+    };
+
+    // VIGILANTE SILENCIOSO: Cada minuto revisa si ya es medianoche en España
+    const midnightChecker = setInterval(checkMidnightReset, 60000); // 60.000 ms = 1 minuto
+
+    // Revisión inmediata al montar el componente
+    checkMidnightReset();
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('storage', updateAILimits);
-    window.addEventListener('focus', updateAILimits);
-    window.addEventListener('ai_limit_updated', updateAILimits);
+    // Escuchamos storage (otras pestañas)
+    window.addEventListener('storage', checkMidnightReset);
+    // Escuchamos focus (volvemos a la app desde el background en móvil)
+    window.addEventListener('focus', checkMidnightReset);
+    // Escuchamos nuestro evento custom (cuando el aiService obtiene respuesta fresca)
+    window.addEventListener('ai_limit_updated', checkMidnightReset);
 
     return () => {
       clearInterval(midnightChecker);
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('storage', updateAILimits);
-      window.removeEventListener('focus', updateAILimits);
-      window.removeEventListener('ai_limit_updated', updateAILimits);
+      window.removeEventListener('storage', checkMidnightReset);
+      window.removeEventListener('focus', checkMidnightReset);
+      window.removeEventListener('ai_limit_updated', checkMidnightReset);
     };
   }, [cookieConsent, handleAcceptCookies]);
 

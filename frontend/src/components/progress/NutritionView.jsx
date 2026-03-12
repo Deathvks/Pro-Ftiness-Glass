@@ -4,86 +4,72 @@ import useAppStore from '../../store/useAppStore';
 import { NutritionCharts } from './ProgressCharts';
 
 const NutritionView = ({ axisColor }) => {
-    const nutritionSummary = useAppStore(state => state.nutritionSummary);
-    const fetchNutritionSummary = useAppStore(state => state.fetchNutritionSummary);
-    const isLoading = useAppStore(state => state.isLoading);
-    const [summaryDate, setSummaryDate] = useState(new Date());
+    const { nutritionSummary, fetchNutritionSummary, isLoading } = useAppStore();
+    const [date, setDate] = useState(new Date());
 
     useEffect(() => {
-        fetchNutritionSummary(summaryDate.getMonth() + 1, summaryDate.getFullYear());
-    }, [summaryDate, fetchNutritionSummary]);
+        fetchNutritionSummary(date.getMonth() + 1, date.getFullYear());
+    }, [date, fetchNutritionSummary]);
     
-    const changeSummaryMonth = (amount) => {
-        setSummaryDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setMonth(newDate.getMonth() + amount);
-            return newDate;
-        });
-    };
+    const changeMonth = (d) => setDate(p => new Date(p.getFullYear(), p.getMonth() + d, 1));
     
     const chartData = useMemo(() => {
-        if (!nutritionSummary || !summaryDate || typeof summaryDate.getMonth !== 'function') {
-            return [];
-        }
-    
-        const year = summaryDate.getFullYear();
-        const month = summaryDate.getMonth();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const dataMap = new Map();
-
+        if (!nutritionSummary) return [];
+        
+        const [y, m] = [date.getFullYear(), date.getMonth()];
         const today = new Date();
-        const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
-        const lastDayToShow = isCurrentMonth ? today.getDate() : daysInMonth;
+        const isCurrent = y === today.getFullYear() && m === today.getMonth();
+        const lastDay = isCurrent ? today.getDate() : new Date(y, m + 1, 0).getDate();
 
-        for (let i = 1; i <= lastDayToShow; i++) {
-            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-            dataMap.set(dateKey, {
-                // --- INICIO DE LA MODIFICACIÓN ---
-                date: dateKey, // Usar la fecha completa como clave para el tooltip
-                day: i, // Usar solo el día para el eje X
-                // --- FIN DE LA MODIFICACIÓN ---
-                Calorías: 0, Proteínas: 0, Carbs: 0, Grasas: 0, Agua: 0
-            });
-        }
-    
-        (nutritionSummary.nutrition || []).forEach(item => {
-            if (dataMap.has(item.date)) {
-                const dayData = dataMap.get(item.date);
-                dayData.Calorías = parseFloat(item.total_calories) || 0;
-                dayData.Proteínas = parseFloat(item.total_protein) || 0;
-                dayData.Carbs = parseFloat(item.total_carbs) || 0;
-                dayData.Grasas = parseFloat(item.total_fats) || 0;
+        const dataMap = new Map(Array.from({ length: lastDay }, (_, i) => {
+            const day = i + 1;
+            const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            return [dateStr, { date: dateStr, day, Calorías: 0, Proteínas: 0, Carbs: 0, Grasas: 0, Agua: 0 }];
+        }));
+
+        nutritionSummary.nutrition?.forEach(n => {
+            if (dataMap.has(n.date)) {
+                Object.assign(dataMap.get(n.date), {
+                    Calorías: parseFloat(n.total_calories) || 0,
+                    Proteínas: parseFloat(n.total_protein) || 0,
+                    Carbs: parseFloat(n.total_carbs) || 0,
+                    Grasas: parseFloat(n.total_fats) || 0
+                });
             }
         });
-    
-        (nutritionSummary.water || []).forEach(item => {
-            if (dataMap.has(item.log_date)) {
-                dataMap.get(item.log_date).Agua = item.quantity_ml || 0;
-            }
+
+        nutritionSummary.water?.forEach(w => {
+            if (dataMap.has(w.log_date)) dataMap.get(w.log_date).Agua = w.quantity_ml || 0;
         });
         
         return Array.from(dataMap.values());
-    
-    }, [nutritionSummary, summaryDate]);
+    }, [nutritionSummary, date]);
+
+    const isNextDisabled = date.getFullYear() === new Date().getFullYear() && date.getMonth() === new Date().getMonth();
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex justify-center items-center gap-4">
-                <button onClick={() => changeSummaryMonth(-1)} className="p-2 rounded-full hover:bg-white/10 transition"><ChevronLeft /></button>
-                <h2 className="text-xl font-bold capitalize">{summaryDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}</h2>
+        <div className="flex flex-col gap-4">
+            {/* Controles Superiores (Sin bordes ni fondos) */}
+            <div className="flex items-center justify-between gap-3 w-full">
                 <button 
-                    onClick={() => changeSummaryMonth(1)} 
-                    disabled={new Date(summaryDate.getFullYear(), summaryDate.getMonth() + 1, 1) > new Date()}
-                    className="p-2 rounded-full hover:bg-white/10 transition disabled:opacity-50"
+                    onClick={() => changeMonth(-1)} 
+                    className="p-2 rounded-lg hover:bg-white/10 transition text-text-secondary hover:text-text-primary"
                 >
-                    <ChevronRight />
+                    <ChevronLeft size={20} />
+                </button>
+                <h2 className="text-sm font-semibold capitalize text-text-primary tracking-wide">
+                    {date.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+                </h2>
+                <button 
+                    onClick={() => changeMonth(1)} 
+                    disabled={isNextDisabled}
+                    className="p-2 rounded-lg hover:bg-white/10 transition text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                >
+                    <ChevronRight size={20} />
                 </button>
             </div>
-            <NutritionCharts
-                chartData={chartData}
-                axisColor={axisColor}
-                isLoading={isLoading}
-            />
+            
+            <NutritionCharts chartData={chartData} axisColor={axisColor} isLoading={isLoading} />
         </div>
     );
 };
