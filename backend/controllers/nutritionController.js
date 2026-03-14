@@ -44,14 +44,14 @@ const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const webpFilename = `barcode-${uniqueSuffix}.webp`;
     const outputPath = path.join(outputDir, webpFilename);
-    
+
     // OPTIMIZACIÓN: 600px es suficiente para thumbnails de comida
     await sharp(imageBuffer)
       .rotate()
       .resize(600, 600, { fit: sharp.fit.inside, withoutEnlargement: true })
       .webp({ quality: 70 })
       .toFile(outputPath);
-      
+
     return `/images/food/${webpFilename}`;
   } catch (error) {
     console.error(`Error al descargar o convertir la imagen ${imageUrl}:`, error.message);
@@ -63,14 +63,13 @@ const isImageInUse = async (imageUrl, excludeLogId = null) => {
   if (!imageUrl) return false;
   const whereClause = { image_url: imageUrl };
   if (excludeLogId) whereClause.id = { [Op.ne]: excludeLogId };
-  
-  // OPTIMIZACIÓN: count es más rápido que findAll
+
   const logsCount = await NutritionLog.count({ where: whereClause });
   if (logsCount > 0) return true;
-  
+
   const favsCount = await FavoriteMeal.count({ where: { image_url: imageUrl } });
   if (favsCount > 0) return true;
-  
+
   return false;
 };
 
@@ -87,7 +86,7 @@ const checkCalorieTargetReward = async (userId, logDate) => {
         created_at: { [Op.between]: [startOfDay, endOfDay] }
       },
       attributes: ['data', 'message'],
-      raw: true // Ahorro de memoria
+      raw: true
     });
 
     const alreadyAwarded = todayNotifications.some(n => {
@@ -102,11 +101,11 @@ const checkCalorieTargetReward = async (userId, logDate) => {
     const user = await User.findByPk(userId, { raw: true });
     if (!user) return null;
 
-    const lastWeightLog = await BodyWeightLog.findOne({ 
-      where: { user_id: userId }, 
+    const lastWeightLog = await BodyWeightLog.findOne({
+      where: { user_id: userId },
       order: [['log_date', 'DESC']],
       attributes: ['weight_kg'],
-      raw: true 
+      raw: true
     });
 
     const weight = lastWeightLog ? parseFloat(lastWeightLog.weight_kg) : 70;
@@ -138,12 +137,10 @@ const getNutritionLogsByDate = async (req, res, next) => {
     const { date } = req.query;
     const { userId } = req.user;
     if (!date) return res.status(400).json({ error: 'La fecha es requerida.' });
-    
-    // OPTIMIZACIÓN: raw: false necesario para getters de Sequelize si los hubiera,
-    // pero si es data pura, raw: true sería mejor. Lo mantenemos false por seguridad de compatibilidad.
+
     const nutritionLogs = await NutritionLog.findAll({ where: { user_id: userId, log_date: date }, order: [['meal_type', 'ASC'], ['id', 'ASC']] });
     const waterLog = await WaterLog.findOne({ where: { user_id: userId, log_date: date } });
-    
+
     res.json({ nutrition: nutritionLogs, water: waterLog });
   } catch (error) {
     next(error);
@@ -153,18 +150,17 @@ const getNutritionLogsByDate = async (req, res, next) => {
 const getRecentMeals = async (req, res, next) => {
   try {
     const { userId } = req.user;
-    
-    // OPTIMIZACIÓN: raw: true ahorra mucha RAM al procesar listas
-    const recentLogs = await NutritionLog.findAll({ 
-      where: { user_id: userId }, 
-      limit: 50, 
+
+    const recentLogs = await NutritionLog.findAll({
+      where: { user_id: userId },
+      limit: 50,
       order: [['id', 'DESC']],
       raw: true
     });
 
     const uniqueMeals = [];
     const descriptionsSeen = new Set();
-    
+
     for (const log of recentLogs) {
       const lowerCaseDescription = log.description.toLowerCase();
       if (!descriptionsSeen.has(lowerCaseDescription)) {
@@ -184,32 +180,32 @@ const getNutritionSummary = async (req, res, next) => {
     const { userId } = req.user;
     const { month, year } = req.query;
     if (!month || !year) return res.status(400).json({ error: 'El mes y el año son requeridos.' });
-    
+
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
-    
-    const nutritionSummary = await NutritionLog.findAll({ 
-      where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } }, 
+
+    const nutritionSummary = await NutritionLog.findAll({
+      where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } },
       attributes: [
-        ['log_date', 'date'], 
-        [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'], 
-        [sequelize.fn('sum', sequelize.col('protein_g')), 'total_protein'], 
-        [sequelize.fn('sum', sequelize.col('carbs_g')), 'total_carbs'], 
+        ['log_date', 'date'],
+        [sequelize.fn('sum', sequelize.col('calories')), 'total_calories'],
+        [sequelize.fn('sum', sequelize.col('protein_g')), 'total_protein'],
+        [sequelize.fn('sum', sequelize.col('carbs_g')), 'total_carbs'],
         [sequelize.fn('sum', sequelize.col('fats_g')), 'total_fats'],
         [sequelize.fn('sum', sequelize.col('sugars_g')), 'total_sugars']
-      ], 
-      group: ['log_date'], 
+      ],
+      group: ['log_date'],
       order: [['log_date', 'ASC']],
       raw: true
     });
-    
-    const waterSummary = await WaterLog.findAll({ 
-      where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } }, 
-      attributes: ['log_date', 'quantity_ml'], 
+
+    const waterSummary = await WaterLog.findAll({
+      where: { user_id: userId, log_date: { [Op.between]: [startDate, endDate] } },
+      attributes: ['log_date', 'quantity_ml'],
       order: [['log_date', 'ASC']],
       raw: true
     });
-    
+
     res.json({ nutritionSummary, waterSummary });
   } catch (error) {
     next(error);
@@ -217,7 +213,6 @@ const getNutritionSummary = async (req, res, next) => {
 };
 
 const addFoodLog = async (req, res, next) => {
-  // Transacción para consistencia
   const t = await sequelize.transaction();
   try {
     const { userId } = req.user;
@@ -227,22 +222,22 @@ const addFoodLog = async (req, res, next) => {
     if (sanitizedImageUrl === 'null' || sanitizedImageUrl === 'undefined' || sanitizedImageUrl === '') sanitizedImageUrl = null;
     const finalImageUrl = (req.file && req.file.processedPath) ? req.file.processedPath : sanitizedImageUrl;
 
-    const foodData = { 
-      user_id: userId, 
-      log_date, 
-      meal_type, 
-      description, 
-      calories: calories || 0, 
-      protein_g: protein_g || null, 
-      carbs_g: carbs_g || null, 
-      fats_g: fats_g || null, 
+    const foodData = {
+      user_id: userId,
+      log_date,
+      meal_type,
+      description,
+      calories: calories || 0,
+      protein_g: protein_g || null,
+      carbs_g: carbs_g || null,
+      fats_g: fats_g || null,
       sugars_g: sugars_g || null,
-      weight_g: weight_g || null, 
-      image_url: finalImageUrl, 
-      micronutrients: micronutrients || null, 
-      calories_per_100g: calories_per_100g || null, 
-      protein_per_100g: protein_per_100g || null, 
-      carbs_per_100g: carbs_per_100g || null, 
+      weight_g: weight_g || null,
+      image_url: finalImageUrl,
+      micronutrients: micronutrients || null,
+      calories_per_100g: calories_per_100g || null,
+      protein_per_100g: protein_per_100g || null,
+      carbs_per_100g: carbs_per_100g || null,
       fat_per_100g: fat_per_100g || null,
       sugars_per_100g: sugars_per_100g || null
     };
@@ -262,12 +257,10 @@ const addFoodLog = async (req, res, next) => {
       }
     }
 
-    await t.commit(); // Commit temprano
+    await t.commit();
 
-    // Gamificación Post-Commit
     const gamificationEvents = [];
     try {
-      console.log(`[XP AUDIT] Iniciando AddFoodLog. Usuario: ${userId}.`);
       const gamificationResult = await processFoodGamification(userId, log_date);
 
       if (gamificationResult.xpAdded > 0) {
@@ -277,7 +270,7 @@ const addFoodLog = async (req, res, next) => {
       }
 
       if (gamificationResult.limitReachedNow) {
-        createNotification(userId, { type: 'warning', title: 'Límite XP', message: 'Límite diario comidas (5/5).', data: { type: 'xp_limit' } }).catch(() => {});
+        createNotification(userId, { type: 'warning', title: 'Límite XP', message: 'Límite diario comidas (5/5).', data: { type: 'xp_limit' } }).catch(() => { });
       }
 
       const calorieResult = await checkCalorieTargetReward(userId, log_date);
@@ -300,7 +293,7 @@ const updateFoodLog = async (req, res, next) => {
   try {
     const { logId } = req.params;
     const { userId } = req.user;
-    
+
     const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId }, transaction: t });
     if (!log) {
       await t.rollback();
@@ -316,28 +309,27 @@ const updateFoodLog = async (req, res, next) => {
     else if (image_url !== undefined) newImageUrl = (image_url === 'null' || image_url === '' || image_url === undefined) ? null : image_url;
     else newImageUrl = oldImageUrl;
 
-    const foodData = { 
-      description: description ?? log.description, 
-      calories: calories ?? log.calories, 
-      protein_g: protein_g ?? log.protein_g, 
-      carbs_g: carbs_g ?? log.carbs_g, 
-      fats_g: fats_g ?? log.fats_g, 
+    const foodData = {
+      description: description ?? log.description,
+      calories: calories ?? log.calories,
+      protein_g: protein_g ?? log.protein_g,
+      carbs_g: carbs_g ?? log.carbs_g,
+      fats_g: fats_g ?? log.fats_g,
       sugars_g: sugars_g ?? log.sugars_g,
-      weight_g: weight_g ?? log.weight_g, 
-      image_url: newImageUrl, 
-      meal_type: meal_type ?? log.meal_type, 
-      log_date: log_date ?? log.log_date, 
-      micronutrients: micronutrients ?? log.micronutrients, 
-      calories_per_100g: calories_per_100g ?? log.calories_per_100g, 
-      protein_per_100g: protein_per_100g ?? log.protein_per_100g, 
-      carbs_per_100g: carbs_per_100g ?? log.carbs_per_100g, 
+      weight_g: weight_g ?? log.weight_g,
+      image_url: newImageUrl,
+      meal_type: meal_type ?? log.meal_type,
+      log_date: log_date ?? log.log_date,
+      micronutrients: micronutrients ?? log.micronutrients,
+      calories_per_100g: calories_per_100g ?? log.calories_per_100g,
+      protein_per_100g: protein_per_100g ?? log.protein_per_100g,
+      carbs_per_100g: carbs_per_100g ?? log.carbs_per_100g,
       fat_per_100g: fat_per_100g ?? log.fat_per_100g,
       sugars_per_100g: sugars_per_100g ?? log.sugars_per_100g
     };
 
     await log.update(foodData, { transaction: t });
 
-    // Lógica Favoritos
     const favData = { ...foodData, name: foodData.description, user_id: userId };
     delete favData.log_date;
     delete favData.meal_type;
@@ -353,7 +345,6 @@ const updateFoodLog = async (req, res, next) => {
 
     await t.commit();
 
-    // Limpieza de imagen huérfana (Post-Commit)
     if (oldImageUrl && oldImageUrl !== newImageUrl) {
       const inUse = await isImageInUse(oldImageUrl, logId);
       if (!inUse) deleteFile(oldImageUrl);
@@ -363,7 +354,7 @@ const updateFoodLog = async (req, res, next) => {
     try {
       const calorieResult = await checkCalorieTargetReward(userId, foodData.log_date);
       if (calorieResult && calorieResult.success) gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
-    } catch (gError) {}
+    } catch (gError) { }
 
     res.json({ ...log.toJSON(), gamification: gamificationEvents });
 
@@ -380,10 +371,10 @@ const deleteFoodLog = async (req, res, next) => {
     const { userId } = req.user;
     const log = await NutritionLog.findOne({ where: { id: logId, user_id: userId } });
     if (!log) return res.status(404).json({ error: 'Registro no encontrado.' });
-    
+
     const imageUrl = log.image_url;
     await log.destroy();
-    
+
     if (imageUrl) {
       const inUse = await isImageInUse(imageUrl);
       if (!inUse) deleteFile(imageUrl);
@@ -400,14 +391,14 @@ const upsertWaterLog = async (req, res, next) => {
     const { log_date, quantity_ml } = req.body;
     if (!log_date || quantity_ml === undefined) return res.status(400).json({ error: 'Fecha y cantidad son requeridas.' });
 
-    const user = await User.findByPk(userId); // Mantenemos instancia completa por si acaso, aunque raw sería mejor
-    const lastWeightLog = await BodyWeightLog.findOne({ 
-      where: { user_id: userId }, 
+    const user = await User.findByPk(userId);
+    const lastWeightLog = await BodyWeightLog.findOne({
+      where: { user_id: userId },
       order: [['log_date', 'DESC']],
       attributes: ['weight_kg'],
-      raw: true 
+      raw: true
     });
-    
+
     const weight = lastWeightLog ? parseFloat(lastWeightLog.weight_kg) : 70;
     const waterTarget = weight > 0 ? weight * 35 : 2500;
 
@@ -433,7 +424,7 @@ const upsertWaterLog = async (req, res, next) => {
             gamificationEvents.push({ type: 'xp', amount: xpToAward, reason: `Hidratación: ${Math.round(currentProgress * 100)}%` });
           }
           if ((xpEarnedToday + xpToAward) >= MAX_DAILY_WATER_XP) {
-            createNotification(userId, { type: 'warning', title: 'Límite XP', message: 'Límite hidratación alcanzado.', data: { type: 'xp_limit' } }).catch(() => {});
+            createNotification(userId, { type: 'warning', title: 'Límite XP', message: 'Límite hidratación alcanzado.', data: { type: 'xp_limit' } }).catch(() => { });
           }
         }
       } else {
@@ -443,7 +434,7 @@ const upsertWaterLog = async (req, res, next) => {
       }
 
       const todayStr = new Date().toISOString().split('T')[0];
-      checkStreak(userId, todayStr).catch(() => {});
+      checkStreak(userId, todayStr).catch(() => { });
     } catch (gError) { console.error('Error gamificación:', gError); }
 
     res.json({ ...waterLog.toJSON(), gamification: gamificationEvents });
@@ -454,38 +445,35 @@ const searchByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
     console.log(`[BACKEND] Buscando código: ${barcode}`);
-    
-    // API de OpenFoodFacts (Gratuita)
+
     const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
-    
-    const response = await axios.get(apiUrl, { timeout: 5000 }); // Timeout para no colgar servidor
-    
+
+    const response = await axios.get(apiUrl, { timeout: 5000 });
+
     if (!response.data || response.data.status === 0 || !response.data.product) {
-        return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null } });
+      return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null } });
     }
-    
+
     const product = response.data.product;
     const nutriments = product.nutriments || {};
-    
+
     const originalImageUrl = product.image_url || product.image_front_url || null;
     let localImageUrl = null;
-    
-    // Solo descargamos si hay imagen válida
+
     if (originalImageUrl) {
-        localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
+      localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
     }
-    
-    const foodData = { 
-        product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado', 
-        nutriments: nutriments, 
-        image_url: localImageUrl, 
-        serving_quantity: product.serving_quantity || null 
+
+    const foodData = {
+      product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
+      nutriments: nutriments,
+      image_url: localImageUrl,
+      serving_quantity: product.serving_quantity || null
     };
-    
+
     res.json({ product: foodData });
   } catch (error) {
     console.error(`Error barcode ${req.params.barcode}:`, error.message);
-    // Retornar 404 limpio en lugar de error 500
     if (error.response && error.response.status === 404) return res.status(404).json({ product: { product_name: 'No encontrado' } });
     next(error);
   }
@@ -498,45 +486,62 @@ const searchFoods = async (req, res, next) => {
     const { userId } = req.user;
     const { q } = req.query;
     console.log(`[BACKEND] Buscando: "${q}"`);
-    
-    // Paralelismo para velocidad
-    const favoriteResultsPromise = FavoriteMeal.findAll({ where: { user_id: userId, name: { [Op.like]: `%${q}%` } }, limit: 10, raw: true });
-    
+
+    // CAMBIO 1: Búsqueda local Case-Insensitive usando sequelize.fn('LOWER') en vez de un Op.like que fallaba si había mayúsculas
+    const favoriteResultsPromise = FavoriteMeal.findAll({
+      where: sequelize.where(
+        sequelize.fn('LOWER', sequelize.col('name')),
+        'LIKE',
+        `%${q.toLowerCase()}%`
+      ),
+      limit: 10,
+      raw: true
+    });
+
     const offSearchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_es,nutriments,image_url,image_small_url`;
-    
-    const offResultsPromise = axios.get(offSearchUrl, { timeout: 3000 })
-        .then(response => { 
-            if (response.data && response.data.products) { 
-                return response.data.products.map(p => ({ 
-                    id: `off-${p.code}`, 
-                    name: p.product_name_es || p.product_name || 'Sin nombre', 
-                    calories: p.nutriments?.['energy-kcal_100g'] || 0, 
-                    protein_g: p.nutriments?.proteins_100g || 0, 
-                    carbs_g: p.nutriments?.carbohydrates_100g || 0, 
-                    fats_g: p.nutriments?.fat_100g || 0, 
-                    sugars_g: p.nutriments?.sugars_100g || 0, 
-                    calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0, 
-                    protein_per_100g: p.nutriments?.proteins_100g || 0, 
-                    carbs_per_100g: p.nutriments?.carbohydrates_100g || 0, 
-                    fat_per_100g: p.nutriments?.fat_100g || 0, 
-                    sugars_per_100g: p.nutriments?.sugars_100g || 0, 
-                    image_url: p.image_small_url || p.image_url || null, 
-                    source: 'global', 
-                    weight_g: 100 
-                })); 
-            } 
-            return []; 
-        })
-        .catch(err => { console.error("Error OFF:", err.message); return []; });
+
+    // CAMBIO 2: Añadido timeout más largo y encabezado "User-Agent" OBLIGATORIO para que OpenFoodFacts no nos deniegue el servicio silenciosamente
+    const offResultsPromise = axios.get(offSearchUrl, {
+      timeout: 8000,
+      headers: {
+        'User-Agent': 'MiAplicacionFitness/1.0 (Buscador Web)'
+      }
+    })
+      .then(response => {
+        if (response.data && response.data.products) {
+          return response.data.products.map(p => ({
+            id: `off-${p.code}`,
+            name: p.product_name_es || p.product_name || 'Sin nombre',
+            calories: p.nutriments?.['energy-kcal_100g'] || 0,
+            protein_g: p.nutriments?.proteins_100g || 0,
+            carbs_g: p.nutriments?.carbohydrates_100g || 0,
+            fats_g: p.nutriments?.fat_100g || 0,
+            sugars_g: p.nutriments?.sugars_100g || 0,
+            calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
+            protein_per_100g: p.nutriments?.proteins_100g || 0,
+            carbs_per_100g: p.nutriments?.carbohydrates_100g || 0,
+            fat_per_100g: p.nutriments?.fat_100g || 0,
+            sugars_per_100g: p.nutriments?.sugars_100g || 0,
+            image_url: p.image_small_url || p.image_url || null,
+            source: 'global',
+            weight_g: 100
+          }));
+        }
+        return [];
+      })
+      .catch(err => {
+        console.error("Error OFF:", err.message);
+        return [];
+      });
 
     const [favoriteResults, offResults] = await Promise.all([favoriteResultsPromise, offResultsPromise]);
-    
-    const formattedFavorites = favoriteResults.map(f => ({ 
-        ...f, 
-        source: 'local', 
-        calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0 
+
+    const formattedFavorites = favoriteResults.map(f => ({
+      ...f,
+      source: 'local',
+      calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0
     }));
-    
+
     const combinedResults = [...formattedFavorites, ...offResults];
     res.json(combinedResults);
   } catch (error) { next(error); }
