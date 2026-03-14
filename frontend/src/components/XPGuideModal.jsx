@@ -3,11 +3,15 @@ import React, { useRef, useState } from 'react';
 import {
     X, Trophy, Dumbbell, Calendar, Plus, Activity, Star, Crown,
     Utensils, Droplets, Zap, Rocket, ChefHat, Info, LogIn, Flame,
-    Footprints, Shield
+    Footprints, Shield, CheckCircle
 } from 'lucide-react';
 import LevelBadge from './LevelBadge';
+import useAppStore from '../store/useAppStore';
 
 const XPGuideModal = ({ onClose }) => {
+    // Obtenemos las insignias desbloqueadas del estado global
+    const unlockedBadges = useAppStore(state => state.gamification?.unlockedBadges || []);
+
     // Referencia y estados para el Drag-to-Scroll en PC
     const carouselRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -34,10 +38,21 @@ const XPGuideModal = ({ onClose }) => {
     const dailyCardClass = "flex items-center justify-between p-3 bg-bg-primary rounded-xl border border-glass-border hover:border-accent/30 transition-all duration-300 group shadow-sm gap-2";
     const dailyXpClass = "font-bold text-accent text-xs sm:text-sm drop-shadow-[0_0_6px_rgba(34,211,238,0.4)] transition-transform group-hover:scale-110 whitespace-nowrap text-right shrink-0";
 
-    const goldCardClass = "flex items-center justify-between p-3 bg-gradient-to-br from-amber-500/10 to-amber-500/20 rounded-xl border border-amber-500/20 hover:border-amber-400/50 transition-all duration-300 group shadow-sm gap-2";
-    const goldXpClass = "font-extrabold text-amber-500 text-xs sm:text-sm drop-shadow-[0_0_8px_rgba(251,191,36,0.4)] transition-transform group-hover:scale-110 whitespace-nowrap text-right shrink-0";
-
     const rankPreviews = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+    // Lista de hitos e insignias
+    const milestones = [
+        { id: 'first_login', icon: Rocket, title: 'Primer Paso', desc: 'Por iniciar sesión 1ª vez', xp: 50 },
+        { id: 'first_workout', icon: Trophy, title: '1º Entrenamiento', desc: 'Al completar el primero', xp: 100 },
+        { id: 'nutrition_master', icon: ChefHat, title: 'Chef', desc: 'Por registrar 5 comidas', xp: 100 },
+        { id: 'streak_3', icon: Calendar, title: 'Racha de 3 Días', desc: '3 días seguidos activo', xp: 150 },
+        { id: 'streak_7', icon: Calendar, title: 'Racha de 7 Días', desc: '7 días seguidos activo', xp: 300 },
+        { id: 'streak_14', icon: Shield, title: 'Muro de Acero', desc: '14 días seguidos activo', xp: 500 },
+        { id: 'streak_30', icon: Crown, title: 'Leyenda', desc: '30 días seguidos activo', xp: 1000 },
+        { id: 'streak_60', icon: Flame, title: 'Dios del Gym', desc: '60 días seguidos activo', xp: 2000 },
+        { id: 'streak_100', icon: Zap, title: 'Titán', desc: '100 días seguidos activo', xp: 5000 },
+        { id: 'streak_365', icon: Star, title: 'Inmortal', desc: '365 días seguidos activo', xp: 10000 },
+    ];
 
     return (
         <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-20 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
@@ -53,7 +68,6 @@ const XPGuideModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                {/* Se añadió overflow-x-hidden aquí para forzar a que no se escape nada a los lados */}
                 <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-6 w-full">
                     <div className="bg-accent/10 rounded-xl p-4 flex items-start gap-3 mb-6 border border-glass-border w-full">
                         <Info className="text-accent shrink-0 mt-0.5" size={20} />
@@ -221,83 +235,51 @@ const XPGuideModal = ({ onClose }) => {
                             <Crown size={14} className="animate-pulse shrink-0" /> Insignias y Hitos
                         </h3>
                         <div className="space-y-2 w-full">
-                            <div className={goldCardClass}>
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="p-2 bg-amber-500/20 text-amber-500 rounded-lg ring-1 ring-amber-500/30 shrink-0">
-                                        <Rocket size={18} />
+                            {milestones.map(m => {
+                                const isUnlocked = unlockedBadges.includes(m.id);
+                                const Icon = m.icon;
+                                
+                                return (
+                                    <div 
+                                        key={m.id} 
+                                        className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-300 group shadow-sm gap-2 
+                                            ${isUnlocked 
+                                                ? 'bg-gradient-to-br from-amber-500/10 to-amber-500/20 border-amber-500/30' 
+                                                : 'bg-bg-primary border-glass-border opacity-60 hover:opacity-80 grayscale-[30%]'
+                                            }`
+                                        }
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            <div className={`p-2 rounded-lg ring-1 shrink-0 transition-colors 
+                                                ${isUnlocked 
+                                                    ? 'bg-amber-500/20 text-amber-500 ring-amber-500/30' 
+                                                    : 'bg-white/5 text-text-muted ring-white/10'
+                                                }`}
+                                            >
+                                                <Icon size={18} />
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className={`font-bold text-sm truncate transition-colors ${isUnlocked ? 'text-text-primary' : 'text-text-secondary'}`}>
+                                                    {m.title}
+                                                </span>
+                                                <span className="text-[10px] sm:text-xs text-text-tertiary truncate">
+                                                    {m.desc}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <span className={`font-extrabold text-xs sm:text-sm whitespace-nowrap text-right transition-colors
+                                                ${isUnlocked ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]' : 'text-text-muted'}`}
+                                            >
+                                                +{m.xp} XP
+                                            </span>
+                                            {isUnlocked && (
+                                                <CheckCircle size={16} className="text-amber-500 shrink-0 drop-shadow-sm" />
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-bold text-sm text-text-primary truncate">Primer Paso</span>
-                                        <span className="text-[10px] sm:text-xs text-text-secondary truncate">Por iniciar sesión 1ª vez</span>
-                                    </div>
-                                </div>
-                                <span className={goldXpClass}>+50 XP</span>
-                            </div>
-
-                            <div className={goldCardClass}>
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="p-2 bg-amber-500/20 text-amber-500 rounded-lg ring-1 ring-amber-500/30 shrink-0">
-                                        <Trophy size={18} />
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-bold text-sm text-text-primary truncate">1º Entrenamiento</span>
-                                        <span className="text-[10px] sm:text-xs text-text-secondary truncate">Al completar el primero</span>
-                                    </div>
-                                </div>
-                                <span className={goldXpClass}>+100 XP</span>
-                            </div>
-
-                            <div className={goldCardClass}>
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="p-2 bg-amber-500/20 text-amber-500 rounded-lg ring-1 ring-amber-500/30 shrink-0">
-                                        <ChefHat size={18} />
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-bold text-sm text-text-primary truncate">Chef</span>
-                                        <span className="text-[10px] sm:text-xs text-text-secondary truncate">Por registrar 5 comidas</span>
-                                    </div>
-                                </div>
-                                <span className={goldXpClass}>+100 XP</span>
-                            </div>
-
-                            <div className={goldCardClass}>
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="p-2 bg-amber-500/20 text-amber-500 rounded-lg ring-1 ring-amber-500/30 shrink-0">
-                                        <Calendar size={18} />
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-bold text-sm text-text-primary truncate">Racha de 3 Días</span>
-                                        <span className="text-[10px] sm:text-xs text-text-secondary truncate">3 días seguidos activo</span>
-                                    </div>
-                                </div>
-                                <span className={goldXpClass}>+150 XP</span>
-                            </div>
-
-                            <div className={goldCardClass}>
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="p-2 bg-amber-500/20 text-amber-500 rounded-lg ring-1 ring-amber-500/30 shrink-0">
-                                        <Calendar size={18} />
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-bold text-sm text-text-primary truncate">Racha de 7 Días</span>
-                                        <span className="text-[10px] sm:text-xs text-text-secondary truncate">7 días seguidos activo</span>
-                                    </div>
-                                </div>
-                                <span className={goldXpClass}>+300 XP</span>
-                            </div>
-
-                            <div className={goldCardClass}>
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="p-2 bg-amber-500/20 text-amber-500 rounded-lg ring-1 ring-amber-500/30 shrink-0">
-                                        <Crown size={18} />
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-bold text-sm text-text-primary truncate">Racha de 30 Días</span>
-                                        <span className="text-[10px] sm:text-xs text-text-secondary truncate">30 días seguidos activo</span>
-                                    </div>
-                                </div>
-                                <span className={goldXpClass}>+1000 XP</span>
-                            </div>
+                                );
+                            })}
                         </div>
                     </section>
                 </div>

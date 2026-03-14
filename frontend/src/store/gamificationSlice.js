@@ -50,14 +50,20 @@ export const createGamificationSlice = (set, get) => ({
         isCheckingStreak: false,
     },
 
+    // --- INICIO MODIFICACIÓN: Se añadieron las nuevas rachas con sus iconos ---
     badgesList: [
         { id: 'first_login', name: 'Primer Paso', description: 'Inicia sesión por primera vez', icon: '🚀', xp: 50 },
         { id: 'first_workout', name: 'Primer Sudor', description: 'Completa tu primera rutina', icon: '💪', xp: 100 },
         { id: 'streak_3', name: 'En Llamas', description: 'Racha de 3 días seguidos', icon: '🔥', xp: 150 },
         { id: 'streak_7', name: 'Imparable', description: 'Racha de 7 días seguidos', icon: '⚡', xp: 300 },
+        { id: 'streak_14', name: 'Muro de Acero', description: 'Racha de 14 días seguidos', icon: '🛡️', xp: 500 },
         { id: 'streak_30', name: 'Leyenda', description: 'Racha de 30 días seguidos', icon: '👑', xp: 1000 },
+        { id: 'streak_60', name: 'Dios del Gym', description: 'Racha de 60 días seguidos', icon: '🔱', xp: 2000 },
+        { id: 'streak_100', name: 'Titán', description: 'Racha de 100 días seguidos', icon: '☄️', xp: 5000 },
+        { id: 'streak_365', name: 'Inmortal', description: 'Racha de 365 días seguidos', icon: '♾️', xp: 10000 },
         { id: 'nutrition_master', name: 'Chef', description: 'Registra 5 comidas', icon: '🥗', xp: 100 },
     ],
+    // --- FIN MODIFICACIÓN ---
 
     clearGamificationEvents: () => {
         set(state => ({
@@ -65,9 +71,6 @@ export const createGamificationSlice = (set, get) => ({
         }));
     },
 
-    // --- CORRECCIÓN: Eliminada lógica optimista ---
-    // Esta función ahora solo sirve para efectos visuales locales (Toasts) si es necesario,
-    // pero NO altera la XP real del usuario. La XP real viene del backend.
     addXp: async (amount, reason = 'Actividad completada') => {
         console.log(`[Gamification Slice] Evento visual de XP: ${amount} por ${reason}`);
 
@@ -75,7 +78,6 @@ export const createGamificationSlice = (set, get) => ({
             set((state) => ({
                 gamification: {
                     ...state.gamification,
-                    // Solo añadimos el evento para que salte la notificación, no sumamos XP al total
                     gamificationEvents: [
                         ...(state.gamification.gamificationEvents || []),
                         { id: Date.now() + Math.random(), type: 'xp', amount, reason }
@@ -83,7 +85,6 @@ export const createGamificationSlice = (set, get) => ({
                 }
             }));
         }
-        // Eliminada la llamada a la API que sobrescribía la XP.
     },
 
     unlockBadge: async (badgeId) => {
@@ -96,7 +97,6 @@ export const createGamificationSlice = (set, get) => ({
 
         const newBadges = [...unlockedBadges, badgeId];
 
-        // Actualizamos estado local de insignias (esto es seguro porque las insignias son únicas)
         set((state) => ({
             gamification: {
                 ...state.gamification,
@@ -129,7 +129,6 @@ export const createGamificationSlice = (set, get) => ({
         set(s => ({ gamification: { ...s.gamification, isCheckingStreak: true } }));
 
         try {
-            // Notificamos actividad. El backend decidirá si suma racha o XP.
             const response = await apiClient('/users/me/gamification', {
                 body: {
                     last_activity_date: today,
@@ -140,20 +139,37 @@ export const createGamificationSlice = (set, get) => ({
             if (response && response.data) {
                 const serverData = response.data;
                 const previousXp = get().gamification.xp || 0;
+                
+                // --- INICIO MODIFICACIÓN: Comprobar si hay nuevas insignias desde el servidor ---
+                const currentBadges = get().gamification.unlockedBadges || [];
+                const serverBadges = serverData.unlocked_badges || [];
+                
+                const newlyUnlocked = serverBadges.filter(b => !currentBadges.includes(b));
+                // --- FIN MODIFICACIÓN ---
 
                 set((state) => {
                     const currentEvents = state.gamification.gamificationEvents || [];
                     const newEvents = [...currentEvents];
 
-                    // Si el servidor dice que tenemos más XP que antes, generamos evento
                     if (serverData.xp > previousXp) {
                         newEvents.push({
                             id: Date.now() + Math.random(),
                             type: 'xp',
                             amount: serverData.xp - previousXp,
-                            reason: 'Login Diario'
+                            reason: 'Login / Racha Diaria'
                         });
                     }
+
+                    // --- INICIO MODIFICACIÓN: Disparar evento de Toast si hay insignia nueva ---
+                    newlyUnlocked.forEach(badgeId => {
+                        const badgeDef = get().badgesList.find(b => b.id === badgeId) || { name: badgeId, icon: '🏅' };
+                        newEvents.push({
+                            id: Date.now() + Math.random(),
+                            type: 'badge',
+                            badge: badgeDef
+                        });
+                    });
+                    // --- FIN MODIFICACIÓN ---
 
                     return {
                         gamification: {

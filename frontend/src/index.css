@@ -201,6 +201,115 @@
   --color-accent-border: rgba(115, 115, 115, 0.28);
 }
 
+/* --- TEMAS ÉPICOS DESBLOQUEABLES DEL PASE --- */
+
+/* Nivel 5: Neón Cyberpunk */
+.accent-cyberpunk {
+  --color-accent: #06b6d4; 
+  --color-accent-transparent: rgba(6, 182, 212, 0.15);
+  --color-accent-border: rgba(6, 182, 212, 0.5);
+  --bg-primary: #050b14; 
+  --bg-secondary: #0b172a;
+  --glass-bg: rgba(5, 11, 20, 0.85);
+  --glass-border: rgba(6, 182, 212, 0.3);
+}
+.accent-cyberpunk body {
+  background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #050b14 60%) !important;
+}
+.accent-cyberpunk #root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(217, 70, 239, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Nivel 50: OLED Midnight (¡AHORA 100% PREMIUM Y DISTINTO!) */
+.accent-oled_midnight {
+  --color-accent: #fbbf24; /* Dorado lujoso brillante */
+  --color-accent-transparent: rgba(251, 191, 36, 0.15);
+  --color-accent-border: rgba(251, 191, 36, 0.4);
+  --bg-primary: #000000; /* Negro puro absoluto */
+  --bg-secondary: #050505; /* Negro levísimamente alzado */
+  /* Los componentes Glass toman un tinte y bordes dorados lujosos */
+  --glass-border: rgba(251, 191, 36, 0.25);
+  --glass-bg: rgba(5, 5, 5, 0.85);
+  --glass-highlight: rgba(251, 191, 36, 0.15);
+  --glass-shadow-inner: rgba(251, 191, 36, 0.05);
+}
+.accent-oled_midnight body {
+  background: #000000 !important;
+}
+.accent-oled_midnight #root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  /* Spotlight dorado muy suave desde arriba que se mezcla con el negro puro */
+  background: radial-gradient(ellipse at 50% 0%, rgba(251, 191, 36, 0.12) 0%, transparent 60%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Nivel 90: Oro Puro */
+.accent-pure_gold {
+  --color-accent: #facc15; 
+  --color-accent-transparent: rgba(250, 204, 21, 0.15);
+  --color-accent-border: rgba(250, 204, 21, 0.5);
+  --bg-primary: #1a1600; 
+  --bg-secondary: #2b2400;
+  --glass-border: rgba(250, 204, 21, 0.25);
+  --glass-bg: rgba(26, 22, 0, 0.85);
+}
+.accent-pure_gold body {
+  background: radial-gradient(circle at 50% 100%, #3f3500 0%, #1a1600 70%) !important;
+}
+
+/* Nivel 100: Galaxia */
+.accent-galaxy {
+  --color-accent: #a855f7; 
+  --color-accent-transparent: rgba(168, 85, 247, 0.2);
+  --color-accent-border: rgba(168, 85, 247, 0.5);
+  --bg-primary: #090416; 
+  --bg-secondary: #160a2b;
+  --glass-border: rgba(168, 85, 247, 0.3);
+  --glass-bg: rgba(9, 4, 22, 0.75);
+}
+.accent-galaxy body {
+  background: radial-gradient(circle at top right, #200d46 0%, #090416 100%) !important;
+}
+.accent-galaxy #root::before {
+  content: "";
+  position: fixed;
+  inset: -100px;
+  background-image: 
+    radial-gradient(2px 2px at 40px 60px, #fff, transparent),
+    radial-gradient(2px 2px at 150px 150px, #fff, transparent),
+    radial-gradient(2px 2px at 80px 120px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 200px 80px, #fff, transparent),
+    radial-gradient(2.5px 2.5px at 250px 25px, rgba(168,85,247,0.8), transparent);
+  background-size: 300px 300px;
+  animation: stars-anim 100s linear infinite;
+  z-index: -2;
+  pointer-events: none;
+}
+.accent-galaxy #root::after {
+  content: "";
+  position: fixed;
+  top: 10%; left: -10%;
+  width: 150px; height: 2px;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
+  transform: rotate(45deg);
+  animation: comet-anim 6s linear infinite;
+  z-index: -1;
+  pointer-events: none;
+  box-shadow: 0 0 10px 2px rgba(168, 85, 247, 0.8);
+}
+
+
 /* 5) COMPONENTES BASE */
 @layer components {
 
@@ -234,6 +343,7 @@
     width: 100%;
     position: relative;
     overflow: hidden;
+    z-index: 1; /* Necesario para que los efectos épicos queden por debajo del UI */
   }
 
   main {
@@ -449,6 +559,18 @@
       transform: translateX(100%);
       opacity: 0;
     }
+  }
+
+  /* Animaciones exclusivas Galaxia */
+  @keyframes stars-anim {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-150px); }
+  }
+
+  @keyframes comet-anim {
+    0% { top: -10%; left: -10%; opacity: 1; }
+    10% { top: 110%; left: 110%; opacity: 0; }
+    100% { top: 110%; left: 110%; opacity: 0; }
   }
 }
 

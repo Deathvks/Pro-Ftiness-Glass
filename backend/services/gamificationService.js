@@ -20,16 +20,30 @@ const LIMITS = {
     water_xp: 50       // Máximo 50 XP de agua
 };
 
+// --- INICIO MODIFICACIÓN: Se añadieron más hitos de racha con más XP ---
 const BADGES_CONFIG = {
     'first_login': { name: 'Primer Paso', xp: 50 },
     'first_workout': { name: 'Primer Sudor', xp: 100 },
     'streak_3': { name: 'En Llamas (Racha 3)', xp: 150 },
     'streak_7': { name: 'Imparable (Racha 7)', xp: 300 },
+    'streak_14': { name: 'Muro de Acero (Racha 14)', xp: 500 },
     'streak_30': { name: 'Leyenda (Racha 30)', xp: 1000 },
+    'streak_60': { name: 'Dios del Gym (Racha 60)', xp: 2000 },
+    'streak_100': { name: 'Titán (Racha 100)', xp: 5000 },
+    'streak_365': { name: 'Inmortal (Racha 365)', xp: 10000 },
     'nutrition_master': { name: 'Chef', xp: 100 }
 };
 
-const STREAK_THRESHOLDS = { 3: 'streak_3', 7: 'streak_7', 30: 'streak_30' };
+const STREAK_THRESHOLDS = { 
+    3: 'streak_3', 
+    7: 'streak_7', 
+    14: 'streak_14', 
+    30: 'streak_30', 
+    60: 'streak_60', 
+    100: 'streak_100', 
+    365: 'streak_365' 
+};
+// --- FIN MODIFICACIÓN ---
 
 // Fórmula de Nivel
 const calculateLevel = (xp) => Math.max(1, Math.floor((-350 + Math.sqrt(202500 + 200 * xp)) / 100));
@@ -97,13 +111,10 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
         const oldLevel = user.level;
         user.xp += amount;
 
-        // --- CORRECCIÓN CRÍTICA ---
         // Calculamos y asignamos el nivel ANTES de guardar en la DB.
         const newLevel = calculateLevel(user.xp);
         let leveledUp = false;
 
-        // Auto-reparación: Si el nivel calculado es diferente al almacenado, lo actualizamos.
-        // Esto arreglará tu cuenta la próxima vez que ganes cualquier cantidad de XP.
         if (newLevel !== oldLevel) {
             user.level = newLevel;
             if (newLevel > oldLevel) {
@@ -117,7 +128,6 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
             }
         }
 
-        // Ahora sí guardamos, con XP y Level actualizados simultáneamente
         await user.save({ transaction });
 
         if (amount > 0) {
@@ -153,12 +163,14 @@ export const unlockBadge = async (userId, badgeId, opts = {}) => {
                 : (user.unlocked_badges || []);
         } catch { currentBadges = []; }
 
+        // Si ya tiene la insignia, no se le da XP de nuevo
         if (currentBadges.includes(badgeId)) return { success: true, unlocked: false };
 
         currentBadges.push(badgeId);
         user.unlocked_badges = JSON.stringify(currentBadges);
         await user.save({ transaction });
 
+        // Esta notificación es la que aparece en la base de datos (pestaña Notificaciones) y via Socket.
         createNotification(userId, {
             type: 'success',
             title: '¡Insignia Desbloqueada!',
@@ -189,13 +201,19 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
         if (!lastActivityStr) {
             user.streak = 1;
         } else {
-            const diffDays = Math.ceil(Math.abs(new Date(todayDateStr) - new Date(lastActivityStr)) / (1000 * 60 * 60 * 24));
+            // Se calcula la diferencia de días entre hoy y la última actividad
+            const diffTime = Math.abs(new Date(todayDateStr).getTime() - new Date(lastActivityStr).getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays === 1) {
+                // El usuario entró el día anterior, se incrementa la racha
                 user.streak += 1;
                 const badgeId = STREAK_THRESHOLDS[user.streak];
-                if (badgeId) await unlockBadge(userId, badgeId, { transaction, userInstance: user });
-            } else {
+                if (badgeId) {
+                    await unlockBadge(userId, badgeId, { transaction, userInstance: user });
+                }
+            } else if (diffDays > 1) {
+                // El usuario NO entró el día anterior, la racha se reinicia
                 user.streak = 1;
             }
         }
@@ -212,8 +230,6 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
     }
 };
 
-// --- MODIFICADO: WORKOUTS ---
-// Ahora acepta activityName para personalizar la razón del XP
 export const processWorkoutGamification = async (userId, workoutDate, activityName = 'Entrenamiento') => {
     const t = await sequelize.transaction();
     try {
@@ -228,10 +244,8 @@ export const processWorkoutGamification = async (userId, workoutDate, activityNa
             user.changed('daily_gamification_state', true);
             await user.save({ transaction: t });
 
-            // Usamos activityName en la razón del XP
             const result = await addXp(userId, WORKOUT_COMPLETION_XP, `${activityName} completado`, { transaction: t, userInstance: user });
 
-            // Detectar si acabamos de llegar al límite
             if (state.workouts === LIMITS.workouts) {
                 result.limitReachedNow = true;
             }
@@ -244,7 +258,6 @@ export const processWorkoutGamification = async (userId, workoutDate, activityNa
         }
 
         await t.commit();
-        // Devolvemos razón explícita para el frontend
         return { xpAdded: 0, reason: 'daily_limit_reached' };
 
     } catch (error) {
@@ -254,7 +267,6 @@ export const processWorkoutGamification = async (userId, workoutDate, activityNa
     }
 };
 
-// --- MODIFICADO: FOOD ---
 export const processFoodGamification = async (userId, logDate) => {
     const t = await sequelize.transaction();
     try {
@@ -272,7 +284,6 @@ export const processFoodGamification = async (userId, logDate) => {
 
             const result = await addXp(userId, FOOD_LOG_XP, 'Comida registrada', { transaction: t, userInstance: user });
 
-            // Detectar límite
             if (state.food_logs === LIMITS.food_logs) {
                 result.limitReachedNow = true;
             }

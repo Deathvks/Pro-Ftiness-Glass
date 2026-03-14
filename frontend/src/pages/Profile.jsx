@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, ChevronRight, Save, User, Camera, AlertTriangle,
-  Trophy, Flame, Dumbbell, Crown, Star, Eye
+  Trophy, Flame, Dumbbell, Crown, Star, Eye, Shield, Medal, Award
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
@@ -65,6 +65,21 @@ const BADGE_DETAILS = {
     color: 'text-purple-400',
     bg: 'bg-purple-400/10'
   },
+  // --- Insignias Cosméticas del Pase ---
+  season_despierto: { 
+    name: 'Despierto', 
+    desc: 'Pase Temporada 1', 
+    icon: Shield, 
+    color: 'text-fuchsia-400', 
+    bg: 'bg-fuchsia-400/10' 
+  },
+  season_titan: { 
+    name: 'Titán', 
+    desc: 'Pase Temporada 1', 
+    icon: Medal, 
+    color: 'text-amber-400', 
+    bg: 'bg-amber-400/10' 
+  },
   default: {
     name: 'Insignia',
     desc: 'Logro desbloqueado',
@@ -94,6 +109,18 @@ const Profile = ({ onCancel, setView, navigate }) => {
   const fileInputRef = useRef(null);
 
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+  // --- Lógica de Recompensas Cosméticas del Pase ---
+  const userLevel = gamification?.level || 1;
+  const hasFrame = userLevel >= 15;
+  const hasTitle = userLevel >= 30;
+  const hasBanner = userLevel >= 75;
+  const hasCrown = userLevel >= 100;
+
+  // Inyección automática de insignias según el nivel
+  const unlockedBadges = [...(gamification?.unlockedBadges || [])];
+  if (userLevel >= 5 && !unlockedBadges.includes('season_despierto')) unlockedBadges.unshift('season_despierto');
+  if (userLevel >= 50 && !unlockedBadges.includes('season_titan')) unlockedBadges.unshift('season_titan');
 
   // --- Estado para Paginación de Insignias Responsiva ---
   const [itemsPerPage, setItemsPerPage] = useState(() => window.innerWidth < 640 ? 1 : 3);
@@ -359,8 +386,13 @@ const Profile = ({ onCancel, setView, navigate }) => {
           Perfil
         </h1>
 
-        <GlassCard className="p-6">
-          <form onSubmit={handleSave} className="flex flex-col gap-6">
+        <GlassCard className="p-6 relative overflow-hidden z-0">
+          {/* Banner Dinámico (Nv. 75) */}
+          {hasBanner && (
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/5 animate-[pulse_4s_ease-in-out_infinite] -z-10 pointer-events-none"></div>
+          )}
+          
+          <form onSubmit={handleSave} className="flex flex-col gap-6 relative z-10">
             {errors.api && (
               <p className="text-center text-red mb-4 -mt-2">{errors.api}</p>
             )}
@@ -374,20 +406,29 @@ const Profile = ({ onCancel, setView, navigate }) => {
                 className="hidden"
               />
               <div
-                className="relative w-32 h-32 rounded-full cursor-pointer"
+                className={`relative w-32 h-32 rounded-full cursor-pointer transition-all ${
+                  hasFrame ? 'ring-[5px] ring-slate-400 shadow-[0_0_20px_rgba(148,163,184,0.5)]' : ''
+                }`}
                 onClick={openImageModal}
                 title="Ver imagen ampliada"
               >
+                {/* Corona VIP (Nv. 100) */}
+                {hasCrown && (
+                  <div className="absolute -top-3 -right-3 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full p-2 shadow-[0_0_15px_rgba(245,158,11,0.8)] z-20 animate-bounce border border-yellow-200">
+                    <Crown size={20} className="text-white drop-shadow-md" />
+                  </div>
+                )}
+                
                 {imagePreview ? (
                   <img
                     src={getProcessedImageUrl(imagePreview)}
                     alt={`Foto de perfil de ${formData.username || 'usuario'}`}
-                    className="w-32 h-32 rounded-full object-cover"
+                    className="w-full h-full rounded-full object-cover"
                     referrerPolicy="no-referrer"
                     onError={(e) => { e.target.onerror = null; }}
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-bg-secondary flex items-center justify-center border border-glass-border">
+                  <div className="w-full h-full rounded-full bg-bg-secondary flex items-center justify-center border border-glass-border">
                     <User size={64} className="text-text-muted" />
                   </div>
                 )}
@@ -397,7 +438,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     e.stopPropagation();
                     fileInputRef.current.click();
                   }}
-                  className="absolute bottom-0 right-0 p-2 bg-accent rounded-full text-bg-secondary hover:scale-110 transition"
+                  className="absolute bottom-0 right-0 p-2 bg-accent rounded-full text-bg-secondary hover:scale-110 transition z-10"
                   aria-label="Cambiar foto de perfil"
                 >
                   <Camera size={20} />
@@ -517,10 +558,21 @@ const Profile = ({ onCancel, setView, navigate }) => {
 
         {/* --- NUEVO APARTADO: PERFIL SOCIAL --- */}
         <GlassCard className="p-6 mt-8">
-          <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-            <User size={20} className="text-accent" />
-            Perfil Social
-          </h3>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+            <div>
+              <h3 className="text-xl font-bold text-text-primary mb-1 flex items-center gap-2">
+                <User size={20} className="text-accent" />
+                Perfil Social
+              </h3>
+              {/* Título Cosmético (Nv. 30) */}
+              {hasTitle && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-black uppercase tracking-widest shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+                  <Award size={14} /> El Constante
+                </div>
+              )}
+            </div>
+          </div>
+
           <p className="text-sm text-text-secondary mb-4">
             Así es como otros usuarios ven tu perfil, logros y estadísticas.
             Puedes personalizar qué información es pública desde los ajustes.
@@ -542,9 +594,8 @@ const Profile = ({ onCancel, setView, navigate }) => {
             Insignias Desbloqueadas
           </h3>
 
-          {gamification?.unlockedBadges && gamification.unlockedBadges.length > 0 ? (
+          {unlockedBadges && unlockedBadges.length > 0 ? (
             (() => {
-              const unlockedBadges = gamification.unlockedBadges;
               const totalPages = Math.ceil(unlockedBadges.length / itemsPerPage);
               const currentBadges = unlockedBadges.slice(
                 badgePage * itemsPerPage,

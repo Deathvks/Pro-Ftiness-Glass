@@ -23,7 +23,10 @@ import {
     Download,
     Folder,
     X,
-    Play
+    Play,
+    Crown,
+    Star,
+    Award
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import GlassCard from '../components/GlassCard';
@@ -36,6 +39,9 @@ import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
 import SEOHead from '../components/SEOHead';
 import ExerciseMedia from '../components/ExerciseMedia';
+// --- INICIO MODIFICACIÓN: Importar LevelBadge ---
+import LevelBadge from '../components/LevelBadge';
+// --- FIN MODIFICACIÓN ---
 
 // --- CONFIGURACIÓN DE PUERTO ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -80,6 +86,9 @@ const BADGES_MAP = {
     'social_10_friends': { name: 'Popular', icon: '🌟' },
     'weight_goal': { name: 'Meta Cumplida', icon: '🎯' },
     'first_pr': { name: 'Récord Personal', icon: '🏆' },
+    // --- Insignias Cosméticas del Pase ---
+    'season_despierto': { name: 'Despierto', icon: '🛡️' },
+    'season_titan': { name: 'Titán', icon: '🎖️' },
     'default': { name: 'Logro', icon: '🏅' }
 };
 
@@ -350,6 +359,13 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         );
     }
 
+    // --- Lógica de Recompensas Cosméticas del Pase para PERFIL PÚBLICO ---
+    const displayedLevel = profile.level || 1;
+    const hasFrame = displayedLevel >= 15;
+    const hasTitle = displayedLevel >= 30;
+    const hasBanner = displayedLevel >= 75;
+    const hasCrown = displayedLevel >= 100;
+
     let badges = [];
     try {
         badges = typeof profile.unlocked_badges === 'string'
@@ -358,6 +374,10 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     } catch (e) {
         badges = [];
     }
+
+    // Inyección automática de insignias cosméticas en el array de visualización
+    if (displayedLevel >= 5 && !badges.includes('season_despierto')) badges.unshift('season_despierto');
+    if (displayedLevel >= 50 && !badges.includes('season_titan')) badges.unshift('season_titan');
 
     const totalBadgePages = Math.ceil(badges.length / BADGES_PER_PAGE);
     const visibleBadges = badges.slice(badgePage * BADGES_PER_PAGE, (badgePage + 1) * BADGES_PER_PAGE);
@@ -511,7 +531,12 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
             {/* --- PROFILE CARD PRINCIPAL --- */}
             <GlassCard className="relative overflow-hidden p-6 flex flex-col items-center text-center gap-4">
-                <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent/20 to-transparent pointer-events-none" />
+                {/* Banner Cosmético (Nv. 75) */}
+                {hasBanner ? (
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/5 animate-[pulse_4s_ease-in-out_infinite] -z-10 pointer-events-none"></div>
+                ) : (
+                    <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent/20 to-transparent pointer-events-none" />
+                )}
 
                 <div 
                     className={`relative z-10 w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300
@@ -523,25 +548,37 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                               }`
                             : 'shadow-xl shadow-accent/20'
                         }
+                        ${hasFrame ? 'ring-[5px] ring-slate-400 shadow-[0_0_20px_rgba(148,163,184,0.5)]' : ''}
                     `}
                     onClick={() => {
                         if (userStory) setViewingStory(true);
                     }}
                 >
+                    {/* Corona Cosmética VIP (Nv. 100) */}
+                    {hasCrown && (
+                        <div className="absolute -top-3 -right-3 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full p-2 shadow-[0_0_15px_rgba(245,158,11,0.8)] z-20 animate-bounce border border-yellow-200 pointer-events-none">
+                            <Crown size={20} className="text-white drop-shadow-md" />
+                        </div>
+                    )}
+
                     <UserAvatar
                         user={profile} 
                         size="full"
                         className={`w-full h-full rounded-full object-cover bg-bg-primary ${userStory ? 'border-[4px] border-bg-primary !border-bg-primary' : '!border-none'}`}
                     />
 
+                    {/* --- INICIO MODIFICACIÓN: Usar LevelBadge para el nivel del usuario --- */}
                     {profile.show_level_xp && (
-                        <div className="absolute -bottom-2 -right-2 bg-bg-primary border-2 border-accent rounded-full w-10 h-10 flex items-center justify-center font-black text-sm text-text-primary shadow-lg z-20">
-                            {profile.level || 1}
+                        <div className="absolute -bottom-6 flex justify-center w-full">
+                            <div className="scale-[0.6] origin-center z-20">
+                                <LevelBadge level={displayedLevel} size="md" showName={false} />
+                            </div>
                         </div>
                     )}
+                    {/* --- FIN MODIFICACIÓN --- */}
                 </div>
 
-                <div className="z-10">
+                <div className={`z-10 ${profile.show_level_xp ? 'mt-4' : ''}`}>
                     <h2 className="text-2xl font-bold text-text-primary mb-1 flex items-center justify-center gap-2">
                         {profile.username}
                         {userStory && (
@@ -550,7 +587,15 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                             </span>
                         )}
                     </h2>
-                    <p className="text-text-secondary text-sm flex items-center justify-center gap-2">
+                    
+                    {/* Título Cosmético (Nv. 30) */}
+                    {hasTitle && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-[10px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(99,102,241,0.2)] mb-2 mt-1">
+                            <Award size={12} /> El Constante
+                        </div>
+                    )}
+
+                    <p className="text-text-secondary text-sm flex items-center justify-center gap-2 mt-1">
                         Miembro desde {profile.createdAt ? new Date(profile.createdAt).getFullYear() : '2024'}
                         {profile.is_verified && <Shield size={14} className="text-blue-400 fill-blue-400/20" />}
                     </p>
@@ -628,7 +673,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
                     <GlassCard className="p-4 flex flex-col items-center justify-center gap-2">
                         <Medal className="text-purple-500 mb-1" size={24} />
-                        <span className="text-2xl font-bold text-text-primary">{profile.level || 1}</span>
+                        <span className="text-2xl font-bold text-text-primary">{displayedLevel}</span>
                         <span className="text-xs text-text-tertiary uppercase tracking-wider">Nivel</span>
                     </GlassCard>
 

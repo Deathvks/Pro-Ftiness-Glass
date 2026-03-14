@@ -28,6 +28,7 @@
     "@mui/material": "^6.1.8",
     "@react-oauth/google": "^0.12.2",
     "@remotion/cli": "^4.0.400",
+    "canvas-confetti": "^1.9.4",
     "date-fns": "^4.1.0",
     "driver.js": "^1.4.0",
     "html-to-image": "^1.11.13",

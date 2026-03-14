@@ -5,7 +5,7 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube
+  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube, Lock
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -18,15 +18,15 @@ import BugReportModal from '../components/BugReportModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CustomSelect from '../components/CustomSelect';
 import GlassCard from '../components/GlassCard';
+import LevelBadge from '../components/LevelBadge';
 import { useAppTheme } from '../hooks/useAppTheme';
 
-// --- Constantes ---
-const ACCENT_OPTIONS = [
+// --- Constantes de Colores ---
+const BASE_ACCENT_OPTIONS = [
   { id: 'green', label: 'Verde', hex: '#22c55e' },
   { id: 'blue', label: 'Azul', hex: '#3b82f6' },
   { id: 'violet', label: 'Violeta', hex: '#8b5cf6' },
   { id: 'amber', label: 'Ámbar', hex: '#f59e0b' },
-  { id: 'rose', label: 'Rosa', hex: '#f43f5e' },
   { id: 'teal', label: 'Turquesa', hex: '#14b8a6' },
   { id: 'cyan', label: 'Cian', hex: '#06b6d4' },
   { id: 'orange', label: 'Naranja', hex: '#f97316' },
@@ -34,16 +34,17 @@ const ACCENT_OPTIONS = [
   { id: 'fuchsia', label: 'Fucsia', hex: '#d946ef' },
   { id: 'emerald', label: 'Esmeralda', hex: '#10b981' },
   { id: 'indigo', label: 'Índigo', hex: '#6366f1' },
-  { id: 'purple', label: 'Púrpura', hex: '#a855f7' },
-  { id: 'pink', label: 'Rosa Claro', hex: '#ec4899' },
-  { id: 'red', label: 'Rojo', hex: '#ef4444' },
-  { id: 'yellow', label: 'Amarillo', hex: '#eab308' },
-  { id: 'sky', label: 'Cielo', hex: '#0ea5e9' },
-  { id: 'slate', label: 'Pizarra', hex: '#64748b' },
-  { id: 'zinc', label: 'Zinc', hex: '#71717a' },
-  { id: 'stone', label: 'Piedra', hex: '#78716c' },
-  { id: 'neutral', label: 'Neutral', hex: '#737373' }
+  { id: 'pink', label: 'Rosa Claro', hex: '#ec4899' }
 ];
+
+const UNLOCKABLE_ACCENT_OPTIONS = [
+  { id: 'cyberpunk', label: 'Neón Cyberpunk (Nv.5)', hex: '#06b6d4', reqLevel: 5, title: 'Neón Cyberpunk' }, 
+  { id: 'oled_midnight', label: 'OLED Midnight (Nv.50)', hex: '#eab308', reqLevel: 50, title: 'OLED Midnight' }, 
+  { id: 'pure_gold', label: 'Oro Puro (Nv.90)', hex: '#facc15', reqLevel: 90, title: 'Oro Puro' }, 
+  { id: 'galaxy', label: 'Galaxia (Nv.100)', hex: '#a855f7', reqLevel: 100, title: 'Galaxia' }, 
+];
+
+const ACCENT_OPTIONS = [...BASE_ACCENT_OPTIONS, ...UNLOCKABLE_ACCENT_OPTIONS];
 
 // --- TIMEZONES COMUNES ---
 const TIMEZONES = [
@@ -58,13 +59,11 @@ const TIMEZONES = [
   { value: 'UTC', label: 'UTC (Universal)' },
 ];
 
-// Detección simple de iOS
 const isIOS = () => {
   if (typeof navigator === 'undefined') return false;
   return [
     'iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod'
   ].includes(navigator.platform)
-    // iPad en iOS 13+ detection
     || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 };
 
@@ -87,10 +86,8 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
           ? 'text-red active:bg-red/10 md:hover:bg-red/10'
           : 'text-text-primary md:hover:border-[--glass-border]'}`}
     >
-      {/* CORRECCIÓN: flex-shrink-0 para que el icono no se aplaste */}
       {Icon && <Icon size={22} className={`flex-shrink-0 ${danger ? 'text-red' : 'text-accent'}`} />}
       <div className="flex-1 text-left min-w-0">
-        {/* CORRECCIÓN: Quitamos truncate y añadimos leading-tight para permitir multilínea */}
         <div className="text-sm font-bold leading-tight">{title}</div>
         {subtitle && <div className={`text-xs font-medium truncate ${danger ? 'text-red/70' : 'text-text-secondary'}`}>{subtitle}</div>}
       </div>
@@ -101,9 +98,7 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
 
 const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, loading }) => (
   <div className={`flex items-center justify-between p-3 rounded-2xl transition ${disabled ? 'opacity-50' : 'hover:bg-bg-secondary/30'}`}>
-    {/* MODIFICACIÓN: Añadido flex-1 y min-w-0 para evitar desbordamiento */}
     <div className="flex items-center gap-4 flex-1 min-w-0">
-      {/* Contenedor de icono con shrink-0 */}
       <div className={`
         p-2.5 rounded-xl border border-transparent shrink-0
         ${checked ? 'bg-accent/10 text-accent dark:border-accent/20' : 'bg-text-muted/10 text-text-muted dark:border-white/10 [.oled-theme_&]:bg-transparent'}
@@ -132,7 +127,6 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
   </div>
 );
 
-// --- Componente Icono Personalizado para TikTok ---
 const TikTokIcon = ({ size = 20, className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -157,7 +151,7 @@ export default function SettingsScreen({
   setAccent,
   setView,
   onLogoutClick,
-  highlight // AÑADIDO: Prop para recibir la sección a resaltar
+  highlight 
 }) {
   const { resolvedTheme } = useAppTheme();
 
@@ -166,13 +160,15 @@ export default function SettingsScreen({
     resetCookieConsent,
     setUserProfile,
     hapticsEnabled,
-    setHapticsEnabled
+    setHapticsEnabled,
+    gamification
   } = useAppStore(state => ({
     userProfile: state.userProfile,
     resetCookieConsent: state.resetCookieConsent,
     setUserProfile: state.setUserProfile,
     hapticsEnabled: state.hapticsEnabled,
-    setHapticsEnabled: state.setHapticsEnabled
+    setHapticsEnabled: state.setHapticsEnabled,
+    gamification: state.gamification
   }));
 
   const { addToast } = useToast();
@@ -182,11 +178,38 @@ export default function SettingsScreen({
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
   
   const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
-
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
   const [pendingTheme, setPendingTheme] = useState(null);
+  
+  const baseAccentRef = useRef(accent); 
+  const previewTimerRef = useRef(null);
+  const [currentDisplayAccent, setCurrentDisplayAccent] = useState(accent);
 
-  // Estados y Refs para Highlighting
+  const userLevel = gamification?.level || 1;
+
+  // --- SISTEMA ROBUSTO ANTI-BUGS PARA LA PREVIEW DE COLOR ---
+  useEffect(() => {
+      // Verificamos si el color que está llegando es un color bloqueado
+      const incomingOpt = ACCENT_OPTIONS.find(o => o.id === accent);
+      const isLocked = incomingOpt?.reqLevel && userLevel < incomingOpt.reqLevel;
+
+      // Solo actualizamos el color base guardado si NO es un tema bloqueado y no estamos previsualizando
+      if (!isLocked && !previewTimerRef.current) {
+          baseAccentRef.current = accent;
+          setCurrentDisplayAccent(accent);
+      }
+  }, [accent, userLevel]);
+
+  // Si desmontamos la vista en medio de una preview, devolvemos el color original al instante
+  useEffect(() => {
+      return () => {
+          if (previewTimerRef.current) {
+              clearTimeout(previewTimerRef.current);
+              setAccent(baseAccentRef.current);
+          }
+      };
+  }, []);
+
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
 
@@ -214,22 +237,15 @@ export default function SettingsScreen({
     permission: pushPermission
   } = usePushNotifications();
 
-  // --- EFECTO DE SCROLL Y RESALTADO ---
   useEffect(() => {
     if (highlight === 'social_privacy' && socialPrivacyRef.current) {
-        // 1. Scroll suave hacia la sección
         setTimeout(() => {
             socialPrivacyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
-
-        // 2. Activar efecto visual
         setHighlightedSection('social_privacy');
-
-        // 3. Quitar efecto visual después de 2.5 segundos
         const timer = setTimeout(() => {
             setHighlightedSection(null);
         }, 2500);
-
         return () => clearTimeout(timer);
     }
   }, [highlight]);
@@ -252,8 +268,8 @@ export default function SettingsScreen({
   }, []);
 
   const COLORS_PER_PAGE = 12;
-  const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
-  const currentColors = ACCENT_OPTIONS.slice(
+  const totalPages = Math.ceil(BASE_ACCENT_OPTIONS.length / COLORS_PER_PAGE);
+  const currentColors = BASE_ACCENT_OPTIONS.slice(
     currentColorPage * COLORS_PER_PAGE,
     (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
   );
@@ -270,18 +286,14 @@ export default function SettingsScreen({
 
   const detectAndUpdateTimezone = async (silent = false) => {
     if (isUpdatingTimezone) return;
-
     try {
       const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
       if (detected === userProfile?.timezone) {
         if (!silent) addToast('Ya tienes la zona horaria correcta.', 'info');
         return;
       }
-
       setIsUpdatingTimezone(true);
       const prevTimezone = userProfile?.timezone;
-
       setUserProfile({ ...userProfile, timezone: detected });
 
       try {
@@ -302,14 +314,12 @@ export default function SettingsScreen({
     if (autoTimezone) {
       detectAndUpdateTimezone(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoTimezone]);
 
   const handleTimezoneChange = async (newTimezone) => {
     if (isUpdatingTimezone) return;
     setIsUpdatingTimezone(true);
     const prevTimezone = userProfile?.timezone;
-
     setUserProfile({ ...userProfile, timezone: newTimezone });
 
     try {
@@ -327,10 +337,7 @@ export default function SettingsScreen({
     const newValue = !autoTimezone;
     setAutoTimezone(newValue);
     localStorage.setItem('settings_auto_timezone', newValue);
-
-    if (newValue) {
-      detectAndUpdateTimezone(false);
-    }
+    if (newValue) detectAndUpdateTimezone(false);
   };
 
   const handleExport = async (format) => {
@@ -373,7 +380,6 @@ export default function SettingsScreen({
     if (isUpdatingPrivacy) return;
     setIsUpdatingPrivacy(true);
     const newValue = !userProfile?.[key];
-
     const prevValue = userProfile?.[key];
     setUserProfile({ ...userProfile, [key]: newValue });
 
@@ -412,70 +418,67 @@ export default function SettingsScreen({
     setShowThemeReloadModal(false);
   };
 
-  const glassCardClass = "p-6 border-transparent dark:border dark:border-white/10";
+  const handleAccentClick = (opt) => {
+      const isLocked = opt.reqLevel && userLevel < opt.reqLevel;
 
-  // --- CONTENIDO DE LA TARJETA SOPORTE (Extraído para reutilización) ---
+      if (isLocked) {
+          // Si está bloqueado, forzamos PREVIEW y cancelamos timeouts anteriores
+          if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+          
+          setAccent(opt.id);
+          setCurrentDisplayAccent(opt.id);
+          addToast(`👀 Preview: Alcanza el Nivel ${opt.reqLevel} para usarlo permanentemente.`, 'info');
+          
+          previewTimerRef.current = setTimeout(() => {
+             // Devolvemos al color verdadero (el cual NUNCA será uno bloqueado por la protección en el useEffect)
+             setAccent(baseAccentRef.current); 
+             setCurrentDisplayAccent(baseAccentRef.current);
+             previewTimerRef.current = null;
+          }, 3000);
+      } else {
+          // Si está desbloqueado, limpiamos cualquier preview anterior y GUARDAMOS de verdad
+          if (previewTimerRef.current) {
+              clearTimeout(previewTimerRef.current);
+              previewTimerRef.current = null;
+          }
+          baseAccentRef.current = opt.id;
+          setCurrentDisplayAccent(opt.id);
+          setAccent(opt.id);
+      }
+  };
+
+  const glassCardClass = "p-6 border-transparent dark:border dark:border-white/10";
+  
+  // LOGICA PARA BLOQUEAR TEMAS CLASICOS CUANDO HAY UN TEMA EPICO
+  const EPIC_THEMES = ['cyberpunk', 'oled_midnight', 'pure_gold', 'galaxy'];
+  const isEpicThemeActive = EPIC_THEMES.includes(currentDisplayAccent);
+
   const soporteCard = (
     <GlassCard className={glassCardClass}>
       <SectionTitle icon={Info} title="Soporte y General" />
       <div className="flex flex-col gap-1">
-        <a
-          href={apkDownloadUrl || "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk"}
-          className="no-underline"
-        >
-          <SettingsItem
-            icon={Smartphone}
-            title="Descargar App Android"
-            subtitle="Instalar APK nativo"
-            action={<Download size={18} className="text-accent" />}
-          />
+        <a href={apkDownloadUrl || "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk"} className="no-underline">
+          <SettingsItem icon={Smartphone} title="Descargar App Android" subtitle="Instalar APK nativo" action={<Download size={18} className="text-accent" />} />
         </a>
-
-        <SettingsItem
-          icon={Bug}
-          title="Reportar un problema"
-          subtitle="¿Algo no funciona bien?"
-          onClick={() => setShowBugModal(true)}
-        />
-
+        <SettingsItem icon={Bug} title="Reportar un problema" subtitle="¿Algo no funciona bien?" onClick={() => setShowBugModal(true)} />
         <a href="mailto:profitnessglass@gmail.com" className="no-underline">
           <SettingsItem icon={Mail} title="Contactar Soporte" subtitle="profitnessglass@gmail.com" />
         </a>
-
         <div className="my-3 h-px bg-[--glass-border]" />
-
         <SectionTitle icon={Share2} title="Síguenos" />
         <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
-          <SettingsItem
-            icon={Instagram}
-            title="Instagram"
-            subtitle="@pro_fitness_glass"
-            action={<ChevronRight size={18} className="text-text-muted" />}
-          />
+          <SettingsItem icon={Instagram} title="Instagram" subtitle="@pro_fitness_glass" action={<ChevronRight size={18} className="text-text-muted" />} />
         </a>
         <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="no-underline">
-          <SettingsItem
-            icon={TikTokIcon}
-            title="TikTok"
-            subtitle="@pro_fitness_glass"
-            action={<ChevronRight size={18} className="text-text-muted" />}
-          />
+          <SettingsItem icon={TikTokIcon} title="TikTok" subtitle="@pro_fitness_glass" action={<ChevronRight size={18} className="text-text-muted" />} />
         </a>
         <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="no-underline">
-          <SettingsItem
-            icon={Youtube}
-            title="YouTube"
-            subtitle="@ProFitnessGlass"
-            action={<ChevronRight size={18} className="text-text-muted" />}
-          />
+          <SettingsItem icon={Youtube} title="YouTube" subtitle="@ProFitnessGlass" action={<ChevronRight size={18} className="text-text-muted" />} />
         </a>
-
         <div className="my-3 h-px bg-[--glass-border]" />
-
         <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
           <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
         </a>
-
         <div className="flex md:hidden items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
           <Binary size={22} className="text-accent" />
           <div className="flex-1 text-left">
@@ -483,38 +486,24 @@ export default function SettingsScreen({
             <div className="text-xs text-text-secondary font-medium">v{APP_VERSION}</div>
           </div>
         </div>
-
         <div className="my-3 h-px bg-[--glass-border]" />
-
-        <SettingsItem
-          icon={LogOut}
-          title="Cerrar Sesión"
-          onClick={onLogoutClick}
-          danger
-        />
+        <SettingsItem icon={LogOut} title="Cerrar Sesión" onClick={onLogoutClick} danger />
       </div>
     </GlassCard>
   );
 
   return (
-    // CAMBIO: Añadido pt-6 para separar del borde superior en móvil
     <div className="px-4 pt-6 pb-24 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
-      {/* CORRECCIÓN: Contenedor oculto en móvil (hidden md:flex) para evitar espacios y título degradado visible solo en escritorio */}
       <div className="hidden md:flex items-center justify-between mb-8">
         <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
           Ajustes
         </h1>
       </div>
 
-      {/* MODIFICACIÓN: Grid ajustado para Tablets (805px+).
-        - 1 columna por defecto (móvil y tablet vertical/cuadrada)
-        - 2 columnas a partir de 'lg' (1024px, tablet horizontal/laptop pequeña)
-        - 3 columnas a partir de 'xl' (1280px, desktop)
-      */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
 
         {/* --- COLUMNA 1 --- */}
@@ -523,8 +512,9 @@ export default function SettingsScreen({
             <SectionTitle icon={Palette} title="Apariencia" />
 
             <div className="mb-8">
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4">Tema</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4">Fondo Global</h3>
+              
+              <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 transition-all duration-300 ${isEpicThemeActive ? 'opacity-40 grayscale-[50%] pointer-events-none' : ''}`}>
                 {['system', 'light', 'dark', 'oled'].map((mode) => (
                   <button
                     key={mode}
@@ -546,11 +536,18 @@ export default function SettingsScreen({
                   </button>
                 ))}
               </div>
+              
+              {isEpicThemeActive && (
+                  <div className="mt-3 flex items-center gap-2 text-[10px] sm:text-xs font-bold text-accent bg-accent/10 px-3 py-2.5 rounded-xl border border-accent/20 animate-in fade-in slide-in-from-top-2">
+                      <Lock size={16} className="shrink-0" />
+                      <span>Fondo nativo bloqueado por un Tema de Temporada activo.</span>
+                  </div>
+              )}
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
+                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Colores Base</h3>
                 {totalPages > 1 && (
                   <div className="flex gap-1">
                     <button
@@ -560,6 +557,7 @@ export default function SettingsScreen({
                     >
                       <ChevronLeft size={16} />
                     </button>
+                    <span className="text-xs font-mono text-text-muted px-1 mt-1">{currentColorPage + 1}/{totalPages}</span>
                     <button
                       onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
                       disabled={currentColorPage === totalPages - 1}
@@ -570,29 +568,96 @@ export default function SettingsScreen({
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-6 gap-3">
-                {currentColors.map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setAccent(opt.id)}
-                    title={opt.label}
-                    className="group relative flex justify-center items-center"
-                  >
-                    <span
-                      className="w-9 h-9 rounded-full border transition-transform hover:scale-110"
-                      style={{
-                        backgroundColor: opt.hex,
-                        borderColor: accent === opt.id ? opt.hex : 'transparent',
-                        boxShadow: accent === opt.id ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${opt.hex}` : 'none'
-                      }}
-                    />
-                    {accent === opt.id && (
-                      <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none shadow-sm">
-                        <Check size={16} strokeWidth={3} />
-                      </span>
-                    )}
-                  </button>
-                ))}
+              
+              <div className="grid grid-cols-6 gap-3 mb-6">
+                {currentColors.map(opt => {
+                    return (
+                        <button
+                          key={opt.id}
+                          onClick={() => handleAccentClick(opt)}
+                          title={opt.label}
+                          className="group relative flex justify-center items-center"
+                        >
+                          <span
+                            className="w-9 h-9 rounded-full border transition-transform group-hover:scale-110"
+                            style={{
+                              backgroundColor: opt.hex,
+                              borderColor: currentDisplayAccent === opt.id ? opt.hex : 'transparent',
+                              boxShadow: currentDisplayAccent === opt.id ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${opt.hex}` : 'none'
+                            }}
+                          />
+                          {currentDisplayAccent === opt.id && (
+                            <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none shadow-sm">
+                              <Check size={16} strokeWidth={3} />
+                            </span>
+                          )}
+                        </button>
+                    );
+                })}
+              </div>
+
+              {/* SECCIÓN TEMAS DE NIVEL */}
+              <div className="flex justify-between items-center mb-4 pt-4 border-t border-glass-border">
+                  <h3 className="text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-2">
+                      <Trophy size={14} /> Pase de Temporada
+                  </h3>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3">
+                  {UNLOCKABLE_ACCENT_OPTIONS.map(opt => {
+                      const isLocked = userLevel < opt.reqLevel;
+                      const isSelected = currentDisplayAccent === opt.id;
+
+                      return (
+                          <button
+                              key={opt.id}
+                              onClick={() => handleAccentClick(opt)}
+                              className={`relative flex items-center gap-3 p-3 rounded-2xl border transition-all overflow-hidden group text-left
+                                  ${isSelected 
+                                      ? 'bg-bg-primary border-accent shadow-md shadow-accent/20' 
+                                      : 'bg-transparent border-glass-border hover:bg-bg-primary'}
+                                  ${isLocked && !isSelected ? 'opacity-80 grayscale-[20%]' : ''}
+                              `}
+                          >
+                              {/* Círculo de color */}
+                              <div className="relative shrink-0 flex items-center justify-center">
+                                  <span
+                                      className={`w-10 h-10 rounded-full border-2 transition-transform duration-300 ${!isLocked ? 'group-hover:scale-110' : ''}`}
+                                      style={{
+                                          backgroundColor: opt.hex,
+                                          borderColor: isSelected ? 'var(--bg-primary)' : 'transparent',
+                                          boxShadow: isSelected ? `0 0 0 2px ${opt.hex}` : 'none',
+                                      }}
+                                  />
+                                  {isLocked && !isSelected && (
+                                      <span className="absolute inset-0 flex items-center justify-center text-white drop-shadow-md">
+                                          <Lock size={14} strokeWidth={3} />
+                                      </span>
+                                  )}
+                                  {isSelected && !isLocked && (
+                                      <span className="absolute inset-0 flex items-center justify-center text-white drop-shadow-sm">
+                                          <Check size={16} strokeWidth={4} />
+                                      </span>
+                                  )}
+                              </div>
+
+                              {/* Texto descriptivo */}
+                              <div className="flex flex-col min-w-0 flex-1 pr-12">
+                                  <span className={`text-sm font-black truncate ${(isLocked && !isSelected) ? 'text-text-muted' : 'text-text-primary'}`}>
+                                      {opt.title}
+                                  </span>
+                                  <span className={`text-[10px] truncate ${(isLocked && !isSelected) ? 'text-accent font-bold' : 'text-text-secondary'}`}>
+                                      {(isLocked && !isSelected) ? 'Toca para previsualizar' : 'Desbloqueado y listo'}
+                                  </span>
+                              </div>
+                              
+                              {/* Nivel Requerido */}
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 transition-transform duration-300 group-hover:scale-105">
+                                  <LevelBadge level={opt.reqLevel} size="sm" />
+                              </div>
+                          </button>
+                      );
+                  })}
               </div>
             </div>
 
@@ -611,9 +676,6 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
 
-          {/* MODIFICACIÓN: Tarjeta Soporte visible en Col 1 hasta 'xl' (3 columnas).
-            Esto cubre Móvil y Tablet/Laptop (1 o 2 columnas) manteniendo la posición "debajo de Apariencia" (o arriba en la columna izquierda).
-          */}
           <div className="block xl:hidden">
             {soporteCard}
           </div>
@@ -642,7 +704,6 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
 
-          {/* MOVIDO AQUI: Seguridad para que esté arriba en tablet */}
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={Shield} title="Seguridad" />
             <div className="flex flex-col gap-1">
@@ -742,7 +803,6 @@ export default function SettingsScreen({
                   <button
                     onClick={() => detectAndUpdateTimezone(false)}
                     disabled={isUpdatingTimezone || autoTimezone}
-                    // CORRECCIÓN: Fondo transparente estricto para OLED
                     className="p-3 rounded-xl border border-transparent dark:border-white/10 text-accent hover:bg-accent/10 transition flex items-center justify-center min-w-[50px] h-[48px] bg-transparent dark:bg-white/5 [.oled-theme_&]:bg-transparent"
                     title="Detectar ahora"
                   >
@@ -763,7 +823,6 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
 
-          {/* Wrapper para el Ref de Scroll y Highlight */}
           <div 
             ref={socialPrivacyRef} 
             className={`rounded-2xl transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-lg shadow-accent/20 scale-[1.02]' : ''}`}
@@ -799,13 +858,12 @@ export default function SettingsScreen({
             </GlassCard>
           </div>
 
-          {/* CORRECCIÓN: Usar GlassCard estándar sin lógica especial de transparencia */}
           <GlassCard className={glassCardClass}>
             <ActiveSessions />
           </GlassCard>
         </div>
 
-        {/* --- COLUMNA 3 (Ahora solo visible en Desktop muy grande 'xl') --- */}
+        {/* --- COLUMNA 3 --- */}
         <div className="hidden xl:flex flex-col gap-8">
           {soporteCard}
         </div>

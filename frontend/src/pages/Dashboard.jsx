@@ -22,9 +22,9 @@ import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
 import XPGuideModal from '../components/XPGuideModal';
 import TourGuide from '../components/TourGuide';
-// --- INICIO MODIFICACIÓN: Importar LevelBadge ---
 import LevelBadge from '../components/LevelBadge';
-// --- FIN MODIFICACIÓN ---
+// --- Importar SeasonPassCard ---
+import SeasonPassCard from '../components/SeasonPassCard';
 import * as nutritionService from '../services/nutritionService';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
@@ -174,48 +174,8 @@ const Dashboard = ({ setView }) => {
   const weeklyRecapRef = useRef(null);
   const streakCheckedRef = useRef(false);
 
-  const [timeUntilSunday, setTimeUntilSunday] = useState(null);
-
-  useEffect(() => {
-    const updateTimer = () => {
-        const now = new Date();
-        const day = now.getDay();
-        
-        if (day === 0) {
-            setTimeUntilSunday(null);
-            return;
-        }
-
-        const target = new Date(now);
-        target.setDate(now.getDate() + (7 - day));
-        target.setHours(0, 0, 0, 0);
-
-        const diff = target - now;
-        
-        if (diff <= 0) {
-             setTimeUntilSunday(null);
-             return;
-        }
-
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-        setTimeUntilSunday(`${days}d ${hours}h ${minutes}m`);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 60000); 
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (checkStreak && !streakCheckedRef.current) {
-      checkStreak(new Date().toISOString().split('T')[0]);
-      streakCheckedRef.current = true;
-      cancelLoginReminder();
-    }
-  }, [checkStreak, cancelLoginReminder]);
+  const prevStreakRef = useRef(gamification?.streak || 0);
+  const [streakAnim, setStreakAnim] = useState(null); 
 
   const levelData = useMemo(() => {
     const level = gamification?.level || 1;
@@ -224,6 +184,69 @@ const Dashboard = ({ setView }) => {
     const { currentXp, nextLevelXp, progressPercent } = getLevelProgress(xp, level);
     return { level, streak, percentage: progressPercent, progress: currentXp, needed: nextLevelXp };
   }, [gamification]);
+
+  // --- LÓGICA VISUAL DE RACHA COSMÉTICA (FUEGO AZUL / LLAMA OSCURA) ---
+  const streakColorClass = useMemo(() => {
+    if (levelData.level >= 90) return 'text-purple-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]';
+    if (levelData.level >= 30) return 'text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]';
+    return 'text-orange-500 drop-shadow-[0_0_15px_rgba(249,115,22,0.8)]';
+  }, [levelData.level]);
+
+  const streakUpColorClass = useMemo(() => {
+    if (levelData.level >= 90) return 'text-fuchsia-400';
+    if (levelData.level >= 30) return 'text-cyan-400';
+    return 'text-yellow-400';
+  }, [levelData.level]);
+
+  const streakPingClass = useMemo(() => {
+    if (levelData.level >= 90) return 'bg-purple-500/20';
+    if (levelData.level >= 30) return 'bg-blue-500/20';
+    return 'bg-orange-500/20';
+  }, [levelData.level]);
+
+  const streakPulseClass = useMemo(() => {
+    if (levelData.level >= 90) return 'bg-fuchsia-400/40';
+    if (levelData.level >= 30) return 'bg-cyan-400/40';
+    return 'bg-yellow-400/40';
+  }, [levelData.level]);
+  // -------------------------------------------------------------------
+
+  useEffect(() => {
+      if (levelData.streak !== prevStreakRef.current) {
+          if (levelData.streak > prevStreakRef.current) {
+              setStreakAnim('up');
+          } else if (levelData.streak < prevStreakRef.current && prevStreakRef.current !== 0) {
+              setStreakAnim('down');
+          }
+          prevStreakRef.current = levelData.streak;
+
+          const timer = setTimeout(() => setStreakAnim(null), 1000);
+          return () => clearTimeout(timer);
+      }
+  }, [levelData.streak]);
+
+  const [timeUntilSunday, setTimeUntilSunday] = useState(null);
+
+  useEffect(() => {
+    const doCheck = () => {
+        if (checkStreak) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            checkStreak(todayStr);
+        }
+    };
+
+    if (!streakCheckedRef.current) {
+      doCheck();
+      streakCheckedRef.current = true;
+      cancelLoginReminder();
+    }
+
+    const midnightChecker = setInterval(() => {
+       doCheck();
+    }, 60000); 
+
+    return () => clearInterval(midnightChecker);
+  }, [checkStreak, cancelLoginReminder]);
 
   const sortedWeightLog = useMemo(() =>
     [...bodyWeightLog].sort((a, b) => new Date(b.log_date) - new Date(a.log_date)),
@@ -272,6 +295,39 @@ const Dashboard = ({ setView }) => {
       weeklyRecapData: { totalVolume: volume, totalWorkouts: logs.length, totalDuration: seconds, totalCalories: calories }
     };
   }, [workoutLog]);
+
+  useEffect(() => {
+    const updateTimer = () => {
+        const now = new Date();
+        const day = now.getDay();
+        
+        if (day === 0) {
+            setTimeUntilSunday(null);
+            return;
+        }
+
+        const target = new Date(now);
+        target.setDate(now.getDate() + (7 - day));
+        target.setHours(0, 0, 0, 0);
+
+        const diff = target - now;
+        
+        if (diff <= 0) {
+             setTimeUntilSunday(null);
+             return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+        setTimeUntilSunday(`${days}d ${hours}h ${minutes}m`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000); 
+    return () => clearInterval(interval);
+  }, []);
 
   const hasWeeklyData = weeklySessions > 0;
   const isWeeklyRecapUnlocked = timeUntilSunday === null;
@@ -447,11 +503,9 @@ const Dashboard = ({ setView }) => {
           className="w-full lg:w-auto p-5 flex items-center gap-6 bg-bg-secondary/40 rounded-3xl relative overflow-hidden group border-transparent dark:border dark:border-white/10 hover:bg-bg-secondary transition-all cursor-pointer"
           onClick={() => setShowXPModal(true)}
         >
-          {/* --- INICIO MODIFICACIÓN: Usar LevelBadge en lugar del renderizado manual --- */}
           <div className="relative flex-shrink-0">
             <LevelBadge level={levelData.level} size="md" />
           </div>
-          {/* --- FIN MODIFICACIÓN --- */}
 
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -473,14 +527,36 @@ const Dashboard = ({ setView }) => {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center pl-6 border-l border-white/5 flex-shrink-0">
-            <div className={`transition-all duration-500 mb-1 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.6)]' : 'text-text-muted opacity-30'}`}>
-              <Flame size={26} fill={levelData.streak > 0 ? "currentColor" : "none"} />
+          <div className="flex flex-col items-center justify-center pl-6 border-l border-white/5 flex-shrink-0 relative">
+            <div 
+              className={`
+                  transition-all duration-500 mb-1 z-10 relative
+                  ${levelData.streak > 0 ? streakColorClass : 'text-text-muted opacity-30'}
+                  ${streakAnim === 'up' ? `animate-[bounce_0.5s_ease-out] scale-125 ${streakUpColorClass}` : ''}
+                  ${streakAnim === 'down' ? 'animate-[shake_0.5s_ease-in-out] text-red-500' : ''}
+              `}
+            >
+              <Flame size={32} fill={levelData.streak > 0 ? "currentColor" : "none"} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
+            
+            <span 
+              className={`
+                text-xs font-black uppercase tracking-wider transition-all duration-300
+                ${streakAnim === 'up' ? `${streakUpColorClass} scale-110` : 'text-text-primary'}
+                ${streakAnim === 'down' ? 'text-red-500 opacity-50' : ''}
+              `}
+            >
               {levelData.streak} {t('DÍAS', { defaultValue: 'DÍAS' })}
             </span>
+            
+            {streakAnim === 'up' && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className={`w-16 h-16 ${streakPingClass} rounded-full animate-ping absolute`}></div>
+                    <div className={`w-12 h-12 ${streakPulseClass} rounded-full animate-pulse absolute`}></div>
+                </div>
+            )}
           </div>
+
         </GlassCard>
       </div>
 
@@ -569,6 +645,11 @@ const Dashboard = ({ setView }) => {
         <BentoStatCard title={t('Meta Calórica', { defaultValue: 'Meta Calórica' })} value={targets.calories.toLocaleString()} unit="kcal" icon={Target} subtext={t('Objetivo diario', { defaultValue: 'Objetivo diario' })} />
         <BentoStatCard title={t('Tiempo Activo', { defaultValue: 'Tiempo Activo' })} value={weeklyTimeDisplay} icon={Clock} subtext={t('Total semanal', { defaultValue: 'Total semanal' })} />
         <BentoStatCard title={t('Quemadas', { defaultValue: 'Quemadas' })} value={weeklyCalories.toLocaleString()} unit="kcal" icon={Flame} subtext={t('Total estimado', { defaultValue: 'Total estimado' })} />
+      </div>
+
+      {/* --- SEASON PASS --- */}
+      <div className="mb-10 animate-[fade-in-up_0.6s_ease-out]">
+        <SeasonPassCard currentLevel={levelData.level} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
@@ -755,7 +836,6 @@ const Dashboard = ({ setView }) => {
              {showWeeklyRecap && <WeeklyRecapCard weeklyData={weeklyRecapData} userProfile={userProfile} />}
          </div>
          <div ref={prCardRef} style={{ width: '1080px', height: '1920px' }}>
-             {/* AQUÍ INYECTAMOS LA FOTO AL RENDER OCULTO */}
              {showPRModal && prShareData && <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />}
          </div>
       </div>
@@ -833,7 +913,6 @@ const Dashboard = ({ setView }) => {
                  <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center pointer-events-none">
                       <ScaleToFit width={1080} height={1920}>
                           <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 pointer-events-auto">
-                              {/* AQUÍ INYECTAMOS LA FOTO AL OVERLAY VISIBLE */}
                               <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />
                           </div>
                       </ScaleToFit>

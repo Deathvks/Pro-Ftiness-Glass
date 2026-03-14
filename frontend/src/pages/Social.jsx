@@ -16,7 +16,10 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
 import socialService from '../services/socialService';
-import Feed from '../components/Feed'; // <-- Importamos el nuevo componente Muro
+import Feed from '../components/Feed';
+// --- INICIO MODIFICACIÓN: Importar LevelBadge ---
+import LevelBadge from '../components/LevelBadge';
+// --- FIN MODIFICACIÓN ---
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -887,8 +890,11 @@ export default function Social({ setView }) {
                 <span className="text-xs font-medium text-text-tertiary bg-white/10 px-2 py-1 rounded-full">Top 50</span>
             </div>
             <div className="flex flex-col">
-                <div className="flex text-xs text-text-tertiary p-3 border-b border-white/5 uppercase tracking-wider font-bold bg-white/5">
-                    <span className="w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-16 text-right">Nivel</span><span className="w-24 text-right">XP</span>
+                <div className="flex text-xs text-text-tertiary p-3 border-b border-white/5 uppercase tracking-wider font-bold bg-white/5 items-center">
+                    <span className="w-8 text-center">#</span>
+                    <span className="flex-1 pl-2">Atleta</span>
+                    <span className="w-16 text-center">Nivel</span>
+                    <span className="w-20 text-right">XP</span>
                 </div>
                 {socialLeaderboard.map((user, index) => {
                     const isMe = user.id === userProfile?.id;
@@ -896,15 +902,19 @@ export default function Social({ setView }) {
 
                     return (
                         <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 border-b border-white/5 last:border-0 cursor-pointer transition-colors hover:bg-white/10 ${isMe ? 'bg-accent/10 border-l-4 border-l-accent pl-2' : ''}`}>
-                            <div className="w-10 flex justify-center font-bold text-text-secondary text-lg">
+                            <div className="w-8 flex justify-center font-bold text-text-secondary text-lg">
                                 {index + 1 === 1 ? <Medal size={20} className="text-yellow-400" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-300" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
                             </div>
                             <div className="flex-1 flex items-center gap-3 min-w-0 pl-2">
                                 <UserAvatar user={fixedUser} size={9} className="w-9 h-9" />
                                 <span className={`truncate text-sm ${isMe ? 'text-accent font-bold' : 'text-text-primary font-medium'}`}>{user.username} {isMe && "(Tú)"}</span>
                             </div>
-                            <div className="w-16 text-right text-sm text-text-secondary font-medium">{user.level}</div>
-                            <div className="w-24 text-right text-sm text-text-primary font-mono font-semibold tracking-tight">{user.xp?.toLocaleString()}</div>
+                            <div className="w-16 flex justify-center items-center">
+                                <div className="scale-[0.8] origin-center">
+                                    <LevelBadge level={user.level || 1} size="sm" showName={false} />
+                                </div>
+                            </div>
+                            <div className="w-20 text-right text-sm text-text-primary font-mono font-semibold tracking-tight">{user.xp?.toLocaleString()}</div>
                         </div>
                     );
                 })}
@@ -960,8 +970,12 @@ export default function Social({ setView }) {
                         </div>
                     </div>
                     <div className="flex flex-col">
-                        <div className="flex text-xs text-text-tertiary p-3 border-b border-white/5 uppercase tracking-wider font-bold bg-white/5">
-                            <span className="w-10 text-center">#</span><span className="flex-1 pl-2">Miembro</span><span className="w-24 text-right">Racha</span><span className="w-24 text-right">XP</span>
+                        <div className="flex text-xs text-text-tertiary p-3 border-b border-white/5 uppercase tracking-wider font-bold bg-white/5 items-center">
+                            <span className="w-8 text-center">#</span>
+                            <span className="flex-1 pl-2">Miembro</span>
+                            <span className="w-16 text-center">Nivel</span>
+                            <span className="w-16 text-right">Racha</span>
+                            <span className="w-20 text-right">XP</span>
                         </div>
                         {selectedSquad.Members?.map((user, index) => {
                             const isMe = user.id === userProfile?.id;
@@ -969,7 +983,7 @@ export default function Social({ setView }) {
 
                             return (
                                 <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 border-b border-white/5 last:border-0 cursor-pointer transition-colors hover:bg-white/10 ${isMe ? 'bg-accent/10 border-l-4 border-l-accent pl-2' : ''}`}>
-                                    <div className="w-10 flex justify-center font-bold text-text-secondary text-lg">
+                                    <div className="w-8 flex justify-center font-bold text-text-secondary text-lg">
                                         {index + 1 === 1 ? <Medal size={20} className="text-yellow-400" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-300" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
                                     </div>
                                     <div className="flex-1 flex items-center gap-3 min-w-0 pl-2">
@@ -979,10 +993,15 @@ export default function Social({ setView }) {
                                             <span className="text-[10px] text-text-tertiary capitalize">{user.SquadMember?.role}</span>
                                         </div>
                                     </div>
-                                    <div className="w-24 text-right text-sm text-orange-400 font-bold flex items-center justify-end gap-1">
+                                    <div className="w-16 flex justify-center items-center">
+                                        <div className="scale-[0.8] origin-center">
+                                            <LevelBadge level={user.level || 1} size="sm" showName={false} />
+                                        </div>
+                                    </div>
+                                    <div className="w-16 text-right text-sm text-orange-400 font-bold flex items-center justify-end gap-1">
                                         🔥 {user.streak || 0}
                                     </div>
-                                    <div className="w-24 text-right text-sm text-text-primary font-mono font-semibold tracking-tight">{user.xp?.toLocaleString() || 0}</div>
+                                    <div className="w-20 text-right text-sm text-text-primary font-mono font-semibold tracking-tight">{user.xp?.toLocaleString() || 0}</div>
                                 </div>
                             );
                         })}
@@ -1190,14 +1209,16 @@ export default function Social({ setView }) {
             </section>
 
             {/* --- Pestañas Horizontales --- */}
+            {/* INICIO MODIFICACIÓN: Nuevo orden: Muro, Ranking, Amigos, Grupos... */}
             <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 py-2 px-1 md:justify-center">
                 <TabButton id="feed" icon={Activity} label="Muro" isActive={activeTab === 'feed'} onClick={changeTab} />
+                <TabButton id="leaderboard" icon={Trophy} label="Ranking" isActive={activeTab === 'leaderboard'} onClick={changeTab} />
                 <TabButton id="friends" icon={Users} label="Amigos" isActive={activeTab === 'friends'} onClick={changeTab} />
                 <TabButton id="squads" icon={Shield} label="Grupos" isActive={activeTab === 'squads'} onClick={changeTab} />
                 <TabButton id="requests" icon={UserPlus} label="Solicitudes" badge={socialRequests?.received?.length || 0} isActive={activeTab === 'requests'} onClick={changeTab} />
                 <TabButton id="search" icon={Search} label="Buscar" isActive={activeTab === 'search'} onClick={changeTab} />
-                <TabButton id="leaderboard" icon={Trophy} label="Ranking" isActive={activeTab === 'leaderboard'} onClick={changeTab} />
             </div>
+            {/* FIN MODIFICACIÓN */}
 
             {/* --- Contenido Principal --- */}
             <div className="min-h-[400px] max-w-3xl mx-auto w-full">

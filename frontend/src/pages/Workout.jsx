@@ -5,6 +5,7 @@ import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import { calculateCalories } from '../utils/helpers';
 import Spinner from '../components/Spinner';
+import confetti from 'canvas-confetti'; // <--- IMPORT DE CONFETI
 
 // --- Imports de Modales ---
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -15,7 +16,7 @@ import WorkoutExerciseDetailModal from './WorkoutExerciseDetailModal';
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 import WorkoutHeatmapModal from '../components/Workout/WorkoutHeatmapModal';
-import WorkoutReviewModal from '../components/Workout/WorkoutReviewModal'; // <--- NUEVO IMPORT
+import WorkoutReviewModal from '../components/Workout/WorkoutReviewModal';
 
 // --- IMPORTS DE COMPONENTES MODULARIZADOS ---
 import NoActiveWorkout from '../components/Workout/NoActiveWorkout';
@@ -45,6 +46,7 @@ const Workout = ({ timer, setView }) => {
         openRestModal,
         userProfile,
         fetchInitialData,
+        gamification, // <--- Obtenemos el gamification para saber el nivel
     } = useAppStore((state) => ({
         activeWorkout: state.activeWorkout,
         logWorkout: state.logWorkout,
@@ -59,6 +61,7 @@ const Workout = ({ timer, setView }) => {
         openRestModal: state.openRestModal,
         userProfile: state.userProfile,
         fetchInitialData: state.fetchInitialData,
+        gamification: state.gamification,
     }));
 
     // --- 2. Estado Local (Modales y Notas) ---
@@ -67,8 +70,8 @@ const Workout = ({ timer, setView }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [wasTimerRunningOnFinish, setWasTimerRunningOnFinish] = useState(false);
     const [showCalorieModal, setShowCalorieModal] = useState(false);
-    const [showReviewModal, setShowReviewModal] = useState(false); // <--- NUEVO ESTADO
-    const [finalCalories, setFinalCalories] = useState(0); // <--- NUEVO ESTADO PARA GUARDAR CALORIAS TEMP
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [finalCalories, setFinalCalories] = useState(0);
     const [exerciseToReplace, setExerciseToReplace] = useState(null);
     const [showWorkoutSummaryModal, setShowWorkoutSummaryModal] = useState(false);
     const [completedWorkoutData, setCompletedWorkoutData] = useState(null);
@@ -76,9 +79,10 @@ const Workout = ({ timer, setView }) => {
     const [showCalculatorModal, setShowCalculatorModal] = useState(false);
     const [historyExercise, setHistoryExercise] = useState(null);
     const [showHeatmapModal, setShowHeatmapModal] = useState(false);
-
-    // Estado para la vista de Cardio Rápido
     const [showQuickCardio, setShowQuickCardio] = useState(false);
+    
+    // Estado para el efecto relámpago (PR)
+    const [lightningEffect, setLightningEffect] = useState(false);
 
     // Efecto de limpieza
     useEffect(() => {
@@ -97,12 +101,11 @@ const Workout = ({ timer, setView }) => {
     }, []);
 
     // --- 3. Memos y Variables Derivadas ---
-
+    const userLevel = gamification?.level || 1;
     const hasWorkoutStarted = workoutStartTime !== null;
     const isSimpleWorkout =
         !activeWorkout?.exercises || activeWorkout.exercises.length === 0;
 
-    // Memo para agrupar ejercicios en superseries
     const exerciseGroups = useMemo(() => {
         if (isSimpleWorkout) return [];
 
@@ -154,6 +157,46 @@ const Workout = ({ timer, setView }) => {
         return parseFloat(String(value).replace(',', '.')) || 0;
     };
 
+    // Función para lanzar el confeti de celebración
+    const triggerConfetti = () => {
+        const duration = 3000;
+        const end = Date.now() + duration;
+
+        const frame = () => {
+            confetti({
+                particleCount: 5,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: ['#22c55e', '#3b82f6', '#f59e0b']
+            });
+            confetti({
+                particleCount: 5,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: ['#22c55e', '#3b82f6', '#f59e0b']
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        };
+        frame();
+    };
+
+    // Función para el relámpago de Récord Personal
+    const triggerLightning = () => {
+        setLightningEffect(true);
+        // El relámpago dura muy poco (150ms)
+        setTimeout(() => setLightningEffect(false), 150);
+        // Hacemos un doble parpadeo
+        setTimeout(() => {
+            setLightningEffect(true);
+            setTimeout(() => setLightningEffect(false), 100);
+        }, 300);
+    };
+
     // --- 5. Manejadores de Eventos ---
 
     const handleFinishClick = () => {
@@ -191,7 +234,6 @@ const Workout = ({ timer, setView }) => {
         setView(returnView);
     };
 
-    // PASO 1: Captura calorías y abre el modal de revisión
     const handleCalorieInputComplete = (calories) => {
         const isAnySetFilled =
             isSimpleWorkout ||
@@ -212,18 +254,11 @@ const Workout = ({ timer, setView }) => {
 
         setFinalCalories(calories);
         setShowCalorieModal(false);
-        setShowReviewModal(true); // Abrir el nuevo modal de revisión
+        setShowReviewModal(true); 
     };
 
-    // PASO 2: Guarda definitivamente después de la revisión
     const handleReviewConfirm = async () => {
         setIsSaving(true);
-        
-        // Obtenemos los datos MÁS RECIENTES de activeWorkout (por si hubo ediciones en el modal)
-        // Como 'activeWorkout' viene del store y el modal actualiza el store, 
-        // la variable activeWorkout en este scope ya debería estar actualizada 
-        // gracias al re-render de React, pero por seguridad accedemos al store si fuera necesario.
-        // Aquí usamos 'activeWorkout' del hook que se actualiza reactivamente.
 
         const workoutData = {
             routineId: activeWorkout.routineId,
@@ -256,6 +291,22 @@ const Workout = ({ timer, setView }) => {
 
         const result = await logWorkout(workoutData);
         if (result.success) {
+            
+            // --- EFECTOS COSMÉTICOS AL GUARDAR ---
+            // 1. Confeti si es Nivel 15+
+            if (userLevel >= 15) {
+                triggerConfetti();
+            }
+
+            // 2. Relámpago si es Nivel 75+ y batió algún récord
+            // Asumimos que result.personalRecords indica si hubo récords. 
+            // Si el backend no devuelve eso exactamente, puedes adaptarlo.
+            const hasNewPR = result.personalRecords && result.personalRecords.length > 0;
+            if (userLevel >= 75 && hasNewPR) {
+                triggerLightning();
+            }
+            // ------------------------------------
+
             if (result.gamification) {
                 result.gamification.forEach(event => {
                     if (event.type === 'xp') {
@@ -313,7 +364,13 @@ const Workout = ({ timer, setView }) => {
     }
 
     return (
-        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] relative">
+            
+            {/* Capa del Efecto Relámpago (PR) */}
+            {lightningEffect && (
+                <div className="fixed inset-0 bg-yellow-100 z-[9999] opacity-80 pointer-events-none mix-blend-overlay"></div>
+            )}
+
             <WorkoutHeader
                 routineName={activeWorkout.routineName}
                 routineImage={activeWorkout.image_url}
@@ -354,7 +411,6 @@ const Workout = ({ timer, setView }) => {
 
             {/* MODALES EN CADENA */}
 
-            {/* 1. Modal de Calorías */}
             {showCalorieModal && (
                 <CalorieInputModal
                     estimatedCalories={calculateCalories(
@@ -372,19 +428,16 @@ const Workout = ({ timer, setView }) => {
                 />
             )}
 
-            {/* 2. Modal de Revisión (NUEVO) */}
             {showReviewModal && (
                 <WorkoutReviewModal
                     onClose={() => {
                         setShowReviewModal(false);
-                        // Opcional: Volver a reanudar o dejar pausado
                     }}
                     onConfirm={handleReviewConfirm}
                     isSaving={isSaving}
                 />
             )}
 
-            {/* 3. Modal de Resumen Final */}
             {showWorkoutSummaryModal && completedWorkoutData && (
                 <WorkoutSummaryModal
                     workoutData={completedWorkoutData}

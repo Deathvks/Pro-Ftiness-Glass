@@ -1,7 +1,7 @@
 /* frontend/src/App.jsx */
 import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Home, Dumbbell, BarChart2, Settings, Utensils, Users, User } from 'lucide-react';
+import { Home, Dumbbell, BarChart2, Settings, Utensils, Users, User, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -106,6 +106,7 @@ export default function App() {
     isResting,
     restTimerMode,
     myStories,
+    gamification, // <--- Importamos gamification para leer el nivel
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -115,7 +116,11 @@ export default function App() {
     isResting: state.isResting,
     restTimerMode: state.restTimerMode,
     myStories: state.myStories,
+    gamification: state.gamification,
   }));
+
+  // Calculamos si tiene el Aura Divina (Nivel 100+)
+  const hasDivineAura = gamification?.level >= 100;
 
   const isInstalledApp = useMemo(() => {
     return Capacitor.isNativePlatform() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -143,10 +148,12 @@ export default function App() {
     if (Capacitor.isNativePlatform()) {
       const applyNativeTheme = async () => {
         try {
-          await StatusBar.setBackgroundColor({ color: themeColor });
+          // Si tiene Aura Divina y la app permite teñir la status bar, le damos un toque ámbar muy sutil
+          const barColor = hasDivineAura ? '#201A0A' : themeColor;
+          await StatusBar.setBackgroundColor({ color: barColor });
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
-          await NavigationBar.setColor({ color: themeColor });
+          await NavigationBar.setColor({ color: barColor });
           await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
@@ -155,7 +162,7 @@ export default function App() {
       applyNativeTheme();
     }
     document.body.style.backgroundColor = themeColor;
-  }, [themeColor, resolvedTheme]);
+  }, [themeColor, resolvedTheme, hasDivineAura]);
 
   useEffect(() => {
     if (isAuthenticated && !isLoading && Capacitor.isNativePlatform()) {
@@ -348,47 +355,65 @@ export default function App() {
     };
 
     return (
-      <>
-        <MainAppLayout
-          view={view}
-          navigate={navigateInternal}
-          mainContentRef={mainContentRef}
-          currentTitle={currentTitle}
-          currentViewComponent={currentViewComponent}
-          navItems={navItems}
-          handleLogoutClick={handleLogoutClick}
-          showLogoutConfirm={showLogoutConfirm}
-          confirmLogout={confirmLogout}
-          setShowLogoutConfirm={setShowLogoutConfirm}
-          handleShowPolicy={handleShowPolicy}
-          fetchInitialData={fetchInitialData}
-          {...verificationProps}
-          onHeaderAvatarClick={handleHeaderAvatarClick}
-          userProfile={userProfileWithStory}
-        />
-        {isResting && (
-          restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
+      <div className={`relative w-full h-full ${hasDivineAura ? 'divine-aura-container' : ''}`}>
+        {/* --- CAPA DE AURA DIVINA (Nivel 100+) --- */}
+        {hasDivineAura && (
+            <div className="fixed inset-0 pointer-events-none z-0">
+                {/* Resplandor dorado suave en los bordes de la pantalla */}
+                <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(251,191,36,0.15)] opacity-50 mix-blend-screen animate-[pulse_4s_ease-in-out_infinite]" />
+                
+                {/* Partículas estáticas doradas flotando */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,transparent_100%),radial-gradient(circle_at_20%_30%,rgba(251,191,36,0.15)_0%,transparent_10%)] animate-[pulse_6s_ease-in-out_infinite_alternate]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(251,191,36,0.15)_0%,transparent_10%)] animate-[pulse_7s_ease-in-out_infinite_alternate-reverse]" />
+                
+                {/* Destello sutil superior */}
+                <div className="absolute top-0 left-1/4 right-1/4 h-32 bg-gradient-to-b from-yellow-500/10 to-transparent blur-2xl" />
+            </div>
         )}
-        {show2FAPromo && (
-          <TwoFactorPromoModal
-            onClose={handleClose2FAPromo}
-            onConfigure={handleConfigure2FA}
-          />
-        )}
-        {viewingMyStory && (
-            <StoryViewer 
-                userId={userProfile.id} 
-                onClose={() => setViewingMyStory(false)} 
+        
+        {/* Contenido principal de la App (z-index superior para estar encima del aura de fondo) */}
+        <div className="relative z-10 w-full h-full">
+            <MainAppLayout
+              view={view}
+              navigate={navigateInternal}
+              mainContentRef={mainContentRef}
+              currentTitle={currentTitle}
+              currentViewComponent={currentViewComponent}
+              navItems={navItems}
+              handleLogoutClick={handleLogoutClick}
+              showLogoutConfirm={showLogoutConfirm}
+              confirmLogout={confirmLogout}
+              setShowLogoutConfirm={setShowLogoutConfirm}
+              handleShowPolicy={handleShowPolicy}
+              fetchInitialData={fetchInitialData}
+              {...verificationProps}
+              onHeaderAvatarClick={handleHeaderAvatarClick}
+              userProfile={userProfileWithStory}
             />
-        )}
-      </>
+            {isResting && (
+              restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
+            )}
+            {show2FAPromo && (
+              <TwoFactorPromoModal
+                onClose={handleClose2FAPromo}
+                onConfigure={handleConfigure2FA}
+              />
+            )}
+            {viewingMyStory && (
+                <StoryViewer 
+                    userId={userProfile.id} 
+                    onClose={() => setViewingMyStory(false)} 
+                />
+            )}
+        </div>
+      </div>
     );
   }, [
     userProfile, isLoading, view, navParams, navigateInternal,
     performLogout, mainContentRef, currentTitle, currentViewComponent,
     navItems, handleLogoutClick, showLogoutConfirm, confirmLogout, handleShowPolicy,
     fetchInitialData, verificationProps, handleHeaderAvatarClick, myStories,
-    isResting, restTimerMode, show2FAPromo, viewingMyStory, hasStories
+    isResting, restTimerMode, show2FAPromo, viewingMyStory, hasStories, hasDivineAura
   ]);
 
   const isLandingPage = !isAuthenticated && currentPath === '/';
