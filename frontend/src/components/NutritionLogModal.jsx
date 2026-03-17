@@ -36,29 +36,43 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false); // Para saber si ya se intentó buscar algo
 
     const [selectedDetailItem, setSelectedDetailItem] = useState(null);
 
-    useEffect(() => {
-        if (activeTab !== 'search' || !searchTerm.trim()) {
+    // NUEVO: Función manual para ejecutar la búsqueda (Reemplaza al useEffect automático)
+    const executeSearch = async () => {
+        if (searchTerm.trim().length < 3) return;
+
+        setIsSearching(true);
+        setHasSearched(true);
+
+        try {
+            const results = await searchFoods(searchTerm.trim());
+            setSearchResults(results);
+        } catch (error) {
+            console.error("Error buscando alimentos:", error);
             setSearchResults([]);
-            return;
+        } finally {
+            setIsSearching(false);
         }
+    };
 
-        const delayDebounceFn = setTimeout(async () => {
-            setIsSearching(true);
-            try {
-                const results = await searchFoods(searchTerm);
-                setSearchResults(results);
-            } catch (error) {
-                console.error("Error buscando alimentos:", error);
-            } finally {
-                setIsSearching(false);
-            }
-        }, 500);
+    // NUEVO: Capturar cuando el usuario presiona "Enter"
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Evita que se envíen formularios por accidente
+            executeSearch();
+        }
+    };
 
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm, activeTab]);
+    // Limpiar resultados si cambias de pestaña
+    useEffect(() => {
+        if (activeTab !== 'search') {
+            setSearchResults([]);
+            setHasSearched(false);
+        }
+    }, [activeTab]);
 
     const handleSelectSearchResult = (food) => {
         const foodData = {
@@ -70,12 +84,12 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
             carbs_g: food.carbs_g || food.carbs || 0,
             fats_g: food.fats_g || food.fat || 0,
             sugars_g: food.sugars_g || food.sugars || 0,
-            
+
             weight_g: food.weight_g || 100,
             serving_weight_g: food.serving_weight_g,
             image_url: food.image_url,
             brand: food.brand,
-            
+
             calories_per_100g: food.calories_per_100g,
             protein_per_100g: food.protein_per_100g,
             carbs_per_100g: food.carbs_per_100g,
@@ -96,12 +110,13 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
         handleAddRecentItem(itemToAdd);
         setSelectedDetailItem(null);
         setSearchTerm('');
+        setSearchResults([]);
+        setHasSearched(false);
     };
 
     if (selectedDetailItem) {
         return (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s]">
-                {/* CAMBIO: Se asegura bg-bg-primary y bordes consistentes para modo claro/oscuro */}
                 <div className="relative w-11/12 max-w-md overflow-hidden m-4 bg-bg-primary rounded-2xl border border-glass-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
                     <FoodDetailView
                         food={selectedDetailItem}
@@ -133,17 +148,24 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                                     onAdd={() => handleSelectSearchResult(food)}
                                 />
                             ))
-                        ) : (
-                            searchTerm && (
-                                <p className="text-center text-text-secondary py-8">
-                                    No se encontraron resultados.
-                                </p>
-                            )
-                        )}
+                        ) : hasSearched && searchTerm.length >= 3 ? (
+                            <p className="text-center text-text-secondary py-8">
+                                No se encontraron resultados.
+                            </p>
+                        ) : !hasSearched && searchTerm.length >= 3 ? (
+                            <p className="text-center text-text-secondary py-8">
+                                Pulsa Enter o en la Lupa para buscar.
+                            </p>
+                        ) : searchTerm.length > 0 && searchTerm.length < 3 ? (
+                            <p className="text-center text-text-secondary py-8">
+                                Escribe al menos 3 letras...
+                            </p>
+                        ) : null}
+
                         {!searchTerm && !isSearching && (
                             <div className="text-center text-text-secondary py-8 flex flex-col items-center opacity-50">
                                 <Search size={48} className="mb-2" />
-                                <p>Escribe arriba para buscar</p>
+                                <p>Escribe arriba y pulsa Enter</p>
                             </div>
                         )}
                     </div>
@@ -215,16 +237,24 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                         {!(isEditingLog || editingFavorite) && (
                             <div className="p-5 flex-shrink-0">
                                 {(activeTab === 'search' || activeTab === 'favorites' || activeTab === 'recent') && (
-                                    <div className="relative mb-4">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+                                    <div className="relative mb-4 flex items-center">
                                         <input
                                             type="text"
-                                            placeholder={activeTab === 'search' ? "Buscar en base de datos..." : "Filtrar lista..."}
+                                            placeholder={activeTab === 'search' ? "Buscar alimento..." : "Filtrar lista..."}
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
+                                            onKeyDown={activeTab === 'search' ? handleKeyDown : undefined}
                                             autoFocus={activeTab === 'search'}
-                                            className="w-full pl-10 pr-4 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent"
+                                            className="w-full pl-4 pr-12 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent"
                                         />
+                                        {/* Botón Lupa clickeable para buscar */}
+                                        <button
+                                            onClick={activeTab === 'search' ? executeSearch : undefined}
+                                            className={`absolute right-3 p-1 rounded-md transition ${activeTab === 'search' ? 'text-accent hover:bg-accent/10 cursor-pointer' : 'text-text-secondary cursor-default'}`}
+                                            title="Buscar"
+                                        >
+                                            <Search size={20} />
+                                        </button>
                                     </div>
                                 )}
 

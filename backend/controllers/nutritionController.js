@@ -22,10 +22,20 @@ const __dirname = path.dirname(__filename);
 
 const FOOD_IMAGES_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 
-const { NutritionLog, WaterLog, FavoriteMeal, User, Notification, BodyWeightLog, sequelize } = db;
+const { NutritionLog, WaterLog, FavoriteMeal, LocalFood, User, Notification, BodyWeightLog, sequelize } = db;
 
-// --- CONFIGURACIÓN ---
 const MAX_DAILY_WATER_XP = 50;
+
+const searchCache = new Map();
+const CACHE_TTL = 1000 * 60 * 60 * 24;
+
+// Escudo Anti-Baneo reforzado
+const offSearchTimestamps = [];
+const canMakeOffSearch = () => {
+  const now = Date.now();
+  while (offSearchTimestamps.length > 0 && now - offSearchTimestamps[0] > 60000) offSearchTimestamps.shift();
+  return offSearchTimestamps.length < 8; // Máximo 8 peticiones por minuto
+};
 
 const ensureUploadDirExists = async (dirPath) => {
   try {
@@ -45,7 +55,6 @@ const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
     const webpFilename = `barcode-${uniqueSuffix}.webp`;
     const outputPath = path.join(outputDir, webpFilename);
 
-    // OPTIMIZACIÓN: 600px es suficiente para thumbnails de comida
     await sharp(imageBuffer)
       .rotate()
       .resize(600, 600, { fit: sharp.fit.inside, withoutEnlargement: true })
@@ -448,7 +457,10 @@ const searchByBarcode = async (req, res, next) => {
 
     const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
 
-    const response = await axios.get(apiUrl, { timeout: 5000 });
+    const response = await axios.get(apiUrl, {
+      timeout: 6000,
+      headers: { 'User-Agent': 'FitApp_Backend/1.0 (contacto@tuapp.com)' }
+    });
 
     if (!response.data || response.data.status === 0 || !response.data.product) {
       return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null } });
@@ -483,35 +495,100 @@ const uploadFoodImage = async (req, res, next) => { if (req.imageUrl) res.status
 
 const searchFoods = async (req, res, next) => {
   try {
-    const { userId } = req.user;
     const { q } = req.query;
-    console.log(`[BACKEND] Buscando: "${q}"`);
+    if (!q) return res.json([]);
 
-    // CAMBIO 1: Búsqueda local Case-Insensitive usando sequelize.fn('LOWER') en vez de un Op.like que fallaba si había mayúsculas
-    const favoriteResultsPromise = FavoriteMeal.findAll({
-      where: sequelize.where(
-        sequelize.fn('LOWER', sequelize.col('name')),
-        'LIKE',
-        `%${q.toLowerCase()}%`
-      ),
-      limit: 10,
-      raw: true
-    });
+    console.log(`\n=========================================`);
+    console.log(`[BACKEND] 🔍 Iniciando búsqueda para: "${q}"`);
 
-    const offSearchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_es,nutriments,image_url,image_small_url`;
+    const searchTerm = q.toLowerCase().trim();
+    const searchPattern = `%${searchTerm}%`;
 
-    // CAMBIO 2: Añadido timeout más largo y encabezado "User-Agent" OBLIGATORIO para que OpenFoodFacts no nos deniegue el servicio silenciosamente
-    const offResultsPromise = axios.get(offSearchUrl, {
-      timeout: 8000,
-      headers: {
-        'User-Agent': 'MiAplicacionFitness/1.0 (Buscador Web)'
+    console.log(`[BACKEND] 🏠 Consultando tablas locales...`);
+
+    const [favoriteResults, localFoods] = await Promise.all([
+      FavoriteMeal.findAll({
+        where: sequelize.where(
+          sequelize.fn('LOWER', sequelize.col('name')),
+          'LIKE',
+          searchPattern
+        ),
+        limit: 10,
+        raw: true
+      }),
+      LocalFood ? LocalFood.findAll({
+        where: sequelize.where(
+          sequelize.fn('LOWER', sequelize.col('name')),
+          'LIKE',
+          searchPattern
+        ),
+        limit: 50,
+        raw: true
+      }) : Promise.resolve([])
+    ]);
+
+    console.log(`[BACKEND] ⭐ Favoritos: ${favoriteResults.length} | 🏠 Locales: ${localFoods.length}`);
+
+    const formattedFavorites = favoriteResults.map(f => ({
+      ...f, source: 'local', calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0
+    }));
+
+    const formattedLocals = localFoods.map(food => ({
+      id: `local-${food.id}`,
+      name: food.name,
+      calories: food.calories,
+      protein_g: food.protein_g,
+      carbs_g: food.carbs_g,
+      fats_g: food.fats_g,
+      sugars_g: food.sugars_g,
+      calories_per_100g: food.calories,
+      protein_per_100g: food.protein_g,
+      carbs_per_100g: food.carbs_g,
+      fat_per_100g: food.fats_g,
+      sugars_per_100g: food.sugars_g,
+      image_url: food.image_url || null,
+      source: 'local_db',
+      weight_g: 100
+    }));
+
+    const localResults = [...formattedFavorites, ...formattedLocals];
+
+    if (searchCache.has(searchTerm)) {
+      const cachedData = searchCache.get(searchTerm);
+      if (Date.now() - cachedData.timestamp < CACHE_TTL) {
+        console.log(`[BACKEND] ⚡ Búsqueda devuelta desde CACHÉ`);
+        return res.json([...localResults, ...cachedData.results]);
       }
-    })
-      .then(response => {
-        if (response.data && response.data.products) {
-          return response.data.products.map(p => ({
+    }
+
+    let externalResults = [];
+
+    if (!canMakeOffSearch()) {
+      console.log(`[BACKEND] 🛑 Límite de seguridad alcanzado. Evitando baneo. Devolviendo locales.`);
+    } else {
+      try {
+        console.log(`[BACKEND] 🌐 Consultando OpenFoodFacts...`);
+        offSearchTimestamps.push(Date.now());
+
+        // Timeout ultracorto (4 segundos). Si tarda más de 4s es que estás baneado o el servidor va mal.
+        // Cortamos rápido y damos la experiencia fluida con los datos locales.
+        const offRes = await axios.get(`https://world.openfoodfacts.org/cgi/search.pl`, {
+          params: {
+            search_terms: q,
+            search_simple: 1,
+            action: 'process',
+            json: 1,
+            page_size: 20,
+            fields: 'code,product_name,product_name_es,generic_name,nutriments,image_front_small_url'
+          },
+          timeout: 4000,
+          headers: { 'User-Agent': 'FitApp_Backend/1.0 (contacto@tuapp.com)' }
+        });
+
+        if (offRes.data && offRes.data.products) {
+          externalResults = offRes.data.products.map(p => ({
             id: `off-${p.code}`,
-            name: p.product_name_es || p.product_name || 'Sin nombre',
+            name: p.product_name_es || p.product_name || p.generic_name || 'Sin nombre',
             calories: p.nutriments?.['energy-kcal_100g'] || 0,
             protein_g: p.nutriments?.proteins_100g || 0,
             carbs_g: p.nutriments?.carbohydrates_100g || 0,
@@ -522,29 +599,26 @@ const searchFoods = async (req, res, next) => {
             carbs_per_100g: p.nutriments?.carbohydrates_100g || 0,
             fat_per_100g: p.nutriments?.fat_100g || 0,
             sugars_per_100g: p.nutriments?.sugars_100g || 0,
-            image_url: p.image_small_url || p.image_url || null,
-            source: 'global',
+            image_url: p.image_front_small_url || null,
+            source: 'openfoodfacts',
             weight_g: 100
           }));
+
+          searchCache.set(searchTerm, { timestamp: Date.now(), results: externalResults });
         }
-        return [];
-      })
-      .catch(err => {
-        console.error("Error OFF:", err.message);
-        return [];
-      });
+      } catch (err) {
+        console.log(`[BACKEND] ⚠️ OFF falló (${err.message}). Devolviendo solo locales.`);
+      }
+    }
 
-    const [favoriteResults, offResults] = await Promise.all([favoriteResultsPromise, offResultsPromise]);
+    console.log(`[BACKEND] 🏁 Enviando al frontend: ${localResults.length + externalResults.length} resultados`);
+    console.log(`=========================================\n`);
 
-    const formattedFavorites = favoriteResults.map(f => ({
-      ...f,
-      source: 'local',
-      calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0
-    }));
-
-    const combinedResults = [...formattedFavorites, ...offResults];
-    res.json(combinedResults);
-  } catch (error) { next(error); }
+    res.json([...localResults, ...externalResults]);
+  } catch (error) {
+    console.error(`[BACKEND] 💥 Error general en searchFoods:`, error);
+    next(error);
+  }
 };
 
 export default { getNutritionLogsByDate, getRecentMeals, getNutritionSummary, addFoodLog, updateFoodLog, deleteFoodLog, upsertWaterLog, searchByBarcode, uploadFoodImage, searchFoods };
