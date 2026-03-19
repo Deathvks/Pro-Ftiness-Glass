@@ -42,7 +42,9 @@ const RoutineHeader = ({
     const folderWrapperRef = useRef(null);
     const [isFolderOpen, setIsFolderOpen] = useState(false);
     const [isPixabayOpen, setIsPixabayOpen] = useState(false);
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    
+    // CORRECCIÓN: Usar la variable correcta de tu entorno (VITE_API_BASE_URL)
+    const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
     const routines = useAppStore(state => state.routines);
     const uniqueFolders = useMemo(() => {
