@@ -85,7 +85,8 @@ const RoutineHeader = ({
     const getDisplayImageUrl = (path) => {
         if (!path || isCssBackground(path)) return null;
         if (path.startsWith('http') || path.startsWith('blob:')) return path;
-        if (path.startsWith('/uploads')) return `${API_URL}${path}`;
+        // CORRECCIÓN: Ahora detecta rutas que empiezan por /images (el nuevo formato del backend)
+        if (path.startsWith('/uploads') || path.startsWith('/images')) return `${API_URL}${path}`;
         return path;
     };
 
