@@ -19,22 +19,21 @@ import { createNotification } from '../services/notificationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const FOOD_IMAGES_DIR = path.join(__dirname, '..', 'public', 'images', 'food');
 
 const { NutritionLog, WaterLog, FavoriteMeal, LocalFood, User, Notification, BodyWeightLog, sequelize } = db;
 
 const MAX_DAILY_WATER_XP = 50;
-
 const searchCache = new Map();
 const CACHE_TTL = 1000 * 60 * 60 * 24;
 
-// Escudo Anti-Baneo reforzado
 const offSearchTimestamps = [];
 const canMakeOffSearch = () => {
   const now = Date.now();
-  while (offSearchTimestamps.length > 0 && now - offSearchTimestamps[0] > 60000) offSearchTimestamps.shift();
-  return offSearchTimestamps.length < 8; // Máximo 8 peticiones por minuto
+  while (offSearchTimestamps.length > 0 && now - offSearchTimestamps[0] > 60000) {
+    offSearchTimestamps.shift();
+  }
+  return offSearchTimestamps.length < 8; 
 };
 
 const ensureUploadDirExists = async (dirPath) => {
@@ -63,7 +62,6 @@ const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
 
     return `/images/food/${webpFilename}`;
   } catch (error) {
-    console.error(`Error al descargar o convertir la imagen ${imageUrl}:`, error.message);
     return null;
   }
 };
@@ -124,9 +122,14 @@ const checkCalorieTargetReward = async (userId, logDate) => {
     const userActivity = activity_level || 1.2;
     const userGender = gender || 'male';
 
-    let bmr = userGender === 'male' ? 10 * weight + 6.25 * userHeight - 5 * userAge + 5 : 10 * weight + 6.25 * userHeight - 5 * userAge - 161;
+    let bmr = userGender === 'male' 
+      ? 10 * weight + 6.25 * userHeight - 5 * userAge + 5 
+      : 10 * weight + 6.25 * userHeight - 5 * userAge - 161;
     let target = bmr * userActivity;
-    if (goal === 'lose') target -= 500; else if (goal === 'gain') target += 500;
+    
+    if (goal === 'lose') target -= 500; 
+    else if (goal === 'gain') target += 500;
+    
     target = Math.round(target);
 
     const totalCalories = await NutritionLog.sum('calories', { where: { user_id: userId, log_date: logDate } }) || 0;
@@ -136,7 +139,6 @@ const checkCalorieTargetReward = async (userId, logDate) => {
     }
     return null;
   } catch (error) {
-    console.error('Error verificando recompensa de calorías:', error);
     return null;
   }
 };
@@ -177,8 +179,7 @@ const getRecentMeals = async (req, res, next) => {
         uniqueMeals.push(log);
       }
     }
-    const result = uniqueMeals.slice(0, 20);
-    res.json(result);
+    res.json(uniqueMeals.slice(0, 20));
   } catch (error) {
     next(error);
   }
@@ -232,10 +233,7 @@ const addFoodLog = async (req, res, next) => {
     const finalImageUrl = (req.file && req.file.processedPath) ? req.file.processedPath : sanitizedImageUrl;
 
     const foodData = {
-      user_id: userId,
-      log_date,
-      meal_type,
-      description,
+      user_id: userId, log_date, meal_type, description,
       calories: calories || 0,
       protein_g: protein_g || null,
       carbs_g: carbs_g || null,
@@ -286,7 +284,7 @@ const addFoodLog = async (req, res, next) => {
       if (calorieResult && calorieResult.success) {
         gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
       }
-    } catch (gError) { console.error('Error gamificación:', gError); }
+    } catch (gError) {}
 
     res.status(201).json({ ...newLog.toJSON(), gamification: gamificationEvents });
 
@@ -444,7 +442,7 @@ const upsertWaterLog = async (req, res, next) => {
 
       const todayStr = new Date().toISOString().split('T')[0];
       checkStreak(userId, todayStr).catch(() => { });
-    } catch (gError) { console.error('Error gamificación:', gError); }
+    } catch (gError) { }
 
     res.json({ ...waterLog.toJSON(), gamification: gamificationEvents });
   } catch (error) { next(error); }
@@ -453,13 +451,11 @@ const upsertWaterLog = async (req, res, next) => {
 const searchByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
-    console.log(`[BACKEND] Buscando código: ${barcode}`);
-
     const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
 
     const response = await axios.get(apiUrl, {
-      timeout: 6000,
-      headers: { 'User-Agent': 'FitApp_Backend/1.0 (contacto@tuapp.com)' }
+      timeout: 8000, 
+      headers: { 'User-Agent': 'FitApp_Backend/1.0 (profitnessglass@gmail.com)' }
     });
 
     if (!response.data || response.data.status === 0 || !response.data.product) {
@@ -476,35 +472,35 @@ const searchByBarcode = async (req, res, next) => {
       localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
     }
 
-    const foodData = {
-      product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
-      nutriments: nutriments,
-      image_url: localImageUrl,
-      serving_quantity: product.serving_quantity || null
-    };
-
-    res.json({ product: foodData });
+    res.json({
+      product: {
+        product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
+        nutriments: nutriments,
+        image_url: localImageUrl,
+        serving_quantity: product.serving_quantity || null
+      }
+    });
   } catch (error) {
-    console.error(`Error barcode ${req.params.barcode}:`, error.message);
+    if (error.code === 'ECONNABORTED' || (error.message && error.message.includes('timeout'))) {
+      return res.status(408).json({ error: 'El servidor tardó demasiado en responder.' });
+    }
     if (error.response && error.response.status === 404) return res.status(404).json({ product: { product_name: 'No encontrado' } });
     next(error);
   }
 };
 
-const uploadFoodImage = async (req, res, next) => { if (req.imageUrl) res.status(201).json({ imageUrl: req.imageUrl }); else res.status(400).json({ error: "No se procesó ninguna imagen." }); };
+const uploadFoodImage = async (req, res, next) => {
+  if (req.imageUrl) res.status(201).json({ imageUrl: req.imageUrl });
+  else res.status(400).json({ error: "No se procesó ninguna imagen." });
+};
 
 const searchFoods = async (req, res, next) => {
   try {
     const { q } = req.query;
     if (!q) return res.json([]);
 
-    console.log(`\n=========================================`);
-    console.log(`[BACKEND] 🔍 Iniciando búsqueda para: "${q}"`);
-
     const searchTerm = q.toLowerCase().trim();
     const searchPattern = `%${searchTerm}%`;
-
-    console.log(`[BACKEND] 🏠 Consultando tablas locales...`);
 
     const [favoriteResults, localFoods] = await Promise.all([
       FavoriteMeal.findAll({
@@ -526,8 +522,6 @@ const searchFoods = async (req, res, next) => {
         raw: true
       }) : Promise.resolve([])
     ]);
-
-    console.log(`[BACKEND] ⭐ Favoritos: ${favoriteResults.length} | 🏠 Locales: ${localFoods.length}`);
 
     const formattedFavorites = favoriteResults.map(f => ({
       ...f, source: 'local', calories_per_100g: (f.weight_g > 0) ? (f.calories / f.weight_g * 100) : 0
@@ -556,22 +550,15 @@ const searchFoods = async (req, res, next) => {
     if (searchCache.has(searchTerm)) {
       const cachedData = searchCache.get(searchTerm);
       if (Date.now() - cachedData.timestamp < CACHE_TTL) {
-        console.log(`[BACKEND] ⚡ Búsqueda devuelta desde CACHÉ`);
         return res.json([...localResults, ...cachedData.results]);
       }
     }
 
     let externalResults = [];
 
-    if (!canMakeOffSearch()) {
-      console.log(`[BACKEND] 🛑 Límite de seguridad alcanzado. Evitando baneo. Devolviendo locales.`);
-    } else {
+    if (canMakeOffSearch()) {
       try {
-        console.log(`[BACKEND] 🌐 Consultando OpenFoodFacts...`);
         offSearchTimestamps.push(Date.now());
-
-        // Timeout ultracorto (4 segundos). Si tarda más de 4s es que estás baneado o el servidor va mal.
-        // Cortamos rápido y damos la experiencia fluida con los datos locales.
         const offRes = await axios.get(`https://world.openfoodfacts.org/cgi/search.pl`, {
           params: {
             search_terms: q,
@@ -582,7 +569,7 @@ const searchFoods = async (req, res, next) => {
             fields: 'code,product_name,product_name_es,generic_name,nutriments,image_front_small_url'
           },
           timeout: 4000,
-          headers: { 'User-Agent': 'FitApp_Backend/1.0 (contacto@tuapp.com)' }
+          headers: { 'User-Agent': 'FitApp_Backend/1.0 (profitnessglass@gmail.com)' }
         });
 
         if (offRes.data && offRes.data.products) {
@@ -606,17 +593,11 @@ const searchFoods = async (req, res, next) => {
 
           searchCache.set(searchTerm, { timestamp: Date.now(), results: externalResults });
         }
-      } catch (err) {
-        console.log(`[BACKEND] ⚠️ OFF falló (${err.message}). Devolviendo solo locales.`);
-      }
+      } catch (err) {}
     }
-
-    console.log(`[BACKEND] 🏁 Enviando al frontend: ${localResults.length + externalResults.length} resultados`);
-    console.log(`=========================================\n`);
 
     res.json([...localResults, ...externalResults]);
   } catch (error) {
-    console.error(`[BACKEND] 💥 Error general en searchFoods:`, error);
     next(error);
   }
 };
