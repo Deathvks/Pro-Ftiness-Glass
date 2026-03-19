@@ -42,11 +42,8 @@ const RoutineHeader = ({
     const folderWrapperRef = useRef(null);
     const [isFolderOpen, setIsFolderOpen] = useState(false);
     const [isPixabayOpen, setIsPixabayOpen] = useState(false);
-    
-    // Estado para controlar si la imagen falla y no hacer bucles infinitos
     const [imgError, setImgError] = useState(false);
 
-    // Reiniciar el error si el usuario selecciona una nueva imagen
     useEffect(() => {
         setImgError(false);
     }, [imageUrl]);
@@ -75,28 +72,25 @@ const RoutineHeader = ({
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file && onImageUpload) {
-            onImageUpload(file);
-        }
+        if (file && onImageUpload) onImageUpload(file);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const isCssBackground = (value) => {
-        return value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
-    };
+    const isCssBackground = (value) => value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
 
     const getDisplayImageUrl = (path) => {
         if (!path || isCssBackground(path)) return null;
         if (path.startsWith('blob:')) return path;
 
-        // Limpiar "localhost" por si la BD guardó accidentalmente la URL local
         let cleanPath = path.replace(/http:\/\/localhost:\d+/g, '');
-
         if (cleanPath.startsWith('http')) return cleanPath;
         
-        // Cargar desde tu variable de Zeabur
         const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
-        const base = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+        let base = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+        
+        if (base.endsWith('/api')) {
+            base = base.slice(0, -4);
+        }
 
         if (cleanPath.startsWith('/uploads') || cleanPath.startsWith('/images')) {
             return `${base}${cleanPath}`;
@@ -107,11 +101,6 @@ const RoutineHeader = ({
     const handleSelectFolder = (selectedFolder) => {
         setFolder(selectedFolder);
         setIsFolderOpen(false);
-    };
-
-    const handlePixabaySelect = (url) => {
-        setImageUrl(url);
-        setIsPixabayOpen(false);
     };
 
     return (
@@ -317,7 +306,7 @@ const RoutineHeader = ({
             <PixabayModal 
                 isOpen={isPixabayOpen} 
                 onClose={() => setIsPixabayOpen(false)} 
-                onSelectImage={handlePixabaySelect} 
+                onSelectImage={(url) => { setImageUrl(url); setIsPixabayOpen(false); }} 
             />
         </>
     );
