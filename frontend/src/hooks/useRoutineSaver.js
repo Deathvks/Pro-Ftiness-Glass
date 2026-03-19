@@ -104,11 +104,17 @@ export const useRoutineSaver = ({
     if (!validateRoutine()) return;
     setIsSaving(true);
 
+    // LIMPIEZA DEFINITIVA: Si la URL que viene del estado tiene localhost (por ser una rutina vieja), se lo quitamos antes de guardar en la BD.
+    let cleanImageUrl = imageUrl;
+    if (cleanImageUrl) {
+        cleanImageUrl = cleanImageUrl.replace(/http:\/\/localhost:\d+/g, '');
+    }
+
     // 1. Preparamos los datos de la rutina para la API
     const routineData = {
       name: routineName,
       description: description,
-      image_url: imageUrl,
+      image_url: cleanImageUrl,
       folder: folder || null, // <-- Enviamos la carpeta al backend
       exercises: exercises.map((ex, index) => {
         // Normalizamos el 'rest_seconds'
