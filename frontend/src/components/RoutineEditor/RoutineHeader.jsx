@@ -43,8 +43,13 @@ const RoutineHeader = ({
     const [isFolderOpen, setIsFolderOpen] = useState(false);
     const [isPixabayOpen, setIsPixabayOpen] = useState(false);
     
-    // CORRECCIÓN: Usar la variable correcta de tu entorno (VITE_API_BASE_URL)
-    const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+    // Estado para controlar si la imagen falla y no hacer bucles infinitos
+    const [imgError, setImgError] = useState(false);
+
+    // Reiniciar el error si el usuario selecciona una nueva imagen
+    useEffect(() => {
+        setImgError(false);
+    }, [imageUrl]);
 
     const routines = useAppStore(state => state.routines);
     const uniqueFolders = useMemo(() => {
@@ -82,9 +87,21 @@ const RoutineHeader = ({
 
     const getDisplayImageUrl = (path) => {
         if (!path || isCssBackground(path)) return null;
-        if (path.startsWith('http') || path.startsWith('blob:')) return path;
-        if (path.startsWith('/uploads') || path.startsWith('/images')) return `${API_URL}${path}`;
-        return path;
+        if (path.startsWith('blob:')) return path;
+
+        // Limpiar "localhost" por si la BD guardó accidentalmente la URL local
+        let cleanPath = path.replace(/http:\/\/localhost:\d+/g, '');
+
+        if (cleanPath.startsWith('http')) return cleanPath;
+        
+        // Cargar desde tu variable de Zeabur
+        const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
+        const base = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+
+        if (cleanPath.startsWith('/uploads') || cleanPath.startsWith('/images')) {
+            return `${base}${cleanPath}`;
+        }
+        return cleanPath;
     };
 
     const handleSelectFolder = (selectedFolder) => {
@@ -125,7 +142,7 @@ const RoutineHeader = ({
 
                 <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
                     <div className="relative w-40 sm:w-48 aspect-video bg-bg-primary rounded-lg overflow-hidden border border-glass-border flex items-center justify-center flex-shrink-0 group shadow-sm">
-                        {imageUrl ? (
+                        {imageUrl && !imgError ? (
                             <>
                                 {isCssBackground(imageUrl) ? (
                                     <div className="w-full h-full transition-transform duration-500 group-hover:scale-105" style={{ background: imageUrl }} />
@@ -134,14 +151,11 @@ const RoutineHeader = ({
                                         src={getDisplayImageUrl(imageUrl)}
                                         alt="Portada"
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        onError={(e) => { 
-                                            e.target.onerror = null; 
-                                            e.target.src = 'https://via.placeholder.com/300x169?text=Error'; 
-                                        }}
+                                        onError={() => setImgError(true)}
                                     />
                                 )}
                                 <button
-                                    onClick={() => setImageUrl(null)}
+                                    onClick={() => { setImageUrl(null); setImgError(false); }}
                                     className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
                                     title="Eliminar imagen"
                                 >
