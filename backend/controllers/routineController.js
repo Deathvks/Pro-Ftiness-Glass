@@ -168,9 +168,10 @@ const processAndSaveExercises = async (
         }
       }
 
+      // CORRECCIÓN APLICADA AQUÍ: Truncar para que MySQL no lance "Data too long"
       return {
-        name: exerciseName,
-        muscle_group: muscleGroup,
+        name: exerciseName ? String(exerciseName).substring(0, 255) : "Ejercicio Manual",
+        muscle_group: muscleGroup ? String(muscleGroup).substring(0, 100) : "Varios",
         sets: ex.sets,
         reps: ex.reps,
         rest_seconds: ex.rest_seconds,
