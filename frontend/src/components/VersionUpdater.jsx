@@ -52,7 +52,7 @@ const VersionUpdater = () => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-[9999]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[9999]">
             <div className="bg-bg-primary border border-glass-border rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
                 <div className="mx-auto w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mb-4">
                     {isChunkError ? (
@@ -62,11 +62,11 @@ const VersionUpdater = () => {
                     )}
                 </div>
 
-                <h3 className="text-xl font-bold mb-2 text-white">
+                <h3 className="text-xl font-bold mb-2 text-text-primary">
                     {isChunkError ? 'Recarga necesaria' : 'Nueva versión disponible'}
                 </h3>
 
-                <p className="text-text-muted mb-6 text-sm">
+                <p className="text-text-secondary mb-6 text-sm">
                     {isChunkError
                         ? 'Hemos detectado un problema de conexión con la versión actual. Recarga para solucionar el bloqueo.'
                         : 'Hay una actualización lista con mejoras y correcciones. Actualiza ahora para disfrutar de la mejor experiencia.'}
@@ -74,7 +74,7 @@ const VersionUpdater = () => {
 
                 <button
                     onClick={handleUpdate}
-                    className="w-full py-3 px-4 bg-accent text-bg-primary font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 px-4 bg-accent text-white font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2"
                 >
                     <RefreshCw size={18} />
                     Actualizar ahora

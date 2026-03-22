@@ -18,12 +18,12 @@ import SEOHead from '../components/SEOHead';
 import { Capacitor } from '@capacitor/core';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
-    <div className="flex w-full min-h-screen bg-bg-primary overflow-hidden">
+    <div className="flex w-full min-h-[100dvh] bg-bg-primary overflow-hidden">
         {/* Panel Izquierdo - Ancho reducido al 30%, Sólido con Color y Animaciones */}
-        <div className="hidden lg:flex flex-col justify-center items-center w-[30%] relative bg-bg-secondary border-r border-glass-border p-8 overflow-hidden">
+        <div className="hidden lg:flex flex-col justify-center items-center w-[30%] min-h-[100dvh] relative bg-bg-secondary border-r border-glass-border p-8 overflow-hidden">
             {/* Fondo de cuadrícula arquitectónica */}
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
-            
+
             {/* Orbes de luz animadas y vibrantes para dar color */}
             <div className="absolute top-1/4 -left-10 w-48 h-48 bg-accent/30 rounded-full mix-blend-screen filter blur-[60px] animate-[pulse_4s_ease-in-out_infinite]"></div>
             <div className="absolute bottom-10 -right-10 w-64 h-64 bg-[#3b82f6]/20 rounded-full mix-blend-screen filter blur-[80px] animate-[pulse_5s_ease-in-out_infinite]"></div>
@@ -31,7 +31,7 @@ const SplitLayout = ({ children, onShowPolicy }) => (
 
             <div className="relative z-10 w-full max-w-[400px] flex flex-col items-center">
                 <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-accent mb-4 text-center tracking-tight drop-shadow-sm">Pro Fitness Glass</h2>
-                
+
                 {/* Etiqueta Gratis y Sin Anuncios con borde suave */}
                 <div className="mb-8 w-full flex justify-center">
                     <div className="bg-bg-secondary/40 border border-glass-border px-6 py-2.5 rounded-2xl shadow-sm backdrop-blur-md flex items-center justify-center gap-2 whitespace-nowrap transition-transform hover:scale-105 cursor-default">
@@ -43,7 +43,7 @@ const SplitLayout = ({ children, onShowPolicy }) => (
                 </div>
 
                 <p className="text-text-secondary text-sm text-center mb-10 font-medium">Tu ecosistema definitivo para transform tu físico, impulsado por datos reales.</p>
-                
+
                 {/* Grid Sólido (Bento Box / Columnas) con fondos más opacos para mejor legibilidad */}
                 <div className="grid grid-cols-2 gap-4 w-full">
                     <div className="bg-bg-primary/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-glass-border border-t-4 border-t-accent transition-all duration-500 hover:-translate-y-2 hover:shadow-accent/20 hover:shadow-2xl relative overflow-hidden group">
@@ -76,13 +76,13 @@ const SplitLayout = ({ children, onShowPolicy }) => (
                 </div>
             </div>
         </div>
-        
-        {/* Panel Derecho - Ancho ajustado al 70% */}
-        <div className="flex flex-col items-center justify-center w-full lg:w-[70%] py-8 px-4 relative z-10">
+
+        {/* Panel Derecho - Añadido overflow-y-auto y min-h-[100dvh] para centrado perfecto */}
+        <div className="flex flex-col items-center justify-center flex-1 w-full lg:w-[70%] min-h-[100dvh] py-8 px-4 relative z-10 overflow-y-auto">
             <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none"></div>
-            <div className="w-full max-w-sm text-center relative z-10 animate-[fade-in_0.5s_ease-out]">
+            <div className="w-full max-w-sm text-center relative z-10 animate-[fade-in_0.5s_ease-out] my-auto">
                 {children}
-                
+
                 {/* Enlaces de Privacidad y Términos */}
                 <div className="mt-6 sm:mt-8 text-xs text-text-muted px-2">
                     Al continuar, aceptas nuestros{' '}
@@ -164,7 +164,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             const params = new URLSearchParams(search);
             const code = params.get('code');
             const state = params.get('state');
-            
+
             if (code) {
                 if (state === 'x') {
                     processXToken(code);
@@ -211,12 +211,12 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const handleXClick = async () => {
         const X_CLIENT_ID = import.meta.env.VITE_X_CLIENT_ID || 'TU_X_CLIENT_ID';
         const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-        
+
         const verifier = generateCodeVerifier();
         sessionStorage.setItem('x_code_verifier', verifier);
-        
+
         const challenge = await generateCodeChallenge(verifier);
-        
+
         const xAuthUrl = `https://x.com/i/oauth2/authorize?response_type=code&client_id=${X_CLIENT_ID}&redirect_uri=${redirectUri}&scope=tweet.read%20users.read&state=x&code_challenge=${challenge}&code_challenge_method=S256`;
         window.location.href = xAuthUrl;
     };
@@ -231,7 +231,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
             const redirectUri = window.location.origin + window.location.pathname;
             const codeVerifier = sessionStorage.getItem('x_code_verifier');
-            
+
             if (!codeVerifier) {
                 throw new Error("No se encontró el verificador de seguridad.");
             }
@@ -382,7 +382,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             try {
                 const user = await signInWithGoogle();
                 const token = user.authentication?.idToken;
-                
+
                 if (token) {
                     await processGoogleToken(token);
                 } else {
@@ -588,7 +588,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         <>
             <SEOHead title="Iniciar Sesión - Pro Fitness Glass" description="Accede a tu cuenta de Pro Fitness Glass." route="login" />
             <SplitLayout onShowPolicy={() => setShowPolicy(true)}>
-                
+
                 <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-20 h-20 mx-auto mb-3 object-contain drop-shadow-md transition-transform duration-500 hover:scale-105" />
 
                 {/* Etiqueta Gratis en Móvil */}
@@ -611,28 +611,28 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
                         {errors.api && <p className="text-center text-red text-sm">{errors.api}</p>}
                         <div>
-                            <input 
-                                type="email" 
-                                placeholder="Email" 
-                                className="w-full bg-bg-secondary border border-glass-border rounded-lg px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition text-sm font-medium" 
-                                value={email} 
-                                onChange={(e) => setEmail(e.target.value)} 
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                className="w-full bg-bg-secondary border border-glass-border rounded-lg px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition text-sm font-medium"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                             {errors.email && <p className="form-error-text text-left text-xs mt-1.5 font-medium">{errors.email}</p>}
                         </div>
                         <div>
-                            <input 
-                                type="password" 
-                                placeholder="Contraseña" 
-                                className="w-full bg-bg-secondary border border-glass-border rounded-lg px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition text-sm font-medium" 
-                                value={password} 
-                                onChange={(e) => setPassword(e.target.value)} 
+                            <input
+                                type="password"
+                                placeholder="Contraseña"
+                                className="w-full bg-bg-secondary border border-glass-border rounded-lg px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition text-sm font-medium"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
                             {errors.password && <p className="form-error-text text-left text-xs mt-1.5 font-medium">{errors.password}</p>}
                         </div>
-                        <button 
-                            type="submit" 
-                            disabled={isLoading} 
+                        <button
+                            type="submit"
+                            disabled={isLoading}
                             className="flex items-center justify-center gap-2 w-full rounded-lg bg-accent text-bg-secondary font-bold py-3 transition-transform hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-sm mt-2"
                         >
                             {isLoading ? <Spinner /> : <><LogIn size={18} /> <span>Iniciar Sesión</span></>}
@@ -666,7 +666,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         >
                             <FaDiscord size={20} />
                         </button>
-                        
+
                         {/* <button
                             onClick={handleFacebookClick}
                             disabled={isLoading}
@@ -715,22 +715,22 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
                     {/* Fila adaptable: Columna en móvil, Fila en PC/Tablets con whitespace-nowrap */}
                     <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
-                        <button 
+                        <button
                             onClick={(e) => {
                                 e.preventDefault();
                                 showForgotPassword();
-                            }} 
+                            }}
                             type="button"
                             className="text-text-secondary hover:text-accent transition-colors font-medium text-sm whitespace-nowrap"
                         >
                             ¿Olvidaste la contraseña?
                         </button>
                         <span className="text-glass-border text-sm hidden sm:block">|</span>
-                        <button 
+                        <button
                             onClick={(e) => {
                                 e.preventDefault();
                                 showRegister();
-                            }} 
+                            }}
                             type="button"
                             className="text-text-secondary hover:text-accent transition-colors font-medium text-sm whitespace-nowrap"
                         >
