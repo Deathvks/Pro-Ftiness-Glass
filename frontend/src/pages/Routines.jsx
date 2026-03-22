@@ -315,7 +315,6 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
 const Routines = ({ setView }) => {
   const { addToast } = useToast();
   const { t } = useTranslation('exercise_names');
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   const {
     routines,
@@ -389,12 +388,27 @@ const Routines = ({ setView }) => {
     return value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
   };
 
+  // Lógica centralizada para mostrar imágenes compatible con subidas antiguas y nuevas
   const getDisplayImageUrl = (path) => {
-    if (!path) return null;
-    if (isCssBackground(path)) return null;
-    if (path.startsWith('http') || path.startsWith('blob:')) return path;
-    if (path.startsWith('/uploads')) return `${API_URL}${path}`;
-    return path;
+    if (!path || isCssBackground(path)) return null;
+    if (path.startsWith('blob:')) return path;
+
+    // Limpia el localhost si se guardó en BD por error
+    let cleanPath = path.replace(/http:\/\/localhost:\d+/g, '');
+    if (cleanPath.startsWith('http')) return cleanPath;
+    
+    const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
+    let base = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+    
+    // Quita '/api' para apuntar a la raíz donde están los archivos estáticos
+    if (base.endsWith('/api')) {
+        base = base.slice(0, -4);
+    }
+
+    if (cleanPath.startsWith('/uploads') || cleanPath.startsWith('/images')) {
+        return `${base}${cleanPath}`;
+    }
+    return cleanPath;
   };
 
   useEffect(() => {
@@ -475,7 +489,7 @@ const Routines = ({ setView }) => {
       groups.push(currentGroup);
     }
     return groups;
-  };
+  }
 
   const handleSave = async () => {
     setIsLoading(true);

@@ -15,7 +15,6 @@ import {
 import useAppStore from '../../store/useAppStore';
 import PixabayModal from './PixabayModal';
 
-// Colores/Degradados predefinidos
 const PREDEFINED_BACKGROUNDS = [
     'linear-gradient(135deg, var(--color-accent) 0%, var(--bg-primary) 100%)',
     'linear-gradient(to bottom right, var(--bg-secondary), var(--color-accent))',
@@ -43,9 +42,12 @@ const RoutineHeader = ({
     const folderWrapperRef = useRef(null);
     const [isFolderOpen, setIsFolderOpen] = useState(false);
     const [isPixabayOpen, setIsPixabayOpen] = useState(false);
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const [imgError, setImgError] = useState(false);
 
-    // Obtener carpetas únicas del store
+    useEffect(() => {
+        setImgError(false);
+    }, [imageUrl]);
+
     const routines = useAppStore(state => state.routines);
     const uniqueFolders = useMemo(() => {
         if (!routines) return [];
@@ -53,13 +55,11 @@ const RoutineHeader = ({
         return [...new Set(folders)].sort();
     }, [routines]);
 
-    // Filtrar carpetas según lo que escribe el usuario
     const filteredFolders = useMemo(() => {
         if (!folder) return uniqueFolders;
         return uniqueFolders.filter(f => f.toLowerCase().includes(folder.toLowerCase()));
     }, [uniqueFolders, folder]);
 
-    // Cerrar el dropdown si se hace click fuera
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (folderWrapperRef.current && !folderWrapperRef.current.contains(event.target)) {
@@ -72,31 +72,35 @@ const RoutineHeader = ({
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file && onImageUpload) {
-            onImageUpload(file);
-        }
+        if (file && onImageUpload) onImageUpload(file);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const isCssBackground = (value) => {
-        return value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
-    };
+    const isCssBackground = (value) => value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
 
     const getDisplayImageUrl = (path) => {
         if (!path || isCssBackground(path)) return null;
-        if (path.startsWith('http') || path.startsWith('blob:')) return path;
-        if (path.startsWith('/uploads')) return `${API_URL}${path}`;
-        return path;
+        if (path.startsWith('blob:')) return path;
+
+        let cleanPath = path.replace(/http:\/\/localhost:\d+/g, '');
+        if (cleanPath.startsWith('http')) return cleanPath;
+        
+        const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
+        let base = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+        
+        if (base.endsWith('/api')) {
+            base = base.slice(0, -4);
+        }
+
+        if (cleanPath.startsWith('/uploads') || cleanPath.startsWith('/images')) {
+            return `${base}${cleanPath}`;
+        }
+        return cleanPath;
     };
 
     const handleSelectFolder = (selectedFolder) => {
         setFolder(selectedFolder);
         setIsFolderOpen(false);
-    };
-
-    const handlePixabaySelect = (url) => {
-        setImageUrl(url);
-        setIsPixabayOpen(false);
     };
 
     return (
@@ -120,16 +124,14 @@ const RoutineHeader = ({
                 </div>
             )}
 
-            {/* --- SECCIÓN DE IMAGEN --- */}
             <div className="mb-6 bg-bg-secondary rounded-xl p-4 border border-glass-border shadow-sm">
                 <label className="block text-sm font-medium text-text-secondary mb-3">
                     Imagen de Portada
                 </label>
 
                 <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
-                    {/* Previsualización */}
                     <div className="relative w-40 sm:w-48 aspect-video bg-bg-primary rounded-lg overflow-hidden border border-glass-border flex items-center justify-center flex-shrink-0 group shadow-sm">
-                        {imageUrl ? (
+                        {imageUrl && !imgError ? (
                             <>
                                 {isCssBackground(imageUrl) ? (
                                     <div className="w-full h-full transition-transform duration-500 group-hover:scale-105" style={{ background: imageUrl }} />
@@ -138,11 +140,11 @@ const RoutineHeader = ({
                                         src={getDisplayImageUrl(imageUrl)}
                                         alt="Portada"
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        onError={(e) => { e.target.src = 'https://via.placeholder.com/300x169?text=Error'; }}
+                                        onError={() => setImgError(true)}
                                     />
                                 )}
                                 <button
-                                    onClick={() => setImageUrl(null)}
+                                    onClick={() => { setImageUrl(null); setImgError(false); }}
                                     className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
                                     title="Eliminar imagen"
                                 >
@@ -162,7 +164,6 @@ const RoutineHeader = ({
                         )}
                     </div>
 
-                    {/* Controles Imagen */}
                     <div className="flex-1 w-full space-y-4">
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
@@ -208,7 +209,6 @@ const RoutineHeader = ({
                 </div>
             </div>
 
-            {/* --- CAMPOS DE TEXTO --- */}
             <div className="mb-6 space-y-4">
                 <input
                     type="text"
@@ -218,7 +218,6 @@ const RoutineHeader = ({
                     className="w-full px-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent text-lg placeholder-text-tertiary"
                 />
 
-                {/* --- CUSTOM SELECT / CREATABLE COMBOBOX PARA CARPETAS --- */}
                 <div className="relative" ref={folderWrapperRef}>
                     <div className="relative">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none">
@@ -249,7 +248,6 @@ const RoutineHeader = ({
                         </button>
                     </div>
 
-                    {/* DROPDOWN MENU */}
                     {isFolderOpen && (
                         <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary border border-glass-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
                             {filteredFolders.length > 0 ? (
@@ -265,7 +263,6 @@ const RoutineHeader = ({
                                             {folder === f && <Check size={16} className="text-accent" />}
                                         </li>
                                     ))}
-                                    {/* Opción de crear si no coincide exactamente */}
                                     {folder && !uniqueFolders.includes(folder) && (
                                         <li
                                             onClick={() => handleSelectFolder(folder)}
@@ -306,11 +303,10 @@ const RoutineHeader = ({
                 />
             </div>
 
-            {/* Modal de Pixabay */}
             <PixabayModal 
                 isOpen={isPixabayOpen} 
                 onClose={() => setIsPixabayOpen(false)} 
-                onSelectImage={handlePixabaySelect} 
+                onSelectImage={(url) => { setImageUrl(url); setIsPixabayOpen(false); }} 
             />
         </>
     );
