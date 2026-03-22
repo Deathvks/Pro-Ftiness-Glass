@@ -40,86 +40,86 @@ const styles = `
 
 // --- CONFIGURACIÓN DE RUTINAS DIVIDIDAS (3 DÍAS) ---
 const SPLIT_ROUTINES_CONFIG = {
-    lose: [
-        {
-            name: 'Día 1: Circuito Metabólico A',
-            description: 'Alta intensidad enfocada en tren inferior y cardio.',
-            keywords: ['Squat', 'Sentadilla', 'Zancada', 'Lunge', 'Burpee', 'Jumping', 'Comba'],
-            sets: 4, reps: '15-20'
-        },
-        {
-            name: 'Día 2: Circuito Metabólico B',
-            description: 'Enfoque en tren superior y core para quemar calorías.',
-            keywords: ['Push Up', 'Flexiones', 'Plank', 'Plancha', 'Row', 'Remo', 'Mountain', 'Escalador'],
-            sets: 4, reps: '12-15'
-        },
-        {
-            name: 'Día 3: Full Body Burn',
-            description: 'Rutina de cuerpo completo para maximizar el gasto energético semanal.',
-            keywords: ['Deadlift', 'Peso Muerto', 'Press', 'Thruster', 'Swing', 'Kettlebell', 'Cardio'],
-            sets: 3, reps: '15'
-        }
-    ],
-    gain: [
-        {
-            name: 'Día 1: Empuje (Push)',
-            description: 'Pecho, Hombros y Tríceps. Enfoque en fuerza e hipertrofia.',
-            keywords: ['Bench Press', 'Press de Banca', 'Overhead', 'Militar', 'Push Up', 'Flexiones', 'Triceps', 'Lateral', 'Aperturas', 'Fly'],
-            sets: 3, reps: '8-12'
-        },
-        {
-            name: 'Día 2: Tracción (Pull)',
-            description: 'Espalda y Bíceps. Construcción de la cadena posterior.',
-            keywords: ['Pull Up', 'Dominada', 'Row', 'Remo', 'Deadlift', 'Peso Muerto', 'Curl', 'Jalón', 'Lat'],
-            sets: 3, reps: '8-12'
-        },
-        {
-            name: 'Día 3: Pierna (Legs)',
-            description: 'Entrenamiento completo de tren inferior.',
-            keywords: ['Squat', 'Sentadilla', 'Leg Press', 'Prensa', 'Lunge', 'Zancada', 'Extension', 'Curl Femoral', 'Calf', 'Gemelo'],
-            sets: 4, reps: '10-12'
-        }
-    ],
-    recomp: [
-        {
-            name: 'Día 1: Torso Pesado',
-            description: 'Fuerza para la parte superior del cuerpo.',
-            keywords: ['Press de Banca', 'Bench', 'Row', 'Remo', 'Militar', 'Overhead', 'Pull Up', 'Dominada'],
-            sets: 4, reps: '6-8'
-        },
-        {
-            name: 'Día 2: Pierna Pesada',
-            description: 'Fuerza y potencia para el tren inferior.',
-            keywords: ['Squat', 'Sentadilla', 'Deadlift', 'Peso Muerto', 'Prensa', 'Leg Press', 'Hip Thrust'],
-            sets: 4, reps: '6-8'
-        },
-        {
-            name: 'Día 3: Full Body Hipertrofia',
-            description: 'Volumen y bombeo para todo el cuerpo.',
-            keywords: ['Curl', 'Extension', 'Lateral', 'Fly', 'Aperturas', 'Zancada', 'Lunge', 'Face Pull'],
-            sets: 3, reps: '12-15'
-        }
-    ],
-    maintain: [
-        {
-            name: 'Día 1: Full Body A',
-            description: 'Ejercicios compuestos básicos.',
-            keywords: ['Squat', 'Sentadilla', 'Bench', 'Press de Banca', 'Row', 'Remo'],
-            sets: 3, reps: '10'
-        },
-        {
-            name: 'Día 2: Movilidad y Core',
-            description: 'Recuperación activa, abdominales y estabilidad.',
-            keywords: ['Plank', 'Plancha', 'Crunch', 'Abdominal', 'Stretch', 'Estiramiento', 'Yoga', 'Bird Dog'],
-            sets: 3, reps: '15'
-        },
-        {
-            name: 'Día 3: Full Body B',
-            description: 'Variaciones de ejercicios compuestos.',
-            keywords: ['Deadlift', 'Peso Muerto', 'Militar', 'Press', 'Lunge', 'Zancada', 'Dominada', 'Pull Up'],
-            sets: 3, reps: '10'
-        }
-    ]
+  lose: [
+    {
+      name: 'Día 1: Circuito Metabólico A',
+      description: 'Alta intensidad enfocada en tren inferior y cardio.',
+      keywords: ['Squat', 'Sentadilla', 'Zancada', 'Lunge', 'Burpee', 'Jumping', 'Comba'],
+      sets: 4, reps: '15-20'
+    },
+    {
+      name: 'Día 2: Circuito Metabólico B',
+      description: 'Enfoque en tren superior y core para quemar calorías.',
+      keywords: ['Push Up', 'Flexiones', 'Plank', 'Plancha', 'Row', 'Remo', 'Mountain', 'Escalador'],
+      sets: 4, reps: '12-15'
+    },
+    {
+      name: 'Día 3: Full Body Burn',
+      description: 'Rutina de cuerpo completo para maximizar el gasto energético semanal.',
+      keywords: ['Deadlift', 'Peso Muerto', 'Press', 'Thruster', 'Swing', 'Kettlebell', 'Cardio'],
+      sets: 3, reps: '15'
+    }
+  ],
+  gain: [
+    {
+      name: 'Día 1: Empuje (Push)',
+      description: 'Pecho, Hombros y Tríceps. Enfoque en fuerza e hipertrofia.',
+      keywords: ['Bench Press', 'Press de Banca', 'Overhead', 'Militar', 'Push Up', 'Flexiones', 'Triceps', 'Lateral', 'Aperturas', 'Fly'],
+      sets: 3, reps: '8-12'
+    },
+    {
+      name: 'Día 2: Tracción (Pull)',
+      description: 'Espalda y Bíceps. Construcción de la cadena posterior.',
+      keywords: ['Pull Up', 'Dominada', 'Row', 'Remo', 'Deadlift', 'Peso Muerto', 'Curl', 'Jalón', 'Lat'],
+      sets: 3, reps: '8-12'
+    },
+    {
+      name: 'Día 3: Pierna (Legs)',
+      description: 'Entrenamiento completo de tren inferior.',
+      keywords: ['Squat', 'Sentadilla', 'Leg Press', 'Prensa', 'Lunge', 'Zancada', 'Extension', 'Curl Femoral', 'Calf', 'Gemelo'],
+      sets: 4, reps: '10-12'
+    }
+  ],
+  recomp: [
+    {
+      name: 'Día 1: Torso Pesado',
+      description: 'Fuerza para la parte superior del cuerpo.',
+      keywords: ['Press de Banca', 'Bench', 'Row', 'Remo', 'Militar', 'Overhead', 'Pull Up', 'Dominada'],
+      sets: 4, reps: '6-8'
+    },
+    {
+      name: 'Día 2: Pierna Pesada',
+      description: 'Fuerza y potencia para el tren inferior.',
+      keywords: ['Squat', 'Sentadilla', 'Deadlift', 'Peso Muerto', 'Prensa', 'Leg Press', 'Hip Thrust'],
+      sets: 4, reps: '6-8'
+    },
+    {
+      name: 'Día 3: Full Body Hipertrofia',
+      description: 'Volumen y bombeo para todo el cuerpo.',
+      keywords: ['Curl', 'Extension', 'Lateral', 'Fly', 'Aperturas', 'Zancada', 'Lunge', 'Face Pull'],
+      sets: 3, reps: '12-15'
+    }
+  ],
+  maintain: [
+    {
+      name: 'Día 1: Full Body A',
+      description: 'Ejercicios compuestos básicos.',
+      keywords: ['Squat', 'Sentadilla', 'Bench', 'Press de Banca', 'Row', 'Remo'],
+      sets: 3, reps: '10'
+    },
+    {
+      name: 'Día 2: Movilidad y Core',
+      description: 'Recuperación activa, abdominales y estabilidad.',
+      keywords: ['Plank', 'Plancha', 'Crunch', 'Abdominal', 'Stretch', 'Estiramiento', 'Yoga', 'Bird Dog'],
+      sets: 3, reps: '15'
+    },
+    {
+      name: 'Día 3: Full Body B',
+      description: 'Variaciones de ejercicios compuestos.',
+      keywords: ['Deadlift', 'Peso Muerto', 'Militar', 'Press', 'Lunge', 'Zancada', 'Dominada', 'Pull Up'],
+      sets: 3, reps: '10'
+    }
+  ]
 };
 
 // --- COMPONENTES UI ---
@@ -131,7 +131,7 @@ const AnimContainer = ({ children, direction }) => (
 );
 
 const StoryProgress = ({ total, current }) => (
-  <div className="flex gap-2 w-full px-6 pt-6 z-50">
+  <div className="flex gap-2 w-full px-6 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] z-50">
     {Array.from({ length: total }).map((_, idx) => (
       <div key={idx} className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
         <div
@@ -199,13 +199,13 @@ const FloatingFab = ({ onClick, disabled, isLoading, text, loadingText }) => (
   <button
     onClick={onClick}
     disabled={disabled || isLoading}
-    className="fixed bottom-8 right-6 bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none z-50 text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
+    className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+2rem)] right-6 bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none z-50 text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
   >
     {isLoading ? (
-        <>
-            <Loader2 size={24} className="animate-spin" /> 
-            {loadingText && <span className="text-base font-medium ml-1">{loadingText}</span>}
-        </>
+      <>
+        <Loader2 size={24} className="animate-spin" />
+        {loadingText && <span className="text-base font-medium ml-1">{loadingText}</span>}
+      </>
     ) : (
       <>
         {text} <ChevronRight size={24} strokeWidth={3} />
@@ -217,7 +217,7 @@ const FloatingFab = ({ onClick, disabled, isLoading, text, loadingText }) => (
 const BackButton = ({ onClick }) => (
   <button
     onClick={onClick}
-    className="fixed bottom-8 left-6 p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/10 transition-all active:scale-75 z-50 backdrop-blur-md bg-black/20"
+    className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+2rem)] left-6 p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/10 transition-all active:scale-75 z-50 backdrop-blur-md bg-black/20"
   >
     <ChevronLeft size={28} />
   </button>
@@ -246,20 +246,20 @@ const OnboardingScreen = () => {
 
     const quizDataString = localStorage.getItem('temp_onboarding_data');
     let prefilled = {};
-    
+
     if (quizDataString) {
-        try {
-            const quizData = JSON.parse(quizDataString);
-            if (quizData.currentWeight) prefilled.weight = quizData.currentWeight;
-            if (quizData.targetWeight) prefilled.targetWeight = quizData.targetWeight; 
-            
-            if (quizData.goal === 'muscle') prefilled.goal = 'gain';
-            else if (quizData.goal === 'hybrid') prefilled.goal = 'recomp'; 
-            else if (quizData.goal === 'lose') prefilled.goal = 'lose';
-            
-        } catch (e) {
-            console.error("Error parsing quiz data", e);
-        }
+      try {
+        const quizData = JSON.parse(quizDataString);
+        if (quizData.currentWeight) prefilled.weight = quizData.currentWeight;
+        if (quizData.targetWeight) prefilled.targetWeight = quizData.targetWeight;
+
+        if (quizData.goal === 'muscle') prefilled.goal = 'gain';
+        else if (quizData.goal === 'hybrid') prefilled.goal = 'recomp';
+        else if (quizData.goal === 'lose') prefilled.goal = 'lose';
+
+      } catch (e) {
+        console.error("Error parsing quiz data", e);
+      }
     }
 
     return {
@@ -313,143 +313,143 @@ const OnboardingScreen = () => {
   // --- LÓGICA DE GENERACIÓN DE RUTINA MEJORADA (3 DÍAS) ---
   const handleComplete = async () => {
     setIsLoading(true);
-    
+
     try {
-        setLoadingText('Analizando biotipo...');
-        await new Promise(r => setTimeout(r, 800));
+      setLoadingText('Analizando biotipo...');
+      await new Promise(r => setTimeout(r, 800));
 
-        // --- MODIFICACIÓN: VERIFICAR SI EXISTE EL TEST INTERACTIVO ---
-        const hasQuizData = localStorage.getItem('temp_onboarding_data');
+      // --- MODIFICACIÓN: VERIFICAR SI EXISTE EL TEST INTERACTIVO ---
+      const hasQuizData = localStorage.getItem('temp_onboarding_data');
 
-        if (hasQuizData) {
-            setLoadingText('Diseñando plan de 3 días...');
-            
-            // 1. OBTENER LISTA DE EJERCICIOS
-            const allExercises = await getExerciseList();
-            
-            // 2. SELECCIONAR CONFIGURACIÓN SEGÚN OBJETIVO (O FALLBACK)
-            const routinesToCreate = SPLIT_ROUTINES_CONFIG[formData.goal] || SPLIT_ROUTINES_CONFIG.maintain;
-            let createdCount = 0;
+      if (hasQuizData) {
+        setLoadingText('Diseñando plan de 3 días...');
 
-            // 3. GENERAR LAS 3 RUTINAS SECUENCIALMENTE
-            if (allExercises && allExercises.length > 0) {
-                for (const routineConfig of routinesToCreate) {
-                    
-                    setLoadingText(`Creando ${routineConfig.name}...`);
+        // 1. OBTENER LISTA DE EJERCICIOS
+        const allExercises = await getExerciseList();
 
-                    // Buscar ejercicios que coincidan con las keywords del día
-                    const dayExercises = [];
-                    const foundIds = new Set();
-                    
-                    // Mezclar keywords para variedad si hay muchas
-                    routineConfig.keywords.forEach(keyword => {
-                        const matches = allExercises.filter(ex => 
-                            ex.name.toLowerCase().includes(keyword.toLowerCase()) && 
-                            !foundIds.has(ex.id)
-                        );
+        // 2. SELECCIONAR CONFIGURACIÓN SEGÚN OBJETIVO (O FALLBACK)
+        const routinesToCreate = SPLIT_ROUTINES_CONFIG[formData.goal] || SPLIT_ROUTINES_CONFIG.maintain;
+        let createdCount = 0;
 
-                        // Tomar 1 o 2 ejercicios por keyword para no llenar demasiado
-                        // (Lógica simple: tomamos el primero que encontramos)
-                        if (matches.length > 0) {
-                             const match = matches[0]; // Podríamos hacer random aquí
-                             foundIds.add(match.id);
-                             dayExercises.push({
-                                exercise_id: match.id,
-                                name: match.name,
-                                sets: routineConfig.sets,
-                                reps: routineConfig.reps,
-                                weight: 0,
-                                rest_seconds: 60
-                            });
-                        }
-                    });
+        // 3. GENERAR LAS 3 RUTINAS SECUENCIALMENTE
+        if (allExercises && allExercises.length > 0) {
+          for (const routineConfig of routinesToCreate) {
 
-                    // Si encontramos ejercicios, creamos la rutina
-                    if (dayExercises.length > 0) {
-                         // Limitamos a 6-7 ejercicios por día para que sea realista
-                         const limitedExercises = dayExercises.slice(0, 7);
+            setLoadingText(`Creando ${routineConfig.name}...`);
 
-                         await createRoutine({
-                            name: routineConfig.name,
-                            description: routineConfig.description,
-                            exercises: limitedExercises,
-                            is_public: false
-                        });
-                        createdCount++;
-                    }
-                }
-            }
+            // Buscar ejercicios que coincidan con las keywords del día
+            const dayExercises = [];
+            const foundIds = new Set();
 
-            if (createdCount > 0) {
-                 addToast(`¡Plan de entrenamiento de ${createdCount} días generado!`, 'success');
-            } else {
-                 // Fallback total si no hay ejercicios
-                 await createRoutine({
-                    name: `Plan Base: ${getGoalLabel(formData.goal)}`,
-                    description: "Rutina inicial. ¡Añade tus ejercicios favoritos!",
-                    exercises: [],
-                    is_public: false
+            // Mezclar keywords para variedad si hay muchas
+            routineConfig.keywords.forEach(keyword => {
+              const matches = allExercises.filter(ex =>
+                ex.name.toLowerCase().includes(keyword.toLowerCase()) &&
+                !foundIds.has(ex.id)
+              );
+
+              // Tomar 1 o 2 ejercicios por keyword para no llenar demasiado
+              // (Lógica simple: tomamos el primero que encontramos)
+              if (matches.length > 0) {
+                const match = matches[0]; // Podríamos hacer random aquí
+                foundIds.add(match.id);
+                dayExercises.push({
+                  exercise_id: match.id,
+                  name: match.name,
+                  sets: routineConfig.sets,
+                  reps: routineConfig.reps,
+                  weight: 0,
+                  rest_seconds: 60
                 });
-                addToast('Rutina base creada. ¡Personalízala ahora!', 'info');
+              }
+            });
+
+            // Si encontramos ejercicios, creamos la rutina
+            if (dayExercises.length > 0) {
+              // Limitamos a 6-7 ejercicios por día para que sea realista
+              const limitedExercises = dayExercises.slice(0, 7);
+
+              await createRoutine({
+                name: routineConfig.name,
+                description: routineConfig.description,
+                exercises: limitedExercises,
+                is_public: false
+              });
+              createdCount++;
             }
-        }
-        // SI NO HAY QUIZ DATA, NO SE CREA NINGUNA RUTINA (NI BASE NI CUSTOM)
-
-        // 4. GUARDADO DE PERFIL
-        setLoadingText('Finalizando...');
-        
-        const currentWeight = parseFloat(formData.weight);
-        let safeTargetWeight = currentWeight;
-        let safeGoal = formData.goal;
-        
-        // Mapeo seguro para backend si no soporta 'recomp'
-        if (safeGoal === 'recomp') {
-            safeGoal = 'maintain';
+          }
         }
 
-        if (safeGoal === 'lose') {
-            safeTargetWeight = Math.max(40, currentWeight - 2.5); 
-        } else if (safeGoal === 'gain') {
-            safeTargetWeight = currentWeight + 2.5;
+        if (createdCount > 0) {
+          addToast(`¡Plan de entrenamiento de ${createdCount} días generado!`, 'success');
         } else {
-            safeTargetWeight = currentWeight;
+          // Fallback total si no hay ejercicios
+          await createRoutine({
+            name: `Plan Base: ${getGoalLabel(formData.goal)}`,
+            description: "Rutina inicial. ¡Añade tus ejercicios favoritos!",
+            exercises: [],
+            is_public: false
+          });
+          addToast('Rutina base creada. ¡Personalízala ahora!', 'info');
         }
-        
-        safeTargetWeight = Math.round(safeTargetWeight * 10) / 10;
+      }
+      // SI NO HAY QUIZ DATA, NO SE CREA NINGUNA RUTINA (NI BASE NI CUSTOM)
 
-        const cleanProfileData = {
-            gender: formData.gender,
-            age: parseInt(formData.age, 10),
-            weight: currentWeight,
-            height: parseInt(formData.height, 10),
-            activityLevel: parseFloat(formData.activityLevel),
-            activity_level: parseFloat(formData.activityLevel),
-            goal: safeGoal,
-            targetWeight: safeTargetWeight, 
-            target_weight: safeTargetWeight
-        };
+      // 4. GUARDADO DE PERFIL
+      setLoadingText('Finalizando...');
 
-        const result = await updateUserProfile(cleanProfileData);
-        
-        if (!result.success) {
-            console.error("Error backend:", result.message);
-            throw new Error(result.message);
-        }
+      const currentWeight = parseFloat(formData.weight);
+      let safeTargetWeight = currentWeight;
+      let safeGoal = formData.goal;
 
-        // Limpieza completa al terminar
-        localStorage.removeItem('onboarding_data');
-        localStorage.removeItem('onboarding_step');
-        localStorage.removeItem('temp_onboarding_data'); 
+      // Mapeo seguro para backend si no soporta 'recomp'
+      if (safeGoal === 'recomp') {
+        safeGoal = 'maintain';
+      }
+
+      if (safeGoal === 'lose') {
+        safeTargetWeight = Math.max(40, currentWeight - 2.5);
+      } else if (safeGoal === 'gain') {
+        safeTargetWeight = currentWeight + 2.5;
+      } else {
+        safeTargetWeight = currentWeight;
+      }
+
+      safeTargetWeight = Math.round(safeTargetWeight * 10) / 10;
+
+      const cleanProfileData = {
+        gender: formData.gender,
+        age: parseInt(formData.age, 10),
+        weight: currentWeight,
+        height: parseInt(formData.height, 10),
+        activityLevel: parseFloat(formData.activityLevel),
+        activity_level: parseFloat(formData.activityLevel),
+        goal: safeGoal,
+        targetWeight: safeTargetWeight,
+        target_weight: safeTargetWeight
+      };
+
+      const result = await updateUserProfile(cleanProfileData);
+
+      if (!result.success) {
+        console.error("Error backend:", result.message);
+        throw new Error(result.message);
+      }
+
+      // Limpieza completa al terminar
+      localStorage.removeItem('onboarding_data');
+      localStorage.removeItem('onboarding_step');
+      localStorage.removeItem('temp_onboarding_data');
 
     } catch (err) {
-        console.error("Error en onboarding:", err);
-        localStorage.removeItem('onboarding_data');
-        localStorage.removeItem('onboarding_step');
-        localStorage.removeItem('temp_onboarding_data'); 
-        window.location.href = '/dashboard';
+      console.error("Error en onboarding:", err);
+      localStorage.removeItem('onboarding_data');
+      localStorage.removeItem('onboarding_step');
+      localStorage.removeItem('temp_onboarding_data');
+      window.location.href = '/dashboard';
     } finally {
-        setIsLoading(false);
-        setLoadingText('');
+      setIsLoading(false);
+      setLoadingText('');
     }
   };
 
@@ -553,7 +553,7 @@ const OnboardingScreen = () => {
                     onChange={(e) => handleInput('weight', e.target.value, 'decimal')}
                     placeholder="70.5"
                     unit="kg"
-                    // No autofocus aquí para no molestar si ya viene relleno del paso anterior
+                  // No autofocus aquí para no molestar si ya viene relleno del paso anterior
                   />
                 </div>
               </div>
@@ -655,7 +655,7 @@ const OnboardingScreen = () => {
                 <button onClick={() => setStep(2)} className="relative flex items-center justify-center p-6 hover:bg-white/5 transition-colors group border-b border-black/20 text-center active:bg-white/10">
                   <div className="flex flex-col items-center transition-transform group-hover:scale-105">
                     <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">MEDIDAS</p>
-                    <p className="font-bold text-text-primary text-xl">{formData.height} cm  •  {formData.weight} kg</p>
+                    <p className="font-bold text-text-primary text-xl">{formData.height} cm  •  {formData.weight} kg</p>
                   </div>
                   <div className="absolute right-6 p-2 rounded-full bg-bg-primary/50 text-accent opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-sm">
                     <Edit size={18} />
@@ -676,13 +676,13 @@ const OnboardingScreen = () => {
                   <div className="flex flex-col items-center transition-transform group-hover:scale-105">
                     <p className="text-text-muted text-[10px] uppercase font-black tracking-[0.2em] mb-1">OBJETIVO</p>
                     <div className="flex flex-col items-center">
-                        <p className="font-black text-accent text-xl uppercase tracking-tight shadow-accent drop-shadow-sm">{getGoalLabel(formData.goal)}</p>
-                        {/* MOSTRAR META DEL ONBOARDING EMOCIONAL SI EXISTE */}
-                        {formData.targetWeight && (
-                            <span className="text-xs font-bold text-text-secondary mt-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
-                                Meta: {formData.targetWeight} kg
-                            </span>
-                        )}
+                      <p className="font-black text-accent text-xl uppercase tracking-tight shadow-accent drop-shadow-sm">{getGoalLabel(formData.goal)}</p>
+                      {/* MOSTRAR META DEL ONBOARDING EMOCIONAL SI EXISTE */}
+                      {formData.targetWeight && (
+                        <span className="text-xs font-bold text-text-secondary mt-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                          Meta: {formData.targetWeight} kg
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="absolute right-6 p-2 rounded-full bg-bg-primary/50 text-accent opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all shadow-sm">
@@ -709,7 +709,7 @@ const OnboardingScreen = () => {
         <StoryProgress total={totalSteps} current={step} />
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden w-full relative z-10">
-          <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 max-w-2xl mx-auto py-20">
+          <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 max-w-2xl mx-auto pt-20 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)]">
             <div className="w-full">
               {renderContent()}
             </div>

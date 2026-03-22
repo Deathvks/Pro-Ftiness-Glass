@@ -27,11 +27,8 @@ const DynamicIslandTimer = () => {
     const [timeLeft, setTimeLeft] = useState(0);
     const [progress, setProgress] = useState(100);
     const [isBlinking, setIsBlinking] = useState(true);
-
-    // Estado para la expansión de la isla
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Refs para controlar el Long Press y evitar clicks fantasma
     const longPressTimerRef = useRef(null);
     const isLongPressRef = useRef(false);
     const containerRef = useRef(null);
@@ -80,13 +77,11 @@ const DynamicIslandTimer = () => {
         }
     }, [isFinished]);
 
-
-    // --- Lógica de Long Press Mejorada ---
     const handlePressStart = () => {
         isLongPressRef.current = false;
         longPressTimerRef.current = setTimeout(() => {
             isLongPressRef.current = true;
-            ignoreClickRef.current = true; // Activar escudo para evitar click inmediato al soltar
+            ignoreClickRef.current = true;
 
             setIsExpanded(true);
             if (navigator.vibrate) navigator.vibrate(50);
@@ -96,23 +91,28 @@ const DynamicIslandTimer = () => {
     };
 
     const handlePressEnd = () => {
-        // Solo limpiamos el timer. La acción corta se maneja en onClick.
         clearTimeout(longPressTimerRef.current);
     };
 
-    // --- Handler para el Click Corto (Play/Pausa o Maximizar) ---
     const handleShortClick = (e, action) => {
         e.stopPropagation();
-        // Solo ejecutamos si NO fue un long press
         if (!isLongPressRef.current) {
             action();
         }
     };
 
+    const handleOverlayInteraction = (e) => {
+        e.stopPropagation();
+        if (e.type === 'touchstart') {
+            e.preventDefault();
+        }
+        setIsExpanded(false);
+    };
+
     const handleBackgroundClick = (e) => {
+        e.stopPropagation();
         if (ignoreClickRef.current) {
             ignoreClickRef.current = false;
-            e.stopPropagation();
             return;
         }
         setIsExpanded(false);
@@ -134,24 +134,17 @@ const DynamicIslandTimer = () => {
 
     return (
         <>
-            {/* Overlay invisible para atrapar clicks cuando está expandida */}
             {isExpanded && (
-                <div 
-                    className="fixed inset-0 z-[90]" 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setIsExpanded(false);
-                    }}
-                    onTouchStart={(e) => {
-                        e.stopPropagation();
-                        setIsExpanded(false);
-                    }}
+                <div
+                    className="fixed inset-0 z-[90]"
+                    onClick={handleOverlayInteraction}
+                    onTouchStart={handleOverlayInteraction}
                 />
             )}
 
             <div
                 ref={containerRef}
-                className="fixed top-3 left-1/2 -translate-x-1/2 z-[100] animate-[fade-in_0.3s_ease-out] flex flex-col items-center"
+                className="fixed top-[calc(env(safe-area-inset-top,0px)+12px)] left-1/2 -translate-x-1/2 z-[100] animate-[fade-in_0.3s_ease-out] flex flex-col items-center"
             >
                 <div className={`
                     relative bg-black text-white shadow-2xl 
@@ -169,28 +162,23 @@ const DynamicIslandTimer = () => {
                     }
                 `}>
 
-                    {/* --- PROGRESS BAR (Solo visible en modo píldora) --- */}
                     <div
                         className={`absolute bottom-0 left-0 h-[2px] bg-accent transition-opacity duration-300 ${!isExpanded && !isFinished ? 'opacity-80' : 'opacity-0'}`}
                         style={{ width: `${progress}%` }}
                     />
 
-                    {/* --- CONTENIDO MODO PÍLDORA (Overlay) --- */}
                     <div className={`
                         absolute inset-0 flex items-center justify-between pl-1 pr-1
                         transition-all duration-300
                         ${!isExpanded ? 'opacity-100 scale-100 delay-75 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'}
                     `}>
                         <button
-                            // Eventos Long Press
                             onMouseDown={handlePressStart}
                             onMouseUp={handlePressEnd}
                             onTouchStart={handlePressStart}
                             onTouchEnd={handlePressEnd}
                             onMouseLeave={handlePressEnd}
-                            // Evento Click Corto
                             onClick={(e) => handleShortClick(e, () => setRestTimerMode('modal'))}
-                            // Estilos
                             className="flex-1 flex items-center gap-3 px-3 h-full hover:opacity-80 transition-opacity cursor-pointer focus:outline-none"
                             onContextMenu={(e) => e.preventDefault()}
                         >
@@ -205,7 +193,6 @@ const DynamicIslandTimer = () => {
                         <div className="w-[1px] h-4 bg-gray-800 mx-1"></div>
 
                         <div className="flex items-center gap-1">
-                            {/* --- BOTÓN PLAY/PAUSA --- */}
                             <button
                                 onMouseDown={handlePressStart}
                                 onMouseUp={handlePressEnd}
@@ -242,7 +229,6 @@ const DynamicIslandTimer = () => {
                         </div>
                     </div>
 
-                    {/* --- CONTENIDO MODO EXPANDIDO (Overlay) --- */}
                     <div
                         onClick={handleBackgroundClick}
                         className={`
@@ -302,7 +288,6 @@ const DynamicIslandTimer = () => {
                             </button>
                         </div>
                     </div>
-
                 </div>
             </div>
         </>
