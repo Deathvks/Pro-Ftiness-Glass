@@ -63,13 +63,9 @@ export default {
     console.log(`✅ ¡Proceso terminado! Insertando ${uniqueFoods.length} alimentos únicos de España en la base de datos...`);
 
     if (uniqueFoods.length > 0) {
-<<<<<<< HEAD
-      await queryInterface.bulkInsert('local_foods', uniqueFoods);
-=======
       await queryInterface.bulkInsert('local_foods', uniqueFoods, {
         ignoreDuplicates: true // <--- AÑADE ESTA LÍNEA
       });
->>>>>>> main
     }
   },
 
