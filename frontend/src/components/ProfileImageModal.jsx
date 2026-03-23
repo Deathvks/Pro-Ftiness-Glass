@@ -9,11 +9,20 @@ const ProfileImageModal = ({ imageUrl, username, onClose }) => {
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md animate-[fade-in_0.3s_ease-out]"
       onClick={onClose} // Cerrar al hacer clic fuera de la imagen
+      style={{
+        // Aseguramos que todo el modal respete el área segura de navegación inferior (gestos/botones)
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
     >
-      {/* Botón de cerrar */}
+      {/* Botón de cerrar respetando el notch y cámara */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-white/70 hover:text-white transition z-[110]"
+        className="absolute text-white/70 hover:text-white transition z-[110] p-2"
+        style={{
+          // Usamos max() para que tenga un margen de 1rem mínimo, o el tamaño del notch si es mayor
+          top: 'max(1rem, env(safe-area-inset-top))',
+          right: 'max(1rem, env(safe-area-inset-right))'
+        }}
         aria-label="Cerrar"
       >
         <X size={32} />

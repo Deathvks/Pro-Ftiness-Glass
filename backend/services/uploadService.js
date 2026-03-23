@@ -115,28 +115,36 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
     const newFilename = `${name}.webp`;
     const newPath = path.join(dir, newFilename);
 
+    const isProfilePic = dir.includes('profiles'); // <-- NUEVO: Detectamos si es de perfil
     const imagePipeline = sharp(file.path);
     const metadata = await imagePipeline.metadata();
     
     const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
     const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
 
-    // Pipeline base
-    const finalPipeline = sharp(file.path)
-      .rotate() 
-      .resize(1080, 1920, { 
+    let finalPipeline = sharp(file.path).rotate();
+
+    // <-- NUEVO: Recorte diferente según si es perfil o no
+    if (isProfilePic) {
+      finalPipeline = finalPipeline.resize(300, 300, {
+        fit: sharp.fit.cover,
+        position: sharp.strategy.entropy
+      });
+    } else {
+      finalPipeline = finalPipeline.resize(1080, 1920, { 
         fit: 'inside', 
         withoutEnlargement: true 
       });
+    }
 
-    if (shouldProcessAsHDR) {
+    if (shouldProcessAsHDR && !isProfilePic) {
       // HDR: Calidad alta necesaria para profundidad de color
       finalPipeline.withMetadata().webp({ quality: 85, effort: 4 });
     } else {
-      // SDR: Ahorro máximo. Eliminamos metadatos no visuales y bajamos calidad a estándar web
+      // SDR o Perfil: Ahorro máximo. Eliminamos metadatos no visuales y bajamos calidad a estándar web
       finalPipeline
         .toColourspace('srgb')
-        .webp({ quality: 75, effort: 3 }); // Effort 3 es más rápido (menos CPU)
+        .webp({ quality: 75, effort: 3 }); 
     }
 
     await finalPipeline.toFile(newPath);
@@ -150,7 +158,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
     
     return {
       url: '/' + relativePath.split(path.sep).join('/'),
-      isHDR: shouldProcessAsHDR
+      isHDR: shouldProcessAsHDR && !isProfilePic
     };
 
   } catch (error) {
