@@ -574,23 +574,24 @@ const Dashboard = ({ setView }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
         <div className="lg:col-span-2 space-y-8">
           <section id="tour-nutrition">
-            <GlassCard className="p-8 relative overflow-hidden rounded-[2rem] border-transparent dark:border dark:border-white/10 transition-all">
-              <div className="flex items-center justify-between mb-10 relative z-10">
-                <div className="flex items-center gap-4">
-                  <div className="p-3.5 rounded-2xl text-accent transition-transform bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent">
-                    <Activity size={26} />
+            {/* CORRECCIÓN RESPONSIVE APLICADA EN ESTE CONTENEDOR Y HEADER */}
+            <GlassCard className="p-5 sm:p-8 relative overflow-hidden rounded-[2rem] border-transparent dark:border dark:border-white/10 transition-all">
+              <div className="flex items-center justify-between gap-2 mb-8 sm:mb-10 relative z-10">
+                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                  <div className="p-2 sm:p-3.5 rounded-2xl text-accent transition-transform bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent shrink-0">
+                    <Activity className="w-5 h-5 sm:w-[26px] sm:h-[26px]" />
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">{t('Nutrición', { defaultValue: 'Nutrición' })}</h2>
-                    <p className="text-xs text-text-muted font-medium mt-0.5">{t('Resumen del día', { defaultValue: 'Resumen del día' })}</p>
+                  <div className="min-w-0">
+                    <h2 className="text-lg sm:text-2xl font-bold text-white truncate">{t('Nutrición', { defaultValue: 'Nutrición' })}</h2>
+                    <p className="text-[10px] sm:text-xs text-text-muted font-medium mt-0.5 truncate">{t('Resumen del día', { defaultValue: 'Resumen del día' })}</p>
                   </div>
                 </div>
-                <button onClick={() => setView('nutrition')} className="text-xs font-bold bg-bg-secondary hover:bg-bg-secondary/80 px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2 text-text-primary">
-                  {t('Ver Diario', { defaultValue: 'Ver Diario' })} <ChevronRight size={14} />
+                <button onClick={() => setView('nutrition')} className="shrink-0 whitespace-nowrap text-[10px] sm:text-xs font-bold bg-bg-secondary hover:bg-bg-secondary/80 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-colors flex items-center gap-1 sm:gap-2 text-text-primary">
+                  {t('Ver Diario', { defaultValue: 'Ver Diario' })} <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-10 relative z-10 justify-items-center">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-10 relative z-10 justify-items-center">
                 <button onClick={() => setView('nutrition')} className="group/item flex flex-col items-center gap-4 transition-transform hover:scale-105">
                   <CircularProgress value={nutritionTotals.calories} maxValue={targets.calories} label={t('Calorías', { defaultValue: 'Calorías' })} icon={Flame} color="#fbbf24" size={90} strokeWidth={8} />
                 </button>
