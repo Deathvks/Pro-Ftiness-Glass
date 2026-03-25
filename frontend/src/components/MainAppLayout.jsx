@@ -215,14 +215,14 @@ export default function MainAppLayout({
       >
 
         {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil --- */}
-        <div className="md:hidden sticky top-0 z-40 bg-[--glass-bg] backdrop-blur-glass flex flex-col border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10">
-          
-          {/* Espaciador dedicado para el Notch (igual que en el navbar inferior) */}
-          <div className="w-full" style={{ height: 'max(0.5rem, env(safe-area-inset-top))' }}></div>
+        <div 
+          className="md:hidden sticky top-0 z-40 w-full bg-[--glass-bg] backdrop-blur-glass border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        >
 
-          {/* Contenedor del contenido del Header - Altura estándar y centrado perfecto */}
-          <div className="flex justify-between items-center w-full px-4 pb-2">
-            
+          {/* ALTO FIJO (h-14) para que no se estire y padding horizontal */}
+          <div className="flex justify-between items-center w-full px-4 h-14 pb-2">
+
             {/* Animación Título Header */}
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
               <span
