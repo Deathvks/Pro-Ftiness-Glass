@@ -175,7 +175,7 @@ export default function MainAppLayout({
     const checkMidnightReset = () => {
       const lastDate = localStorage.getItem('ai_last_date');
       const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-      
+
       if (lastDate && lastDate !== today) {
         localStorage.removeItem('ai_remaining_uses');
         localStorage.removeItem('ai_daily_limit');
@@ -236,7 +236,7 @@ export default function MainAppLayout({
         {/* --- HEADER: Fuera del main para que no se estire con el scroll --- */}
         <header className="md:hidden shrink-0 w-full bg-[--glass-bg]/90 backdrop-blur-xl border-b border-glass-border z-40 pt-[max(env(safe-area-inset-top),0px)]">
           <div className="flex justify-between items-center w-full h-14 px-4">
-            
+
             {/* Animación Título Header */}
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
               <span
@@ -258,9 +258,8 @@ export default function MainAppLayout({
               <div className="flex items-center justify-center mr-1 sm:mr-2">
                 <button
                   onClick={() => setShowAIModal(true)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${
-                      isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'
-                  }`}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'
+                    }`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   title="Créditos IA"
                 >
@@ -339,11 +338,15 @@ export default function MainAppLayout({
       />
 
       {/* Navbar flotante - píldora intacta */}
-      <div 
+      {/* Navbar flotante con gradiente que tapa el safe area */}
+      <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+        style={{
+          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+          background: 'linear-gradient(to bottom, transparent 40%, var(--bg-primary) 100%)'
+        }}
       >
-        <nav 
+        <nav
           className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
         >
           {navItems.map((item, index) => {
