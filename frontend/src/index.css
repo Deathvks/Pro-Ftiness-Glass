@@ -206,26 +206,23 @@
 
   html {
     width: 100%;
-    /* FIX IOS: Usar fill-available para ignorar barras del navegador */
-    height: 100vh;
-    height: -webkit-fill-available;
+    /* FIX IOS DEFINITIVO: Eliminado -webkit-fill-available. Usamos 100% estricto. */
+    height: 100%;
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
-    /* FIX IOS: Evitar que el lienzo completo rebote al hacer scroll al tope/fondo */
     overscroll-behavior: none;
   }
 
   body {
     @apply text-text-primary antialiased;
-    /* FIX IOS: Body anclado absoluto a la pantalla física sin posibilidad de desplazarse */
+    /* FIX IOS: Body anclado absoluto a la pantalla física para evitar que se desplace o acorte */
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 100vh;
-    min-height: -webkit-fill-available;
+    height: 100%;
     overflow: hidden;
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
