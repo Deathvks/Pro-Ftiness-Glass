@@ -77,10 +77,14 @@ const SplitLayout = ({ children, onShowPolicy }) => (
             </div>
         </div>
 
-        {/* Panel Derecho - Añadido overflow-y-auto y min-h-[100dvh] para centrado perfecto */}
-        <div className="flex flex-col items-center justify-center flex-1 w-full lg:w-[70%] min-h-[100dvh] py-8 px-4 relative z-10 overflow-y-auto">
+        {/* Panel Derecho - Cambiado para usar flex-grow en lugar de my-auto/justify-center para no cortar scroll */}
+        <div className="flex flex-col items-center flex-1 w-full lg:w-[70%] h-[100dvh] overflow-y-auto relative z-10">
             <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none"></div>
-            <div className="w-full max-w-sm text-center relative z-10 animate-[fade-in_0.5s_ease-out] my-auto">
+            
+            {/* Spacer superior flexible */}
+            <div className="flex-grow w-full min-h-[2rem]"></div>
+
+            <div className="w-full max-w-sm text-center relative z-10 animate-[fade-in_0.5s_ease-out] flex-shrink-0 px-4">
                 {children}
 
                 {/* Enlaces de Privacidad y Términos */}
@@ -91,6 +95,9 @@ const SplitLayout = ({ children, onShowPolicy }) => (
                     <button onClick={onShowPolicy} className="text-accent hover:underline transition-all">Política de Privacidad</button>.
                 </div>
             </div>
+
+            {/* Spacer inferior flexible */}
+            <div className="flex-grow w-full min-h-[2rem]"></div>
         </div>
     </div>
 );
