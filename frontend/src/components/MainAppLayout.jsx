@@ -216,11 +216,9 @@ export default function MainAppLayout({
 
         {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil --- */}
         <div 
-          className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-[100] px-4 pb-2.5 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
+          className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-[100] px-4 pb-2 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
           style={{ 
-            // Añadimos el margen superior dinámico del notch + un pequeño respiro (0.5rem),
-            // asegurando un mínimo de 1rem si no hay notch (ej: navegadores web normales).
-            paddingTop: 'max(1rem, calc(env(safe-area-inset-top) + 0.5rem))' 
+            paddingTop: 'max(0.5rem, env(safe-area-inset-top))' 
           }}
         >
 
