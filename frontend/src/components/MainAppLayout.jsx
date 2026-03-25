@@ -215,7 +215,6 @@ export default function MainAppLayout({
       >
 
         {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil (Fix Android Bug) --- */}
-        {/* 'block' evita el conflicto flex+env() que estira la cabecera en Android */}
         <header className="md:hidden sticky top-0 z-40 w-full bg-[--glass-bg] backdrop-blur-glass border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10 block">
           
           {/* Espaciador estático del Notch. Usa paddingTop puro. */}
@@ -311,11 +310,14 @@ export default function MainAppLayout({
 
       </main>
 
-      {/* Navbar (Móvil) - Cambiado a FIXED y estructurado para estirar el background en la safe area de iOS Safari */}
-      <nav 
-        className="md:hidden fixed bottom-0 left-0 w-full bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10 flex flex-col"
+      {/* --- INICIO MODIFICACIÓN: Navbar Flotante Moderno (Píldora) --- */}
+      <div 
+        className="md:hidden fixed bottom-0 w-full pointer-events-none z-50 flex justify-center px-4"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
       >
-        <div className="flex justify-evenly w-full h-[4.5rem]">
+        <nav 
+          className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
+        >
           {navItems.map((item, index) => {
             const isActive = view === item.id;
             const isSocial = item.id === 'social';
@@ -326,7 +328,7 @@ export default function MainAppLayout({
                 key={item.id}
                 onClick={() => navigate(item.id)}
                 className={`
-                  group flex flex-col items-center justify-center flex-grow h-full
+                  group flex flex-col items-center justify-center flex-1 h-full
                   transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
                   outline-none focus:outline-none ring-0
                   ${isActive ? 'text-accent' : 'text-text-secondary'}
@@ -346,10 +348,9 @@ export default function MainAppLayout({
               </button>
             );
           })}
-        </div>
-        {/* Espaciador dedicado para la safe area de iOS */}
-        <div className="w-full" style={{ height: 'env(safe-area-inset-bottom)' }}></div>
-      </nav>
+        </nav>
+      </div>
+      {/* --- FIN MODIFICACIÓN --- */}
 
       {/* --- Modales y Notificaciones --- */}
 
@@ -384,7 +385,7 @@ export default function MainAppLayout({
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => navigate('workout')}
-          className="fixed right-4 bottom-24 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 bottom-28 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>
