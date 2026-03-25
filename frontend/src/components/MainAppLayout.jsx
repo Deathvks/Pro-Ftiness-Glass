@@ -216,7 +216,7 @@ export default function MainAppLayout({
 
         {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil --- */}
         <div 
-          className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-[100] px-4 pb-2 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
+          className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-40 px-4 pb-2 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
           style={{ 
             paddingTop: 'max(0.5rem, env(safe-area-inset-top))' 
           }}
