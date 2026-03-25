@@ -56,7 +56,6 @@ export const upload = multer({
 
 let model;
 
-// Carga Lazy: Solo cargamos el modelo la primera vez que se necesita
 const getModel = async () => {
   if (!model) {
     try {
@@ -81,7 +80,6 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
   }
 
   try {
-    // --- PASO A: VERIFICACIÓN NSFW ---
     const { data, info } = await sharp(file.path)
       .resize(224, 224, { fit: 'cover' })
       .removeAlpha()
@@ -109,13 +107,12 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
       if (tfImage) tfImage.dispose();
     }
 
-    // --- PASO B: PROCESAMIENTO OPTIMIZADO (SDR/HDR) ---
     const dir = path.dirname(file.path);
     const name = path.parse(file.filename).name;
     const newFilename = `${name}.webp`;
     const newPath = path.join(dir, newFilename);
 
-    const isProfilePic = dir.includes('profiles'); // <-- NUEVO: Detectamos si es de perfil
+    const isProfilePic = dir.includes('profiles');
     const imagePipeline = sharp(file.path);
     const metadata = await imagePipeline.metadata();
     
@@ -124,11 +121,9 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
 
     let finalPipeline = sharp(file.path).rotate();
 
-    // <-- NUEVO: Recorte diferente según si es perfil o no
     if (isProfilePic) {
       finalPipeline = finalPipeline.resize(300, 300, {
-        fit: sharp.fit.cover,
-        position: sharp.strategy.entropy
+        fit: 'cover'
       });
     } else {
       finalPipeline = finalPipeline.resize(1080, 1920, { 
@@ -138,10 +133,8 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
     }
 
     if (shouldProcessAsHDR && !isProfilePic) {
-      // HDR: Calidad alta necesaria para profundidad de color
       finalPipeline.withMetadata().webp({ quality: 85, effort: 4 });
     } else {
-      // SDR o Perfil: Ahorro máximo. Eliminamos metadatos no visuales y bajamos calidad a estándar web
       finalPipeline
         .toColourspace('srgb')
         .webp({ quality: 75, effort: 3 }); 
@@ -149,7 +142,6 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
 
     await finalPipeline.toFile(newPath);
 
-    // Borrar original inmediatamente para liberar espacio temporal
     if (file.path !== newPath && fs.existsSync(file.path)) {
       fs.unlinkSync(file.path);
     }
@@ -163,7 +155,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
 
   } catch (error) {
     if (file && file.path && fs.existsSync(file.path)) {
-      try { fs.unlinkSync(file.path); } catch (e) { /* ignore */ }
+      try { fs.unlinkSync(file.path); } catch (e) { }
     }
     throw error;
   }

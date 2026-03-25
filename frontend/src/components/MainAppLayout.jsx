@@ -215,87 +215,89 @@ export default function MainAppLayout({
       >
 
         {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil --- */}
-        <div 
-          className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-40 px-4 pb-2 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
-          style={{ 
-            paddingTop: 'max(0.5rem, env(safe-area-inset-top))' 
-          }}
-        >
+        <div className="md:hidden sticky top-0 z-40 bg-[--glass-bg] backdrop-blur-glass flex flex-col border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10">
+          
+          {/* Espaciador dedicado para el Notch (igual que en el navbar inferior) */}
+          <div className="w-full" style={{ height: 'max(0.5rem, env(safe-area-inset-top))' }}></div>
 
-          {/* Animación Título Header */}
-          <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-            <span
-              key={currentTitle}
-              className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary animate-fade-in-up truncate"
-            >
-              {currentTitle}
-            </span>
-            {view === 'social' && (
-              <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase animate-fade-in-up shrink-0">
-                BETA
+          {/* Contenedor del contenido del Header - Altura estándar y centrado perfecto */}
+          <div className="flex justify-between items-center w-full px-4 pb-2">
+            
+            {/* Animación Título Header */}
+            <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+              <span
+                key={currentTitle}
+                className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary animate-fade-in-up truncate"
+              >
+                {currentTitle}
               </span>
-            )}
-          </div>
-
-          {/* Botones de Header (IA + Notif + Ajustes) */}
-          <div className="flex items-center shrink-0">
-
-            {/* Nuevo Botón de IA */}
-            <div className="flex items-center justify-center mr-1 sm:mr-2">
-              <button
-                onClick={() => setShowAIModal(true)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${
-                    isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'
-                }`}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-                title="Créditos IA"
-              >
-                <Sparkles size={14} />
-                <span>{aiRemaining}/{aiLimit}</span>
-              </button>
+              {view === 'social' && (
+                <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase animate-fade-in-up shrink-0">
+                  BETA
+                </span>
+              )}
             </div>
 
-            {/* Botón de Notificaciones */}
-            <div
-              className={`
-                    flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
-                    ${view === 'notifications'
-                  ? 'w-0 opacity-0 mr-0 translate-x-4'
-                  : 'w-10 opacity-100 mr-0 translate-x-0'
-                }
-                `}
-            >
-              <button
-                onClick={() => navigate('notifications')}
-                className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-                aria-label="Notificaciones"
-              >
-                <Bell size={24} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>
-                )}
-              </button>
-            </div>
+            {/* Botones de Header (IA + Notif + Ajustes) */}
+            <div className="flex items-center shrink-0">
 
-            {/* Botón de Ajustes */}
-            <div
-              className={`
-                    flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
-                    ${view === 'settings'
-                  ? 'w-0 opacity-0 ml-0 translate-x-4'
-                  : 'w-10 opacity-100 ml-0 sm:ml-2 translate-x-0'
-                }
-                `}
-            >
-              <button
-                onClick={() => navigate('settings')}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-                aria-label="Ajustes"
+              {/* Nuevo Botón de IA */}
+              <div className="flex items-center justify-center mr-1 sm:mr-2">
+                <button
+                  onClick={() => setShowAIModal(true)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${
+                      isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'
+                  }`}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  title="Créditos IA"
+                >
+                  <Sparkles size={14} />
+                  <span>{aiRemaining}/{aiLimit}</span>
+                </button>
+              </div>
+
+              {/* Botón de Notificaciones */}
+              <div
+                className={`
+                      flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
+                      ${view === 'notifications'
+                    ? 'w-0 opacity-0 mr-0 translate-x-4'
+                    : 'w-10 opacity-100 mr-0 translate-x-0'
+                  }
+                  `}
               >
-                <Settings size={24} />
-              </button>
+                <button
+                  onClick={() => navigate('notifications')}
+                  className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Notificaciones"
+                >
+                  <Bell size={24} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>
+                  )}
+                </button>
+              </div>
+
+              {/* Botón de Ajustes */}
+              <div
+                className={`
+                      flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
+                      ${view === 'settings'
+                    ? 'w-0 opacity-0 ml-0 translate-x-4'
+                    : 'w-10 opacity-100 ml-0 sm:ml-2 translate-x-0'
+                  }
+                  `}
+              >
+                <button
+                  onClick={() => navigate('settings')}
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Ajustes"
+                >
+                  <Settings size={24} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
