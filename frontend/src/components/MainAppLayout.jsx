@@ -175,7 +175,7 @@ export default function MainAppLayout({
     const checkMidnightReset = () => {
       const lastDate = localStorage.getItem('ai_last_date');
       const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-      
+
       if (lastDate && lastDate !== today) {
         localStorage.removeItem('ai_remaining_uses');
         localStorage.removeItem('ai_daily_limit');
@@ -236,7 +236,7 @@ export default function MainAppLayout({
         {/* --- HEADER: Fuera del main para que no se estire con el scroll --- */}
         <header className="md:hidden shrink-0 w-full bg-[--glass-bg]/90 backdrop-blur-xl border-b border-glass-border z-40 pt-[max(env(safe-area-inset-top),0px)]">
           <div className="flex justify-between items-center w-full h-14 px-4">
-            
+
             {/* Animación Título Header */}
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
               <span
@@ -258,9 +258,8 @@ export default function MainAppLayout({
               <div className="flex items-center justify-center mr-1 sm:mr-2">
                 <button
                   onClick={() => setShowAIModal(true)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${
-                      isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'
-                  }`}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'
+                    }`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   title="Créditos IA"
                 >
@@ -324,20 +323,21 @@ export default function MainAppLayout({
             {currentViewComponent}
           </Suspense>
 
-          {/* FIX: Espaciador final calculado de forma matemática para que el scroll termine justo y el contenido alcance el borde inferior sin huecos fantasmas */}
+          {/* FIX: Espaciador final calculado dinámicamente. Como usamos 100vh, el contenedor llega al final. Este hueco evita que las listas queden ocultas detrás del navbar */}
           <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + env(safe-area-inset-bottom))' }}></div>
         </main>
 
       </div>
 
       {/* --- NAVBAR: Píldora Flotante --- */}
-      {/* FIX: Usamos "max" estricto. Si no hay safe area (Android), padding de 16px. Si hay safe area (iOS), se pega al área segura inferior exacto, sin sumar distancias absurdas. */}
-      <div 
-        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
+      {/* FIX DEFINITIVO: Al estar el Body a 100vh, bottom-0 aterriza en el mismísimo borde físico del móvil. 
+          El paddingBottom empuja la barra exactamente por encima de la raya de navegación, de forma limpia y transparente. */}
+      <div
+        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2 bg-[--glass-bg] backdrop-blur-xl border-t border-glass-border"
         style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
       >
-        <nav 
-          className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
+        <nav
+          className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
         >
           {navItems.map((item, index) => {
             const isActive = view === item.id;
