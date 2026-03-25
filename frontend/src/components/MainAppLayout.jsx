@@ -137,7 +137,6 @@ export default function MainAppLayout({
 
   // FIX PWA iOS: Forzamos metaetiquetas de viewport y status bar
   useEffect(() => {
-    // Evita el padding fantasma en iOS PWA (standalone)
     let metaViewport = document.querySelector('meta[name=viewport]');
     if (metaViewport) {
       if (!metaViewport.content.includes('viewport-fit=cover')) {
@@ -156,7 +155,7 @@ export default function MainAppLayout({
       metaStatus.name = 'apple-mobile-web-app-status-bar-style';
       document.head.appendChild(metaStatus);
     }
-    metaStatus.content = 'black-translucent'; // Obliga a la barra a flotar sobre la app
+    metaStatus.content = 'black-translucent';
   }, []);
 
   // --- Sincronización de Cookies e IA Automática ---
@@ -216,11 +215,6 @@ export default function MainAppLayout({
   // Renderizado del layout principal
   return (
     <div className="relative flex w-full h-full overflow-hidden bg-bg-primary">
-      {/* Añadimos estilos globales para las safe-areas aquí mismo para evitar problemas de plugins de tailwind */}
-      <style>{`
-        .safe-pt { padding-top: env(safe-area-inset-top, 0px); }
-        .safe-pb { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); }
-      `}</style>
 
       {/* Fondo decorativo */}
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
@@ -236,18 +230,13 @@ export default function MainAppLayout({
         unreadCount={unreadCount}
       />
 
-      {/* Contenido Principal */}
-      <main
-        ref={mainContentRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-0"
-      >
+      {/* CONTENEDOR MÓVIL: Flex Columna para separar Header y Main */}
+      <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil (Fix iOS PWA y Android WebView) --- */}
-        {/* Cambiamos a safe-pt para evitar que los estilos en línea rompan flexbox en Android */}
-        <header className="md:hidden sticky top-0 z-40 w-full bg-[--glass-bg] backdrop-blur-glass border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10 safe-pt">
-          
-          <div className="flex justify-between items-center w-full px-4 py-3 min-h-[60px]">
-
+        {/* --- HEADER: Fuera del main para que no se estire con el scroll --- */}
+        <header className="md:hidden shrink-0 w-full bg-[--glass-bg]/90 backdrop-blur-xl border-b border-glass-border z-40 pt-[env(safe-area-inset-top)]">
+          <div className="flex justify-between items-center w-full h-14 px-4">
+            
             {/* Animación Título Header */}
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
               <span
@@ -265,7 +254,6 @@ export default function MainAppLayout({
 
             {/* Botones de Header (IA + Notif + Ajustes) */}
             <div className="flex items-center shrink-0">
-
               {/* Nuevo Botón de IA */}
               <div className="flex items-center justify-center mr-1 sm:mr-2">
                 <button
@@ -326,54 +314,62 @@ export default function MainAppLayout({
             </div>
           </div>
         </header>
-        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
-        {/* Renderizado de la Vista/Página Actual */}
-        <Suspense fallback={<LoadingFallback />}>
-          {currentViewComponent}
-        </Suspense>
-
-      </main>
-
-      {/* --- INICIO MODIFICACIÓN: Navbar Flotante Moderno (Píldora) --- */}
-      {/* Cambiamos el style en línea por la clase safe-pb para máxima compatibilidad */}
-      <div className="md:hidden fixed bottom-0 w-full pointer-events-none z-50 flex justify-center px-4 safe-pb">
-        <nav 
-          className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
+        {/* --- MAIN: Único contenedor que hace scroll --- */}
+        <main
+          ref={mainContentRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden relative"
         >
-          {navItems.map((item, index) => {
-            const isActive = view === item.id;
-            const isSocial = item.id === 'social';
-            const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
+          <Suspense fallback={<LoadingFallback />}>
+            {currentViewComponent}
+          </Suspense>
 
-            return (
-              <button
-                key={item.id}
-                onClick={() => navigate(item.id)}
-                className={`
-                  group flex flex-col items-center justify-center flex-1 h-full
-                  transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
-                  outline-none focus:outline-none ring-0
-                  ${isActive ? 'text-accent' : 'text-text-secondary'}
-                `}
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                  animationFillMode: 'both',
-                  WebkitTapHighlightColor: 'transparent'
-                }}
-              >
-                <div className={`transition-transform duration-300 ${isActive ? 'scale-125' : 'group-hover:scale-110'} relative`}>
-                  {item.icon}
-                  {pendingCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </nav>
+          {/* Espaciador final para que el contenido no quede oculto detrás de la píldora flotante */}
+          <div className="md:hidden w-full h-28 shrink-0 pb-[env(safe-area-inset-bottom)]"></div>
+        </main>
+
       </div>
-      {/* --- FIN MODIFICACIÓN --- */}
+
+      {/* --- NAVBAR: Píldora Flotante --- */}
+      {/* Contenedor transparente pegado abajo que empuja la píldora usando el safe-area */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 pb-[env(safe-area-inset-bottom)]">
+        <div className="w-full flex justify-center px-4 pb-4 pt-2">
+          <nav 
+            className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
+          >
+            {navItems.map((item, index) => {
+              const isActive = view === item.id;
+              const isSocial = item.id === 'social';
+              const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.id)}
+                  className={`
+                    group flex flex-col items-center justify-center flex-1 h-full
+                    transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
+                    outline-none focus:outline-none ring-0
+                    ${isActive ? 'text-accent' : 'text-text-secondary'}
+                  `}
+                  style={{
+                    animationDelay: `${index * 100}ms`,
+                    animationFillMode: 'both',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
+                >
+                  <div className={`transition-transform duration-300 ${isActive ? 'scale-125' : 'group-hover:scale-110'} relative`}>
+                    {item.icon}
+                    {pendingCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
 
       {/* --- Modales y Notificaciones --- */}
 
