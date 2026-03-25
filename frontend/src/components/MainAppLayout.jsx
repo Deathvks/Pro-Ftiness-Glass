@@ -234,7 +234,7 @@ export default function MainAppLayout({
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
         {/* --- HEADER: Fuera del main para que no se estire con el scroll --- */}
-        <header className="md:hidden shrink-0 w-full bg-[--glass-bg]/90 backdrop-blur-xl border-b border-glass-border z-40 pt-[env(safe-area-inset-top)]">
+        <header className="md:hidden shrink-0 w-full bg-[--glass-bg]/90 backdrop-blur-xl border-b border-glass-border z-40 pt-[max(env(safe-area-inset-top),0px)]">
           <div className="flex justify-between items-center w-full h-14 px-4">
             
             {/* Animación Título Header */}
@@ -325,14 +325,14 @@ export default function MainAppLayout({
           </Suspense>
 
           {/* Espaciador final para que el contenido no quede oculto detrás de la píldora flotante */}
-          <div className="md:hidden w-full h-28 shrink-0 pb-[env(safe-area-inset-bottom)]"></div>
+          <div className="md:hidden w-full h-28 shrink-0 pb-[max(env(safe-area-inset-bottom),16px)]"></div>
         </main>
 
       </div>
 
       {/* --- NAVBAR: Píldora Flotante --- */}
       {/* Contenedor transparente pegado abajo que empuja la píldora usando el safe-area */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 pb-[env(safe-area-inset-bottom)]">
+      <div className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 pb-[max(env(safe-area-inset-bottom),16px)]">
         <div className="w-full flex justify-center px-4 pb-4 pt-2">
           <nav 
             className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"

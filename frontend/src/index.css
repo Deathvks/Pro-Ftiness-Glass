@@ -205,7 +205,7 @@
 @layer components {
 
   html {
-    height: 100dvh;
+    height: 100%;
     width: 100vw;
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
@@ -213,7 +213,7 @@
 
   body {
     @apply text-text-primary antialiased;
-    height: 100dvh;
+    height: 100%;
     width: 100vw;
     overflow: hidden;
     background-color: var(--bg-primary);
@@ -221,10 +221,8 @@
     
     /* El truco principal: body actúa de marco sólido usando su color de fondo */
     box-sizing: border-box;
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-    /* padding-bottom eliminado para evitar saltos en móviles con gestos de navegación */
+    /* Los paddings globales env() se han eliminado de aquí para evitar el doble cálculo 
+       y que estiren la app cuando los componentes hijos ya usan sus propios safe-areas */
   }
 
   /* #root ahora siempre vive dentro del espacio completamente libre y seguro */
