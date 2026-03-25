@@ -214,14 +214,15 @@ export default function MainAppLayout({
         className="flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-0"
       >
 
-        {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil --- */}
-        <div 
-          className="md:hidden sticky top-0 z-40 w-full bg-[--glass-bg] backdrop-blur-glass border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
-          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-        >
+        {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil (Fix Android Bug) --- */}
+        {/* 'block' evita el conflicto flex+env() que estira la cabecera en Android */}
+        <header className="md:hidden sticky top-0 z-40 w-full bg-[--glass-bg] backdrop-blur-glass border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10 block">
+          
+          {/* Espaciador estático del Notch. Usa paddingTop puro. */}
+          <div className="w-full" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}></div>
 
-          {/* ALTO FIJO (h-14) para que no se estire y padding horizontal */}
-          <div className="flex justify-between items-center w-full px-4 h-14 pb-2">
+          {/* Contenedor Flex para el contenido: Altura mínima fija y padding parejo */}
+          <div className="flex justify-between items-center w-full px-4 py-3 min-h-[64px]">
 
             {/* Animación Título Header */}
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
@@ -300,7 +301,7 @@ export default function MainAppLayout({
               </div>
             </div>
           </div>
-        </div>
+        </header>
         {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         {/* Renderizado de la Vista/Página Actual */}
