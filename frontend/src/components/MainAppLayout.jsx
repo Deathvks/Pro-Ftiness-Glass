@@ -324,51 +324,52 @@ export default function MainAppLayout({
             {currentViewComponent}
           </Suspense>
 
-          {/* Espaciador final para que el contenido no quede oculto detrás de la píldora flotante */}
-          <div className="md:hidden w-full h-28 shrink-0 pb-[max(env(safe-area-inset-bottom),16px)]"></div>
+          {/* FIX: Espaciador final calculado de forma matemática para que el scroll termine justo y el contenido alcance el borde inferior sin huecos fantasmas */}
+          <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + env(safe-area-inset-bottom))' }}></div>
         </main>
 
       </div>
 
       {/* --- NAVBAR: Píldora Flotante --- */}
-      {/* Contenedor transparente pegado abajo que empuja la píldora usando el safe-area */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 pb-[max(env(safe-area-inset-bottom),16px)]">
-        <div className="w-full flex justify-center px-4 pb-4 pt-2">
-          <nav 
-            className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
-          >
-            {navItems.map((item, index) => {
-              const isActive = view === item.id;
-              const isSocial = item.id === 'social';
-              const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
+      {/* FIX: Usamos "max" estricto. Si no hay safe area (Android), padding de 16px. Si hay safe area (iOS), se pega al área segura inferior exacto, sin sumar distancias absurdas. */}
+      <div 
+        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
+        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+      >
+        <nav 
+          className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
+        >
+          {navItems.map((item, index) => {
+            const isActive = view === item.id;
+            const isSocial = item.id === 'social';
+            const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
 
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.id)}
-                  className={`
-                    group flex flex-col items-center justify-center flex-1 h-full
-                    transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
-                    outline-none focus:outline-none ring-0
-                    ${isActive ? 'text-accent' : 'text-text-secondary'}
-                  `}
-                  style={{
-                    animationDelay: `${index * 100}ms`,
-                    animationFillMode: 'both',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                >
-                  <div className={`transition-transform duration-300 ${isActive ? 'scale-125' : 'group-hover:scale-110'} relative`}>
-                    {item.icon}
-                    {pendingCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigate(item.id)}
+                className={`
+                  group flex flex-col items-center justify-center flex-1 h-full
+                  transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
+                  outline-none focus:outline-none ring-0
+                  ${isActive ? 'text-accent' : 'text-text-secondary'}
+                `}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animationFillMode: 'both',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
+              >
+                <div className={`transition-transform duration-300 ${isActive ? 'scale-125' : 'group-hover:scale-110'} relative`}>
+                  {item.icon}
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
       {/* --- Modales y Notificaciones --- */}
