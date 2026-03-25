@@ -329,23 +329,12 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* --- NAVBAR --- */}
-
-      {/* FIX iOS PWA: Relleno del safe area para tapar el hueco bajo la píldora */}
-      <div
-        className="md:hidden fixed bottom-0 left-0 w-full bg-bg-primary z-40"
-        style={{ height: 'env(safe-area-inset-bottom)' }}
-      />
-
-      {/* Navbar flotante - píldora intacta */}
-      {/* Navbar flotante con gradiente que tapa el safe area */}
+      {/* --- NAVBAR: Píldora Flotante --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{
-          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-          background: 'linear-gradient(to bottom, transparent 40%, var(--bg-primary) 100%)'
-        }}
+        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
       >
+        {/* Devolvemos el bg, backdrop-blur y border al <nav> para que sea la píldora la que flote */}
         <nav
           className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
         >
