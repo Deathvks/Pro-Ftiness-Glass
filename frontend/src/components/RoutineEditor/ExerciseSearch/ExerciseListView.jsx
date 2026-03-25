@@ -1,9 +1,12 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseListView.jsx */
-import React, { useRef, useLayoutEffect, useEffect } from 'react';
+import React, { useRef, useLayoutEffect, useState } from 'react';
 import { X, Search, ShoppingCart, ListFilter, Plus } from 'lucide-react';
 import CustomSelect from '../../CustomSelect';
 import ExerciseListItem from './ExerciseListItem';
 import Spinner from '../../Spinner';
+
+const ITEM_HEIGHT = 90; // Altura fija de cada elemento en píxeles
+const OVERSCAN = 5; // Cuántos elementos renderizar fuera de pantalla para que el scroll sea fluido
 
 const ExerciseListView = ({
   onClose,
@@ -27,37 +30,62 @@ const ExerciseListView = ({
   onAddManual,
   t,
 }) => {
-  // Referencia al contenedor de la lista para controlar el scroll
   const listRef = useRef(null);
   const SCROLL_KEY = 'exerciseListScrollPos';
 
-  // --- LÓGICA DE SCROLL ---
+  // --- VIRTUALIZACIÓN NATIVA 100% LIBRE DE LIBRERÍAS ---
+  const [scrollTop, setScrollTop] = useState(0);
+  const [listHeight, setListHeight] = useState(0);
 
+  // Observamos el tamaño del contenedor para calcular cuántos elementos caben
+  useLayoutEffect(() => {
+    if (!listRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      setListHeight(entries[0].contentRect.height);
+    });
+    observer.observe(listRef.current);
+    return () => observer.disconnect();
+  }, [isLoading]);
+
+  // Recuperamos el scroll guardado al montar el componente
   useLayoutEffect(() => {
     const savedPos = sessionStorage.getItem(SCROLL_KEY);
     if (listRef.current && savedPos && !isLoading && filteredExercises.length > 0) {
       listRef.current.scrollTop = Number(savedPos);
-      requestAnimationFrame(() => {
-        if (listRef.current) {
-          listRef.current.scrollTop = Number(savedPos);
-        }
-      });
+      setScrollTop(Number(savedPos));
     }
   }, [isLoading, filteredExercises.length]);
 
-  useEffect(() => {
-    // Resetear scroll si cambia la búsqueda (opcional, mejora UX)
-    // De momento confiamos en el comportamiento nativo o manual
-  }, [searchQuery, filterMuscle, filterEquipment]);
-
-  const handleScroll = () => {
-    if (listRef.current) {
-      sessionStorage.setItem(SCROLL_KEY, listRef.current.scrollTop);
-    }
+  const handleScroll = (e) => {
+    const top = e.target.scrollTop;
+    setScrollTop(top);
+    sessionStorage.setItem(SCROLL_KEY, top);
   };
 
-  // --- LÓGICA MULTI-SELECT ---
+  const resetScroll = () => {
+    sessionStorage.setItem(SCROLL_KEY, 0);
+    setScrollTop(0);
+    if (listRef.current) listRef.current.scrollTop = 0;
+  };
 
+  // --- CÁLCULO DE ELEMENTOS VISIBLES (VIRTUALIZACIÓN) ---
+  const totalItems = filteredExercises.length + 1; // +1 por el botón de "Añadir manual" al final
+  const totalHeight = totalItems * ITEM_HEIGHT;
+
+  const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - OVERSCAN);
+  const endIndex = Math.min(
+    totalItems - 1,
+    Math.floor((scrollTop + listHeight) / ITEM_HEIGHT) + OVERSCAN
+  );
+
+  const visibleIndices = [];
+  if (listHeight > 0) {
+    for (let i = startIndex; i <= endIndex; i++) {
+      visibleIndices.push(i);
+    }
+  }
+
+  // --- LÓGICA MULTI-SELECT ---
   const currentMuscleFilters = Array.isArray(filterMuscle) ? filterMuscle : [];
   const currentEquipmentFilters = Array.isArray(filterEquipment) ? filterEquipment : [];
 
@@ -73,8 +101,7 @@ const ExerciseListView = ({
     if (!newValue) return;
     if (!currentMuscleFilters.includes(newValue)) {
       setFilterMuscle([...currentMuscleFilters, newValue]);
-      sessionStorage.setItem(SCROLL_KEY, 0);
-      if (listRef.current) listRef.current.scrollTop = 0;
+      resetScroll();
     }
   };
 
@@ -82,33 +109,30 @@ const ExerciseListView = ({
     if (!newValue) return;
     if (!currentEquipmentFilters.includes(newValue)) {
       setFilterEquipment([...currentEquipmentFilters, newValue]);
-      sessionStorage.setItem(SCROLL_KEY, 0);
-      if (listRef.current) listRef.current.scrollTop = 0;
+      resetScroll();
     }
   };
 
   const removeMuscleFilter = (valueToRemove) => {
     setFilterMuscle(currentMuscleFilters.filter(val => val !== valueToRemove));
-    sessionStorage.setItem(SCROLL_KEY, 0);
+    resetScroll();
   };
 
   const removeEquipmentFilter = (valueToRemove) => {
     setFilterEquipment(currentEquipmentFilters.filter(val => val !== valueToRemove));
-    sessionStorage.setItem(SCROLL_KEY, 0);
+    resetScroll();
   };
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    if (listRef.current) listRef.current.scrollTop = 0;
-    sessionStorage.setItem(SCROLL_KEY, 0);
+    resetScroll();
   };
 
   const availableMuscleOptions = muscleOptions.filter(opt => !currentMuscleFilters.includes(opt.value));
   const availableEquipmentOptions = equipmentOptions.filter(opt => !currentEquipmentFilters.includes(opt.value));
 
-
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full bg-bg-primary overflow-hidden">
       {/* Header (Cerrar y Carrito) */}
       <div className="flex-shrink-0 flex items-center justify-between p-3 md:p-4 border-b border-glass-border gap-2 bg-bg-primary z-10">
         <h2 className="text-lg md:text-xl font-bold truncate min-w-0">
@@ -120,7 +144,7 @@ const ExerciseListView = ({
             className="relative flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-accent text-bg-secondary font-semibold text-sm md:text-base whitespace-nowrap transition-transform active:scale-95"
           >
             <ShoppingCart size={16} className="md:w-[18px] md:h-[18px]" />
-            <span>{t('exercise_ui:view_cart', 'Ver Carrito')}</span>
+            <span className="hidden sm:inline">{t('exercise_ui:view_cart', 'Ver Carrito')}</span>
             {stagedExercisesCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 w-5 h-5 md:w-6 md:h-6 rounded-full bg-red text-white text-[10px] md:text-xs font-bold flex items-center justify-center border-2 border-bg-primary">
                 {stagedExercisesCount}
@@ -134,7 +158,7 @@ const ExerciseListView = ({
       </div>
 
       {/* Barra de Búsqueda y Zona de Filtros */}
-      <div className="flex-shrink-0 p-4 space-y-4 border-b border-glass-border bg-bg-primary z-10">
+      <div className="flex-shrink-0 p-4 space-y-4 border-b border-glass-border bg-bg-primary z-10 shadow-sm">
         {/* Input Buscador */}
         <div className="relative">
           <input
@@ -142,7 +166,7 @@ const ExerciseListView = ({
             placeholder={t('exercise_ui:search_placeholder_extended', 'Buscar ejercicio o grupo muscular...')}
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full pl-10 pr-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
           />
           <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
         </div>
@@ -219,48 +243,70 @@ const ExerciseListView = ({
         )}
       </div>
 
-      {/* Lista de Resultados con Scroll Controlado y Padding Inferior Extra */}
+      {/* Lista Virtualizada Nativa */}
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-3 pb-32 md:pb-4"
+        className="flex-1 bg-bg-primary overflow-y-auto overflow-x-hidden relative"
       >
         {isLoading ? (
           <div className="flex justify-center py-10"><Spinner /></div>
+        ) : filteredExercises.length === 0 ? (
+          <p className="text-center text-text-muted pt-10 px-4">{t('exercise_ui:no_exercises_found', 'No se encontraron ejercicios.')}</p>
         ) : (
-          <>
-            {filteredExercises.map(exercise => (
-              <ExerciseListItem
-                key={exercise.id}
-                exercise={exercise}
-                onAdd={onAddExercise}
-                onView={onViewDetail}
-                isStaged={stagedIds.has(exercise.id)}
-                t={t}
-              />
-            ))}
+          <div style={{ height: `${totalHeight}px`, position: 'relative', width: '100%' }}>
+            {visibleIndices.map(index => {
+              const isLast = index === filteredExercises.length;
+              const topPosition = index * ITEM_HEIGHT;
+              
+              // Ajustamos el estilo para simular padding e iterar de forma fluida
+              const itemStyle = {
+                position: 'absolute',
+                top: topPosition + 8,
+                height: ITEM_HEIGHT - 8,
+                left: '1rem',
+                right: '1rem',
+              };
 
-            <button
-              onClick={onAddManual}
-              className="w-full flex items-center gap-4 p-3 rounded-lg bg-bg-secondary hover:bg-accent-transparent border border-glass-border transition-colors group"
-            >
-              <div className="w-14 h-14 rounded-md bg-bg-primary border border-glass-border flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent-border transition-colors">
-                <Plus size={24} />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-semibold text-text-primary group-hover:text-accent transition-colors">
-                  {t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
-                </p>
-                <p className="text-sm text-text-muted">
-                  {t('exercise_ui:add_manual_desc', 'Añade un ejercicio que no esté en la lista.')}
-                </p>
-              </div>
-            </button>
+              // Si es el último elemento, renderizamos el botón de añadir manual
+              if (isLast) {
+                return (
+                  <div key="manual-btn" style={itemStyle}>
+                    <button
+                      onClick={onAddManual}
+                      className="w-full flex items-center gap-4 p-3 rounded-lg bg-bg-secondary hover:bg-accent-transparent border border-glass-border transition-colors group h-full"
+                    >
+                      <div className="w-14 h-14 rounded-md bg-bg-primary border border-glass-border flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent-border transition-colors shrink-0">
+                        <Plus size={24} />
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-semibold text-text-primary group-hover:text-accent transition-colors truncate">
+                          {t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
+                        </p>
+                        <p className="text-sm text-text-muted truncate">
+                          {t('exercise_ui:add_manual_desc', 'Añade un ejercicio que no esté en la lista.')}
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                );
+              }
 
-            {filteredExercises.length === 0 && (
-              <p className="text-center text-text-muted pt-10">{t('exercise_ui:no_exercises_found', 'No se encontraron ejercicios.')}</p>
-            )}
-          </>
+              // Ejercicio normal
+              const exercise = filteredExercises[index];
+              return (
+                <div key={exercise.id} style={itemStyle}>
+                  <ExerciseListItem
+                    exercise={exercise}
+                    onAdd={onAddExercise}
+                    onView={onViewDetail}
+                    isStaged={stagedIds.has(exercise.id)}
+                    t={t}
+                  />
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

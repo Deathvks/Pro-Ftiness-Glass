@@ -15,11 +15,41 @@ import {
   deleteMyAccount,
 } from '../services/userService';
 import ProfileImageModal from '../components/ProfileImageModal';
+import Cropper from 'react-easy-crop';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api')
   ? API_BASE_URL.slice(0, -4)
   : API_BASE_URL;
+
+// --- Helper para extraer la imagen recortada ---
+const getCroppedImg = async (imageSrc, pixelCrop) => {
+  const image = new Image();
+  image.src = imageSrc;
+  await new Promise((resolve) => (image.onload = resolve));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+  const ctx = canvas.getContext('2d');
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+    0, 0, pixelCrop.width, pixelCrop.height
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((file) => {
+      if (file) {
+        file.name = 'cropped.jpg';
+        resolve(new File([file], 'profile.jpg', { type: 'image/jpeg' }));
+      } else {
+        reject(new Error('Canvas is empty'));
+      }
+    }, 'image/jpeg', 0.9);
+  });
+};
 
 // --- Configuración de Insignias ---
 const BADGE_DETAILS = {
@@ -95,6 +125,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
 
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
+  // --- Estados para el Cropper ---
+  const [tempImage, setTempImage] = useState(null);
+  const [isCropping, setIsCropping] = useState(false);
+
   // --- Estado para Paginación de Insignias Responsiva ---
   const [itemsPerPage, setItemsPerPage] = useState(() => window.innerWidth < 640 ? 1 : 3);
   const [badgePage, setBadgePage] = useState(0);
@@ -119,8 +153,11 @@ const Profile = ({ onCancel, setView, navigate }) => {
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
       }
+      if (tempImage && tempImage.startsWith('blob:')) {
+        URL.revokeObjectURL(tempImage);
+      }
     };
-  }, [imagePreview]);
+  }, [imagePreview, tempImage]);
 
   const openImageModal = () => {
     if (imagePreview) {
@@ -174,13 +211,32 @@ const Profile = ({ onCancel, setView, navigate }) => {
         return;
       }
 
-      setProfileImageFile(file);
+      // En lugar de guardarlo directo, abrimos el cropper
+      setTempImage(URL.createObjectURL(file));
+      setIsCropping(true);
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // --- Nueva función para manejar el fin del recorte ---
+  const handleCropComplete = async (croppedAreaPixels) => {
+    try {
+      const croppedFile = await getCroppedImg(tempImage, croppedAreaPixels);
+      setProfileImageFile(croppedFile);
       
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
       }
       
-      setImagePreview(URL.createObjectURL(file));
+      setImagePreview(URL.createObjectURL(croppedFile));
+      setIsCropping(false);
+      setTempImage(null);
+    } catch (e) {
+      console.error(e);
+      addToast('Error al procesar la imagen.', 'error');
     }
   };
 
@@ -611,7 +667,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
         </GlassCard>
 
         {/* --- Zona de Peligro --- */}
-        {/* USANDO EL COLOR 'red' PERSONALIZADO */}
         <GlassCard className="p-6 mt-8 border border-red/50">
           <h3 className="text-xl font-bold text-red mb-4 flex items-center gap-2">
             <AlertTriangle size={20} />
@@ -649,6 +704,18 @@ const Profile = ({ onCancel, setView, navigate }) => {
         </GlassCard>
       </div>
 
+      {/* --- MODAL DE RECORTE DE IMAGEN --- */}
+      {isCropping && tempImage && (
+        <ImageCropModal
+          imageSrc={tempImage}
+          onComplete={handleCropComplete}
+          onCancel={() => {
+            setIsCropping(false);
+            setTempImage(null);
+          }}
+        />
+      )}
+
       <DeleteConfirmationModal
         modalAction={modalAction}
         isModalLoading={isModalLoading}
@@ -670,6 +737,43 @@ const Profile = ({ onCancel, setView, navigate }) => {
         />
       )}
     </>
+  );
+};
+
+// --- Componente: Modal de Recorte ---
+const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const onCropComplete = (croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black flex flex-col animate-[fade-in_0.2s_ease-out]">
+      <div className="relative flex-1">
+        <Cropper
+          image={imageSrc}
+          crop={crop}
+          zoom={zoom}
+          aspect={1}
+          cropShape="round"
+          showGrid={false}
+          onCropChange={setCrop}
+          onCropComplete={onCropComplete}
+          onZoomChange={setZoom}
+        />
+      </div>
+      <div className="bg-bg-primary p-4 pb-8 flex justify-between items-center px-8 border-t border-white/10" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+        <button type="button" onClick={onCancel} className="text-text-secondary font-medium px-4 py-2 hover:text-white transition">
+          Cancelar
+        </button>
+        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-bg-secondary font-bold px-6 py-2 rounded-full hover:scale-105 transition">
+          Recortar
+        </button>
+      </div>
+    </div>
   );
 };
 

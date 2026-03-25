@@ -153,7 +153,7 @@ export default function MainAppLayout({
     const checkMidnightReset = () => {
       const lastDate = localStorage.getItem('ai_last_date');
       const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
-
+      
       if (lastDate && lastDate !== today) {
         localStorage.removeItem('ai_remaining_uses');
         localStorage.removeItem('ai_daily_limit');
@@ -211,36 +211,44 @@ export default function MainAppLayout({
       {/* Contenido Principal */}
       <main
         ref={mainContentRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden pb-[calc(env(safe-area-inset-bottom,0px)+7rem)] md:pb-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-0"
       >
 
-        {/* Header (Móvil) - Padding normal gestionado por Tailwind */}
-        <div className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-50 px-4 pb-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10">
+        {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil --- */}
+        <div 
+          className="md:hidden flex justify-between items-center sticky top-0 bg-[--glass-bg] backdrop-blur-glass z-[100] px-4 pb-2.5 border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10"
+          style={{ 
+            // Añadimos el margen superior dinámico del notch + un pequeño respiro (0.5rem),
+            // asegurando un mínimo de 1rem si no hay notch (ej: navegadores web normales).
+            paddingTop: 'max(1rem, calc(env(safe-area-inset-top) + 0.5rem))' 
+          }}
+        >
 
           {/* Animación Título Header */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
             <span
               key={currentTitle}
-              className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary animate-fade-in-up"
+              className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary animate-fade-in-up truncate"
             >
               {currentTitle}
             </span>
             {view === 'social' && (
-              <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase animate-fade-in-up">
+              <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase animate-fade-in-up shrink-0">
                 BETA
               </span>
             )}
           </div>
 
           {/* Botones de Header (IA + Notif + Ajustes) */}
-          <div className="flex items-center">
+          <div className="flex items-center shrink-0">
 
             {/* Nuevo Botón de IA */}
             <div className="flex items-center justify-center mr-1 sm:mr-2">
               <button
                 onClick={() => setShowAIModal(true)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'
-                  }`}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${
+                    isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'
+                }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
                 title="Créditos IA"
               >
@@ -272,7 +280,7 @@ export default function MainAppLayout({
               </button>
             </div>
 
-            {/* Botón de Ajustes (Reemplaza Perfil) */}
+            {/* Botón de Ajustes */}
             <div
               className={`
                     flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
@@ -292,8 +300,8 @@ export default function MainAppLayout({
               </button>
             </div>
           </div>
-
         </div>
+        {/* --- FIN DE LA MODIFICACIÓN --- */}
 
         {/* Renderizado de la Vista/Página Actual */}
         <Suspense fallback={<LoadingFallback />}>
@@ -303,7 +311,7 @@ export default function MainAppLayout({
       </main>
 
       {/* Navbar (Móvil) - Cambiado a FIXED y estructurado para estirar el background en la safe area de iOS Safari */}
-      <nav
+      <nav 
         className="md:hidden fixed bottom-0 left-0 w-full bg-[--glass-bg] backdrop-blur-glass z-50 border-0 shadow-none [.oled-theme_&]:border-t [.oled-theme_&]:border-white/10 flex flex-col"
       >
         <div className="flex justify-evenly w-full h-[4.5rem]">
@@ -375,7 +383,7 @@ export default function MainAppLayout({
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => navigate('workout')}
-          className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom,0px)+6rem)] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 bottom-24 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>

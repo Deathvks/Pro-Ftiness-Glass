@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import PixabayModal from './PixabayModal';
+import Cropper from 'react-easy-crop';
 
 const PREDEFINED_BACKGROUNDS = [
     'linear-gradient(135deg, var(--color-accent) 0%, var(--bg-primary) 100%)',
@@ -22,6 +23,35 @@ const PREDEFINED_BACKGROUNDS = [
     'linear-gradient(to right, var(--glass-highlight), var(--color-accent-transparent))',
     'var(--color-accent)',
 ];
+
+// --- Helper para extraer la imagen recortada ---
+const getCroppedImg = async (imageSrc, pixelCrop) => {
+    const image = new Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(
+        image,
+        pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+        0, 0, pixelCrop.width, pixelCrop.height
+    );
+
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((file) => {
+            if (file) {
+                file.name = 'cropped-cover.jpg';
+                resolve(new File([file], 'cover.jpg', { type: 'image/jpeg' }));
+            } else {
+                reject(new Error('Canvas is empty'));
+            }
+        }, 'image/jpeg', 0.9);
+    });
+};
 
 const RoutineHeader = ({
     id,
@@ -43,6 +73,10 @@ const RoutineHeader = ({
     const [isFolderOpen, setIsFolderOpen] = useState(false);
     const [isPixabayOpen, setIsPixabayOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
+
+    // --- Estados para el Cropper ---
+    const [tempImage, setTempImage] = useState(null);
+    const [isCropping, setIsCropping] = useState(false);
 
     useEffect(() => {
         setImgError(false);
@@ -70,10 +104,33 @@ const RoutineHeader = ({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Limpiar URLs temporales al desmontar
+    useEffect(() => {
+        return () => {
+            if (tempImage && tempImage.startsWith('blob:')) {
+                URL.revokeObjectURL(tempImage);
+            }
+        };
+    }, [tempImage]);
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file && onImageUpload) onImageUpload(file);
+        if (file) {
+            setTempImage(URL.createObjectURL(file));
+            setIsCropping(true);
+        }
         if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleCropComplete = async (croppedAreaPixels) => {
+        try {
+            const croppedFile = await getCroppedImg(tempImage, croppedAreaPixels);
+            if (onImageUpload) onImageUpload(croppedFile);
+            setIsCropping(false);
+            setTempImage(null);
+        } catch (e) {
+            console.error("Error al procesar la imagen:", e);
+        }
     };
 
     const isCssBackground = (value) => value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
@@ -303,12 +360,61 @@ const RoutineHeader = ({
                 />
             </div>
 
+            {/* --- MODAL DE RECORTE DE IMAGEN --- */}
+            {isCropping && tempImage && (
+                <ImageCropModal
+                    imageSrc={tempImage}
+                    onComplete={handleCropComplete}
+                    onCancel={() => {
+                        setIsCropping(false);
+                        setTempImage(null);
+                    }}
+                />
+            )}
+
             <PixabayModal 
                 isOpen={isPixabayOpen} 
                 onClose={() => setIsPixabayOpen(false)} 
                 onSelectImage={(url) => { setImageUrl(url); setIsPixabayOpen(false); }} 
             />
         </>
+    );
+};
+
+// --- Componente: Modal de Recorte (Aspecto 16:9) ---
+const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+    const onCropComplete = (croppedArea, croppedAreaPixels) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[200] bg-black flex flex-col animate-[fade-in_0.2s_ease-out]">
+            <div className="relative flex-1">
+                <Cropper
+                    image={imageSrc}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={16 / 9} // Aspecto de vídeo (horizontal) para las portadas de rutina
+                    cropShape="rect"
+                    showGrid={true}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                />
+            </div>
+            <div className="bg-bg-primary p-4 pb-8 flex justify-between items-center px-8 border-t border-white/10" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+                <button type="button" onClick={onCancel} className="text-text-secondary font-medium px-4 py-2 hover:text-white transition">
+                    Cancelar
+                </button>
+                <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-bg-secondary font-bold px-6 py-2 rounded-full hover:scale-105 transition">
+                    Recortar
+                </button>
+            </div>
+        </div>
     );
 };
 

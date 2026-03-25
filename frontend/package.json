@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "6.2.15",
+  "version": "6.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -40,6 +40,7 @@
     "react": "^19.2.3",
     "react-body-highlighter": "^2.0.5",
     "react-dom": "^19.2.3",
+    "react-easy-crop": "^5.5.7",
     "react-helmet-async": "2.0.5",
     "react-i18next": "^15.0.0",
     "react-icons": "^5.5.0",
