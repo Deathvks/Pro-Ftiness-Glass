@@ -53,7 +53,6 @@
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
 
-  /* Borde sutil oscuro para modo claro */
   --glass-border: rgba(0, 0, 0, 0.1);
   --glass-bg: rgba(255, 255, 255, 0.75);
   --glass-highlight: rgba(255, 255, 255, 0.6);
@@ -67,7 +66,6 @@
   --text-secondary: #a3a3a3;
   --text-muted: #525252;
 
-  /* AJUSTADO: Bordes mucho más suaves para evitar el efecto "blanco fuerte" en negro */
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-bg: rgba(0, 0, 0, 0.7); 
   --glass-highlight: rgba(255, 255, 255, 0.05);
@@ -205,32 +203,38 @@
 @layer components {
 
   html {
+    width: 100%;
     height: 100%;
-    width: 100vw;
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
   }
 
   body {
     @apply text-text-primary antialiased;
+    /* FIX DEFINITIVO PWA iOS: Fijar el body a los bordes para evitar que se desplace */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
     height: 100%;
-    width: 100vw;
     overflow: hidden;
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
-    
-    /* El truco principal: body actúa de marco sólido usando su color de fondo */
     box-sizing: border-box;
-    /* Los paddings globales env() se han eliminado de aquí para evitar el doble cálculo 
-       y que estiren la app cuando los componentes hijos ya usan sus propios safe-areas */
   }
 
   /* #root ahora siempre vive dentro del espacio completamente libre y seguro */
   #root {
     isolation: isolate;
-    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
-    position: relative;
+    height: 100%;
     overflow: hidden;
   }
 
@@ -245,7 +249,6 @@
   }
 
   /* --- GLOBAL INPUT OVERRIDES --- */
-  /* Eliminamos el anillo/glow azul por defecto o de Tailwind y forzamos solo el borde de acento */
   input:focus,
   textarea:focus,
   select:focus,
@@ -260,8 +263,8 @@
   input:focus,
   textarea:focus,
   select:focus {
-    box-shadow: none !important; /* Elimina el anillo "azul" o doble borde */
-    border-color: var(--color-accent) !important; /* Fuerza el color de acento */
+    box-shadow: none !important;
+    border-color: var(--color-accent) !important;
     outline: none !important;
   }
 
@@ -271,11 +274,9 @@
   .bg-\[--glass-bg\] {
     background-color: var(--glass-bg);
     
-    /* Efecto Blur obligatorio para glass */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     
-    /* Bordes y sombras unificados */
     border: 1px solid var(--glass-border);
     border-top-color: var(--glass-highlight);
     
@@ -311,7 +312,6 @@
     box-shadow: none !important;
   }
 
-  /* Checkbox Light Theme */
   .light-theme input[type="checkbox"] {
     background-color: white !important;
     border-color: #d1d5db !important;
@@ -336,7 +336,6 @@
     0% {
       transform: translateY(0);
     }
-
     100% {
       transform: translateY(240px);
     }
@@ -372,7 +371,6 @@
 
 /* 6) UTILIDADES */
 @layer utilities {
-  /* Fix manual para la clase border-glass-border */
   .border-glass-border {
     border-color: var(--glass-border);
   }
@@ -389,15 +387,12 @@
     0% {
       transform: translate(-50%, -50%) scale(1);
     }
-
     33% {
       transform: translate(-60%, -40%) scale(1.15);
     }
-
     66% {
       transform: translate(-40%, -60%) scale(0.9);
     }
-
     100% {
       transform: translate(-50%, -50%) scale(1);
     }
@@ -408,7 +403,6 @@
       opacity: 0;
       transform: translateY(6px);
     }
-
     100% {
       opacity: 1;
       transform: translateY(0);
@@ -419,7 +413,6 @@
     0% {
       opacity: 0
     }
-
     100% {
       opacity: 1
     }
@@ -430,7 +423,6 @@
       transform: translateX(100%);
       opacity: 0;
     }
-
     to {
       transform: translateX(0);
       opacity: 1;
@@ -442,7 +434,6 @@
       transform: translateX(0);
       opacity: 1;
     }
-
     to {
       transform: translateX(100%);
       opacity: 0;
