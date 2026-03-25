@@ -135,6 +135,29 @@ export default function MainAppLayout({
     }
   }, [gamificationEvents, clearGamificationEvents, addToast]);
 
+  // FIX PWA iOS: Forzamos metaetiquetas de viewport y status bar
+  useEffect(() => {
+    // Evita el padding fantasma en iOS PWA (standalone)
+    let metaViewport = document.querySelector('meta[name=viewport]');
+    if (metaViewport) {
+      if (!metaViewport.content.includes('viewport-fit=cover')) {
+        metaViewport.content += ', viewport-fit=cover';
+      }
+    } else {
+      metaViewport = document.createElement('meta');
+      metaViewport.name = 'viewport';
+      metaViewport.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
+      document.head.appendChild(metaViewport);
+    }
+
+    let metaStatus = document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]');
+    if (!metaStatus) {
+      metaStatus = document.createElement('meta');
+      metaStatus.name = 'apple-mobile-web-app-status-bar-style';
+      document.head.appendChild(metaStatus);
+    }
+    metaStatus.content = 'black-translucent'; // Obliga a la barra a flotar sobre la app
+  }, []);
 
   // --- Sincronización de Cookies e IA Automática ---
   useEffect(() => {
@@ -192,7 +215,12 @@ export default function MainAppLayout({
 
   // Renderizado del layout principal
   return (
-    <div className="relative flex w-full h-full overflow-hidden">
+    <div className="relative flex w-full h-full overflow-hidden bg-bg-primary">
+      {/* Añadimos estilos globales para las safe-areas aquí mismo para evitar problemas de plugins de tailwind */}
+      <style>{`
+        .safe-pt { padding-top: env(safe-area-inset-top, 0px); }
+        .safe-pb { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); }
+      `}</style>
 
       {/* Fondo decorativo */}
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
@@ -214,14 +242,11 @@ export default function MainAppLayout({
         className="flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-0"
       >
 
-        {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil (Fix Android Bug) --- */}
-        <header className="md:hidden sticky top-0 z-40 w-full bg-[--glass-bg] backdrop-blur-glass border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10 block">
+        {/* --- INICIO DE LA MODIFICACIÓN: Header Móvil (Fix iOS PWA y Android WebView) --- */}
+        {/* Cambiamos a safe-pt para evitar que los estilos en línea rompan flexbox en Android */}
+        <header className="md:hidden sticky top-0 z-40 w-full bg-[--glass-bg] backdrop-blur-glass border-0 shadow-none [.oled-theme_&]:border-b [.oled-theme_&]:border-white/10 safe-pt">
           
-          {/* Espaciador estático del Notch. Usa paddingTop puro. */}
-          <div className="w-full" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}></div>
-
-          {/* Contenedor Flex para el contenido: Altura mínima fija y padding parejo */}
-          <div className="flex justify-between items-center w-full px-4 py-3 min-h-[64px]">
+          <div className="flex justify-between items-center w-full px-4 py-3 min-h-[60px]">
 
             {/* Animación Título Header */}
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
@@ -311,10 +336,8 @@ export default function MainAppLayout({
       </main>
 
       {/* --- INICIO MODIFICACIÓN: Navbar Flotante Moderno (Píldora) --- */}
-      <div 
-        className="md:hidden fixed bottom-0 w-full pointer-events-none z-50 flex justify-center px-4"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
-      >
+      {/* Cambiamos el style en línea por la clase safe-pb para máxima compatibilidad */}
+      <div className="md:hidden fixed bottom-0 w-full pointer-events-none z-50 flex justify-center px-4 safe-pb">
         <nav 
           className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
         >
