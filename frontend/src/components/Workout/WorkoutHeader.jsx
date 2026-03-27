@@ -1,9 +1,7 @@
 /* frontend/src/components/Workout/WorkoutHeader.jsx */
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Play, Pause, Square, Calculator, Activity, Timer } from 'lucide-react';
-import GlassCard from '../GlassCard';
 
-// NOTA: Mantenemos esta función helper aquí por ahora.
 const formatTime = (timeInSeconds) => {
   const hours = String(Math.floor(timeInSeconds / 3600)).padStart(2, '0');
   const minutes = String(Math.floor((timeInSeconds % 3600) / 60)).padStart(2, '0');
@@ -13,11 +11,11 @@ const formatTime = (timeInSeconds) => {
 
 /**
  * Cabecera de la página de Workout.
- * Muestra el nombre, cronómetro, controles e imagen de la rutina (si existe).
+ * Rediseño épico estilo iOS con Glassmorphism y la portada de fondo.
  */
 const WorkoutHeader = ({
   routineName,
-  routineImage, // Nueva prop
+  routineImage,
   timer,
   isWorkoutPaused,
   hasWorkoutStarted,
@@ -29,96 +27,129 @@ const WorkoutHeader = ({
 }) => {
   const [imageError, setImageError] = useState(false);
 
-  // Reseteamos el error si cambia la imagen (ej. al cambiar de rutina sin desmontar)
   useEffect(() => {
     setImageError(false);
   }, [routineImage]);
 
-  return (
-    <div className="w-full">
-      <button
-        onClick={onBackClick}
-        className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4"
-      >
-        <ChevronLeft size={20} />
-        Volver
-      </button>
+  // Lógica para detectar si es un link de imagen real o un código CSS de degradado
+  const isImageLink = routineImage && (
+    routineImage.startsWith('http') || 
+    routineImage.startsWith('/') || 
+    routineImage.startsWith('data:') || 
+    routineImage.startsWith('blob:')
+  );
+  
+  const isCssGradient = routineImage && routineImage.includes('gradient');
 
-      {/* Renderizado Condicional de la Imagen */}
-      {routineImage && !imageError && (
-        <div className="w-full h-32 sm:h-48 mb-6 rounded-xl overflow-hidden relative shadow-lg animate-[fade-in_0.5s_ease-out]">
+  return (
+    <div className="relative w-full rounded-[2rem] overflow-hidden mb-6 shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] animate-[fade-in_0.5s_ease-out]">
+      
+      {/* --- FONDO DINÁMICO --- */}
+      {isImageLink && !imageError ? (
+        // Opción A: Es una imagen real (Efecto cristal translúcido)
+        <div className="absolute inset-0 z-0">
           <img
             src={routineImage}
             alt={`Portada de ${routineName}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover opacity-60 scale-105"
             onError={() => setImageError(true)}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/90 via-bg-primary/40 to-transparent pointer-events-none" />
-
-          {/* Título sobre la imagen (opcional, estilo moderno) */}
-          <div className="absolute bottom-4 left-4 right-4 z-10 sm:hidden">
-            <h1 className="text-2xl font-bold text-white drop-shadow-md truncate">
-              {routineName}
-            </h1>
-          </div>
+          {/* Capas de oscurecimiento y blur */}
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/70 to-bg-primary/30" />
+          <div className="absolute inset-0 backdrop-blur-[6px]" />
         </div>
+      ) : isCssGradient ? (
+        // Opción B: Es un degradado CSS (como el del log, efecto cristal)
+        <div className="absolute inset-0 z-0" style={{ background: routineImage }}>
+           {/* Capa oscura y blur encima del degradado para suavizarlo */}
+           <div className="absolute inset-0 bg-bg-primary/60 backdrop-blur-[4px]" />
+        </div>
+      ) : (
+        // Opción C: No hay imagen ni patrón (Fallback al color estándar de tarjetas)
+        // Eliminado el degradado fuerte, ahora se ve el color suave transparente del GlassCard gracias a las clases del contenedor.
+        null
       )}
 
-      <GlassCard className="p-6 mb-6 relative z-10">
-        {/* Si hay imagen, ocultamos el título aquí en móvil para no duplicar, 
-            o lo dejamos si preferimos el diseño estándar. 
-            En este caso, lo mantengo visible siempre por consistencia visual 
-            con o sin imagen, pero ajustando márgenes. */}
-        <h1 className={`text-3xl font-bold text-center sm:text-left ${routineImage && !imageError ? 'hidden sm:block' : ''}`}>
+      {/* --- CONTENIDO DE LA CABECERA --- */}
+      <div className="relative z-10 p-6 flex flex-col items-center text-center">
+        
+        {/* Botón Volver */}
+        <div className="w-full flex justify-start mb-4">
+          <button
+            onClick={onBackClick}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/20 backdrop-blur-md border border-[--glass-border] text-white/90 text-sm font-medium hover:bg-black/40 hover:text-white transition active:scale-95"
+          >
+            <ChevronLeft size={18} />
+            Atrás
+          </button>
+        </div>
+
+        {/* Título de la Rutina */}
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2 drop-shadow-lg px-4 break-words text-balance">
           {routineName}
         </h1>
 
-        <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-4 mt-4">
-          <div className="font-mono text-4xl sm:text-5xl font-bold text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.3)]">
-            {formatTime(timer)}
-          </div>
-          <div className="flex gap-4">
-            <button
-              onClick={onShowHeatmap}
-              className="p-4 rounded-full bg-bg-secondary border border-glass-border text-text-primary transition hover:bg-white/10 active:scale-95"
-              title="Mapa de Músculos"
-            >
-              <Activity size={24} />
-            </button>
-
-            <button
-              onClick={onShowCalculator}
-              className="p-4 rounded-full bg-bg-secondary border border-glass-border text-text-primary transition hover:bg-white/10 active:scale-95"
-              title="Calculadora de Platos"
-            >
-              <Calculator size={24} />
-            </button>
-
-            <button
-              onClick={onTogglePause}
-              className="p-4 rounded-full transition text-bg-secondary bg-accent hover:bg-accent/80 active:scale-95 shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)]"
-              aria-label={isWorkoutPaused ? 'Reanudar' : 'Pausar'}
-            >
-              {isWorkoutPaused ? <Play size={24} fill="currentColor" /> : <Pause size={24} fill="currentColor" />}
-            </button>
-            <button
-              onClick={onFinishClick}
-              className="p-4 rounded-full bg-red text-bg-secondary transition hover:bg-red/80 active:scale-95 shadow-lg shadow-red/20"
-              aria-label="Finalizar"
-            >
-              <Square size={24} fill="currentColor" />
-            </button>
-          </div>
-        </div>
+        {/* Aviso de Iniciar Cronómetro */}
         {!hasWorkoutStarted && (
-          <div className="mt-4 p-3 bg-accent/10 border border-accent/20 rounded-lg flex items-center justify-center gap-2 animate-pulse">
-            <Timer size={20} className="text-accent shrink-0" />
-            <p className="text-accent font-medium text-center text-sm">
-              Inicia el cronómetro para comenzar a registrar datos
-            </p>
+          <div className="mb-4 flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 border border-[--glass-border] text-accent text-xs font-semibold uppercase tracking-wider animate-pulse">
+            <Timer size={14} /> Toca Play para Empezar
           </div>
         )}
-      </GlassCard>
+
+        {/* Cronómetro Gigante */}
+        <div className={`font-mono text-6xl sm:text-8xl font-black tracking-tighter drop-shadow-[0_0_20px_rgba(var(--accent-rgb),0.3)] mb-8 transition-colors duration-500 ${hasWorkoutStarted && !isWorkoutPaused ? 'text-accent' : 'text-white/80'}`}>
+          {formatTime(timer)}
+        </div>
+
+        {/* Controles (Píldora flotante iOS) */}
+        <div className="flex items-center gap-1 sm:gap-2 p-2 rounded-full bg-black/40 backdrop-blur-xl border border-[--glass-border] shadow-xl">
+          
+          <button
+            onClick={onShowHeatmap}
+            className="p-3 sm:p-4 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition active:scale-95"
+            title="Mapa Muscular"
+          >
+            <Activity size={24} />
+          </button>
+          
+          <button
+            onClick={onShowCalculator}
+            className="p-3 sm:p-4 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition active:scale-95"
+            title="Calculadora de Discos"
+          >
+            <Calculator size={24} />
+          </button>
+
+          <div className="w-[1px] h-8 bg-white/20 mx-1 sm:mx-2" />
+
+          {/* Botón Principal (Play/Pause) */}
+          <button
+            onClick={onTogglePause}
+            className={`p-4 sm:p-5 rounded-full transition shadow-lg flex items-center justify-center active:scale-90 ${
+              hasWorkoutStarted && !isWorkoutPaused
+                ? 'bg-white/10 text-white hover:bg-white/20 border border-[--glass-border]'
+                : 'bg-accent text-bg-secondary hover:bg-accent/90 hover:scale-105 shadow-[0_0_20px_rgba(var(--accent-rgb),0.5)]'
+            }`}
+          >
+            {isWorkoutPaused ? (
+              <Play size={28} fill="currentColor" className="ml-1" />
+            ) : (
+              <Pause size={28} fill="currentColor" />
+            )}
+          </button>
+
+          <div className="w-[1px] h-8 bg-white/20 mx-1 sm:mx-2" />
+
+          <button
+            onClick={onFinishClick}
+            className="p-3 sm:p-4 rounded-full text-red/80 hover:text-red hover:bg-red/10 transition active:scale-95"
+            title="Finalizar Entrenamiento"
+          >
+            <Square size={24} fill="currentColor" />
+          </button>
+          
+        </div>
+      </div>
     </div>
   );
 };

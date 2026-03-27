@@ -96,6 +96,18 @@ const Workout = ({ timer, setView }) => {
         };
     }, []);
 
+    // --- LOGS PARA DEPURACIÓN AÑADIDOS ---
+    useEffect(() => {
+        if (activeWorkout) {
+            console.log("=== DEBUG WORKOUT ===");
+            console.log("Objeto activeWorkout completo:", activeWorkout);
+            console.log("activeWorkout.imageUrl:", activeWorkout.imageUrl);
+            console.log("activeWorkout.image_url:", activeWorkout.image_url);
+            console.log("Imagen que se enviará al Header:", activeWorkout.imageUrl || activeWorkout.image_url);
+        }
+    }, [activeWorkout]);
+    // -------------------------------------
+
     // --- 3. Memos y Variables Derivadas ---
 
     const hasWorkoutStarted = workoutStartTime !== null;
@@ -316,7 +328,7 @@ const Workout = ({ timer, setView }) => {
         <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
             <WorkoutHeader
                 routineName={activeWorkout.routineName}
-                routineImage={activeWorkout.image_url}
+                routineImage={activeWorkout.imageUrl || activeWorkout.image_url} // <--- MODIFICACIÓN AQUÍ
                 timer={timer}
                 isWorkoutPaused={isWorkoutPaused}
                 hasWorkoutStarted={hasWorkoutStarted}

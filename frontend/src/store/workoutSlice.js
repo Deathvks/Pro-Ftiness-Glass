@@ -218,6 +218,9 @@ export const createWorkoutSlice = (set, get) => ({
       activeWorkout: {
         routineId: routine.id || null,
         routineName: routine.name,
+        // CAPTURAMOS AMBAS VARIANTES POR SI ACASO
+        image_url: routine.imageUrl || routine.image_url || null, 
+        imageUrl: routine.imageUrl || routine.image_url || null,
         exercises,
         startTime: new Date().toISOString(), 
       },
@@ -234,6 +237,8 @@ export const createWorkoutSlice = (set, get) => ({
       activeWorkout: {
         routineId: null,
         routineName: workoutName,
+        image_url: null,
+        imageUrl: null,
         exercises: [],
         startTime: new Date().toISOString(), 
       },
@@ -570,13 +575,10 @@ export const createWorkoutSlice = (set, get) => ({
         get().showPRNotification(responseData.newPRs);
         get()._showLocalPRNotification(responseData.newPRs);
         
-        // --- CORRECCIÓN CRÍTICA: INYECTAR FECHA MANUALMENTE ---
-        // Si el PR viene sin fecha del servidor, le ponemos la fecha actual
-        // para que el Dashboard no lo filtre y salga al instante.
         if (get().addLocalPersonalRecords) {
             const recordsWithDate = responseData.newPRs.map(pr => ({
                 ...pr,
-                date: pr.date || workoutDate // Usar fecha del entreno o ahora
+                date: pr.date || workoutDate
             }));
             get().addLocalPersonalRecords(recordsWithDate);
         }
