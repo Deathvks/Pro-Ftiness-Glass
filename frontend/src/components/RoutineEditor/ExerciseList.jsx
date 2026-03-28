@@ -1,4 +1,3 @@
-/* frontend/src/components/RoutineEditor/ExerciseList.jsx */
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ExerciseGroup from '../RoutineEditor/ExerciseGroup';
@@ -28,8 +27,8 @@ const ExerciseList = ({
         <Droppable droppableId="exercises">
           {(provided) => (
             // --- INICIO DE LA MODIFICACIÓN (Revertir a Lista) ---
-            // Volvemos a usar `space-y-6` en lugar de un grid
-            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6 mb-6">
+            // Volvemos a usar `space-y-6` en lugar de un grid y añadimos el padding inferior para móvil
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6 mb-6 pb-10 md:pb-8">
             {/* --- FIN DE LA MODIFICACIÓN (Revertir a Lista) --- */}
               {groupedExercises.map((group, groupIndex) => {
                 if (!group || group.length === 0) return null;

@@ -1,4 +1,3 @@
-/* frontend/src/pages/SettingsScreen.jsx */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -119,6 +118,7 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
       <button
         role="switch"
         aria-checked={checked}
+        onChange={onChange}
         onClick={onChange}
         disabled={disabled}
         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg] ml-3
@@ -498,7 +498,7 @@ export default function SettingsScreen({
 
   return (
     // CAMBIO: Añadido pt-6 para separar del borde superior en móvil
-    <div className="px-4 pt-6 pb-24 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div className="px-4 pt-6 pb-10 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>

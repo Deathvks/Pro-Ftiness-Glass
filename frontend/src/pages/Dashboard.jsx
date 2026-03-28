@@ -1,4 +1,3 @@
-/* frontend/src/pages/Dashboard.jsx */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
@@ -22,9 +21,7 @@ import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
 import XPGuideModal from '../components/XPGuideModal';
 import TourGuide from '../components/TourGuide';
-// --- INICIO MODIFICACIÓN: Importar LevelBadge ---
 import LevelBadge from '../components/LevelBadge';
-// --- FIN MODIFICACIÓN ---
 import * as nutritionService from '../services/nutritionService';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
@@ -416,7 +413,7 @@ const Dashboard = ({ setView }) => {
   const handleShareRecap = () => shareImage(weeklyRecapRef, t('Resumen Semanal', { defaultValue: 'Resumen Semanal' }));
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-24 md:p-10 animate-[fade-in_0.5s_ease-out]">
+    <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-10 md:p-10 md:pb-8 animate-[fade-in_0.5s_ease-out]">
       <SEOHead 
         title={t("Dashboard - Pro Fitness Glass", { defaultValue: "Dashboard - Pro Fitness Glass" })} 
         description={t("Panel de control de usuario.", { defaultValue: "Panel de control de usuario." })}
@@ -447,11 +444,9 @@ const Dashboard = ({ setView }) => {
           className="w-full lg:w-auto p-5 flex items-center gap-6 bg-bg-secondary/40 rounded-3xl relative overflow-hidden group border-transparent dark:border dark:border-white/10 hover:bg-bg-secondary transition-all cursor-pointer"
           onClick={() => setShowXPModal(true)}
         >
-          {/* --- INICIO MODIFICACIÓN: Usar LevelBadge en lugar del renderizado manual --- */}
           <div className="relative flex-shrink-0">
             <LevelBadge level={levelData.level} size="md" />
           </div>
-          {/* --- FIN MODIFICACIÓN --- */}
 
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -571,10 +566,9 @@ const Dashboard = ({ setView }) => {
         <BentoStatCard title={t('Quemadas', { defaultValue: 'Quemadas' })} value={weeklyCalories.toLocaleString()} unit="kcal" icon={Flame} subtext={t('Total estimado', { defaultValue: 'Total estimado' })} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <section id="tour-nutrition">
-            {/* CORRECCIÓN RESPONSIVE APLICADA EN ESTE CONTENEDOR Y HEADER */}
             <GlassCard className="p-5 sm:p-8 relative overflow-hidden rounded-[2rem] border-transparent dark:border dark:border-white/10 transition-all">
               <div className="flex items-center justify-between gap-2 mb-8 sm:mb-10 relative z-10">
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -756,7 +750,6 @@ const Dashboard = ({ setView }) => {
              {showWeeklyRecap && <WeeklyRecapCard weeklyData={weeklyRecapData} userProfile={userProfile} />}
          </div>
          <div ref={prCardRef} style={{ width: '1080px', height: '1920px' }}>
-             {/* AQUÍ INYECTAMOS LA FOTO AL RENDER OCULTO */}
              {showPRModal && prShareData && <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />}
          </div>
       </div>
@@ -834,7 +827,6 @@ const Dashboard = ({ setView }) => {
                  <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center pointer-events-none">
                       <ScaleToFit width={1080} height={1920}>
                           <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 pointer-events-auto">
-                              {/* AQUÍ INYECTAMOS LA FOTO AL OVERLAY VISIBLE */}
                               <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />
                           </div>
                       </ScaleToFit>

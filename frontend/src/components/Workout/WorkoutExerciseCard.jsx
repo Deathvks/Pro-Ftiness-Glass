@@ -44,7 +44,9 @@ const WorkoutExerciseCard = ({
   };
 
   return (
-    <div className="p-4 relative">
+    <div className="p-4 sm:p-6 relative flex flex-col gap-6">
+      
+      {/* --- Imagen (Mantenido tamaño original, añadido efecto OLED gris en modo oscuro) --- */}
       <button
         onClick={() => onSetSelectedExercise(exercise)}
         className="w-full text-left transition-transform active:scale-[0.99] group"
@@ -52,138 +54,97 @@ const WorkoutExerciseCard = ({
       >
         <ExerciseMedia
           details={exercise.exercise_details}
-          className="w-full lg:max-w-lg mx-auto mb-4 transition rounded-xl overflow-hidden relative shadow-sm border border-glass-border"
+          className="w-full lg:max-w-lg mx-auto mb-4 transition rounded-xl overflow-hidden relative shadow-sm border border-glass-border dark:filter dark:grayscale dark:brightness-110"
         />
       </button>
 
-      <button
-        onClick={() => onSetSelectedExercise(exercise)}
-        className="w-full text-left mb-2 group"
-      >
-        <h3 className="text-lg font-semibold truncate group-hover:text-accent">
-          {t(exercise.name, { ns: 'exercise_names' })}
-        </h3>
-      </button>
-
-      <div className="flex items-end justify-between gap-3 mb-4">
+      {/* --- Contenedor de Textos (Jerarquía iOS suave) --- */}
+      <div className="flex flex-col gap-3">
         <button
           onClick={() => onSetSelectedExercise(exercise)}
-          className="flex-1 min-w-0 text-left group flex flex-col gap-1"
-          title="Ver detalles del ejercicio"
+          className="text-left group w-full"
         >
-          <span className="text-sm font-semibold text-accent">
-            {exercise.sets} series × {exercise.reps} reps
-          </span>
+          <h3 className="text-2xl font-extrabold text-text-primary leading-tight group-hover:text-accent transition-colors break-words text-balance">
+            {t(exercise.name, { ns: 'exercise_names' })}
+          </h3>
+        </button>
 
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/* Objetivo */}
+          <p className="text-base font-semibold text-accent">
+            {exercise.sets} series × {exercise.reps} reps
+          </p>
+          
+          {/* Historial (En pastilla suave) */}
           {exercise.last_performance && (
-            <div className="flex items-center gap-1.5 text-xs text-text-muted/80 animate-fade-in">
-              <History size={12} className="text-accent/70 shrink-0" />
-              <span className="truncate">
-                <span className="font-medium text-text-secondary">
+            <div className="flex items-center gap-2 bg-bg-primary/60 border border-[--glass-border] rounded-full px-3 py-1 animate-fade-in shadow-sm">
+              <History size={13} className="text-accent shrink-0" />
+              <span className="text-xs text-text-secondary">
+                <span className="font-semibold text-text-primary">
                   {new Date(exercise.last_performance.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}:
                 </span>{' '}
                 {formatLastPerformance(exercise.last_performance)}
               </span>
             </div>
           )}
-        </button>
-
-        <div className="flex gap-2 items-center shrink-0">
-          {/* Botón Historial */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onShowHistory) {
-                onShowHistory(exercise);
-              }
-            }}
-            className="p-2 rounded-xl transition shrink-0 bg-bg-primary text-text-secondary hover:text-accent hover:shadow-md hover:shadow-accent/10"
-            title="Ver Historial"
-          >
-            <History size={18} />
-          </button>
-
-          {/* Botón Calentamiento - AHORA COINCIDE CON EL ESTILO */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (hasWorkoutStarted) setShowWarmupInput(true);
-            }}
-            // CAMBIO: Estilo igualado al de Historial y Reemplazar (bg-bg-primary, text-secondary)
-            className={`p-2 rounded-xl transition shrink-0 ${hasWorkoutStarted
-              ? 'bg-bg-primary text-text-secondary hover:text-accent hover:shadow-md hover:shadow-accent/10'
-              : 'bg-bg-primary text-text-muted opacity-50 cursor-not-allowed'
-              }`}
-            title={hasWorkoutStarted ? "Generar series de calentamiento" : "Inicia el entrenamiento primero"}
-            disabled={!hasWorkoutStarted}
-          >
-            <Flame size={18} />
-          </button>
-
-          {/* Botón Reemplazar */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSetExerciseToReplace(actualExIndex);
-            }}
-            className={`p-2 rounded-xl transition shrink-0 ${hasWorkoutStarted
-              ? 'bg-bg-primary text-text-secondary hover:text-accent hover:shadow-md hover:shadow-accent/10'
-              : 'bg-bg-primary text-text-muted opacity-50 cursor-not-allowed'
-              }`}
-            title={hasWorkoutStarted ? 'Reemplazar ejercicio' : 'Inicia el cronómetro para reemplazar ejercicios'}
-            disabled={!hasWorkoutStarted}
-          >
-            <Repeat size={18} />
-          </button>
         </div>
       </div>
 
-      {showWarmupInput && (
-        <div
-          className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm rounded-xl animate-fade-in"
-          onClick={() => setShowWarmupInput(false)}
-        >
-          <div className="bg-bg-secondary border border-glass-border rounded-xl p-5 w-full max-w-xs shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
-            <h4 className="text-lg font-bold mb-1 flex items-center gap-2 text-text-primary">
-              <Flame size={20} className="text-accent" />
-              Calentamiento
-            </h4>
-            <p className="text-sm text-text-muted mb-4">
-              Genera series (50%, 70%, 90%) según peso objetivo.
-            </p>
+      <div className="w-full h-[1px] bg-[--glass-border]" />
 
-            <form onSubmit={handleWarmupSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-text-secondary uppercase">Peso de Trabajo (kg)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  autoFocus
-                  value={workingWeight}
-                  onChange={(e) => setWorkingWeight(e.target.value)}
-                  className="w-full bg-bg-primary border border-glass-border rounded-lg px-4 py-3 text-xl font-bold text-center text-text-primary focus:ring-2 focus:ring-accent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
-                  placeholder="0"
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowWarmupInput(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-glass-border text-text-secondary font-medium hover:bg-white/5 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-lg bg-accent text-bg-secondary font-bold hover:bg-accent/80 transition-colors shadow-lg shadow-accent/20"
-                >
-                  Generar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* --- Botonera Segmentada (Estilo iOS unificado) --- */}
+      <div className="flex bg-bg-primary p-1 rounded-2xl border border-[--glass-border] shadow-inner gap-1">
+        
+        {/* Historial */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onShowHistory) onShowHistory(exercise);
+          }}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-secondary hover:shadow-sm transition active:scale-95"
+        >
+          <History size={18} />
+          <span className="text-xs font-semibold hidden sm:block">Ver Historial</span>
+        </button>
+
+        <div className="w-[1px] bg-[--glass-border] my-2" />
+
+        {/* Calentar */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (hasWorkoutStarted) setShowWarmupInput(true);
+          }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition active:scale-95 ${
+            hasWorkoutStarted
+              ? 'text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 hover:shadow-sm'
+              : 'text-text-muted opacity-50 cursor-not-allowed'
+          }`}
+          disabled={!hasWorkoutStarted}
+        >
+          <Flame size={18} className={hasWorkoutStarted ? "text-orange-500/80" : ""} />
+          <span className="text-xs font-semibold hidden sm:block">Calentar</span>
+        </button>
+
+        <div className="w-[1px] bg-[--glass-border] my-2" />
+
+        {/* Sustituir */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onSetExerciseToReplace(actualExIndex);
+          }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition active:scale-95 ${
+            hasWorkoutStarted
+              ? 'text-text-secondary hover:text-accent hover:bg-accent/10 hover:shadow-sm'
+              : 'text-text-muted opacity-50 cursor-not-allowed'
+          }`}
+          disabled={!hasWorkoutStarted}
+        >
+          <Repeat size={18} />
+          <span className="text-xs font-semibold hidden sm:block">Sustituir</span>
+        </button>
+      </div>
 
       <WorkoutSetGrid
         setsDone={exercise.setsDone}
@@ -193,13 +154,72 @@ const WorkoutExerciseCard = ({
         baseInputClasses={baseInputClasses}
         onUpdateSet={onUpdateSet}
         onAddDropset={onAddDropset}
-        onRemoveDropset={onRemoveDropset}
+        onRemoveDropset={onRemoveDropset} // Mantener fix
         onToggleWarmup={onToggleWarmup}
         onOpenRestModal={onOpenRestModal}
         onDisabledInputClick={onDisabledInputClick}
         onDisabledButtonClick={onDisabledButtonClick}
         normalizeDecimalInput={normalizeDecimalInput}
       />
+
+      {/* MODAL CALENTAMIENTO (Mantenido Glassmorphism) */}
+      {showWarmupInput && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/60 backdrop-blur-md rounded-[2rem] animate-[fade-in_0.2s_ease-out]"
+          onClick={() => setShowWarmupInput(false)}
+        >
+          <div 
+            className="bg-[--glass-bg] border border-[--glass-border] rounded-[2rem] p-6 w-full max-w-xs shadow-2xl animate-[scale-in_0.2s_ease-out]" 
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="p-2 bg-orange-500/10 rounded-full">
+                <Flame size={24} className="text-orange-500" />
+              </div>
+            </div>
+            
+            <h4 className="text-xl font-bold text-center text-text-primary mb-1">
+              Calentamiento
+            </h4>
+            <p className="text-xs text-center text-text-secondary mb-6 px-2">
+              Genera 3 series progresivas hacia tu peso objetivo.
+            </p>
+
+            <form onSubmit={handleWarmupSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider text-center block">
+                  Peso Objetivo (kg)
+                </label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  autoFocus
+                  value={workingWeight}
+                  onChange={(e) => setWorkingWeight(e.target.value)}
+                  className="w-full bg-bg-primary border border-[--glass-border] rounded-2xl px-4 py-4 text-4xl font-black text-center text-text-primary focus:ring-2 focus:ring-accent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none shadow-inner"
+                  placeholder="0"
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowWarmupInput(false)}
+                  className="flex-1 py-3 rounded-xl border border-[--glass-border] bg-bg-primary/50 text-text-primary font-semibold hover:bg-bg-secondary transition-colors active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 active:scale-95"
+                >
+                  Generar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

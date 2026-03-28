@@ -1,4 +1,3 @@
-/* frontend/src/pages/Profile.jsx */
 import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -402,7 +401,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
           } - Pro Fitness Glass`}</title>
       </Helmet>
 
-      <div className="w-full max-w-4xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-6 sm:mt-0">
+      <div className="w-full max-w-4xl mx-auto px-4 pb-10 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-6 sm:mt-0">
         <button
           onClick={onCancel}
           className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4"

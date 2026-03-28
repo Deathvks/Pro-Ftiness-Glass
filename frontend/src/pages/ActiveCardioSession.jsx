@@ -1,4 +1,3 @@
-/* frontend/src/pages/ActiveCardioSession.jsx */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
@@ -430,7 +429,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
         </button>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary/90 backdrop-blur-xl rounded-t-3xl border-t border-text-primary/10 p-6 pb-20 md:pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-slide-up">
+      <div className="absolute bottom-0 left-0 right-0 z-20 bg-bg-primary/90 backdrop-blur-xl rounded-t-3xl border-t border-text-primary/10 p-6 pb-28 md:pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-slide-up">
         <div className="text-center mb-6">
           <div className="text-6xl font-black font-mono text-text-primary tracking-tight">{formatTime(seconds)}</div>
           <p className="text-xs text-text-muted uppercase tracking-widest mt-1">Tiempo Transcurrido</p>

@@ -1,4 +1,3 @@
-/* frontend/src/pages/Progress.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -255,7 +254,7 @@ const Progress = ({ darkMode }) => {
     const getTabClass = (type) => `px-4 py-2 text-sm font-semibold rounded-full transition whitespace-nowrap ${viewType === type ? 'bg-accent text-bg-secondary' : 'bg-bg-secondary text-text-secondary'}`;
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-6 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-10 md:p-6 md:pb-8 lg:p-10 lg:pb-8 animate-[fade-in_0.5s_ease-out]">
             <Helmet>
                 <html lang="es" />
                 <title>Tu Progreso - Pro Fitness Glass</title>

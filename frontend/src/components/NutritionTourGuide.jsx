@@ -1,4 +1,3 @@
-/* frontend/src/components/NutritionTourGuide.jsx */
 import { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -33,8 +32,10 @@ const NutritionTourGuide = () => {
           max-width: calc(100vw - 32px) !important;
           
           /* FIX: Forzar respeto por las áreas seguras del móvil (Notch y Gestos) */
-          margin-top: env(safe-area-inset-top, 16px) !important;
-          margin-bottom: env(safe-area-inset-bottom, 16px) !important;
+          margin-top: calc(env(safe-area-inset-top, 40px) + 16px) !important;
+          margin-bottom: calc(env(safe-area-inset-bottom, 30px) + 16px) !important;
+          max-height: calc(100vh - env(safe-area-inset-top, 40px) - env(safe-area-inset-bottom, 30px) - 64px) !important;
+          overflow-y: auto !important;
           z-index: 999999 !important;
         }
 

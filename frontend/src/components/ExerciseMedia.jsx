@@ -23,11 +23,11 @@ const ExerciseMedia = ({ details, className = '' }) => {
   const videoUrl = getMediaUrl(details?.video_url);
   const imageUrl = getMediaUrl(details?.image_url);
 
-  // Lógica de contraste para OLED:
-  // Si el tema es 'oled', las siluetas negras necesitan un fondo claro (gris) para verse.
-  // En otros temas, usamos el fondo secundario estándar.
-  const isOled = theme === 'oled';
-  const imageBgClass = isOled ? 'bg-gray-200' : 'bg-bg-secondary';
+  // Lógica de contraste para Oscuro y OLED:
+  // Si el tema es 'oled' o 'dark', las siluetas negras necesitan un fondo claro (gris) para verse.
+  // En el tema 'light', usamos el fondo secundario estándar de la app.
+  const isDarkTheme = theme === 'oled' || theme === 'dark';
+  const imageBgClass = isDarkTheme ? 'bg-gray-200' : 'bg-bg-secondary';
   const placeholderBgClass = 'bg-bg-secondary'; // El placeholder usa iconos del sistema (colores controlados), puede quedarse oscuro.
 
   // Fallback si no hay media
@@ -58,7 +58,7 @@ const ExerciseMedia = ({ details, className = '' }) => {
   }
 
   if (imageUrl) {
-    // Aplicamos el fondo calculado (gris claro en OLED, estándar en otros)
+    // Aplicamos el fondo calculado (gris claro en Oscuro/OLED, estándar en Claro)
     const imageClasses = `aspect-video object-contain rounded-xl overflow-hidden ${imageBgClass} ${className}`;
 
     return (

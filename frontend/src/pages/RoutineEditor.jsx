@@ -63,7 +63,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 sm:p-6 lg:p-10 pb-4 animate-[fade-in_0.5s_ease_out]">
+    <div className="w-full max-w-3xl mx-auto p-4 sm:p-6 lg:p-10 pb-24 md:pb-10 animate-[fade-in_0.5s_ease_out]">
 
       <RoutineHeader
         id={id}

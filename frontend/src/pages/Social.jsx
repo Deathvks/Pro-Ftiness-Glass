@@ -1,4 +1,3 @@
-/* frontend/src/pages/Social.jsx */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -1044,7 +1043,7 @@ export default function Social({ setView }) {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-24 md:pb-8 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-10 md:pb-8 animate-[fade-in_0.5s_ease-out]">
             
             {/* --- Modales --- */}
             {deleteConfirmation.isOpen && (

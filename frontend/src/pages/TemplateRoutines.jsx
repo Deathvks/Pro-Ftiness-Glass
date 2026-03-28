@@ -6,7 +6,7 @@ import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 import exerciseTranslations from '../locales/es/exercise_names.json';
-// Importamos hook de tema para detectar OLED
+// Importamos hook de tema para detectar OLED y Dark
 import { useAppTheme } from '../hooks/useAppTheme';
 
 // Traducciones manuales para ejercicios que falten en el JSON
@@ -285,9 +285,10 @@ const TemplateRoutines = ({ setView }) => {
   const categoryOptions = [{ value: 'all', label: 'Todas' }, ...categories.map(c => ({ value: c, label: c }))];
   const difficultyOptions = [{ value: 'all', label: 'Todas' }, { value: 'Principiante', label: 'Principiante' }, { value: 'Intermedio', label: 'Intermedio' }, { value: 'Avanzado', label: 'Avanzado' }];
 
-  // Lógica de contraste para OLED:
-  const isOled = theme === 'oled';
-  const imageBgClass = isOled ? 'bg-gray-200' : 'bg-bg-primary';
+  // Lógica de contraste para OLED y Oscuro:
+  // MODIFICADO AQUÍ PARA APLICAR EN AMBOS MODOS
+  const isDarkTheme = theme === 'oled' || theme === 'dark';
+  const imageBgClass = isDarkTheme ? 'bg-gray-200' : 'bg-bg-primary';
 
   return (
     <div className="flex flex-col gap-6 animate-[fade-in_0.5s_ease_out]">
