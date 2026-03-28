@@ -1043,7 +1043,7 @@ export default function Social({ setView }) {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-10 md:pb-8 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:pb-8 animate-[fade-in_0.5s_ease-out]">
             
             {/* --- Modales --- */}
             {deleteConfirmation.isOpen && (

@@ -413,7 +413,7 @@ const Dashboard = ({ setView }) => {
   const handleShareRecap = () => shareImage(weeklyRecapRef, t('Resumen Semanal', { defaultValue: 'Resumen Semanal' }));
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-10 md:p-10 md:pb-8 animate-[fade-in_0.5s_ease-out]">
+    <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-28 md:p-10 md:pb-8 animate-[fade-in_0.5s_ease-out]">
       <SEOHead 
         title={t("Dashboard - Pro Fitness Glass", { defaultValue: "Dashboard - Pro Fitness Glass" })} 
         description={t("Panel de control de usuario.", { defaultValue: "Panel de control de usuario." })}

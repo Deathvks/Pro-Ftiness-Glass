@@ -498,7 +498,7 @@ export default function SettingsScreen({
 
   return (
     // CAMBIO: Añadido pt-6 para separar del borde superior en móvil
-    <div className="px-4 pt-6 pb-10 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>

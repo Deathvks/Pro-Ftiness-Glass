@@ -257,7 +257,10 @@ const checkStreakWars = () => {
       await Promise.all(targetUsers.map(async (dangerUser) => {
         const [friendships, squadMemberships] = await Promise.all([
           db.Friendship.findAll({
-            where: { [Op.or]: [{ requester_id: dangerUser.id }, { addressee_id: dangerUser.id }] },
+            where: { 
+              [Op.or]: [{ requester_id: dangerUser.id }, { addressee_id: dangerUser.id }],
+              status: 'accepted'
+            },
             attributes: ['requester_id', 'addressee_id']
           }),
           db.SquadMember.findAll({

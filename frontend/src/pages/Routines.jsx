@@ -732,7 +732,7 @@ const Routines = ({ setView }) => {
   );
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 pb-10 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">
+    <div className="w-full max-w-5xl mx-auto px-4 pb-28 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">
       <Helmet>
         <title>
           {activeTab === 'myRoutines' ? 'Mis Rutinas' : 'Explorar Plantillas'} - Pro Fitness Glass

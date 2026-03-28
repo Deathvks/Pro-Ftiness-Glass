@@ -362,7 +362,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const visibleBadges = badges.slice(badgePage * BADGES_PER_PAGE, (badgePage + 1) * BADGES_PER_PAGE);
 
     return (
-        <div className="pb-24 md:pb-8 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
+        <div className="pb-28 md:pb-8 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
 
             {viewingStory && (
                 <StoryViewer 

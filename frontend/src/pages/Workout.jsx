@@ -316,7 +316,7 @@ const Workout = ({ timer, setView }) => {
     }
 
     return (
-        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 pb-24 md:pb-10 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 pb-28 md:pb-10 animate-[fade-in_0.5s_ease-out]">
             <WorkoutHeader
                 routineName={activeWorkout.routineName}
                 routineImage={activeWorkout.imageUrl || activeWorkout.image_url} // <--- MODIFICACIÓN AQUÍ

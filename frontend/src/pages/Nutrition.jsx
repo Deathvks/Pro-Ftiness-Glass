@@ -417,7 +417,7 @@ const Nutrition = ({ setView }) => {
     const isSugarHigh = totals.sugar >= sugarTarget;
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 pb-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-7xl mx-auto px-4 pb-28 sm:p-6 sm:pb-8 lg:p-10 lg:pb-10 animate-[fade-in_0.5s_ease-out]">
 
             <NutritionTourGuide />
 

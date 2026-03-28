@@ -28,7 +28,7 @@ const ExerciseList = ({
           {(provided) => (
             // --- INICIO DE LA MODIFICACIÓN (Revertir a Lista) ---
             // Volvemos a usar `space-y-6` en lugar de un grid y añadimos el padding inferior para móvil
-            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6 mb-6 pb-10 md:pb-8">
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6 mb-6 pb-28 md:pb-8">
             {/* --- FIN DE LA MODIFICACIÓN (Revertir a Lista) --- */}
               {groupedExercises.map((group, groupIndex) => {
                 if (!group || group.length === 0) return null;

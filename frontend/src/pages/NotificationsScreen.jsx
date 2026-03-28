@@ -413,7 +413,7 @@ const NotificationsScreen = ({ setView }) => {
   const canLoadMore = notificationPage < notificationTotalPages && activeFilter === 'all';
 
   return (
-    <div className="pb-10 md:pb-8 pt-6 px-4 max-w-2xl mx-auto min-h-full relative">
+    <div className="pb-28 md:pb-8 pt-6 px-4 max-w-2xl mx-auto min-h-full relative">
 
       {/* Modales */}
       {selectedNotification && (
