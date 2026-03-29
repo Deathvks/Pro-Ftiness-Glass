@@ -1,8 +1,11 @@
 /* frontend/src/hooks/useAppInitialization.js */
 import { useState, useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
 import { Camera } from '@capacitor/camera';
 import useAppStore from '../store/useAppStore';
+
+const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
 
 /**
  * Hook para gestionar la carga inicial de datos de la aplicación,
@@ -152,6 +155,31 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     window.addEventListener('popstate', handleUrlChange); 
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, [isAuthenticated, setAuthView]); 
+
+  // Efecto 5: Restaurar notificación nativa al pasar la app a segundo plano
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const handleAppStateChange = async ({ isActive }) => {
+      if (!isActive) {
+        const state = useAppStore.getState();
+        if (state.isResting && !state.isRestTimerPaused && state.restTimerEndTime) {
+          if (NativeTimer) {
+            NativeTimer.startTimer({
+              title: 'Descanso en progreso',
+              endTimeMs: state.restTimerEndTime
+            }).catch(() => {});
+          }
+        }
+      }
+    };
+
+    const listener = CapApp.addListener('appStateChange', handleAppStateChange);
+
+    return () => {
+      listener.then(l => l.remove());
+    };
+  }, []);
 
   return {
     isInitialLoad,

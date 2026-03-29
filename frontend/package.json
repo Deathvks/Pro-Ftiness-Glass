@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "6.3.21",
+  "version": "6.4.0",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
@@ -16,14 +16,14 @@
     "start": "serve -s dist"
   },
   "dependencies": {
-    "@capacitor/android": "^6.0.0",
+    "@capacitor/android": "^8.3.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/camera": "^8.0.0",
-    "@capacitor/core": "^6.0.0",
+    "@capacitor/core": "^8.3.0",
     "@capacitor/geolocation": "^6.0.0",
     "@capacitor/local-notifications": "^8.0.0",
-    "@capacitor/status-bar": "^6.0.0",
-    "@capgo/capacitor-navigation-bar": "^7.3.18",
+    "@capacitor/status-bar": "^8.0.2",
+    "@capgo/capacitor-navigation-bar": "^8.0.25",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@headlessui/react": "^2.2.9",
     "@hello-pangea/dnd": "^18.0.1",
