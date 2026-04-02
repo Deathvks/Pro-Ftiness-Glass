@@ -4,8 +4,43 @@ import { formatDateForQuery } from '../utils/dateUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
-// Inicializamos el plugin nativo de forma segura
-const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
+// Registramos el plugin nativo aquí, en el cerebro del entrenamiento
+const NativeTimer = registerPlugin('NativeTimer');
+
+// --- HELPERS PARA EL TIMER NATIVO (ANDROID) ---
+// Diccionario estricto: 100% a prueba de fallos en Android (Color.parseColor)
+const getAccentColor = () => {
+  try {
+    const accent = localStorage.getItem('accent') || 'green';
+    const colors = {
+      green: '#22c55e', blue: '#3b82f6', violet: '#8b5cf6', amber: '#f59e0b',
+      rose: '#f43f5e', teal: '#14b8a6', cyan: '#06b6d4', orange: '#f97316',
+      lime: '#84cc16', fuchsia: '#d946ef', emerald: '#10b981', indigo: '#6366f1',
+      purple: '#a855f7', pink: '#ec4899', red: '#ef4444', yellow: '#eab308',
+      sky: '#0ea5e9', slate: '#64748b', zinc: '#71717a', stone: '#78716c', neutral: '#737373'
+    };
+    return colors[accent] || '#22c55e';
+  } catch (e) {
+    return '#22c55e';
+  }
+};
+
+const triggerNativeTimer = (endTimeMs) => {
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+    NativeTimer.startTimer({
+      title: 'Descanso en progreso',
+      endTimeMs: endTimeMs,
+      color: getAccentColor() 
+    }).catch(console.warn);
+  }
+};
+
+const stopNativeTimer = () => {
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+    NativeTimer.stopTimer().catch(console.warn);
+  }
+};
+// ----------------------------------------------
 
 // --- HELPER: Buscar último rendimiento ---
 const findLastPerformance = (workoutLog, exerciseName) => {
@@ -222,7 +257,6 @@ export const createWorkoutSlice = (set, get) => ({
       activeWorkout: {
         routineId: routine.id || null,
         routineName: routine.name,
-        // CAPTURAMOS AMBAS VARIANTES POR SI ACASO
         image_url: routine.imageUrl || routine.image_url || null, 
         imageUrl: routine.imageUrl || routine.image_url || null,
         exercises,
@@ -461,13 +495,7 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setRestTimerInStorage(newState);
-
-    if (NativeTimer) {
-      NativeTimer.startTimer({ 
-        title: 'Descanso en progreso', 
-        endTimeMs: endTimeMs 
-      }).catch(() => {});
-    }
+    triggerNativeTimer(endTimeMs); // Lanza notificación con color de acento
   },
 
   setRestTimerMode: (mode) => {
@@ -487,13 +515,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerEndTime: newEndTime,
         restTimerRemaining: null,
       };
-
-      if (NativeTimer) {
-        NativeTimer.startTimer({ 
-          title: 'Descanso en progreso', 
-          endTimeMs: newEndTime 
-        }).catch(() => {});
-      }
+      triggerNativeTimer(newEndTime);
     } else {
       const now = Date.now();
       const remaining = restTimerEndTime ? restTimerEndTime - now : 0;
@@ -502,8 +524,7 @@ export const createWorkoutSlice = (set, get) => ({
         isRestTimerPaused: true,
         restTimerRemaining: remaining,
       };
-
-      if (NativeTimer) NativeTimer.stopTimer().catch(() => {});
+      stopNativeTimer();
     }
 
     set(newState);
@@ -541,13 +562,8 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerInitialDuration: Math.max(1, newInitial),
       };
       setRestTimerInStorage({ ...state, ...newState });
-
-      if (NativeTimer) {
-        NativeTimer.startTimer({ 
-          title: 'Descanso en progreso', 
-          endTimeMs: newEndTime 
-        }).catch(() => {});
-      }
+      
+      triggerNativeTimer(newEndTime);
 
       return newState;
     });
@@ -555,13 +571,13 @@ export const createWorkoutSlice = (set, get) => ({
 
   resetRestTimer: () => {
     clearRestTimerInStorage();
+    stopNativeTimer();
     set({ restTimerEndTime: null, restTimerInitialDuration: null, isRestTimerPaused: false, restTimerRemaining: null });
-    
-    if (NativeTimer) NativeTimer.stopTimer().catch(() => {});
   },
 
   stopRestTimer: () => {
     clearRestTimerInStorage();
+    stopNativeTimer();
     set({
       isResting: false,
       restTimerEndTime: null,
@@ -571,8 +587,6 @@ export const createWorkoutSlice = (set, get) => ({
       isRestTimerPaused: false,
       restTimerRemaining: null,
     });
-
-    if (NativeTimer) NativeTimer.stopTimer().catch(() => {});
   },
 
   logWorkout: async (workoutData) => {
@@ -584,7 +598,7 @@ export const createWorkoutSlice = (set, get) => ({
         ...workoutData,
         date: workoutDate, 
         visibility: localStorage.getItem('globalWorkoutVisibility') || 'friends', 
-        notifyFriends: localStorage.getItem('globalNotifyFriends') !== 'false' // Añadido
+        notifyFriends: localStorage.getItem('globalNotifyFriends') !== 'false'
       };
 
       const responseData = await workoutService.logWorkout(finalWorkoutData);
@@ -619,7 +633,7 @@ export const createWorkoutSlice = (set, get) => ({
 
       clearWorkoutInStorage();
       clearRestTimerInStorage();
-      if (NativeTimer) NativeTimer.stopTimer().catch(() => {});
+      stopNativeTimer();
 
       if (responseData.xpAdded !== undefined && responseData.xpAdded === 0) {
         return {
@@ -695,7 +709,7 @@ export const createWorkoutSlice = (set, get) => ({
   clearWorkoutState: () => {
     clearWorkoutInStorage();
     clearRestTimerInStorage();
+    stopNativeTimer();
     set({ ...initialState, plannedRestTime: null });
-    if (NativeTimer) NativeTimer.stopTimer().catch(() => {});
   },
 });

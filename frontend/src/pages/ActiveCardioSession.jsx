@@ -21,6 +21,7 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import Spinner from '../components/Spinner';
 import { CARDIO_ACTIVITIES } from '../data/cardioLibrary';
 import ConfirmationModal from '../components/ConfirmationModal';
+import PermissionModal from '../components/PermissionModal';
 
 const LS_KEY = 'active_cardio_session';
 
@@ -138,6 +139,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   const [permissionStatus, setPermissionStatus] = useState('prompt');
   const [followUser, setFollowUser] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
@@ -197,6 +199,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           console.error("Error inicial GPS:", err);
           // Si falla, asumimos que no hay permisos o GPS
           setPermissionStatus('denied');
+          setShowPermissionModal(true);
         });
     } else {
       setPermissionStatus('granted');
@@ -211,7 +214,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
   const startSession = async (isResuming = false) => {
     if (permissionStatus === 'denied') {
-      addToast('Habilita la ubicación para usar el GPS', 'error');
+      setShowPermissionModal(true);
       return;
     }
 
@@ -354,19 +357,32 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
 
   if (permissionStatus === 'denied') {
     return (
-      <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-        <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
-          <MapPin size={40} className="text-red-500" />
+      <>
+        <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
+            <MapPin size={40} className="text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-text-primary mb-2">Ubicación desactivada</h2>
+          <p className="text-text-secondary mb-8">
+            Para registrar tu ruta en el mapa, necesitamos acceso a tu ubicación.
+            Por favor, actívala en los ajustes de tu dispositivo.
+          </p>
+          <div className="flex gap-4">
+            <button onClick={goBack} className="px-6 py-3 bg-bg-secondary rounded-full font-bold text-text-primary transition hover:scale-105">
+              Volver
+            </button>
+            <button onClick={() => setShowPermissionModal(true)} className="px-6 py-3 bg-accent rounded-full font-bold text-white transition hover:scale-105">
+              ¿Cómo activar?
+            </button>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-text-primary mb-2">Ubicación desactivada</h2>
-        <p className="text-text-secondary mb-8">
-          Para registrar tu ruta en el mapa, necesitamos acceso a tu ubicación.
-          Por favor, actívala en los ajustes de tu dispositivo.
-        </p>
-        <button onClick={goBack} className="px-6 py-3 bg-bg-secondary rounded-full font-bold text-text-primary">
-          Volver
-        </button>
-      </div>
+        
+        <PermissionModal 
+          isOpen={showPermissionModal} 
+          onClose={() => setShowPermissionModal(false)} 
+          permissionName="Ubicación" 
+        />
+      </>
     );
   }
 
@@ -400,9 +416,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
               opacity={mapConfig.opacity}
               className={mapConfig.className}
             />
-            {/* CORRECCIÓN: Ruta de color dinámico */}
             <Polyline positions={path} pathOptions={{ color: accent, weight: 5, opacity: 0.8 }} />
-            {/* CORRECCIÓN: Marcador de usuario con color dinámico */}
             <Marker position={position} icon={userIcon} />
             <MapRecenter position={position} follow={followUser} />
           </MapContainer>
@@ -463,7 +477,6 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           {status === 'idle' && (
             <button 
               onClick={() => startSession()} 
-              // CORRECCIÓN: Sombras dinámicas usando el acento
               className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
               style={{ boxShadow: `0 0 30px ${accent}66` }}
             >
@@ -474,7 +487,6 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           {status === 'running' && (
             <button 
               onClick={pauseSession} 
-              // CORRECCIÓN: Sombras dinámicas usando el acento
               className="w-20 h-20 bg-accent rounded-full flex items-center justify-center hover:scale-105 transition-transform"
               style={{ boxShadow: `0 0 30px ${accent}66` }}
             >

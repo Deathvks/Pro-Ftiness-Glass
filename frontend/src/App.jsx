@@ -27,6 +27,7 @@ import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
 import SEOHead from './components/SEOHead';
 import StoryViewer from './components/StoryViewer';
+import PermissionModal from './components/PermissionModal'; // <-- AÑADIDO
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import LandingPage from './pages/LandingPage'; 
@@ -88,8 +89,12 @@ export default function App() {
     scheduleDailyReminders 
   } = useLocalNotifications();
 
+  // --- AÑADIDOS LOS ESTADOS PARA EL MODAL GLOBAL DE PERMISOS ---
   const {
     isInitialLoad,
+    showGlobalPermissionModal,
+    setShowGlobalPermissionModal,
+    missingPermissionName,
     ...verificationProps
   } = useAppInitialization({ 
       setView, 
@@ -381,6 +386,13 @@ export default function App() {
                 onClose={() => setViewingMyStory(false)} 
             />
         )}
+
+        {/* --- MODAL GLOBAL DE PERMISOS --- */}
+        <PermissionModal 
+            isOpen={showGlobalPermissionModal} 
+            onClose={() => setShowGlobalPermissionModal(false)} 
+            permissionName={missingPermissionName} 
+        />
       </>
     );
   }, [
@@ -388,7 +400,8 @@ export default function App() {
     performLogout, mainContentRef, currentTitle, currentViewComponent,
     navItems, handleLogoutClick, showLogoutConfirm, confirmLogout, handleShowPolicy,
     fetchInitialData, verificationProps, handleHeaderAvatarClick, myStories,
-    isResting, restTimerMode, show2FAPromo, viewingMyStory, hasStories
+    isResting, restTimerMode, show2FAPromo, viewingMyStory, hasStories,
+    showGlobalPermissionModal, missingPermissionName // dependencias actualizadas
   ]);
 
   const isLandingPage = !isAuthenticated && currentPath === '/';

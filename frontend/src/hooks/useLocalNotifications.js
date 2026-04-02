@@ -18,6 +18,23 @@ const ENGAGEMENT_MESSAGES = [
 const ID_LOGIN_REMINDER = 1001;
 const ID_MEAL_REMINDER = 1002;
 
+// Usamos el diccionario infalible por localStorage para que funcione incluso con el DOM congelado en segundo plano
+const getAccentHexColor = () => {
+  try {
+    const accent = localStorage.getItem('accent') || 'green';
+    const colors = {
+      green: '#22c55e', blue: '#3b82f6', violet: '#8b5cf6', amber: '#f59e0b',
+      rose: '#f43f5e', teal: '#14b8a6', cyan: '#06b6d4', orange: '#f97316',
+      lime: '#84cc16', fuchsia: '#d946ef', emerald: '#10b981', indigo: '#6366f1',
+      purple: '#a855f7', pink: '#ec4899', red: '#ef4444', yellow: '#eab308',
+      sky: '#0ea5e9', slate: '#64748b', zinc: '#71717a', stone: '#78716c', neutral: '#737373'
+    };
+    return colors[accent] || '#22c55e';
+  } catch (e) {
+    return '#22c55e';
+  }
+};
+
 export const useLocalNotifications = () => {
   const isNative = Capacitor.isNativePlatform();
 
@@ -43,8 +60,12 @@ export const useLocalNotifications = () => {
         if (req.display !== 'granted') return; // Si el usuario rechaza, cancelamos la acción
       }
       
-      // 2. Lanzamos la notificación
-      await NativeTimer.startTimer({ title, endTimeMs });
+      // 2. Lanzamos la notificación pasando el color actual infalible
+      await NativeTimer.startTimer({ 
+        title, 
+        endTimeMs,
+        color: getAccentHexColor() 
+      });
     } catch (error) {
       console.warn('Error mostrando notificación nativa:', error);
     }

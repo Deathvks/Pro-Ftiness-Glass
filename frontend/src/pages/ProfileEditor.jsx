@@ -1,9 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { Camera } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Camera as CapCamera } from '@capacitor/camera';
 import useAppStore from '../store/useAppStore';
 import { updateUserProfile } from '../services/userService';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
+import PermissionModal from '../components/PermissionModal';
 
 const ProfileEditor = ({ onDone }) => {
     const { user, fetchInitialData } = useAppStore(state => ({
@@ -17,6 +20,8 @@ const ProfileEditor = ({ onDone }) => {
     const [previewImage, setPreviewImage] = useState(user?.profileImageUrl || null);
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+    
+    const [showPermissionModal, setShowPermissionModal] = useState(false);
     const fileInputRef = useRef(null);
 
     const validateForm = () => {
@@ -27,9 +32,7 @@ const ProfileEditor = ({ onDone }) => {
         } else if (username.length < 3 || username.length > 30) {
             newErrors.username = 'El nombre de usuario debe tener entre 3 y 30 caracteres.';
         } else if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
-             // --- INICIO MODIFICACIÓN: Aclarar error ---
              newErrors.username = 'Solo letras, números, _, . y - (sin espacios).';
-             // --- FIN MODIFICACIÓN ---
         }
 
         if (profileImage && profileImage.size > 2 * 1024 * 1024) { // 2MB
@@ -54,7 +57,6 @@ const ProfileEditor = ({ onDone }) => {
         setIsLoading(true);
 
         const formData = new FormData();
-        // Solo añadir campos si han cambiado
         if (username !== user?.username) {
             formData.append('username', username);
         }
@@ -62,7 +64,6 @@ const ProfileEditor = ({ onDone }) => {
             formData.append('profileImage', profileImage);
         }
 
-        // Si no hay cambios, simplemente cerramos
         if (!profileImage && username === user?.username) {
             setIsLoading(false);
             onDone();
@@ -71,7 +72,7 @@ const ProfileEditor = ({ onDone }) => {
 
         try {
             const response = await updateUserProfile(formData);
-            await fetchInitialData(); // Recargar datos del usuario
+            await fetchInitialData(); 
             addToast(response.message, 'success');
             onDone();
         } catch (err) {
@@ -100,90 +101,111 @@ const ProfileEditor = ({ onDone }) => {
         if (file) {
             setProfileImage(file);
             setPreviewImage(URL.createObjectURL(file));
-            setErrors(prev => ({ ...prev, profileImage: null })); // Limpiar error de imagen
+            setErrors(prev => ({ ...prev, profileImage: null }));
         }
     };
 
-    const handleImageClick = () => {
+    const handleImageClick = async () => {
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const status = await CapCamera.requestPermissions();
+                if (status.photos === 'denied' && status.camera === 'denied') {
+                    setShowPermissionModal(true);
+                    return;
+                }
+            } catch (error) {
+                console.warn('Error al solicitar permisos:', error);
+                setShowPermissionModal(true);
+                return;
+            }
+        }
         fileInputRef.current.click();
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease_out]">
-            <div className="w-full max-w-sm text-center">
-                <h1 className="text-4xl font-extrabold mb-8">Editar Perfil</h1>
+        <>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease_out]">
+                <div className="w-full max-w-sm text-center">
+                    <h1 className="text-4xl font-extrabold mb-8">Editar Perfil</h1>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                    {errors.api && <p className="text-center text-red">{errors.api}</p>}
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                        {errors.api && <p className="text-center text-red">{errors.api}</p>}
 
-                    <div className="relative w-32 h-32 mx-auto mb-4">
-                        <img
-                            src={previewImage || '/logo.png'} // Fallback a logo si no hay imagen
-                            alt="Perfil"
-                            className="w-32 h-32 rounded-full object-cover border-2 border-accent shadow-lg"
-                        />
-                        <button
-                            type="button"
-                            onClick={handleImageClick}
-                            className="absolute bottom-0 right-0 bg-accent text-bg-secondary p-2 rounded-full transition hover:scale-110"
-                            aria-label="Cambiar imagen de perfil"
-                        >
-                            <Camera size={20} />
-                        </button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleImageChange}
-                            accept="image/jpeg,image/png,image/webp"
-                            className="hidden"
-                        />
-                    </div>
-                    {errors.profileImage && <p className="form-error-text -mt-3">{errors.profileImage}</p>}
+                        <div className="relative w-32 h-32 mx-auto mb-4">
+                            <img
+                                src={previewImage || '/logo.png'} 
+                                alt="Perfil"
+                                className="w-32 h-32 rounded-full object-cover border-2 border-accent shadow-lg"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleImageClick}
+                                className="absolute bottom-0 right-0 bg-accent text-bg-secondary p-2 rounded-full transition hover:scale-110"
+                                aria-label="Cambiar imagen de perfil"
+                            >
+                                <Camera size={20} />
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageChange}
+                                accept="image/jpeg,image/png,image/webp"
+                                className="hidden"
+                            />
+                        </div>
+                        {errors.profileImage && <p className="form-error-text -mt-3">{errors.profileImage}</p>}
 
 
-                    <div>
-                        <input
-                            type="text"
-                            placeholder="Nombre de usuario"
-                            className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            maxLength={30}
-                        />
-                        {errors.username && <p className="form-error-text text-left">{errors.username}</p>}
-                    </div>
-                    
-                    <div>
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition disabled:opacity-50"
-                            value={user?.email || ''}
-                            disabled
-                        />
-                        <p className="text-xs text-text-muted text-left mt-1">El email no se puede cambiar.</p>
-                    </div>
+                        <div>
+                            <input
+                                type="text"
+                                placeholder="Nombre de usuario"
+                                className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                maxLength={30}
+                            />
+                            {errors.username && <p className="form-error-text text-left">{errors.username}</p>}
+                        </div>
+                        
+                        <div>
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition disabled:opacity-50"
+                                value={user?.email || ''}
+                                disabled
+                            />
+                            <p className="text-xs text-text-muted text-left mt-1">El email no se puede cambiar.</p>
+                        </div>
 
-                    <div className="flex gap-4">
-                        <button
-                            type="button"
-                            onClick={onDone}
-                            disabled={isLoading}
-                            className="flex-1 rounded-md bg-bg-secondary border border-glass-border text-text-primary font-semibold py-3 transition hover:bg-glass-border disabled:opacity-70"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="flex-1 flex items-center justify-center rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70"
-                        >
-                            {isLoading ? <Spinner /> : 'Guardar'}
-                        </button>
-                    </div>
-                </form>
+                        <div className="flex gap-4">
+                            <button
+                                type="button"
+                                onClick={onDone}
+                                disabled={isLoading}
+                                className="flex-1 rounded-md bg-bg-secondary border border-glass-border text-text-primary font-semibold py-3 transition hover:bg-glass-border disabled:opacity-70"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="flex-1 flex items-center justify-center rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 hover:shadow-lg hover:shadow-accent/20 disabled:opacity-70"
+                            >
+                                {isLoading ? <Spinner /> : 'Guardar'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
+
+            <PermissionModal 
+                isOpen={showPermissionModal} 
+                onClose={() => setShowPermissionModal(false)} 
+                permissionName="Galería / Cámara" 
+            />
+        </>
     );
 };
 

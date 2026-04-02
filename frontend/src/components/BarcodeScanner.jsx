@@ -3,9 +3,11 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { X, Camera } from 'lucide-react';
 import Spinner from './Spinner';
 import { useToast } from '../hooks/useToast';
+import PermissionModal from './PermissionModal';
 
 const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   const [scannerState, setScannerState] = useState('idle'); // 'idle', 'loading', 'scanning'
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
   const { addToast } = useToast();
   const scannerRef = useRef(null);
   const scannerContainerId = 'barcode-scanner-container';
@@ -28,7 +30,6 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   const handleActivateScanner = async () => {
     setScannerState('loading');
     try {
-      // 1. Pedir permisos y obtener la lista de cámaras. Esto muestra el prompt nativo.
       const cameras = await Html5Qrcode.getCameras();
       if (cameras && cameras.length) {
         setScannerState('scanning');
@@ -38,9 +39,8 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
       }
     } catch (err) {
       console.error("Error al solicitar permiso de cámara:", err);
-      addToast('Permiso de cámara denegado. Revisa la configuración de tu navegador.', 'error');
       setScannerState('idle');
-      onClose(); // Cerramos si el permiso es denegado
+      setShowPermissionModal(true);
     }
   };
   
@@ -69,8 +69,8 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
             );
         } catch (err) {
             console.error("Error al iniciar el escáner:", err);
-            addToast("No se pudo iniciar la cámara seleccionada.", "error");
-            onClose();
+            setScannerState('idle');
+            setShowPermissionModal(true);
         }
     };
 
@@ -103,9 +103,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
                 <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-lg" />
                 <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-lg" />
                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-lg" />
-                {/* --- INICIO DE LA MODIFICACIÓN --- */}
                 <div className="scan-line absolute top-0 left-4 right-4 h-1 bg-accent shadow-[0_0_10px_theme(colors.accent)] rounded-full" />
-                {/* --- FIN DE LA MODIFICACIÓN --- */}
               </div>
             </div>
           </div>
@@ -128,20 +126,31 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md p-6 bg-bg-secondary rounded-2xl border border-glass-border">
-        <h3 className="text-xl font-bold text-center mb-4">Escanear Código de Barras</h3>
-        <div className="h-[280px] w-full flex items-center justify-center rounded-lg overflow-hidden bg-bg-primary">
-          {renderContent()}
+    <>
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="relative w-full max-w-md p-6 bg-bg-secondary rounded-2xl border border-glass-border">
+          <h3 className="text-xl font-bold text-center mb-4">Escanear Código de Barras</h3>
+          <div className="h-[280px] w-full flex items-center justify-center rounded-lg overflow-hidden bg-bg-primary">
+            {renderContent()}
+          </div>
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full bg-bg-primary text-text-secondary hover:text-text-primary transition"
+          >
+            <X size={20} />
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-bg-primary text-text-secondary hover:text-text-primary transition"
-        >
-          <X size={20} />
-        </button>
       </div>
-    </div>
+
+      <PermissionModal 
+        isOpen={showPermissionModal} 
+        onClose={() => {
+          setShowPermissionModal(false);
+          onClose();
+        }} 
+        permissionName="Cámara" 
+      />
+    </>
   );
 };
 

@@ -12,9 +12,12 @@ import {
     Check,
     Search
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Camera as CapCamera } from '@capacitor/camera';
 import useAppStore from '../../store/useAppStore';
 import PixabayModal from './PixabayModal';
 import Cropper from 'react-easy-crop';
+import PermissionModal from '../PermissionModal';
 
 const PREDEFINED_BACKGROUNDS = [
     'linear-gradient(135deg, var(--color-accent) 0%, var(--bg-primary) 100%)',
@@ -73,6 +76,9 @@ const RoutineHeader = ({
     const [isFolderOpen, setIsFolderOpen] = useState(false);
     const [isPixabayOpen, setIsPixabayOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
+    
+    // --- Estado para el Modal de Permisos ---
+    const [showPermissionModal, setShowPermissionModal] = useState(false);
 
     // --- Estados para el Cropper ---
     const [tempImage, setTempImage] = useState(null);
@@ -120,6 +126,23 @@ const RoutineHeader = ({
             setIsCropping(true);
         }
         if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleUploadClick = async () => {
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const status = await CapCamera.requestPermissions();
+                if (status.photos === 'denied' && status.camera === 'denied') {
+                    setShowPermissionModal(true);
+                    return;
+                }
+            } catch (error) {
+                console.warn('Error al solicitar permisos:', error);
+                setShowPermissionModal(true);
+                return;
+            }
+        }
+        fileInputRef.current?.click();
     };
 
     const handleCropComplete = async (croppedAreaPixels) => {
@@ -224,7 +247,7 @@ const RoutineHeader = ({
                     <div className="flex-1 w-full space-y-4">
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={handleUploadClick}
                                 className="flex items-center justify-center sm:justify-start flex-1 sm:flex-none gap-2 px-4 py-2 bg-glass-highlight border border-glass-border rounded-lg hover:bg-glass-heavy hover:border-accent/50 transition-all text-sm font-medium"
                                 disabled={isUploadingImage}
                             >
@@ -377,6 +400,12 @@ const RoutineHeader = ({
                 onClose={() => setIsPixabayOpen(false)} 
                 onSelectImage={(url) => { setImageUrl(url); setIsPixabayOpen(false); }} 
             />
+
+            <PermissionModal 
+                isOpen={showPermissionModal} 
+                onClose={() => setShowPermissionModal(false)} 
+                permissionName="Galería / Cámara" 
+            />
         </>
     );
 };
@@ -398,7 +427,7 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
                     image={imageSrc}
                     crop={crop}
                     zoom={zoom}
-                    aspect={16 / 9} // Aspecto de vídeo (horizontal) para las portadas de rutina
+                    aspect={16 / 9} 
                     cropShape="rect"
                     showGrid={true}
                     onCropChange={setCrop}

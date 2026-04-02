@@ -7,6 +7,8 @@ import {
     Settings, Shield, PlusCircle, Hash, Copy, ArrowLeft, LogOut, Trash2,
     Activity
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Camera as CapCamera } from '@capacitor/camera';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
@@ -15,7 +17,8 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
 import socialService from '../services/socialService';
-import Feed from '../components/Feed'; // <-- Importamos el nuevo componente Muro
+import Feed from '../components/Feed'; 
+import PermissionModal from '../components/PermissionModal'; // <-- Añadido
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -211,6 +214,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const [privacy, setPrivacy] = useState('friends'); 
     const [canUseHDR, setCanUseHDR] = useState(false);
     const [isHDR, setIsHDR] = useState(false);
+    const [showPermissionModal, setShowPermissionModal] = useState(false); // <-- Estado Modal Permisos
     
     const galleryInputRef = useRef(null);
     const cameraPhotoInputRef = useRef(null);
@@ -273,139 +277,162 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
         setIsHDR(!isHDR);
     };
 
-    const onInputClick = (e) => {
+    const onInputClick = async (e, type) => {
         e.target.value = null;
+        
+        // --- Modificación: Verificar permisos nativos antes de abrir galería/cámara ---
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const status = await CapCamera.requestPermissions();
+                if (status.photos === 'denied' && status.camera === 'denied') {
+                    e.preventDefault(); // Bloquear si no hay permisos
+                    setShowPermissionModal(true);
+                }
+            } catch (error) {
+                console.warn('Error al solicitar permisos:', error);
+                e.preventDefault();
+                setShowPermissionModal(true);
+            }
+        }
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
-            <div className="w-full max-w-md bg-bg-secondary border border-glass-border rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-                <div className="p-4 border-b border-white/10 flex justify-between items-center">
-                    <h3 className="font-bold text-text-primary">Nueva Historia</h3>
-                    <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full">
-                        <X size={20} className="text-text-secondary" />
-                    </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center min-h-[300px]">
-                    {!preview ? (
-                        <div className="grid grid-cols-3 gap-3 w-full h-full">
-                            <div 
-                                onClick={() => cameraPhotoInputRef.current?.click()}
-                                className="aspect-square border-2 border-dashed border-accent/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-accent/10 transition-colors group"
-                            >
-                                <div className="p-3 bg-accent/20 rounded-full group-hover:scale-110 transition-transform text-accent">
-                                    <Camera size={28} />
-                                </div>
-                                <p className="text-accent font-bold text-xs">Foto</p>
-                            </div>
-
-                            <div 
-                                onClick={() => cameraVideoInputRef.current?.click()}
-                                className="aspect-square border-2 border-dashed border-red-500/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-500/10 transition-colors group"
-                            >
-                                <div className="p-3 bg-red-500/20 rounded-full group-hover:scale-110 transition-transform text-red-400">
-                                    <VideoIcon size={28} />
-                                </div>
-                                <p className="text-red-400 font-bold text-xs">Vídeo</p>
-                            </div>
-
-                            <div 
-                                onClick={() => galleryInputRef.current?.click()}
-                                className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-colors group"
-                            >
-                                <div className="p-3 bg-white/5 rounded-full group-hover:scale-110 transition-transform text-text-secondary">
-                                    <ImageIcon size={28} />
-                                </div>
-                                <p className="text-text-secondary font-medium text-xs">Galería</p>
-                            </div>
-                            
-                            <p className="col-span-3 text-center text-xs text-text-tertiary mt-4">
-                                Elige el modo de cámara para asegurar compatibilidad
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="relative w-full h-[60vh] rounded-xl overflow-hidden bg-black flex items-center justify-center">
-                            {file?.type?.startsWith('video') ? (
-                                <video 
-                                    ref={previewVideoRef}
-                                    src={preview} 
-                                    className="max-w-full max-h-full w-auto h-auto outline-none" 
-                                    controls playsInline webkit-playsinline="true" preload="auto" muted
-                                    onLoadedMetadata={handleVideoLoad}
-                                    style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
-                                />
-                            ) : (
-                                <img 
-                                    src={preview} 
-                                    alt="Preview" 
-                                    className="max-w-full max-h-full w-auto h-auto shadow-sm mx-auto"
-                                    style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
-                                />
-                            )}
-                            <button 
-                                onClick={() => { setFile(null); setPreview(null); setIsHDR(false); setCanUseHDR(false); }}
-                                className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500/80 transition-colors z-20"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-                    )}
-                    
-                    <input type="file" accept="image/*,video/*" ref={galleryInputRef} className="hidden" onChange={handleFileChange} onClick={onInputClick} />
-                    <input type="file" accept="image/*" capture="environment" ref={cameraPhotoInputRef} className="hidden" onChange={handleFileChange} onClick={onInputClick} />
-                    <input type="file" accept="video/*" capture="environment" ref={cameraVideoInputRef} className="hidden" onChange={handleFileChange} onClick={onInputClick} />
-                </div>
-
-                <div className="p-4 border-t border-white/10 space-y-4 bg-bg-secondary">
-                    <div className="flex gap-2 justify-center">
-                        <button 
-                            onClick={() => setPrivacy('friends')}
-                            className={`flex-1 py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
-                                ${privacy === 'friends' 
-                                    ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' 
-                                    : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
-                                }`}
-                        >
-                            <Users size={14} /><span>Solo Amigos</span>
+        <>
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
+                <div className="w-full max-w-md bg-bg-secondary border border-glass-border rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                    <div className="p-4 border-b border-white/10 flex justify-between items-center">
+                        <h3 className="font-bold text-text-primary">Nueva Historia</h3>
+                        <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full">
+                            <X size={20} className="text-text-secondary" />
                         </button>
-
-                        <button 
-                            onClick={() => setPrivacy('public')}
-                            className={`flex-1 py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
-                                ${privacy === 'public' 
-                                    ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' 
-                                    : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
-                                }`}
-                        >
-                            <Globe size={14} /><span>Público</span>
-                        </button>
-
-                        {canUseHDR && (
-                            <button 
-                                onClick={toggleHDR}
-                                className={`flex-initial px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all border
-                                    ${isHDR 
-                                        ? 'bg-accent text-white border-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow' 
-                                        : 'bg-white/5 text-text-secondary border-white/5 opacity-60 hover:opacity-100'
-                                    }`}
-                            >
-                                <Zap size={14} className={isHDR ? "fill-current" : ""} />
-                                HDR {isHDR ? 'ON' : 'OFF'}
-                            </button>
-                        )}
                     </div>
 
-                    <button 
-                        onClick={handleSubmit}
-                        disabled={!file || isUploading}
-                        className="w-full py-3 bg-accent text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-accent/20"
-                    >
-                        {isUploading ? <Spinner size={20} color="border-white" /> : 'Compartir Historia'}
-                    </button>
+                    <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center min-h-[300px]">
+                        {!preview ? (
+                            <div className="grid grid-cols-3 gap-3 w-full h-full">
+                                <div 
+                                    onClick={() => cameraPhotoInputRef.current?.click()}
+                                    className="aspect-square border-2 border-dashed border-accent/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-accent/10 transition-colors group"
+                                >
+                                    <div className="p-3 bg-accent/20 rounded-full group-hover:scale-110 transition-transform text-accent">
+                                        <Camera size={28} />
+                                    </div>
+                                    <p className="text-accent font-bold text-xs">Foto</p>
+                                </div>
+
+                                <div 
+                                    onClick={() => cameraVideoInputRef.current?.click()}
+                                    className="aspect-square border-2 border-dashed border-red-500/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-500/10 transition-colors group"
+                                >
+                                    <div className="p-3 bg-red-500/20 rounded-full group-hover:scale-110 transition-transform text-red-400">
+                                        <VideoIcon size={28} />
+                                    </div>
+                                    <p className="text-red-400 font-bold text-xs">Vídeo</p>
+                                </div>
+
+                                <div 
+                                    onClick={() => galleryInputRef.current?.click()}
+                                    className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-colors group"
+                                >
+                                    <div className="p-3 bg-white/5 rounded-full group-hover:scale-110 transition-transform text-text-secondary">
+                                        <ImageIcon size={28} />
+                                    </div>
+                                    <p className="text-text-secondary font-medium text-xs">Galería</p>
+                                </div>
+                                
+                                <p className="col-span-3 text-center text-xs text-text-tertiary mt-4">
+                                    Elige el modo de cámara para asegurar compatibilidad
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="relative w-full h-[60vh] rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                                {file?.type?.startsWith('video') ? (
+                                    <video 
+                                        ref={previewVideoRef}
+                                        src={preview} 
+                                        className="max-w-full max-h-full w-auto h-auto outline-none" 
+                                        controls playsInline webkit-playsinline="true" preload="auto" muted
+                                        onLoadedMetadata={handleVideoLoad}
+                                        style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
+                                    />
+                                ) : (
+                                    <img 
+                                        src={preview} 
+                                        alt="Preview" 
+                                        className="max-w-full max-h-full w-auto h-auto shadow-sm mx-auto"
+                                        style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
+                                    />
+                                )}
+                                <button 
+                                    onClick={() => { setFile(null); setPreview(null); setIsHDR(false); setCanUseHDR(false); }}
+                                    className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500/80 transition-colors z-20"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        )}
+                        
+                        <input type="file" accept="image/*,video/*" ref={galleryInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'gallery')} />
+                        <input type="file" accept="image/*" capture="environment" ref={cameraPhotoInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'camera')} />
+                        <input type="file" accept="video/*" capture="environment" ref={cameraVideoInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'video')} />
+                    </div>
+
+                    <div className="p-4 border-t border-white/10 space-y-4 bg-bg-secondary">
+                        <div className="flex gap-2 justify-center">
+                            <button 
+                                onClick={() => setPrivacy('friends')}
+                                className={`flex-1 py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
+                                    ${privacy === 'friends' 
+                                        ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' 
+                                        : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
+                                    }`}
+                            >
+                                <Users size={14} /><span>Solo Amigos</span>
+                            </button>
+
+                            <button 
+                                onClick={() => setPrivacy('public')}
+                                className={`flex-1 py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
+                                    ${privacy === 'public' 
+                                        ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' 
+                                        : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
+                                    }`}
+                            >
+                                <Globe size={14} /><span>Público</span>
+                            </button>
+
+                            {canUseHDR && (
+                                <button 
+                                    onClick={toggleHDR}
+                                    className={`flex-initial px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all border
+                                        ${isHDR 
+                                            ? 'bg-accent text-white border-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow' 
+                                            : 'bg-white/5 text-text-secondary border-white/5 opacity-60 hover:opacity-100'
+                                        }`}
+                                >
+                                    <Zap size={14} className={isHDR ? "fill-current" : ""} />
+                                    HDR {isHDR ? 'ON' : 'OFF'}
+                                </button>
+                            )}
+                        </div>
+
+                        <button 
+                            onClick={handleSubmit}
+                            disabled={!file || isUploading}
+                            className="w-full py-3 bg-accent text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-accent/20"
+                        >
+                            {isUploading ? <Spinner size={20} color="border-white" /> : 'Compartir Historia'}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <PermissionModal 
+                isOpen={showPermissionModal} 
+                onClose={() => setShowPermissionModal(false)} 
+                permissionName="Galería / Cámara" 
+            />
+        </>
     );
 };
 
