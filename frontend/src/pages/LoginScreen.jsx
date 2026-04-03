@@ -2,10 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LogIn, ArrowLeft, Smartphone, Mail, Dumbbell, Flame, TrendingUp, Sparkles } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
-// --- INICIO MODIFICACIÓN: Añadido FaSpotify ---
 import { FaDiscord, FaFacebook, FaGithub, FaSpotify } from 'react-icons/fa';
-// --- FIN MODIFICACIÓN ---
-import { FaXTwitter } from 'react-icons/fa6'; // Icono moderno de X
+import { FaXTwitter } from 'react-icons/fa6'; 
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
@@ -19,12 +17,9 @@ import { Capacitor } from '@capacitor/core';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
     <div className="flex w-full min-h-[100dvh] bg-bg-primary overflow-hidden">
-        {/* Panel Izquierdo - Ancho reducido al 30%, Sólido con Color y Animaciones */}
         <div className="hidden lg:flex flex-col justify-center items-center w-[30%] min-h-[100dvh] relative bg-bg-secondary border-r border-glass-border p-8 overflow-hidden">
-            {/* Fondo de cuadrícula arquitectónica */}
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
 
-            {/* Orbes de luz animadas y vibrantes para dar color */}
             <div className="absolute top-1/4 -left-10 w-48 h-48 bg-accent/30 rounded-full mix-blend-screen filter blur-[60px] animate-[pulse_4s_ease-in-out_infinite]"></div>
             <div className="absolute bottom-10 -right-10 w-64 h-64 bg-[#3b82f6]/20 rounded-full mix-blend-screen filter blur-[80px] animate-[pulse_5s_ease-in-out_infinite]"></div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-[#a855f7]/20 rounded-full mix-blend-screen filter blur-[80px] animate-[pulse_6s_ease-in-out_infinite]"></div>
@@ -32,7 +27,6 @@ const SplitLayout = ({ children, onShowPolicy }) => (
             <div className="relative z-10 w-full max-w-[400px] flex flex-col items-center">
                 <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-accent mb-4 text-center tracking-tight drop-shadow-sm">Pro Fitness Glass</h2>
 
-                {/* Etiqueta Gratis y Sin Anuncios con borde suave */}
                 <div className="mb-8 w-full flex justify-center">
                     <div className="bg-bg-secondary/40 border border-glass-border px-6 py-2.5 rounded-2xl shadow-sm backdrop-blur-md flex items-center justify-center gap-2 whitespace-nowrap transition-transform hover:scale-105 cursor-default">
                         <Sparkles className="text-accent flex-shrink-0 animate-pulse" size={20} />
@@ -44,7 +38,6 @@ const SplitLayout = ({ children, onShowPolicy }) => (
 
                 <p className="text-text-secondary text-sm text-center mb-10 font-medium">Tu ecosistema definitivo para transform tu físico, impulsado por datos reales.</p>
 
-                {/* Grid Sólido (Bento Box / Columnas) con fondos más opacos para mejor legibilidad */}
                 <div className="grid grid-cols-2 gap-4 w-full">
                     <div className="bg-bg-primary/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-glass-border border-t-4 border-t-accent transition-all duration-500 hover:-translate-y-2 hover:shadow-accent/20 hover:shadow-2xl relative overflow-hidden group">
                         <div className="absolute -top-10 -right-10 w-24 h-24 bg-accent/20 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-150"></div>
@@ -77,17 +70,14 @@ const SplitLayout = ({ children, onShowPolicy }) => (
             </div>
         </div>
 
-        {/* Panel Derecho - Cambiado para usar flex-grow en lugar de my-auto/justify-center para no cortar scroll */}
         <div className="flex flex-col items-center flex-1 w-full lg:w-[70%] h-[100dvh] overflow-y-auto relative z-10">
             <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none"></div>
             
-            {/* Spacer superior flexible */}
             <div className="flex-grow w-full min-h-[2rem]"></div>
 
             <div className="w-full max-w-sm text-center relative z-10 animate-[fade-in_0.5s_ease-out] flex-shrink-0 px-4">
                 {children}
 
-                {/* Enlaces de Privacidad y Términos */}
                 <div className="mt-6 sm:mt-8 text-xs text-text-muted px-2">
                     Al continuar, aceptas nuestros{' '}
                     <a href="/terms" className="text-accent hover:underline transition-all">Términos de Servicio</a>
@@ -96,7 +86,6 @@ const SplitLayout = ({ children, onShowPolicy }) => (
                 </div>
             </div>
 
-            {/* Spacer inferior flexible */}
             <div className="flex-grow w-full min-h-[2rem]"></div>
         </div>
     </div>
@@ -109,9 +98,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const handleFacebookLogin = useAppStore(state => state.handleFacebookLogin);
     const handleXLogin = useAppStore(state => state.handleXLogin);
     const handleGithubLogin = useAppStore(state => state.handleGithubLogin);
-    // --- INICIO MODIFICACIÓN: Añadido handleSpotifyLogin ---
     const handleSpotifyLogin = useAppStore(state => state.handleSpotifyLogin);
-    // --- FIN MODIFICACIÓN ---
 
     const twoFactorPending = useAppStore(state => state.twoFactorPending);
     const handleVerify2FA = useAppStore(state => state.handleVerify2FA);
@@ -148,7 +135,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     }, []);
 
     useEffect(() => {
-        // 1. Manejo de Implicit Flow (Hash) para Discord y Facebook
         const hash = window.location.hash;
         if (hash && hash.includes('access_token')) {
             const params = new URLSearchParams(hash.substring(1));
@@ -165,7 +151,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             }
         }
 
-        // 2. Manejo de Authorization Code Flow (Search params) para X, GitHub y Spotify
         const search = window.location.search;
         if (search && search.includes('code=')) {
             const params = new URLSearchParams(search);
@@ -181,17 +166,14 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                     processGithubCode(code);
                     window.history.replaceState(null, null, window.location.pathname);
                 }
-                // --- INICIO MODIFICACIÓN: Proceso del code para Spotify ---
                 else if (state === 'spotify') {
                     processSpotifyCode(code);
                     window.history.replaceState(null, null, window.location.pathname);
                 }
-                // --- FIN MODIFICACIÓN ---
             }
         }
     }, []);
 
-    // --- Lógica PKCE para X (Twitter) ---
     const generateCodeVerifier = () => {
         const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
         let verifier = '';
@@ -253,7 +235,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             setIsLoading(false);
         }
     };
-    // -------------------------------------
 
     const processFacebookToken = async (token) => {
         setIsLoading(true);
@@ -280,7 +261,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         window.location.href = facebookAuthUrl;
     };
 
-    // --- INICIO DE LA MODIFICACIÓN: Integración GitHub ---
     const handleGithubClick = () => {
         const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID || 'TU_GITHUB_CLIENT_ID';
         const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
@@ -305,9 +285,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             setIsLoading(false);
         }
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // --- INICIO DE LA MODIFICACIÓN: Integración Spotify ---
     const handleSpotifyClick = () => {
         const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || 'TU_SPOTIFY_CLIENT_ID';
         const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
@@ -333,7 +311,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             setIsLoading(false);
         }
     };
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const processDiscordToken = async (token) => {
         setIsLoading(true);
@@ -381,7 +358,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const loginWithGoogle = useGoogleLogin({
         onSuccess: (tokenResponse) => processGoogleToken(tokenResponse.access_token),
-        onError: () => addToast('No se pudo conectar con Google.', 'error'),
+        onError: () => {}, // Silenciado para no mostrar error si el usuario cancela
     });
 
     const handleGoogleClick = async () => {
@@ -392,13 +369,9 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
                 if (token) {
                     await processGoogleToken(token);
-                } else {
-                    addToast('No se recibió el token de identificación.', 'error');
                 }
             } catch (error) {
-                if (error?.message && !error.message.includes('Canceled')) {
-                    addToast(`Error Google: ${JSON.stringify(error)}`, 'error');
-                }
+                // Silenciado para no mostrar error de cancelación en el dispositivo nativo
             }
         } else {
             if (hasConsented) {
@@ -417,7 +390,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const onModalError = () => {
         setShowGoogleModal(false);
-        addToast('No se pudo conectar con Google.', 'error');
+        // Silenciado para no mostrar error si se cierra o falla el modal
     };
 
     useEffect(() => {
@@ -598,7 +571,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
                 <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-20 h-20 mx-auto mb-3 object-contain drop-shadow-md transition-transform duration-500 hover:scale-105" />
 
-                {/* Etiqueta Gratis en Móvil */}
                 <div className="flex justify-center w-full mb-4 mt-1 lg:hidden">
                     <div className="bg-bg-secondary/40 border border-glass-border px-4 py-1.5 rounded-xl shadow-sm backdrop-blur-md flex items-center justify-center gap-1.5 whitespace-nowrap">
                         <Sparkles className="text-accent animate-pulse flex-shrink-0" size={14} />
@@ -652,7 +624,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         <div className="flex-grow border-t border-glass-border"></div>
                     </div>
 
-                    {/* Fila Horizontal de Iconos Sociales - Tamaño reducido */}
                     <div className="flex flex-row justify-center items-center gap-3 flex-wrap">
                         <button
                             onClick={handleGoogleClick}
@@ -674,17 +645,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                             <FaDiscord size={20} />
                         </button>
 
-                        {/* <button
-                            onClick={handleFacebookClick}
-                            disabled={isLoading}
-                            type="button"
-                            title="Iniciar sesión con Facebook"
-                            className="w-10 h-10 bg-[#1877F2] text-white rounded-full flex items-center justify-center shadow-sm transition-transform hover:scale-110 hover:shadow-lg hover:shadow-[#1877F2]/30 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                        >
-                            <FaFacebook size={20} />
-                        </button>
-                        */}
-
                         <button
                             onClick={handleXClick}
                             disabled={isLoading}
@@ -704,23 +664,8 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         >
                             <FaGithub size={20} />
                         </button>
-
-                        {/* --- INICIO DE LA MODIFICACIÓN: Botón Spotify --- */}
-                        {/*
-                        <button
-                            onClick={handleSpotifyClick}
-                            disabled={isLoading}
-                            type="button"
-                            title="Iniciar sesión con Spotify"
-                            className="w-10 h-10 bg-[#1DB954] text-white rounded-full flex items-center justify-center shadow-sm transition-transform hover:scale-110 hover:shadow-lg hover:shadow-[#1DB954]/30 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                        >
-                            <FaSpotify size={20} />
-                        </button>
-                        */}
-                        {/* --- FIN DE LA MODIFICACIÓN --- */}
                     </div>
 
-                    {/* Fila adaptable: Columna en móvil, Fila en PC/Tablets con whitespace-nowrap */}
                     <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
                         <button
                             onClick={(e) => {

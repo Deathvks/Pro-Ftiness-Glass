@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
 // Registramos el plugin nativo aquí, en el cerebro del entrenamiento
-const NativeTimer = registerPlugin('NativeTimer');
+const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
 
 // --- HELPERS PARA EL TIMER NATIVO (ANDROID) ---
 // Diccionario estricto: 100% a prueba de fallos en Android (Color.parseColor)
@@ -25,18 +25,8 @@ const getAccentColor = () => {
   }
 };
 
-const triggerNativeTimer = (endTimeMs) => {
-  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
-    NativeTimer.startTimer({
-      title: 'Descanso en progreso',
-      endTimeMs: endTimeMs,
-      color: getAccentColor() 
-    }).catch(console.warn);
-  }
-};
-
 const stopNativeTimer = () => {
-  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && NativeTimer) {
     NativeTimer.stopTimer().catch(console.warn);
   }
 };
@@ -495,7 +485,10 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setRestTimerInStorage(newState);
-    triggerNativeTimer(endTimeMs); // Lanza notificación con color de acento
+    
+    // --- MODIFICADO: Eliminada la llamada a triggerNativeTimer aquí ---
+    // La notificación solo saltará cuando el usuario minimice la app,
+    // gracias al listener en `useAppInitialization.js`
   },
 
   setRestTimerMode: (mode) => {
@@ -515,7 +508,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerEndTime: newEndTime,
         restTimerRemaining: null,
       };
-      triggerNativeTimer(newEndTime);
+      // --- MODIFICADO: Eliminada la llamada a triggerNativeTimer ---
     } else {
       const now = Date.now();
       const remaining = restTimerEndTime ? restTimerEndTime - now : 0;
@@ -563,7 +556,7 @@ export const createWorkoutSlice = (set, get) => ({
       };
       setRestTimerInStorage({ ...state, ...newState });
       
-      triggerNativeTimer(newEndTime);
+      // --- MODIFICADO: Eliminada la llamada a triggerNativeTimer ---
 
       return newState;
     });

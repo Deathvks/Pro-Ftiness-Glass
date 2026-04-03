@@ -5,6 +5,7 @@ import {
   LineChart, Users, Zap, Smartphone, Trophy, ArrowRight,
   Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check
 } from 'lucide-react';
+import { FaGooglePlay } from 'react-icons/fa';
 
 import packageJson from '../../package.json'; 
 import socialService from '../services/socialService';
@@ -52,7 +53,7 @@ const useIntersectionObserver = (options = {}) => {
     return [elementRef, isIntersecting];
 };
 
-// --- ANIMACIONES SVG FLOTANTES (IA, COMIDA, ENTRENOS) ---
+// --- ANIMACIONES SVG FLOTANTES ---
 const FloatingHeroElements = () => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block" aria-hidden="true">
         <style>{`
@@ -73,10 +74,7 @@ const FloatingHeroElements = () => (
             }
         `}</style>
 
-        {/* IA / Sparkles Float */}
-        <div 
-            className="absolute top-[10%] right-[15%] opacity-60 animate-[float-2_7s_ease-in-out_infinite]"
-        >
+        <div className="absolute top-[10%] right-[15%] opacity-60 animate-[float-2_7s_ease-in-out_infinite]">
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="url(#ai-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_20px_rgba(139,92,246,0.6)]">
                 <defs>
                     <linearGradient id="ai-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -89,10 +87,7 @@ const FloatingHeroElements = () => (
             </svg>
         </div>
 
-        {/* Entrenamiento / Dumbbell Float */}
-        <div 
-            className="absolute bottom-[25%] left-[12%] opacity-50 animate-[float-1_6s_ease-in-out_infinite]"
-        >
+        <div className="absolute bottom-[25%] left-[12%] opacity-50 animate-[float-1_6s_ease-in-out_infinite]">
             <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="url(#workout-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] transform -rotate-12">
                 <defs>
                     <linearGradient id="workout-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -110,10 +105,7 @@ const FloatingHeroElements = () => (
             </svg>
         </div>
 
-        {/* Nutrición / Food Float */}
-        <div 
-            className="absolute top-[20%] left-[20%] opacity-40 animate-[float-3_8s_ease-in-out_infinite]"
-        >
+        <div className="absolute top-[20%] left-[20%] opacity-40 animate-[float-3_8s_ease-in-out_infinite]">
             <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="url(#food-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] transform rotate-12">
                 <defs>
                     <linearGradient id="food-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -132,19 +124,20 @@ const FloatingHeroElements = () => (
 const GymBot = ({ isDocked }) => (
     <div 
         aria-hidden="true"
-        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none
+        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right
             ${isDocked 
-                ? 'top-[90%] left-[85%] sm:left-[92%] -translate-x-1/2 -translate-y-1/2 scale-50 sm:scale-60 opacity-80' 
-                : 'top-[22%] sm:top-[20%] left-1/2 -translate-x-1/2 -translate-y-1/2 scale-75 sm:scale-100 opacity-100'
+                ? 'top-1/2 right-4 sm:right-8 -translate-y-1/2 scale-50 sm:scale-60 opacity-80' 
+                : 'top-[22%] sm:top-[25%] right-8 sm:right-16 scale-75 sm:scale-100 opacity-100'
             }
         `}
     >
+        {/* Reducimos el desplazamiento en X para que no se salga de la pantalla en móviles */}
         <style>{`
             @keyframes gymbot-roam {
                 0% { transform: translate(0, 0) rotate(0deg); }
-                25% { transform: translate(40px, -10px) rotate(5deg); }
+                25% { transform: translate(-15px, -10px) rotate(-3deg); }
                 50% { transform: translate(0, 15px) rotate(0deg); }
-                75% { transform: translate(-40px, -10px) rotate(-5deg); }
+                75% { transform: translate(10px, -10px) rotate(3deg); }
                 100% { transform: translate(0, 0) rotate(0deg); }
             }
         `}</style>
@@ -165,13 +158,9 @@ const GymBot = ({ isDocked }) => (
                     dark:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]
                     ${isDocked ? 'shadow-accent/40 dark:shadow-accent/20' : ''}
                     `}
-                    style={{
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                    }}
+                    style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
                 >
                     <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent rounded-t-[2.5rem] pointer-events-none"></div>
-
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-1.5 h-6 bg-gray-300 dark:bg-gray-600 rounded-full transition-all group-hover:h-8"></div>
                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-accent animate-pulse shadow-[0_0_15px_var(--accent)] group-hover:scale-125 transition-transform z-10"></div>
                     
@@ -247,7 +236,6 @@ const BentoCard = ({ children, className = "", delay = 0, bgIcon: BgIcon, bgIcon
         <div className="h-full p-8 rounded-[2rem] bg-gradient-to-br from-glass-base via-glass-base/50 to-transparent border border-glass-border backdrop-blur-xl hover:border-accent/30 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
             
-            {/* Fondo de marca de agua animada */}
             {BgIcon && (
                 <div className={`absolute -bottom-10 -right-10 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 pointer-events-none ${bgIconColor}`}>
                     <BgIcon size={240} />
@@ -304,10 +292,7 @@ const MockupGallery = () => {
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {images.map((img, i) => (
-                        <div 
-                            key={i} 
-                            className="snap-center shrink-0 w-[240px] sm:w-[280px] relative transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl hover:shadow-accent/20 rounded-[3rem]"
-                        >
+                        <div key={i} className="snap-center shrink-0 w-[240px] sm:w-[280px] relative transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl hover:shadow-accent/20 rounded-[3rem]">
                             <img 
                                 src={img.src} 
                                 alt={img.alt} 
@@ -390,8 +375,17 @@ const LandingPage = ({ onLogin, onRegister }) => {
         onScroll={handleScroll}
         className="absolute inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth perspective-1000"
     >
-      
-      {/* --- FONDO DINÁMICO Y ELEMENTOS FLOTANTES --- */}
+      <svg width="0" height="0" className="absolute pointer-events-none">
+          <defs>
+            <linearGradient id="play-grad-vibrant" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop stopColor="#4285F4" offset="0%" />
+              <stop stopColor="#34A853" offset="33%" />
+              <stop stopColor="#FBBC05" offset="66%" />
+              <stop stopColor="#EA4335" offset="100%" />
+            </linearGradient>
+          </defs>
+      </svg>
+
       <div className="fixed inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
         <div 
           className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite]"
@@ -425,7 +419,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
             <div className="flex items-center gap-2 sm:gap-4">
               <a 
                 href="/privacy" 
-                className="flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent transition-colors mr-1"
+                className="flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent transition-colors mr-1 outline-none border-none focus:outline-none"
                 title="Política de Privacidad"
               >
                 <Shield size={16} className="md:hidden" /> 
@@ -477,7 +471,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
           {/* CTAs Y AVISO DE PRECIO */}
           <div className={`flex flex-col items-center mt-12 mb-8 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center">
+            
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center mb-8">
                 <button 
                   onClick={onRegister}
                   className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform hover:-translate-y-1 active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20 overflow-hidden z-20"
@@ -492,17 +487,48 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 >
                   Ya tengo cuenta
                 </button>
-                
-                {apkDownloadUrl && (
-                    <a 
-                      href={apkDownloadUrl}
-                      className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-glass-base hover:bg-glass-border text-text-primary rounded-2xl font-bold text-lg transition-all border border-glass-border hover:border-accent/30 hover:-translate-y-1 z-20"
-                    >
-                      <Download size={20} className="text-accent" />
-                      Descargar APK
-                    </a>
-                )}
             </div>
+            
+            {/* GOOGLE PLAY BADGE PROMO */}
+            <div className="relative group inline-block z-20 mt-2">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-2xl blur-lg opacity-40 group-hover:opacity-80 transition duration-500 animate-gradient-x"></div>
+              <a 
+                href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative flex items-center justify-center gap-4 px-8 py-3 bg-black/90 backdrop-blur-md border border-white/10 text-white rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-2xl"
+              >
+                <FaGooglePlay style={{ fill: 'url(#play-grad-vibrant)' }} className="text-3xl drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" />
+                <div className="flex flex-col text-left leading-none">
+                  <span className="text-[10px] text-gray-400 font-semibold tracking-wider mb-1">CONSIGUELA EN</span>
+                  <span className="text-xl font-black tracking-tight text-white">Google Play</span>
+                </div>
+                
+                {/* Etiqueta NUEVA - Efecto Cristal 100% */}
+                <span 
+                    className="absolute -top-3 -right-3 flex items-center gap-1.5 px-3 py-1 rounded-full z-30 shadow-xl overflow-hidden"
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)'
+                    }}
+                >
+                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse shadow-[0_0_8px_var(--accent)]"></span>
+                    <span className="text-[9px] font-black tracking-widest uppercase text-white drop-shadow-md">NUEVA</span>
+                </span>
+              </a>
+            </div>
+
+            {apkDownloadUrl && (
+                <a 
+                  href={apkDownloadUrl}
+                  className="mt-6 inline-flex items-center justify-center gap-2 text-xs font-medium text-text-tertiary hover:text-accent transition-colors z-20"
+                >
+                  <Download size={14} />
+                  Descargar APK directamente
+                </a>
+            )}
             
             <p className="mt-5 text-sm font-medium text-text-secondary z-20">
                 Sin tarjeta de crédito. <span className="text-accent font-bold">100% Gratuito.</span>
@@ -526,7 +552,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left">
               
-              {/* Rutinas (Ocupa 2 columnas) */}
               <BentoCard className="md:col-span-2" delay={100} bgIcon={Dumbbell} bgIconColor="text-blue-500">
                  <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <Dumbbell size={32} />
@@ -544,7 +569,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </div>
               </BentoCard>
 
-              {/* Inteligencia Artificial (1 Columna) */}
               <BentoCard delay={200} bgIcon={Bot} bgIconColor="text-purple-500">
                  <div className="w-14 h-14 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <Sparkles size={32} />
@@ -558,7 +582,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </div>
               </BentoCard>
 
-              {/* Nutrición (1 Columna) */}
               <BentoCard delay={300} bgIcon={Apple} bgIconColor="text-green-500">
                  <div className="w-14 h-14 bg-green-500/10 text-green-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <Utensils size={32} />
@@ -569,7 +592,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </p>
               </BentoCard>
 
-              {/* Análisis (1 Columna) */}
               <BentoCard delay={400} bgIcon={LineChart} bgIconColor="text-yellow-500">
                  <div className="w-14 h-14 bg-yellow-500/10 text-yellow-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-yellow-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <LineChart size={32} />
@@ -580,7 +602,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                  </p>
               </BentoCard>
 
-              {/* Comunidad (1 Columna) */}
               <BentoCard delay={500} bgIcon={Globe} bgIconColor="text-orange-500">
                  <div className="w-14 h-14 bg-orange-500/10 text-orange-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                     <Users size={32} />
@@ -652,7 +673,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
              </div>
           </div>
 
-          {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS (Requisito Google) --- */}
+          {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS --- */}
           <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left">
               <ScrollRevealCard>
                   <div className="p-8 md:p-12 rounded-[2rem] bg-glass-base border border-glass-border backdrop-blur-xl relative overflow-hidden">
@@ -706,12 +727,41 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <p className="text-text-secondary text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
                                 Únete hoy mismo a Pro Fitness Glass. Sin trucos, sin pagos ocultos, solo herramientas profesionales para tu mejor versión.
                             </p>
-                            <button 
-                                onClick={onRegister}
-                                className="px-12 py-5 bg-accent text-white rounded-2xl font-black text-xl shadow-xl shadow-accent/30 hover:scale-105 hover:shadow-accent/50 transition-all duration-300 hover:-translate-y-1"
-                            >
-                                Comenzar Gratis
-                            </button>
+                            
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                                <button 
+                                    onClick={onRegister}
+                                    className="w-full sm:w-auto px-12 py-4 bg-accent text-white rounded-2xl font-black text-xl shadow-xl shadow-accent/30 hover:scale-105 hover:shadow-accent/50 transition-all duration-300 hover:-translate-y-1"
+                                >
+                                    Comenzar Gratis
+                                </button>
+                                <a 
+                                  href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-full sm:w-auto relative flex items-center justify-center gap-3 px-8 py-3 bg-black border border-white/10 text-white rounded-2xl transition-all transform hover:scale-105 shadow-xl hover:shadow-blue-500/20 group"
+                                >
+                                  <FaGooglePlay style={{ fill: 'url(#play-grad-vibrant)' }} className="text-2xl group-hover:animate-pulse" />
+                                  <div className="flex flex-col text-left leading-none">
+                                    <span className="text-[9px] text-gray-400 font-semibold tracking-wider mb-0.5">DISPONIBLE EN</span>
+                                    <span className="text-lg font-black tracking-tight">Google Play</span>
+                                  </div>
+
+                                  <span 
+                                      className="absolute -top-3 -right-3 flex items-center gap-1.5 px-3 py-1 rounded-full z-30 shadow-xl overflow-hidden"
+                                      style={{
+                                          background: 'rgba(255, 255, 255, 0.1)',
+                                          backdropFilter: 'blur(12px)',
+                                          WebkitBackdropFilter: 'blur(12px)',
+                                          border: '1px solid rgba(255, 255, 255, 0.3)'
+                                      }}
+                                  >
+                                      <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse shadow-[0_0_8px_var(--accent)]"></span>
+                                      <span className="text-[9px] font-black tracking-widest uppercase text-white drop-shadow-md">NUEVA</span>
+                                  </span>
+                                </a>
+                            </div>
+
                             <p className="mt-6 text-sm font-medium text-text-secondary z-20">
                                 Sin tarjeta de crédito. <span className="text-accent font-bold">100% Gratuito.</span>
                             </p>
