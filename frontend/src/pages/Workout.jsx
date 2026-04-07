@@ -1,3 +1,4 @@
+/* frontend/src/pages/Workout.jsx */
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
@@ -14,7 +15,7 @@ import WorkoutExerciseDetailModal from './WorkoutExerciseDetailModal';
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 import WorkoutHeatmapModal from '../components/Workout/WorkoutHeatmapModal';
-import WorkoutReviewModal from '../components/Workout/WorkoutReviewModal'; // <--- NUEVO IMPORT
+import WorkoutReviewModal from '../components/Workout/WorkoutReviewModal';
 
 // --- IMPORTS DE COMPONENTES MODULARIZADOS ---
 import NoActiveWorkout from '../components/Workout/NoActiveWorkout';
@@ -44,10 +45,11 @@ const Workout = ({ timer, setView }) => {
         openRestModal,
         userProfile,
         fetchInitialData,
+        setExerciseReminder // <--- AÑADIDO: Extraemos la función del store
     } = useAppStore((state) => ({
         activeWorkout: state.activeWorkout,
         logWorkout: state.logWorkout,
-        stopWorkout: state.updateActiveWorkoutSet, // Fix: No era stopWorkout repetido, era error tuyo original
+        stopWorkout: state.updateActiveWorkoutSet, 
         updateActiveWorkoutSet: state.updateActiveWorkoutSet,
         addDropset: state.addDropset,
         removeDropset: state.removeDropset,
@@ -58,10 +60,9 @@ const Workout = ({ timer, setView }) => {
         openRestModal: state.openRestModal,
         userProfile: state.userProfile,
         fetchInitialData: state.fetchInitialData,
+        setExerciseReminder: state.setExerciseReminder // <--- AÑADIDO: Mapeamos la función
     }));
     
-    // Patch original file fix: The destructuring mapping above had a duplicate mapping for `stopWorkout` in your original file. 
-    // I will explicitly map `stopWorkout: state.stopWorkout` to avoid breaking your logic.
     const realStopWorkout = useAppStore(state => state.stopWorkout);
 
     // --- 2. Estado Local (Modales y Notas) ---
@@ -70,8 +71,8 @@ const Workout = ({ timer, setView }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [wasTimerRunningOnFinish, setWasTimerRunningOnFinish] = useState(false);
     const [showCalorieModal, setShowCalorieModal] = useState(false);
-    const [showReviewModal, setShowReviewModal] = useState(false); // <--- NUEVO ESTADO
-    const [finalCalories, setFinalCalories] = useState(0); // <--- NUEVO ESTADO PARA GUARDAR CALORIAS TEMP
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [finalCalories, setFinalCalories] = useState(0); 
     const [exerciseToReplace, setExerciseToReplace] = useState(null);
     const [showWorkoutSummaryModal, setShowWorkoutSummaryModal] = useState(false);
     const [completedWorkoutData, setCompletedWorkoutData] = useState(null);
@@ -80,10 +81,8 @@ const Workout = ({ timer, setView }) => {
     const [historyExercise, setHistoryExercise] = useState(null);
     const [showHeatmapModal, setShowHeatmapModal] = useState(false);
 
-    // Estado para la vista de Cardio Rápido
     const [showQuickCardio, setShowQuickCardio] = useState(false);
 
-    // Efecto de limpieza
     useEffect(() => {
         const mountTime = Date.now();
         return () => {
@@ -105,7 +104,6 @@ const Workout = ({ timer, setView }) => {
     const isSimpleWorkout =
         !activeWorkout?.exercises || activeWorkout.exercises.length === 0;
 
-    // Memo para agrupar ejercicios en superseries
     const exerciseGroups = useMemo(() => {
         if (isSimpleWorkout) return [];
 
@@ -194,7 +192,6 @@ const Workout = ({ timer, setView }) => {
         setView(returnView);
     };
 
-    // PASO 1: Captura calorías y abre el modal de revisión
     const handleCalorieInputComplete = (calories) => {
         const isAnySetFilled =
             isSimpleWorkout ||
@@ -215,19 +212,12 @@ const Workout = ({ timer, setView }) => {
 
         setFinalCalories(calories);
         setShowCalorieModal(false);
-        setShowReviewModal(true); // Abrir el nuevo modal de revisión
+        setShowReviewModal(true); 
     };
 
-    // PASO 2: Guarda definitivamente después de la revisión
     const handleReviewConfirm = async () => {
         setIsSaving(true);
         
-        // Obtenemos los datos MÁS RECIENTES de activeWorkout (por si hubo ediciones en el modal)
-        // Como 'activeWorkout' viene del store y el modal actualiza el store, 
-        // la variable activeWorkout en este scope ya debería estar actualizada 
-        // gracias al re-render de React, pero por seguridad accedemos al store si fuera necesario.
-        // Aquí usamos 'activeWorkout' del hook que se actualiza reactivamente.
-
         const workoutData = {
             routineId: activeWorkout.routineId,
             routineName: activeWorkout.routineName,
@@ -237,8 +227,10 @@ const Workout = ({ timer, setView }) => {
             details: isSimpleWorkout
                 ? []
                 : activeWorkout.exercises.map((ex) => ({
+                    id: ex.id, 
                     exerciseName: ex.name,
                     superset_group_id: ex.superset_group_id,
+                    reminder: ex.reminder, 
                     setsDone: ex.setsDone
                         .filter(
                             (set) =>
@@ -319,7 +311,7 @@ const Workout = ({ timer, setView }) => {
         <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 pb-28 md:pb-10 animate-[fade-in_0.5s_ease-out]">
             <WorkoutHeader
                 routineName={activeWorkout.routineName}
-                routineImage={activeWorkout.imageUrl || activeWorkout.image_url} // <--- MODIFICACIÓN AQUÍ
+                routineImage={activeWorkout.imageUrl || activeWorkout.image_url} 
                 timer={timer}
                 isWorkoutPaused={isWorkoutPaused}
                 hasWorkoutStarted={hasWorkoutStarted}
@@ -346,6 +338,7 @@ const Workout = ({ timer, setView }) => {
                     onOpenRestModal={openRestModal}
                     onDisabledInputClick={handleDisabledInputClick}
                     onDisabledButtonClick={handleDisabledButtonClick}
+                    onSaveReminder={setExerciseReminder} // <--- AÑADIDO: Pasamos la función al hijo
                 />
             )}
 
@@ -355,9 +348,6 @@ const Workout = ({ timer, setView }) => {
                 hasWorkoutStarted={hasWorkoutStarted}
             />
 
-            {/* MODALES EN CADENA */}
-
-            {/* 1. Modal de Calorías */}
             {showCalorieModal && (
                 <CalorieInputModal
                     estimatedCalories={calculateCalories(
@@ -375,19 +365,16 @@ const Workout = ({ timer, setView }) => {
                 />
             )}
 
-            {/* 2. Modal de Revisión (NUEVO) */}
             {showReviewModal && (
                 <WorkoutReviewModal
                     onClose={() => {
                         setShowReviewModal(false);
-                        // Opcional: Volver a reanudar o dejar pausado
                     }}
                     onConfirm={handleReviewConfirm}
                     isSaving={isSaving}
                 />
             )}
 
-            {/* 3. Modal de Resumen Final */}
             {showWorkoutSummaryModal && completedWorkoutData && (
                 <WorkoutSummaryModal
                     workoutData={completedWorkoutData}
@@ -400,8 +387,6 @@ const Workout = ({ timer, setView }) => {
                     }}
                 />
             )}
-
-            {/* OTROS MODALES DE UTILIDAD */}
 
             {exerciseToReplace !== null && (
                 <ExerciseReplaceModal

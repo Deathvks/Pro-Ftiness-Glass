@@ -181,6 +181,7 @@ const processAndSaveExercises = async (
         routine_id: routineId,
         superset_group_id: ex.superset_group_id,
         exercise_order: ex.exercise_order,
+        reminder: ex.reminder || null, // <-- AÑADIDO: Guardar la meta/recordatorio
       };
     })
   );
@@ -568,6 +569,8 @@ export const getPublicRoutineById = async (req, res, next) => {
             ex.image_url_start = ex.ExerciseList.image_url_start;
             ex.video_url = ex.ExerciseList.video_url;
         }
+        // <-- AÑADIDO: Ocultar recordatorios privados de la vista social
+        delete ex.reminder; 
         return ex;
     });
 
@@ -642,7 +645,8 @@ export const downloadRoutine = async (req, res, next) => {
       image_url_start: ex.image_url_start,
       superset_group_id: ex.superset_group_id,
       exercise_order: ex.exercise_order,
-      is_manual: ex.exercise_list_id === null
+      is_manual: ex.exercise_list_id === null,
+      reminder: null // <-- AÑADIDO: No copiamos las metas de otras personas
     }));
 
     await processAndSaveExercises(exercisesToCopy, newRoutine.id, currentUserId, t);

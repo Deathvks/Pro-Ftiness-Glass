@@ -160,8 +160,15 @@ const ToastProvider = ({ children }) => {
         <Toaster 
           position="top-center" 
           className="!z-[2147483647]"
-          style={{ zIndex: 2147483647 }} 
-          toastOptions={{ className: '!z-[2147483647]', style: { zIndex: 2147483647 } }} 
+          style={{ 
+            zIndex: 2147483647,
+            // AÑADIDO: Margen dinámico superior para esquivar el notch del móvil
+            marginTop: 'env(safe-area-inset-top)' 
+          }} 
+          toastOptions={{ 
+            className: '!z-[2147483647]', 
+            style: { zIndex: 2147483647 } 
+          }} 
         />,
         document.body
       )}

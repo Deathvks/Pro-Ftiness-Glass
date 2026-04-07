@@ -4,11 +4,9 @@ import { formatDateForQuery } from '../utils/dateUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
-// Registramos el plugin nativo aquí, en el cerebro del entrenamiento
+// Registramos el plugin nativo aquí
 const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
 
-// --- HELPERS PARA EL TIMER NATIVO (ANDROID) ---
-// Diccionario estricto: 100% a prueba de fallos en Android (Color.parseColor)
 const getAccentColor = () => {
   try {
     const accent = localStorage.getItem('accent') || 'green';
@@ -30,24 +28,34 @@ const stopNativeTimer = () => {
     NativeTimer.stopTimer().catch(console.warn);
   }
 };
-// ----------------------------------------------
 
-// --- HELPER: Buscar último rendimiento ---
+// --- HELPER CORREGIDO: Buscar último rendimiento (AHORA LEE BIEN EL BACKEND) ---
 const findLastPerformance = (workoutLog, exerciseName) => {
   if (!workoutLog || !Array.isArray(workoutLog) || !exerciseName) return null;
 
+  const searchName = exerciseName.toLowerCase().trim();
+
+  // Buscar logs que contengan WorkoutLogDetails con el ejercicio
   const relevantLogs = workoutLog.filter(log =>
-    log.details?.some(d => d.exerciseName === exerciseName)
+    log.WorkoutLogDetails?.some(d => d.exercise_name?.toLowerCase().trim() === searchName)
   );
 
   if (relevantLogs.length === 0) return null;
 
+  // Ordenar de más reciente a más antiguo
   relevantLogs.sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date));
 
   const lastLog = relevantLogs[0];
-  const detail = lastLog.details.find(d => d.exerciseName === exerciseName);
+  const detail = lastLog.WorkoutLogDetails.find(
+    d => d.exercise_name?.toLowerCase().trim() === searchName
+  );
 
-  return detail ? { date: lastLog.workout_date, sets: detail.setsDone } : null;
+  // Extraer los sets y el 1RM estimado directamente de la DB
+  return detail ? { 
+    date: lastLog.workout_date, 
+    sets: detail.WorkoutLogSets || [],
+    estimated_1rm: detail.estimated_1rm || 0
+  } : null;
 };
 
 // --- FUNCIONES DE ALMACENAMIENTO LOCAL ---
@@ -96,15 +104,9 @@ const getRestTimerStateFromStorage = () => {
 
 const setWorkoutInStorage = (state) => {
   localStorage.setItem('activeWorkout', JSON.stringify(state.activeWorkout));
-  localStorage.setItem(
-    'workoutStartTime',
-    JSON.stringify(state.workoutStartTime)
-  );
+  localStorage.setItem('workoutStartTime', JSON.stringify(state.workoutStartTime));
   localStorage.setItem('isWorkoutPaused', JSON.stringify(state.isWorkoutPaused));
-  localStorage.setItem(
-    'workoutAccumulatedTime',
-    JSON.stringify(state.workoutAccumulatedTime)
-  );
+  localStorage.setItem('workoutAccumulatedTime', JSON.stringify(state.workoutAccumulatedTime));
 };
 
 const clearWorkoutInStorage = () => {
@@ -116,14 +118,8 @@ const clearWorkoutInStorage = () => {
 
 const setRestTimerInStorage = (state) => {
   localStorage.setItem('isResting', JSON.stringify(state.isResting));
-  localStorage.setItem(
-    'restTimerEndTime',
-    JSON.stringify(state.restTimerEndTime)
-  );
-  localStorage.setItem(
-    'restTimerInitialDuration',
-    JSON.stringify(state.restTimerInitialDuration)
-  );
+  localStorage.setItem('restTimerEndTime', JSON.stringify(state.restTimerEndTime));
+  localStorage.setItem('restTimerInitialDuration', JSON.stringify(state.restTimerInitialDuration));
   localStorage.setItem('restTimerMode', state.restTimerMode);
   localStorage.setItem('isRestTimerPaused', JSON.stringify(state.isRestTimerPaused));
   localStorage.setItem('restTimerRemaining', JSON.stringify(state.restTimerRemaining));
@@ -236,10 +232,12 @@ export const createWorkoutSlice = (set, get) => ({
           reps: '',
           weight_kg: '',
           is_dropset: false,
+          is_warmup: false,
         })),
         exercise_list_id: fullDetails?.id || null,
         muscle_group: ex.muscle_group || fullDetails?.muscle_group || null,
         last_performance: lastPerformance,
+        reminder: ex.reminder || null, // Cargamos el reminder de la rutina si existe
       };
     });
 
@@ -325,6 +323,7 @@ export const createWorkoutSlice = (set, get) => ({
       reps: '',
       weight_kg: '',
       is_dropset: true,
+      is_warmup: false,
     });
     const newState = {
       activeWorkout: { ...session, exercises: newExercises },
@@ -420,11 +419,13 @@ export const createWorkoutSlice = (set, get) => ({
         reps: '',
         weight_kg: '',
         is_dropset: false,
+        is_warmup: false,
       })),
       id: uuidv4(),
       exercise_list_id: newExercise.id,
       muscle_group: newExercise.muscle_group,
       last_performance: lastPerformance,
+      reminder: null, // Reset del reminder al cambiar ejercicio
     };
     const newState = {
       activeWorkout: { ...session, exercises: newExercises },
@@ -465,6 +466,23 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
+  // --- FUNCIÓN PARA GUARDAR EL RECORDATORIO ---
+  setExerciseReminder: (exIndex, reminderText) => {
+    const session = get().activeWorkout;
+    if (!session) return;
+    
+    const newExercises = JSON.parse(JSON.stringify(session.exercises));
+    newExercises[exIndex].reminder = reminderText;
+    newExercises[exIndex].reminderUpdated = true; // <--- FLAG PARA SABER QUE SE EDITÓ HOY
+
+    const newState = {
+      activeWorkout: { ...session, exercises: newExercises },
+    };
+    set(newState);
+    setWorkoutInStorage({ ...get(), ...newState });
+  },
+  // --------------------------------------------------
+
   openRestModal: (plannedTime) =>
     set({
       isResting: true,
@@ -485,10 +503,6 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setRestTimerInStorage(newState);
-    
-    // --- MODIFICADO: Eliminada la llamada a triggerNativeTimer aquí ---
-    // La notificación solo saltará cuando el usuario minimice la app,
-    // gracias al listener en `useAppInitialization.js`
   },
 
   setRestTimerMode: (mode) => {
@@ -508,7 +522,6 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerEndTime: newEndTime,
         restTimerRemaining: null,
       };
-      // --- MODIFICADO: Eliminada la llamada a triggerNativeTimer ---
     } else {
       const now = Date.now();
       const remaining = restTimerEndTime ? restTimerEndTime - now : 0;
@@ -555,8 +568,6 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerInitialDuration: Math.max(1, newInitial),
       };
       setRestTimerInStorage({ ...state, ...newState });
-      
-      // --- MODIFICADO: Eliminada la llamada a triggerNativeTimer ---
 
       return newState;
     });
@@ -587,8 +598,21 @@ export const createWorkoutSlice = (set, get) => ({
       const state = get();
       const workoutDate = state.activeWorkout?.startTime || new Date().toISOString();
 
+      // INTERCEPTOR: Borramos/Consumimos las metas que no hayan sido actualizadas hoy
+      let processedDetails = workoutData.details;
+      if (processedDetails && Array.isArray(processedDetails)) {
+          processedDetails = processedDetails.map(detail => {
+              const stateEx = state.activeWorkout?.exercises?.find(e => e.id === detail.id);
+              if (stateEx && !stateEx.reminderUpdated) {
+                  return { ...detail, reminder: null };
+              }
+              return detail;
+          });
+      }
+
       const finalWorkoutData = {
         ...workoutData,
+        details: processedDetails || workoutData.details,
         date: workoutDate, 
         visibility: localStorage.getItem('globalWorkoutVisibility') || 'friends', 
         notifyFriends: localStorage.getItem('globalNotifyFriends') !== 'false'

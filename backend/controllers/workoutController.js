@@ -16,8 +16,8 @@ const calculate1RM = (weight, reps) => {
   return Math.round(estimated1RM * 100) / 100;
 };
 
-// AÑADIDO: User y Friendship para poder enviar las notificaciones a los amigos
-const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, User, Friendship, sequelize } = models;
+// AÑADIDO: RoutineExercise para guardar las metas/recordatorios
+const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, User, Friendship, RoutineExercise, sequelize } = models;
 
 export const getWorkoutHistory = async (req, res, next) => {
   try {
@@ -40,8 +40,6 @@ export const getWorkoutHistory = async (req, res, next) => {
       };
     }
 
-    // CORRECCIÓN: Eliminamos 'attributes' explícitos para evitar errores de columnas faltantes.
-    // Sequelize traerá todo lo necesario automáticamente.
     const history = await WorkoutLog.findAll({
       where: whereCondition,
       include: [{
@@ -111,7 +109,7 @@ export const logWorkoutSession = async (req, res, next) => {
     routineName, routine_name,
     workout_date, date,
     duration_seconds, calories_burned, details, exercises, notes, routineId,
-    visibility, notifyFriends // NUEVO: Recibir visibilidad y si debe notificar a amigos
+    visibility, notifyFriends 
   } = req.body;
 
   const { userId } = req.user;
@@ -140,7 +138,7 @@ export const logWorkoutSession = async (req, res, next) => {
       duration_seconds,
       calories_burned,
       notes,
-      visibility: visibility || 'friends' // NUEVO: Guardar la visibilidad elegida (por defecto friends)
+      visibility: visibility || 'friends' 
     }, { transaction: t });
 
     let newPRs = [];
@@ -180,7 +178,7 @@ export const logWorkoutSession = async (req, res, next) => {
 
       const newLogDetail = await WorkoutLogDetail.create({
         workout_log_id: newWorkoutLog.id,
-        exercise_name: exercise.exerciseName,
+        exercise_name: exercise.exerciseName || exercise.name, // Asegurar que pilla el nombre correcto
         total_volume: totalVolume,
         best_set_weight: bestSetWeight,
         superset_group_id: exercise.superset_group_id,
@@ -188,7 +186,6 @@ export const logWorkoutSession = async (req, res, next) => {
       }, { transaction: t });
 
       if (exercise.setsDone && exercise.setsDone.length > 0) {
-        // Preparamos datos para BulkCreate
         const setsToCreate = exercise.setsDone
           .filter(set => (set.reps !== '' && set.reps !== null) || (set.weight_kg !== '' && set.weight_kg !== null))
           .map(set => ({
@@ -201,16 +198,16 @@ export const logWorkoutSession = async (req, res, next) => {
           }));
         
         if (setsToCreate.length > 0) {
-          // OPTIMIZACIÓN: Inserción masiva en lugar de uno a uno
           await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
         }
       }
 
       if (bestSetWeight > 0) {
+        const exerciseNameSafe = exercise.exerciseName || exercise.name;
         const existingPR = await PersonalRecord.findOne({
           where: {
             user_id: userId,
-            exercise_name: exercise.exerciseName
+            exercise_name: exerciseNameSafe
           },
           transaction: t
         });
@@ -218,21 +215,42 @@ export const logWorkoutSession = async (req, res, next) => {
         if (!existingPR) {
           await PersonalRecord.create({
             user_id: userId,
-            exercise_name: exercise.exerciseName,
+            exercise_name: exerciseNameSafe,
             weight_kg: bestSetWeight,
             date: finalDate
           }, { transaction: t });
-          newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
+          newPRs.push({ exercise: exerciseNameSafe, weight: bestSetWeight });
         } else if (bestSetWeight > existingPR.weight_kg) {
           existingPR.weight_kg = bestSetWeight;
           existingPR.date = finalDate;
           await existingPR.save({ transaction: t });
-          newPRs.push({ exercise: exercise.exerciseName, weight: bestSetWeight });
+          newPRs.push({ exercise: exerciseNameSafe, weight: bestSetWeight });
         }
       }
+
+      // --- GUARDAR RECORDATORIO/META (Actualizará a null si el frontend envía null) ---
+      if (routineId && exercise.id && !isNaN(parseInt(exercise.id, 10))) {
+        if (exercise.reminder !== undefined) {
+          try {
+            await RoutineExercise.update(
+              { reminder: exercise.reminder || null },
+              { 
+                where: { 
+                  id: exercise.id, 
+                  routine_id: routineId 
+                }, 
+                transaction: t 
+              }
+            );
+          } catch (err) {
+            console.error(`Error al actualizar RoutineExercise:`, err);
+          }
+        }
+      }
+      // --------------------------------------------------------
     }
 
-    // COMMIT TEMPRANO: Liberamos DB antes de tareas pesadas (Gamificación/Notificaciones)
+    // COMMIT TEMPRANO
     await t.commit();
 
     // Procesamos gamificación fuera de la transacción
@@ -273,7 +291,6 @@ export const logWorkoutSession = async (req, res, next) => {
 
       // Lógica de notificaciones sociales
       try {
-        // 1. Notificar al propio usuario
         await createNotification(userId, {
           type: 'success',
           title: '¡Entrenamiento publicado!',
@@ -281,7 +298,6 @@ export const logWorkoutSession = async (req, res, next) => {
           data: { url: '/social?tab=feed' }
         });
 
-        // 2. Notificar a los amigos SOLO si notifyFriends es true
         if (notifyFriends === true || notifyFriends === 'true') {
           const currentUser = await User.findByPk(userId, { attributes: ['username'] });
           if (currentUser) {
@@ -325,7 +341,6 @@ export const logWorkoutSession = async (req, res, next) => {
   }
 };
 
-
 export const updateWorkoutLog = async (req, res) => {
   res.status(501).json({ error: 'Funcionalidad de editar no implementada todavía.' });
 };
@@ -336,7 +351,6 @@ export const deleteWorkoutLog = async (req, res, next) => {
   const t = await sequelize.transaction();
 
   try {
-    // CORRECCIÓN: Eliminamos 'attributes' para evitar problemas en cascada
     const workoutLog = await WorkoutLog.findOne({
       where: { id: workoutId, user_id: userId },
       include: [{ model: WorkoutLogDetail, as: 'WorkoutLogDetails' }],
@@ -349,6 +363,7 @@ export const deleteWorkoutLog = async (req, res, next) => {
     }
 
     const exercisesInWorkout = [...workoutLog.WorkoutLogDetails];
+    const routineIdToClear = workoutLog.routine_id; // Capturamos el ID de la rutina antes de destruirla
 
     await workoutLog.destroy({ transaction: t });
 
@@ -369,7 +384,7 @@ export const deleteWorkoutLog = async (req, res, next) => {
             model: WorkoutLog,
             as: 'WorkoutLog',
             where: { user_id: userId },
-            attributes: [] // Aquí sí podemos optimizar porque es un WHERE interno
+            attributes: []
           }],
           where: { exercise_name: exerciseName },
           order: [['best_set_weight', 'DESC']],
@@ -377,7 +392,6 @@ export const deleteWorkoutLog = async (req, res, next) => {
         });
 
         if (newBestLogDetail) {
-          // Necesitamos la fecha, así que hacemos fetch del padre
           const newBestWorkout = await WorkoutLog.findByPk(newBestLogDetail.workout_log_id, { 
             attributes: ['workout_date'], 
             transaction: t 
@@ -391,9 +405,19 @@ export const deleteWorkoutLog = async (req, res, next) => {
       }
     }
 
+    // NUEVO: Si este entreno formaba parte de una rutina, limpiamos sus recordatorios
+    if (routineIdToClear) {
+      await RoutineExercise.update(
+        { reminder: null },
+        { 
+          where: { routine_id: routineIdToClear }, 
+          transaction: t 
+        }
+      );
+    }
+
     await t.commit();
 
-    // Emitir actualización de muro por WebSocket (Nuevo)
     const io = req.app.get('io');
     if (io) {
         io.emit('feed_update');

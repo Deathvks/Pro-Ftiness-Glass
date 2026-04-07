@@ -19,6 +19,16 @@ const ExerciseDetailView = ({
   const [rest, setRest] = useState(60);
   const { theme } = useAppTheme();
 
+  // --- LOG PARA CAPTURAR LA CLAVE EXACTA DE CUALQUIER EJERCICIO ---
+  useEffect(() => {
+    if (exercise && exercise.description) {
+      console.log(`=== CLAVE EXACTA PARA: ${exercise.name} ===`);
+      console.log(normalizeText(exercise.description));
+      console.log("=============================================");
+    }
+  }, [exercise]);
+  // ----------------------------------------------------------------
+
   // Estados para la IA
   const [aiExplanation, setAiExplanation] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);

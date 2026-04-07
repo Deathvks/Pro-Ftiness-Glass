@@ -1,11 +1,11 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseListView.jsx */
-import React, { useRef, useLayoutEffect, useState } from 'react';
+import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
 import { X, Search, ShoppingCart, ListFilter, Plus } from 'lucide-react';
 import CustomSelect from '../../CustomSelect';
 import ExerciseListItem from './ExerciseListItem';
 import Spinner from '../../Spinner';
 
-const ITEM_HEIGHT = 90; // Altura fija de cada elemento en píxeles
+const ITEM_HEIGHT = 104; // Altura reservada por elemento
 const OVERSCAN = 5; // Cuántos elementos renderizar fuera de pantalla para que el scroll sea fluido
 
 const ExerciseListView = ({
@@ -36,6 +36,15 @@ const ExerciseListView = ({
   // --- VIRTUALIZACIÓN NATIVA 100% LIBRE DE LIBRERÍAS ---
   const [scrollTop, setScrollTop] = useState(0);
   const [listHeight, setListHeight] = useState(0);
+  
+  // AÑADIDO: Detectar si es móvil para el padding inferior
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Observamos el tamaño del contenedor para calcular cuántos elementos caben
   useLayoutEffect(() => {
@@ -70,7 +79,11 @@ const ExerciseListView = ({
 
   // --- CÁLCULO DE ELEMENTOS VISIBLES (VIRTUALIZACIÓN) ---
   const totalItems = filteredExercises.length + 1; // +1 por el botón de "Añadir manual" al final
-  const totalHeight = totalItems * ITEM_HEIGHT;
+  
+  // AÑADIDO: Padding dinámico. Mucho espacio en móvil para el navbar, espacio normal en PC.
+  const EXTRA_BOTTOM_PADDING = isMobile ? 140 : 24; 
+  const MANUAL_BTN_GAP = 16; // Separación extra para el botón manual
+  const totalHeight = (totalItems * ITEM_HEIGHT) + EXTRA_BOTTOM_PADDING + MANUAL_BTN_GAP;
 
   const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - OVERSCAN);
   const endIndex = Math.min(
@@ -133,8 +146,11 @@ const ExerciseListView = ({
 
   return (
     <div className="flex flex-col h-full w-full bg-bg-primary overflow-hidden">
-      {/* Header (Cerrar y Carrito) */}
-      <div className="flex-shrink-0 flex items-center justify-between p-3 md:p-4 border-b border-glass-border gap-2 bg-bg-primary z-10">
+      {/* Header (Cerrar y Carrito) - Zonas Seguras para el Notch */}
+      <div 
+        className="flex-shrink-0 flex items-center justify-between px-3 pb-3 md:px-4 md:pb-4 border-b border-glass-border gap-2 bg-bg-primary z-10"
+        style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
+      >
         <h2 className="text-lg md:text-xl font-bold truncate min-w-0">
           {t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
         </h2>
@@ -257,13 +273,13 @@ const ExerciseListView = ({
           <div style={{ height: `${totalHeight}px`, position: 'relative', width: '100%' }}>
             {visibleIndices.map(index => {
               const isLast = index === filteredExercises.length;
-              const topPosition = index * ITEM_HEIGHT;
               
-              // Ajustamos el estilo para simular padding e iterar de forma fluida
+              const topPosition = (index * ITEM_HEIGHT) + (isLast ? MANUAL_BTN_GAP : 0);
+              
               const itemStyle = {
                 position: 'absolute',
-                top: topPosition + 8,
-                height: ITEM_HEIGHT - 8,
+                top: topPosition + 12,
+                height: ITEM_HEIGHT - 12,
                 left: '1rem',
                 right: '1rem',
               };

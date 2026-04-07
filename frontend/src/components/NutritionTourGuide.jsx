@@ -1,3 +1,4 @@
+/* frontend/src/components/NutritionTourGuide.jsx */
 import { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -31,9 +32,10 @@ const NutritionTourGuide = () => {
           -webkit-backdrop-filter: blur(12px) !important;
           max-width: calc(100vw - 32px) !important;
           
-          /* FIX: Forzar respeto por las áreas seguras del móvil (Notch y Gestos) */
-          margin-top: calc(env(safe-area-inset-top, 40px) + 16px) !important;
-          margin-bottom: calc(env(safe-area-inset-bottom, 30px) + 16px) !important;
+          /* FIX: Forzar respeto por las áreas seguras del móvil (Notch y Gestos) 
+             Usamos transform para forzar el desplazamiento si el top está pillado por JS */
+          transform: translateY(env(safe-area-inset-top, 0px)) !important;
+          margin-bottom: env(safe-area-inset-bottom, 16px) !important;
           max-height: calc(100vh - env(safe-area-inset-top, 40px) - env(safe-area-inset-bottom, 30px) - 64px) !important;
           overflow-y: auto !important;
           z-index: 999999 !important;

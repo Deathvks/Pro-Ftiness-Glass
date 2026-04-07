@@ -68,6 +68,13 @@ const RoutineExercise = sequelize.define(
       allowNull: true,
     },
     // --- FIN DE LA MODIFICACIÓN ---
+
+    // --- NUEVO CAMPO: RECORDATORIO / META ---
+    reminder: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    // ----------------------------------------
   },
   {
     tableName: 'routine_exercises',

@@ -30,8 +30,13 @@ const PREDEFINED_BACKGROUNDS = [
 // --- Helper para extraer la imagen recortada ---
 const getCroppedImg = async (imageSrc, pixelCrop) => {
     const image = new Image();
+    image.crossOrigin = 'anonymous'; // IMPORTANTE: Para evitar problemas de CORS al recortar imágenes externas
     image.src = imageSrc;
-    await new Promise((resolve) => (image.onload = resolve));
+    
+    await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = (e) => reject(new Error('Error al cargar la imagen en el canvas'));
+    });
 
     const canvas = document.createElement('canvas');
     canvas.width = pixelCrop.width;
@@ -76,6 +81,7 @@ const RoutineHeader = ({
     const [isFolderOpen, setIsFolderOpen] = useState(false);
     const [isPixabayOpen, setIsPixabayOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
+    const [isDownloadingPixabay, setIsDownloadingPixabay] = useState(false);
     
     // --- Estado para el Modal de Permisos ---
     const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -143,6 +149,27 @@ const RoutineHeader = ({
             }
         }
         fileInputRef.current?.click();
+    };
+
+    const handlePixabaySelect = async (url) => {
+        setIsPixabayOpen(false);
+        setIsDownloadingPixabay(true);
+        try {
+            // Descargamos la imagen de Pixabay como Blob localmente.
+            // Esto la pasa al cropper y luego se envía al backend para persistencia
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            setTempImage(blobUrl);
+            setIsCropping(true);
+        } catch (error) {
+            console.error("Error al descargar imagen de Pixabay:", error);
+            // Fallback: usar la URL directa
+            setTempImage(url);
+            setIsCropping(true);
+        } finally {
+            setIsDownloadingPixabay(false);
+        }
     };
 
     const handleCropComplete = async (croppedAreaPixels) => {
@@ -237,7 +264,7 @@ const RoutineHeader = ({
                                 <span className="text-xs font-medium">Sin imagen</span>
                             </div>
                         )}
-                        {isUploadingImage && (
+                        {(isUploadingImage || isDownloadingPixabay) && (
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-20">
                                 <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
                             </div>
@@ -249,7 +276,7 @@ const RoutineHeader = ({
                             <button
                                 onClick={handleUploadClick}
                                 className="flex items-center justify-center sm:justify-start flex-1 sm:flex-none gap-2 px-4 py-2 bg-glass-highlight border border-glass-border rounded-lg hover:bg-glass-heavy hover:border-accent/50 transition-all text-sm font-medium"
-                                disabled={isUploadingImage}
+                                disabled={isUploadingImage || isDownloadingPixabay}
                             >
                                 <Upload size={16} />
                                 {isUploadingImage ? 'Subiendo...' : 'Subir foto'}
@@ -398,7 +425,7 @@ const RoutineHeader = ({
             <PixabayModal 
                 isOpen={isPixabayOpen} 
                 onClose={() => setIsPixabayOpen(false)} 
-                onSelectImage={(url) => { setImageUrl(url); setIsPixabayOpen(false); }} 
+                onSelectImage={handlePixabaySelect} 
             />
 
             <PermissionModal 

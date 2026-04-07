@@ -1,3 +1,4 @@
+/* frontend/src/pages/Routines.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -383,23 +384,23 @@ const Routines = ({ setView }) => {
     return localStorage.getItem('routinesActiveTab') || 'myRoutines';
   });
 
+  // AÑADIDO: Variable para saber si hay CUALQUIER entrenamiento activo
+  const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined;
+
   const isCssBackground = (value) => {
     return value && (value.startsWith('linear-gradient') || value.startsWith('var(--'));
   };
 
-  // Lógica centralizada para mostrar imágenes compatible con subidas antiguas y nuevas
   const getDisplayImageUrl = (path) => {
     if (!path || isCssBackground(path)) return null;
     if (path.startsWith('blob:')) return path;
 
-    // Limpia el localhost si se guardó en BD por error
     let cleanPath = path.replace(/http:\/\/localhost:\d+/g, '');
     if (cleanPath.startsWith('http')) return cleanPath;
     
     const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
     let base = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
     
-    // Quita '/api' para apuntar a la raíz donde están los archivos estáticos
     if (base.endsWith('/api')) {
         base = base.slice(0, -4);
     }
@@ -503,8 +504,8 @@ const Routines = ({ setView }) => {
   };
 
   const handleEditClick = (routine) => {
-    if (activeWorkout && activeWorkout.routineId === routine.id) {
-      addToast('No puedes editar una rutina que está en curso. Finaliza o descarta el entrenamiento primero.', 'warning');
+    if (isAnyWorkoutActive && activeWorkout.routineId === routine.id) {
+      addToast('No puedes editar la rutina que está en curso. Finaliza o descarta el entrenamiento primero.', 'warning');
     } else {
       const exercises = routine.exercises || routine.RoutineExercises || [];
       const normalizedRoutine = {
@@ -618,6 +619,12 @@ const Routines = ({ setView }) => {
     if (activeWorkout && activeWorkout.routineId === routine.id) {
       setView('workout');
       return;
+    }
+
+    // AÑADIDO: Bloqueo extra por seguridad
+    if (isAnyWorkoutActive && activeWorkout.routineId !== routine.id) {
+        addToast('Ya tienes un entrenamiento en curso. Finalízalo o descártalo para empezar uno nuevo.', 'warning');
+        return;
     }
 
     setIsLoading(true);
@@ -831,7 +838,10 @@ const Routines = ({ setView }) => {
                 if (!routine) return null;
 
                 const isCompleted = completedRoutineIdsToday.includes(routine.id);
+                // AÑADIDO: Calculamos estados
                 const isActive = activeWorkout && activeWorkout.routineId === routine.id;
+                const isBlockedByOtherWorkout = isAnyWorkoutActive && !isActive; 
+                
                 const exercisesToGroup = routine.RoutineExercises || routine.exercises || [];
                 const exerciseGroups = groupExercises(exercisesToGroup);
                 const lastUsed = lastUsedMap.get(routine.id);
@@ -993,15 +1003,16 @@ const Routines = ({ setView }) => {
                       <div className="mt-auto pt-2">
                         <button
                           onClick={() => handleStartWorkout(routine)}
-                          disabled={isCompleted || isActive || isLoading}
+                          // AÑADIDO: Se deshabilita si está bloqueado por otro entrenamiento
+                          disabled={isCompleted || isActive || isLoading || isBlockedByOtherWorkout}
                           className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all
-                          ${isCompleted || isActive
+                          ${isCompleted || isActive || isBlockedByOtherWorkout
                               ? 'bg-bg-secondary text-text-muted cursor-not-allowed border border-transparent dark:border dark:border-white/10'
                               : 'bg-accent text-bg-secondary hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-0.5'
                             }
                         `}
                         >
-                          {isLoading && !isCompleted && !isActive ? (
+                          {isLoading && !isCompleted && !isActive && !isBlockedByOtherWorkout ? (
                             <Spinner size="small" />
                           ) : isCompleted ? (
                             <>
@@ -1012,6 +1023,11 @@ const Routines = ({ setView }) => {
                             <>
                               <Clock size={16} />
                               Continuar Entrenamiento
+                            </>
+                          ) : isBlockedByOtherWorkout ? ( // AÑADIDO: Texto cuando está bloqueado
+                            <>
+                              <Lock size={16} />
+                              Entrenamiento en Curso
                             </>
                           ) : (
                             <>

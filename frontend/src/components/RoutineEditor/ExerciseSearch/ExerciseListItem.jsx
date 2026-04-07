@@ -66,7 +66,7 @@ const ExerciseListItem = ({
   const imageBgClass = isOled ? 'bg-gray-200' : 'bg-bg-primary';
 
   return (
-    <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-xl border border-glass-border">
+    <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-lg border border-glass-border">
       <button
         onClick={() => onView(exercise)}
         className={`shrink-0 rounded-md overflow-hidden w-16 h-16 ${imageBgClass} border border-glass-border`}
