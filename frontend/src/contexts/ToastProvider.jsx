@@ -59,9 +59,14 @@ const ToastProvider = ({ children }) => {
       display: none !important; /* Adiós al SVG deforme de Sileo */
     }
     
-    /* REGLA AGRESIVA PARA ASEGURAR QUE FLOTE SOBRE TODO (Modales en z-[80]) */
+    /* FIX DEFINITIVO PARA EL NOTCH: Forzamos al contenedor global a bajar de la barra de estado */
     [data-sonner-toaster], 
-    [data-sileo-toaster], 
+    [data-sileo-toaster] {
+      z-index: 2147483647 !important;
+      top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
+    }
+
+    /* REGLA AGRESIVA PARA ASEGURAR QUE FLOTE SOBRE TODO (Modales en z-[80]) */
     [data-sonner-toast],
     .sileo-toaster,
     .sonner-toaster {
@@ -150,7 +155,7 @@ const ToastProvider = ({ children }) => {
     <ToastContext.Provider value={contextValue}>
       {children}
       
-      {/* Inyectamos los estilos de limpieza y el z-index supremo siempre */}
+      {/* Inyectamos los estilos de limpieza, el z-index supremo y el fix del notch siempre */}
       <style dangerouslySetInnerHTML={{ __html: globalCleanStyles }} />
       
       {/* El Portal asegura que el Toaster se inyecte directamente en el body,
@@ -160,15 +165,8 @@ const ToastProvider = ({ children }) => {
         <Toaster 
           position="top-center" 
           className="!z-[2147483647]"
-          style={{ 
-            zIndex: 2147483647,
-            // AÑADIDO: Margen dinámico superior para esquivar el notch del móvil
-            marginTop: 'env(safe-area-inset-top)' 
-          }} 
-          toastOptions={{ 
-            className: '!z-[2147483647]', 
-            style: { zIndex: 2147483647 } 
-          }} 
+          style={{ zIndex: 2147483647 }} 
+          toastOptions={{ className: '!z-[2147483647]', style: { zIndex: 2147483647 } }} 
         />,
         document.body
       )}

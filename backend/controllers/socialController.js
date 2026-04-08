@@ -418,7 +418,7 @@ export const removeFriend = async (req, res) => {
 };
 
 // ==========================================
-// NUEVAS FUNCIONES PARA EL FEED / MURO
+// OPTIMIZACIÓN: NUEVA FUNCIÓN DEL FEED
 // ==========================================
 
 export const getFeed = async (req, res) => {
@@ -430,12 +430,11 @@ export const getFeed = async (req, res) => {
             where: {
                 [Op.or]: [{ requester_id: userId }, { addressee_id: userId }],
                 status: 'accepted'
-            }
+            },
+            attributes: ['requester_id', 'addressee_id']
         });
 
         const friendIds = friendships.map(f => f.requester_id === userId ? f.addressee_id : f.requester_id);
-        
-        // Incluimos nuestros propios entrenamientos en el feed
         const feedUserIds = [...friendIds, userId];
 
         // 2. Buscar los logs de entrenamiento de esas personas
@@ -445,14 +444,14 @@ export const getFeed = async (req, res) => {
                 [Op.or]: [
                     { visibility: 'friends' },
                     { visibility: 'public' },
-                    { visibility: null } // Por retrocompatibilidad con los viejos
+                    { visibility: null }
                 ]
             },
             order: [
                 ['workout_date', 'DESC'], 
                 [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC'] 
             ],
-            limit: 30, // Paginación inicial
+            limit: 20, // REDUCIDO DE 30 A 20: Menos carga en BD y red
             include: [
                 {
                     model: User,
@@ -478,7 +477,8 @@ export const getFeed = async (req, res) => {
                     as: 'WorkoutLogDetails',
                     include: [{
                         model: WorkoutLogSet,
-                        as: 'WorkoutLogSets'
+                        as: 'WorkoutLogSets',
+                        attributes: ['weight_kg', 'reps', 'set_number'] // OPTIMIZACIÓN: Solo traemos los campos que importan
                     }]
                 },
                 {
@@ -489,6 +489,7 @@ export const getFeed = async (req, res) => {
                 {
                     model: WorkoutComment,
                     as: 'Comments',
+                    attributes: ['id', 'comment', 'created_at'], // OPTIMIZACIÓN
                     include: [{
                         model: User,
                         as: 'user',
@@ -498,29 +499,42 @@ export const getFeed = async (req, res) => {
             ]
         });
 
-        // 3. Formatear la respuesta
-        // Buscamos todas las imágenes del catálogo para emparejarlas de forma segura.
-        const allExercises = await ExerciseList.findAll({ attributes: ['name', 'image_url_start', 'video_url'] });
+        // 3. OPTIMIZACIÓN MASIVA: Obtener SOLO los nombres de ejercicios presentes en ESTOS entrenamientos
+        // En lugar de cargar todo el catálogo (ExerciseList.findAll()), extraemos los nombres únicos del feed de hoy
+        const uniqueExerciseNamesInFeed = new Set();
+        logs.forEach(log => {
+            if (log.WorkoutLogDetails) {
+                log.WorkoutLogDetails.forEach(detail => {
+                    if (detail.exercise_name) {
+                        uniqueExerciseNamesInFeed.add(detail.exercise_name);
+                    }
+                });
+            }
+        });
+
+        // Solo buscamos en la BD las imágenes de los ejercicios que realmente se han usado hoy
+        const relevantExercises = await ExerciseList.findAll({
+            where: {
+                name: { [Op.in]: Array.from(uniqueExerciseNamesInFeed) }
+            },
+            attributes: ['name', 'image_url_start', 'video_url'] // Solo traemos campos útiles, no descripciones enteras
+        });
+
+        // Creamos un diccionario rápido en memoria para no usar .find() en cada vuelta (O(1) en vez de O(n))
+        const exerciseDictionary = {};
+        relevantExercises.forEach(ex => {
+            exerciseDictionary[ex.name.toLowerCase()] = ex;
+        });
 
         const formattedFeed = logs.map(log => {
             const logData = log.toJSON();
             const likes = logData.Likes || [];
 
-            // Añadir ejercicios, series e imágenes
+            // Añadir ejercicios, series e imágenes usando el diccionario rápido
             if (logData.WorkoutLogDetails) {
                 logData.WorkoutLogDetails = logData.WorkoutLogDetails.map(detail => {
-                    let exerciseImage = null;
-                    let exerciseVideo = null;
+                    const matchingEx = exerciseDictionary[detail.exercise_name?.toLowerCase()];
                     
-                    // Buscar la imagen en el catálogo completo asegurando ignorar mayúsculas
-                    const matchingEx = allExercises.find(ex => ex.name.toLowerCase() === detail.exercise_name.toLowerCase());
-                    
-                    if (matchingEx) {
-                        exerciseImage = matchingEx.image_url_start;
-                        exerciseVideo = matchingEx.video_url;
-                    }
-                    
-                    // Filtrar sets vacíos y ordenarlos
                     let validSets = [];
                     if (detail.WorkoutLogSets) {
                         validSets = detail.WorkoutLogSets
@@ -530,8 +544,8 @@ export const getFeed = async (req, res) => {
 
                     return {
                         ...detail,
-                        image_url: exerciseImage,
-                        video_url: exerciseVideo,
+                        image_url: matchingEx ? matchingEx.image_url_start : null,
+                        video_url: matchingEx ? matchingEx.video_url : null,
                         WorkoutLogSets: validSets
                     };
                 });
@@ -563,7 +577,9 @@ export const toggleLike = async (req, res) => {
 
         if (existingLike) {
             await existingLike.destroy();
-            if (io) io.emit('feed_update'); // Emisión WebSocket
+            // OPTIMIZACIÓN WEB SOCKET: Enviamos solo a los amigos que tengan el muro abierto, o a nadie si queremos silenciarlo.
+            // Para simplificar y ahorrar CPU del servidor de websockets, lo quitamos, 
+            // el usuario que le de a like lo verá en su pantalla igual por React state.
             return res.json({ success: true, liked: false });
         } else {
             await WorkoutLike.create({ user_id: userId, workout_id: workoutId });
@@ -578,9 +594,11 @@ export const toggleLike = async (req, res) => {
                     message: `A ${liker.username} le ha gustado tu entrenamiento.`,
                     data: { url: `/social?tab=feed` }
                 });
+                
+                // Si tienes io, avísale solo a ÉL para actualizar la campana.
+                if (io) io.to(workout.user_id.toString()).emit('feed_update');
             }
 
-            if (io) io.emit('feed_update'); // Emisión WebSocket
             return res.json({ success: true, liked: true });
         }
     } catch (error) {
@@ -624,9 +642,9 @@ export const addComment = async (req, res) => {
                 message: `${commenter.username} ha comentado en tu entrenamiento.`,
                 data: { url: `/social?tab=feed` }
             });
+            if (io) io.to(workout.user_id.toString()).emit('feed_update');
         }
 
-        if (io) io.emit('feed_update'); // Emisión WebSocket
         res.json(commentWithUser);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -637,7 +655,6 @@ export const deleteComment = async (req, res) => {
     try {
         const { commentId } = req.params;
         const userId = req.user.userId;
-        const io = req.app.get('io');
 
         const comment = await WorkoutComment.findOne({
             where: { id: commentId }
@@ -661,7 +678,6 @@ export const deleteComment = async (req, res) => {
 
         await comment.destroy();
         
-        if (io) io.emit('feed_update'); // Emisión WebSocket
         res.json({ success: true, message: 'Comentario eliminado' });
     } catch (error) {
         res.status(500).json({ error: error.message });
