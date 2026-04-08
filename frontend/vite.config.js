@@ -65,7 +65,7 @@ export default defineConfig({
       ]
     }),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate', // <-- CAMBIO AQUI: Actualización automática
       includeAssets: ['favicon-32x32.png', 'apple-touch-icon.webp'],
       manifest: {
         name: 'Pro Fitness Glass',

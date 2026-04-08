@@ -61,15 +61,16 @@ const ToastProvider = ({ children }) => {
     
     /* FIX DEFINITIVO PARA EL NOTCH: Forzamos al contenedor global a bajar de la barra de estado */
     [data-sonner-toaster], 
-    [data-sileo-toaster] {
+    [data-sileo-toaster],
+    .sileo-toaster,
+    .sonner-toaster {
       z-index: 2147483647 !important;
-      top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
+      /* Usamos env() pero le damos un fallback agresivo de 40px si Capacitor no lee la variable a tiempo */
+      top: calc(env(safe-area-inset-top, 40px) + 16px) !important;
     }
 
     /* REGLA AGRESIVA PARA ASEGURAR QUE FLOTE SOBRE TODO (Modales en z-[80]) */
-    [data-sonner-toast],
-    .sileo-toaster,
-    .sonner-toaster {
+    [data-sonner-toast] {
       z-index: 2147483647 !important; /* El valor máximo posible en CSS */
     }
   `;
@@ -165,7 +166,11 @@ const ToastProvider = ({ children }) => {
         <Toaster 
           position="top-center" 
           className="!z-[2147483647]"
-          style={{ zIndex: 2147483647 }} 
+          style={{ 
+            zIndex: 2147483647,
+            // Añadimos margen directamente al estilo nativo del toaster por si Sileo sobreescribe la clase 'top'
+            marginTop: 'env(safe-area-inset-top, 40px)'
+          }} 
           toastOptions={{ className: '!z-[2147483647]', style: { zIndex: 2147483647 } }} 
         />,
         document.body

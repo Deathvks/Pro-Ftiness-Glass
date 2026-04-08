@@ -9,15 +9,9 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
 
-// 1. Tomar control inmediato de la página
+// 1. Tomar control inmediato de la página y forzar actualización automática
+self.skipWaiting(); // <-- Obliga a instalar la nueva versión sin esperar
 clientsClaim();
-
-// Escuchamos el evento 'message' para actualizaciones
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
 
 // 2. Limpieza de cachés antiguas y precarga
 cleanupOutdatedCaches();
