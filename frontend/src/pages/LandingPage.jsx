@@ -32,24 +32,29 @@ const TikTokIcon = ({ size = 20, className }) => (
   </svg>
 );
 
-// HOOK OPTIMIZADO: Ahora usa triggerOnce y rootMargin para evitar tirones
+// HOOK DEFINITIVO PARA SAFARI: Usamos el ID del contenedor como 'root' y ampliamos el margen.
 const useIntersectionObserver = (options = {}) => {
-    const { threshold = 0.1, rootMargin = '150px', triggerOnce = true } = options;
+    // Ampliamos el rootMargin a 400px para que carguen mucho antes de entrar a la pantalla
+    const { threshold = 0, rootMargin = '400px', triggerOnce = true } = options;
     const [isIntersecting, setIsIntersecting] = useState(false);
     const elementRef = useRef(null);
   
     useEffect(() => {
+      // Capturamos el contenedor principal de scroll para que Safari no se vuelva loco
+      const rootElement = document.getElementById('landing-scroll-container');
+      
       const observer = new IntersectionObserver(([entry]) => {
         if (entry.isIntersecting) {
           setIsIntersecting(true);
-          // Si triggerOnce es true, dejamos de observar el elemento una vez aparece (mejora radical de rendimiento)
           if (triggerOnce && elementRef.current) {
             observer.unobserve(elementRef.current);
           }
-        } else if (!triggerOnce) {
-          setIsIntersecting(false);
         }
-      }, { threshold, rootMargin });
+      }, { 
+        root: rootElement || null, // Clave para iOS Safari
+        threshold, 
+        rootMargin 
+      });
   
       const currentElement = elementRef.current;
       if (currentElement) {
@@ -85,7 +90,7 @@ const FloatingHeroElements = () => (
             }
         `}</style>
 
-        <div className="absolute top-[10%] right-[15%] opacity-60 animate-[float-2_7s_ease-in-out_infinite] will-change-transform">
+        <div className="absolute top-[10%] right-[15%] opacity-60 animate-[float-2_7s_ease-in-out_infinite]">
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="url(#ai-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_20px_rgba(139,92,246,0.6)]">
                 <defs>
                     <linearGradient id="ai-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -98,7 +103,7 @@ const FloatingHeroElements = () => (
             </svg>
         </div>
 
-        <div className="absolute bottom-[25%] left-[12%] opacity-50 animate-[float-1_6s_ease-in-out_infinite] will-change-transform">
+        <div className="absolute bottom-[25%] left-[12%] opacity-50 animate-[float-1_6s_ease-in-out_infinite]">
             <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="url(#workout-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] transform -rotate-12">
                 <defs>
                     <linearGradient id="workout-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -116,7 +121,7 @@ const FloatingHeroElements = () => (
             </svg>
         </div>
 
-        <div className="absolute top-[20%] left-[20%] opacity-40 animate-[float-3_8s_ease-in-out_infinite] will-change-transform">
+        <div className="absolute top-[20%] left-[20%] opacity-40 animate-[float-3_8s_ease-in-out_infinite]">
             <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="url(#food-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] transform rotate-12">
                 <defs>
                     <linearGradient id="food-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -135,7 +140,7 @@ const FloatingHeroElements = () => (
 const GymBot = ({ isDocked }) => (
     <div 
         aria-hidden="true"
-        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right will-change-transform
+        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right
             ${isDocked 
                 ? 'top-1/2 right-4 sm:right-8 -translate-y-1/2 scale-50 sm:scale-60 opacity-80' 
                 : 'top-[22%] sm:top-[25%] right-8 sm:right-16 scale-75 sm:scale-100 opacity-100'
@@ -209,18 +214,17 @@ const GymBot = ({ isDocked }) => (
     </div>
 );
 
-// COMPONENTE OPTIMIZADO: Agregado will-change-[opacity,transform]
+// COMPONENTE LIMPIADO: Fuera blurs y transformaciones pesadas para Safari
 const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
-    // Configuración ajustada: 5% de threshold y margen de 150px
-    const [ref, isVisible] = useIntersectionObserver({ threshold: 0.05, rootMargin: '150px' }); 
+    const [ref, isVisible] = useIntersectionObserver(); 
 
     return (
         <div 
             ref={ref}
-            className={`transition-all duration-700 cubic-bezier(0.2, 0.8, 0.2, 1) transform will-change-[opacity,transform] ${className}
+            className={`transition-all duration-700 ease-out ${className}
                 ${isVisible 
-                    ? 'opacity-100 translate-y-0 scale-100 blur-0' 
-                    : 'opacity-0 translate-y-24 scale-90 blur-sm'
+                    ? 'opacity-100 translate-y-0 scale-100' 
+                    : 'opacity-0 translate-y-12 scale-95'
                 }
             `}
             style={{ transitionDelay: `${delay}ms` }}
@@ -284,7 +288,7 @@ const MockupGallery = () => {
 
     return (
         <div className="w-full mt-16 mb-8 relative z-20 group">
-            <ScrollRevealCard delay={400}>
+            <ScrollRevealCard delay={200}>
                 <button 
                     onClick={() => scroll('left')}
                     className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-glass-base/90 hover:bg-bg-secondary text-text-primary hover:text-accent rounded-full items-center justify-center backdrop-blur-md border border-glass-border hover:border-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110"
@@ -376,7 +380,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
     fetchVersionInfo();
   }, []);
 
-  // SCROLL OPTIMIZADO: Evita re-renderizados innecesarios comprobando el estado previo
   const handleScroll = (e) => {
     const scrollTop = e.target.scrollTop;
     const shouldBeDocked = scrollTop > 200;
@@ -388,9 +391,12 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
   return (
     <div 
+        id="landing-scroll-container"
         ref={containerRef}
         onScroll={handleScroll}
-        className="absolute inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth perspective-1000"
+        // HEMOS ELIMINADO EL PERSPECTIVE-1000 DE ESTA LÍNEA
+        className="absolute inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth"
+        style={{ WebkitOverflowScrolling: 'touch' }} // Habilita inercia nativa en iOS sin glitchear animaciones
     >
       <svg width="0" height="0" className="absolute pointer-events-none">
           <defs>
@@ -405,11 +411,11 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
       <div className="fixed inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
         <div 
-          className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite] will-change-transform"
+          className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite]"
           style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }}
         />
         <div 
-          className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-10 animate-[pulse_12s_ease-in-out_infinite] will-change-transform"
+          className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-10 animate-[pulse_12s_ease-in-out_infinite]"
           style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)', animationDelay: '2s' }}
         />
         <div className="absolute inset-0 opacity-[0.04] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
