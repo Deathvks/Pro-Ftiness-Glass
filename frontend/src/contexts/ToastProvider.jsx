@@ -20,27 +20,27 @@ const ToastProvider = ({ children }) => {
       case 'oled':
         return {
           bg: '#000000',
-          border: '1px solid rgba(255, 255, 255, 0.15)', // Borde blanco sutil
+          border: '1px solid rgba(255, 255, 255, 0.15)',
           titleColor: '#ffffff',
           descColor: '#d1d5db',
           shadow: '0 4px 20px rgba(0,0,0,0.8)'
         };
       case 'dark':
         return {
-          bg: '#1f2937', // Gris oscuro (Tailwind gray-800)
-          border: '1px solid #374151', // Borde gris medio (gray-700)
-          titleColor: '#f9fafb', // Blanco roto
-          descColor: '#9ca3af', // Gris claro
+          bg: '#1f2937', 
+          border: '1px solid #374151', 
+          titleColor: '#f9fafb', 
+          descColor: '#9ca3af', 
           shadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)'
         };
       case 'light':
       default:
         return {
-          bg: '#ffffff', // Blanco puro
-          border: '1px solid #e5e7eb', // Borde gris muy suave (gray-200)
-          titleColor: '#111827', // Negro casi puro
-          descColor: '#4b5563', // Gris medio
-          shadow: '0 4px 12px rgba(0, 0, 0, 0.08)' // Sombra suave elegante
+          bg: '#ffffff', 
+          border: '1px solid #e5e7eb', 
+          titleColor: '#111827', 
+          descColor: '#4b5563', 
+          shadow: '0 4px 12px rgba(0, 0, 0, 0.08)' 
         };
     }
   }, [resolvedTheme]);
@@ -53,31 +53,28 @@ const ToastProvider = ({ children }) => {
       border: none !important;
       padding: 0 !important;
       margin: 0 !important;
-      z-index: 2147483647 !important; /* Capa altísima individual */
+      z-index: 2147483647 !important;
     }
     .custom-toast-root svg {
-      display: none !important; /* Adiós al SVG deforme de Sileo */
+      display: none !important;
     }
     
-    /* FIX DEFINITIVO PARA EL NOTCH: Forzamos al contenedor global a bajar de la barra de estado */
-    [data-sonner-toaster], 
-    [data-sileo-toaster],
-    .sileo-toaster,
-    .sonner-toaster {
+    /* FIX DEFINITIVO PARA EL NOTCH: Atacamos el atributo exacto donde Sonner/Sileo se ancla */
+    [data-sonner-toaster][data-y-position="top"],
+    [data-sileo-toaster] {
       z-index: 2147483647 !important;
-      /* Usamos env() pero le damos un fallback agresivo de 40px si Capacitor no lee la variable a tiempo */
-      top: calc(env(safe-area-inset-top, 40px) + 16px) !important;
+      /* Usamos max() para que coja el área segura, y si falla o es 0, coja 55px (que salva cualquier notch/Dynamic Island) */
+      top: max(env(safe-area-inset-top), 55px) !important;
+      margin-top: 10px !important;
     }
 
-    /* REGLA AGRESIVA PARA ASEGURAR QUE FLOTE SOBRE TODO (Modales en z-[80]) */
     [data-sonner-toast] {
-      z-index: 2147483647 !important; /* El valor máximo posible en CSS */
+      z-index: 2147483647 !important;
     }
   `;
 
   const addToast = useCallback((message, type = 'info') => {
     
-    // Títulos automáticos según tipo
     const titles = {
       success: 'Completado',
       error: 'Error',
@@ -86,7 +83,6 @@ const ToastProvider = ({ children }) => {
     };
     const titleText = titles[type] || titles.info;
 
-    // Construimos el HTML Manual para TODOS los temas
     const customContent = (
       <div style={{
         backgroundColor: currentThemeStyles.bg,
@@ -97,12 +93,11 @@ const ToastProvider = ({ children }) => {
         display: 'flex',
         flexDirection: 'column',
         gap: '4px',
-        minWidth: '250px', // Ancho consistente
+        minWidth: '250px',
         maxWidth: '350px',
         position: 'relative',
         zIndex: 2147483647
       }}>
-        {/* Título */}
         <span style={{ 
             color: currentThemeStyles.titleColor, 
             fontWeight: '700', 
@@ -111,7 +106,6 @@ const ToastProvider = ({ children }) => {
           {titleText}
         </span>
         
-        {/* Mensaje */}
         <span style={{ 
             color: currentThemeStyles.descColor, 
             fontSize: '0.75rem', 
@@ -122,13 +116,10 @@ const ToastProvider = ({ children }) => {
       </div>
     );
 
-    // Opciones para Sileo
     const options = { 
       description: customContent,
-      className: 'custom-toast-root !z-[2147483647]', // Aplicamos limpieza y z-index tailwind
+      className: 'custom-toast-root !z-[2147483647]',
       duration: 3000,
-      
-      // Props "dummy" para que Sileo no pinte nada extra
       fill: 'transparent',
       styles: {
         title: 'hidden',
@@ -137,7 +128,6 @@ const ToastProvider = ({ children }) => {
       }
     };
 
-    // Ejecución
     const typeMap = {
       success: sileo.success,
       error: sileo.error,
@@ -146,7 +136,7 @@ const ToastProvider = ({ children }) => {
     };
     
     const method = typeMap[type] || sileo.info;
-    method({ title: null, ...options }); // Pasamos null al título nativo
+    method({ title: null, ...options }); 
 
   }, [currentThemeStyles]);
 
@@ -156,21 +146,14 @@ const ToastProvider = ({ children }) => {
     <ToastContext.Provider value={contextValue}>
       {children}
       
-      {/* Inyectamos los estilos de limpieza, el z-index supremo y el fix del notch siempre */}
       <style dangerouslySetInnerHTML={{ __html: globalCleanStyles }} />
       
-      {/* El Portal asegura que el Toaster se inyecte directamente en el body,
-        escapando de cualquier "stacking context" (capas ocultas) que tenga la aplicación
-      */}
       {mounted && createPortal(
         <Toaster 
           position="top-center" 
+          offset="60px" /* Forzamos mediante la prop nativa que baje 60px desde el borde */
           className="!z-[2147483647]"
-          style={{ 
-            zIndex: 2147483647,
-            // Añadimos margen directamente al estilo nativo del toaster por si Sileo sobreescribe la clase 'top'
-            marginTop: 'env(safe-area-inset-top, 40px)'
-          }} 
+          style={{ zIndex: 2147483647 }} 
           toastOptions={{ className: '!z-[2147483647]', style: { zIndex: 2147483647 } }} 
         />,
         document.body

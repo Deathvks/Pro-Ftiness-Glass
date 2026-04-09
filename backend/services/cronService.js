@@ -68,6 +68,7 @@ const notifyUser = async (userId, payload) => {
 
 /**
  * TAREA 1: Recordatorio de Nutrición
+ * (Minuto 0)
  */
 const checkNutritionGoals = () => {
   cron.schedule('0 * * * *', async () => {
@@ -117,9 +118,10 @@ const checkNutritionGoals = () => {
 
 /**
  * TAREA 2: Recordatorio de Entrenamiento
+ * (Minuto 5)
  */
 const checkTrainingReminder = () => {
-  cron.schedule('0 * * * *', async () => {
+  cron.schedule('5 * * * *', async () => {
     try {
       const users = await db.User.findAll({
         attributes: ['id', 'timezone'],
@@ -151,9 +153,10 @@ const checkTrainingReminder = () => {
 
 /**
  * TAREA 3: Recordatorio de Peso
+ * (Minuto 10)
  */
 const checkWeightLogReminder = () => {
-  cron.schedule('0 * * * *', async () => {
+  cron.schedule('10 * * * *', async () => {
     try {
       const allUsers = await db.User.findAll({ attributes: ['id', 'timezone'] });
 
@@ -190,6 +193,7 @@ const checkWeightLogReminder = () => {
 
 /**
  * TAREA 4: Limpieza de imágenes huérfanas
+ * (Mantenido a las 4 AM los domingos, ya que no choca con tareas horarias)
  */
 const scheduleImageCleanup = () => {
   cron.schedule('0 4 * * 0', async () => {
@@ -203,9 +207,10 @@ const scheduleImageCleanup = () => {
 
 /**
  * TAREA 5: Limpieza de Historias Expiradas
+ * (Minuto 15)
  */
 const cleanupExpiredStories = () => {
-  cron.schedule('0 * * * *', async () => {
+  cron.schedule('15 * * * *', async () => {
     try {
       const now = new Date();
       const expiredStories = await db.Story.findAll({
@@ -230,9 +235,10 @@ const cleanupExpiredStories = () => {
 
 /**
  * TAREA 6: Streak Wars (Notificar a amigos si pierdes la racha)
+ * (Minuto 20)
  */
 const checkStreakWars = () => {
-  cron.schedule('0 * * * *', async () => {
+  cron.schedule('20 * * * *', async () => {
     try {
       // 1. Obtener solo usuarios con racha activa
       const users = await db.User.findAll({

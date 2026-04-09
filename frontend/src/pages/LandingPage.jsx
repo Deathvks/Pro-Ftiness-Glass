@@ -32,23 +32,34 @@ const TikTokIcon = ({ size = 20, className }) => (
   </svg>
 );
 
+// HOOK OPTIMIZADO: Ahora usa triggerOnce y rootMargin para evitar tirones
 const useIntersectionObserver = (options = {}) => {
+    const { threshold = 0.1, rootMargin = '150px', triggerOnce = true } = options;
     const [isIntersecting, setIsIntersecting] = useState(false);
     const elementRef = useRef(null);
   
     useEffect(() => {
       const observer = new IntersectionObserver(([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
-      }, { threshold: 0.15, ...options });
+        if (entry.isIntersecting) {
+          setIsIntersecting(true);
+          // Si triggerOnce es true, dejamos de observar el elemento una vez aparece (mejora radical de rendimiento)
+          if (triggerOnce && elementRef.current) {
+            observer.unobserve(elementRef.current);
+          }
+        } else if (!triggerOnce) {
+          setIsIntersecting(false);
+        }
+      }, { threshold, rootMargin });
   
-      if (elementRef.current) {
-        observer.observe(elementRef.current);
+      const currentElement = elementRef.current;
+      if (currentElement) {
+        observer.observe(currentElement);
       }
   
       return () => {
-        if (elementRef.current) observer.unobserve(elementRef.current);
+        if (currentElement) observer.unobserve(currentElement);
       };
-    }, [options]);
+    }, [threshold, rootMargin, triggerOnce]);
   
     return [elementRef, isIntersecting];
 };
@@ -74,7 +85,7 @@ const FloatingHeroElements = () => (
             }
         `}</style>
 
-        <div className="absolute top-[10%] right-[15%] opacity-60 animate-[float-2_7s_ease-in-out_infinite]">
+        <div className="absolute top-[10%] right-[15%] opacity-60 animate-[float-2_7s_ease-in-out_infinite] will-change-transform">
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="url(#ai-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_20px_rgba(139,92,246,0.6)]">
                 <defs>
                     <linearGradient id="ai-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -87,7 +98,7 @@ const FloatingHeroElements = () => (
             </svg>
         </div>
 
-        <div className="absolute bottom-[25%] left-[12%] opacity-50 animate-[float-1_6s_ease-in-out_infinite]">
+        <div className="absolute bottom-[25%] left-[12%] opacity-50 animate-[float-1_6s_ease-in-out_infinite] will-change-transform">
             <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="url(#workout-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] transform -rotate-12">
                 <defs>
                     <linearGradient id="workout-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -105,7 +116,7 @@ const FloatingHeroElements = () => (
             </svg>
         </div>
 
-        <div className="absolute top-[20%] left-[20%] opacity-40 animate-[float-3_8s_ease-in-out_infinite]">
+        <div className="absolute top-[20%] left-[20%] opacity-40 animate-[float-3_8s_ease-in-out_infinite] will-change-transform">
             <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="url(#food-grad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] transform rotate-12">
                 <defs>
                     <linearGradient id="food-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -124,14 +135,13 @@ const FloatingHeroElements = () => (
 const GymBot = ({ isDocked }) => (
     <div 
         aria-hidden="true"
-        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right
+        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right will-change-transform
             ${isDocked 
                 ? 'top-1/2 right-4 sm:right-8 -translate-y-1/2 scale-50 sm:scale-60 opacity-80' 
                 : 'top-[22%] sm:top-[25%] right-8 sm:right-16 scale-75 sm:scale-100 opacity-100'
             }
         `}
     >
-        {/* Reducimos el desplazamiento en X para que no se salga de la pantalla en móviles */}
         <style>{`
             @keyframes gymbot-roam {
                 0% { transform: translate(0, 0) rotate(0deg); }
@@ -199,13 +209,15 @@ const GymBot = ({ isDocked }) => (
     </div>
 );
 
+// COMPONENTE OPTIMIZADO: Agregado will-change-[opacity,transform]
 const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
-    const [ref, isVisible] = useIntersectionObserver({ threshold: 0.1 }); 
+    // Configuración ajustada: 5% de threshold y margen de 150px
+    const [ref, isVisible] = useIntersectionObserver({ threshold: 0.05, rootMargin: '150px' }); 
 
     return (
         <div 
             ref={ref}
-            className={`transition-all duration-700 cubic-bezier(0.2, 0.8, 0.2, 1) transform ${className}
+            className={`transition-all duration-700 cubic-bezier(0.2, 0.8, 0.2, 1) transform will-change-[opacity,transform] ${className}
                 ${isVisible 
                     ? 'opacity-100 translate-y-0 scale-100 blur-0' 
                     : 'opacity-0 translate-y-24 scale-90 blur-sm'
@@ -364,9 +376,14 @@ const LandingPage = ({ onLogin, onRegister }) => {
     fetchVersionInfo();
   }, []);
 
+  // SCROLL OPTIMIZADO: Evita re-renderizados innecesarios comprobando el estado previo
   const handleScroll = (e) => {
     const scrollTop = e.target.scrollTop;
-    setIsDocked(scrollTop > 200); 
+    const shouldBeDocked = scrollTop > 200;
+    
+    if (isDocked !== shouldBeDocked) {
+        setIsDocked(shouldBeDocked);
+    }
   };
 
   return (
@@ -388,11 +405,11 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
       <div className="fixed inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
         <div 
-          className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite]"
+          className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite] will-change-transform"
           style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }}
         />
         <div 
-          className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-10 animate-[pulse_12s_ease-in-out_infinite]"
+          className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-10 animate-[pulse_12s_ease-in-out_infinite] will-change-transform"
           style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)', animationDelay: '2s' }}
         />
         <div className="absolute inset-0 opacity-[0.04] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
@@ -504,7 +521,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                   <span className="text-xl font-black tracking-tight text-white">Google Play</span>
                 </div>
                 
-                {/* Etiqueta NUEVA - Efecto Cristal 100% */}
                 <span 
                     className="absolute -top-3 -right-3 flex items-center gap-1.5 px-3 py-1 rounded-full z-30 shadow-xl overflow-hidden"
                     style={{

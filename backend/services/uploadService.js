@@ -54,18 +54,29 @@ export const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }
 });
 
-let model;
+// --- OPTIMIZACIÓN DE MEMORIA RAM ---
+let model = null;
+let activeUploads = 0; // Evita borrar el modelo si hay subidas simultáneas
 
 const getModel = async () => {
   if (!model) {
     try {
+      console.log("🧠 [IA] Cargando modelo NSFWJS en RAM...");
       model = await nsfw.load();
-      console.log("Modelo NSFWJS cargado en memoria.");
     } catch (err) {
       console.error("Error cargando modelo NSFWJS:", err);
     }
   }
   return model;
+};
+
+// Se ejecuta al terminar cada procesamiento de imagen
+const releaseModelSafely = () => {
+  if (activeUploads <= 0 && model) {
+    console.log("🧹 [IA] Liberando memoria RAM: Destruyendo modelo TensorFlow.");
+    model = null; // Eliminamos la referencia del objeto
+    tf.disposeVariables(); // Destruimos los pesos de la IA de la memoria del servidor
+  }
 };
 
 export const processUploadedFile = async (file, isHDRRequested = false) => {
@@ -78,6 +89,8 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
       isHDR: isHDRRequested 
     };
   }
+
+  activeUploads++; // Registramos que un proceso está usando la IA
 
   try {
     const { data, info } = await sharp(file.path)
@@ -158,5 +171,10 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
       try { fs.unlinkSync(file.path); } catch (e) { }
     }
     throw error;
+  } finally {
+    // El bloque finally se asegura de que la RAM se libere siempre, 
+    // incluso si hubo un error (como la detección NSFW)
+    activeUploads--;
+    releaseModelSafely();
   }
 };

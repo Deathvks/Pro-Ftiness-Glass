@@ -72,39 +72,53 @@ async function getFilesRecursively(dir) {
 }
 
 /**
+ * Función auxiliar para cargar URLs activas procesando la BD por lotes (Evita picos de RAM)
+ */
+const loadActiveImagesInBatches = async (Model, column, activeImagesSet) => {
+    const limit = 1000;
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+        const records = await Model.findAll({
+            attributes: [column],
+            where: { [column]: { [models.Sequelize.Op.ne]: null } },
+            limit,
+            offset,
+            raw: true
+        });
+
+        records.forEach(item => {
+            if (item[column]) {
+                // Normalizamos a minúsculas y formato path para comparar
+                activeImagesSet.add(path.normalize(item[column]).toLowerCase());
+            }
+        });
+        
+        hasMore = records.length === limit;
+        offset += limit;
+    }
+};
+
+/**
  * Limpieza de imágenes optimizada (RAM eficiente)
  */
 export const cleanOrphanedImages = async () => {
     console.log('🧹 [Mantenimiento] Iniciando limpieza de imágenes huérfanas...');
 
     try {
-        // 1. Recolectar URLs en uso (Paralelo y RAW para ahorrar RAM)
-        // Añadimos BugReport para no borrar capturas de errores reportados
-        const [users, meals, logs, routines, stories, bugs] = await Promise.all([
-            User.findAll({ attributes: ['profile_image_url'], where: { profile_image_url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
-            FavoriteMeal.findAll({ attributes: ['image_url'], where: { image_url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
-            NutritionLog.findAll({ attributes: ['image_url'], where: { image_url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
-            Routine.findAll({ attributes: ['image_url'], where: { image_url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
-            Story.findAll({ attributes: ['url'], where: { url: { [models.Sequelize.Op.ne]: null } }, raw: true }),
-            BugReport.findAll({ attributes: ['image_url'], where: { image_url: { [models.Sequelize.Op.ne]: null } }, raw: true })
-        ]);
-
         const activeImages = new Set();
         
-        // Helper para normalizar rutas y añadirlas al Set
-        const addToSet = (list, key) => list.forEach(item => {
-            if (item[key]) {
-                // Normalizamos a minúsculas y formato path para comparar
-                activeImages.add(path.normalize(item[key]).toLowerCase());
-            }
-        });
-
-        addToSet(users, 'profile_image_url');
-        addToSet(meals, 'image_url');
-        addToSet(logs, 'image_url');
-        addToSet(routines, 'image_url');
-        addToSet(stories, 'url');
-        addToSet(bugs, 'image_url');
+        // 1. Recolectar URLs en uso (Paralelo, RAW y por lotes para ahorrar RAM)
+        // Añadimos BugReport para no borrar capturas de errores reportados
+        await Promise.all([
+            loadActiveImagesInBatches(User, 'profile_image_url', activeImages),
+            loadActiveImagesInBatches(FavoriteMeal, 'image_url', activeImages),
+            loadActiveImagesInBatches(NutritionLog, 'image_url', activeImages),
+            loadActiveImagesInBatches(Routine, 'image_url', activeImages),
+            loadActiveImagesInBatches(Story, 'url', activeImages),
+            loadActiveImagesInBatches(BugReport, 'image_url', activeImages)
+        ]);
 
         // 2. Escanear disco físico
         const filesOnDisk = await getFilesRecursively(UPLOADS_DIR);
