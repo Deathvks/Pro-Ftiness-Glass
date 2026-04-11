@@ -68,7 +68,6 @@ const useIntersectionObserver = (options = {}) => {
 
 // --- ANIMACIONES SVG FLOTANTES ---
 const FloatingHeroElements = () => (
-    // FIX SAFARI: Añadido transform-gpu
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block transform-gpu" aria-hidden="true">
         <style>{`
             @keyframes float-1 {
@@ -136,7 +135,6 @@ const FloatingHeroElements = () => (
 );
 
 const GymBot = ({ isDocked }) => (
-    // FIX SAFARI: Añadido transform-gpu y will-change
     <div
         aria-hidden="true"
         className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right transform-gpu will-change-transform
@@ -214,7 +212,6 @@ const GymBot = ({ isDocked }) => (
     </div>
 );
 
-// FIX SAFARI: Forzamos GPU y añadimos will-change para evitar repaints en scroll
 const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
     const [ref, isVisible] = useIntersectionObserver();
 
@@ -229,7 +226,7 @@ const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
             `}
             style={{
                 transitionDelay: `${delay}ms`,
-                WebkitTransform: isVisible ? 'translate3d(0, 0, 0) scale(1)' : 'translate3d(0, 3rem, 0) scale(0.95)' // Asegura hardware accleration en iOS
+                WebkitTransform: isVisible ? 'translate3d(0, 0, 0) scale(1)' : 'translate3d(0, 3rem, 0) scale(0.95)'
             }}
         >
             {children}
@@ -411,26 +408,31 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 </defs>
             </svg>
 
-            <div className="fixed inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
-                <div
-                    className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite] transform-gpu"
-                    style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }}
-                />
-                <div
-                    className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-10 animate-[pulse_12s_ease-in-out_infinite] transform-gpu"
-                    style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)', animationDelay: '2s' }}
-                />
+            {/* Ruido SVG fijo de fondo */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0" aria-hidden="true">
                 <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
             </div>
 
             <FloatingHeroElements />
             <GymBot isDocked={isDocked} />
 
+            {/* Contenedor relativo principal que engloba todo el contenido con scroll */}
             <div className="relative z-10 flex flex-col min-h-full">
+
+                {/* --- NUEVO: Círculos de colores distribuidos por toda la página --- */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+                    <div className="absolute top-[0%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }} />
+                    <div className="absolute top-[20%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 animate-[pulse_12s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, #3b82f6, transparent)', animationDelay: '2s' }} />
+                    <div className="absolute top-[40%] left-[-5%] w-[700px] h-[700px] rounded-full blur-[150px] opacity-10 dark:opacity-15 animate-[pulse_14s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, #a855f7, transparent)', animationDelay: '4s' }} />
+                    <div className="absolute top-[65%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 animate-[pulse_11s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, #10b981, transparent)', animationDelay: '1s' }} />
+                    <div className="absolute top-[85%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_13s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)', animationDelay: '3s' }} />
+                    <div className="absolute bottom-[0%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 animate-[pulse_10s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, #f59e0b, transparent)', animationDelay: '5s' }} />
+                </div>
+                {/* ---------------------------------------------------------------- */}
 
                 {/* --- NAVBAR --- */}
                 <nav className={`sticky top-0 z-50 transition-all duration-500 border-b transform-gpu ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-glass-border shadow-sm' : 'bg-transparent border-transparent'}`} aria-label="Navegación principal">
-                    <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full">
+                    <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full relative z-10">
                         <div
                             className="flex items-center gap-4 cursor-pointer group"
                             onClick={() => containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -470,7 +472,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 </nav>
 
                 {/* --- HERO SECTION --- */}
-                <main className="flex-grow flex flex-col items-center px-4 pt-12 pb-24 text-center w-full max-w-7xl mx-auto overflow-x-hidden relative">
+                <main className="flex-grow flex flex-col items-center px-4 pt-12 pb-24 text-center w-full max-w-7xl mx-auto overflow-x-hidden relative z-10">
 
                     <div className="h-32 sm:h-28 md:h-12 lg:h-6 w-full mb-8 sm:mb-16 md:mb-6 lg:mb-4 pointer-events-none" aria-hidden="true"></div>
 
@@ -515,7 +517,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         </div>
 
                         {/* GOOGLE PLAY BADGE PROMO */}
-                        {/* FIX SAFARI: Añadido transform-gpu al contenedor y al enlace para evitar que desaparezcan */}
                         <div className="relative group inline-block z-20 mt-2 transform-gpu">
                             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-2xl blur-lg opacity-40 group-hover:opacity-80 transition duration-500 animate-gradient-x transform-gpu"></div>
                             <a
@@ -565,7 +566,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     {isVisible && <MockupGallery />}
 
                     {/* --- SECCIÓN 1: BENTO GRID --- */}
-                    <div className="w-full mt-16">
+                    <div className="w-full mt-16 relative z-10">
                         <ScrollRevealCard>
                             <div className="flex items-center justify-center gap-5 mb-14">
                                 <div className="h-px w-16 bg-gradient-to-r from-transparent to-accent/50"></div>
@@ -664,7 +665,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     </div>
 
                     {/* --- SECCIÓN 2: CARACTERÍSTICAS TÉCNICAS --- */}
-                    <div className="w-full mt-32">
+                    <div className="w-full mt-32 relative z-10">
                         <ScrollRevealCard>
                             <h2 className="text-4xl md:text-5xl font-black text-center mb-16">
                                 Diseñado para <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple-500">Rendir</span>
@@ -700,7 +701,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     </div>
 
                     {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS --- */}
-                    <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left">
+                    <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
                         <ScrollRevealCard>
                             <div className="p-8 md:p-12 rounded-[2rem] bg-glass-base border border-glass-border backdrop-blur-xl relative overflow-hidden transform-gpu">
                                 <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
@@ -761,7 +762,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                             >
                                                 Comenzar Gratis
                                             </button>
-                                            {/* FIX SAFARI CTA FINAL: transform-gpu */}
                                             <a
                                                 href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419"
                                                 target="_blank"

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LogIn, ArrowLeft, Smartphone, Mail, Dumbbell, Flame, TrendingUp, Sparkles } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaDiscord, FaFacebook, FaGithub, FaSpotify } from 'react-icons/fa';
-import { FaXTwitter } from 'react-icons/fa6'; 
+import { FaXTwitter } from 'react-icons/fa6';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
@@ -72,7 +72,7 @@ const SplitLayout = ({ children, onShowPolicy }) => (
 
         <div className="flex flex-col items-center flex-1 w-full lg:w-[70%] h-[100dvh] overflow-y-auto relative z-10">
             <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none"></div>
-            
+
             <div className="flex-grow w-full min-h-[2rem]"></div>
 
             <div className="w-full max-w-sm text-center relative z-10 animate-[fade-in_0.5s_ease-out] flex-shrink-0 px-4">
@@ -358,7 +358,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const loginWithGoogle = useGoogleLogin({
         onSuccess: (tokenResponse) => processGoogleToken(tokenResponse.access_token),
-        onError: () => {}, // Silenciado para no mostrar error si el usuario cancela
+        onError: () => { },
     });
 
     const handleGoogleClick = async () => {
@@ -390,7 +390,6 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const onModalError = () => {
         setShowGoogleModal(false);
-        // Silenciado para no mostrar error si se cierra o falla el modal
     };
 
     useEffect(() => {
@@ -589,6 +588,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 <GlassCard className="p-6 sm:p-8 relative shadow-2xl">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
                         {errors.api && <p className="text-center text-red text-sm">{errors.api}</p>}
+
                         <div>
                             <input
                                 type="email"
@@ -599,6 +599,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                             />
                             {errors.email && <p className="form-error-text text-left text-xs mt-1.5 font-medium">{errors.email}</p>}
                         </div>
+
                         <div>
                             <input
                                 type="password"
@@ -607,12 +608,29 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
-                            {errors.password && <p className="form-error-text text-left text-xs mt-1.5 font-medium">{errors.password}</p>}
+
+                            {/* Aquí se reubica el botón de Olvidar Contraseña */}
+                            <div className="flex justify-between items-start mt-1.5 px-1">
+                                <div className="flex-1">
+                                    {errors.password && <p className="form-error-text text-left text-xs font-medium">{errors.password}</p>}
+                                </div>
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        showForgotPassword();
+                                    }}
+                                    type="button"
+                                    className="text-xs font-semibold text-text-secondary hover:text-accent transition-colors ml-2 shrink-0"
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </button>
+                            </div>
                         </div>
+
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex items-center justify-center gap-2 w-full rounded-lg bg-accent text-bg-secondary font-bold py-3 transition-transform hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-sm mt-2"
+                            className="flex items-center justify-center gap-2 w-full rounded-lg bg-accent text-bg-secondary font-bold py-3 transition-transform hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-sm mt-1"
                         >
                             {isLoading ? <Spinner /> : <><LogIn size={18} /> <span>Iniciar Sesión</span></>}
                         </button>
@@ -666,27 +684,18 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                         </button>
                     </div>
 
-                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                showForgotPassword();
-                            }}
-                            type="button"
-                            className="text-text-secondary hover:text-accent transition-colors font-medium text-sm whitespace-nowrap"
-                        >
-                            ¿Olvidaste la contraseña?
-                        </button>
-                        <span className="text-glass-border text-sm hidden sm:block">|</span>
+                    {/* Nuevo Footer para Registro */}
+                    <div className="mt-8 pt-6 border-t border-glass-border flex flex-wrap justify-center items-center gap-1.5">
+                        <span className="text-sm font-medium text-text-secondary">¿Aún no tienes cuenta?</span>
                         <button
                             onClick={(e) => {
                                 e.preventDefault();
                                 showRegister();
                             }}
                             type="button"
-                            className="text-text-secondary hover:text-accent transition-colors font-medium text-sm whitespace-nowrap"
+                            className="text-sm font-bold text-accent hover:text-accent/80 transition-colors"
                         >
-                            Crear cuenta nueva
+                            Regístrate ahora
                         </button>
                     </div>
                 </GlassCard>
