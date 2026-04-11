@@ -1,4 +1,3 @@
-/* frontend/src/pages/Routines.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -22,7 +21,8 @@ import {
   Users,
   Lock,
   X,
-  Sparkles
+  Sparkles,
+  Flame
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -50,8 +50,8 @@ const GlobalPrivacyModal = ({ onClose }) => {
   const getOptionClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
     return `flex items-center gap-4 p-4 rounded-xl border transition-all text-left group cursor-pointer relative overflow-hidden
-      ${isSelected 
-        ? 'bg-accent/10 border-accent shadow-[0_0_15px_-3px_rgba(var(--accent-rgb),0.3)]' 
+      ${isSelected
+        ? 'bg-accent/10 border-accent shadow-[0_0_15px_-3px_rgba(var(--accent-rgb),0.3)]'
         : 'bg-glass-base border-glass-border hover:border-accent/30 hover:bg-glass-base/80'
       }`;
   };
@@ -59,8 +59,8 @@ const GlobalPrivacyModal = ({ onClose }) => {
   const getIconContainerClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
     return `transition-colors flex items-center justify-center
-      ${isSelected 
-        ? 'text-accent' 
+      ${isSelected
+        ? 'text-accent'
         : 'text-text-secondary group-hover:text-text-primary'
       }`;
   };
@@ -72,12 +72,12 @@ const GlobalPrivacyModal = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-fade-in">
-      <GlassCard 
-        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl" 
+      <GlassCard
+        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl"
         style={{ backgroundColor: 'var(--bg-primary)' }}
       >
         <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent shrink-0">
-          <button 
+          <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-full hover:bg-glass-base text-text-secondary transition-colors z-10"
           >
@@ -142,14 +142,14 @@ const GlobalPrivacyModal = ({ onClose }) => {
             </div>
           )}
         </div>
-        
+
         <div className="p-6 pt-0 shrink-0">
-             <button 
-                onClick={handleSave}
-                className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
-             >
-                Guardar Cambios
-             </button>
+          <button
+            onClick={handleSave}
+            className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
+          >
+            Guardar Cambios
+          </button>
         </div>
       </GlassCard>
     </div>
@@ -171,8 +171,8 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
 
   const handleVisibilityChange = async (newVisibility) => {
     if (newVisibility === visibility) return;
-    
-    setVisibility(newVisibility); 
+
+    setVisibility(newVisibility);
     setIsUpdating(true);
     try {
       const currentExercises = routine.exercises || routine.RoutineExercises || [];
@@ -201,8 +201,8 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   const getOptionClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
     return `flex items-center gap-4 p-4 rounded-xl border transition-all text-left group cursor-pointer relative overflow-hidden
-      ${isSelected 
-        ? 'bg-accent/10 border-accent shadow-[0_0_15px_-3px_rgba(var(--accent-rgb),0.3)]' 
+      ${isSelected
+        ? 'bg-accent/10 border-accent shadow-[0_0_15px_-3px_rgba(var(--accent-rgb),0.3)]'
         : 'bg-glass-base border-glass-border hover:border-accent/30 hover:bg-glass-base/80'
       }`;
   };
@@ -210,8 +210,8 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   const getIconContainerClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
     return `transition-colors flex items-center justify-center
-      ${isSelected 
-        ? 'text-accent' 
+      ${isSelected
+        ? 'text-accent'
         : 'text-text-secondary group-hover:text-text-primary'
       }`;
   };
@@ -223,12 +223,12 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-fade-in">
-      <GlassCard 
-        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl" 
+      <GlassCard
+        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl"
         style={{ backgroundColor: 'var(--bg-primary)' }}
       >
         <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent shrink-0">
-          <button 
+          <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-full hover:bg-glass-base text-text-secondary transition-colors z-10"
           >
@@ -281,13 +281,13 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
           <div className={`transition-all duration-300 overflow-hidden ${visibility !== 'private' ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
             <div className="p-4 rounded-xl bg-glass-base border border-glass-border space-y-2">
               <label className="text-[10px] font-bold text-accent uppercase tracking-wider flex items-center gap-1">
-                 <Link2 size={10} /> Enlace para compartir
+                <Link2 size={10} /> Enlace para compartir
               </label>
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-bg-primary rounded-lg px-3 py-2 border border-glass-border text-xs text-text-secondary font-mono truncate select-all">
                   {shareUrl}
                 </div>
-                <button 
+                <button
                   onClick={copyLink}
                   className="p-2 bg-accent text-bg-primary hover:brightness-110 rounded-lg transition-colors shadow-lg shadow-accent/20"
                   title="Copiar enlace"
@@ -298,14 +298,14 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
             </div>
           </div>
         </div>
-        
+
         <div className="p-6 pt-0 shrink-0">
-             <button 
-                onClick={onClose}
-                className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
-             >
-                Cerrar
-             </button>
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
+          >
+            Cerrar
+          </button>
         </div>
       </GlassCard>
     </div>
@@ -362,11 +362,11 @@ const Routines = ({ setView }) => {
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
-  
+
   const [sharingRoutineId, setSharingRoutineId] = useState(null);
   const sharingRoutine = useMemo(() => {
-      if (!sharingRoutineId) return null;
-      return routines.find(r => r.id === sharingRoutineId);
+    if (!sharingRoutineId) return null;
+    return routines.find(r => r.id === sharingRoutineId);
   }, [routines, sharingRoutineId]);
 
   const [selectedFolder, setSelectedFolder] = useState(() => {
@@ -384,7 +384,6 @@ const Routines = ({ setView }) => {
     return localStorage.getItem('routinesActiveTab') || 'myRoutines';
   });
 
-  // AÑADIDO: Variable para saber si hay CUALQUIER entrenamiento activo
   const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined;
 
   const isCssBackground = (value) => {
@@ -397,16 +396,16 @@ const Routines = ({ setView }) => {
 
     let cleanPath = path.replace(/http:\/\/localhost:\d+/g, '');
     if (cleanPath.startsWith('http')) return cleanPath;
-    
+
     const API_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
     let base = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
-    
+
     if (base.endsWith('/api')) {
-        base = base.slice(0, -4);
+      base = base.slice(0, -4);
     }
 
     if (cleanPath.startsWith('/uploads') || cleanPath.startsWith('/images')) {
-        return `${base}${cleanPath}`;
+      return `${base}${cleanPath}`;
     }
     return cleanPath;
   };
@@ -531,7 +530,7 @@ const Routines = ({ setView }) => {
         let rawSets = ex.setsDone || ex.sets_done || ex.sets || ex.Sets || ex.WorkoutLogSets || [];
 
         if (typeof rawSets === 'string') {
-          try { rawSets = JSON.parse(rawSets); } 
+          try { rawSets = JSON.parse(rawSets); }
           catch (e) { rawSets = []; }
         }
 
@@ -621,10 +620,9 @@ const Routines = ({ setView }) => {
       return;
     }
 
-    // AÑADIDO: Bloqueo extra por seguridad
     if (isAnyWorkoutActive && activeWorkout.routineId !== routine.id) {
-        addToast('Ya tienes un entrenamiento en curso. Finalízalo o descártalo para empezar uno nuevo.', 'warning');
-        return;
+      addToast('Ya tienes un entrenamiento en curso. Finalízalo o descártalo para empezar uno nuevo.', 'warning');
+      return;
     }
 
     setIsLoading(true);
@@ -761,18 +759,27 @@ const Routines = ({ setView }) => {
         {activeTab === 'myRoutines' && <RoutineActionButtons />}
       </div>
 
-      <div className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit mt-6 md:mt-0`}>
+      <div className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit max-w-full overflow-x-auto scrollbar-hide mt-6 md:mt-0`}>
         <button
           onClick={() => setActiveTab('myRoutines')}
-          className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses}`}
+          className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
         >
           <BookCopy size={16} /> Mis Rutinas
         </button>
         <button
           onClick={() => setActiveTab('explore')}
-          className={`${baseButtonClasses} ${activeTab === 'explore' ? activeModeClasses : inactiveModeClasses}`}
+          className={`${baseButtonClasses} ${activeTab === 'explore' ? activeModeClasses : inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
         >
           <Compass size={16} /> Explorar
+        </button>
+        <button
+          onClick={() => {
+            localStorage.setItem('quickCardioOrigin', 'routines');
+            setView('quickCardio');
+          }}
+          className={`${baseButtonClasses} ${inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
+        >
+          <Flame size={16} /> Cardio Rápido
         </button>
       </div>
 
@@ -838,10 +845,9 @@ const Routines = ({ setView }) => {
                 if (!routine) return null;
 
                 const isCompleted = completedRoutineIdsToday.includes(routine.id);
-                // AÑADIDO: Calculamos estados
                 const isActive = activeWorkout && activeWorkout.routineId === routine.id;
-                const isBlockedByOtherWorkout = isAnyWorkoutActive && !isActive; 
-                
+                const isBlockedByOtherWorkout = isAnyWorkoutActive && !isActive;
+
                 const exercisesToGroup = routine.RoutineExercises || routine.exercises || [];
                 const exerciseGroups = groupExercises(exercisesToGroup);
                 const lastUsed = lastUsedMap.get(routine.id);
@@ -850,7 +856,7 @@ const Routines = ({ setView }) => {
 
                 let visibilityIcon = <Lock size={12} />;
                 let visibilityText = 'Privada';
-                
+
                 if (routine.visibility === 'public') {
                   visibilityIcon = <Globe size={12} />;
                   visibilityText = 'Pública';
@@ -904,7 +910,7 @@ const Routines = ({ setView }) => {
                             </span>
                           )}
                           <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] uppercase font-bold shrink-0 border border-transparent flex items-center gap-1">
-                              {visibilityIcon} {visibilityText}
+                            {visibilityIcon} {visibilityText}
                           </span>
                         </div>
                       </div>
@@ -930,42 +936,42 @@ const Routines = ({ setView }) => {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 mb-4 mt-2">
-                        <button 
-                          onClick={() => setSharingRoutineId(routine.id)} 
-                          className="text-text-secondary hover:text-accent transition-colors p-1" 
+                        <button
+                          onClick={() => setSharingRoutineId(routine.id)}
+                          className="text-text-secondary hover:text-accent transition-colors p-1"
                           title="Privacidad"
                         >
                           <Globe size={20} />
                         </button>
                         {isCompleted && (
-                          <button 
-                            onClick={() => handleShareClick(routine)} 
-                            className="text-text-secondary hover:text-accent transition-colors p-1" 
+                          <button
+                            onClick={() => handleShareClick(routine)}
+                            className="text-text-secondary hover:text-accent transition-colors p-1"
                             title="Compartir"
                           >
                             <Share2 size={20} />
                           </button>
                         )}
-                        <button 
-                          onClick={() => handleEditClick(routine)} 
-                          className="text-text-secondary hover:text-accent transition-colors p-1" 
+                        <button
+                          onClick={() => handleEditClick(routine)}
+                          className="text-text-secondary hover:text-accent transition-colors p-1"
                           title="Editar"
                         >
                           <Edit size={20} />
                         </button>
-                        <button 
-                          onClick={() => duplicateRoutine(routine)} 
-                          className="text-text-secondary hover:text-accent transition-colors p-1" 
+                        <button
+                          onClick={() => duplicateRoutine(routine)}
+                          className="text-text-secondary hover:text-accent transition-colors p-1"
                           title="Duplicar"
                         >
                           <Copy size={20} />
                         </button>
-                        
+
                         <div className="flex-1"></div>
-                        
-                        <button 
-                          onClick={() => handleDeleteClick(routine.id)} 
-                          className="text-text-muted hover:text-red transition-colors p-1" 
+
+                        <button
+                          onClick={() => handleDeleteClick(routine.id)}
+                          className="text-text-muted hover:text-red transition-colors p-1"
                           title="Eliminar"
                         >
                           <Trash2 size={20} />
@@ -1003,7 +1009,6 @@ const Routines = ({ setView }) => {
                       <div className="mt-auto pt-2">
                         <button
                           onClick={() => handleStartWorkout(routine)}
-                          // AÑADIDO: Se deshabilita si está bloqueado por otro entrenamiento
                           disabled={isCompleted || isActive || isLoading || isBlockedByOtherWorkout}
                           className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all
                           ${isCompleted || isActive || isBlockedByOtherWorkout
@@ -1024,7 +1029,7 @@ const Routines = ({ setView }) => {
                               <Clock size={16} />
                               Continuar Entrenamiento
                             </>
-                          ) : isBlockedByOtherWorkout ? ( // AÑADIDO: Texto cuando está bloqueado
+                          ) : isBlockedByOtherWorkout ? (
                             <>
                               <Lock size={16} />
                               Entrenamiento en Curso
@@ -1096,7 +1101,7 @@ const Routines = ({ setView }) => {
         />
       )}
 
-      <RoutineAIGeneratorModal 
+      <RoutineAIGeneratorModal
         isOpen={showAIGenerator}
         onClose={() => setShowAIGenerator(false)}
         onGenerate={(generatedRoutine) => setEditingRoutine(generatedRoutine)}

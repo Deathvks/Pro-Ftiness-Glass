@@ -4,7 +4,7 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube
+  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube, Play
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
@@ -65,6 +65,14 @@ const isIOS = () => {
   ].includes(navigator.platform)
     // iPad en iOS 13+ detection
     || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+};
+
+// Detección de Android Web o PWA (excluyendo APK nativo)
+const isAndroidWebOrPWA = () => {
+  if (typeof navigator === 'undefined') return false;
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isNative = window.Capacitor?.isNativePlatform?.() || false;
+  return isAndroid && !isNative;
 };
 
 // --- Sub-componentes ---
@@ -180,7 +188,7 @@ export default function SettingsScreen({
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
-  
+
   const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
 
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
@@ -214,23 +222,25 @@ export default function SettingsScreen({
     permission: pushPermission
   } = usePushNotifications();
 
+  const showGooglePlayLink = isAndroidWebOrPWA();
+
   // --- EFECTO DE SCROLL Y RESALTADO ---
   useEffect(() => {
     if (highlight === 'social_privacy' && socialPrivacyRef.current) {
-        // 1. Scroll suave hacia la sección
-        setTimeout(() => {
-            socialPrivacyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
+      // 1. Scroll suave hacia la sección
+      setTimeout(() => {
+        socialPrivacyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
 
-        // 2. Activar efecto visual
-        setHighlightedSection('social_privacy');
+      // 2. Activar efecto visual
+      setHighlightedSection('social_privacy');
 
-        // 3. Quitar efecto visual después de 2.5 segundos
-        const timer = setTimeout(() => {
-            setHighlightedSection(null);
-        }, 2500);
+      // 3. Quitar efecto visual después de 2.5 segundos
+      const timer = setTimeout(() => {
+        setHighlightedSection(null);
+      }, 2500);
 
-        return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
     }
   }, [highlight]);
 
@@ -419,6 +429,18 @@ export default function SettingsScreen({
     <GlassCard className={glassCardClass}>
       <SectionTitle icon={Info} title="Soporte y General" />
       <div className="flex flex-col gap-1">
+
+        {showGooglePlayLink && (
+          <a href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419" target="_blank" rel="noopener noreferrer" className="no-underline">
+            <SettingsItem
+              icon={Play}
+              title="Google Play"
+              subtitle="Consigue la App oficial"
+              action={<ChevronRight size={18} className="text-text-muted" />}
+            />
+          </a>
+        )}
+
         <a
           href={apkDownloadUrl || "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk"}
           className="no-underline"
@@ -646,7 +668,7 @@ export default function SettingsScreen({
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={Shield} title="Seguridad" />
             <div className="flex flex-col gap-1">
-              
+
               <SettingsItem
                 icon={Smartphone}
                 title="Verificación en 2 pasos"
@@ -764,38 +786,38 @@ export default function SettingsScreen({
           </GlassCard>
 
           {/* Wrapper para el Ref de Scroll y Highlight */}
-          <div 
-            ref={socialPrivacyRef} 
+          <div
+            ref={socialPrivacyRef}
             className={`rounded-2xl transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-lg shadow-accent/20 scale-[1.02]' : ''}`}
           >
             <GlassCard className={glassCardClass}>
-                <SectionTitle icon={Users} title="Privacidad Social" />
-                <div className="flex flex-col gap-3">
+              <SectionTitle icon={Users} title="Privacidad Social" />
+              <div className="flex flex-col gap-3">
                 <SwitchItem
-                    icon={Eye}
-                    title="Perfil Público"
-                    subtitle="Aparecer en búsquedas y ranking"
-                    checked={!!userProfile?.is_public_profile}
-                    onChange={() => handleTogglePrivacy('is_public_profile', 'Perfil público')}
-                    disabled={isUpdatingPrivacy}
+                  icon={Eye}
+                  title="Perfil Público"
+                  subtitle="Aparecer en búsquedas y ranking"
+                  checked={!!userProfile?.is_public_profile}
+                  onChange={() => handleTogglePrivacy('is_public_profile', 'Perfil público')}
+                  disabled={isUpdatingPrivacy}
                 />
                 <SwitchItem
-                    icon={Trophy}
-                    title="Mostrar Nivel y XP"
-                    subtitle="Visible para otros usuarios"
-                    checked={!!userProfile?.show_level_xp}
-                    onChange={() => handleTogglePrivacy('show_level_xp', 'Nivel y XP')}
-                    disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
+                  icon={Trophy}
+                  title="Mostrar Nivel y XP"
+                  subtitle="Visible para otros usuarios"
+                  checked={!!userProfile?.show_level_xp}
+                  onChange={() => handleTogglePrivacy('show_level_xp', 'Nivel y XP')}
+                  disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
                 />
                 <SwitchItem
-                    icon={Medal}
-                    title="Mostrar Insignias"
-                    subtitle="Compartir tus logros"
-                    checked={!!userProfile?.show_badges}
-                    onChange={() => handleTogglePrivacy('show_badges', 'Insignias')}
-                    disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
+                  icon={Medal}
+                  title="Mostrar Insignias"
+                  subtitle="Compartir tus logros"
+                  checked={!!userProfile?.show_badges}
+                  onChange={() => handleTogglePrivacy('show_badges', 'Insignias')}
+                  disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
                 />
-                </div>
+              </div>
             </GlassCard>
           </div>
 

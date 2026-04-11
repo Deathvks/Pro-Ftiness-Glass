@@ -1,14 +1,13 @@
 /* frontend/src/pages/QuickCardio.jsx */
 import React, { useState, useMemo, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, Clock, Flame, Play, X, Save, Search, Filter, MapPin } from 'lucide-react';
+import { ChevronLeft, Clock, Flame, Play, X, Save, Search, Filter, MapPin, BookCopy, Compass } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { CARDIO_ACTIVITIES } from '../data/cardioLibrary';
 import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import CustomSelect from '../components/CustomSelect';
-// Importamos el hook de tema para controlar el color de fondo del slider y sombras
 import { useAppTheme } from '../hooks/useAppTheme';
 
 const INTENSITY_OPTIONS = [
@@ -19,16 +18,18 @@ const INTENSITY_OPTIONS = [
   { value: 'Máxima', label: 'Máxima' },
 ];
 
+const baseButtonClasses = 'px-4 py-2 rounded-full font-semibold transition-colors flex items-center gap-2';
+const activeModeClasses = 'bg-accent text-bg-secondary';
+const inactiveModeClasses = 'bg-bg-secondary hover:bg-white/10 text-text-secondary';
+
 // --- COMPONENTE MODAL AISLADO ---
 const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) => {
   const [duration, setDuration] = useState(30);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Estados para controlar el hover y aplicar sombras dinámicas
+
   const [isGpsHovered, setIsGpsHovered] = useState(false);
   const [isSaveHovered, setIsSaveHovered] = useState(false);
 
-  // Obtenemos el tema y el acento actual
   const { theme, accent } = useAppTheme();
 
   const estimatedCalories = useMemo(() => {
@@ -43,26 +44,20 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
     setIsSubmitting(false);
   };
 
-  // Cálculo del porcentaje para el relleno del slider
   const min = 5;
   const max = 180;
   const percentage = ((duration - min) / (max - min)) * 100;
-  
-  // Color de fondo de la parte vacía del slider según el tema
   const trackColor = theme === 'light' ? '#e5e7eb' : 'rgba(255, 255, 255, 0.1)';
 
-  // Estilos dinámicos para las sombras (Glow) usando el color de acento
-  // Usamos notación HEX con opacidad: 4D = ~30%, 80 = ~50%
   const gpsShadowStyle = {
-    boxShadow: isGpsHovered 
-      ? `0 0 25px ${accent}80` 
+    boxShadow: isGpsHovered
+      ? `0 0 25px ${accent}80`
       : `0 0 15px ${accent}4D`
   };
 
-  // El botón de guardar solo lleva sombra si NO hay GPS (es la acción principal destacada)
   const saveShadowStyle = !activity.hasGPS ? {
     boxShadow: isSaveHovered
-      ? `0 0 25px ${accent}80` 
+      ? `0 0 25px ${accent}80`
       : `0 0 15px ${accent}4D`
   } : {};
 
@@ -72,7 +67,6 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
       <div className="bg-bg-secondary border border-white/10 w-full max-w-md rounded-2xl shadow-2xl animate-scale-in relative mb-20 md:mb-0 max-h-[85vh] flex flex-col [.oled-theme_&]:border-white/10">
 
-        {/* Botón de cierre fijo en la esquina superior */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-text-secondary transition z-10"
@@ -80,7 +74,6 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
           <X size={20} />
         </button>
 
-        {/* Contenedor con SCROLL para el contenido */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
           <div className="flex flex-col items-center mb-6">
             <div className={`p-4 rounded-full mb-4 ${activity.bg} ${activity.color} shadow-[0_0_20px_rgba(0,0,0,0.3)]`}>
@@ -100,8 +93,6 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
                   onMouseEnter={() => setIsGpsHovered(true)}
                   onMouseLeave={() => setIsGpsHovered(false)}
                   style={gpsShadowStyle}
-                  // CORRECCIÓN: Eliminado hover:bg-white hover:text-black
-                  // Usamos hover:brightness-110 para iluminar el color de acento sin cambiarlo a blanco
                   className="w-full py-4 rounded-xl font-bold text-lg bg-accent text-bg-primary hover:brightness-110 transition-all flex items-center justify-center gap-2"
                 >
                   <MapPin size={24} />
@@ -120,7 +111,7 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
                 </label>
                 <span className="text-xl font-bold text-accent font-mono">{duration} min</span>
               </div>
-              
+
               <input
                 type="range"
                 min={min}
@@ -149,7 +140,7 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
                   background: `linear-gradient(to right, ${accent} ${percentage}%, ${trackColor} ${percentage}%)`
                 }}
               />
-              
+
               <div className="flex justify-between text-xs text-text-tertiary mt-2 font-mono">
                 <span>5m</span>
                 <span>3h</span>
@@ -173,9 +164,8 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
               onMouseEnter={() => setIsSaveHovered(true)}
               onMouseLeave={() => setIsSaveHovered(false)}
               style={saveShadowStyle}
-              // CORRECCIÓN: Aplicada la misma lógica al botón de guardar cuando es la acción principal
               className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed
-                            ${activity.hasGPS
+                ${activity.hasGPS
                   ? 'bg-bg-primary text-text-primary border border-white/10 hover:bg-white/5'
                   : 'bg-accent text-bg-primary hover:brightness-110'
                 }`}
@@ -245,7 +235,7 @@ const QuickCardio = ({ onBack, setView }) => {
         }
 
         setSelectedActivity(null);
-        if (onBack) onBack();
+        handleGoBack();
       } else {
         addToast(result.message, 'error');
       }
@@ -253,7 +243,7 @@ const QuickCardio = ({ onBack, setView }) => {
       console.error(error);
       addToast('Error al guardar la sesión', 'error');
     }
-  }, [fetchInitialData, addToast, onBack, logWorkout]);
+  }, [fetchInitialData, addToast, logWorkout]);
 
   const handleStartGPS = useCallback((activity) => {
     if (setView) {
@@ -261,101 +251,135 @@ const QuickCardio = ({ onBack, setView }) => {
     }
   }, [setView]);
 
+  const handleGoBack = useCallback(() => {
+    const origin = localStorage.getItem('quickCardioOrigin');
+
+    if (origin === 'routines') {
+      localStorage.removeItem('quickCardioOrigin'); // Limpiamos para no arrastrar estados fantasma
+      if (setView) setView('routines');
+    } else {
+      localStorage.removeItem('quickCardioOrigin');
+      if (onBack) {
+        onBack();
+      } else if (setView) {
+        setView('dashboard');
+      }
+    }
+  }, [onBack, setView]);
+
+  const handleTabChange = useCallback((tab) => {
+    if (tab === 'quickCardio') return;
+    localStorage.removeItem('quickCardioOrigin'); // Limpiamos al cambiar de tab manualmente
+    localStorage.setItem('routinesForceTab', tab);
+    if (setView) setView('routines');
+  }, [setView]);
+
   return (
-    <div className="min-h-screen bg-bg-primary pb-6 md:pb-8 animate-fade-in">
+    <div className="w-full max-w-5xl mx-auto px-4 pb-28 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">
       <Helmet>
         <title>Cardio Rápido - Pro Fitness Glass</title>
       </Helmet>
 
-      {/* Header Sticky */}
-      <div className="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-md px-4 py-4 md:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col gap-4">
-          <div className="hidden md:flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={onBack}
-                className="p-2 -ml-2 rounded-full hover:bg-white/10 transition text-text-secondary"
-              >
-                <ChevronLeft size={24} />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-text-primary">Cardio Rápido</h1>
-                <p className="text-xs text-text-secondary hidden md:block">Registra actividad sin crear una rutina compleja</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2 items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={16} />
-              <input
-                type="text"
-                placeholder="Buscar actividad..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-bg-secondary border border-transparent focus:border-accent/50 rounded-xl pl-10 pr-4 py-2 text-sm text-text-primary outline-none transition-all placeholder:text-text-tertiary"
-              />
-            </div>
-            <div className="w-40">
-              <CustomSelect
-                value={intensityFilter}
-                onChange={setIntensityFilter}
-                options={INTENSITY_OPTIONS}
-                icon={Filter}
-              />
-            </div>
-          </div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <div className="flex items-center gap-2 md:gap-4 mt-10 md:mt-0">
+          <button
+            onClick={handleGoBack}
+            className="p-2 -ml-2 rounded-full hover:bg-bg-secondary transition text-text-secondary"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
+            Cardio Rápido
+          </h1>
         </div>
       </div>
 
-      {/* Grid de Actividades */}
-      <div className="max-w-7xl mx-auto px-4 py-6 md:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredActivities.map((activity) => (
-            <GlassCard
-              key={activity.id}
-              className="p-4 hover:border-accent/30 transition-all cursor-pointer group active:scale-[0.98] [.oled-theme_&]:border-white/10"
-              onClick={() => setSelectedActivity(activity)}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`p-3 rounded-xl ${activity.bg} ${activity.color} transition-transform group-hover:scale-110 group-hover:rotate-3`}>
-                  <activity.icon size={24} />
-                </div>
-                <div className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-bg-secondary text-text-secondary border border-white/5">
-                  {activity.intensity}
-                </div>
-              </div>
-
-              <h3 className="font-bold text-lg text-text-primary mb-1 group-hover:text-accent transition-colors">
-                {activity.name}
-              </h3>
-              <p className="text-xs text-text-secondary line-clamp-2">
-                {activity.description}
-              </p>
-
-              <div className="mt-4 pt-3 flex items-center justify-between">
-                <span className="text-xs text-text-tertiary font-mono">
-                  METs: <span className="text-text-secondary">{activity.mets}</span>
-                </span>
-                <span className="text-xs font-bold text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-                  {activity.hasGPS ? (
-                    <>Empezar <MapPin size={10} fill="currentColor" /></>
-                  ) : (
-                    <>Empezar <Play size={10} fill="currentColor" /></>
-                  )}
-                </span>
-              </div>
-            </GlassCard>
-          ))}
-        </div>
-
-        {filteredActivities.length === 0 && (
-          <div className="text-center py-20 opacity-50">
-            <Search size={48} className="mx-auto mb-4" />
-            <p>No se encontraron actividades.</p>
-          </div>
-        )}
+      <div className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit max-w-full overflow-x-auto scrollbar-hide mt-6 md:mt-0`}>
+        <button
+          onClick={() => handleTabChange('myRoutines')}
+          className={`${baseButtonClasses} ${inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
+        >
+          <BookCopy size={16} /> Mis Rutinas
+        </button>
+        <button
+          onClick={() => handleTabChange('explore')}
+          className={`${baseButtonClasses} ${inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
+        >
+          <Compass size={16} /> Explorar
+        </button>
+        <button
+          className={`${baseButtonClasses} ${activeModeClasses} whitespace-nowrap flex-shrink-0`}
+        >
+          <Flame size={16} /> Cardio Rápido
+        </button>
       </div>
+
+      <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+          <input
+            type="text"
+            placeholder="Buscar actividad..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-secondary border border-transparent dark:border dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent/40 text-text-primary placeholder:text-text-tertiary"
+          />
+        </div>
+        <div className="w-full sm:w-48">
+          <CustomSelect
+            value={intensityFilter}
+            onChange={setIntensityFilter}
+            options={INTENSITY_OPTIONS}
+            icon={Filter}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
+        {filteredActivities.map((activity) => (
+          <GlassCard
+            key={activity.id}
+            className="p-4 hover:border-accent/30 transition-all cursor-pointer group active:scale-[0.98] [.oled-theme_&]:border-white/10"
+            onClick={() => setSelectedActivity(activity)}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className={`p-3 rounded-xl ${activity.bg} ${activity.color} transition-transform group-hover:scale-110 group-hover:rotate-3`}>
+                <activity.icon size={24} />
+              </div>
+              <div className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-bg-secondary text-text-secondary border border-white/5">
+                {activity.intensity}
+              </div>
+            </div>
+
+            <h3 className="font-bold text-lg text-text-primary mb-1 group-hover:text-accent transition-colors">
+              {activity.name}
+            </h3>
+            <p className="text-xs text-text-secondary line-clamp-2">
+              {activity.description}
+            </p>
+
+            <div className="mt-4 pt-3 flex items-center justify-between">
+              <span className="text-xs text-text-tertiary font-mono">
+                METs: <span className="text-text-secondary">{activity.mets}</span>
+              </span>
+              <span className="text-xs font-bold text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
+                {activity.hasGPS ? (
+                  <>Empezar <MapPin size={10} fill="currentColor" /></>
+                ) : (
+                  <>Empezar <Play size={10} fill="currentColor" /></>
+                )}
+              </span>
+            </div>
+          </GlassCard>
+        ))}
+      </div>
+
+      {filteredActivities.length === 0 && (
+        <div className="text-center py-20 opacity-50">
+          <Search size={48} className="mx-auto mb-4" />
+          <p>No se encontraron actividades.</p>
+        </div>
+      )}
 
       {selectedActivity && (
         <ConfigModal
