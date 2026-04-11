@@ -68,22 +68,23 @@ const useIntersectionObserver = (options = {}) => {
 
 // --- ANIMACIONES SVG FLOTANTES ---
 const FloatingHeroElements = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block" aria-hidden="true">
+    // FIX SAFARI: Añadido transform-gpu
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block transform-gpu" aria-hidden="true">
         <style>{`
             @keyframes float-1 {
-                0% { transform: translateY(0px) rotate(0deg); }
-                50% { transform: translateY(-20px) rotate(10deg); }
-                100% { transform: translateY(0px) rotate(0deg); }
+                0% { transform: translateY(0px) rotate(0deg) translateZ(0); }
+                50% { transform: translateY(-20px) rotate(10deg) translateZ(0); }
+                100% { transform: translateY(0px) rotate(0deg) translateZ(0); }
             }
             @keyframes float-2 {
-                0% { transform: translateY(0px) rotate(0deg) scale(1); }
-                50% { transform: translateY(-15px) rotate(-8deg) scale(1.05); }
-                100% { transform: translateY(0px) rotate(0deg) scale(1); }
+                0% { transform: translateY(0px) rotate(0deg) scale(1) translateZ(0); }
+                50% { transform: translateY(-15px) rotate(-8deg) scale(1.05) translateZ(0); }
+                100% { transform: translateY(0px) rotate(0deg) scale(1) translateZ(0); }
             }
             @keyframes float-3 {
-                0% { transform: translateY(0px) rotate(0deg); }
-                50% { transform: translateY(15px) rotate(15deg); }
-                100% { transform: translateY(0px) rotate(0deg); }
+                0% { transform: translateY(0px) rotate(0deg) translateZ(0); }
+                50% { transform: translateY(15px) rotate(15deg) translateZ(0); }
+                100% { transform: translateY(0px) rotate(0deg) translateZ(0); }
             }
         `}</style>
 
@@ -135,30 +136,32 @@ const FloatingHeroElements = () => (
 );
 
 const GymBot = ({ isDocked }) => (
+    // FIX SAFARI: Añadido transform-gpu y will-change
     <div
         aria-hidden="true"
-        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right
+        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right transform-gpu will-change-transform
             ${isDocked
                 ? 'top-1/2 right-4 sm:right-8 -translate-y-1/2 scale-50 sm:scale-60 opacity-80'
-                : 'top-[22%] sm:top-[25%] right-10 sm:right-8 lg:right-16 scale-75 sm:scale-100 opacity-100' // AJUSTE MÓVIL: right-4 -> right-10
+                : 'top-[22%] sm:top-[25%] right-10 sm:right-8 lg:right-16 scale-75 sm:scale-100 opacity-100'
             }
         `}
+        style={{ WebkitTransform: isDocked ? 'translateY(-50%) translateZ(0)' : 'translateZ(0)' }}
     >
         <style>{`
             @keyframes gymbot-roam {
-                0% { transform: translate(0, 0) rotate(0deg); }
-                25% { transform: translate(-15px, -10px) rotate(-3deg); }
-                50% { transform: translate(0, 15px) rotate(0deg); }
-                75% { transform: translate(10px, -10px) rotate(3deg); }
-                100% { transform: translate(0, 0) rotate(0deg); }
+                0% { transform: translate(0, 0) rotate(0deg) translateZ(0); }
+                25% { transform: translate(-15px, -10px) rotate(-3deg) translateZ(0); }
+                50% { transform: translate(0, 15px) rotate(0deg) translateZ(0); }
+                75% { transform: translate(10px, -10px) rotate(3deg) translateZ(0); }
+                100% { transform: translate(0, 0) rotate(0deg) translateZ(0); }
             }
         `}</style>
 
         <div
-            className="w-40 h-40 relative group cursor-pointer perspective-1000 sm:pointer-events-auto"
+            className="w-40 h-40 relative group cursor-pointer perspective-1000 sm:pointer-events-auto transform-gpu"
             style={{ animation: 'gymbot-roam 8s infinite ease-in-out' }}
         >
-            <div className="w-full h-full relative animate-[bounce_4s_infinite_ease-in-out] group-hover:[animation-play-state:paused]">
+            <div className="w-full h-full relative animate-[bounce_4s_infinite_ease-in-out] group-hover:[animation-play-state:paused] transform-gpu">
 
                 <div
                     className={`absolute inset-4 rounded-[2.5rem] flex flex-col items-center justify-center z-20 transition-all duration-500 group-hover:scale-105 
@@ -167,41 +170,41 @@ const GymBot = ({ isDocked }) => (
                     shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)]
                     dark:bg-gradient-to-br dark:from-gray-800/90 dark:to-black/60
                     dark:border-white/10
-                    dark:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]
+                    dark:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] transform-gpu
                     ${isDocked ? 'shadow-accent/40 dark:shadow-accent/20' : ''}
                     `}
                     style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
                 >
                     <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent rounded-t-[2.5rem] pointer-events-none"></div>
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-1.5 h-6 bg-gray-300 dark:bg-gray-600 rounded-full transition-all group-hover:h-8"></div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-accent animate-pulse shadow-[0_0_15px_var(--accent)] group-hover:scale-125 transition-transform z-10"></div>
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-accent animate-pulse shadow-[0_0_15px_var(--accent)] group-hover:scale-125 transition-transform z-10 transform-gpu"></div>
 
                     <div className="relative w-full px-6 py-2 flex flex-col items-center gap-3 z-10">
                         <div className="flex gap-6 w-full justify-center">
-                            <div className="w-3.5 h-5 bg-accent rounded-full animate-[pulse_3s_infinite] shadow-[0_0_12px_var(--accent)]"></div>
-                            <div className="w-3.5 h-5 bg-accent rounded-full animate-[pulse_3s_infinite] delay-100 shadow-[0_0_12px_var(--accent)]"></div>
+                            <div className="w-3.5 h-5 bg-accent rounded-full animate-[pulse_3s_infinite] shadow-[0_0_12px_var(--accent)] transform-gpu"></div>
+                            <div className="w-3.5 h-5 bg-accent rounded-full animate-[pulse_3s_infinite] delay-100 shadow-[0_0_12px_var(--accent)] transform-gpu"></div>
                         </div>
-                        <div className="w-6 h-3 bg-gray-400/50 dark:bg-gray-500/50 rounded-b-full group-hover:bg-accent/80 transition-colors group-hover:scale-110"></div>
+                        <div className="w-6 h-3 bg-gray-400/50 dark:bg-gray-500/50 rounded-b-full group-hover:bg-accent/80 transition-colors group-hover:scale-110 transform-gpu"></div>
                     </div>
                 </div>
 
-                <div className="absolute top-1/2 -left-7 w-12 h-12 flex items-center justify-center origin-right animate-[spin_4s_ease-in-out_infinite_alternate]">
+                <div className="absolute top-1/2 -left-7 w-12 h-12 flex items-center justify-center origin-right animate-[spin_4s_ease-in-out_infinite_alternate] transform-gpu">
                     <div className="w-full h-2 bg-gray-300 dark:bg-gray-700 absolute right-0 rounded-full"></div>
                     <div className="absolute left-0 p-1.5 bg-accent rounded-lg shadow-lg text-white transform -rotate-90 border border-white/20">
                         <Dumbbell size={18} fill="currentColor" />
                     </div>
                 </div>
 
-                <div className="absolute top-1/2 -right-7 w-12 h-12 flex items-center justify-center origin-left animate-[spin_4s_ease-in-out_infinite_alternate-reverse]">
+                <div className="absolute top-1/2 -right-7 w-12 h-12 flex items-center justify-center origin-left animate-[spin_4s_ease-in-out_infinite_alternate-reverse] transform-gpu">
                     <div className="w-full h-2 bg-gray-300 dark:bg-gray-700 absolute left-0 rounded-full"></div>
                     <div className="absolute right-0 p-1.5 bg-accent rounded-lg shadow-lg text-white transform rotate-90 border border-white/20">
                         <Dumbbell size={18} fill="currentColor" />
                     </div>
                 </div>
 
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-4 bg-accent/20 blur-xl rounded-[100%] animate-[pulse_2s_infinite_ease-in-out]"></div>
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-4 bg-accent/20 blur-xl rounded-[100%] animate-[pulse_2s_infinite_ease-in-out] transform-gpu"></div>
 
-                <div className={`absolute -top-24 -left-28 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-2xl rounded-br-none text-xs font-bold text-accent shadow-xl transition-all duration-500 transform origin-bottom-right z-30
+                <div className={`absolute -top-24 -left-28 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-2xl rounded-br-none text-xs font-bold text-accent shadow-xl transition-all duration-500 transform-gpu origin-bottom-right z-30
                     ${isDocked ? 'opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100 -translate-y-2 group-hover:translate-y-0' : 'opacity-0'}
                 `}>
                     ¡Dale caña! 🔥
@@ -211,19 +214,23 @@ const GymBot = ({ isDocked }) => (
     </div>
 );
 
+// FIX SAFARI: Forzamos GPU y añadimos will-change para evitar repaints en scroll
 const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
     const [ref, isVisible] = useIntersectionObserver();
 
     return (
         <div
             ref={ref}
-            className={`transition-all duration-700 ease-out ${className}
+            className={`transform-gpu will-change-transform will-change-opacity transition-all duration-700 ease-out ${className}
                 ${isVisible
                     ? 'opacity-100 translate-y-0 scale-100'
                     : 'opacity-0 translate-y-12 scale-95'
                 }
             `}
-            style={{ transitionDelay: `${delay}ms` }}
+            style={{
+                transitionDelay: `${delay}ms`,
+                WebkitTransform: isVisible ? 'translate3d(0, 0, 0) scale(1)' : 'translate3d(0, 3rem, 0) scale(0.95)' // Asegura hardware accleration en iOS
+            }}
         >
             {children}
         </div>
@@ -232,9 +239,9 @@ const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
 
 const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
     <ScrollRevealCard delay={delay} className="h-full">
-        <div className="h-full p-6 rounded-3xl bg-glass-base border border-glass-border backdrop-blur-md flex flex-col items-center text-center hover:border-accent/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="relative z-10 p-5 rounded-2xl bg-accent/10 text-accent mb-8 group-hover:bg-accent group-hover:text-white transition-all duration-500 group-hover:scale-110 shadow-sm">
+        <div className="h-full p-6 rounded-3xl bg-glass-base border border-glass-border backdrop-blur-md flex flex-col items-center text-center hover:border-accent/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform-gpu" />
+            <div className="relative z-10 p-5 rounded-2xl bg-accent/10 text-accent mb-8 group-hover:bg-accent group-hover:text-white transition-all duration-500 group-hover:scale-110 shadow-sm transform-gpu">
                 <Icon size={32} strokeWidth={1.5} />
             </div>
             <h3 className="relative z-10 font-bold text-text-primary text-xl mb-4">{title}</h3>
@@ -245,11 +252,11 @@ const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
 
 const BentoCard = ({ children, className = "", delay = 0, bgIcon: BgIcon, bgIconColor = "text-text-primary" }) => (
     <ScrollRevealCard delay={delay} className={className}>
-        <div className="h-full p-8 rounded-[2rem] bg-gradient-to-br from-glass-base via-glass-base/50 to-transparent border border-glass-border backdrop-blur-xl hover:border-accent/30 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+        <div className="h-full p-8 rounded-[2rem] bg-gradient-to-br from-glass-base via-glass-base/50 to-transparent border border-glass-border backdrop-blur-xl hover:border-accent/30 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform-gpu"></div>
 
             {BgIcon && (
-                <div className={`absolute -bottom-12 -right-12 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 pointer-events-none ${bgIconColor}`}>
+                <div className={`absolute -bottom-12 -right-12 opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700 pointer-events-none transform-gpu ${bgIconColor}`}>
                     <BgIcon size={240} />
                 </div>
             )}
@@ -287,13 +294,13 @@ const MockupGallery = () => {
             <ScrollRevealCard delay={200}>
                 <button
                     onClick={() => scroll('left')}
-                    className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-glass-base/90 hover:bg-bg-secondary text-text-primary hover:text-accent rounded-full items-center justify-center backdrop-blur-md border border-glass-border hover:border-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110"
+                    className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-glass-base/90 hover:bg-bg-secondary text-text-primary hover:text-accent rounded-full items-center justify-center backdrop-blur-md border border-glass-border hover:border-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110 transform-gpu"
                 >
                     <ChevronLeft size={24} />
                 </button>
                 <button
                     onClick={() => scroll('right')}
-                    className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-glass-base/90 hover:bg-bg-secondary text-text-primary hover:text-accent rounded-full items-center justify-center backdrop-blur-md border border-glass-border hover:border-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110"
+                    className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-glass-base/90 hover:bg-bg-secondary text-text-primary hover:text-accent rounded-full items-center justify-center backdrop-blur-md border border-glass-border hover:border-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110 transform-gpu"
                 >
                     <ChevronRight size={24} />
                 </button>
@@ -301,10 +308,10 @@ const MockupGallery = () => {
                 <div
                     ref={scrollRef}
                     className="flex gap-6 overflow-x-auto py-10 px-4 sm:px-12 snap-x snap-mandatory hide-scrollbar relative"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
                 >
                     {images.map((img, i) => (
-                        <div key={i} className="snap-center shrink-0 w-[240px] sm:w-[280px] relative transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl hover:shadow-accent/20 rounded-[3rem]">
+                        <div key={i} className="snap-center shrink-0 w-[240px] sm:w-[280px] relative transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl hover:shadow-accent/20 rounded-[3rem] transform-gpu">
                             <img
                                 src={img.src}
                                 alt={img.alt}
@@ -390,7 +397,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
             id="landing-scroll-container"
             ref={containerRef}
             onScroll={handleScroll}
-            className="absolute inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth"
+            className="absolute inset-0 z-[100] bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden font-sans custom-scrollbar scroll-smooth transform-gpu"
             style={{ WebkitOverflowScrolling: 'touch' }}
         >
             <svg width="0" height="0" className="absolute pointer-events-none">
@@ -406,11 +413,11 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
             <div className="fixed inset-0 pointer-events-none overflow-hidden select-none" aria-hidden="true">
                 <div
-                    className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite]"
+                    className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite] transform-gpu"
                     style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }}
                 />
                 <div
-                    className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-10 animate-[pulse_12s_ease-in-out_infinite]"
+                    className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-10 animate-[pulse_12s_ease-in-out_infinite] transform-gpu"
                     style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)', animationDelay: '2s' }}
                 />
                 <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
@@ -422,7 +429,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
             <div className="relative z-10 flex flex-col min-h-full">
 
                 {/* --- NAVBAR --- */}
-                <nav className={`sticky top-0 z-50 transition-all duration-500 border-b ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-glass-border shadow-sm' : 'bg-transparent border-transparent'}`} aria-label="Navegación principal">
+                <nav className={`sticky top-0 z-50 transition-all duration-500 border-b transform-gpu ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-glass-border shadow-sm' : 'bg-transparent border-transparent'}`} aria-label="Navegación principal">
                     <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full">
                         <div
                             className="flex items-center gap-4 cursor-pointer group"
@@ -467,7 +474,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                     <div className="h-32 sm:h-28 md:h-12 lg:h-6 w-full mb-8 sm:mb-16 md:mb-6 lg:mb-4 pointer-events-none" aria-hidden="true"></div>
 
-                    <div className={`inline-flex items-center gap-3 px-5 py-2 rounded-full bg-glass-base border border-white/20 dark:border-white/10 mb-8 backdrop-blur-md shadow-sm transition-all duration-1000 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                    <div className={`inline-flex items-center gap-3 px-5 py-2 rounded-full bg-glass-base border border-white/20 dark:border-white/10 mb-8 backdrop-blur-md shadow-sm transition-all duration-1000 delay-100 transform-gpu ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                         <span className="relative flex h-2.5 w-2.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
@@ -475,7 +482,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         <span className="text-xs font-bold text-text-primary tracking-wide uppercase">Versión {appVersion}</span>
                     </div>
 
-                    <div className={`space-y-6 max-w-5xl mx-auto transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                    <div className={`space-y-6 max-w-5xl mx-auto transition-all duration-1000 delay-200 transform-gpu ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
                         <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter leading-[1] mb-8 drop-shadow-sm z-20 relative">
                             Tu Cuerpo, <br className="md:hidden" />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-purple-400 to-accent animate-gradient-x bg-[length:200%_auto]">
@@ -488,12 +495,12 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     </div>
 
                     {/* CTAs Y AVISO DE PRECIO */}
-                    <div className={`flex flex-col items-center mt-12 md:mt-8 mb-8 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                    <div className={`flex flex-col items-center mt-12 md:mt-8 mb-8 transition-all duration-1000 delay-300 transform-gpu ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
 
                         <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto justify-center mb-8">
                             <button
                                 onClick={onRegister}
-                                className="group relative inline-flex items-center justify-center gap-4 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform hover:-translate-y-1 active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20 overflow-hidden z-20"
+                                className="group relative inline-flex items-center justify-center gap-4 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform hover:-translate-y-1 active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20 overflow-hidden z-20 transform-gpu"
                             >
                                 <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
                                 Empezar Gratis
@@ -501,20 +508,22 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             </button>
                             <button
                                 onClick={onLogin}
-                                className="inline-flex items-center justify-center gap-4 px-8 py-4 bg-glass-base hover:bg-glass-border text-text-primary rounded-2xl font-bold text-lg transition-all border border-glass-border hover:border-accent/30 hover:-translate-y-1 z-20"
+                                className="inline-flex items-center justify-center gap-4 px-8 py-4 bg-glass-base hover:bg-glass-border text-text-primary rounded-2xl font-bold text-lg transition-all border border-glass-border hover:border-accent/30 hover:-translate-y-1 z-20 transform-gpu"
                             >
                                 Ya tengo cuenta
                             </button>
                         </div>
 
                         {/* GOOGLE PLAY BADGE PROMO */}
-                        <div className="relative group inline-block z-20 mt-2">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-2xl blur-lg opacity-40 group-hover:opacity-80 transition duration-500 animate-gradient-x"></div>
+                        {/* FIX SAFARI: Añadido transform-gpu al contenedor y al enlace para evitar que desaparezcan */}
+                        <div className="relative group inline-block z-20 mt-2 transform-gpu">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-2xl blur-lg opacity-40 group-hover:opacity-80 transition duration-500 animate-gradient-x transform-gpu"></div>
                             <a
                                 href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="relative flex items-center justify-center gap-5 px-8 py-3 bg-black/90 backdrop-blur-md border border-white/10 text-white rounded-2xl font-bold transition-all transform hover:scale-105 active:scale-95 shadow-2xl"
+                                className="relative flex items-center justify-center gap-5 px-8 py-3 bg-black/90 backdrop-blur-md border border-white/10 text-white rounded-2xl font-bold transition-all transform-gpu hover:scale-105 active:scale-95 shadow-2xl"
+                                style={{ WebkitTransform: 'translateZ(0)' }}
                             >
                                 <FaGooglePlay style={{ fill: 'url(#play-grad-vibrant)' }} className="text-3xl drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" />
                                 <div className="flex flex-col text-left leading-none">
@@ -523,7 +532,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </div>
 
                                 <span
-                                    className="absolute -top-3 -right-3 flex items-center gap-1.5 px-3 py-1 rounded-full z-30 shadow-xl overflow-hidden"
+                                    className="absolute -top-3 -right-3 flex items-center gap-1.5 px-3 py-1 rounded-full z-30 shadow-xl overflow-hidden transform-gpu"
                                     style={{
                                         background: 'rgba(255, 255, 255, 0.1)',
                                         backdropFilter: 'blur(12px)',
@@ -540,7 +549,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         {apkDownloadUrl && (
                             <a
                                 href={apkDownloadUrl}
-                                className="mt-6 inline-flex items-center justify-center gap-3 text-xs font-medium text-text-tertiary hover:text-accent transition-colors z-20"
+                                className="mt-6 inline-flex items-center justify-center gap-3 text-xs font-medium text-text-tertiary hover:text-accent transition-colors z-20 transform-gpu"
                             >
                                 <Download size={14} />
                                 Descargar APK directamente
@@ -693,7 +702,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS --- */}
                     <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left">
                         <ScrollRevealCard>
-                            <div className="p-8 md:p-12 rounded-[2rem] bg-glass-base border border-glass-border backdrop-blur-xl relative overflow-hidden">
+                            <div className="p-8 md:p-12 rounded-[2rem] bg-glass-base border border-glass-border backdrop-blur-xl relative overflow-hidden transform-gpu">
                                 <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                                     <Shield size={200} />
                                 </div>
@@ -736,7 +745,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     {/* --- CTA FINAL --- */}
                     <div className="mt-32 w-full max-w-4xl relative z-20">
                         <ScrollRevealCard delay={200}>
-                            <div className="p-1 rounded-[2.5rem] bg-gradient-to-r from-accent/50 via-purple-500/30 to-accent/50 animate-gradient-x shadow-2xl shadow-accent/20">
+                            <div className="p-1 rounded-[2.5rem] bg-gradient-to-r from-accent/50 via-purple-500/30 to-accent/50 animate-gradient-x shadow-2xl shadow-accent/20 transform-gpu">
                                 <div className="bg-bg-primary rounded-[2.2rem] p-12 md:p-20 text-center relative overflow-hidden group">
                                     <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent opacity-50 group-hover:opacity-80 transition-opacity duration-700"></div>
                                     <div className="relative z-10">
@@ -748,15 +757,17 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                         <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
                                             <button
                                                 onClick={onRegister}
-                                                className="w-full sm:w-auto px-12 py-4 bg-accent text-white rounded-2xl font-black text-xl shadow-xl shadow-accent/30 hover:scale-105 hover:shadow-accent/50 transition-all duration-300 hover:-translate-y-1"
+                                                className="w-full sm:w-auto px-12 py-4 bg-accent text-white rounded-2xl font-black text-xl shadow-xl shadow-accent/30 hover:scale-105 hover:shadow-accent/50 transition-all duration-300 hover:-translate-y-1 transform-gpu"
                                             >
                                                 Comenzar Gratis
                                             </button>
+                                            {/* FIX SAFARI CTA FINAL: transform-gpu */}
                                             <a
                                                 href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="w-full sm:w-auto relative flex items-center justify-center gap-4 px-8 py-3 bg-black border border-white/10 text-white rounded-2xl transition-all transform hover:scale-105 shadow-xl hover:shadow-blue-500/20 group"
+                                                className="w-full sm:w-auto relative flex items-center justify-center gap-4 px-8 py-3 bg-black border border-white/10 text-white rounded-2xl transition-all transform-gpu hover:scale-105 shadow-xl hover:shadow-blue-500/20 group"
+                                                style={{ WebkitTransform: 'translateZ(0)' }}
                                             >
                                                 <FaGooglePlay style={{ fill: 'url(#play-grad-vibrant)' }} className="text-2xl group-hover:animate-pulse" />
                                                 <div className="flex flex-col text-left leading-none">
@@ -765,7 +776,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                                 </div>
 
                                                 <span
-                                                    className="absolute -top-3 -right-3 flex items-center gap-1.5 px-3 py-1 rounded-full z-30 shadow-xl overflow-hidden"
+                                                    className="absolute -top-3 -right-3 flex items-center gap-1.5 px-3 py-1 rounded-full z-30 shadow-xl overflow-hidden transform-gpu"
                                                     style={{
                                                         background: 'rgba(255, 255, 255, 0.1)',
                                                         backdropFilter: 'blur(12px)',
@@ -791,7 +802,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 </main>
 
                 {/* --- FOOTER LEGAL Y SOCIAL --- */}
-                <footer className="p-10 pb-16 text-center border-t border-glass-border bg-glass-base/30 backdrop-blur-xl relative z-20">
+                <footer className="p-10 pb-16 text-center border-t border-glass-border bg-glass-base/30 backdrop-blur-xl relative z-20 transform-gpu">
 
                     <div className="flex justify-center gap-8 mb-8">
                         <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#E1306C] transition-all transform hover:scale-125 hover:-translate-y-1">
