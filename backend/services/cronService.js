@@ -137,7 +137,7 @@ const checkTrainingReminder = () => {
 
       if (targetUsers.length > 0) {
         console.log(`[Cron] Entrenamiento: Notificando a ${targetUsers.length} usuarios.`);
-        await Promise.all(targetUsers.map(user => 
+        await Promise.all(targetUsers.map(user =>
           notifyUser(user.id, {
             title: '¡Es hora de moverse!',
             body: '¿Listo para tu entrenamiento de hoy? ¡Vamos a por ello!',
@@ -250,7 +250,7 @@ const checkStreakWars = () => {
       const targetUsers = users.filter(user => {
         const { hour, date: localDate } = getLocalTime(user.timezone);
         if (hour !== 20 || !user.last_activity_date) return false;
-        
+
         // Si el último registro de actividad es anterior a hoy, está en peligro
         const lastActiveDate = new Date(user.last_activity_date).toISOString().split('T')[0];
         return lastActiveDate < localDate;
@@ -263,7 +263,7 @@ const checkStreakWars = () => {
       await Promise.all(targetUsers.map(async (dangerUser) => {
         const [friendships, squadMemberships] = await Promise.all([
           db.Friendship.findAll({
-            where: { 
+            where: {
               [Op.or]: [{ requester_id: dangerUser.id }, { addressee_id: dangerUser.id }],
               status: 'accepted'
             },
@@ -277,7 +277,7 @@ const checkStreakWars = () => {
 
         const friendIds = friendships.map(f => f.requester_id === dangerUser.id ? f.addressee_id : f.requester_id);
         const squadIds = squadMemberships.map(s => s.squad_id);
-        
+
         let squadMateIds = [];
         if (squadIds.length > 0) {
           const mates = await db.SquadMember.findAll({
@@ -290,7 +290,7 @@ const checkStreakWars = () => {
         // Set unifica IDs repetidos (por si son amigos y del mismo squad)
         const usersToNotify = [...new Set([...friendIds, ...squadMateIds])];
 
-        await Promise.all(usersToNotify.map(notifyId => 
+        await Promise.all(usersToNotify.map(notifyId =>
           notifyUser(notifyId, {
             title: '🔥 ¡Racha en peligro!',
             body: `Tu amigo ${dangerUser.username || 'alguien de tu equipo'} está a punto de perder su racha de ${dangerUser.streak} días. ¡Empújale a entrenar!`,
@@ -304,6 +304,54 @@ const checkStreakWars = () => {
   });
 };
 
+/**
+ * TAREA 7: Limpieza de Rachas Muertas (Reset a 0)
+ * (Minuto 30)
+ */
+const resetInactiveStreaks = () => {
+  cron.schedule('30 * * * *', async () => {
+    try {
+      // 1. Obtener solo usuarios con racha > 0
+      const users = await db.User.findAll({
+        where: { streak: { [Op.gt]: 0 } },
+        attributes: ['id', 'streak', 'last_activity_date', 'timezone']
+      });
+
+      let resetCount = 0;
+
+      await Promise.all(users.map(async (user) => {
+        if (!user.last_activity_date) return;
+
+        const { date: localDate } = getLocalTime(user.timezone);
+
+        // Parseamos las fechas usando formato YYYY-MM-DD para evitar diferencias de horas
+        const lastActiveDate = new Date(user.last_activity_date);
+        const todayDate = new Date(localDate);
+
+        // Calculamos la diferencia exacta en días
+        const diffTime = todayDate.getTime() - lastActiveDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // Si han pasado más de 1 día (2 días o más), el usuario ha perdido la racha
+        if (diffDays > 1) {
+          user.streak = 0;
+          await user.save();
+          resetCount++;
+
+          // Opcional: podrías notificarle que ha perdido su racha
+          // notifyUser(user.id, { title: 'Racha perdida 💔', body: 'Tu racha ha vuelto a 0. ¡Hoy es un buen día para empezar de nuevo!', url: '/' });
+        }
+      }));
+
+      if (resetCount > 0) {
+        console.log(`[Cron] Rachas Muertas: Se han reiniciado a 0 las rachas de ${resetCount} usuarios inactivos.`);
+      }
+    } catch (error) {
+      console.error('[Cron] Error tarea reset de rachas:', error.message);
+    }
+  });
+};
+
 export const startCronJobs = () => {
   console.log('[Cron] Iniciando tareas (Optimizado)...');
   checkNutritionGoals();
@@ -311,5 +359,6 @@ export const startCronJobs = () => {
   checkWeightLogReminder();
   scheduleImageCleanup();
   cleanupExpiredStories();
-  checkStreakWars(); 
+  checkStreakWars();
+  resetInactiveStreaks(); // <-- Añadido el nuevo vigilante
 };
