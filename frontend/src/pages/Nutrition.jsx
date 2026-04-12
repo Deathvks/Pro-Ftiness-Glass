@@ -1,7 +1,7 @@
 /* frontend/src/pages/Nutrition.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon, IceCream, AlertTriangle, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon, IceCream, AlertTriangle, Check, PieChart, LayoutGrid } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -15,7 +15,6 @@ import NutritionTourGuide from '../components/NutritionTourGuide';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
 
-// Componente para el selector de fecha
 const DateNavigator = ({ selectedDate, onDateChange }) => {
     const today = new Date();
     const date = new Date(selectedDate);
@@ -49,7 +48,6 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
     );
 };
 
-// Función auxiliar para obtener la URL de la imagen con cache busting
 const getImageUrl = (url, updatedAt) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
@@ -67,7 +65,6 @@ const getImageUrl = (url, updatedAt) => {
     return fullUrl;
 };
 
-// Nuevo componente para manejar la carga de imágenes y errores
 const MealImage = ({ src, alt, className, onClick }) => {
     const [hasError, setHasError] = useState(false);
     const [imgSrc, setImgSrc] = useState(src);
@@ -141,7 +138,22 @@ const Nutrition = ({ setView }) => {
     const [mealGroupToDelete, setMealGroupToDelete] = useState(null);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
 
-    // --- Helper para procesar eventos del servidor ---
+    const [hoveredMacro, setHoveredMacro] = useState(null);
+
+    const [summaryView, setSummaryView] = useState(() => {
+        return localStorage.getItem('nutritionSummaryView') || 'grid';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('nutritionSummaryView', summaryView);
+    }, [summaryView]);
+
+    useEffect(() => {
+        const handleResize = () => setHoveredMacro(null);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const processGamificationEvents = (events) => {
         if (!events || !Array.isArray(events)) return;
         events.forEach(event => {
@@ -189,7 +201,7 @@ const Nutrition = ({ setView }) => {
         const { gender, age, height, activity_level = 1.2, goal } = userProfile;
 
         let bmr = (10 * latestWeight) + (6.25 * height) - (5 * age) + (gender === 'male' ? 5 : -161);
-        
+
         let target = bmr * activity_level;
         if (goal === 'lose') target -= 500;
         if (goal === 'gain') target += 500;
@@ -202,6 +214,15 @@ const Nutrition = ({ setView }) => {
         return Math.round(latestWeight * multiplier);
     }, [latestWeight, userProfile]);
 
+    const fatsTarget = useMemo(() => {
+        return Math.round((calorieTarget * 0.25) / 9);
+    }, [calorieTarget]);
+
+    const carbsTarget = useMemo(() => {
+        const remainingCals = calorieTarget - (proteinTarget * 4) - (fatsTarget * 9);
+        return Math.round(Math.max(0, remainingCals) / 4);
+    }, [calorieTarget, proteinTarget, fatsTarget]);
+
     const sugarTarget = useMemo(() => {
         return Math.round((calorieTarget * 0.10) / 4);
     }, [calorieTarget]);
@@ -209,6 +230,12 @@ const Nutrition = ({ setView }) => {
     const waterTarget = useMemo(() => {
         if (!latestWeight) return 2500;
         return Math.round(latestWeight * 35);
+    }, [latestWeight]);
+
+    const creatineTarget = useMemo(() => {
+        if (!latestWeight) return "3-5";
+        const target = latestWeight * 0.05;
+        return Math.max(3, parseFloat(target.toFixed(1)));
     }, [latestWeight]);
 
     const handleSaveWater = async (quantity_ml) => {
@@ -286,7 +313,24 @@ const Nutrition = ({ setView }) => {
                 if (!formData) {
                     throw new Error("No se proporcionaron datos para la actualización.");
                 }
-                const res = await nutritionService.updateFoodLog(modal.data.id, formData);
+
+                const {
+                    favorite_meal_id,
+                    favorite_id,
+                    is_favorite,
+                    wasInitiallyFavorite,
+                    id,
+                    created_at,
+                    updated_at,
+                    user_id,
+                    log_date,
+                    isFavorite,
+                    saveAsFavorite,
+                    tempId,
+                    ...safeFormData
+                } = formData;
+
+                const res = await nutritionService.updateFoodLog(modal.data.id, safeFormData);
 
                 if (res && res.gamification) {
                     processGamificationEvents(res.gamification);
@@ -319,6 +363,7 @@ const Nutrition = ({ setView }) => {
 
             setModal({ type: null, data: null });
         } catch (error) {
+            console.error(error);
             addToast(error.message || 'Error al guardar la(s) comida(s).', 'error');
         } finally {
             setIsSubmitting(false);
@@ -416,6 +461,74 @@ const Nutrition = ({ setView }) => {
 
     const isSugarHigh = totals.sugar >= sugarTarget;
 
+    const pCals = totals.protein * 4;
+    const fCals = totals.fats * 9;
+    const sugarCals = totals.sugar * 4;
+    const remainingCarbCals = Math.max(0, (totals.carbs * 4) - sugarCals);
+
+    const totalMacroCals = pCals + fCals + sugarCals + remainingCarbCals;
+
+    const pPct = totalMacroCals > 0 ? (pCals / totalMacroCals) * 100 : 0;
+    const remainingCPct = totalMacroCals > 0 ? (remainingCarbCals / totalMacroCals) * 100 : 0;
+    const sugarPct = totalMacroCals > 0 ? (sugarCals / totalMacroCals) * 100 : 0;
+    const fPct = totalMacroCals > 0 ? (fCals / totalMacroCals) * 100 : 0;
+    const totalCarbsPct = remainingCPct + sugarPct;
+
+    const getCircleProps = (macroId) => ({
+        onMouseEnter: () => setHoveredMacro(macroId),
+        onMouseLeave: () => setHoveredMacro(null),
+        onClick: (e) => {
+            e.stopPropagation();
+            setHoveredMacro(prev => prev === macroId ? null : macroId);
+        },
+        className: `cursor-pointer outline-none transition-none`,
+        style: { touchAction: 'none', WebkitTapHighlightColor: 'transparent' }
+    });
+
+    const renderChartCenterText = () => {
+        switch (hoveredMacro) {
+            case 'protein':
+                return (
+                    <>
+                        <span className="text-[10px] sm:text-xs font-bold text-red-500 uppercase tracking-wider mb-[-4px]">Proteínas</span>
+                        <span className="text-3xl sm:text-4xl font-black text-text-primary">{totals.protein.toFixed(0)}<span className="text-xl text-text-muted">/{proteinTarget}g</span></span>
+                        <span className="text-[10px] sm:text-xs font-semibold text-text-muted">{Math.round(pPct)}% ({Math.round(pCals)} kcal)</span>
+                    </>
+                );
+            case 'carbs':
+                return (
+                    <>
+                        <span className="text-[10px] sm:text-xs font-bold text-blue-500 uppercase tracking-wider mb-[-4px]">Carbos</span>
+                        <span className="text-3xl sm:text-4xl font-black text-text-primary">{totals.carbs.toFixed(0)}<span className="text-xl text-text-muted">/{carbsTarget}g</span></span>
+                        <span className="text-[10px] sm:text-xs font-semibold text-text-muted">{Math.round(totalCarbsPct)}% ({Math.round(remainingCarbCals + sugarCals)} kcal)</span>
+                    </>
+                );
+            case 'sugar':
+                return (
+                    <>
+                        <span className="text-[10px] sm:text-xs font-bold text-pink-500 uppercase tracking-wider mb-[-4px]">Azúcar</span>
+                        <span className="text-3xl sm:text-4xl font-black text-text-primary">{totals.sugar.toFixed(0)}<span className="text-xl text-text-muted">/{sugarTarget}g</span></span>
+                        <span className="text-[10px] sm:text-xs font-semibold text-text-muted">{Math.round(sugarPct)}% ({Math.round(sugarCals)} kcal)</span>
+                    </>
+                );
+            case 'fats':
+                return (
+                    <>
+                        <span className="text-[10px] sm:text-xs font-bold text-yellow-500 uppercase tracking-wider mb-[-4px]">Grasas</span>
+                        <span className="text-3xl sm:text-4xl font-black text-text-primary">{totals.fats.toFixed(0)}<span className="text-xl text-text-muted">/{fatsTarget}g</span></span>
+                        <span className="text-[10px] sm:text-xs font-semibold text-text-muted">{Math.round(fPct)}% ({Math.round(fCals)} kcal)</span>
+                    </>
+                );
+            default:
+                return (
+                    <>
+                        <span className="text-3xl sm:text-4xl font-black text-text-primary">{Math.round(totals.calories)}</span>
+                        <span className="text-xs sm:text-sm font-semibold text-text-muted">/ {calorieTarget} kcal</span>
+                    </>
+                );
+        }
+    };
+
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pb-28 sm:p-6 sm:pb-8 lg:p-10 lg:pb-10 animate-[fade-in_0.5s_ease-out]">
 
@@ -438,62 +551,165 @@ const Nutrition = ({ setView }) => {
                 <>
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
                         <GlassCard className="lg:col-span-3 p-6 border-glass-border">
-                            <div className="flex justify-between items-center mb-4">
+                            <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-xl font-bold">Resumen del Día</h2>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div id="calories-ring" className="h-full">
-                                    <StatCard 
-                                        icon={<Flame size={24} className="text-orange-500" />} 
-                                        title="Calorías" 
-                                        value={totals.calories.toLocaleString('es-ES')} 
-                                        unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`} 
-                                        className="h-full border border-glass-border"
-                                    />
-                                </div>
-                                <div id="macro-stats" className="h-full">
-                                    <StatCard 
-                                        icon={<Beef size={24} className="text-red" />} 
-                                        title="Proteínas" 
-                                        value={totals.protein.toFixed(1)} 
-                                        unit={`/ ${proteinTarget} g`} 
-                                        className="h-full border border-glass-border"
-                                    />
-                                </div>
-                                <StatCard 
-                                    icon={<Wheat size={24} className="text-blue-500" />} 
-                                    title="Carbs" 
-                                    value={totals.carbs.toFixed(1)} 
-                                    unit="g" 
-                                    className="border border-glass-border"
-                                />
-                                <StatCard 
-                                    icon={<Salad size={24} className="text-yellow-500" />} 
-                                    title="Grasas" 
-                                    value={totals.fats.toFixed(1)} 
-                                    unit="g" 
-                                    className="border border-glass-border"
-                                />
-                                
-                                <div 
-                                    className="cursor-pointer transition-transform hover:scale-[1.02]"
-                                    onClick={() => setModal({ type: 'sugar' })}
-                                >
-                                    <StatCard 
-                                        icon={isSugarHigh ? <AlertTriangle size={24} className="text-red animate-pulse" /> : <IceCream size={24} className="text-pink-500" />} 
-                                        title="Azúcar" 
-                                        value={totals.sugar.toFixed(1)} 
-                                        unit={`/ ${sugarTarget} g`} 
-                                        className={isSugarHigh ? "border-red shadow-[0_0_20px_rgba(239,68,68,0.3)] after:absolute after:inset-0 after:rounded-2xl after:border-2 after:border-red after:animate-pulse" : "border border-glass-border"}
-                                        type={isSugarHigh ? 'danger' : 'default'}
-                                    />
+                                <div className="flex bg-bg-secondary p-1 rounded-lg border border-glass-border">
+                                    <button
+                                        onClick={() => setSummaryView('grid')}
+                                        className={`p-1.5 rounded-md transition-all ${summaryView === 'grid' ? 'bg-bg-primary text-accent shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                                        title="Vista de cuadrícula"
+                                    >
+                                        <LayoutGrid size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => setSummaryView('chart')}
+                                        className={`p-1.5 rounded-md transition-all ${summaryView === 'chart' ? 'bg-bg-primary text-accent shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                                        title="Vista de gráfico"
+                                    >
+                                        <PieChart size={16} />
+                                    </button>
                                 </div>
                             </div>
+
+                            {summaryView === 'grid' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-[fade-in_0.3s_ease-out]">
+                                    <div id="calories-ring" className="h-full">
+                                        <StatCard
+                                            icon={<Flame size={24} style={{ color: '#f97316' }} />}
+                                            title="Calorías"
+                                            value={totals.calories.toLocaleString('es-ES')}
+                                            unit={`/ ${calorieTarget.toLocaleString('es-ES')} kcal`}
+                                            className="h-full"
+                                        />
+                                    </div>
+                                    <div id="macro-stats" className="h-full">
+                                        <StatCard
+                                            icon={<Beef size={24} style={{ color: '#ef4444' }} />}
+                                            title="Proteínas"
+                                            value={totals.protein.toFixed(1)}
+                                            unit={`/ ${proteinTarget} g`}
+                                            className="h-full"
+                                        />
+                                    </div>
+                                    <StatCard
+                                        icon={<Wheat size={24} style={{ color: '#3b82f6' }} />}
+                                        title="Carbos"
+                                        value={totals.carbs.toFixed(1)}
+                                        unit={`/ ${carbsTarget} g`}
+                                    />
+                                    <StatCard
+                                        icon={<Salad size={24} style={{ color: '#eab308' }} />}
+                                        title="Grasas"
+                                        value={totals.fats.toFixed(1)}
+                                        unit={`/ ${fatsTarget} g`}
+                                    />
+
+                                    <div
+                                        className="cursor-pointer transition-transform hover:scale-[1.02]"
+                                        onClick={() => setModal({ type: 'sugar' })}
+                                    >
+                                        <StatCard
+                                            icon={isSugarHigh ? <AlertTriangle size={24} color="#ffffff" className="animate-pulse" /> : <IceCream size={24} style={{ color: '#ec4899' }} />}
+                                            title="Azúcar"
+                                            value={totals.sugar.toFixed(1)}
+                                            unit={`/ ${sugarTarget} g`}
+                                            type={isSugarHigh ? 'danger' : 'default'}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-2 animate-[fade-in_0.3s_ease-out]" onClick={() => setHoveredMacro(null)}>
+                                    <div className="relative w-48 h-48 sm:w-56 sm:h-56 mb-8">
+                                        <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 drop-shadow-lg">
+                                            {/* Fondo gris adaptado para oled */}
+                                            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-glass-border" strokeWidth="4" />
+
+                                            {totalMacroCals > 0 && (
+                                                <>
+                                                    {/* Círculos VISUALES (animados, sin eventos) */}
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ef4444" strokeWidth={hoveredMacro === 'protein' ? "6" : "4"} strokeDasharray={`${Math.max(0, pPct)} ${100 - Math.max(0, pPct)}`} strokeDashoffset="0" className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'protein' ? 'opacity-30' : 'opacity-100'}`} />
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#3b82f6" strokeWidth={hoveredMacro === 'carbs' ? "6" : "4"} strokeDasharray={`${Math.max(0, remainingCPct)} ${100 - Math.max(0, remainingCPct)}`} strokeDashoffset={`-${pPct}`} className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'carbs' ? 'opacity-30' : 'opacity-100'}`} />
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ec4899" strokeWidth={hoveredMacro === 'sugar' ? "6" : "4"} strokeDasharray={`${Math.max(0, sugarPct)} ${100 - Math.max(0, sugarPct)}`} strokeDashoffset={`-${pPct + remainingCPct}`} className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'sugar' ? 'opacity-30' : 'opacity-100'}`} />
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#eab308" strokeWidth={hoveredMacro === 'fats' ? "6" : "4"} strokeDasharray={`${Math.max(0, fPct)} ${100 - Math.max(0, fPct)}`} strokeDashoffset={`-${pPct + remainingCPct + sugarPct}`} className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'fats' ? 'opacity-30' : 'opacity-100'}`} />
+
+                                                    {/* Círculos INTERACTIVOS (invisibles) */}
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="transparent" strokeWidth="12" pointerEvents="stroke" strokeDasharray={`${Math.max(0, pPct)} ${100 - Math.max(0, pPct)}`} strokeDashoffset="0" {...getCircleProps('protein')} />
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="transparent" strokeWidth="12" pointerEvents="stroke" strokeDasharray={`${Math.max(0, remainingCPct)} ${100 - Math.max(0, remainingCPct)}`} strokeDashoffset={`-${pPct}`} {...getCircleProps('carbs')} />
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="transparent" strokeWidth="12" pointerEvents="stroke" strokeDasharray={`${Math.max(0, sugarPct)} ${100 - Math.max(0, sugarPct)}`} strokeDashoffset={`-${pPct + remainingCPct}`} {...getCircleProps('sugar')} />
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="transparent" strokeWidth="12" pointerEvents="stroke" strokeDasharray={`${Math.max(0, fPct)} ${100 - Math.max(0, fPct)}`} strokeDashoffset={`-${pPct + remainingCPct + sugarPct}`} {...getCircleProps('fats')} />
+                                                </>
+                                            )}
+                                        </svg>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none transition-all duration-300">
+                                            {renderChartCenterText()}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full">
+                                        <div
+                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-all border ${hoveredMacro === 'protein' ? 'bg-bg-primary shadow-sm scale-105 border-red-500/50' : 'bg-bg-secondary border-glass-border'}`}
+                                            onMouseEnter={() => setHoveredMacro('protein')}
+                                            onMouseLeave={() => setHoveredMacro(null)}
+                                        >
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ef4444', boxShadow: '0 0 8px rgba(239,68,68,0.5)' }}></div>
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Proteínas</span>
+                                            </div>
+                                            <span className="text-lg font-bold text-text-primary">{totals.protein.toFixed(1)}g</span>
+                                            <span className="text-[10px] text-text-muted font-medium">{Math.round(pPct)}% • / {proteinTarget}g</span>
+                                        </div>
+
+                                        <div
+                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-all border ${hoveredMacro === 'carbs' ? 'bg-bg-primary shadow-sm scale-105 border-blue-500/50' : 'bg-bg-secondary border-glass-border'}`}
+                                            onMouseEnter={() => setHoveredMacro('carbs')}
+                                            onMouseLeave={() => setHoveredMacro(null)}
+                                        >
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6', boxShadow: '0 0 8px rgba(59,130,246,0.5)' }}></div>
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Carbos</span>
+                                            </div>
+                                            <span className="text-lg font-bold text-text-primary">{totals.carbs.toFixed(1)}g</span>
+                                            <span className="text-[10px] text-text-muted font-medium">{Math.round(totalCarbsPct)}% • / {carbsTarget}g</span>
+                                        </div>
+
+                                        <div
+                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-all border ${hoveredMacro === 'fats' ? 'bg-bg-primary shadow-sm scale-105 border-yellow-500/50' : 'bg-bg-secondary border-glass-border'}`}
+                                            onMouseEnter={() => setHoveredMacro('fats')}
+                                            onMouseLeave={() => setHoveredMacro(null)}
+                                        >
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#eab308', boxShadow: '0 0 8px rgba(234,179,8,0.5)' }}></div>
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Grasas</span>
+                                            </div>
+                                            <span className="text-lg font-bold text-text-primary">{totals.fats.toFixed(1)}g</span>
+                                            <span className="text-[10px] text-text-muted font-medium">{Math.round(fPct)}% • / {fatsTarget}g</span>
+                                        </div>
+
+                                        <div
+                                            onClick={(e) => { e.stopPropagation(); setModal({ type: 'sugar' }); }}
+                                            onMouseEnter={() => setHoveredMacro('sugar')}
+                                            onMouseLeave={() => setHoveredMacro(null)}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-transform border ${hoveredMacro === 'sugar' ? 'scale-105' : 'hover:scale-105'} ${isSugarHigh ? 'shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-bg-secondary border-glass-border'}`}
+                                            style={isSugarHigh ? { backgroundColor: '#ef4444', borderColor: '#ef4444' } : (hoveredMacro === 'sugar' ? { borderColor: 'rgba(236,72,153,0.5)', backgroundColor: 'var(--bg-primary)' } : {})}
+                                        >
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                {isSugarHigh ? (
+                                                    <AlertTriangle size={14} color="#ffffff" className="animate-pulse" />
+                                                ) : (
+                                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ec4899' }}></div>
+                                                )}
+                                                <span className={`text-[10px] font-bold uppercase tracking-wider`} style={{ color: isSugarHigh ? '#ffffff' : 'var(--text-secondary)' }}>Azúcar</span>
+                                            </div>
+                                            <span className="text-lg font-bold" style={{ color: isSugarHigh ? '#ffffff' : 'var(--text-primary)' }}>{totals.sugar.toFixed(1)}g</span>
+                                            <span className="text-[10px] font-medium" style={{ color: isSugarHigh ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)' }}>{Math.round(sugarPct)}% • / {sugarTarget}g</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </GlassCard>
 
                         <div className="lg:col-span-2 space-y-4">
-                            {/* Tarjeta de Agua Rediseñada */}
-                            <GlassCard 
+                            <GlassCard
                                 id="water-tracker"
                                 className="p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-colors border-glass-border"
                                 onClick={() => setModal({ type: 'water', data: null })}
@@ -514,7 +730,7 @@ const Nutrition = ({ setView }) => {
                                     <div className="relative">
                                         <Droplet size={48} className="text-blue-500 drop-shadow-lg" />
                                     </div>
-                                    
+
                                     <div className="flex flex-col items-center">
                                         <span className="text-3xl font-black text-text-primary tracking-tight">
                                             {waterLog?.quantity_ml || 0}
@@ -523,25 +739,29 @@ const Nutrition = ({ setView }) => {
                                     </div>
 
                                     <div className="w-full h-2 bg-bg-secondary rounded-full overflow-hidden border border-glass-border">
-                                        <div 
+                                        <div
                                             className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500"
                                             style={{ width: `${Math.min(100, ((waterLog?.quantity_ml || 0) / waterTarget) * 100)}%` }}
                                         />
                                     </div>
                                 </div>
-                                
+
                                 <div className="absolute -bottom-8 -right-8 text-blue-500/5 rotate-12 pointer-events-none transition-transform group-hover:scale-110 duration-700">
                                     <Droplet size={140} />
                                 </div>
                             </GlassCard>
 
-                            {/* Tarjeta de Creatina Rediseñada */}
-                            <GlassCard 
+                            <GlassCard
                                 className="p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-colors border-glass-border"
                                 onClick={() => setShowCreatinaTracker(true)}
                             >
                                 <div className="flex justify-between items-center mb-4 pb-2 border-b border-glass-border relative z-10">
-                                    <h2 className="text-lg font-bold text-text-primary">Creatina</h2>
+                                    <div className="flex items-baseline gap-2">
+                                        <h2 className="text-lg font-bold text-text-primary">Creatina</h2>
+                                        <span className="text-sm font-semibold text-text-muted">
+                                            (~{creatineTarget}g/día)
+                                        </span>
+                                    </div>
                                     <div className="p-1.5 rounded-full bg-white/5 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
                                         <Plus size={18} />
                                     </div>
@@ -557,7 +777,7 @@ const Nutrition = ({ setView }) => {
                                             )}
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex flex-col items-center">
                                         <div className="flex items-baseline gap-1">
                                             <span className={`text-4xl font-black tracking-tighter ${todaysCreatineLog?.length > 0 ? 'text-text-primary' : 'text-text-muted'}`}>
@@ -570,7 +790,7 @@ const Nutrition = ({ setView }) => {
                                         </span>
                                     </div>
                                 </div>
-                                
+
                                 <div className={`absolute -bottom-6 -right-6 rotate-12 pointer-events-none transition-all duration-700 ${todaysCreatineLog?.length > 0 ? 'text-purple-500/20 scale-125' : 'text-text-muted/5'}`}>
                                     <Zap size={140} />
                                 </div>
@@ -612,7 +832,7 @@ const Nutrition = ({ setView }) => {
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex flex-col gap-3">
                                     {logs.length > 0 ? logs.map(log => {
                                         const displayImage = getLogImage(log);
@@ -645,29 +865,29 @@ const Nutrition = ({ setView }) => {
 
                                                     <div className="flex flex-wrap items-end justify-between gap-y-1 text-[10px] sm:text-xs">
                                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                                            
-                                                            <div className="flex items-center gap-1 text-red font-bold">
-                                                                <div className="w-2 h-2 rounded-full bg-red shrink-0" style={{ backgroundColor: '#ef4444' }}></div>
+
+                                                            <div className="flex items-center gap-1 font-bold">
+                                                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#ef4444' }}></div>
                                                                 <span style={{ color: '#ef4444' }}>{protein}p</span>
                                                             </div>
 
-                                                            <div className="flex items-center gap-1 text-blue-500 font-bold">
-                                                                <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" style={{ backgroundColor: '#3b82f6' }}></div>
+                                                            <div className="flex items-center gap-1 font-bold">
+                                                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#3b82f6' }}></div>
                                                                 <span style={{ color: '#3b82f6' }}>{carbs}c</span>
                                                             </div>
 
-                                                            <div className="flex items-center gap-1 text-yellow-500 font-bold">
-                                                                <div className="w-2 h-2 rounded-full bg-yellow-500 shrink-0" style={{ backgroundColor: '#eab308' }}></div>
+                                                            <div className="flex items-center gap-1 font-bold">
+                                                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#eab308' }}></div>
                                                                 <span style={{ color: '#eab308' }}>{fats}g</span>
                                                             </div>
 
-                                                            <div className="flex items-center gap-1 text-pink-500 font-bold">
-                                                                <div className="w-2 h-2 rounded-full bg-pink-500 shrink-0" style={{ backgroundColor: '#ec4899' }}></div>
+                                                            <div className="flex items-center gap-1 font-bold">
+                                                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#ec4899' }}></div>
                                                                 <span style={{ color: '#ec4899' }}>{sugars}a</span>
                                                             </div>
 
                                                         </div>
-                                                        
+
                                                         {log.weight_g && (
                                                             <span className="text-text-muted font-medium ml-2">{Math.round(log.weight_g)}g</span>
                                                         )}
@@ -695,8 +915,8 @@ const Nutrition = ({ setView }) => {
                                     }) : (
                                         <div className="flex flex-col items-center justify-center py-8 text-text-muted/50 rounded-xl">
                                             <p className="text-xs font-medium">Sin registros</p>
-                                            <button 
-                                                onClick={() => setModal({ type: 'food', data: { mealType } })} 
+                                            <button
+                                                onClick={() => setModal({ type: 'food', data: { mealType } })}
                                                 className="mt-2 text-xs text-accent hover:underline flex items-center gap-1"
                                             >
                                                 <Plus size={12} /> Añadir
@@ -757,35 +977,35 @@ const Nutrition = ({ setView }) => {
                             </div>
 
                             <h4 className="font-semibold text-text-primary mb-4">Macronutrientes</h4>
-                            
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
-                                    <div className="p-2 rounded-full bg-red-500/10 mb-2">
-                                        <Beef size={20} className="text-red" />
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
+                                    <div className="p-2 rounded-full bg-red-500/10 mb-1.5 shrink-0">
+                                        <Beef size={18} style={{ color: '#ef4444' }} />
                                     </div>
-                                    <span className="text-2xl font-bold text-red">{viewLog.protein_g || 0}g</span>
-                                    <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Proteína</span>
+                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#ef4444' }}>{Number(viewLog.protein_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Proteína</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
-                                    <div className="p-2 rounded-full bg-blue-500/10 mb-2">
-                                        <Wheat size={20} className="text-blue-500" />
+                                <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
+                                    <div className="p-2 rounded-full bg-blue-500/10 mb-1.5 shrink-0">
+                                        <Wheat size={18} style={{ color: '#3b82f6' }} />
                                     </div>
-                                    <span className="text-2xl font-bold text-blue-500">{viewLog.carbs_g || 0}g</span>
-                                    <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Carbos</span>
+                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#3b82f6' }}>{Number(viewLog.carbs_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Carbos</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
-                                    <div className="p-2 rounded-full bg-yellow-500/10 mb-2">
-                                        <Salad size={20} className="text-yellow-500" />
+                                <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
+                                    <div className="p-2 rounded-full bg-yellow-500/10 mb-1.5 shrink-0">
+                                        <Salad size={18} style={{ color: '#eab308' }} />
                                     </div>
-                                    <span className="text-2xl font-bold text-yellow-500">{viewLog.fats_g || 0}g</span>
-                                    <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Grasas</span>
+                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#eab308' }}>{Number(viewLog.fats_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Grasas</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-4 rounded-xl border border-glass-border flex flex-col items-center">
-                                    <div className="p-2 rounded-full bg-pink-500/10 mb-2">
-                                        <IceCream size={20} className="text-pink-500" />
+                                <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
+                                    <div className="p-2 rounded-full bg-pink-500/10 mb-1.5 shrink-0">
+                                        <IceCream size={18} style={{ color: '#ec4899' }} />
                                     </div>
-                                    <span className="text-2xl font-bold text-pink-500">{viewLog.sugars_g || viewLog.sugar_g || 0}g</span>
-                                    <span className="text-xs text-text-secondary uppercase tracking-wider font-medium">Azúcar</span>
+                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#ec4899' }}>{Number(viewLog.sugars_g || viewLog.sugar_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Azúcar</span>
                                 </div>
                             </div>
                         </div>

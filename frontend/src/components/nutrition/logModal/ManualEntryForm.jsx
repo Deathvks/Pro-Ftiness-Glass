@@ -85,15 +85,75 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
     </div>
 );
 
-const CalculatedMacros = ({ calories, protein, carbs, fats, sugars }) => (
-    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-1">
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Cal</p><p className="font-semibold">{Math.round(calories) || 0}</p></div>
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Prot</p><p className="font-semibold">{protein || 0} g</p></div>
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Carbs</p><p className="font-semibold">{carbs || 0} g</p></div>
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Grasas</p><p className="font-semibold">{fats || 0} g</p></div>
-        <div className="p-2 rounded-md border text-center bg-bg-primary border-glass-border"><p className="text-xs text-text-muted">Azúcar</p><p className="font-semibold text-pink-500">{sugars || 0} g</p></div>
-    </div>
-);
+const CalculatedMacrosGraph = ({ calories, protein, carbs, fats, sugars }) => {
+    const pCals = (parseFloat(protein) || 0) * 4;
+    const fCals = (parseFloat(fats) || 0) * 9;
+    const sugarCals = (parseFloat(sugars) || 0) * 4;
+    const totalCarbsCals = (parseFloat(carbs) || 0) * 4;
+    const remainingCarbCals = Math.max(0, totalCarbsCals - sugarCals);
+
+    const totalMacroCals = pCals + fCals + sugarCals + remainingCarbCals;
+
+    const pPct = totalMacroCals > 0 ? (pCals / totalMacroCals) * 100 : 0;
+    const remainingCPct = totalMacroCals > 0 ? (remainingCarbCals / totalMacroCals) * 100 : 0;
+    const sugarPct = totalMacroCals > 0 ? (sugarCals / totalMacroCals) * 100 : 0;
+    const fPct = totalMacroCals > 0 ? (fCals / totalMacroCals) * 100 : 0;
+
+    return (
+        <div className="mt-4 p-4 rounded-xl bg-bg-secondary border border-glass-border animate-[fade-in_0.3s_ease-out]">
+            <div className="flex items-center gap-6">
+                <div className="relative w-24 h-24 shrink-0">
+                    <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 drop-shadow-sm">
+                        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-glass-border" strokeWidth="6" />
+                        {totalMacroCals > 0 && (
+                            <>
+                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ef4444" strokeWidth="6" strokeDasharray={`${Math.max(0, pPct)} ${100 - Math.max(0, pPct)}`} strokeDashoffset="0" className="transition-all duration-500 ease-out" />
+                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#3b82f6" strokeWidth="6" strokeDasharray={`${Math.max(0, remainingCPct)} ${100 - Math.max(0, remainingCPct)}`} strokeDashoffset={`-${pPct}`} className="transition-all duration-500 ease-out" />
+                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ec4899" strokeWidth="6" strokeDasharray={`${Math.max(0, sugarPct)} ${100 - Math.max(0, sugarPct)}`} strokeDashoffset={`-${pPct + remainingCPct}`} className="transition-all duration-500 ease-out" />
+                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#eab308" strokeWidth="6" strokeDasharray={`${Math.max(0, fPct)} ${100 - Math.max(0, fPct)}`} strokeDashoffset={`-${pPct + remainingCPct + sugarPct}`} className="transition-all duration-500 ease-out" />
+                            </>
+                        )}
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-lg font-black text-text-primary">{Math.round(calories) || 0}</span>
+                        <span className="text-[10px] font-semibold text-text-muted leading-none">kcal</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 flex-1">
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ef4444' }}></div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Prot</span>
+                        </div>
+                        <span className="text-sm font-bold text-text-primary">{protein || 0}g</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#3b82f6' }}></div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Carbs</span>
+                        </div>
+                        <span className="text-sm font-bold text-text-primary">{carbs || 0}g</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#eab308' }}></div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Grasas</span>
+                        </div>
+                        <span className="text-sm font-bold text-text-primary">{fats || 0}g</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ec4899' }}></div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Azúcar</span>
+                        </div>
+                        <span className="text-sm font-bold text-pink-500">{sugars || 0}g</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const ManualEntryForm = ({
     onAddManual,
@@ -204,10 +264,8 @@ const ManualEntryForm = ({
         }
 
         if (isPer100g) {
-            // --- INICIO CORRECCIÓN ---
-            // Usamos || 0 para que si es NaN (campo vacío) no falle la validación bloqueante, se asume 0.
             const cal100 = parseFloat(per100Data.calories) || 0;
-            
+
             if (isNaN(weight) || weight <= 0) {
                 addToast('Introduce un peso válido (mayor a 0).', 'error');
                 return null;
@@ -216,7 +274,6 @@ const ManualEntryForm = ({
                 addToast('Las calorías por 100g no pueden ser negativas.', 'error');
                 return null;
             }
-            // --- FIN CORRECCIÓN ---
         } else {
             if (isNaN(calories) || calories < 0) {
                 addToast('Las calorías no pueden ser negativas.', 'error');
@@ -323,8 +380,7 @@ const ManualEntryForm = ({
                 isUploading={isUploading}
             />
 
-            {/* --- MODIFICACIÓN: Mostrar siempre el interruptor, incluso al editar favoritos --- */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mt-2">
                 <label className="text-sm font-medium text-text-secondary">Valores por 100g</label>
                 <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={isPer100g} onChange={(e) => setIsPer100g(e.target.checked)} />
@@ -341,9 +397,9 @@ const ManualEntryForm = ({
                         <InputField label="Carbs/100g" name="carbs_g" value={per100Data.carbs_g} onChange={handlePer100Change} inputMode="decimal" />
                         <InputField label="Grasas/100g" name="fats_g" value={per100Data.fats_g} onChange={handlePer100Change} inputMode="decimal" />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
-                         <InputField label="Azúcar/100g" name="sugars_g" value={per100Data.sugars_g} onChange={handlePer100Change} inputMode="decimal" />
+                        <InputField label="Azúcar/100g" name="sugars_g" value={per100Data.sugars_g} onChange={handlePer100Change} inputMode="decimal" />
                     </div>
 
                     <div className="relative mt-2">
@@ -356,7 +412,7 @@ const ManualEntryForm = ({
                             required={isPer100g}
                         />
                     </div>
-                    <CalculatedMacros
+                    <CalculatedMacrosGraph
                         calories={calculatedMacros.calories}
                         protein={calculatedMacros.protein_g}
                         carbs={calculatedMacros.carbs_g}
@@ -367,52 +423,59 @@ const ManualEntryForm = ({
             ) : (
                 <>
                     <div className="grid grid-cols-2 gap-4">
-                         <InputField label="Calorías (kcal)" name="calories" value={formData.calories} onChange={handleChange} inputMode="decimal" required />
-                         <InputField label="Gramos totales (opc)" name="weight_g" value={formData.weight_g} onChange={handleChange} inputMode="decimal" />
+                        <InputField label="Calorías (kcal)" name="calories" value={formData.calories} onChange={handleChange} inputMode="decimal" required />
+                        <InputField label="Gramos totales (opc)" name="weight_g" value={formData.weight_g} onChange={handleChange} inputMode="decimal" />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <InputField label="Proteínas (g)" name="protein_g" value={formData.protein_g} onChange={handleChange} inputMode="decimal" />
                         <InputField label="Carbs (g)" name="carbs_g" value={formData.carbs_g} onChange={handleChange} inputMode="decimal" />
                         <InputField label="Grasas (g)" name="fats_g" value={formData.fats_g} onChange={handleChange} inputMode="decimal" />
                         <InputField label="Azúcar (g)" name="sugars_g" value={formData.sugars_g} onChange={handleChange} inputMode="decimal" />
                     </div>
+                    <CalculatedMacrosGraph
+                        calories={calculatedMacros.calories}
+                        protein={calculatedMacros.protein_g}
+                        carbs={calculatedMacros.carbs_g}
+                        fats={calculatedMacros.fats_g}
+                        sugars={calculatedMacros.sugars_g}
+                    />
                 </>
             )}
 
             <button
                 type="button"
                 onClick={handleFavoriteChange}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all border
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-transform active:scale-95 mt-1 border border-glass-border
                     ${isFavorite
-                        ? 'bg-accent-transparent text-accent border-accent-border'
-                        : 'bg-bg-primary text-text-secondary border-glass-border'
-                    } mt-1`}
+                        ? 'bg-accent/10 text-accent border-accent/20'
+                        : 'bg-bg-secondary text-text-primary hover:bg-accent/5 hover:text-accent'
+                    }`}
             >
                 <Star
                     size={18}
                     className={`transition-all ${isFavorite ? 'fill-accent' : ''}`}
                 />
                 {isFavorite
-                    ? (isOriginallyFavorite ? 'Actualizar favorito' : 'Guardar en favoritos')
-                    : (isOriginallyFavorite ? 'Eliminar de favoritos' : 'Guardar en favoritos')
+                    ? (isEditing && !editingFavorite ? 'En favoritos (Guardado)' : (isOriginallyFavorite ? 'Actualizar favorito' : 'Guardar en favoritos'))
+                    : (isOriginallyFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos')
                 }
             </button>
 
             {isEditing || editingFavorite ? (
-                <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50 mt-2">
+                <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-bg-secondary disabled:opacity-50 mt-2 hover:brightness-110">
                     {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Guardar Cambios</>}
                 </button>
             ) : editingListItem ? (
-                <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50 mt-2">
+                <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-bg-secondary disabled:opacity-50 mt-2 hover:brightness-110">
                     {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Actualizar Comida</>}
                 </button>
             ) : (
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                    <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-50`}>
+                    <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-50 border border-accent/20`}>
                         {isLoading || isUploading ? <Spinner /> : <><Plus size={18} className="mr-2" /> Añadir a la lista</>}
                     </button>
-                    <button type="button" onClick={handleSaveAndClose} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-white dark:text-bg-secondary disabled:opacity-50`}>
+                    <button type="button" onClick={handleSaveAndClose} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-bg-secondary hover:brightness-110 disabled:opacity-50`}>
                         {isLoading || isUploading ? <Spinner /> : <><Check size={18} className="mr-2" /> Añadir y Guardar</>}
                     </button>
                 </div>

@@ -1,5 +1,5 @@
 /* frontend/src/pages/QuickCardio.jsx */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, Clock, Flame, Play, X, Save, Search, Filter, MapPin, BookCopy, Compass } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
@@ -197,6 +197,8 @@ const QuickCardio = ({ onBack, setView }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [intensityFilter, setIntensityFilter] = useState('all');
 
+  const scrollContainerRef = useRef(null);
+
   const currentWeight = useMemo(() => {
     if (bodyWeightLog && bodyWeightLog.length > 0) {
       const sorted = [...bodyWeightLog].sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
@@ -212,6 +214,16 @@ const QuickCardio = ({ onBack, setView }) => {
       return matchesSearch && matchesIntensity;
     });
   }, [searchTerm, intensityFilter]);
+
+  // Centrar automáticamente la pestaña activa al cargar
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const activeTab = scrollContainerRef.current.querySelector('[data-active="true"]');
+      if (activeTab) {
+        activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  }, []);
 
   const handleSaveSession = useCallback(async (activity, duration, calories) => {
     const payload = {
@@ -255,7 +267,7 @@ const QuickCardio = ({ onBack, setView }) => {
     const origin = localStorage.getItem('quickCardioOrigin');
 
     if (origin === 'routines') {
-      localStorage.removeItem('quickCardioOrigin'); // Limpiamos para no arrastrar estados fantasma
+      localStorage.removeItem('quickCardioOrigin');
       if (setView) setView('routines');
     } else {
       localStorage.removeItem('quickCardioOrigin');
@@ -269,7 +281,7 @@ const QuickCardio = ({ onBack, setView }) => {
 
   const handleTabChange = useCallback((tab) => {
     if (tab === 'quickCardio') return;
-    localStorage.removeItem('quickCardioOrigin'); // Limpiamos al cambiar de tab manualmente
+    localStorage.removeItem('quickCardioOrigin');
     localStorage.setItem('routinesForceTab', tab);
     if (setView) setView('routines');
   }, [setView]);
@@ -280,40 +292,52 @@ const QuickCardio = ({ onBack, setView }) => {
         <title>Cardio Rápido - Pro Fitness Glass</title>
       </Helmet>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-        <div className="flex items-center gap-2 md:gap-4 mt-10 md:mt-0">
+      {/* --- ENCABEZADO Y NAVEGACIÓN UNIFICADOS --- */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 mt-6 md:mt-0">
+
+        {/* Título en Desktop */}
+        <h1 className="hidden md:block text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary shrink-0">
+          Cardio Rápido
+        </h1>
+
+        {/* Contenedor Flex para el Botón Atrás + Menú de Pestañas (Mobile & Desktop) */}
+        <div className="flex items-center gap-2 max-w-full overflow-hidden">
+
+          {/* Botón Volver Atrás */}
           <button
             onClick={handleGoBack}
-            className="p-2 -ml-2 rounded-full hover:bg-bg-secondary transition text-text-secondary"
+            title="Volver"
+            className="p-2.5 shrink-0 rounded-full bg-bg-secondary border border-transparent dark:border-white/10 hover:bg-white/10 transition text-text-secondary shadow-sm"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={20} strokeWidth={2.5} />
           </button>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
-            Cardio Rápido
-          </h1>
+
+          {/* Menú Deslizable de Pestañas */}
+          <div ref={scrollContainerRef} className="flex items-center gap-2 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-full overflow-x-auto scrollbar-hide">
+            <button
+              onClick={() => handleTabChange('myRoutines')}
+              className={`${baseButtonClasses} ${inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
+            >
+              <BookCopy size={16} /> Mis Rutinas
+            </button>
+            <button
+              onClick={() => handleTabChange('explore')}
+              className={`${baseButtonClasses} ${inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
+            >
+              <Compass size={16} /> Explorar
+            </button>
+            <button
+              data-active="true"
+              className={`${baseButtonClasses} ${activeModeClasses} whitespace-nowrap flex-shrink-0`}
+            >
+              <Flame size={16} /> Cardio Rápido
+            </button>
+          </div>
+
         </div>
       </div>
 
-      <div className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit max-w-full overflow-x-auto scrollbar-hide mt-6 md:mt-0`}>
-        <button
-          onClick={() => handleTabChange('myRoutines')}
-          className={`${baseButtonClasses} ${inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
-        >
-          <BookCopy size={16} /> Mis Rutinas
-        </button>
-        <button
-          onClick={() => handleTabChange('explore')}
-          className={`${baseButtonClasses} ${inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
-        >
-          <Compass size={16} /> Explorar
-        </button>
-        <button
-          className={`${baseButtonClasses} ${activeModeClasses} whitespace-nowrap flex-shrink-0`}
-        >
-          <Flame size={16} /> Cardio Rápido
-        </button>
-      </div>
-
+      {/* Buscador y Filtros */}
       <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />

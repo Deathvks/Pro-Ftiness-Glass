@@ -40,7 +40,7 @@ export const useSaveActions = ({
     return false;
   }, [originalData, editingFavorite, favoriteMeals]);
 
-  // --- INICIO DE LA MODIFICACIÓN: Helper para preparar el payload de favoritos ---
+  // Helper para preparar el payload de favoritos
   const prepareFavoritePayload = (item) => {
     const weight = parseFloat(item.weight_g) || 100;
 
@@ -57,7 +57,7 @@ export const useSaveActions = ({
       protein_g: parseFloat(item.protein_g) || 0,
       carbs_g: parseFloat(item.carbs_g) || 0,
       fats_g: parseFloat(item.fats_g || item.fat_g || item.fats || 0), // Soporte para variaciones de nombre
-      sugars_g: parseFloat(item.sugars_g || item.sugars || 0), // AÑADIDO: Azúcar
+      sugars_g: parseFloat(item.sugars_g || item.sugars || 0), // Azúcar
       weight_g: weight,
       image_url: item.image_url || null,
       micronutrients: item.micronutrients || null,
@@ -66,10 +66,9 @@ export const useSaveActions = ({
       protein_per_100g: getPer100(item.protein_per_100g, item.protein_g),
       carbs_per_100g: getPer100(item.carbs_per_100g, item.carbs_g),
       fat_per_100g: getPer100(item.fat_per_100g || item.fats_per_100g, item.fats_g || item.fat_g || item.fats),
-      sugars_per_100g: getPer100(item.sugars_per_100g, item.sugars_g || item.sugars), // AÑADIDO: Azúcar por 100g
+      sugars_per_100g: getPer100(item.sugars_per_100g, item.sugars_g || item.sugars), // Azúcar por 100g
     };
   };
-  // --- FIN DE LA MODIFICACIÓN ---
 
   const handleSaveList = async () => {
     if (itemsToAdd.length === 0)
@@ -116,7 +115,7 @@ export const useSaveActions = ({
 
   const handleSaveEdit = async (formData) => {
     let hasDataChanged = false;
-    let hasFavoriteStatusChanged = false;
+    let hasFavoriteStatusChanged = manualFormState.isFavorite !== isOriginallyFavorite;
 
     // 1. Comprobar si los datos del formulario han cambiado respecto a los originales
     if (originalData && (isEditingLog || editingFavorite)) {
@@ -128,16 +127,13 @@ export const useSaveActions = ({
         (parseFloat(originalData.protein_g) || 0) !== formData.protein_g ||
         (parseFloat(originalData.carbs_g) || 0) !== formData.carbs_g ||
         (parseFloat(originalData.fats_g) || 0) !== formData.fats_g ||
-        (parseFloat(originalData.sugars_g) || 0) !== formData.sugars_g || // AÑADIDO: Comprobación de cambio en azúcar
+        (parseFloat(originalData.sugars_g) || 0) !== formData.sugars_g ||
         (parseFloat(originalData.weight_g) || null) !== formData.weight_g ||
         originalData.image_url !== formData.image_url ||
         originalMicros !== newMicros;
     }
 
-    // 2. Comprobar si el estado de favorito ha cambiado
-    hasFavoriteStatusChanged = manualFormState.isFavorite !== isOriginallyFavorite;
-
-    // 3. Salir si no ha cambiado nada
+    // 2. Salir si no ha cambiado nada
     if (!hasDataChanged && !hasFavoriteStatusChanged) {
       addToast('No se detectaron cambios.', 'info');
       if (editingFavorite) {
@@ -152,57 +148,76 @@ export const useSaveActions = ({
     }
 
     let favoriteOperationSuccess = true;
+    const basePayload = prepareFavoritePayload(formData);
+    const originalName = (originalData?.description || originalData?.name || '').trim().toLowerCase();
+    const existingFavorite = favoriteMeals.find(fav => fav.name.toLowerCase() === originalName);
 
-    // 4. Gestionar el estado de favorito
-    if (hasFavoriteStatusChanged || (editingFavorite && hasDataChanged)) {
-      // Usamos el helper también aquí
-      const basePayload = prepareFavoritePayload(formData);
-
-      // Combinamos con el payload preparado para asegurar consistencia
-      const favData = { ...basePayload };
-
-      const existingFavoriteByName = favoriteMeals.find(
-        (fav) => fav.name.toLowerCase() === formData.description.toLowerCase()
-      );
-
-      try {
+    // 3. GESTIÓN DE FAVORITOS SEGÚN EL MODO (LÓGICA SEPARADA)
+    try {
+      if (editingFavorite) {
+        // MODO A: Editando desde la pestaña de Favoritos
+        // -> SÍ actualizamos el producto base en la base de datos
         if (manualFormState.isFavorite) {
-          if (existingFavoriteByName) {
-            const result = await updateFavoriteMeal(existingFavoriteByName.id, { ...existingFavoriteByName, ...favData });
-            if (result.success) {
-              addToast(`Favorito '${formData.description}' actualizado.`, 'success');
-            } else {
-              throw new Error(result.message);
+          const result = await updateFavoriteMeal(editingFavorite.id, { ...editingFavorite, ...basePayload });
+          if (result.success) {
+            addToast(`Favorito '${formData.description}' actualizado.`, 'success');
+          } else {
+            throw new Error(result.message);
+          }
+        } else {
+          // Si quita la estrella mientras edita un favorito, lo elimina
+          const result = await deleteFavoriteMeal(editingFavorite.id);
+          if (result.success) {
+            addToast(`'${originalData?.description}' eliminado de favoritos.`, 'info');
+          } else {
+            throw new Error(result.message);
+          }
+        }
+
+      } else if (isEditingLog) {
+        // MODO B: Editando desde el Log Diario 
+        // -> NUNCA SE ACTUALIZAN LOS MACROS DEL FAVORITO BASE
+        if (hasFavoriteStatusChanged) {
+          if (manualFormState.isFavorite) {
+            // El usuario marcó la estrella para añadirlo. Si ya existe, NO hacemos nada para no sobreescribir.
+            if (!existingFavorite) {
+              const result = await addFavoriteMeal(basePayload);
+              if (result.success) {
+                addToast(`'${formData.description}' añadido a favoritos.`, 'success');
+              } else {
+                throw new Error(result.message);
+              }
             }
           } else {
-            const result = await addFavoriteMeal(favData);
-            if (result.success) {
-              addToast(`'${formData.description}' guardado en favoritos.`, 'success');
-            } else {
-              throw new Error(result.message);
-            }
-          }
-        } else if (!manualFormState.isFavorite && isOriginallyFavorite) {
-          const favoriteToDeleteId = editingFavorite?.id || favoriteMeals.find(fav => fav.name.toLowerCase() === (originalData?.description || originalData?.name)?.trim().toLowerCase())?.id;
-
-          if (favoriteToDeleteId) {
-            const result = await deleteFavoriteMeal(favoriteToDeleteId);
-            if (result.success) {
-              addToast(`'${originalData?.description || originalData?.name}' eliminado de favoritos.`, 'info');
-            } else {
-              throw new Error(result.message);
+            // El usuario desmarcó la estrella para quitarlo de favoritos
+            if (existingFavorite) {
+              const result = await deleteFavoriteMeal(existingFavorite.id);
+              if (result.success) {
+                addToast(`'${originalData?.description}' eliminado de favoritos.`, 'info');
+              } else {
+                throw new Error(result.message);
+              }
             }
           }
         }
-      } catch (error) {
-        console.error("Error gestionando favorito en edit:", error);
-        addToast(error.message || 'Error al gestionar el favorito.', 'error');
-        favoriteOperationSuccess = false;
+
+      } else {
+        // MODO C: Editando un elemento de la lista temporal antes de guardarlo
+        if (hasFavoriteStatusChanged && manualFormState.isFavorite && !existingFavorite) {
+          const result = await addFavoriteMeal(basePayload);
+          if (!result.success) throw new Error(result.message);
+        } else if (hasFavoriteStatusChanged && !manualFormState.isFavorite && existingFavorite) {
+          const result = await deleteFavoriteMeal(existingFavorite.id);
+          if (!result.success) throw new Error(result.message);
+        }
       }
+    } catch (error) {
+      console.error("Error gestionando favorito en edit:", error);
+      addToast(error.message || 'Error al gestionar el favorito.', 'error');
+      favoriteOperationSuccess = false;
     }
 
-
-    // 5. Lógica para editar favorito directamente
+    // 4. Lógica de cierre para Favoritos
     if (editingFavorite) {
       if (favoriteOperationSuccess) {
         setEditingFavorite(null);
@@ -212,19 +227,19 @@ export const useSaveActions = ({
       return;
     }
 
-
-    // 6. Lógica para actualizar el log de nutrición
+    // 5. Lógica para actualizar el Log Diario
     if (isEditingLog && (hasDataChanged || (hasFavoriteStatusChanged && favoriteOperationSuccess))) {
+      // Pasamos los datos al componente superior, que actualizará SOLO el log de ese día.
       onSave([{ ...logToEdit, ...formData }], true);
     } else if (isEditingLog && hasFavoriteStatusChanged && !favoriteOperationSuccess) {
       addToast("El log no se actualizó debido a un error al gestionar el favorito.", "warning");
     }
 
+    // Limpiar formulario si no es log
     if (!isEditingLog && favoriteOperationSuccess) {
       resetManualForm();
     }
   };
-
 
   return {
     handleSaveList,

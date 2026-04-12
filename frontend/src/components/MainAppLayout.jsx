@@ -107,6 +107,27 @@ export default function MainAppLayout({
   const [aiRemaining, setAiRemaining] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');
   const [aiLimit, setAiLimit] = useState(() => localStorage.getItem('ai_daily_limit') || '5');
 
+  // --- ESTADO PARA FORZAR EL RESETEO DE VISTAS ---
+  const [viewResetKey, setViewResetKey] = useState(0);
+
+  // --- LÓGICA CENTRAL DE NAVEGACIÓN (Reseteo a la raíz) ---
+  const handleNavClick = (itemId) => {
+    // 1. Limpieza de memoria (localStorage) específica de la página
+    if (itemId === 'routines') {
+      localStorage.removeItem('routinesEditingState_v2'); // Salir del modo edición
+      localStorage.setItem('routinesForceTab', 'myRoutines'); // Volver a la pestaña mis rutinas
+      localStorage.removeItem('quickCardioOrigin');
+    }
+
+    // 2. Si ya estamos en esa página, cambiamos la Key para forzar un re-render desde cero
+    if (view === itemId) {
+      setViewResetKey(prev => prev + 1);
+    } else {
+      // Si es una página nueva, simplemente navegamos
+      navigate(itemId);
+    }
+  };
+
   // Calculamos el contador de no leídas localmente para asegurar consistencia
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -219,10 +240,10 @@ export default function MainAppLayout({
       {/* Fondo decorativo */}
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
-      {/* Sidebar (Desktop) */}
+      {/* Sidebar (Desktop) pasándole nuestro handleNavClick personalizado */}
       <Sidebar
         view={view}
-        navigate={navigate}
+        navigate={handleNavClick}
         navItems={navItems}
         userProfile={userProfile}
         BACKEND_BASE_URL={BACKEND_BASE_URL}
@@ -279,7 +300,7 @@ export default function MainAppLayout({
                   `}
               >
                 <button
-                  onClick={() => navigate('notifications')}
+                  onClick={() => handleNavClick('notifications')}
                   className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Notificaciones"
@@ -302,7 +323,7 @@ export default function MainAppLayout({
                   `}
               >
                 <button
-                  onClick={() => navigate('settings')}
+                  onClick={() => handleNavClick('settings')}
                   className="w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Ajustes"
@@ -320,7 +341,10 @@ export default function MainAppLayout({
           className="flex-1 overflow-y-auto overflow-x-hidden relative"
         >
           <Suspense fallback={<LoadingFallback />}>
-            {currentViewComponent}
+            {/* React.Fragment con una key que se actualiza forzará el desmontaje completo */}
+            <React.Fragment key={`${view}-${viewResetKey}`}>
+              {currentViewComponent}
+            </React.Fragment>
           </Suspense>
 
           {/* FIX: Espaciador final calculado dinámicamente. Como usamos 100vh, el contenedor llega al final. Este hueco evita que las listas queden ocultas detrás del navbar */}
@@ -346,7 +370,7 @@ export default function MainAppLayout({
             return (
               <button
                 key={item.id}
-                onClick={() => navigate(item.id)}
+                onClick={() => handleNavClick(item.id)}
                 className={`
                   group flex flex-col items-center justify-center flex-1 h-full
                   transition-all duration-300 ease-out active:scale-90 animate-fade-in-up
@@ -403,7 +427,7 @@ export default function MainAppLayout({
       {/* Botón Flotante de "Volver al Entreno" */}
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
-          onClick={() => navigate('workout')}
+          onClick={() => handleNavClick('workout')}
           className="fixed right-4 bottom-28 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />

@@ -33,7 +33,7 @@ const ExerciseDetailView = ({
   const [aiExplanation, setAiExplanation] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
-  
+
   // Guardamos y leemos de localStorage para que el límite se muestre al instante
   const [remainingUses, setRemainingUses] = useState(() => {
     const saved = localStorage.getItem('ai_remaining_uses');
@@ -58,7 +58,7 @@ const ExerciseDetailView = ({
       setDailyLimit(null);
       setAiError(null);
     }
-    
+
     // Actualizamos la fecha
     localStorage.setItem('ai_last_date', today);
   }, []);
@@ -125,17 +125,17 @@ const ExerciseDetailView = ({
 
   const handleAskAI = async () => {
     if (isLimitReached) return;
-    
+
     setIsAiLoading(true);
     setAiError(null);
     try {
       const prompt = `Actúa como un entrenador experto. Explica detalladamente el ejercicio "${translatedName}". 
       Incluye una breve descripción de la técnica correcta paso a paso, músculos principales y secundarios implicados, los 2 errores más comunes al realizarlo y un "Pro Tip" final. 
       Sé directo y usa un formato limpio y fácil de leer.`;
-      
+
       const res = await askTrainerAI(prompt);
       setAiExplanation(res.response);
-      
+
       if (res.remaining !== undefined) {
         setRemainingUses(res.remaining);
         localStorage.setItem('ai_remaining_uses', res.remaining);
@@ -168,16 +168,18 @@ const ExerciseDetailView = ({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-glass-border">
-        <button onClick={onBack} className="flex items-center gap-2 p-2 -m-2 rounded-lg hover:bg-white/10">
+      {/* Header modificado: Botón arriba y título grande debajo */}
+      <div className="flex-shrink-0 p-4 pb-2 border-b border-glass-border">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 p-2 -ml-2 mb-2 rounded-lg text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors"
+        >
           <ChevronLeft size={24} />
           <span className="font-semibold">{t('exercise_ui:back', 'Volver')}</span>
         </button>
-        <h2 className="text-xl font-bold truncate px-4">
+        <h2 className="text-2xl md:text-3xl font-extrabold text-text-primary break-words whitespace-normal leading-tight">
           {translatedName}
         </h2>
-        <div className="w-16"></div>
       </div>
 
       {/* Contenido */}
@@ -258,11 +260,10 @@ const ExerciseDetailView = ({
             <button
               onClick={handleAskAI}
               disabled={isLimitReached}
-              className={`w-full p-4 rounded-xl border flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold ${
-                isLimitReached
-                  ? 'bg-gray-500/10 border-transparent text-text-muted cursor-not-allowed'
-                  : 'border-accent/30 bg-accent/10 text-accent hover:bg-accent/20'
-              }`}
+              className={`w-full p-4 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold border border-glass-border ${isLimitReached
+                  ? 'bg-bg-secondary/50 text-text-muted cursor-not-allowed'
+                  : 'bg-bg-secondary text-accent hover:bg-accent/5'
+                }`}
             >
               {isLimitReached ? (
                 <>
@@ -279,7 +280,7 @@ const ExerciseDetailView = ({
           )}
 
           {isAiLoading && (
-            <div className="p-6 rounded-xl border border-glass-border bg-bg-secondary flex flex-col items-center justify-center gap-3">
+            <div className="p-6 rounded-xl bg-bg-secondary border border-glass-border flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-6 h-6 text-accent animate-spin" />
               <span className="text-sm text-text-secondary">Analizando biomecánica del ejercicio...</span>
             </div>
@@ -293,11 +294,12 @@ const ExerciseDetailView = ({
           )}
 
           {aiExplanation && (
-            <div className="p-5 rounded-xl border border-accent/20 bg-accent/5 space-y-2 text-sm leading-relaxed whitespace-pre-wrap text-text-primary">
+            <div className="p-5 rounded-xl bg-bg-secondary border border-glass-border space-y-2 text-sm leading-relaxed whitespace-pre-wrap text-text-primary">
               {aiExplanation}
             </div>
           )}
         </div>
+
         {/* Espacio extra al final para scroll cómodo */}
         <div className="h-6"></div>
       </div>

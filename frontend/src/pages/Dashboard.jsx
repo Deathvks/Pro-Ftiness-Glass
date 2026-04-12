@@ -1,3 +1,4 @@
+/* frontend/src/pages/Dashboard.jsx */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
@@ -102,7 +103,7 @@ const getWeightTrendData = (current, previous, goal) => {
   return { icon: isGaining ? ArrowUp : ArrowDown, color, bg };
 };
 
-const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconColor = "text-accent" }) => (
+const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconColor = "text-accent", onInfoClick }) => (
   <GlassCard
     onClick={onClick}
     className="p-5 relative overflow-hidden group cursor-pointer hover:bg-bg-secondary transition-all duration-300 flex flex-col justify-between h-full min-h-[160px] border-transparent dark:border dark:border-white/10 hover:shadow-lg"
@@ -114,7 +115,17 @@ const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconC
     </div>
 
     <div className="relative z-10 mt-4 space-y-1">
-      <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{title}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{title}</p>
+        {onInfoClick && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onInfoClick(); }}
+            className="text-text-muted hover:text-accent transition-colors"
+          >
+            <Info size={12} />
+          </button>
+        )}
+      </div>
       <div className="flex items-baseline gap-1">
         <span className="text-3xl font-black text-text-primary tracking-tight">{value}</span>
         {unit && <span className="text-xs font-semibold text-text-muted">{unit}</span>}
@@ -561,9 +572,28 @@ const Dashboard = ({ setView }) => {
           </div>
         </GlassCard>
 
-        <BentoStatCard title={t('Meta Calórica', { defaultValue: 'Meta Calórica' })} value={targets.calories.toLocaleString()} unit="kcal" icon={Target} subtext={t('Objetivo diario', { defaultValue: 'Objetivo diario' })} />
-        <BentoStatCard title={t('Tiempo Activo', { defaultValue: 'Tiempo Activo' })} value={weeklyTimeDisplay} icon={Clock} subtext={t('Total semanal', { defaultValue: 'Total semanal' })} />
-        <BentoStatCard title={t('Quemadas', { defaultValue: 'Quemadas' })} value={weeklyCalories.toLocaleString()} unit="kcal" icon={Flame} subtext={t('Total estimado', { defaultValue: 'Total estimado' })} />
+        <BentoStatCard
+          title={t('Meta Calórica', { defaultValue: 'Meta Calórica' })}
+          value={targets.calories.toLocaleString()}
+          unit="kcal"
+          icon={Target}
+          subtext={t('Objetivo diario', { defaultValue: 'Objetivo diario' })}
+          onInfoClick={() => addToast(t('Tu meta ya incluye tus entrenamientos semanales. ¡No comas de más los días que entrenas!', { defaultValue: 'Tu meta ya incluye tus entrenamientos semanales. ¡No comas de más los días que entrenas!' }), 'info')}
+        />
+        <BentoStatCard
+          title={t('Tiempo Activo', { defaultValue: 'Tiempo Activo' })}
+          value={weeklyTimeDisplay}
+          icon={Clock}
+          subtext={t('Total semanal', { defaultValue: 'Total semanal' })}
+        />
+        <BentoStatCard
+          title={t('Quemadas', { defaultValue: 'Quemadas' })}
+          value={weeklyCalories.toLocaleString()}
+          unit="kcal"
+          icon={Flame}
+          subtext={t('Total estimado', { defaultValue: 'Total estimado' })}
+          onInfoClick={() => addToast(t('Calorías quemadas en entrenamientos. Es un logro visual, no debes sumarlas a tus comidas.', { defaultValue: 'Calorías quemadas en entrenamientos. Es un logro visual, no debes sumarlas a tus comidas.' }), 'info')}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

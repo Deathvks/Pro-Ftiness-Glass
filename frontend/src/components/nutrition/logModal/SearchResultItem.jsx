@@ -95,12 +95,12 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                         {item.weight_g && <span>• {formatNumber(item.weight_g, 1)}g</span>}
                         {item.brand && <span className="truncate hidden sm:inline">• {item.brand}</span>}
                     </p>
-                    {/* --- NUEVA LÍNEA DE MACROS --- */}
+                    {/* --- NUEVA LÍNEA DE MACROS CON CSS INLINE --- */}
                     <div className="text-[10px] flex items-center gap-2 mt-0.5 font-medium">
-                        <span className="text-green-500">P: {formatNumber(protein, 1)}</span>
-                        <span className="text-blue-500">C: {formatNumber(carbs, 1)}</span>
-                        <span className="text-yellow-500">G: {formatNumber(fats, 1)}</span>
-                        <span className="text-pink-500">Az: {formatNumber(sugars, 1)}</span>
+                        <span style={{ color: '#ef4444' }}>P: {formatNumber(protein, 1)}</span>
+                        <span style={{ color: '#3b82f6' }}>C: {formatNumber(carbs, 1)}</span>
+                        <span style={{ color: '#eab308' }}>G: {formatNumber(fats, 1)}</span>
+                        <span style={{ color: '#ec4899' }}>Az: {formatNumber(sugars, 1)}</span>
                     </div>
                 </div>
             </div>

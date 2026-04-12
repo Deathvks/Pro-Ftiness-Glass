@@ -33,7 +33,7 @@ const canMakeOffSearch = () => {
   while (offSearchTimestamps.length > 0 && now - offSearchTimestamps[0] > 60000) {
     offSearchTimestamps.shift();
   }
-  return offSearchTimestamps.length < 8; 
+  return offSearchTimestamps.length < 8;
 };
 
 const ensureUploadDirExists = async (dirPath) => {
@@ -122,14 +122,14 @@ const checkCalorieTargetReward = async (userId, logDate) => {
     const userActivity = activity_level || 1.2;
     const userGender = gender || 'male';
 
-    let bmr = userGender === 'male' 
-      ? 10 * weight + 6.25 * userHeight - 5 * userAge + 5 
+    let bmr = userGender === 'male'
+      ? 10 * weight + 6.25 * userHeight - 5 * userAge + 5
       : 10 * weight + 6.25 * userHeight - 5 * userAge - 161;
     let target = bmr * userActivity;
-    
-    if (goal === 'lose') target -= 500; 
+
+    if (goal === 'lose') target -= 500;
     else if (goal === 'gain') target += 500;
-    
+
     target = Math.round(target);
 
     const totalCalories = await NutritionLog.sum('calories', { where: { user_id: userId, log_date: logDate } }) || 0;
@@ -284,7 +284,7 @@ const addFoodLog = async (req, res, next) => {
       if (calorieResult && calorieResult.success) {
         gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
       }
-    } catch (gError) {}
+    } catch (gError) { }
 
     res.status(201).json({ ...newLog.toJSON(), gamification: gamificationEvents });
 
@@ -345,10 +345,8 @@ const updateFoodLog = async (req, res, next) => {
       const existingFav = await FavoriteMeal.findOne({ where: { user_id: userId, name: foodData.description }, transaction: t });
       if (existingFav) await existingFav.update(favData, { transaction: t });
       else await FavoriteMeal.create(favData, { transaction: t });
-    } else {
-      const favorite = await FavoriteMeal.findOne({ where: { user_id: userId, name: foodData.description }, transaction: t });
-      if (favorite) await favorite.update(favData, { transaction: t });
     }
+    // EL ELSE ELIMINADO AQUÍ. Ya no sobreescribirá el favorito a menos que save_as_favorite sea true.
 
     await t.commit();
 
@@ -454,7 +452,7 @@ const searchByBarcode = async (req, res, next) => {
     const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
 
     const response = await axios.get(apiUrl, {
-      timeout: 8000, 
+      timeout: 8000,
       headers: { 'User-Agent': 'FitApp_Backend/1.0 (profitnessglass@gmail.com)' }
     });
 
@@ -593,7 +591,7 @@ const searchFoods = async (req, res, next) => {
 
           searchCache.set(searchTerm, { timestamp: Date.now(), results: externalResults });
         }
-      } catch (err) {}
+      } catch (err) { }
     }
 
     res.json([...localResults, ...externalResults]);

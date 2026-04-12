@@ -7,7 +7,7 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => {
     const [showMicros, setShowMicros] = useState(false);
 
     const micronutrients = item.micronutrients;
-    
+
     // Lista simplificada de micronutrientes a mostrar
     const simpleMicrosList = [
         { key: 'vitamin-c_100g', name: 'Vit C' },
@@ -24,9 +24,9 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => {
             const value = micronutrients[micro.key];
             let unit = micronutrients[micro.key.replace('_100g', '_unit')] || 'g';
             if (micro.key === 'sodium_100g' && unit === 'g') unit = 'mg';
-            
-            return (value && parseFloat(value) > 0) 
-                ? `${micro.name}: ${formatNumber(value, 2)} ${unit}` 
+
+            return (value && parseFloat(value) > 0)
+                ? `${micro.name}: ${formatNumber(value, 2)} ${unit}`
                 : null;
         })
         .filter(Boolean) : [];
@@ -66,16 +66,16 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => {
                 <p className="font-semibold text-sm truncate text-text-primary">{item.name}</p>
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                     <p className="text-xs text-text-secondary">{Math.round(item.calories)} kcal</p>
-                    {/* Visualización de macros pequeña */}
+                    {/* Visualización de macros pequeña con CSS inline */}
                     <div className="text-[10px] flex items-center gap-1.5 font-medium opacity-90">
-                        <span className="text-green-500">P:{formatNumber(protein, 1)}</span>
-                        <span className="text-blue-500">C:{formatNumber(carbs, 1)}</span>
-                        <span className="text-yellow-500">G:{formatNumber(fats, 1)}</span>
-                        <span className="text-pink-500">Az:{formatNumber(sugars, 1)}</span>
+                        <span style={{ color: '#ef4444' }}>P:{formatNumber(protein, 1)}</span>
+                        <span style={{ color: '#3b82f6' }}>C:{formatNumber(carbs, 1)}</span>
+                        <span style={{ color: '#eab308' }}>G:{formatNumber(fats, 1)}</span>
+                        <span style={{ color: '#ec4899' }}>Az:{formatNumber(sugars, 1)}</span>
                     </div>
                 </div>
             </div>
-            
+
             {/* Gramos */}
             <div className="text-right flex-shrink-0 w-16 sm:w-20">
                 <p className="font-semibold text-sm text-text-primary">
@@ -83,7 +83,7 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => {
                     <span className="text-xs text-text-muted"> g</span>
                 </p>
             </div>
-            
+
             {/* Botones de acción */}
             <div className="flex items-center flex-shrink-0 ml-auto gap-1">
                 {/* Botón para mostrar micros */}
@@ -114,7 +114,7 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => {
 
             {/* Contenedor para mostrar micronutrientes */}
             {hasMicros && showMicros && (
-                <div 
+                <div
                     className="w-full mt-1 p-2 bg-bg-secondary rounded-md border border-glass-border cursor-default"
                     onClick={(e) => e.stopPropagation()}
                 >

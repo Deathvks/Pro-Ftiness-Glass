@@ -21,7 +21,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const [aiExplanation, setAiExplanation] = useState(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
-  
+
   // Guardamos y leemos de localStorage para que el límite se muestre al instante
   const [remainingUses, setRemainingUses] = useState(() => {
     const saved = localStorage.getItem('ai_remaining_uses');
@@ -46,7 +46,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       setDailyLimit(null);
       setAiError(null);
     }
-    
+
     // Actualizamos la fecha
     localStorage.setItem('ai_last_date', today);
   }, []);
@@ -127,17 +127,17 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
   const handleAskAI = async () => {
     if (isLimitReached) return;
-    
+
     setIsAiLoading(true);
     setAiError(null);
     try {
       const prompt = `Actúa como un entrenador experto. Explica detalladamente el ejercicio "${translatedName}". 
       Incluye una breve descripción de la técnica correcta paso a paso, músculos principales y secundarios implicados, los 2 errores más comunes al realizarlo y un "Pro Tip" final. 
       Sé directo y usa un formato limpio y fácil de leer.`;
-      
+
       const res = await askTrainerAI(prompt);
       setAiExplanation(res.response);
-      
+
       if (res.remaining !== undefined) {
         setRemainingUses(res.remaining);
         localStorage.setItem('ai_remaining_uses', res.remaining);
@@ -155,7 +155,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       const data = error.response?.data || {};
       const errorMsg = data.error || error.message || "Error al conectar con la IA.";
       setAiError(errorMsg);
-      
+
       if (errorMsg.includes('agotado') || errorMsg.includes('Límite')) {
         setRemainingUses(0);
         localStorage.setItem('ai_remaining_uses', '0');
@@ -209,26 +209,26 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
             {t('details', { ns: 'exercise_ui', defaultValue: 'Detalles' })}
           </h3>
 
-          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
+          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border border-glass-border">
             <Target size={20} className="text-accent" />
             <span className="font-medium capitalize text-text-primary">
               {muscleGroupLabel}
             </span>
           </div>
 
-          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
+          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border border-glass-border">
             <Dumbbell size={20} className="text-accent" />
             <span className="font-medium text-text-primary">
               {t('n_sets', { count: exercise.sets, ns: 'exercise_ui' })}
             </span>
           </div>
-          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
+          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border border-glass-border">
             <Repeat size={20} className="text-accent" />
             <span className="font-medium text-text-primary">
               {t('n_reps', { count: exercise.reps, ns: 'exercise_ui' })}
             </span>
           </div>
-          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border-glass-border">
+          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border border-glass-border">
             <Clock size={20} className="text-accent" />
             <span className="font-medium text-text-primary">
               {t('n_rest', { count: exercise.rest_seconds || 90, ns: 'exercise_ui' })}
@@ -279,11 +279,10 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
             <button
               onClick={handleAskAI}
               disabled={isLimitReached}
-              className={`w-full p-4 rounded-xl border flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold ${
-                isLimitReached
-                  ? 'bg-gray-500/10 border-transparent text-text-muted cursor-not-allowed'
-                  : 'border-accent/30 bg-accent/10 text-accent hover:bg-accent/20'
-              }`}
+              className={`w-full p-4 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold border border-glass-border ${isLimitReached
+                  ? 'bg-bg-secondary/50 text-text-muted cursor-not-allowed'
+                  : 'bg-bg-secondary text-accent hover:bg-accent/5'
+                }`}
             >
               {isLimitReached ? (
                 <>
@@ -300,7 +299,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           )}
 
           {isAiLoading && (
-            <div className="p-6 rounded-xl border border-glass-border bg-bg-secondary flex flex-col items-center justify-center gap-3">
+            <div className="p-6 rounded-xl bg-bg-secondary border border-glass-border flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-6 h-6 text-accent animate-spin" />
               <span className="text-sm text-text-secondary">Analizando biomecánica del ejercicio...</span>
             </div>
@@ -314,7 +313,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           )}
 
           {aiExplanation && (
-            <div className="p-5 rounded-xl border border-accent/20 bg-accent/5 space-y-2 text-sm leading-relaxed whitespace-pre-wrap text-text-primary">
+            <div className="p-5 rounded-xl bg-bg-secondary border border-glass-border space-y-2 text-sm leading-relaxed whitespace-pre-wrap text-text-primary">
               {aiExplanation}
             </div>
           )}
