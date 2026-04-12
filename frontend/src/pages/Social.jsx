@@ -1,3 +1,4 @@
+/* frontend/src/pages/Social.jsx */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -17,18 +18,19 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
 import socialService from '../services/socialService';
-import Feed from '../components/Feed'; 
-import PermissionModal from '../components/PermissionModal'; // <-- Añadido
+import Feed from '../components/Feed';
+import PermissionModal from '../components/PermissionModal';
+import SocialTourGuide from '../components/SocialTourGuide';
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 const SERVER_URL = API_URL.replace('/api', '');
 
 // Helper para corregir URLs de imágenes (Avatar)
 const getFullImageUrl = (path) => {
     if (!path) return null;
-    if (path.startsWith('http')) return path; 
-    if (path.startsWith('blob:')) return path; 
+    if (path.startsWith('http')) return path;
+    if (path.startsWith('blob:')) return path;
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `${SERVER_URL}${cleanPath}`;
 };
@@ -38,24 +40,24 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
     const isPublic = privacy === 'public';
 
     return (
-        <div 
+        <div id="social-privacy-banner"
             className="mb-6 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 shadow-sm backdrop-blur-sm transition-all animate-[fade-in_0.3s_ease-out] max-w-3xl mx-auto"
             style={{
                 background: 'linear-gradient(to bottom right, var(--color-accent-border), var(--color-accent-transparent))'
             }}
         >
-            <div 
+            <div
                 className="p-2.5 rounded-full text-white shrink-0 mt-0.5"
                 style={{ backgroundColor: 'var(--color-accent-border)' }}
             >
                 {isPublic ? <Globe size={20} /> : <Lock size={20} />}
             </div>
-            
+
             <div className="flex-1">
                 <h4 className="text-sm font-bold text-accent mb-1 flex items-center gap-2">
                     {isPublic ? 'Tu perfil es VISIBLE (Público)' : 'Tu perfil es PRIVADO'}
                 </h4>
-                
+
                 <div className="text-xs text-text-secondary leading-relaxed mb-3 space-y-1">
                     {isPublic ? (
                         <>
@@ -80,7 +82,7 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
                     )}
                 </div>
 
-                <button 
+                <button
                     onClick={onNavigate}
                     className="text-xs font-bold bg-accent/10 hover:bg-accent/20 text-accent px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
                 >
@@ -96,32 +98,32 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
 const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
     return (
         <div className="flex flex-col items-center gap-1 min-w-[72px] cursor-pointer group relative">
-            <div 
+            <div
                 className={`
                     relative p-[3px] rounded-full transition-all duration-300
-                    ${hasStories 
-                        ? (hasUnseen 
-                            ? 'bg-accent shadow-lg shadow-accent/40 animate-pulse-slow' 
-                            : 'bg-gray-300 dark:bg-white/20' 
-                          ) 
+                    ${hasStories
+                        ? (hasUnseen
+                            ? 'bg-accent shadow-lg shadow-accent/40 animate-pulse-slow'
+                            : 'bg-gray-300 dark:bg-white/20'
+                        )
                         : 'bg-transparent border-2 border-dashed border-gray-300 dark:border-white/20 hover:border-accent dark:hover:border-accent'
                     }
                 `}
                 onClick={onClick}
             >
                 <div className="p-[2px] bg-bg-primary rounded-full relative z-10">
-                    <UserAvatar 
+                    <UserAvatar
                         user={{
                             ...user,
                             profile_image_url: user.profile_image_url || user.avatar
-                        }} 
-                        size={14} 
-                        className="w-14 h-14" 
+                        }}
+                        size={14}
+                        className="w-14 h-14"
                     />
                 </div>
 
                 {isMe && (
-                    <button 
+                    <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onAdd();
@@ -144,12 +146,12 @@ const StoryTermsModal = ({ onAccept, onReject }) => {
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-[fade-in_0.3s_ease-out]">
             <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl overflow-hidden shadow-2xl flex flex-col relative">
-                
+
                 <div className="p-6 text-center">
                     <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4 text-accent">
                         <ShieldAlert size={32} />
                     </div>
-                    
+
                     <h3 className="text-xl font-bold text-text-primary mb-2">Historias Efímeras</h3>
                     <p className="text-sm text-text-secondary mb-6 leading-relaxed">
                         Antes de subir tu primera historia, debes conocer cómo funciona este espacio en nuestra comunidad.
@@ -188,13 +190,13 @@ const StoryTermsModal = ({ onAccept, onReject }) => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                        <button 
+                        <button
                             onClick={onAccept}
                             className="flex-1 order-1 sm:order-2 py-3 px-4 rounded-xl font-bold bg-accent text-white shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm whitespace-nowrap"
                         >
                             Aceptar y Continuar
                         </button>
-                        <button 
+                        <button
                             onClick={onReject}
                             className="flex-1 order-2 sm:order-1 py-3 px-4 rounded-xl font-medium text-text-secondary hover:bg-white/10 transition-colors text-sm"
                         >
@@ -211,11 +213,11 @@ const StoryTermsModal = ({ onAccept, onReject }) => {
 const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
-    const [privacy, setPrivacy] = useState('friends'); 
+    const [privacy, setPrivacy] = useState('friends');
     const [canUseHDR, setCanUseHDR] = useState(false);
     const [isHDR, setIsHDR] = useState(false);
     const [showPermissionModal, setShowPermissionModal] = useState(false); // <-- Estado Modal Permisos
-    
+
     const galleryInputRef = useRef(null);
     const cameraPhotoInputRef = useRef(null);
     const cameraVideoInputRef = useRef(null);
@@ -279,7 +281,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 
     const onInputClick = async (e, type) => {
         e.target.value = null;
-        
+
         // --- Modificación: Verificar permisos nativos antes de abrir galería/cámara ---
         if (Capacitor.isNativePlatform()) {
             try {
@@ -310,7 +312,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                     <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center min-h-[300px]">
                         {!preview ? (
                             <div className="grid grid-cols-3 gap-3 w-full h-full">
-                                <div 
+                                <div
                                     onClick={() => cameraPhotoInputRef.current?.click()}
                                     className="aspect-square border-2 border-dashed border-accent/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-accent/10 transition-colors group"
                                 >
@@ -320,7 +322,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     <p className="text-accent font-bold text-xs">Foto</p>
                                 </div>
 
-                                <div 
+                                <div
                                     onClick={() => cameraVideoInputRef.current?.click()}
                                     className="aspect-square border-2 border-dashed border-red-500/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-500/10 transition-colors group"
                                 >
@@ -330,7 +332,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     <p className="text-red-400 font-bold text-xs">Vídeo</p>
                                 </div>
 
-                                <div 
+                                <div
                                     onClick={() => galleryInputRef.current?.click()}
                                     className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-colors group"
                                 >
@@ -339,7 +341,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     </div>
                                     <p className="text-text-secondary font-medium text-xs">Galería</p>
                                 </div>
-                                
+
                                 <p className="col-span-3 text-center text-xs text-text-tertiary mt-4">
                                     Elige el modo de cámara para asegurar compatibilidad
                                 </p>
@@ -347,23 +349,23 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         ) : (
                             <div className="relative w-full h-[60vh] rounded-xl overflow-hidden bg-black flex items-center justify-center">
                                 {file?.type?.startsWith('video') ? (
-                                    <video 
+                                    <video
                                         ref={previewVideoRef}
-                                        src={preview} 
-                                        className="max-w-full max-h-full w-auto h-auto outline-none" 
+                                        src={preview}
+                                        className="max-w-full max-h-full w-auto h-auto outline-none"
                                         controls playsInline webkit-playsinline="true" preload="auto" muted
                                         onLoadedMetadata={handleVideoLoad}
                                         style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
                                     />
                                 ) : (
-                                    <img 
-                                        src={preview} 
-                                        alt="Preview" 
+                                    <img
+                                        src={preview}
+                                        alt="Preview"
                                         className="max-w-full max-h-full w-auto h-auto shadow-sm mx-auto"
                                         style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
                                     />
                                 )}
-                                <button 
+                                <button
                                     onClick={() => { setFile(null); setPreview(null); setIsHDR(false); setCanUseHDR(false); }}
                                     className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500/80 transition-colors z-20"
                                 >
@@ -371,7 +373,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 </button>
                             </div>
                         )}
-                        
+
                         <input type="file" accept="image/*,video/*" ref={galleryInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'gallery')} />
                         <input type="file" accept="image/*" capture="environment" ref={cameraPhotoInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'camera')} />
                         <input type="file" accept="video/*" capture="environment" ref={cameraVideoInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'video')} />
@@ -379,22 +381,22 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 
                     <div className="p-4 border-t border-white/10 space-y-4 bg-bg-secondary">
                         <div className="flex gap-2 justify-center">
-                            <button 
+                            <button
                                 onClick={() => setPrivacy('friends')}
                                 className={`flex-1 py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
-                                    ${privacy === 'friends' 
-                                        ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' 
+                                    ${privacy === 'friends'
+                                        ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
                                         : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
                                     }`}
                             >
                                 <Users size={14} /><span>Solo Amigos</span>
                             </button>
 
-                            <button 
+                            <button
                                 onClick={() => setPrivacy('public')}
                                 className={`flex-1 py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
-                                    ${privacy === 'public' 
-                                        ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' 
+                                    ${privacy === 'public'
+                                        ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
                                         : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
                                     }`}
                             >
@@ -402,11 +404,11 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             </button>
 
                             {canUseHDR && (
-                                <button 
+                                <button
                                     onClick={toggleHDR}
                                     className={`flex-initial px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all border
-                                        ${isHDR 
-                                            ? 'bg-accent text-white border-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow' 
+                                        ${isHDR
+                                            ? 'bg-accent text-white border-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow'
                                             : 'bg-white/5 text-text-secondary border-white/5 opacity-60 hover:opacity-100'
                                         }`}
                                 >
@@ -416,7 +418,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             )}
                         </div>
 
-                        <button 
+                        <button
                             onClick={handleSubmit}
                             disabled={!file || isUploading}
                             className="w-full py-3 bg-accent text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-accent/20"
@@ -427,10 +429,10 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                 </div>
             </div>
 
-            <PermissionModal 
-                isOpen={showPermissionModal} 
-                onClose={() => setShowPermissionModal(false)} 
-                permissionName="Galería / Cámara" 
+            <PermissionModal
+                isOpen={showPermissionModal}
+                onClose={() => setShowPermissionModal(false)}
+                permissionName="Galería / Cámara"
             />
         </>
     );
@@ -443,9 +445,9 @@ const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
         onClick={() => onClick(id)}
         className={`flex items-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm whitespace-nowrap transition-all flex-shrink-0 border active:scale-95
         ${isActive
-            ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
-            : 'bg-white/5 text-text-secondary border-transparent hover:bg-white/10 hover:text-text-primary hover:border-white/20'
-        }`}
+                ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
+                : 'bg-white/5 text-text-secondary border-transparent hover:bg-white/10 hover:text-text-primary hover:border-white/20'
+            }`}
     >
         <Icon size={18} />
         <span>{label}</span>
@@ -461,7 +463,7 @@ const UserListItem = ({ user, action, subtext, isHighlighted, onNavigate }) => {
     const fixedUser = {
         ...user,
         avatar: getFullImageUrl(user.profile_image_url || user.avatar),
-        profile_image_url: getFullImageUrl(user.profile_image_url || user.avatar) 
+        profile_image_url: getFullImageUrl(user.profile_image_url || user.avatar)
     };
 
     return (
@@ -503,13 +505,13 @@ export default function Social({ setView }) {
     const [friendsPage, setFriendsPage] = useState(1);
     const FRIENDS_PER_PAGE = 5;
     const ITEMS_PER_PAGE = 10;
-    
+
     const [highlightedId, setHighlightedId] = useState(null);
     const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, friendId: null });
     const [isDeleting, setIsDeleting] = useState(false);
 
     // --- Estados para Historias ---
-    const [viewingStoryUserId, setViewingStoryUserId] = useState(null); 
+    const [viewingStoryUserId, setViewingStoryUserId] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [isUploadingStory, setIsUploadingStory] = useState(false);
@@ -521,7 +523,7 @@ export default function Social({ setView }) {
     const [showCreateSquadModal, setShowCreateSquadModal] = useState(false);
     const [showJoinSquadModal, setShowJoinSquadModal] = useState(false);
     const [squadForm, setSquadForm] = useState({ name: '', description: '', invite_code: '' });
-    
+
     const [leaveSquadConfirmation, setLeaveSquadConfirmation] = useState({ isOpen: false, squadId: null });
     const [isLeavingSquad, setIsLeavingSquad] = useState(false);
 
@@ -556,9 +558,9 @@ export default function Social({ setView }) {
         fetchFriends();
         fetchFriendRequests();
         fetchLeaderboard();
-        fetchStories(); 
-        subscribeToStories(); 
-        subscribeToSocialEvents(); 
+        fetchStories();
+        subscribeToStories();
+        subscribeToSocialEvents();
     }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories, subscribeToStories, subscribeToSocialEvents]);
 
     // Manejo de params
@@ -962,21 +964,21 @@ export default function Social({ setView }) {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button 
-                                onClick={() => copyInviteCode(selectedSquad.invite_code)} 
+                            <button
+                                onClick={() => copyInviteCode(selectedSquad.invite_code)}
                                 className="text-xs font-bold text-text-primary bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
                             >
                                 <Copy size={14} /> Código
                             </button>
                             {!amIAdmin ? (
-                                <button 
+                                <button
                                     onClick={() => setLeaveSquadConfirmation({ isOpen: true, squadId: selectedSquad.id })}
                                     className="text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
                                 >
                                     <LogOut size={14} /> Salir
                                 </button>
                             ) : (
-                                <button 
+                                <button
                                     onClick={() => setDeleteSquadConfirmation({ isOpen: true, squadId: selectedSquad.id })}
                                     className="text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
                                 >
@@ -1020,13 +1022,13 @@ export default function Social({ setView }) {
         return (
             <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row gap-3">
-                    <button 
+                    <button
                         onClick={() => setShowCreateSquadModal(true)}
                         className="flex-1 py-3 bg-accent text-white font-bold rounded-xl hover:opacity-90 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
                     >
                         <PlusCircle size={18} className="shrink-0" /> <span className="truncate">Crear Grupo</span>
                     </button>
-                    <button 
+                    <button
                         onClick={() => setShowJoinSquadModal(true)}
                         className="flex-1 py-3 bg-white/10 text-text-primary font-bold rounded-xl hover:bg-white/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                     >
@@ -1071,7 +1073,8 @@ export default function Social({ setView }) {
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:pb-8 animate-[fade-in_0.5s_ease-out]">
-            
+            <SocialTourGuide />
+
             {/* --- Modales --- */}
             {deleteConfirmation.isOpen && (
                 <ConfirmationModal
@@ -1115,15 +1118,15 @@ export default function Social({ setView }) {
                 <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl relative">
                         <button onClick={() => setShowCreateSquadModal(false)} className="absolute top-4 right-4 p-1 text-text-secondary hover:text-white"><X size={20} /></button>
-                        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2"><Shield className="text-accent"/> Crear Grupo</h3>
+                        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2"><Shield className="text-accent" /> Crear Grupo</h3>
                         <form onSubmit={handleCreateSquad} className="space-y-4">
                             <div>
                                 <label className="block text-xs text-text-secondary mb-1">Nombre del Grupo</label>
-                                <input required type="text" maxLength={50} value={squadForm.name} onChange={e => setSquadForm({...squadForm, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors"/>
+                                <input required type="text" maxLength={50} value={squadForm.name} onChange={e => setSquadForm({ ...squadForm, name: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors" />
                             </div>
                             <div>
                                 <label className="block text-xs text-text-secondary mb-1">Descripción (Opcional)</label>
-                                <input type="text" maxLength={100} value={squadForm.description} onChange={e => setSquadForm({...squadForm, description: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors"/>
+                                <input type="text" maxLength={100} value={squadForm.description} onChange={e => setSquadForm({ ...squadForm, description: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors" />
                             </div>
                             <button type="submit" disabled={!squadForm.name.trim()} className="w-full bg-accent text-white font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all mt-4">Crear</button>
                         </form>
@@ -1136,11 +1139,11 @@ export default function Social({ setView }) {
                 <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl relative">
                         <button onClick={() => setShowJoinSquadModal(false)} className="absolute top-4 right-4 p-1 text-text-secondary hover:text-white"><X size={20} /></button>
-                        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2"><Hash className="text-accent"/> Unirse a un Grupo</h3>
+                        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2"><Hash className="text-accent" /> Unirse a un Grupo</h3>
                         <form onSubmit={handleJoinSquad} className="space-y-4">
                             <div>
                                 <label className="block text-xs text-text-secondary mb-1">Código de Invitación</label>
-                                <input required type="text" placeholder="Ej: A1B2C3D4" value={squadForm.invite_code} onChange={e => setSquadForm({...squadForm, invite_code: e.target.value.toUpperCase()})} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors font-mono uppercase tracking-widest text-center"/>
+                                <input required type="text" placeholder="Ej: A1B2C3D4" value={squadForm.invite_code} onChange={e => setSquadForm({ ...squadForm, invite_code: e.target.value.toUpperCase() })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors font-mono uppercase tracking-widest text-center" />
                             </div>
                             <button type="submit" disabled={!squadForm.invite_code.trim()} className="w-full bg-accent text-white font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all mt-4">Unirse</button>
                         </form>
@@ -1166,24 +1169,24 @@ export default function Social({ setView }) {
             </header>
 
             {/* Banner de Estado de Privacidad */}
-            <PrivacyBanner 
-                privacy={userProfile?.is_public_profile ? 'public' : 'private'} 
-                onNavigate={() => setView('settings', { highlight: 'social_privacy' })} 
+            <PrivacyBanner
+                privacy={userProfile?.is_public_profile ? 'public' : 'private'}
+                onNavigate={() => setView('settings', { highlight: 'social_privacy' })}
             />
 
             {/* --- Carrusel de Historias --- */}
-            <section className="mb-8 overflow-x-auto no-scrollbar pb-2 max-w-3xl mx-auto">
+            <section id="social-stories" className="mb-8 overflow-x-auto no-scrollbar pb-2 max-w-3xl mx-auto">
                 <div className="flex items-start gap-4 px-1">
                     {/* Mi Historia / Subir */}
-                    <StoryBubble 
-                        user={{ 
-                            ...userProfile, 
-                            avatar: getFullImageUrl(userProfile?.profile_image_url || userProfile?.avatar) 
-                        }} 
-                        isMe={true} 
-                        hasStories={myStories.length > 0} 
-                        hasUnseen={myStoriesUnseen} 
-                        onClick={handleMyStoryClick} 
+                    <StoryBubble
+                        user={{
+                            ...userProfile,
+                            avatar: getFullImageUrl(userProfile?.profile_image_url || userProfile?.avatar)
+                        }}
+                        isMe={true}
+                        hasStories={myStories.length > 0}
+                        hasUnseen={myStoriesUnseen}
+                        onClick={handleMyStoryClick}
                         onAdd={initiateStoryUpload}
                     />
 
@@ -1192,19 +1195,19 @@ export default function Social({ setView }) {
                         const rawUser = storyUser.user || {};
                         const username = storyUser.username || rawUser.username || 'Usuario';
                         const avatarPath = storyUser.profile_image_url || rawUser.profile_image_url || storyUser.avatar || rawUser.avatar;
-                        const hasUnseen = storyUser.hasUnseen !== undefined 
-                            ? storyUser.hasUnseen 
+                        const hasUnseen = storyUser.hasUnseen !== undefined
+                            ? storyUser.hasUnseen
                             : storyUser.items?.some(item => !item.viewed);
                         const fullAvatarUrl = getFullImageUrl(avatarPath);
 
                         return (
-                            <StoryBubble 
+                            <StoryBubble
                                 key={storyUser.userId}
-                                user={{ 
-                                    username: username, 
+                                user={{
+                                    username: username,
                                     avatar: fullAvatarUrl,
                                     profile_image_url: fullAvatarUrl
-                                }} 
+                                }}
                                 isMe={false}
                                 hasStories={true}
                                 hasUnseen={hasUnseen}
@@ -1216,7 +1219,7 @@ export default function Social({ setView }) {
             </section>
 
             {/* --- Pestañas Horizontales --- */}
-            <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 py-2 px-1 md:justify-center">
+            <div id="social-tabs" className="flex overflow-x-auto no-scrollbar gap-2 mb-6 py-2 px-1 md:justify-center">
                 <TabButton id="feed" icon={Activity} label="Muro" isActive={activeTab === 'feed'} onClick={changeTab} />
                 <TabButton id="friends" icon={Users} label="Amigos" isActive={activeTab === 'friends'} onClick={changeTab} />
                 <TabButton id="squads" icon={Shield} label="Grupos" isActive={activeTab === 'squads'} onClick={changeTab} />

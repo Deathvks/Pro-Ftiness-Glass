@@ -201,12 +201,11 @@ const NutritionTourGuide = () => {
       progressText: '{{current}} / {{total}}',
       steps: [
         {
-          element: '#nutrition-header',
+          // Quitamos el element: '#nutrition-header' porque está oculto en móvil.
+          // Esto forzará a que el primer paso sea un popover de bienvenida centrado en la pantalla.
           popover: {
             title: 'Tu Panel de Nutrición',
             description: 'Gestiona tus comidas diarias, controla tus macros y mantén tu hidratación al día desde aquí.',
-            side: 'bottom',
-            align: 'start'
           }
         },
         {

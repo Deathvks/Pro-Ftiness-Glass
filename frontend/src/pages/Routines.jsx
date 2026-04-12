@@ -1,3 +1,4 @@
+/* frontend/src/pages/Routines.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -34,6 +35,7 @@ import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
+import RoutineTourGuide from '../components/RoutineTourGuide';
 
 const GlobalPrivacyModal = ({ onClose }) => {
   const { addToast } = useToast();
@@ -701,8 +703,9 @@ const Routines = ({ setView }) => {
   const activeModeClasses = 'bg-accent text-bg-secondary';
   const inactiveModeClasses = 'bg-bg-secondary hover:bg-white/10 text-text-secondary';
 
-  const RoutineActionButtons = ({ className = '' }) => (
-    <div className={`flex gap-2 ${className}`}>
+  // Añadimos el prop id
+  const RoutineActionButtons = ({ className = '', id }) => (
+    <div className={`flex gap-2 ${className}`} id={id}>
       <button
         onClick={() => setShowPrivacyModal(true)}
         className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-glass-base text-text-primary font-semibold transition hover:scale-105 border border-glass-border shadow-sm"
@@ -738,6 +741,7 @@ const Routines = ({ setView }) => {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 pb-28 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">
+      <RoutineTourGuide />
       <Helmet>
         <title>
           {activeTab === 'myRoutines' ? 'Mis Rutinas' : 'Explorar Plantillas'} - Pro Fitness Glass
@@ -756,10 +760,11 @@ const Routines = ({ setView }) => {
         <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
           Rutinas
         </h1>
-        {activeTab === 'myRoutines' && <RoutineActionButtons />}
+        {/* Pasamos el ID para escritorio */}
+        {activeTab === 'myRoutines' && <RoutineActionButtons id="routines-actions-desktop" />}
       </div>
 
-      <div className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit max-w-full overflow-x-auto scrollbar-hide mt-6 md:mt-0`}>
+      <div id="routines-tabs" className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit max-w-full overflow-x-auto scrollbar-hide mt-6 md:mt-0`}>
         <button
           onClick={() => setActiveTab('myRoutines')}
           className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
@@ -784,13 +789,13 @@ const Routines = ({ setView }) => {
       </div>
 
       {activeTab === 'myRoutines' && (
-        <RoutineActionButtons className="flex md:hidden w-full mb-6" />
+        < RoutineActionButtons id="routines-actions-mobile" className="flex md:hidden w-full mb-6" />
       )}
 
       {activeTab === 'myRoutines' && (
         <>
           <div className="mb-6 flex flex-col gap-4">
-            <div className="max-w-md relative">
+            <div className="max-w-md relative" id="routines-search">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
               <input
                 value={query}
@@ -1087,7 +1092,7 @@ const Routines = ({ setView }) => {
           onCancel={() => setShowDeleteModal(false)}
           message="¿Estás seguro de que quieres borrar esta rutina?"
           onConfirm={confirmDelete}
-          isLoading={isLoading}
+          isLoading={isSubmitting}
           confirmText="Eliminar"
           isDestructive={true}
         />

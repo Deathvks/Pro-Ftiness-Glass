@@ -472,7 +472,7 @@ const ManualEntryForm = ({
                 </button>
             ) : (
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                    <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-50 border border-accent/20`}>
+                    <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-bg-secondary text-accent hover:bg-white/5 disabled:opacity-50 border border-glass-border`}>
                         {isLoading || isUploading ? <Spinner /> : <><Plus size={18} className="mr-2" /> Añadir a la lista</>}
                     </button>
                     <button type="button" onClick={handleSaveAndClose} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-bg-secondary hover:brightness-110 disabled:opacity-50`}>

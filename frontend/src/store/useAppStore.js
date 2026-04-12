@@ -86,6 +86,56 @@ const useAppStore = create((set, get) => ({
             localStorage.removeItem('nutritionTourCompleted');
         } catch (e) { }
         set({ nutritionTourCompleted: false });
+    },
+
+    // --- Configuración Global: Tour Rutinas ---
+    routineTourCompleted: (() => {
+        try {
+            return localStorage.getItem('routineTourCompleted') === 'true';
+        } catch (e) {
+            return false;
+        }
+    })(),
+
+    completeRoutineTour: () => {
+        try {
+            localStorage.setItem('routineTourCompleted', 'true');
+        } catch (e) {
+            console.warn(e);
+        }
+        set({ routineTourCompleted: true });
+    },
+
+    resetRoutineTour: () => {
+        try {
+            localStorage.removeItem('routineTourCompleted');
+        } catch (e) { }
+        set({ routineTourCompleted: false });
+    },
+
+    // --- Configuración Global: Tour Social ---
+    socialTourCompleted: (() => {
+        try {
+            return localStorage.getItem('socialTourCompleted') === 'true';
+        } catch (e) {
+            return false;
+        }
+    })(),
+
+    completeSocialTour: () => {
+        try {
+            localStorage.setItem('socialTourCompleted', 'true');
+        } catch (e) {
+            console.warn(e);
+        }
+        set({ socialTourCompleted: true });
+    },
+
+    resetSocialTour: () => {
+        try {
+            localStorage.removeItem('socialTourCompleted');
+        } catch (e) { }
+        set({ socialTourCompleted: false });
     }
 }));
 
