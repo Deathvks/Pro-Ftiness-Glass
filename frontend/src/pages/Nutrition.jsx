@@ -514,7 +514,7 @@ const Nutrition = ({ setView }) => {
             case 'fats':
                 return (
                     <>
-                        <span className="text-[10px] sm:text-xs font-bold text-yellow-500 uppercase tracking-wider mb-[-4px]">Grasas</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-green-500 uppercase tracking-wider mb-[-4px]">Grasas</span>
                         <span className="text-3xl sm:text-4xl font-black text-text-primary">{totals.fats.toFixed(0)}<span className="text-xl text-text-muted">/{fatsTarget}g</span></span>
                         <span className="text-[10px] sm:text-xs font-semibold text-text-muted">{Math.round(fPct)}% ({Math.round(fCals)} kcal)</span>
                     </>
@@ -598,7 +598,7 @@ const Nutrition = ({ setView }) => {
                                         unit={`/ ${carbsTarget} g`}
                                     />
                                     <StatCard
-                                        icon={<Salad size={24} style={{ color: '#eab308' }} />}
+                                        icon={<Salad size={24} style={{ color: '#22c55e' }} />}
                                         title="Grasas"
                                         value={totals.fats.toFixed(1)}
                                         unit={`/ ${fatsTarget} g`}
@@ -621,18 +621,15 @@ const Nutrition = ({ setView }) => {
                                 <div className="flex flex-col items-center justify-center py-2 animate-[fade-in_0.3s_ease-out]" onClick={() => setHoveredMacro(null)}>
                                     <div className="relative w-48 h-48 sm:w-56 sm:h-56 mb-8">
                                         <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 drop-shadow-lg">
-                                            {/* Fondo gris adaptado para oled */}
                                             <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-glass-border" strokeWidth="4" />
 
                                             {totalMacroCals > 0 && (
                                                 <>
-                                                    {/* Círculos VISUALES (animados, sin eventos) */}
                                                     <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ef4444" strokeWidth={hoveredMacro === 'protein' ? "6" : "4"} strokeDasharray={`${Math.max(0, pPct)} ${100 - Math.max(0, pPct)}`} strokeDashoffset="0" className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'protein' ? 'opacity-30' : 'opacity-100'}`} />
                                                     <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#3b82f6" strokeWidth={hoveredMacro === 'carbs' ? "6" : "4"} strokeDasharray={`${Math.max(0, remainingCPct)} ${100 - Math.max(0, remainingCPct)}`} strokeDashoffset={`-${pPct}`} className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'carbs' ? 'opacity-30' : 'opacity-100'}`} />
                                                     <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ec4899" strokeWidth={hoveredMacro === 'sugar' ? "6" : "4"} strokeDasharray={`${Math.max(0, sugarPct)} ${100 - Math.max(0, sugarPct)}`} strokeDashoffset={`-${pPct + remainingCPct}`} className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'sugar' ? 'opacity-30' : 'opacity-100'}`} />
-                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#eab308" strokeWidth={hoveredMacro === 'fats' ? "6" : "4"} strokeDasharray={`${Math.max(0, fPct)} ${100 - Math.max(0, fPct)}`} strokeDashoffset={`-${pPct + remainingCPct + sugarPct}`} className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'fats' ? 'opacity-30' : 'opacity-100'}`} />
+                                                    <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#22c55e" strokeWidth={hoveredMacro === 'fats' ? "6" : "4"} strokeDasharray={`${Math.max(0, fPct)} ${100 - Math.max(0, fPct)}`} strokeDashoffset={`-${pPct + remainingCPct + sugarPct}`} className={`transition-all duration-300 ease-out pointer-events-none ${hoveredMacro && hoveredMacro !== 'fats' ? 'opacity-30' : 'opacity-100'}`} />
 
-                                                    {/* Círculos INTERACTIVOS (invisibles) */}
                                                     <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="transparent" strokeWidth="12" pointerEvents="stroke" strokeDasharray={`${Math.max(0, pPct)} ${100 - Math.max(0, pPct)}`} strokeDashoffset="0" {...getCircleProps('protein')} />
                                                     <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="transparent" strokeWidth="12" pointerEvents="stroke" strokeDasharray={`${Math.max(0, remainingCPct)} ${100 - Math.max(0, remainingCPct)}`} strokeDashoffset={`-${pPct}`} {...getCircleProps('carbs')} />
                                                     <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="transparent" strokeWidth="12" pointerEvents="stroke" strokeDasharray={`${Math.max(0, sugarPct)} ${100 - Math.max(0, sugarPct)}`} strokeDashoffset={`-${pPct + remainingCPct}`} {...getCircleProps('sugar')} />
@@ -673,12 +670,12 @@ const Nutrition = ({ setView }) => {
                                         </div>
 
                                         <div
-                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-all border ${hoveredMacro === 'fats' ? 'bg-bg-primary shadow-sm scale-105 border-yellow-500/50' : 'bg-bg-secondary border-glass-border'}`}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-all border ${hoveredMacro === 'fats' ? 'bg-bg-primary shadow-sm scale-105 border-green-500/50' : 'bg-bg-secondary border-glass-border'}`}
                                             onMouseEnter={() => setHoveredMacro('fats')}
                                             onMouseLeave={() => setHoveredMacro(null)}
                                         >
                                             <div className="flex items-center gap-1.5 mb-1">
-                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#eab308', boxShadow: '0 0 8px rgba(234,179,8,0.5)' }}></div>
+                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e', boxShadow: '0 0 8px rgba(34,197,94,0.5)' }}></div>
                                                 <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Grasas</span>
                                             </div>
                                             <span className="text-lg font-bold text-text-primary">{totals.fats.toFixed(1)}g</span>
@@ -877,8 +874,8 @@ const Nutrition = ({ setView }) => {
                                                             </div>
 
                                                             <div className="flex items-center gap-1 font-bold">
-                                                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#eab308' }}></div>
-                                                                <span style={{ color: '#eab308' }}>{fats}g</span>
+                                                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#22c55e' }}></div>
+                                                                <span style={{ color: '#22c55e' }}>{fats}g</span>
                                                             </div>
 
                                                             <div className="flex items-center gap-1 font-bold">
@@ -994,10 +991,10 @@ const Nutrition = ({ setView }) => {
                                     <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Carbos</span>
                                 </div>
                                 <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
-                                    <div className="p-2 rounded-full bg-yellow-500/10 mb-1.5 shrink-0">
-                                        <Salad size={18} style={{ color: '#eab308' }} />
+                                    <div className="p-2 rounded-full bg-green-500/10 mb-1.5 shrink-0">
+                                        <Salad size={18} style={{ color: '#22c55e' }} />
                                     </div>
-                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#eab308' }}>{Number(viewLog.fats_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#22c55e' }}>{Number(viewLog.fats_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
                                     <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Grasas</span>
                                 </div>
                                 <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">

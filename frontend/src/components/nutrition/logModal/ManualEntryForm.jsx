@@ -110,7 +110,7 @@ const CalculatedMacrosGraph = ({ calories, protein, carbs, fats, sugars }) => {
                                 <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ef4444" strokeWidth="6" strokeDasharray={`${Math.max(0, pPct)} ${100 - Math.max(0, pPct)}`} strokeDashoffset="0" className="transition-all duration-500 ease-out" />
                                 <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#3b82f6" strokeWidth="6" strokeDasharray={`${Math.max(0, remainingCPct)} ${100 - Math.max(0, remainingCPct)}`} strokeDashoffset={`-${pPct}`} className="transition-all duration-500 ease-out" />
                                 <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ec4899" strokeWidth="6" strokeDasharray={`${Math.max(0, sugarPct)} ${100 - Math.max(0, sugarPct)}`} strokeDashoffset={`-${pPct + remainingCPct}`} className="transition-all duration-500 ease-out" />
-                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#eab308" strokeWidth="6" strokeDasharray={`${Math.max(0, fPct)} ${100 - Math.max(0, fPct)}`} strokeDashoffset={`-${pPct + remainingCPct + sugarPct}`} className="transition-all duration-500 ease-out" />
+                                <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#22c55e" strokeWidth="6" strokeDasharray={`${Math.max(0, fPct)} ${100 - Math.max(0, fPct)}`} strokeDashoffset={`-${pPct + remainingCPct + sugarPct}`} className="transition-all duration-500 ease-out" />
                             </>
                         )}
                     </svg>
@@ -137,7 +137,7 @@ const CalculatedMacrosGraph = ({ calories, protein, carbs, fats, sugars }) => {
                     </div>
                     <div className="flex flex-col">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#eab308' }}></div>
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22c55e' }}></div>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Grasas</span>
                         </div>
                         <span className="text-sm font-bold text-text-primary">{fats || 0}g</span>

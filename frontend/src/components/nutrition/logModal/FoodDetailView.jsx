@@ -7,11 +7,11 @@ import { round as formatNumber } from '../../../hooks/useNutritionConstants';
 
 const FoodDetailView = ({ food, onClose, onAdd }) => {
     const { addToast } = useToast();
-    
+
     // 1. Obtener valores base por 100g para cálculos precisos
     const baseValues = useMemo(() => {
         const weightRef = parseFloat(food.weight_g) || 100;
-        
+
         const getBase = (valPer100, totalVal) => {
             if (food[valPer100] !== undefined && food[valPer100] !== null) return parseFloat(food[valPer100]);
             return (parseFloat(totalVal || 0) / weightRef) * 100;
@@ -29,11 +29,11 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
     // 2. Estado del Peso (Editable)
     const defaultWeight = (food.serving_weight_g && food.serving_weight_g > 0) ? food.serving_weight_g : 100;
     const [weight, setWeight] = useState(defaultWeight);
-    
+
     // Estado para Favoritos (Solo visual/local ahora)
     const [isFavorite, setIsFavorite] = useState(false);
     // Guardamos si ya era favorito al inicio para evitar duplicados innecesarios
-    const [wasInitiallyFavorite, setWasInitiallyFavorite] = useState(false); 
+    const [wasInitiallyFavorite, setWasInitiallyFavorite] = useState(false);
 
     useEffect(() => {
         const checkFavorite = async () => {
@@ -104,7 +104,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
         if (!url) return null;
         if (url.startsWith('http')) return url;
         const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-        const rootUrl = apiBase.replace(/\/api\/?$/, ''); 
+        const rootUrl = apiBase.replace(/\/api\/?$/, '');
         return `${rootUrl}${url.startsWith('/') ? '' : '/'}${url}`;
     };
 
@@ -112,16 +112,16 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
         <div className="flex flex-col h-full bg-bg-secondary animate-[slide-in-up_0.3s] overflow-y-auto">
             {/* --- Header / Imagen --- */}
             <div className="relative w-full h-48 bg-gray-900 flex-shrink-0 flex items-center justify-center pb-6">
-                
+
                 {/* Contenedor de Imagen */}
-                <div className="w-full h-full absolute inset-0 opacity-40 blur-lg" 
-                     style={{ backgroundImage: `url('${getImageUrl(food.image_url)}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                
+                <div className="w-full h-full absolute inset-0 opacity-40 blur-lg"
+                    style={{ backgroundImage: `url('${getImageUrl(food.image_url)}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+
                 <div className="relative w-32 h-32 rounded-xl border-2 border-white/50 shadow-xl overflow-hidden z-10">
                     {food.image_url ? (
-                        <img 
-                            src={getImageUrl(food.image_url)} 
-                            alt={food.description} 
+                        <img
+                            src={getImageUrl(food.image_url)}
+                            alt={food.description}
                             className="w-full h-full object-cover"
                         />
                     ) : (
@@ -135,7 +135,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
                 <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-bg-secondary to-transparent z-20" />
 
                 {/* Botón Cerrar */}
-                <button 
+                <button
                     onClick={onClose}
                     className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-colors z-30 border border-white/10"
                 >
@@ -145,18 +145,17 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
 
             {/* --- Contenido --- */}
             <div className="flex-grow p-6 flex flex-col relative z-20 -mt-6 bg-bg-secondary rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
-                
+
                 {/* Nombre y Botón Favoritos */}
                 <div className="flex justify-between items-start mb-6">
                     <h2 className="text-2xl font-bold text-text-primary leading-tight pr-4">
                         {food.description}
                     </h2>
                     {/* Botón Favorito (Toggle Local) */}
-                    <button 
+                    <button
                         onClick={handleToggleFavorite}
-                        className={`p-2 rounded-full flex-shrink-0 transition-all ${
-                            isFavorite ? 'text-accent hover:bg-accent/10' : 'text-text-muted hover:text-text-primary'
-                        }`}
+                        className={`p-2 rounded-full flex-shrink-0 transition-all ${isFavorite ? 'text-accent hover:bg-accent/10' : 'text-text-muted hover:text-text-primary'
+                            }`}
                     >
                         <Star size={24} fill={isFavorite ? "currentColor" : "none"} />
                     </button>
@@ -187,24 +186,22 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
 
                     {/* Botones rápidos */}
                     <div className="flex gap-2">
-                        <button 
+                        <button
                             onClick={() => setWeight(100)}
-                            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all border ${
-                                weight === 100 
-                                ? 'bg-accent text-white border-accent' 
-                                : 'bg-bg-secondary text-text-secondary border-glass-border hover:border-accent/50'
-                            }`}
+                            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all border ${weight === 100
+                                    ? 'bg-accent text-white border-accent'
+                                    : 'bg-bg-secondary text-text-secondary border-glass-border hover:border-accent/50'
+                                }`}
                         >
                             100 g
                         </button>
                         {food.serving_weight_g && food.serving_weight_g !== 100 && (
-                            <button 
+                            <button
                                 onClick={() => setWeight(food.serving_weight_g)}
-                                className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all border ${
-                                    weight === food.serving_weight_g 
-                                    ? 'bg-accent text-white border-accent' 
-                                    : 'bg-bg-secondary text-text-secondary border-glass-border hover:border-accent/50'
-                                }`}
+                                className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all border ${weight === food.serving_weight_g
+                                        ? 'bg-accent text-white border-accent'
+                                        : 'bg-bg-secondary text-text-secondary border-glass-border hover:border-accent/50'
+                                    }`}
                             >
                                 Ración ({food.serving_weight_g}g)
                             </button>
@@ -216,7 +213,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
                 <div className="grid grid-cols-2 gap-4 mb-6">
                     {/* Calorías */}
                     <div className="p-4 bg-bg-primary rounded-2xl border border-glass-border flex flex-col items-center justify-center shadow-sm relative overflow-hidden">
-                         <div className="absolute top-0 left-0 w-1 h-full bg-accent"></div>
+                        <div className="absolute top-0 left-0 w-1 h-full bg-accent"></div>
                         <span className="text-4xl font-extrabold text-text-primary mb-1">
                             {Math.round(currentMacros.calories || 0)}
                         </span>
@@ -225,19 +222,19 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
                             ({formatNumber(baseValues.calories, 1)} / 100g)
                         </span>
                     </div>
-                    
+
                     {/* Resto de Macros */}
                     <div className="grid grid-rows-4 gap-2">
-                        <MacroRow label="Proteína" value={currentMacros.protein} color="text-green-500" barColor="bg-green-500" />
-                        <MacroRow label="Carbos" value={currentMacros.carbs} color="text-blue-500" barColor="bg-blue-500" />
-                        <MacroRow label="Grasas" value={currentMacros.fat} color="text-yellow-500" barColor="bg-yellow-500" />
-                        <MacroRow label="Azúcar" value={currentMacros.sugars} color="text-pink-500" barColor="bg-pink-500" />
+                        <MacroRow label="Proteína" value={currentMacros.protein} hexColor="#ef4444" />
+                        <MacroRow label="Carbos" value={currentMacros.carbs} hexColor="#3b82f6" />
+                        <MacroRow label="Grasas" value={currentMacros.fat} hexColor="#22c55e" />
+                        <MacroRow label="Azúcar" value={currentMacros.sugars} hexColor="#ec4899" />
                     </div>
                 </div>
 
                 {/* Botón de Acción Principal */}
                 <div className="mt-auto">
-                    <button 
+                    <button
                         onClick={handleAddToList}
                         disabled={!weight || weight <= 0}
                         className="w-full py-4 bg-accent hover:bg-accent-hover text-white font-bold rounded-2xl shadow-lg shadow-accent/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -251,12 +248,12 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
     );
 };
 
-// Subcomponente para fila de macros
-const MacroRow = ({ label, value, color, barColor }) => (
+// Subcomponente para fila de macros (usando estilos en línea)
+const MacroRow = ({ label, value, hexColor }) => (
     <div className="flex items-center justify-between px-3 py-2 bg-bg-primary rounded-xl border border-glass-border relative overflow-hidden">
-        <div className={`absolute left-0 top-0 bottom-0 w-1 ${barColor} opacity-80`}></div>
+        <div className="absolute left-0 top-0 bottom-0 w-1 opacity-80" style={{ backgroundColor: hexColor }}></div>
         <span className="text-xs text-text-secondary font-semibold pl-2">{label}</span>
-        <span className={`text-sm font-bold ${color}`}>
+        <span className="text-sm font-bold" style={{ color: hexColor }}>
             {formatNumber(value || 0, 1)}g
         </span>
     </div>
