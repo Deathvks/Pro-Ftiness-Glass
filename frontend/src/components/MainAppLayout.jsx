@@ -156,6 +156,19 @@ export default function MainAppLayout({
     }
   }, [gamificationEvents, clearGamificationEvents, addToast]);
 
+  // --- NUEVO: OBLIGAR A CAMBIAR EL EMAIL DE X (TWITTER) ---
+  useEffect(() => {
+    if (userProfile && userProfile.email && userProfile.email.endsWith('@x-auth.local')) {
+      // Solo abrimos si no hay ya un modal de verificación abierto
+      if (!showCodeVerificationModal && !showEmailVerificationModal) {
+        addToast('Por seguridad, debes vincular un correo real a tu cuenta de X.', 'warning', 6000);
+        setShowEmailVerificationModal(true);
+        // Truco UX: Le limpiamos el correo placeholder para que tenga que escribir el suyo
+        setVerificationEmail(''); 
+      }
+    }
+  }, [userProfile, showCodeVerificationModal, showEmailVerificationModal, setShowEmailVerificationModal, setVerificationEmail, addToast]);
+
   // FIX PWA iOS: Forzamos metaetiquetas de viewport y status bar
   useEffect(() => {
     let metaViewport = document.querySelector('meta[name=viewport]');

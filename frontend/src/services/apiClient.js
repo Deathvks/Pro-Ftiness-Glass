@@ -1,5 +1,6 @@
 /* frontend/src/services/apiClient.js */
 import useAppStore from '../store/useAppStore';
+import { Capacitor } from '@capacitor/core';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -13,6 +14,23 @@ const apiClient = async (endpoint, options = {}) => {
 
     // Headers por defecto.
     const headers = { ...customConfig.headers };
+
+    // --- MODIFICADO: Identificamos si es Nativo, PWA o Web Normal ---
+    let platform = 'web';
+    if (Capacitor.isNativePlatform()) {
+        platform = 'native';
+    } else if (typeof window !== 'undefined') {
+        // Detecta PWA instalada en Chrome/Edge/Android
+        if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+            platform = 'pwa';
+        } 
+        // Detecta PWA instalada en iOS Safari
+        else if (window.navigator && window.navigator.standalone === true) {
+            platform = 'pwa';
+        }
+    }
+    
+    headers['X-App-Platform'] = platform;
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;

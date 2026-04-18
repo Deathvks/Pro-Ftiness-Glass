@@ -89,22 +89,24 @@ registerRoute(
 // --- 4. LÓGICA DE PUSH NOTIFICATIONS ---
 
 self.addEventListener('push', (event) => {
-  let data;
+  if (!event.data) return;
+
+  let payload;
   try {
-    data = event.data.json();
+    payload = event.data.json();
   } catch (e) {
-    data = { body: event.data.text() };
+    payload = { body: event.data.text() };
   }
 
-  const title = data.title || 'Pro Fitness Glass';
+  const title = payload.title || 'Pro Fitness Glass';
   const options = {
-    body: data.body || 'Tienes una nueva notificación.',
-    icon: data.icon || '/pwa-192x192.webp',
-    badge: data.badge || '/pwa-192x192.webp',
-    tag: data.tag || 'general-notification',
-    vibrate: [100, 50, 100],
+    body: payload.body || 'Tienes una nueva notificación.',
+    icon: payload.icon || '/pwa-192x192.png',
+    badge: payload.badge || '/pwa-192x192.png',
+    tag: payload.tag || `notif-${Date.now()}`,
+    vibrate: payload.vibrate || [100, 50, 100],
     data: {
-      url: data.url || '/',
+      url: (payload.data && payload.data.url) ? payload.data.url : '/',
     },
   };
 

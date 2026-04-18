@@ -106,7 +106,8 @@ export const loginUser = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { email, password } = req.body;
+  let { email, password } = req.body;
+  email = email.toLowerCase().trim(); // Limpieza del email
 
   try {
     let user;
@@ -191,8 +192,12 @@ export const loginUser = async (req, res, next) => {
       });
     }
 
+    // Lógica para tiempo de expiración según plataforma
+    const platform = req.headers['x-app-platform'] || 'web';
+    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+
     const payload = { userId: user.id, role: user.role };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
 
     await createUserSession(user.id, token, req);
 
@@ -237,7 +242,7 @@ export const googleLogin = async (req, res, next) => {
       });
       const payload = ticket.getPayload();
       googleUser = {
-        email: payload.email,
+        email: payload.email.toLowerCase().trim(), // Limpieza del email
         name: payload.name,
         googleId: payload.sub,
         picture: payload.picture
@@ -255,7 +260,7 @@ export const googleLogin = async (req, res, next) => {
 
         const data = await response.json();
         googleUser = {
-          email: data.email,
+          email: data.email.toLowerCase().trim(), // Limpieza del email
           name: data.name,
           googleId: data.sub,
           picture: data.picture
@@ -343,8 +348,11 @@ export const googleLogin = async (req, res, next) => {
       });
     }
 
+    const platform = req.headers['x-app-platform'] || 'web';
+    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+
     const appPayload = { userId: user.id, role: user.role };
-    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn });
 
     await createUserSession(user.id, appToken, req);
 
@@ -404,7 +412,7 @@ export const discordLogin = async (req, res, next) => {
       return res.status(400).json({ error: 'Se requiere acceso al email de Discord.' });
     }
 
-    const email = discordUser.email;
+    const email = discordUser.email.toLowerCase().trim(); // Limpieza del email
     const discordId = discordUser.id;
     const picture = discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordId}/${discordUser.avatar}.png` : null;
 
@@ -484,8 +492,11 @@ export const discordLogin = async (req, res, next) => {
       });
     }
 
+    const platform = req.headers['x-app-platform'] || 'web';
+    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+
     const appPayload = { userId: user.id, role: user.role };
-    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn });
 
     await createUserSession(user.id, appToken, req);
 
@@ -543,7 +554,7 @@ export const facebookLogin = async (req, res, next) => {
       return res.status(400).json({ error: 'Se requiere acceso al email de Facebook.' });
     }
 
-    const email = fbUser.email;
+    const email = fbUser.email.toLowerCase().trim(); // Limpieza del email
     const facebookId = fbUser.id;
     const picture = fbUser.picture?.data?.url || null;
 
@@ -623,8 +634,11 @@ export const facebookLogin = async (req, res, next) => {
       });
     }
 
+    const platform = req.headers['x-app-platform'] || 'web';
+    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+
     const appPayload = { userId: user.id, role: user.role };
-    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn });
 
     await createUserSession(user.id, appToken, req);
 
@@ -708,7 +722,7 @@ export const xLogin = async (req, res, next) => {
     const { data: xUser } = await userResponse.json();
 
     // X (Twitter) OAuth 2.0 no devuelve el email. Usamos un email interno seguro como placeholder.
-    const email = `${xUser.username}@x-auth.local`;
+    const email = `${xUser.username}@x-auth.local`.toLowerCase().trim(); // Limpieza del placeholder
     const xId = xUser.id;
     const picture = xUser.profile_image_url ? xUser.profile_image_url.replace('_normal', '') : null;
 
@@ -793,8 +807,11 @@ export const xLogin = async (req, res, next) => {
       });
     }
 
+    const platform = req.headers['x-app-platform'] || 'web';
+    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+
     const appPayload = { userId: user.id, role: user.role };
-    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn });
 
     await createUserSession(user.id, appToken, req);
 
@@ -888,6 +905,7 @@ export const githubLogin = async (req, res, next) => {
       return res.status(400).json({ error: 'Se requiere acceso al email de GitHub.' });
     }
 
+    email = email.toLowerCase().trim(); // Limpieza del email
     const githubId = githubUser.id.toString();
     const picture = githubUser.avatar_url || null;
 
@@ -966,8 +984,11 @@ export const githubLogin = async (req, res, next) => {
       });
     }
 
+    const platform = req.headers['x-app-platform'] || 'web';
+    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+
     const appPayload = { userId: user.id, role: user.role };
-    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn });
 
     await createUserSession(user.id, appToken, req);
 
@@ -1046,11 +1067,12 @@ export const spotifyLogin = async (req, res, next) => {
 
     const spotifyUser = await userResponse.json();
 
-    const email = spotifyUser.email;
+    let email = spotifyUser.email;
     if (!email) {
       return res.status(400).json({ error: 'Se requiere acceso al email de Spotify.' });
     }
 
+    email = email.toLowerCase().trim(); // Limpieza del email
     const spotifyId = spotifyUser.id;
     const picture = spotifyUser.images && spotifyUser.images.length > 0 ? spotifyUser.images[0].url : null;
     const name = spotifyUser.display_name;
@@ -1130,8 +1152,11 @@ export const spotifyLogin = async (req, res, next) => {
       });
     }
 
+    const platform = req.headers['x-app-platform'] || 'web';
+    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+
     const appPayload = { userId: user.id, role: user.role };
-    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const appToken = jwt.sign(appPayload, process.env.JWT_SECRET, { expiresIn });
 
     await createUserSession(user.id, appToken, req);
 
@@ -1190,9 +1215,10 @@ export const register = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  try {
-    const { username, email, password } = req.body;
+  let { username, email, password } = req.body;
+  email = email.toLowerCase().trim(); // Limpieza del email
 
+  try {
     if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
       return res.status(400).json({ error: 'Nombre de usuario solo puede contener letras, números, _, . y -' });
     }
@@ -1266,18 +1292,45 @@ export const verifyEmail = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  try {
-    const { email, code } = req.body;
+  let { email, code } = req.body;
+  email = email.toLowerCase().trim(); // Limpieza del email
+  code = code.trim(); // Limpieza del código
 
-    const user = await User.findOne({ where: { email } });
+  try {
+    let isPendingUpdate = false;
+    let user = await User.findOne({ where: { email } });
+
+    // Si no encuentra el usuario por el correo introducido, leemos el token de la sesión para saber quién es
+    if (!user) {
+      const authHeader = req.headers['authorization'];
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          user = await User.findByPk(decoded.userId);
+          // Solo permitimos este atajo si la cuenta tiene el correo falso
+          if (user && user.email.endsWith('@x-auth.local')) {
+            isPendingUpdate = true;
+          } else {
+            user = null;
+          }
+        } catch (err) {
+          user = null;
+        }
+      }
+    }
 
     if (!user) {
       return res.status(400).json({ error: 'Usuario no encontrado' });
     }
 
-    if (user.is_verified) {
+    if (user.is_verified && !isPendingUpdate) {
+      const platform = req.headers['x-app-platform'] || 'web';
+      const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+
       const payload = { userId: user.id, role: user.role };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
+
       await createUserSession(user.id, token, req);
       return res.status(200).json({
         message: 'Email ya verificado.',
@@ -1308,20 +1361,30 @@ export const verifyEmail = async (req, res, next) => {
       return res.status(400).json({ error: 'Código incorrecto' });
     }
 
-    await user.update({
-      is_verified: true,
-      verification_code: null,
-      verification_code_expires_at: null
-    });
+    // Aplicar los cambios en la Base de Datos
+    if (isPendingUpdate) {
+      await user.update({
+        email: email, // Actualizamos con el correo real por fin
+        is_verified: true,
+        verification_code: null,
+        verification_code_expires_at: null
+      });
+    } else {
+      await user.update({
+        is_verified: true,
+        verification_code: null,
+        verification_code_expires_at: null
+      });
+    }
+
+    const platform = req.headers['x-app-platform'] || 'web';
+    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
 
     const payload = { userId: user.id, role: user.role };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
 
     await createUserSession(user.id, token, req);
-
-    // --- MODIFICACIÓN: Gamificación controlada ---
     await handleDailyLoginGamification(user);
-    // --- FIN MODIFICACIÓN ---
 
     createNotification(user.id, {
       type: 'success',
@@ -1348,20 +1411,48 @@ export const verifyEmail = async (req, res, next) => {
 };
 
 export const resendVerificationEmail = async (req, res, next) => {
-  const { email } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  let { email } = req.body;
+  email = email.toLowerCase().trim(); // Limpieza del email
 
   try {
-    const user = await User.findOne({ where: { email } });
+    let isPendingUpdate = false;
+    let user = await User.findOne({ where: { email } });
+
+    // Si no lo encontramos por el correo, lo buscamos por su token de sesión actual
+    if (!user) {
+      const authHeader = req.headers['authorization'];
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          user = await User.findByPk(decoded.userId);
+          // Asegurarse de que este usuario de verdad tiene el email falso
+          if (user && user.email.endsWith('@x-auth.local')) {
+            isPendingUpdate = true;
+          } else {
+            user = null;
+          }
+        } catch(err) {
+          user = null;
+        }
+      }
+    }
 
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado. Por favor, regístrate nuevamente.' });
     }
 
-    if (user.is_verified) {
-      return res.status(400).json({ error: 'La cuenta ya está verificada.' });
+    if (user.is_verified && !user.email.endsWith('@x-auth.local') && !isPendingUpdate) {
+      return res.status(400).json({ error: 'Tu cuenta ya está verificada con un correo válido.' });
     }
 
     const verificationCode = generateVerificationCode();
+    // Enviamos el código al correo nuevo que nos llegó en req.body, NO al de la base de datos
     const emailResult = await sendVerificationEmail(email, verificationCode);
 
     if (!emailResult.success) {
@@ -1381,7 +1472,13 @@ export const resendVerificationEmail = async (req, res, next) => {
 };
 
 export const updateEmailForVerification = async (req, res, next) => {
-  const { email: newEmail } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  let { email: newEmail } = req.body;
+  newEmail = newEmail.toLowerCase().trim(); // Limpieza del email
   const { userId } = req.user;
 
   try {
@@ -1390,33 +1487,40 @@ export const updateEmailForVerification = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    if (user.is_verified) {
-      return res.status(400).json({ error: 'La cuenta ya está verificada.' });
+    if (user.is_verified && !user.email.endsWith('@x-auth.local')) {
+      return res.status(400).json({ error: 'Tu cuenta ya está verificada con un correo válido.' });
     }
 
-    const existingUser = await User.findOne({ where: { email: newEmail, is_verified: true } });
+    const existingUser = await User.findOne({ where: { email: newEmail } });
     if (existingUser && existingUser.id !== userId) {
-      return res.status(409).json({ error: 'El email ya está en uso.' });
+      return res.status(409).json({ error: 'El email ya está en uso por otra cuenta.' });
     }
 
     const verificationCode = generateVerificationCode();
     await sendVerificationEmail(newEmail, verificationCode);
 
+    // Solo actualizamos el código. El correo en DB NO CAMBIA hasta que ponga el código.
     await user.update({
-      email: newEmail,
       verification_code: verificationCode,
       verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
     });
 
-    res.json({ message: 'Email actualizado y código de verificación enviado.' });
+    res.json({ message: 'Código de verificación enviado al nuevo email.' });
   } catch (error) {
     next(error);
   }
 };
 
 export const forgotPassword = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  let { email } = req.body;
+  email = email.toLowerCase().trim(); // Limpieza del email
+
   try {
-    const { email } = req.body;
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
@@ -1491,7 +1595,7 @@ const authController = {
   facebookLogin,
   xLogin,
   githubLogin,
-  spotifyLogin, // Exportada nueva función
+  spotifyLogin,
   logoutUser,
   resendVerificationEmail,
   updateEmailForVerification,

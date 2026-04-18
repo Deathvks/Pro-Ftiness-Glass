@@ -51,3 +51,6 @@ frontend/.env.*
 
 # Ignorar carpeta public (asegurando que es directorio)
 public/
+
+# Firebase Admin Key
+firebase-admin.json

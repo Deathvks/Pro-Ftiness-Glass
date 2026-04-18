@@ -25,6 +25,10 @@ const AndroidDownloadPrompt = () => {
 
             if (!isAndroid) return;
 
+            // 2.5. Comprobar si es PWA (Standalone). Si es PWA, NO mostramos el aviso.
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            if (isStandalone) return;
+
             // 3. Comprobar frecuencia (localStorage)
             const lastSeenStr = localStorage.getItem(STORAGE_KEY);
             if (lastSeenStr) {
@@ -38,7 +42,7 @@ const AndroidDownloadPrompt = () => {
                 }
             }
 
-            // 4. Obtener URL desde version.json (Fuente única de verdad)
+            // 4. Obtener URL desde version.json (Fuente única de verdad) o usar enlace de Play Store
             try {
                 // Usamos ruta relativa porque este componente corre en la web/PWA
                 const response = await fetch(`/version.json?t=${Date.now()}`);
@@ -46,12 +50,21 @@ const AndroidDownloadPrompt = () => {
                     const data = await response.json();
                     if (data && data.downloadUrl) {
                         setDownloadUrl(data.downloadUrl);
-                        // Solo mostramos el prompt si hemos conseguido una URL válida
-                        setTimeout(() => setIsVisible(true), 2000);
+                    } else {
+                        // Enlace directo si el JSON no tiene la propiedad
+                        setDownloadUrl("https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es");
                     }
+                } else {
+                    // Enlace directo si la respuesta del fetch no es ok
+                    setDownloadUrl("https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es");
                 }
             } catch (error) {
                 console.warn("No se pudo cargar la configuración de versión dinámica", error);
+                // Enlace directo si falla el fetch
+                setDownloadUrl("https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es");
+            } finally {
+                // Aseguramos que se muestre después de haber establecido alguna URL
+                setTimeout(() => setIsVisible(true), 2000);
             }
         };
 
@@ -70,7 +83,7 @@ const AndroidDownloadPrompt = () => {
     if (!isVisible || !downloadUrl) return null;
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-[100] animate-[slide-in-up_0.5s_ease-out] flex justify-center">
+        <div className="fixed top-4 left-4 right-4 z-[10000] animate-[slide-in-down_0.5s_ease-out] flex justify-center">
             {/* CORRECCIÓN: Borde actualizado para modo OLED/Dark */}
             <div className="bg-bg-secondary border border-transparent dark:border dark:border-white/10 shadow-xl rounded-2xl p-4 w-full max-w-md relative overflow-hidden">
 

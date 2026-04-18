@@ -1,7 +1,7 @@
 /* frontend/src/App.jsx */
 import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Home, Dumbbell, BarChart2, Settings, Utensils, Users, User } from 'lucide-react';
+import { Home, Dumbbell, BarChart2, Settings, Utensils, Users, User, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -27,7 +27,7 @@ import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
 import SEOHead from './components/SEOHead';
 import StoryViewer from './components/StoryViewer';
-import PermissionModal from './components/PermissionModal'; // <-- AÑADIDO
+import PermissionModal from './components/PermissionModal'; 
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import LandingPage from './pages/LandingPage'; 
@@ -89,7 +89,6 @@ export default function App() {
     scheduleDailyReminders 
   } = useLocalNotifications();
 
-  // --- AÑADIDOS LOS ESTADOS PARA EL MODAL GLOBAL DE PERMISOS ---
   const {
     isInitialLoad,
     showGlobalPermissionModal,
@@ -111,6 +110,7 @@ export default function App() {
     isResting,
     restTimerMode,
     myStories,
+    sessionExpired,
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -120,11 +120,38 @@ export default function App() {
     isResting: state.isResting,
     restTimerMode: state.restTimerMode,
     myStories: state.myStories,
+    sessionExpired: state.sessionExpired,
   }));
 
   const isInstalledApp = useMemo(() => {
     return Capacitor.isNativePlatform() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   }, []);
+
+  // --- NUEVO VIGILANTE DE TOKEN INSTANTÁNEO ---
+  useEffect(() => {
+    if (!isAuthenticated || sessionExpired) return;
+
+    const checkTokenExistence = () => {
+      const token = localStorage.getItem('pro_fitness_token');
+      if (!token) {
+        useAppStore.getState().handleSessionExpiry();
+      }
+    };
+
+    // Escuchar cambios desde otras pestañas
+    window.addEventListener('storage', checkTokenExistence);
+    // Escuchar foco de ventana (ej. salir de F12 a la web)
+    window.addEventListener('focus', checkTokenExistence);
+    // Intervalo de 1 segundo para hacerlo verdaderamente instantáneo en la misma pestaña
+    const intervalId = setInterval(checkTokenExistence, 1000);
+
+    return () => {
+      window.removeEventListener('storage', checkTokenExistence);
+      window.removeEventListener('focus', checkTokenExistence);
+      clearInterval(intervalId);
+    };
+  }, [isAuthenticated, sessionExpired]);
+  // --- FIN NUEVO VIGILANTE ---
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -401,7 +428,7 @@ export default function App() {
     navItems, handleLogoutClick, showLogoutConfirm, confirmLogout, handleShowPolicy,
     fetchInitialData, verificationProps, handleHeaderAvatarClick, myStories,
     isResting, restTimerMode, show2FAPromo, viewingMyStory, hasStories,
-    showGlobalPermissionModal, missingPermissionName // dependencias actualizadas
+    showGlobalPermissionModal, missingPermissionName
   ]);
 
   const isLandingPage = !isAuthenticated && currentPath === '/';
@@ -461,6 +488,26 @@ export default function App() {
       <VersionUpdater />
       <APKUpdater />
       <AndroidDownloadPrompt />
+
+      {/* --- INICIO MODAL DE SESIÓN CADUCADA --- */}
+      {sessionExpired && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-bg-primary p-6 rounded-2xl shadow-xl max-w-sm w-full text-center border border-bg-secondary flex flex-col items-center">
+            <AlertTriangle size={48} className="text-red-500 mb-4" />
+            <h2 className="text-xl font-bold text-text-primary mb-2">Sesión Caducada</h2>
+            <p className="text-text-secondary mb-6 text-sm">
+              Tu sesión ha expirado por seguridad o has cerrado sesión. Por favor, recarga para continuar.
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full bg-accent text-white font-bold py-3 px-4 rounded-xl active:scale-95 transition-all"
+            >
+              Recargar Aplicación
+            </button>
+          </div>
+        </div>
+      )}
+      {/* --- FIN MODAL DE SESIÓN CADUCADA --- */}
 
       <Routes>
         <Route path="/privacy" element={

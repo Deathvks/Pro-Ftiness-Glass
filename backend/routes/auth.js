@@ -25,7 +25,8 @@ router.post('/register', authLimiter, [
         .trim()
         .isLength({ min: 3, max: 30 }).withMessage('El nombre de usuario debe tener entre 3 y 30 caracteres.')
         .matches(/^[a-zA-Z0-9_.-]+$/).withMessage('Nombre de usuario solo puede contener letras, números, _, . y - (sin espacios).'), // Añadido validador regex y longitud
-    body('email', 'Por favor, incluye un email válido').isEmail().normalizeEmail(),
+    // FIX: Usamos toLowerCase y trim en lugar de normalizeEmail para no alterar correos de Gmail
+    body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim(),
     body('password', 'La contraseña debe tener 6 o más caracteres').isLength({ min: 6 })
     // --- FIN MODIFICACIÓN ---
 ], authController.register);
@@ -33,21 +34,25 @@ router.post('/register', authLimiter, [
 // Nueva ruta para verificar email
 router.post('/verify-email', authLimiter, [
     // --- INICIO MODIFICACIÓN: Usar 'body' ---
-    body('email', 'Por favor, incluye un email válido').isEmail().normalizeEmail(),
+    body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim(),
     body('code', 'El código de verificación es requerido').not().isEmpty().trim()
     // --- FIN MODIFICACIÓN ---
 ], authController.verifyEmail);
 
 router.post('/resend-verification', [
     // --- INICIO MODIFICACIÓN: Usar 'body' ---
-    body('email', 'Por favor, incluye un email válido').isEmail().normalizeEmail()
+    body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim()
     // --- FIN MODIFICACIÓN ---
 ], authController.resendVerificationEmail);
-router.put('/update-email-verification', authenticateToken, authController.updateEmailForVerification);
+
+// FIX: Añadida la misma validación de email a esta ruta para garantizar consistencia
+router.put('/update-email-verification', authenticateToken, [
+    body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim()
+], authController.updateEmailForVerification);
 
 router.post('/login', authLimiter, [
     // --- INICIO MODIFICACIÓN: Usar 'body' ---
-    body('email', 'Por favor, incluye un email válido').isEmail().normalizeEmail(),
+    body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim(),
     body('password', 'La contraseña es requerida').not().isEmpty()
     // --- FIN MODIFICACIÓN ---
 ], authController.loginUser);
@@ -95,7 +100,7 @@ router.post('/logout', authController.logoutUser);
 // Rutas para reseteo de contraseña
 router.post('/forgot-password', authLimiter, [
     // --- INICIO MODIFICACIÓN: Usar 'body' ---
-    body('email', 'Por favor, incluye un email válido').isEmail().normalizeEmail(),
+    body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim(),
     // --- FIN MODIFICACIÓN ---
 ], authController.forgotPassword);
 

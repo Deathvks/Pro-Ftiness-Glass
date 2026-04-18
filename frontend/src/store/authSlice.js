@@ -21,6 +21,7 @@ export const createAuthSlice = (set, get) => ({
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
+    sessionExpired: false, // <-- NUEVO: Estado para el modal instantáneo de caducidad
 
     // --- INICIO MODIFICACIÓN 2FA ---
     // Estado para saber si estamos esperando el código de segunda fase
@@ -65,7 +66,8 @@ export const createAuthSlice = (set, get) => ({
             token,
             isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null // Guardamos el usuario si existe
+            userProfile: user || null, // Guardamos el usuario si existe
+            sessionExpired: false // Reiniciamos por si acaso
         });
     },
 
@@ -97,7 +99,8 @@ export const createAuthSlice = (set, get) => ({
             token,
             isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null
+            userProfile: user || null,
+            sessionExpired: false
         });
     },
 
@@ -124,7 +127,8 @@ export const createAuthSlice = (set, get) => ({
             token,
             isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null
+            userProfile: user || null,
+            sessionExpired: false
         });
     },
     // --- FIN MODIFICACIÓN DISCORD ---
@@ -152,7 +156,8 @@ export const createAuthSlice = (set, get) => ({
             token,
             isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null
+            userProfile: user || null,
+            sessionExpired: false
         });
     },
     // --- FIN MODIFICACIÓN FACEBOOK ---
@@ -181,7 +186,8 @@ export const createAuthSlice = (set, get) => ({
             token,
             isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null
+            userProfile: user || null,
+            sessionExpired: false
         });
     },
     // --- FIN MODIFICACIÓN X ---
@@ -209,7 +215,8 @@ export const createAuthSlice = (set, get) => ({
             token,
             isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null
+            userProfile: user || null,
+            sessionExpired: false
         });
     },
     // --- FIN DE LA MODIFICACIÓN ---
@@ -238,7 +245,8 @@ export const createAuthSlice = (set, get) => ({
             token,
             isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null
+            userProfile: user || null,
+            sessionExpired: false
         });
     },
     // --- FIN DE LA MODIFICACIÓN ---
@@ -258,7 +266,8 @@ export const createAuthSlice = (set, get) => ({
             token,
             isAuthenticated: true,
             twoFactorPending: null,
-            userProfile: user || null
+            userProfile: user || null,
+            sessionExpired: false
         });
     },
 
@@ -280,6 +289,7 @@ export const createAuthSlice = (set, get) => ({
             userProfile: null,
             isLoading: false,
             twoFactorPending: null,
+            sessionExpired: false
             // NO reseteamos cookieConsent aquí
         });
     },
@@ -290,12 +300,13 @@ export const createAuthSlice = (set, get) => ({
         // Mantenemos el workout activo en localStorage (NO llamamos a clearWorkoutState)
         get().clearDataState();
 
+        // <-- MODIFICADO: Solo eliminamos el token y activamos la caducidad.
+        // Mantenemos isAuthenticated en true temporalmente y el perfil para que no salte al login y la interfaz de fondo no cambie bruscamente.
         set({
-            isAuthenticated: false,
             token: null,
-            userProfile: null,
             isLoading: false,
             twoFactorPending: null,
+            sessionExpired: true // Activamos el modal
         });
     },
 
