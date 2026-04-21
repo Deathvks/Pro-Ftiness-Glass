@@ -16,6 +16,13 @@ export const getAllUsers = async (req, res, next) => {
         'username',
         'profile_image_url',
         'lastSeen',
+        // NUEVO: Añadimos los IDs sociales para que el frontend sepa el método de inicio de sesión
+        'google_id',
+        'discord_id',
+        'x_id',
+        'github_id',
+        'spotify_id',
+        'facebook_id',
         // CORRECCIÓN CRÍTICA: Mapeo explícito de la columna de base de datos al atributo
         ['created_at', 'createdAt']
       ],

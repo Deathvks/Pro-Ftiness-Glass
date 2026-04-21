@@ -41,6 +41,32 @@ const formatDateSafe = (dateString) => {
   }
 };
 
+// Componente para indicar el método de inicio de sesión como un pequeño Badge
+const LoginMethodBadge = ({ user }) => {
+  const getMethod = () => {
+    if (user.google_id) return { type: 'Google', bg: 'bg-white', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg' };
+    if (user.discord_id) return { type: 'Discord', bg: 'bg-[#5865F2]', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/discord/discord-original.svg' };
+    if (user.github_id) return { type: 'GitHub', bg: 'bg-white', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg' };
+    if (user.spotify_id) return { type: 'Spotify', bg: 'bg-[#1DB954]', icon: 'https://upload.wikimedia.org/wikipedia/commons/2/26/Spotify_logo_with_text.svg' };
+    if (user.x_id) return { type: 'X', bg: 'bg-white', icon: 'https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg' };
+    if (user.facebook_id) return { type: 'Facebook', bg: 'bg-white', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/facebook/facebook-original.svg' };
+    // Por defecto: App Nativa
+    return { type: 'App', bg: 'bg-accent', isApp: true };
+  };
+
+  const method = getMethod();
+
+  return (
+    <div title={`Registrado vía ${method.type}`} className={`w-5 h-5 flex items-center justify-center rounded-full overflow-hidden shrink-0 ${method.bg} ring-2 ring-bg-secondary relative group`}>
+      {method.isApp ? (
+        <Smartphone size={10} className="text-white" />
+      ) : (
+        <img src={method.icon} alt={method.type} className="w-3 h-3 object-contain" />
+      )}
+    </div>
+  );
+};
+
 // Componente para el indicador de estado
 const StatusIndicator = ({ lastSeen }) => {
   const [isOnline, setIsOnline] = useState(false);
@@ -116,10 +142,6 @@ const AdminPanel = ({ onCancel }) => {
     if (isInitialLoad) setIsLoading(true);
     try {
       const data = await getAllUsers();
-      // Debug para ver qué campos trae el usuario realmente
-      if (data && data.length > 0) {
-        console.log('Usuario ejemplo (check fecha):', data[0]);
-      }
       setUsers(data);
     } catch (error) {
       if (isInitialLoad) {
@@ -231,6 +253,13 @@ const AdminPanel = ({ onCancel }) => {
     return user.created_at || user.createdAt || user.register_date || user.date || null;
   };
 
+  // Helper para la URL de avatar
+  const getAvatarUrl = (user) => {
+    if (!user.profile_image_url) return null;
+    if (user.profile_image_url.startsWith('http')) return user.profile_image_url;
+    return `${API_URL}${user.profile_image_url}`;
+  };
+
   // --- LÓGICA DE ORDENACIÓN ---
   const sortedUsers = useMemo(() => {
     const sorted = [...users];
@@ -243,7 +272,7 @@ const AdminPanel = ({ onCancel }) => {
 
     switch (sortBy) {
       case 'date':
-        // Recientes ARRIBA (Fecha Mayor - Fecha Menor = Positivo -> B va antes)
+        // Recientes ARRIBA
         return sorted.sort((a, b) => {
           const timeA = getTime(getUserDate(a));
           const timeB = getTime(getUserDate(b));
@@ -269,7 +298,8 @@ const AdminPanel = ({ onCancel }) => {
   }, [reports, reportPage]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-2 sm:p-4 lg:p-8 animate-[fade-in_0.5s_ease-out]">
+    // CORRECCIÓN: pb-24 en móvil para salvar el navbar inferior, md:pb-8 para escritorio
+    <div className="w-full max-w-6xl mx-auto p-2 pb-24 md:p-4 md:pb-8 lg:p-8 animate-[fade-in_0.5s_ease-out]">
       <button onClick={onCancel} className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4">
         <ChevronLeft size={20} />
         Volver a Ajustes
@@ -280,11 +310,12 @@ const AdminPanel = ({ onCancel }) => {
 
       {/* Navegación de Pestañas */}
       <div className="flex gap-4 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+        {/* CORRECCIÓN: Sombras eliminadas en modo claro para que no se vea el borde negro raro */}
         <button
           onClick={() => setActiveTab('users')}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === 'users'
-            ? 'bg-accent text-bg-primary shadow-lg shadow-accent/20'
-            : 'bg-glass-light border border-glass-border text-text-secondary hover:bg-white/5'
+            ? 'bg-accent text-white dark:text-bg-primary'
+            : 'bg-glass-light border border-glass-border text-text-secondary hover:bg-black/5 dark:hover:bg-white/5'
             }`}
         >
           <Users size={20} />
@@ -293,8 +324,8 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('reports')}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === 'reports'
-            ? 'bg-accent text-bg-primary shadow-lg shadow-accent/20'
-            : 'bg-glass-light border border-glass-border text-text-secondary hover:bg-white/5'
+            ? 'bg-accent text-white dark:text-bg-primary'
+            : 'bg-glass-light border border-glass-border text-text-secondary hover:bg-black/5 dark:hover:bg-white/5'
             }`}
         >
           <Bug size={20} />
@@ -305,7 +336,7 @@ const AdminPanel = ({ onCancel }) => {
         </button>
       </div>
 
-      <GlassCard className="p-4 sm:p-6">
+      <GlassCard className="p-4 sm:p-6 shadow-sm">
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
@@ -332,7 +363,7 @@ const AdminPanel = ({ onCancel }) => {
                 {/* Botón Crear */}
                 <button
                   onClick={() => setIsCreatingUser(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-accent text-bg-secondary font-semibold transition hover:scale-105 whitespace-nowrap flex-1 sm:flex-none"
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-accent text-white dark:text-bg-secondary font-semibold transition hover:scale-105 whitespace-nowrap flex-1 sm:flex-none"
                 >
                   <Plus size={18} />
                   <span className="hidden sm:inline">Crear Usuario</span>
@@ -350,7 +381,7 @@ const AdminPanel = ({ onCancel }) => {
                   <table className="w-full text-left">
                     <thead className="border-b border-glass-border text-text-secondary text-sm">
                       <tr>
-                        <th className="p-3">Nombre</th>
+                        <th className="p-3">Usuario</th>
                         <th className="p-3">Email</th>
                         <th className="p-3">Fecha Registro</th>
                         <th className="p-3 text-center">Estado</th>
@@ -361,8 +392,26 @@ const AdminPanel = ({ onCancel }) => {
                     </thead>
                     <tbody>
                       {sortedUsers.map(user => (
-                        <tr key={user.id} className="border-b border-glass-border last:border-b-0 hover:bg-white/5 transition-colors">
-                          <td className="p-3 font-semibold align-middle">{user.username || user.name}</td>
+                        <tr key={user.id} className="border-b border-glass-border last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                          <td className="p-3 font-semibold align-middle">
+                            <div className="flex items-center gap-3">
+                              <div className="relative">
+                                {/* Avatar Foto */}
+                                {getAvatarUrl(user) ? (
+                                  <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-10 h-10 rounded-full object-cover border border-glass-border shadow-sm bg-bg-secondary" />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold uppercase border border-glass-border shadow-sm">
+                                    {(user.username || user.name || '?').charAt(0)}
+                                  </div>
+                                )}
+                                {/* Badge de método de inicio de sesión superpuesto */}
+                                <div className="absolute -bottom-1 -right-1">
+                                  <LoginMethodBadge user={user} />
+                                </div>
+                              </div>
+                              <span>{user.username || user.name}</span>
+                            </div>
+                          </td>
                           <td className="p-3 text-text-secondary align-middle text-sm">{user.email}</td>
                           <td className="p-3 text-text-muted align-middle text-sm font-mono">
                             {formatDateSafe(getUserDate(user))}
@@ -371,7 +420,7 @@ const AdminPanel = ({ onCancel }) => {
                             <StatusIndicator lastSeen={user.lastSeen} />
                           </td>
                           <td className="p-3 align-middle text-center">
-                            <span className={`inline-flex items-center px-2 py-1 text-xs font-bold rounded-full capitalize ${user.role === 'admin' ? 'bg-accent-transparent text-accent' : 'bg-bg-secondary text-text-secondary'}`}>
+                            <span className={`inline-flex items-center px-2 py-1 text-xs font-bold rounded-full capitalize ${user.role === 'admin' ? 'bg-accent/10 text-accent' : 'bg-bg-secondary text-text-secondary'}`}>
                               {user.role}
                             </span>
                           </td>
@@ -405,20 +454,36 @@ const AdminPanel = ({ onCancel }) => {
                 {/* Vista Tarjetas Móvil (Menos de md) */}
                 <div className="md:hidden space-y-3">
                   {sortedUsers.map(user => (
-                    <div key={user.id} className="bg-glass-light border border-glass-border rounded-xl p-4 text-left shadow-sm">
+                    <div key={user.id} className="bg-glass-light border border-glass-border rounded-xl p-4 text-left">
                       <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1 min-w-0 pr-2">
-                          <h3 className="font-bold text-base truncate text-white">{user.username || user.name}</h3>
-                          <p className="text-text-secondary text-xs truncate">{user.email}</p>
+                        <div className="flex-1 min-w-0 pr-2 flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            {/* Avatar Foto */}
+                            {getAvatarUrl(user) ? (
+                              <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-10 h-10 rounded-full object-cover border border-glass-border bg-bg-secondary" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold uppercase border border-glass-border">
+                                {(user.username || user.name || '?').charAt(0)}
+                              </div>
+                            )}
+                            {/* Badge de método de inicio de sesión superpuesto */}
+                            <div className="absolute -bottom-1 -right-1">
+                              <LoginMethodBadge user={user} />
+                            </div>
+                          </div>
+                          <div className="flex flex-col overflow-hidden">
+                            <h3 className="font-bold text-base truncate text-text-primary">{user.username || user.name}</h3>
+                            <p className="text-text-secondary text-xs truncate">{user.email}</p>
+                          </div>
                         </div>
-                        <div className="flex gap-1">
-                          <button onClick={() => setUserToEdit(user)} className="p-2 bg-white/5 rounded-lg text-text-secondary hover:text-accent transition"><Edit size={16} /></button>
-                          <button onClick={() => setUserToDelete(user)} className="p-2 bg-white/5 rounded-lg text-text-secondary hover:text-red transition"><Trash2 size={16} /></button>
+                        <div className="flex gap-1 shrink-0">
+                          <button onClick={() => setUserToEdit(user)} className="p-2 bg-black/5 dark:bg-white/5 rounded-lg text-text-secondary hover:text-accent transition"><Edit size={16} /></button>
+                          <button onClick={() => setUserToDelete(user)} className="p-2 bg-black/5 dark:bg-white/5 rounded-lg text-text-secondary hover:text-red transition"><Trash2 size={16} /></button>
                         </div>
                       </div>
 
                       {/* Información en Grid compacto */}
-                      <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs mt-2 border-t border-white/5 pt-2">
+                      <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs mt-3 border-t border-glass-border pt-3">
                         <div className="flex items-center gap-2">
                           <Calendar size={12} className="text-text-muted" />
                           <span className="text-text-muted">{formatDateSafe(getUserDate(user))}</span>
@@ -430,7 +495,7 @@ const AdminPanel = ({ onCancel }) => {
 
                         <div className="flex items-center gap-2">
                           <span className="text-text-muted">Rol:</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${user.role === 'admin' ? 'bg-accent/20 text-accent' : 'bg-white/10 text-text-secondary'}`}>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${user.role === 'admin' ? 'bg-accent/20 text-accent' : 'bg-black/10 dark:bg-white/10 text-text-secondary'}`}>
                             {user.role}
                           </span>
                         </div>
@@ -457,7 +522,7 @@ const AdminPanel = ({ onCancel }) => {
             )}
           </>
         ) : (
-          /* --- CONTENIDO PESTAÑA REPORTES (Sin cambios mayores) --- */
+          /* --- CONTENIDO PESTAÑA REPORTES --- */
           <>
             <div className="mb-6 text-left">
               <h2 className="text-xl font-bold">Reportes de Problemas</h2>
@@ -479,13 +544,13 @@ const AdminPanel = ({ onCancel }) => {
                       <div className="flex flex-col md:flex-row gap-4 justify-between items-start">
                         <div className="flex-1 space-y-3">
                           <div className="flex flex-wrap items-center gap-3">
-                            <span className="px-2.5 py-0.5 bg-accent text-bg-primary text-[10px] font-extrabold rounded-full uppercase tracking-wider">
+                            <span className="px-2.5 py-0.5 bg-accent text-white dark:text-bg-primary text-[10px] font-extrabold rounded-full uppercase tracking-wider">
                               {REPORT_CATEGORY_LABELS[report.category] || report.category}
                             </span>
                             <span className="text-xs text-text-muted">{formatDateSafe(report.created_at)}</span>
                             <span className="text-xs text-accent font-medium">@{report.username || 'Anónimo'}</span>
                           </div>
-                          <h3 className="text-lg font-bold text-white">{report.subject}</h3>
+                          <h3 className="text-lg font-bold text-text-primary">{report.subject}</h3>
 
                           <p className="text-text-secondary whitespace-pre-wrap text-sm leading-relaxed">
                             {report.description}
@@ -500,7 +565,7 @@ const AdminPanel = ({ onCancel }) => {
                                 {report.images.map((img, idx) => (
                                   <div
                                     key={idx}
-                                    className="relative group w-16 h-16 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in"
+                                    className="relative group w-16 h-16 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in bg-black/5 dark:bg-white/5"
                                     onClick={() => setSelectedImageForLightbox(API_URL + img)}
                                   >
                                     <img src={API_URL + img} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="bug-snap" />
@@ -515,11 +580,11 @@ const AdminPanel = ({ onCancel }) => {
 
                           {report.deviceInfo && (
                             <div className="mt-4 flex flex-wrap gap-3 text-xs text-text-muted">
-                              <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
+                              <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 px-2 py-1 rounded">
                                 {report.deviceInfo.userAgent?.includes('Mobile') ? <Smartphone size={12} /> : <Monitor size={12} />}
                                 <span>{report.deviceInfo.platform}</span>
                               </div>
-                              <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
+                              <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 px-2 py-1 rounded">
                                 <Globe size={12} />
                                 <span className="truncate max-w-[150px]" title={report.deviceInfo.userAgent}>{report.deviceInfo.userAgent}</span>
                               </div>
@@ -529,7 +594,7 @@ const AdminPanel = ({ onCancel }) => {
 
                         <button
                           onClick={() => setReportToDelete(report)}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-lg font-medium transition-colors shrink-0 mt-4 md:mt-0 w-full md:w-auto justify-center"
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-600 dark:text-green-500 hover:bg-green-500/20 rounded-lg font-medium transition-colors shrink-0 mt-4 md:mt-0 w-full md:w-auto justify-center"
                         >
                           <CheckSquare size={18} />
                           Resolver
@@ -544,7 +609,7 @@ const AdminPanel = ({ onCancel }) => {
                     <button
                       onClick={() => setReportPage(p => Math.max(1, p - 1))}
                       disabled={reportPage === 1}
-                      className="p-2 rounded-xl bg-bg-secondary text-text-primary disabled:opacity-30 hover:bg-accent hover:text-bg-primary transition-all shadow-lg"
+                      className="p-2 rounded-xl bg-bg-secondary text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white transition-all shadow-sm"
                     >
                       <ChevronLeft size={20} />
                     </button>
@@ -554,7 +619,7 @@ const AdminPanel = ({ onCancel }) => {
                     <button
                       onClick={() => setReportPage(p => Math.min(totalPages, p + 1))}
                       disabled={reportPage === totalPages}
-                      className="p-2 rounded-xl bg-bg-secondary text-text-primary disabled:opacity-30 hover:bg-accent hover:text-bg-primary transition-all shadow-lg"
+                      className="p-2 rounded-xl bg-bg-secondary text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white transition-all shadow-sm"
                     >
                       <ChevronRight size={20} />
                     </button>
@@ -566,7 +631,7 @@ const AdminPanel = ({ onCancel }) => {
         )}
       </GlassCard>
 
-      {/* Lightbox y Modales (sin cambios) */}
+      {/* Lightbox y Modales */}
       {selectedImageForLightbox && (
         <div
           className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
