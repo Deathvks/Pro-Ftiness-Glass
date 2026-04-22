@@ -2,9 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Check, Repeat, Dumbbell, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { useAppTheme } from '../../../hooks/useAppTheme';
-// Importamos la función centralizada
 import { normalizeText } from '../../../utils/helpers';
 import { askTrainerAI } from '../../../services/aiService';
+
+// Base URL para construir las rutas de imágenes
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 const ExerciseDetailView = ({
   exercise,
@@ -18,6 +21,39 @@ const ExerciseDetailView = ({
   const [reps, setReps] = useState('8-12');
   const [rest, setRest] = useState(60);
   const { theme } = useAppTheme();
+
+  // --- LÓGICA INTELIGENTE DE IMÁGENES (Cero 404s) ---
+  const [startImageError, setStartImageError] = useState(false);
+  const [endImageError, setEndImageError] = useState(false);
+
+  useEffect(() => {
+    setStartImageError(false);
+    setEndImageError(false);
+  }, [exercise]);
+
+  const rawStartUrl = exercise.image_url_start || exercise.image_url || exercise.image;
+  const rawEndUrl = exercise.image_url_end || rawStartUrl; 
+
+  const getBestImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    const filename = cleanUrl.split('/').pop();
+    
+    // Expresión regular relajada: Busca el patrón UUID en CUALQUIER parte del nombre del archivo
+    const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
+    
+    if (isWgerUuid || cleanUrl.includes('exercise-images')) {
+      return `https://wger.de/media/exercise-images/${filename}`;
+    }
+
+    return `${BACKEND_BASE_URL}/${cleanUrl}`;
+  };
+
+  const finalStartUrl = getBestImageUrl(rawStartUrl);
+  const finalEndUrl = getBestImageUrl(rawEndUrl);
+  // ----------------------------------------
 
   // --- LOG PARA CAPTURAR LA CLAVE EXACTA DE CUALQUIER EJERCICIO ---
   useEffect(() => {
@@ -34,7 +70,6 @@ const ExerciseDetailView = ({
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
 
-  // Guardamos y leemos de localStorage para que el límite se muestre al instante
   const [remainingUses, setRemainingUses] = useState(() => {
     const saved = localStorage.getItem('ai_remaining_uses');
     return saved !== null ? parseInt(saved, 10) : null;
@@ -45,13 +80,11 @@ const ExerciseDetailView = ({
     return saved !== null ? parseInt(saved, 10) : null;
   });
 
-  // --- NUEVA LÓGICA: Comprobación de cambio de día ---
   useEffect(() => {
     const lastDate = localStorage.getItem('ai_last_date');
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }); // Formato YYYY-MM-DD
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
 
     if (lastDate && lastDate !== today) {
-      // Ha cambiado de día, borramos los límites del frontend
       localStorage.removeItem('ai_remaining_uses');
       localStorage.removeItem('ai_daily_limit');
       setRemainingUses(null);
@@ -59,10 +92,8 @@ const ExerciseDetailView = ({
       setAiError(null);
     }
 
-    // Actualizamos la fecha
     localStorage.setItem('ai_last_date', today);
   }, []);
-  // --- FIN DE NUEVA LÓGICA ---
 
   const handleAddClick = () => {
     if (isReplacing) {
@@ -72,13 +103,11 @@ const ExerciseDetailView = ({
     }
   };
 
-  // 1. Traducir el nombre
   const translatedName = t(exercise.name, {
     ns: 'exercise_names',
     defaultValue: exercise.name,
   });
 
-  // 2. Traducir grupo muscular
   const rawMuscleGroup = exercise.muscle_group || exercise.muscles || exercise.target || exercise.category || 'Other';
   const translatedMuscle = rawMuscleGroup
     .split(',')
@@ -91,7 +120,6 @@ const ExerciseDetailView = ({
     })
     .join(', ');
 
-  // 3. Traducir equipamiento
   const rawEquipment = exercise.equipment || 'None';
   const translatedEquipment = rawEquipment
     .split(',')
@@ -104,7 +132,6 @@ const ExerciseDetailView = ({
     })
     .join(', ');
 
-  // 4. Traducir la descripción
   const defaultDescription = exercise.description || t('exercise_ui:no_description_available', 'No hay descripción disponible.');
   const descriptionKey = normalizeText(exercise.description);
 
@@ -115,11 +142,9 @@ const ExerciseDetailView = ({
     keySeparator: false,
   });
 
-  // Lógica de contraste para OLED:
   const isOled = theme === 'oled';
   const hasVideo = !!exercise.video_url;
-  const hasImages = !!exercise.image_url_start;
-  const mediaBgClass = (!hasVideo && !hasImages && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
+  const mediaBgClass = (!hasVideo && !finalStartUrl && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
 
   const isLimitReached = remainingUses === 0 || (aiError && aiError.toLowerCase().includes('agotado'));
 
@@ -145,7 +170,6 @@ const ExerciseDetailView = ({
         localStorage.setItem('ai_daily_limit', res.limit);
       }
 
-      // Guardamos la fecha de la última petición exitosa
       const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
       localStorage.setItem('ai_last_date', today);
 
@@ -168,7 +192,6 @@ const ExerciseDetailView = ({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header modificado: Botón arriba y título grande debajo */}
       <div className="flex-shrink-0 p-4 pb-2 border-b border-glass-border">
         <button
           onClick={onBack}
@@ -182,11 +205,9 @@ const ExerciseDetailView = ({
         </h2>
       </div>
 
-      {/* Contenido */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        {/* Visor de medios */}
         <div className={`mb-6 aspect-video ${mediaBgClass} rounded-xl border border-glass-border overflow-hidden flex items-center justify-center`}>
-          {exercise.video_url ? (
+          {hasVideo ? (
             <video
               src={exercise.video_url}
               autoPlay
@@ -195,18 +216,33 @@ const ExerciseDetailView = ({
               playsInline
               className="w-full h-full object-contain"
             />
-          ) : hasImages ? (
+          ) : finalStartUrl ? (
             <div className="flex gap-4 w-full h-full p-4">
-              <img
-                src={exercise.image_url_start}
-                alt={`Inicio de ${translatedName}`}
-                className="w-1/2 h-full object-contain"
-              />
-              <img
-                src={exercise.image_url_end || exercise.image_url_start}
-                alt={`Fin de ${translatedName}`}
-                className="w-1/2 h-full object-contain"
-              />
+              {!startImageError && (
+                <img
+                  key={`start-${finalStartUrl}`}
+                  src={finalStartUrl}
+                  alt={`Inicio de ${translatedName}`}
+                  className={`${finalEndUrl && !endImageError ? 'w-1/2' : 'w-full'} h-full object-contain`}
+                  loading="lazy"
+                  onError={() => setStartImageError(true)}
+                />
+              )}
+              {finalEndUrl && !endImageError && (
+                <img
+                  key={`end-${finalEndUrl}`}
+                  src={finalEndUrl}
+                  alt={`Fin de ${translatedName}`}
+                  className={`${!startImageError ? 'w-1/2' : 'w-full'} h-full object-contain`}
+                  loading="lazy"
+                  onError={() => setEndImageError(true)}
+                />
+              )}
+              {startImageError && (!finalEndUrl || endImageError) && (
+                 <div className="flex w-full items-center justify-center text-text-muted">
+                    <Dumbbell size={64} opacity={0.5} />
+                 </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center text-text-muted">
@@ -215,7 +251,6 @@ const ExerciseDetailView = ({
           )}
         </div>
 
-        {/* Información */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
             <p className="text-sm text-text-muted">{t('exercise_ui:muscle_group', 'Grupo Muscular')}</p>
@@ -231,7 +266,6 @@ const ExerciseDetailView = ({
           </div>
         </div>
 
-        {/* Descripción Original */}
         <div className="pb-4">
           <h3 className="text-lg font-semibold mb-2">{t('exercise_ui:description', 'Descripción')}</h3>
           <p className="text-text-secondary whitespace-pre-line leading-relaxed">
@@ -239,7 +273,6 @@ const ExerciseDetailView = ({
           </p>
         </div>
 
-        {/* Sección del Entrenador IA */}
         <div className="mt-4 pt-6 border-t border-glass-border space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold flex items-center gap-2 text-text-primary">
@@ -300,11 +333,9 @@ const ExerciseDetailView = ({
           )}
         </div>
 
-        {/* Espacio extra al final para scroll cómodo */}
         <div className="h-6"></div>
       </div>
 
-      {/* Footer */}
       <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">
         {!isReplacing && (
           <div className="flex gap-4 mb-4">

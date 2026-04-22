@@ -1,6 +1,6 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseListView.jsx */
 import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
-import { X, Search, ShoppingCart, ListFilter, Plus } from 'lucide-react';
+import { X, Search, ShoppingCart, ListFilter, Plus, SearchX } from 'lucide-react';
 import CustomSelect from '../../CustomSelect';
 import ExerciseListItem from './ExerciseListItem';
 import Spinner from '../../Spinner';
@@ -268,7 +268,32 @@ const ExerciseListView = ({
         {isLoading ? (
           <div className="flex justify-center py-10"><Spinner /></div>
         ) : filteredExercises.length === 0 ? (
-          <p className="text-center text-text-muted pt-10 px-4">{t('exercise_ui:no_exercises_found', 'No se encontraron ejercicios.')}</p>
+          /* NUEVO: Mostrar el botón de añadir manual incluso si no hay resultados */
+          <div className="flex flex-col items-center justify-center p-6 mt-10 max-w-sm mx-auto text-center animate-[fade-in_0.3s_ease-out]">
+            <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center mb-4 border border-glass-border">
+              <SearchX size={32} className="text-text-muted" />
+            </div>
+            <h3 className="text-lg font-bold text-text-primary mb-2">
+              {t('exercise_ui:no_exercises_found', 'No se encontraron ejercicios')}
+            </h3>
+            <p className="text-text-secondary text-sm mb-8">
+              {searchQuery 
+                ? t('exercise_ui:no_exercises_query', 'No hemos encontrado ningún ejercicio llamado "{{query}}".', { query: searchQuery }) 
+                : t('exercise_ui:no_exercises_desc', 'Ajusta los filtros o intenta con otra búsqueda.')}
+            </p>
+            
+            <button
+              onClick={onAddManual}
+              className="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-accent text-white hover:bg-accent-hover transition-transform active:scale-95 shadow-lg shadow-accent/20"
+            >
+              <Plus size={20} />
+              <span className="font-bold">
+                {searchQuery 
+                  ? t('exercise_ui:add_specific_manual', 'Añadir "{{query}}" manualmente', { query: searchQuery })
+                  : t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
+              </span>
+            </button>
+          </div>
         ) : (
           <div style={{ height: `${totalHeight}px`, position: 'relative', width: '100%' }}>
             {visibleIndices.map(index => {

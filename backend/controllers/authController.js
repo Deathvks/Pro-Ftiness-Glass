@@ -289,9 +289,13 @@ export const googleLogin = async (req, res, next) => {
         user.verification_code = null;
         updated = true;
       }
-      if (!user.profile_image_url && picture) {
-        user.profile_image_url = picture;
-        updated = true;
+      
+      // CORRECCIÓN: Refrescar la imagen externa
+      if (picture && (!user.profile_image_url || user.profile_image_url.startsWith('http'))) {
+        if (user.profile_image_url !== picture) {
+            user.profile_image_url = picture;
+            updated = true;
+        }
       }
 
       if (updated) await user.save();
@@ -432,9 +436,13 @@ export const discordLogin = async (req, res, next) => {
         user.verification_code = null;
         updated = true;
       }
-      if (!user.profile_image_url && picture) {
-        user.profile_image_url = picture;
-        updated = true;
+      
+      // CORRECCIÓN: Refrescar la imagen externa
+      if (picture && (!user.profile_image_url || user.profile_image_url.startsWith('http'))) {
+        if (user.profile_image_url !== picture) {
+            user.profile_image_url = picture;
+            updated = true;
+        }
       }
 
       if (updated) await user.save();
@@ -574,9 +582,13 @@ export const facebookLogin = async (req, res, next) => {
         user.verification_code = null;
         updated = true;
       }
-      if (!user.profile_image_url && picture) {
-        user.profile_image_url = picture;
-        updated = true;
+      
+      // CORRECCIÓN: Refrescar la imagen externa
+      if (picture && (!user.profile_image_url || user.profile_image_url.startsWith('http'))) {
+        if (user.profile_image_url !== picture) {
+            user.profile_image_url = picture;
+            updated = true;
+        }
       }
 
       if (updated) await user.save();
@@ -746,9 +758,13 @@ export const xLogin = async (req, res, next) => {
         user.verification_code = null;
         updated = true;
       }
-      if (!user.profile_image_url && picture) {
-        user.profile_image_url = picture;
-        updated = true;
+      
+      // CORRECCIÓN: Refrescar la imagen externa
+      if (picture && (!user.profile_image_url || user.profile_image_url.startsWith('http'))) {
+        if (user.profile_image_url !== picture) {
+            user.profile_image_url = picture;
+            updated = true;
+        }
       }
 
       if (updated) await user.save();
@@ -925,9 +941,13 @@ export const githubLogin = async (req, res, next) => {
         user.verification_code = null;
         updated = true;
       }
-      if (!user.profile_image_url && picture) {
-        user.profile_image_url = picture;
-        updated = true;
+      
+      // CORRECCIÓN: Refrescar la imagen externa
+      if (picture && (!user.profile_image_url || user.profile_image_url.startsWith('http'))) {
+        if (user.profile_image_url !== picture) {
+            user.profile_image_url = picture;
+            updated = true;
+        }
       }
 
       if (updated) await user.save();
@@ -1093,9 +1113,13 @@ export const spotifyLogin = async (req, res, next) => {
         user.verification_code = null;
         updated = true;
       }
-      if (!user.profile_image_url && picture) {
-        user.profile_image_url = picture;
-        updated = true;
+      
+      // CORRECCIÓN: Refrescar la imagen externa
+      if (picture && (!user.profile_image_url || user.profile_image_url.startsWith('http'))) {
+        if (user.profile_image_url !== picture) {
+            user.profile_image_url = picture;
+            updated = true;
+        }
       }
 
       if (updated) await user.save();

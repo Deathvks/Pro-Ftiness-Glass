@@ -1,5 +1,5 @@
 /* frontend/src/components/ExerciseMedia.jsx */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { useAppTheme } from '../hooks/useAppTheme';
 
@@ -9,73 +9,107 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
 
 /**
  * Componente para mostrar la imagen o vídeo del ejercicio.
- * Acepta 'details' (con image_url, video_url) y 'className' para estilos extra.
+ * Acepta 'details' y 'className' para estilos extra.
  */
 const ExerciseMedia = ({ details, className = '' }) => {
-  const [mediaError, setMediaError] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const { theme } = useAppTheme();
 
-  const getMediaUrl = (url) => {
+  // Reseteamos el estado si cambian los detalles del ejercicio
+  useEffect(() => {
+    setImageError(false);
+    setVideoError(false);
+  }, [details]);
+
+  // Compatibilidad: la BD de wger usa image_url_start, otras partes pueden usar image_url o image
+  const rawImageUrl = details?.image_url || details?.image_url_start || details?.image;
+  const rawVideoUrl = details?.video_url;
+
+  // --- LÓGICA INTELIGENTE DE IMÁGENES (Cero 404s) ---
+  const getBestImageUrl = (url) => {
     if (!url) return null;
-    return url.startsWith('http') ? url : `${BACKEND_BASE_URL}${url}`;
+    if (url.startsWith('http')) return url;
+    
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    const filename = cleanUrl.split('/').pop();
+    
+    // Expresión regular relajada: Busca el patrón UUID en CUALQUIER parte del nombre
+    const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
+    
+    if (isWgerUuid || cleanUrl.includes('exercise-images')) {
+      return `https://wger.de/media/exercise-images/${filename}`;
+    }
+
+    // Si es una imagen normal local, va al backend
+    return `${BACKEND_BASE_URL}/${cleanUrl}`;
   };
 
-  const videoUrl = getMediaUrl(details?.video_url);
-  const imageUrl = getMediaUrl(details?.image_url);
+  const finalImageUrl = getBestImageUrl(rawImageUrl);
+
+  const getVideoUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const safeUrl = url.startsWith('/') ? url : `/${url}`;
+    return `${BACKEND_BASE_URL}${safeUrl}`;
+  };
+  
+  const videoUrl = getVideoUrl(rawVideoUrl);
 
   // Lógica de contraste para Oscuro y OLED:
-  // Si el tema es 'oled' o 'dark', las siluetas negras necesitan un fondo claro (gris) para verse.
-  // En el tema 'light', usamos el fondo secundario estándar de la app.
   const isDarkTheme = theme === 'oled' || theme === 'dark';
   const imageBgClass = isDarkTheme ? 'bg-gray-200' : 'bg-bg-secondary';
-  const placeholderBgClass = 'bg-bg-secondary'; // El placeholder usa iconos del sistema (colores controlados), puede quedarse oscuro.
+  
+  // Fondo característico para los placeholders
+  const placeholderBgClass = 'bg-accent/10 text-accent';
 
-  // Fallback si no hay media
-  if (mediaError || !details || (!imageUrl && !videoUrl)) {
+  // Fallback si no hay ningún recurso asignado
+  if (!details || (!rawImageUrl && !rawVideoUrl)) {
     return (
-      <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center text-text-muted ${className}`}>
-        <ImageIcon size={48} />
+      <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
+        <ImageIcon size={48} className="opacity-60" />
       </div>
     );
   }
 
-  if (videoUrl) {
+  // Renderizado de vídeo
+  if (videoUrl && !videoError) {
     return (
       <video
         key={videoUrl}
-        // Los vídeos suelen tener su propio fondo/iluminación, mantenemos bg-bg-secondary para evitar destellos blancos
         className={`aspect-video object-contain rounded-xl overflow-hidden bg-bg-secondary ${className}`}
         src={videoUrl}
         autoPlay
         loop
         muted
         playsInline
-        onError={() => setMediaError(true)}
+        onError={() => setVideoError(true)}
       >
         Tu navegador no soporta el tag de vídeo.
       </video>
     );
   }
 
-  if (imageUrl) {
-    // Aplicamos el fondo calculado (gris claro en Oscuro/OLED, estándar en Claro)
+  // Renderizado de imagen
+  if (finalImageUrl && !imageError) {
     const imageClasses = `aspect-video object-contain rounded-xl overflow-hidden ${imageBgClass} ${className}`;
 
     return (
       <img
-        src={imageUrl}
-        alt={`Demostración de ${details.name}`}
+        key={finalImageUrl}
+        src={finalImageUrl}
+        alt={`Demostración de ${details.name || 'ejercicio'}`}
         className={imageClasses}
-        onError={() => setMediaError(true)}
+        onError={() => setImageError(true)}
         loading="lazy"
       />
     );
   }
 
-  // Fallback final
+  // Fallback final si la imagen falla y no hay video
   return (
-    <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center text-text-muted ${className}`}>
-      <ImageIcon size={48} />
+    <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
+      <ImageIcon size={48} className="opacity-60" />
     </div>
   );
 };
