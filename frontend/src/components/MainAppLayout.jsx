@@ -366,6 +366,18 @@ export default function MainAppLayout({
 
       </div>
 
+      {/* --- EFECTO DE DESENFOQUE INFERIOR (iOS Bloom/Blur) --- */}
+      <div 
+        className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
+        style={{
+          height: 'calc(100px + env(safe-area-inset-bottom))',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%)',
+        }}
+      ></div>
+
       {/* --- NAVBAR: Píldora Flotante --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"

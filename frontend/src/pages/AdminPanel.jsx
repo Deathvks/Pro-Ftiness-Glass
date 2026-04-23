@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar
+  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -39,6 +39,16 @@ const formatDateSafe = (dateString) => {
   } catch (e) {
     return 'Fecha inválida';
   }
+};
+
+// --- BUSCADOR INTELIGENTE: Función para limpiar acentos, espacios y símbolos ---
+const normalizeForSearch = (text) => {
+  if (!text) return '';
+  return text
+    .normalize("NFD")                   // Descompone los acentos (ej: 'é' pasa a 'e' + '´')
+    .replace(/[\u0300-\u036f]/g, "")    // Elimina los acentos descompuestos
+    .replace(/[^a-zA-Z0-9]/g, "")       // Elimina todo lo que no sea letra o número (espacios, @, ., -, _)
+    .toLowerCase();                     // Todo a minúsculas
 };
 
 // Componente para indicar el método de inicio de sesión como un pequeño Badge
@@ -111,6 +121,9 @@ const AdminPanel = ({ onCancel }) => {
 
   // Por defecto ordenamos por fecha (Recientes arriba)
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'date');
+  
+  // Estado para el buscador
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [reports, setReports] = useState([]);
   const [reportPage, setReportPage] = useState(1);
@@ -125,7 +138,10 @@ const AdminPanel = ({ onCancel }) => {
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const { addToast } = useToast();
 
-  const API_URL = import.meta.env.VITE_API_URL || '';
+  const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
+  
+  // FIX: Extraemos la URL base del servidor quitando el sufijo /api
+  const SERVER_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL.replace('/api', '');
 
   // Guardar la pestaña activa cada vez que cambie
   useEffect(() => {
@@ -253,18 +269,31 @@ const AdminPanel = ({ onCancel }) => {
     return user.created_at || user.createdAt || user.register_date || user.date || null;
   };
 
-  // Helper para la URL de avatar
+  // FIX: Lógica calcada de Social.jsx para arreglar las rutas locales de los avatares
   const getAvatarUrl = (user) => {
-    if (!user.profile_image_url) return null;
-    if (user.profile_image_url.startsWith('http')) return user.profile_image_url;
-    return `${API_URL}${user.profile_image_url}`;
+    const path = user.profile_image_url;
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    if (path.startsWith('blob:')) return path;
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${SERVER_URL}${cleanPath}`;
   };
 
-  // --- LÓGICA DE ORDENACIÓN ---
-  const sortedUsers = useMemo(() => {
-    const sorted = [...users];
+  // --- LÓGICA DE BÚSQUEDA Y ORDENACIÓN ---
+  const processedUsers = useMemo(() => {
+    // 1. Filtrado por búsqueda inteligente
+    const cleanQuery = normalizeForSearch(searchQuery);
+    
+    let filtered = users;
+    if (cleanQuery) {
+      filtered = users.filter(user => {
+        const cleanName = normalizeForSearch(user.username || user.name);
+        const cleanEmail = normalizeForSearch(user.email);
+        return cleanName.includes(cleanQuery) || cleanEmail.includes(cleanQuery);
+      });
+    }
 
-    // Función helper para obtener fecha timestamp segura
+    // 2. Ordenación
     const getTime = (dateStr) => {
       if (!dateStr) return 0;
       return new Date(dateStr).getTime();
@@ -273,22 +302,14 @@ const AdminPanel = ({ onCancel }) => {
     switch (sortBy) {
       case 'date':
         // Recientes ARRIBA
-        return sorted.sort((a, b) => {
-          const timeA = getTime(getUserDate(a));
-          const timeB = getTime(getUserDate(b));
-          return timeB - timeA;
-        });
+        return filtered.sort((a, b) => getTime(getUserDate(b)) - getTime(getUserDate(a)));
       case 'alpha': // Alfabético (A-Z)
-        return sorted.sort((a, b) => (a.username || a.name || '').localeCompare(b.username || b.name || ''));
+        return filtered.sort((a, b) => (a.username || a.name || '').localeCompare(b.username || b.name || ''));
       case 'default':
       default: // Por última actividad
-        return sorted.sort((a, b) => {
-          const timeA = getTime(a.lastSeen);
-          const timeB = getTime(b.lastSeen);
-          return timeB - timeA;
-        });
+        return filtered.sort((a, b) => getTime(b.lastSeen) - getTime(a.lastSeen));
     }
-  }, [users, sortBy]);
+  }, [users, sortBy, searchQuery]);
 
   // Lógica de Paginación para Reportes
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
@@ -298,7 +319,6 @@ const AdminPanel = ({ onCancel }) => {
   }, [reports, reportPage]);
 
   return (
-    // CORRECCIÓN: pb-24 en móvil para salvar el navbar inferior, md:pb-8 para escritorio
     <div className="w-full max-w-6xl mx-auto p-2 pb-24 md:p-4 md:pb-8 lg:p-8 animate-[fade-in_0.5s_ease-out]">
       <button onClick={onCancel} className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4">
         <ChevronLeft size={20} />
@@ -310,7 +330,6 @@ const AdminPanel = ({ onCancel }) => {
 
       {/* Navegación de Pestañas */}
       <div className="flex gap-4 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-        {/* CORRECCIÓN: Sombras eliminadas en modo claro para que no se vea el borde negro raro */}
         <button
           onClick={() => setActiveTab('users')}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === 'users'
@@ -340,14 +359,43 @@ const AdminPanel = ({ onCancel }) => {
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-              <h2 className="text-xl font-bold whitespace-nowrap mr-auto">
-                Lista de Usuarios
-              </h2>
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 mb-6">
+              
+              {/* Título + Contador */}
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold whitespace-nowrap mr-auto">
+                  Lista de Usuarios
+                </h2>
+                <span className="bg-accent/10 text-accent text-xs font-extrabold px-3 py-1 rounded-full border border-glass-border">
+                  {users.length} Totales
+                </span>
+              </div>
 
-              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                {/* Select: ancho adaptable */}
-                <div className="flex-1 sm:w-48 z-20">
+              {/* Filtros y Controles */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto lg:ml-auto">
+                
+                {/* Buscador Inteligente */}
+                <div className="relative flex-1 sm:w-64 min-w-[200px]">
+                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <input
+                    type="text"
+                    placeholder="Buscar usuario o email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all text-sm text-text-primary placeholder-text-muted"
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')} 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Select: Ordenación */}
+                <div className="flex-1 sm:flex-none sm:w-40 z-20">
                   <CustomSelect
                     value={sortBy}
                     onChange={setSortBy}
@@ -363,7 +411,7 @@ const AdminPanel = ({ onCancel }) => {
                 {/* Botón Crear */}
                 <button
                   onClick={() => setIsCreatingUser(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-accent text-white dark:text-bg-secondary font-semibold transition hover:scale-105 whitespace-nowrap flex-1 sm:flex-none"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold transition hover:scale-[1.02] active:scale-95 whitespace-nowrap flex-1 sm:flex-none shadow-lg shadow-accent/20"
                 >
                   <Plus size={18} />
                   <span className="hidden sm:inline">Crear Usuario</span>
@@ -374,6 +422,14 @@ const AdminPanel = ({ onCancel }) => {
 
             {isLoading ? (
               <div className="flex justify-center items-center py-10"><Spinner /></div>
+            ) : processedUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center animate-[fade-in_0.3s_ease-out]">
+                <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center mb-4 border border-glass-border">
+                  <Search size={32} className="text-text-muted opacity-50" />
+                </div>
+                <h3 className="text-lg font-bold text-text-primary mb-1">Sin coincidencias</h3>
+                <p className="text-text-secondary text-sm">No se ha encontrado ningún usuario con esos datos.</p>
+              </div>
             ) : (
               <>
                 {/* Tabla Desktop (md en adelante) */}
@@ -391,7 +447,7 @@ const AdminPanel = ({ onCancel }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {sortedUsers.map(user => (
+                      {processedUsers.map(user => (
                         <tr key={user.id} className="border-b border-glass-border last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                           <td className="p-3 font-semibold align-middle">
                             <div className="flex items-center gap-3">
@@ -453,7 +509,7 @@ const AdminPanel = ({ onCancel }) => {
 
                 {/* Vista Tarjetas Móvil (Menos de md) */}
                 <div className="md:hidden space-y-3">
-                  {sortedUsers.map(user => (
+                  {processedUsers.map(user => (
                     <div key={user.id} className="bg-glass-light border border-glass-border rounded-xl p-4 text-left">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1 min-w-0 pr-2 flex items-center gap-3">
@@ -566,9 +622,9 @@ const AdminPanel = ({ onCancel }) => {
                                   <div
                                     key={idx}
                                     className="relative group w-16 h-16 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in bg-black/5 dark:bg-white/5"
-                                    onClick={() => setSelectedImageForLightbox(API_URL + img)}
+                                    onClick={() => setSelectedImageForLightbox(`${API_URL}${img}`)}
                                   >
-                                    <img src={API_URL + img} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="bug-snap" />
+                                    <img src={`${API_URL}${img}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="bug-snap" />
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
                                       <ZoomIn size={16} className="text-white drop-shadow-md" />
                                     </div>
