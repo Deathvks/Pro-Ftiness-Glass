@@ -15,7 +15,6 @@ const stripHtml = (html) => {
     return text === '' ? null : text;
 };
 
-
 const fetchAllPages = async (url, resourceName = 'items') => {
     let results = [];
     let nextUrl = url;
@@ -29,7 +28,6 @@ const fetchAllPages = async (url, resourceName = 'items') => {
                 results = results.concat(response.data.results);
                 nextUrl = response.data.next;
                 page++;
-                // await new Promise(resolve => setTimeout(resolve, 50));
             } else {
                 console.warn(`Unexpected response structure from ${nextUrl}. Stopping pagination.`);
                 nextUrl = null;
@@ -114,73 +112,48 @@ module.exports = {
 
             console.log(` -> Maps created (Categories: ${categoryMap.size}, Equipment: ${equipmentMap.size}, Muscles: ${muscleMap.size}, Main Images: ${mainImageMap.size}, End Images: ${endImageMap.size})`);
             console.log('\nFormatting exercises, removing duplicates, using Name/Desc: ES > EN > API Default fallback...');
+            
             const formattedExercises = [];
             const namesSeen = new Set();
+            
             let missingNameCount = 0;
             let missingDescriptionCount = 0;
-            let usedSpanishNameCount = 0;
-            let usedEnglishNameCount = 0;
-            let usedApiDefaultNameCount = 0;
-            let usedSpanishDescCount = 0;
-            let usedEnglishDescCount = 0;
-            let usedApiDefaultDescCount = 0;
 
             exercises.forEach(exInfo => {
                 try {
                     if (!exInfo || !exInfo.id) return;
 
-                    // --- Name processing (Spanish > English > API Default > Skip) ---
+                    // --- Name processing ---
                     let exerciseName = null;
-                    let nameLang = null;
 
                     if (exInfo.translations) {
                         const spanishTranslation = exInfo.translations.find(t => t.language === SPANISH_LANG_ID);
-                        if (spanishTranslation && spanishTranslation.name?.trim()) {
-                            exerciseName = spanishTranslation.name.trim();
-                            nameLang = 'es';
-                            usedSpanishNameCount++;
-                        }
+                        if (spanishTranslation && spanishTranslation.name?.trim()) exerciseName = spanishTranslation.name.trim();
                     }
 
                     if (!exerciseName && exInfo.translations) {
                         const englishTranslation = exInfo.translations.find(t => t.language === ENGLISH_LANG_ID);
-                        if (englishTranslation && englishTranslation.name?.trim()) {
-                            exerciseName = englishTranslation.name.trim();
-                            nameLang = 'en';
-                            usedEnglishNameCount++;
-                        }
+                        if (englishTranslation && englishTranslation.name?.trim()) exerciseName = englishTranslation.name.trim();
                     }
 
-                    if (!exerciseName && exInfo.name?.trim()) {
-                        exerciseName = exInfo.name.trim();
-                        nameLang = 'api_default';
-                        usedApiDefaultNameCount++;
-                    }
+                    if (!exerciseName && exInfo.name?.trim()) exerciseName = exInfo.name.trim();
 
                     if (!exerciseName) {
                         missingNameCount++;
                         return;
                     }
 
-                    // --- Duplicate check (Based on final name found) ---
                     const lowerCaseName = exerciseName.toLowerCase();
-                    if (namesSeen.has(lowerCaseName)) {
-                        return;
-                    }
+                    if (namesSeen.has(lowerCaseName)) return;
 
-                    // --- Description processing (Spanish > English > API Default > null) ---
+                    // --- Description processing ---
                     let description = null;
-                    let descLang = null;
 
                     if (exInfo.translations) {
                         const spanishTranslation = exInfo.translations.find(t => t.language === SPANISH_LANG_ID);
                         if (spanishTranslation && spanishTranslation.description) {
                             const cleanedDesc = stripHtml(spanishTranslation.description);
-                            if (cleanedDesc) {
-                                description = cleanedDesc;
-                                descLang = 'es';
-                                usedSpanishDescCount++;
-                            }
+                            if (cleanedDesc) description = cleanedDesc;
                         }
                     }
 
@@ -188,70 +161,42 @@ module.exports = {
                         const englishTranslation = exInfo.translations.find(t => t.language === ENGLISH_LANG_ID);
                         if (englishTranslation && englishTranslation.description) {
                             const cleanedDesc = stripHtml(englishTranslation.description);
-                            if (cleanedDesc) {
-                                description = cleanedDesc;
-                                descLang = 'en';
-                                usedEnglishDescCount++;
-                            }
+                            if (cleanedDesc) description = cleanedDesc;
                         }
                     }
 
                     if (!description && exInfo.description) {
                         const cleanedDesc = stripHtml(exInfo.description);
-                        if (cleanedDesc) {
-                            description = cleanedDesc;
-                            descLang = 'api_default';
-                            usedApiDefaultDescCount++;
-                        }
+                        if (cleanedDesc) description = cleanedDesc;
                     }
 
-                    if (!description) {
-                        missingDescriptionCount++;
-                    }
-
+                    if (!description) missingDescriptionCount++;
 
                     // --- Other fields ---
                     const categoryName = categoryMap.get(exInfo.category?.id) || 'Various';
-
                     let muscleGroupName = categoryName;
 
-                    // --- CORRECCIÓN: Tratar 'muscles' como array de objetos ---
-                    // La API /exerciseinfo/ devuelve: muscles: [{id: 10, name: '...'}, ...]
                     if (exInfo.muscles && exInfo.muscles.length > 0) {
                         const specificMuscles = exInfo.muscles
                             .map(m => {
-                                // Si es un objeto, usamos m.id. Si (raramente) fuera un int, usamos m.
                                 const mId = (typeof m === 'object' && m !== null) ? m.id : m;
                                 return muscleMap.get(mId);
                             })
                             .filter(Boolean);
 
-                        if (specificMuscles.length > 0) {
-                            muscleGroupName = specificMuscles.join(', ');
-                        }
+                        if (specificMuscles.length > 0) muscleGroupName = specificMuscles.join(', ');
                     }
 
                     // --- MEJORA PARA ANTEBRAZOS (FOREARMS) ---
-                    // Detectar si el ejercicio es de antebrazo basándose en el nombre o músculos específicos
                     const lowerName = exerciseName.toLowerCase();
                     const lowerMuscleGroup = muscleGroupName.toLowerCase();
-
-                    const forearmKeywords = [
-                        'wrist', 'muñeca',
-                        'forearm', 'antebrazo',
-                        'brachioradialis', 'braquiorradial',
-                        'reverse curl', 'curl invertido',
-                        'pronator', 'pronación',
-                        'supinator', 'supinación'
-                    ];
+                    const forearmKeywords = ['wrist', 'muñeca', 'forearm', 'antebrazo', 'brachioradialis', 'braquiorradial', 'reverse curl', 'curl invertido', 'pronator', 'pronación', 'supinator', 'supinación'];
 
                     const isForearm = forearmKeywords.some(kw => lowerName.includes(kw) || lowerMuscleGroup.includes(kw));
 
-                    // Si se detecta contexto de antebrazo y no está explícito en el grupo, lo añadimos
                     if (isForearm && !lowerMuscleGroup.includes('forearms')) {
                         muscleGroupName += ', Forearms';
                     }
-                    // ------------------------------------------
 
                     const equipmentNames = exInfo.equipment?.length > 0
                         ? exInfo.equipment.map(eq => equipmentMap.get(eq.id) || `Equipment ${eq.id}`).join(', ')
@@ -261,11 +206,8 @@ module.exports = {
                     const imageUrlStart = mainImageMap.get(exerciseId) || endImageMap.get(exerciseId) || null;
                     const imageUrlEnd = endImageMap.get(exerciseId) || imageUrlStart;
 
-                    if (!imageUrlStart) {
-                        return;
-                    }
+                    if (!imageUrlStart) return;
 
-                    // --- Add to list ---
                     formattedExercises.push({
                         name: exerciseName,
                         muscle_group: muscleGroupName,
@@ -283,35 +225,93 @@ module.exports = {
                     console.error(`Error processing exercise info with id ${exInfo?.id}:`, mapError);
                 }
             });
-            console.log(` -> Formatting complete. ${formattedExercises.length} unique exercises ready for insertion.`);
-            // Stats logging...
-            if (missingNameCount > 0) console.warn(` -> ${missingNameCount} skipped (no name).`);
-            if (usedSpanishNameCount > 0) console.log(` -> ES Names: ${usedSpanishNameCount}`);
-            if (usedEnglishNameCount > 0) console.log(` -> EN Names: ${usedEnglishNameCount}`);
-            if (usedApiDefaultNameCount > 0) console.log(` -> Default Names: ${usedApiDefaultNameCount}`);
 
-            console.log('\nCleaning existing exercise_list table...');
-            await queryInterface.bulkDelete('exercise_list', null, {});
-            console.log(' -> Table cleared.');
+            console.log(` -> Formatting complete. ${formattedExercises.length} unique exercises ready for sync.`);
 
-            if (formattedExercises.length > 0) {
-                console.log(`\nInserting ${formattedExercises.length} exercises into database...`);
+            // --- INICIO SYNC SEGURO ---
+            console.log('\nSynchronizing with database (Preserving existing IDs & Preventing name collisions)...');
+            
+            const existingRecords = await queryInterface.sequelize.query(
+                'SELECT id, wger_id, name FROM exercise_list',
+                { type: Sequelize.QueryTypes.SELECT }
+            );
+
+            const existingByWgerId = new Map();
+            const existingByName = new Map();
+
+            existingRecords.forEach(record => {
+                if (record.wger_id) existingByWgerId.set(record.wger_id.toString(), record);
+                if (record.name) existingByName.set(record.name.toLowerCase(), record);
+            });
+
+            const toInsert = [];
+            const toUpdate = [];
+
+            formattedExercises.forEach(ex => {
+                const lowerName = ex.name.toLowerCase();
+                let existingRecord = null;
+
+                if (ex.wger_id && existingByWgerId.has(ex.wger_id.toString())) {
+                    existingRecord = existingByWgerId.get(ex.wger_id.toString());
+                } else if (existingByName.has(lowerName)) {
+                    existingRecord = existingByName.get(lowerName);
+                }
+
+                if (existingRecord) {
+                    // PREVENCIÓN DE COLISIÓN
+                    const ownerOfName = existingByName.get(lowerName);
+                    if (ownerOfName && ownerOfName.id !== existingRecord.id) {
+                        return; // Omitimos para no violar el UNIQUE
+                    }
+                    
+                    toUpdate.push({ ...ex, id: existingRecord.id });
+                } else {
+                    if (!existingByName.has(lowerName)) {
+                        toInsert.push(ex);
+                    }
+                }
+            });
+
+            if (toInsert.length > 0) {
+                console.log(` -> Inserting ${toInsert.length} NEW exercises...`);
                 const chunkSize = 500;
-                for (let i = 0; i < formattedExercises.length; i += chunkSize) {
-                    const chunk = formattedExercises.slice(i, i + chunkSize);
-                    console.log(` -> Inserting chunk ${Math.floor(i / chunkSize) + 1}/${Math.ceil(formattedExercises.length / chunkSize)}`);
+                for (let i = 0; i < toInsert.length; i += chunkSize) {
+                    const chunk = toInsert.slice(i, i + chunkSize);
                     await queryInterface.bulkInsert('exercise_list', chunk, { timeout: 60000 });
                 }
-                console.log('✅ Successfully seeded exercise_list from wger API (Specific muscles + Forearms fix).');
             } else {
-                console.warn('⚠️ No exercises were formatted after filtering. Seeding skipped.');
+                console.log(' -> No new exercises to insert.');
             }
+
+            if (toUpdate.length > 0) {
+                console.log(` -> Updating ${toUpdate.length} EXISTING exercises to refresh data...`);
+                const updateChunkSize = 100;
+                for (let i = 0; i < toUpdate.length; i += updateChunkSize) {
+                    const chunk = toUpdate.slice(i, i + updateChunkSize);
+                    
+                    // Actualizamos de uno en uno o en lotes pequeños, aislando errores
+                    await Promise.all(chunk.map(async (ex) => {
+                        const { id, ...updateFields } = ex;
+                        try {
+                            await queryInterface.bulkUpdate('exercise_list', updateFields, { id });
+                        } catch (err) {
+                            if (err.name === 'SequelizeUniqueConstraintError' || err.code === 'ER_DUP_ENTRY') {
+                                console.warn(`   [Warning] Skipped update for ID ${id} (${ex.name}) to avoid duplicate name collision.`);
+                            } else {
+                                throw err;
+                            }
+                        }
+                    }));
+                }
+            } else {
+                 console.log(' -> No existing exercises to update.');
+            }
+            // --- FIN SYNC SEGURO ---
+
+            console.log('✅ Successfully synchronized exercise_list with wger API.');
 
         } catch (error) {
             console.error('❌ Error during wger API seeding process:', error);
-            if (error.name === 'SequelizeUniqueConstraintError') {
-                console.error(' -> Duplicate entry error.');
-            }
             throw error;
         }
     },

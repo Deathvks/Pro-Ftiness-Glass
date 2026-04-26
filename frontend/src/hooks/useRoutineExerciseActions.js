@@ -24,6 +24,10 @@ export const useRoutineExerciseActions = ({
   setActiveDropdownTempId,
 }) => {
 
+  // Función de seguridad: Garantiza que el ejercicio siempre tenga un identificador único en el frontend
+  // Esto evita que si dos ejercicios tienen el mismo ID de base de datos (o ninguno), se modifiquen a la vez.
+  const secureTempId = (ex) => ex.tempId || uuidv4();
+
   /**
    * Añade un nuevo ejercicio manual vacío a la lista.
    */
@@ -38,6 +42,7 @@ export const useRoutineExerciseActions = ({
       muscle_group: '',
       superset_group_id: null,
       exercise_order: exercises.length,
+      image_url: null, // Aseguramos el campo estándar
       image_url_start: null,
       video_url: null,
       is_manual: true, // Se asume manual hasta que se enlace
@@ -60,7 +65,13 @@ export const useRoutineExerciseActions = ({
    */
   const updateExerciseField = (identifier, field, value) => {
     setExercises(prev =>
-      prev.map(ex => ((ex.tempId || ex.id) === identifier ? { ...ex, [field]: value } : ex))
+      prev.map(ex => {
+        if ((ex.tempId || ex.id) === identifier) {
+          // Si lo editamos, le inyectamos un tempId seguro por si venía de BD sin él
+          return { ...ex, tempId: secureTempId(ex), [field]: value };
+        }
+        return ex;
+      })
     );
   };
 
@@ -71,25 +82,28 @@ export const useRoutineExerciseActions = ({
    */
   const linkExerciseFromList = (identifier, selectedExercise) => {
     setExercises(prev => {
-      const newExercises = prev.map(ex =>
-        (ex.tempId || ex.id) === identifier
-          ? {
+      const newExercises = prev.map(ex => {
+        if ((ex.tempId || ex.id) === identifier) {
+          return {
             ...ex, // Mantiene sets, reps, rest_seconds
+            tempId: secureTempId(ex), // ¡CLAVE! Asegura que no dependamos del ID de la BD para la key de React
             id: selectedExercise.id,
             name: selectedExercise.name,
-            // --- INICIO DE LA MODIFICACIÓN ---
+            
             // Priorizamos muscle_group sobre category.
-            // Antes estaba al revés (category || muscle_group), lo que hacía que
-            // se guardara la categoría general (ej. "Espalda") en lugar del músculo específico (ej. "Dorsal Ancho").
-            muscle_group: selectedExercise.muscle_group || selectedExercise.category,
-            // --- FIN DE LA MODIFICACIÓN ---
-            image_url_start: selectedExercise.image_url_start,
-            image_url_end: selectedExercise.image_url_end,
-            video_url: selectedExercise.video_url,
+            muscle_group: selectedExercise.muscle_group || selectedExercise.category || '',
+            
+            // Cubrimos todos los frentes posibles de las imágenes para que nunca falle la foto
+            image_url: selectedExercise.image_url || selectedExercise.image_url_start || null,
+            image_url_start: selectedExercise.image_url_start || selectedExercise.image_url || null,
+            image_url_end: selectedExercise.image_url_end || null,
+            video_url: selectedExercise.video_url || null,
+            
             is_manual: selectedExercise.is_manual || false,
-          }
-          : ex
-      );
+          };
+        }
+        return ex;
+      });
       return newExercises;
     });
 
@@ -109,7 +123,7 @@ export const useRoutineExerciseActions = ({
     setExercises(prev =>
       prev.map((ex, i) => {
         if (i === index || i === index + 1) {
-          return { ...ex, superset_group_id: supersetId };
+          return { ...ex, tempId: secureTempId(ex), superset_group_id: supersetId };
         }
         return ex;
       })
@@ -122,7 +136,9 @@ export const useRoutineExerciseActions = ({
   const unlinkGroup = (supersetId) => {
     setExercises(prev =>
       prev.map(ex =>
-        ex.superset_group_id === supersetId ? { ...ex, superset_group_id: null } : ex
+        ex.superset_group_id === supersetId 
+          ? { ...ex, tempId: secureTempId(ex), superset_group_id: null } 
+          : ex
       )
     );
   };
@@ -138,10 +154,11 @@ export const useRoutineExerciseActions = ({
     const [movedExercise] = reorderedExercises.splice(source.index, 1);
     reorderedExercises.splice(destination.index, 0, movedExercise);
 
-    // Actualizamos el 'exercise_order' basado en el nuevo índice
+    // Actualizamos el 'exercise_order' basado en el nuevo índice y blindamos tempId
     setExercises(
       reorderedExercises.map((ex, index) => ({
         ...ex,
+        tempId: secureTempId(ex),
         exercise_order: index
       }))
     );
@@ -182,7 +199,8 @@ export const useRoutineExerciseActions = ({
 
         return {
           ...item.exercise,
-          tempId: uuidv4(), // Asignamos nuevo tempId para React
+          // Conservamos el tempId si viene del carrito, si no, generamos uno nuevo
+          tempId: item.exercise.tempId || uuidv4(), 
           id: item.exercise.id,
           sets: item.sets,
           reps: item.reps,
@@ -197,6 +215,7 @@ export const useRoutineExerciseActions = ({
       return;
     }
 
+    // Reemplazamos la lista con la nueva que proviene del carrito
     setExercises(newExerciseList);
 
     // Cerramos el modal de búsqueda después de añadir
@@ -222,6 +241,7 @@ export const useRoutineExerciseActions = ({
       muscle_group: i18n.t('exercise_ui:muscle_groups.unknown', 'N/A'),
       superset_group_id: null,
       exercise_order: exercises.length,
+      image_url: null,
       image_url_start: null,
       video_url: null,
       is_manual: true,

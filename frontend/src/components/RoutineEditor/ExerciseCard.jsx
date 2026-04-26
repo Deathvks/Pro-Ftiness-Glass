@@ -1,12 +1,14 @@
 import React from 'react';
-import { Trash2, GripVertical, Repeat, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Trash2, GripVertical, Repeat, Sparkles } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import ExerciseSearchInput from '../ExerciseSearchInput';
 import { useTranslation } from 'react-i18next';
-// 1. Importamos el nuevo componente
+// 1. Importamos el componente de grupo muscular
 import EditableMuscleGroup from './EditableMuscleGroup';
 // Importamos el hook de tema para detectar OLED
 import { useAppTheme } from '../../hooks/useAppTheme';
+// Importamos el componente de medios inteligente
+import ExerciseMedia from '../ExerciseMedia';
 
 // Clases de input (sin cambios)
 const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-3 py-2 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition text-center";
@@ -59,15 +61,6 @@ const ExerciseCard = ({
     onExerciseSelect(identifier, selectedExercise);
   };
 
-  const videoUrl = exercise.video_url || (exercise.exercise && exercise.exercise.video_url);
-  const imageUrl = exercise.image_url_start || (exercise.exercise && exercise.exercise.image_url_start);
-  const mediaUrl = videoUrl || imageUrl;
-
-  // Lógica de contraste para OLED:
-  const isOled = theme === 'oled';
-  const isVideo = mediaUrl && (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm'));
-  const containerBgClass = (!isVideo && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
-
   return (
     <GlassCard className="p-3 bg-bg-secondary/50 relative">
       <div className="flex flex-col sm:flex-row items-start sm:items-start gap-3">
@@ -82,33 +75,11 @@ const ExerciseCard = ({
           </div>
         )}
 
-        {/* Bloque de Imagen/Video */}
-        <div className={`flex-shrink-0 w-full h-40 sm:w-2/5 sm:h-40 rounded-md overflow-hidden ${containerBgClass} border border-glass-border mb-3 sm:mb-0`}>
-          {mediaUrl ? (
-            (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm')) ? (
-              <video
-                src={mediaUrl}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <img
-                src={mediaUrl}
-                alt={`Vista previa de ${translatedName}`}
-                className="w-full h-full object-contain"
-                loading="lazy"
-              />
-            )
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-text-muted">
-              <ImageIcon size={32} />
-            </div>
-          )
-          }
-        </div>
+        {/* Bloque de Imagen/Video unificado e inteligente */}
+        <ExerciseMedia
+          details={exercise}
+          className="flex-shrink-0 w-full h-40 sm:w-2/5 sm:h-40 rounded-md border border-glass-border mb-3 sm:mb-0"
+        />
 
         {/* Columna de Información (Nombre, Músculo, Inputs) */}
         <div className="flex-grow min-w-0 w-full sm:w-3/5 flex flex-col items-center sm:items-stretch">

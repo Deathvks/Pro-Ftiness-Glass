@@ -9,9 +9,9 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
 
 /**
  * Componente para mostrar la imagen o vídeo del ejercicio.
- * Acepta 'details' y 'className' para estilos extra.
+ * Acepta 'details' (el objeto del ejercicio), 'src' directo, y 'className'.
  */
-const ExerciseMedia = ({ details, className = '' }) => {
+const ExerciseMedia = ({ details, src, videoSrc, className = '' }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const { theme } = useAppTheme();
@@ -20,13 +20,26 @@ const ExerciseMedia = ({ details, className = '' }) => {
   useEffect(() => {
     setImageError(false);
     setVideoError(false);
-  }, [details]);
+  }, [details, src, videoSrc]);
 
-  // Compatibilidad: la BD de wger usa image_url_start, otras partes pueden usar image_url o image
-  const rawImageUrl = details?.image_url || details?.image_url_start || details?.image;
-  const rawVideoUrl = details?.video_url;
+  // --- LÓGICA INTELIGENTE DE EXTRACCIÓN ---
+  // Buscamos la imagen en todas las posibles rutas y anidaciones de la app.
+  // Priorizamos image_url_start porque es la que trae el nuevo seeder.
+  const rawImageUrl = src || 
+    details?.image_url_start || 
+    details?.image_url || 
+    details?.image || 
+    details?.exercise?.image_url_start || 
+    details?.exercise?.image_url ||
+    details?.exercise_details?.image_url_start ||
+    details?.exercise_details?.image_url;
 
-  // --- LÓGICA INTELIGENTE DE IMÁGENES (Cero 404s) ---
+  const rawVideoUrl = videoSrc || 
+    details?.video_url || 
+    details?.exercise?.video_url ||
+    details?.exercise_details?.video_url;
+
+  // Construcción segura de la URL final
   const getBestImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
@@ -64,7 +77,7 @@ const ExerciseMedia = ({ details, className = '' }) => {
   const placeholderBgClass = 'bg-accent/10 text-accent';
 
   // Fallback si no hay ningún recurso asignado
-  if (!details || (!rawImageUrl && !rawVideoUrl)) {
+  if (!finalImageUrl && !videoUrl) {
     return (
       <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
         <ImageIcon size={48} className="opacity-60" />
@@ -98,7 +111,7 @@ const ExerciseMedia = ({ details, className = '' }) => {
       <img
         key={finalImageUrl}
         src={finalImageUrl}
-        alt={`Demostración de ${details.name || 'ejercicio'}`}
+        alt={`Demostración de ${details?.name || 'ejercicio'}`}
         className={imageClasses}
         onError={() => setImageError(true)}
         loading="lazy"

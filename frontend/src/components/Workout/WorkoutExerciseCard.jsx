@@ -23,9 +23,7 @@ const WorkoutExerciseCard = ({
   onDisabledButtonClick,
   normalizeDecimalInput,
   onShowHistory
-  // ELIMINADO: onSaveReminder de las props
 }) => {
-  // AÑADIDO: setExerciseReminder extraído directamente del store global
   const { addWarmupSets, setExerciseReminder } = useAppStore(state => ({ 
     addWarmupSets: state.addWarmupSets,
     setExerciseReminder: state.setExerciseReminder 
@@ -47,7 +45,6 @@ const WorkoutExerciseCard = ({
 
   const handleReminderSubmit = (e) => {
     e.preventDefault();
-    // AÑADIDO: Llamamos a la función del store directamente
     if (setExerciseReminder) {
       setExerciseReminder(actualExIndex, reminderText);
     }
@@ -89,7 +86,7 @@ const WorkoutExerciseCard = ({
         title="Ver detalles del ejercicio"
       >
         <ExerciseMedia
-          details={exercise.exercise_details}
+          details={exercise} // <-- MODIFICACIÓN: Pasamos todo el objeto y dejamos que el componente extraiga la imagen
           className="w-full lg:max-w-lg mx-auto mb-4 transition rounded-xl overflow-hidden relative shadow-sm border border-[--glass-border] dark:border-white/10 dark:filter dark:grayscale dark:brightness-110"
         />
       </button>
