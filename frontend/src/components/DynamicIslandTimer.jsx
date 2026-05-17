@@ -136,7 +136,7 @@ const DynamicIslandTimer = () => {
         <>
             {isExpanded && (
                 <div
-                    className="fixed inset-0 z-[90]"
+                    className="fixed inset-0 z-[90] bg-black/10 backdrop-blur-[2px] transition-all duration-300"
                     onClick={handleOverlayInteraction}
                     onTouchStart={handleOverlayInteraction}
                 />
@@ -150,23 +150,25 @@ const DynamicIslandTimer = () => {
                     relative bg-black text-white shadow-2xl 
                     transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] overflow-hidden select-none
                     ${isExpanded
-                        ? 'w-[320px] h-[220px] rounded-[2.5rem]'
-                        : 'w-[210px] h-11 rounded-[22px]'
+                        ? 'w-[340px] h-[240px] rounded-[48px] ring-1 ring-white/10'
+                        : 'w-[210px] h-11 rounded-[22px] ring-1 ring-white/5'
                     }
                     ${isFinished
                         ? (isBlinking
-                            ? 'border border-gray-800 shadow-[0_0_20px] shadow-accent'
-                            : 'border border-gray-800 shadow-none'
+                            ? 'shadow-[0_0_25px] shadow-accent/60 ring-1 ring-accent'
+                            : 'shadow-none'
                         )
-                        : 'border border-gray-800'
+                        : ''
                     }
                 `}>
 
+                    {/* Barra de progreso inferior */}
                     <div
-                        className={`absolute bottom-0 left-0 h-[2px] bg-accent transition-opacity duration-300 ${!isExpanded && !isFinished ? 'opacity-80' : 'opacity-0'}`}
+                        className={`absolute bottom-0 left-0 h-[2px] bg-accent transition-opacity duration-300 ${!isExpanded && !isFinished ? 'opacity-100' : 'opacity-0'}`}
                         style={{ width: `${progress}%` }}
                     />
 
+                    {/* --- ESTADO CONTRAÍDO --- */}
                     <div className={`
                         absolute inset-0 flex items-center justify-between pl-1 pr-1
                         transition-all duration-300
@@ -179,18 +181,18 @@ const DynamicIslandTimer = () => {
                             onTouchEnd={handlePressEnd}
                             onMouseLeave={handlePressEnd}
                             onClick={(e) => handleShortClick(e, () => setRestTimerMode('modal'))}
-                            className="flex-1 flex items-center gap-3 px-3 h-full hover:opacity-80 transition-opacity cursor-pointer focus:outline-none"
+                            className="flex-1 flex items-center gap-3 px-3 h-full hover:bg-white/5 transition-colors cursor-pointer focus:outline-none rounded-l-[22px]"
                             onContextMenu={(e) => e.preventDefault()}
                         >
-                            <div className={`p-1.5 rounded-full ${isFinished ? 'bg-accent/20' : 'bg-gray-900'}`}>
+                            <div className={`p-1.5 rounded-full ${isFinished ? 'bg-accent/20' : 'bg-white/10'}`}>
                                 <Timer size={14} className={isFinished ? 'text-accent' : 'text-accent'} />
                             </div>
-                            <span className={`font-mono text-base font-bold tracking-wider pt-0.5 ${isFinished ? 'text-accent' : ''}`}>
+                            <span className={`font-mono text-base font-bold tracking-widest pt-0.5 ${isFinished ? 'text-accent' : ''}`}>
                                 {formatTime(timeLeft)}
                             </span>
                         </button>
 
-                        <div className="w-[1px] h-4 bg-gray-800 mx-1"></div>
+                        <div className="w-px h-5 bg-white/10 mx-1"></div>
 
                         <div className="flex items-center gap-1">
                             <button
@@ -202,15 +204,15 @@ const DynamicIslandTimer = () => {
                                 onClick={(e) => handleShortClick(e, togglePauseRestTimer)}
                                 onContextMenu={(e) => e.preventDefault()}
                                 className={`
-                                    px-3 py-1.5 rounded-md flex items-center justify-center transition-colors focus:outline-none
+                                    px-3 py-1.5 rounded-[14px] flex items-center justify-center transition-all focus:outline-none active:scale-95
                                     ${isRestTimerPaused
-                                        ? 'bg-accent text-bg-secondary hover:bg-accent/90'
-                                        : 'bg-gray-900 text-gray-300 border border-gray-700 hover:bg-gray-800 hover:text-white'
+                                        ? 'bg-accent text-white hover:opacity-90 shadow-sm shadow-accent/30'
+                                        : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
                                     }
                                 `}
                             >
                                 {isRestTimerPaused ? (
-                                    <Play size={12} fill="currentColor" />
+                                    <Play size={12} fill="currentColor" className="ml-0.5" />
                                 ) : (
                                     <Pause size={12} fill="currentColor" />
                                 )}
@@ -221,55 +223,56 @@ const DynamicIslandTimer = () => {
                                     e.stopPropagation();
                                     stopRestTimer();
                                 }}
-                                className="p-1.5 rounded-full hover:bg-red-900/30 text-gray-400 hover:text-red-400 transition-colors ml-1 focus:outline-none"
+                                className="p-1.5 rounded-full hover:bg-red/20 text-gray-400 hover:text-red transition-colors ml-1 mr-1 focus:outline-none"
                                 aria-label="Cerrar temporizador"
                             >
-                                <X size={14} />
+                                <X size={14} strokeWidth={2.5} />
                             </button>
                         </div>
                     </div>
 
+                    {/* --- ESTADO EXPANDIDO --- */}
                     <div
                         onClick={handleBackgroundClick}
                         className={`
-                            absolute inset-0 flex flex-col p-6 h-full w-full cursor-pointer
+                            absolute inset-0 flex flex-col px-8 py-7 h-full w-full cursor-pointer
                             transition-all duration-300
                             ${isExpanded ? 'opacity-100 scale-100 delay-75 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}
                         `}
                     >
-                        <div className="flex items-center justify-between mb-2 pointer-events-none">
-                            <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
+                        <div className="flex items-center justify-between mb-4 pointer-events-none">
+                            <div className="flex items-center gap-2 text-gray-400 text-sm font-bold uppercase tracking-wider">
                                 <span>En descanso</span>
                             </div>
-                            <div className={`font-mono text-4xl font-bold tracking-widest ${isFinished ? 'text-accent animate-pulse' : 'text-white'}`}>
+                            <div className={`font-mono text-4xl font-black tracking-widest ${isFinished ? 'text-accent animate-pulse' : 'text-white'}`}>
                                 {formatTime(timeLeft)}
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3 mb-4 cursor-default">
-                            <button onClick={(e) => { e.stopPropagation(); handleAddOption(15); }} className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-xl py-3 text-xs font-bold transition flex flex-col items-center justify-center gap-1">
-                                <Plus size={12} /> 15s
+                        <div className="grid grid-cols-3 gap-3 mb-6 cursor-default">
+                            <button onClick={(e) => { e.stopPropagation(); handleAddOption(15); }} className="bg-white/10 hover:bg-white/20 active:bg-white/30 ring-1 ring-white/5 rounded-[16px] py-3 text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5">
+                                <Plus size={14} /> 15s
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); handleAddOption(30); }} className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-xl py-3 text-xs font-bold transition flex flex-col items-center justify-center gap-1">
-                                <Plus size={12} /> 30s
+                            <button onClick={(e) => { e.stopPropagation(); handleAddOption(30); }} className="bg-white/10 hover:bg-white/20 active:bg-white/30 ring-1 ring-white/5 rounded-[16px] py-3 text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5">
+                                <Plus size={14} /> 30s
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); handleAddOption(60); }} className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-xl py-3 text-xs font-bold transition flex flex-col items-center justify-center gap-1">
-                                <Plus size={12} /> 1m
+                            <button onClick={(e) => { e.stopPropagation(); handleAddOption(60); }} className="bg-white/10 hover:bg-white/20 active:bg-white/30 ring-1 ring-white/5 rounded-[16px] py-3 text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5">
+                                <Plus size={14} /> 1m
                             </button>
                         </div>
 
                         <div className="flex items-center justify-between mt-auto cursor-default">
                             <button
                                 onClick={(e) => { e.stopPropagation(); stopRestTimer(); }}
-                                className="p-3 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 transition"
+                                className="p-3.5 rounded-full bg-red/20 text-red hover:bg-red/30 ring-1 ring-red/30 transition-all active:scale-95"
                                 title="Detener"
                             >
-                                <X size={22} />
+                                <X size={22} strokeWidth={2.5} />
                             </button>
 
                             <button
                                 onClick={(e) => { e.stopPropagation(); togglePauseRestTimer(); }}
-                                className={`p-4 rounded-full transition-transform active:scale-95 ${isRestTimerPaused ? 'bg-accent text-bg-secondary' : 'bg-gray-700 text-white'}`}
+                                className={`p-4 rounded-full transition-all active:scale-95 ${isRestTimerPaused ? 'bg-accent text-white shadow-lg shadow-accent/30' : 'bg-white/10 text-white ring-1 ring-white/10 hover:bg-white/20'}`}
                                 title={isRestTimerPaused ? "Reanudar" : "Pausar"}
                             >
                                 {isRestTimerPaused ? <Play size={28} fill="currentColor" className="ml-1" /> : <Pause size={28} fill="currentColor" />}
@@ -281,7 +284,7 @@ const DynamicIslandTimer = () => {
                                     setIsExpanded(false);
                                     setRestTimerMode('modal');
                                 }}
-                                className="p-3 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 transition"
+                                className="p-3.5 rounded-full bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white ring-1 ring-white/5 transition-all active:scale-95"
                                 title="Abrir en grande"
                             >
                                 <Timer size={22} />

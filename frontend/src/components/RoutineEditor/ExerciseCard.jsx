@@ -1,24 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Trash2, GripVertical, Repeat, Sparkles } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import ExerciseSearchInput from '../ExerciseSearchInput';
 import { useTranslation } from 'react-i18next';
-// 1. Importamos el componente de grupo muscular
 import EditableMuscleGroup from './EditableMuscleGroup';
-// Importamos el hook de tema para detectar OLED
-import { useAppTheme } from '../../hooks/useAppTheme';
-// Importamos el componente de medios inteligente
 import ExerciseMedia from '../ExerciseMedia';
 
-// Clases de input (sin cambios)
-const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-3 py-2 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition text-center";
-
-// Nuevas clases para las etiquetas de los inputs (sin cambios)
-const baseLabelClasses = "block text-xs font-medium text-text-muted mb-1 text-center";
+const baseInputClasses = "w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-3 py-3 text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all font-medium text-center placeholder:text-text-muted";
+const baseLabelClasses = "block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center";
 
 const ExerciseCard = ({
   exercise,
-  // 1. Eliminamos 'exIndex', ya no se usa en este componente.
   errors,
   onFieldChange,
   onExerciseSelect,
@@ -26,93 +18,64 @@ const ExerciseCard = ({
   dragHandleProps,
   onReplaceClick,
 }) => {
-
   const { t: tName } = useTranslation('exercise_names');
-  // --- INICIO MODIFICACIÓN: Importamos traducción de músculos ---
   const { t: tMuscles } = useTranslation('exercise_muscles');
-  // --- FIN MODIFICACIÓN ---
   const { t: tCommon } = useTranslation('translation');
-  const { theme } = useAppTheme();
 
-  // --- SOLUCIÓN DEL BUG: Identificador universal para el ejercicio ---
   const identifier = exercise.tempId || exercise.id;
-
   const translatedName = tName(exercise.name, { defaultValue: exercise.name });
 
-  // --- INICIO DE LA MODIFICACIÓN (Traducción de Músculos Múltiples) ---
-  // Si el ejercicio no es manual (viene de la BD), puede tener múltiples músculos (ej: "Arms, Forearms").
-  // Los separamos y traducimos individualmente para evitar que salga "Arms, Forearms" sin traducir.
-  const displayMuscleGroup = React.useMemo(() => {
-    if (exercise.is_manual) return exercise.muscle_group; // Si es manual, se usa la clave tal cual
+  const displayMuscleGroup = useMemo(() => {
+    if (exercise.is_manual) return exercise.muscle_group;
     if (!exercise.muscle_group) return '';
 
     return exercise.muscle_group
       .split(',')
-      .map(m => {
-        const key = m.trim();
-        // Traducimos cada parte individualmente
-        return tMuscles(key, { defaultValue: key });
-      })
+      .map(m => tMuscles(m.trim(), { defaultValue: m.trim() }))
       .join(', ');
   }, [exercise.muscle_group, exercise.is_manual, tMuscles]);
-  // --- FIN DE LA MODIFICACIÓN ---
-
-  const handleExerciseSelected = (selectedExercise) => {
-    onExerciseSelect(identifier, selectedExercise);
-  };
 
   return (
-    <GlassCard className="p-3 bg-bg-secondary/50 relative">
-      <div className="flex flex-col sm:flex-row items-start sm:items-start gap-3">
-
+    <GlassCard className="glass relative p-5 sm:p-6 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 hover:shadow-lg">
+      <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+        
         {dragHandleProps && (
           <div
             {...dragHandleProps}
-            className="flex-shrink-0 text-text-muted cursor-grab self-start sm:self-start mt-1 sm:mt-0 sm:pt-2"
-            title="Arrastrar para reordenar"
+            className="shrink-0 text-text-muted cursor-grab self-start mt-2 hover:text-text-primary transition-colors"
+            title="Reordenar"
           >
-            <GripVertical size={18} />
+            <GripVertical size={20} />
           </div>
         )}
 
-        {/* Bloque de Imagen/Video unificado e inteligente */}
+        {/* CAMBIO AQUÍ: object-contain en lugar de object-cover y un pequeño padding (p-2) */}
         <ExerciseMedia
           details={exercise}
-          className="flex-shrink-0 w-full h-40 sm:w-2/5 sm:h-40 rounded-md border border-glass-border mb-3 sm:mb-0"
+          className="shrink-0 w-full sm:w-32 md:w-40 h-40 sm:h-32 md:h-40 rounded-[20px] object-contain p-2 ring-1 ring-black/5 dark:ring-white/10 bg-black/5 dark:bg-white/5"
         />
 
-        {/* Columna de Información (Nombre, Músculo, Inputs) */}
-        <div className="flex-grow min-w-0 w-full sm:w-3/5 flex flex-col items-center sm:items-stretch">
-
-          {/* Input de Búsqueda */}
+        <div className="flex-1 min-w-0 w-full flex flex-col">
           <ExerciseSearchInput
             initialQuery={translatedName}
-            onExerciseSelect={handleExerciseSelected}
-            className="w-full"
+            onExerciseSelect={(ex) => onExerciseSelect(identifier, ex)}
+            className="w-full pr-24 sm:pr-0" 
           />
 
-          {/* Grupo Muscular */}
-          <div className="mt-2">
-            <label className="block text-xs font-medium text-text-muted mb-1 text-left">
+          <div className="mt-4">
+            <label className="block text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-2 px-1">
               {tCommon('Grupo Muscular', { defaultValue: 'Grupo Muscular' })}
             </label>
             <EditableMuscleGroup
-              // --- INICIO MODIFICACIÓN: Pasamos el string ya traducido ---
               initialValue={displayMuscleGroup || ''}
-              // --- FIN MODIFICACIÓN ---
               onSave={(newValue) => onFieldChange(identifier, 'muscle_group', newValue)}
               isManual={exercise.is_manual}
             />
           </div>
 
-          {/* Inputs (Series, Reps Y Descanso) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 w-full">
-
-            {/* Series */}
+          <div className="grid grid-cols-3 gap-3 mt-5">
             <div>
-              <label className={baseLabelClasses}>
-                {tCommon('Series', { defaultValue: 'Series' })}
-              </label>
+              <label className={baseLabelClasses}>{tCommon('Series', { defaultValue: 'Series' })}</label>
               <input
                 type="number"
                 min="1"
@@ -121,14 +84,11 @@ const ExerciseCard = ({
                 onChange={(e) => onFieldChange(identifier, 'sets', e.target.value)}
                 className={baseInputClasses}
               />
-              {errors?.sets && <p className="text-red text-xs mt-1">{errors.sets}</p>}
+              {errors?.sets && <p className="text-red-500 text-[10px] mt-1.5 font-medium text-center">{errors.sets}</p>}
             </div>
 
-            {/* Repeticiones */}
             <div>
-              <label className={baseLabelClasses}>
-                {tCommon('Reps', { defaultValue: 'Reps' })}
-              </label>
+              <label className={baseLabelClasses}>{tCommon('Reps', { defaultValue: 'Reps' })}</label>
               <input
                 type="text"
                 placeholder="8-12"
@@ -136,14 +96,11 @@ const ExerciseCard = ({
                 onChange={(e) => onFieldChange(identifier, 'reps', e.target.value)}
                 className={baseInputClasses}
               />
-              {errors?.reps && <p className="text-red text-xs mt-1">{errors.reps}</p>}
+              {errors?.reps && <p className="text-red-500 text-[10px] mt-1.5 font-medium text-center">{errors.reps}</p>}
             </div>
 
-            {/* Tiempo de Descanso */}
             <div>
-              <label className={baseLabelClasses}>
-                {tCommon('Descanso (s)', { defaultValue: 'Descanso (s)' })}
-              </label>
+              <label className={baseLabelClasses}>{tCommon('Descanso (s)', { defaultValue: 'Descanso' })}</label>
               <input
                 type="number"
                 min="0"
@@ -153,37 +110,32 @@ const ExerciseCard = ({
                 className={baseInputClasses}
               />
             </div>
-
           </div>
 
-          {/* --- NUEVO: Explicación de la IA para este ejercicio --- */}
           {exercise.ai_reason && (
-            <div className="mt-3 p-3 rounded-lg bg-accent/5 border border-transparent dark:border-white/5 flex gap-2 items-start w-full">
-              <Sparkles className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-              <p className="text-xs text-text-primary/90 text-left">{exercise.ai_reason}</p>
+            <div className="mt-5 p-4 rounded-[16px] bg-accent/5 ring-1 ring-accent/20 flex gap-3 items-start">
+              <Sparkles className="w-5 h-5 text-accent shrink-0" />
+              <p className="text-xs font-medium text-text-primary leading-relaxed">{exercise.ai_reason}</p>
             </div>
           )}
-
         </div>
 
-        {/* Columna de Acciones (Reemplazar, Eliminar) */}
-        <div className="absolute top-3 right-3 sm:static flex sm:flex-col justify-end sm:justify-center gap-1 sm:gap-2">
+        <div className="absolute top-4 right-4 sm:static flex sm:flex-col justify-end sm:justify-start gap-2 shrink-0">
           <button
             onClick={() => onReplaceClick(identifier)}
-            className="p-1 sm:p-2 rounded-md text-text-muted hover:bg-accent/20 hover:text-accent transition"
+            className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent/10 hover:text-accent transition-all active:scale-95"
             title="Reemplazar ejercicio"
           >
             <Repeat size={18} />
           </button>
           <button
             onClick={() => removeExercise(identifier)}
-            className="p-1 sm:p-2 rounded-md text-text-muted hover:bg-red/20 hover:text-red transition"
+            className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-red-500/10 hover:text-red-500 transition-all active:scale-95"
             title="Eliminar ejercicio"
           >
             <Trash2 size={18} />
           </button>
         </div>
-
       </div>
     </GlassCard>
   );

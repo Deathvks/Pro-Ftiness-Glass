@@ -1,6 +1,6 @@
 /* frontend/src/pages/ResetPasswordScreen.jsx */
 import React, { useState, useEffect } from 'react';
-import { Dumbbell, KeyRound, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Dumbbell, KeyRound, CheckCircle2, ArrowLeft } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import { useToast } from '../hooks/useToast';
@@ -17,7 +17,6 @@ const ResetPasswordScreen = ({ showLogin }) => {
     const { addToast } = useToast();
 
     useEffect(() => {
-        // Extraer el token de la URL cuando el componente se monta
         const urlParams = new URLSearchParams(window.location.search);
         const tokenFromUrl = urlParams.get('token');
         if (tokenFromUrl) {
@@ -27,12 +26,11 @@ const ResetPasswordScreen = ({ showLogin }) => {
         }
     }, [addToast]);
 
-    // Redirección automática
     useEffect(() => {
         if (isSuccess) {
             const timer = setTimeout(() => {
                 showLogin();
-            }, 3000); // 3 segundos para leer el mensaje antes de redirigir
+            }, 3000);
             return () => clearTimeout(timer);
         }
     }, [isSuccess, showLogin]);
@@ -85,16 +83,20 @@ const ResetPasswordScreen = ({ showLogin }) => {
                     route="reset-password/success"
                     noIndex={true}
                 />
-                {/* CAMBIO: Layout flexible */}
                 <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
-                    <div className="w-full max-w-sm text-center">
-                        <GlassCard className="p-8">
-                            <CheckCircle size={40} className="mx-auto text-accent mb-4" />
-                            <h2 className="text-xl font-bold">Contraseña Actualizada</h2>
-                            <p className="text-text-secondary mt-2">
-                                Tu contraseña ha sido restablecida. Redirigiendo al inicio de sesión...
+                    <div className="w-full max-w-md text-center">
+                        <GlassCard className="glass p-8 sm:p-12 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-2xl bg-bg-primary/50">
+                            <div className="w-24 h-24 bg-green-500/10 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-green ring-1 ring-green-500/30 shadow-sm">
+                                <CheckCircle2 size={48} strokeWidth={1.5} />
+                            </div>
+                            <h2 className="text-2xl font-extrabold text-text-primary tracking-tight mb-3">Contraseña Actualizada</h2>
+                            <p className="text-text-secondary font-medium leading-relaxed mb-8">
+                                Tu contraseña ha sido restablecida con éxito. Redirigiendo al inicio de sesión...
                             </p>
-                            <button onClick={showLogin} className="mt-6 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105">
+                            <button 
+                                onClick={showLogin} 
+                                className="w-full rounded-[20px] bg-accent text-white font-bold text-lg py-4 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20"
+                            >
                                 Ir a Iniciar Sesión ahora
                             </button>
                         </GlassCard>
@@ -111,47 +113,57 @@ const ResetPasswordScreen = ({ showLogin }) => {
                 route="reset-password"
                 noIndex={true}
             />
-            {/* CAMBIO: Layout flexible */}
             <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
-                <div className="w-full max-w-sm text-center">
-                    <Dumbbell size={48} className="mx-auto text-accent mb-4" />
-                    <h1 className="text-4xl font-extrabold">Nueva Contraseña</h1>
-                    <p className="text-text-secondary mb-8">Introduce tu nueva contraseña.</p>
-                    <GlassCard className="p-8">
-                        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="w-full max-w-md text-center">
+                    <div className="w-20 h-20 bg-accent/10 rounded-[24px] flex items-center justify-center mx-auto mb-6 text-accent ring-1 ring-accent/30 shadow-sm">
+                        <Dumbbell size={40} strokeWidth={1.5} />
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary mb-3">Nueva Contraseña</h1>
+                    <p className="text-text-secondary font-medium mb-8 leading-relaxed max-w-sm mx-auto">Introduce y confirma tu nueva contraseña de acceso.</p>
+                    
+                    <GlassCard className="glass p-6 sm:p-10 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-2xl bg-bg-primary/50">
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                             <div>
                                 <input
                                     type="password"
                                     placeholder="Nueva Contraseña"
-                                    className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
+                                    className="w-full px-5 py-4 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-accent/50 text-text-primary font-bold placeholder:text-text-muted transition-all shadow-inner"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
-                                {errors.password && <p className="form-error-text text-left">{errors.password}</p>}
+                                {errors.password && <p className="text-red font-bold text-xs text-left mt-2 px-2">{errors.password}</p>}
                             </div>
                             <div>
                                 <input
                                     type="password"
                                     placeholder="Confirmar Nueva Contraseña"
-                                    className="w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition"
+                                    className="w-full px-5 py-4 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-accent/50 text-text-primary font-bold placeholder:text-text-muted transition-all shadow-inner"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                 />
-                                {errors.confirmPassword && <p className="form-error-text text-left">{errors.confirmPassword}</p>}
+                                {errors.confirmPassword && <p className="text-red font-bold text-xs text-left mt-2 px-2">{errors.confirmPassword}</p>}
                             </div>
 
                             <button
                                 type="submit"
                                 disabled={isLoading || !token}
-                                className="flex items-center justify-center gap-2 w-full rounded-md bg-accent text-bg-secondary font-semibold py-3 transition hover:scale-105 disabled:opacity-70"
+                                className="flex items-center justify-center gap-2 w-full rounded-[20px] bg-accent text-white font-bold text-lg py-4 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
                             >
-                                {isLoading ? <Spinner /> : <><KeyRound size={18} /> <span>Guardar Contraseña</span></>}
+                                {isLoading ? <Spinner size={24} color="white" /> : (
+                                    <>
+                                        <KeyRound size={20} strokeWidth={2.5} /> 
+                                        <span>Guardar Contraseña</span>
+                                    </>
+                                )}
                             </button>
                         </form>
                     </GlassCard>
 
-                    <button onClick={showLogin} className="mt-6 text-text-muted hover:text-text-primary transition flex items-center justify-center mx-auto gap-2">
-                        <ArrowLeft size={16} />
+                    <button 
+                        onClick={showLogin} 
+                        className="mt-8 flex items-center justify-center mx-auto gap-2 px-6 py-3.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95"
+                    >
+                        <ArrowLeft size={18} strokeWidth={2.5} />
                         Volver a Iniciar Sesión
                     </button>
                 </div>

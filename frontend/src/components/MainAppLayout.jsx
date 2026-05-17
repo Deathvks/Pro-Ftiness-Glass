@@ -267,8 +267,15 @@ export default function MainAppLayout({
       {/* CONTENEDOR MÓVIL: Flex Columna para separar Header y Main */}
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* --- HEADER: Fuera del main para que no se estire con el scroll --- */}
-        <header className="md:hidden shrink-0 w-full bg-[--glass-bg]/90 backdrop-blur-xl border-b border-glass-border z-40 pt-[max(env(safe-area-inset-top),0px)]">
+        {/* --- HEADER: Estilo Glass con variables --- */}
+        <header 
+          className="md:hidden shrink-0 w-full border-b border-glass-border z-40 pt-[max(env(safe-area-inset-top),0px)]"
+          style={{ 
+            backgroundColor: 'var(--glass-bg)', 
+            backdropFilter: 'blur(var(--glass-blur))',
+            WebkitBackdropFilter: 'blur(var(--glass-blur))'
+          }}
+        >
           <div className="flex justify-between items-center w-full h-14 px-4">
 
             {/* Animación Título Header */}
@@ -361,7 +368,7 @@ export default function MainAppLayout({
           </Suspense>
 
           {/* FIX: Espaciador final calculado dinámicamente. Como usamos 100vh, el contenedor llega al final. Este hueco evita que las listas queden ocultas detrás del navbar */}
-          <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + env(safe-area-inset-bottom))' }}></div>
+          <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
         </main>
 
       </div>
@@ -370,22 +377,21 @@ export default function MainAppLayout({
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
-          height: 'calc(100px + env(safe-area-inset-bottom))',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%)',
+          height: 'calc(120px + env(safe-area-inset-bottom))',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
         }}
       ></div>
 
-      {/* --- NAVBAR: Píldora Flotante --- */}
+      {/* --- NAVBAR: Píldora Flotante con estilo Glass --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
       >
-        {/* Devolvemos el bg, backdrop-blur y border al <nav> para que sea la píldora la que flote */}
         <nav
-          className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 bg-[--glass-bg] backdrop-blur-xl border border-glass-border shadow-2xl rounded-full [.oled-theme_&]:border-white/10 overflow-hidden relative"
+          className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 glass rounded-full overflow-hidden relative"
         >
           {navItems.map((item, index) => {
             const isActive = view === item.id;

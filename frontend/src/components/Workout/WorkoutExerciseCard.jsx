@@ -77,52 +77,54 @@ const WorkoutExerciseCard = ({
   }
 
   return (
-    <div className="p-4 sm:p-6 relative flex flex-col gap-6">
+    <div className="p-4 sm:p-6 relative flex flex-col gap-6 sm:gap-8">
       
       {/* --- Imagen --- */}
       <button
         onClick={() => onSetSelectedExercise(exercise)}
-        className="w-full text-left transition-transform active:scale-[0.99] group"
+        className="w-full text-left transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] group"
         title="Ver detalles del ejercicio"
       >
         <ExerciseMedia
-          details={exercise} // <-- MODIFICACIÓN: Pasamos todo el objeto y dejamos que el componente extraiga la imagen
-          className="w-full lg:max-w-lg mx-auto mb-4 transition rounded-xl overflow-hidden relative shadow-sm border border-[--glass-border] dark:border-white/10 dark:filter dark:grayscale dark:brightness-110"
+          details={exercise}
+          className="w-full lg:max-w-lg mx-auto mb-2 transition-all rounded-[24px] overflow-hidden relative shadow-lg ring-1 ring-black/5 dark:ring-white/10 dark:filter dark:grayscale dark:brightness-110"
         />
       </button>
 
       {/* --- Recordatorio Activo (si existe) --- */}
       {exercise.reminder && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 dark:border-white/10 rounded-xl p-3 flex items-start gap-3 animate-fade-in shadow-sm">
-          <Bell size={18} className="text-yellow-500 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <p className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-wider mb-0.5">Recordatorio / Meta</p>
-            <p className="text-sm text-text-primary">{exercise.reminder}</p>
+        <div className="bg-yellow-500/10 ring-1 ring-yellow-500/30 rounded-[20px] p-4 flex items-start gap-4 animate-[fade-in_0.3s_ease-out] shadow-sm">
+          <div className="p-2 bg-yellow-500/20 rounded-[14px] shrink-0">
+            <Bell size={20} className="text-yellow-600 dark:text-yellow-400" />
+          </div>
+          <div className="flex-1 pt-0.5">
+            <p className="text-[10px] sm:text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase tracking-widest mb-1">Recordatorio / Meta</p>
+            <p className="text-sm font-medium text-text-primary leading-relaxed">{exercise.reminder}</p>
           </div>
         </div>
       )}
 
       {/* --- Contenedor de Textos --- */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <button
           onClick={() => onSetSelectedExercise(exercise)}
-          className="text-left group w-full"
+          className="text-left group w-full outline-none focus:outline-none"
         >
-          <h3 className="text-2xl font-extrabold text-text-primary leading-tight group-hover:text-accent transition-colors break-words text-balance">
+          <h3 className="text-3xl font-extrabold text-text-primary leading-tight group-hover:text-accent transition-colors break-words text-balance tracking-tight">
             {t(exercise.name, { ns: 'exercise_names' })}
           </h3>
         </button>
 
-        <div className="flex flex-col gap-2">
-          <p className="text-base font-semibold text-accent">
+        <div className="flex flex-col gap-3">
+          <p className="text-lg font-bold text-accent">
             {exercise.sets} series × {exercise.reps} reps
           </p>
           
           {/* 1RM Estimado del historial */}
           {estimated1RM > 0 && (
-            <div className="flex w-fit items-center gap-1.5 bg-accent/10 border border-accent/20 dark:border-white/10 rounded-full px-3 py-1 animate-fade-in shadow-sm">
-              <Target size={13} className="text-accent shrink-0" />
-              <span className="text-xs font-bold text-accent">
+            <div className="flex w-fit items-center gap-2 bg-accent/10 ring-1 ring-accent/30 rounded-full px-4 py-2 animate-[fade-in_0.3s_ease-out] shadow-sm">
+              <Target size={16} className="text-accent shrink-0" strokeWidth={2.5} />
+              <span className="text-sm font-bold text-accent">
                 1RM Est: {estimated1RM}kg
               </span>
             </div>
@@ -130,10 +132,10 @@ const WorkoutExerciseCard = ({
         </div>
       </div>
 
-      <div className="w-full h-[1px] bg-[--glass-border] dark:bg-white/10" />
+      <div className="w-full h-px bg-black/5 dark:bg-white/10" />
 
-      {/* --- Botonera Segmentada --- */}
-      <div className="flex flex-wrap sm:flex-nowrap bg-bg-primary p-1 rounded-2xl border border-[--glass-border] dark:border-white/10 shadow-inner gap-1">
+      {/* --- Botonera Segmentada sin bordes --- */}
+      <div className="flex flex-wrap sm:flex-nowrap bg-black/5 dark:bg-white/5 p-1.5 rounded-[24px] shadow-inner gap-1 ring-1 ring-black/5 dark:ring-white/10">
         
         {/* Historial */}
         <button
@@ -141,13 +143,11 @@ const WorkoutExerciseCard = ({
             e.stopPropagation();
             if (onShowHistory) onShowHistory(exercise);
           }}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-text-secondary hover:text-text-primary hover:bg-bg-secondary hover:shadow-sm transition active:scale-95"
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 hover:shadow-sm transition-all duration-300 active:scale-95 outline-none"
         >
-          <History size={18} />
-          <span className="text-xs font-semibold hidden sm:block">Historial</span>
+          <History size={20} />
+          <span className="text-sm font-bold hidden sm:block">Historial</span>
         </button>
-
-        <div className="w-[1px] bg-[--glass-border] dark:bg-white/10 my-2 hidden sm:block" />
 
         {/* Meta / Recordatorio */}
         <button
@@ -155,18 +155,16 @@ const WorkoutExerciseCard = ({
             e.stopPropagation();
             if (hasWorkoutStarted) setShowReminderInput(true);
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition active:scale-95 ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] transition-all duration-300 active:scale-95 outline-none ${
             hasWorkoutStarted
-              ? 'text-text-secondary hover:text-yellow-500 hover:bg-yellow-500/10 hover:shadow-sm'
+              ? 'text-text-secondary hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-500/10 hover:shadow-sm'
               : 'text-text-muted opacity-50 cursor-not-allowed'
           }`}
           disabled={!hasWorkoutStarted}
         >
-          <Target size={18} className={hasWorkoutStarted && exercise.reminder ? "text-yellow-500" : ""} />
-          <span className="text-xs font-semibold hidden sm:block">Meta</span>
+          <Target size={20} className={hasWorkoutStarted && exercise.reminder ? "text-yellow-600 dark:text-yellow-400" : ""} />
+          <span className="text-sm font-bold hidden sm:block">Meta</span>
         </button>
-
-        <div className="w-[1px] bg-[--glass-border] dark:bg-white/10 my-2 hidden sm:block" />
 
         {/* Calentar */}
         <button
@@ -174,18 +172,16 @@ const WorkoutExerciseCard = ({
             e.stopPropagation();
             if (hasWorkoutStarted) setShowWarmupInput(true);
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition active:scale-95 ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] transition-all duration-300 active:scale-95 outline-none ${
             hasWorkoutStarted
               ? 'text-text-secondary hover:text-orange-500 hover:bg-orange-500/10 hover:shadow-sm'
               : 'text-text-muted opacity-50 cursor-not-allowed'
           }`}
           disabled={!hasWorkoutStarted}
         >
-          <Flame size={18} className={hasWorkoutStarted ? "text-orange-500/80" : ""} />
-          <span className="text-xs font-semibold hidden sm:block">Calentar</span>
+          <Flame size={20} className={hasWorkoutStarted ? "text-orange-500/80" : ""} />
+          <span className="text-sm font-bold hidden sm:block">Calentar</span>
         </button>
-
-        <div className="w-[1px] bg-[--glass-border] dark:bg-white/10 my-2 hidden sm:block" />
 
         {/* Sustituir */}
         <button
@@ -193,15 +189,15 @@ const WorkoutExerciseCard = ({
             e.stopPropagation();
             onSetExerciseToReplace(actualExIndex);
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition active:scale-95 ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] transition-all duration-300 active:scale-95 outline-none ${
             hasWorkoutStarted
               ? 'text-text-secondary hover:text-accent hover:bg-accent/10 hover:shadow-sm'
               : 'text-text-muted opacity-50 cursor-not-allowed'
           }`}
           disabled={!hasWorkoutStarted}
         >
-          <Repeat size={18} />
-          <span className="text-xs font-semibold hidden sm:block">Sustituir</span>
+          <Repeat size={20} />
+          <span className="text-sm font-bold hidden sm:block">Sustituir</span>
         </button>
       </div>
 
@@ -221,53 +217,46 @@ const WorkoutExerciseCard = ({
         normalizeDecimalInput={normalizeDecimalInput}
       />
 
-      {/* MODAL RECORDATORIO */}
+      {/* --- MODAL RECORDATORIO --- */}
       {showReminderInput && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/60 backdrop-blur-md rounded-[2rem] animate-[fade-in_0.2s_ease-out]"
-          onClick={() => setShowReminderInput(false)}
-        >
-          <div 
-            className="bg-[--glass-bg] border border-[--glass-border] dark:border-white/10 rounded-[2rem] p-6 w-full max-w-sm shadow-2xl animate-[scale-in_0.2s_ease-out]" 
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="p-2 bg-yellow-500/10 rounded-full">
-                <Target size={24} className="text-yellow-500" />
-              </div>
-            </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+          <div className="absolute inset-0" onClick={() => setShowReminderInput(false)} />
+          <div className="glass w-full max-w-sm p-6 sm:p-8 rounded-[32px] shadow-2xl relative z-10 animate-[slide-up_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10">
             
-            <h4 className="text-xl font-bold text-center text-text-primary mb-1">
-              Meta / Recordatorio
-            </h4>
-            <p className="text-xs text-center text-text-secondary mb-6 px-2">
-              Añade un objetivo para tu próximo entrenamiento (ej. Levantar 100kg, intentar 1RM).
-            </p>
+            <div className="flex flex-col items-center mb-6">
+              <div className="p-3 bg-yellow-500/10 rounded-[20px] mb-4 ring-2 ring-yellow-500/30">
+                <Target size={32} className="text-yellow-500" strokeWidth={1.5} />
+              </div>
+              <h4 className="text-2xl font-bold text-text-primary mb-2 tracking-tight text-center">
+                Meta / Recordatorio
+              </h4>
+              <p className="text-sm font-medium text-text-secondary text-center px-2 leading-relaxed">
+                Añade un objetivo para tu próximo entrenamiento (ej. Levantar 100kg, intentar 1RM).
+              </p>
+            </div>
 
             <form onSubmit={handleReminderSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <textarea
-                  autoFocus
-                  value={reminderText}
-                  onChange={(e) => setReminderText(e.target.value)}
-                  className="w-full bg-bg-primary border border-[--glass-border] dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-text-primary focus:ring-2 focus:ring-accent focus:outline-none shadow-inner resize-none h-24"
-                  placeholder="Escribe tu meta..."
-                />
-              </div>
+              <textarea
+                autoFocus
+                value={reminderText}
+                onChange={(e) => setReminderText(e.target.value)}
+                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] px-5 py-4 text-sm font-medium text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all shadow-inner resize-none h-32 placeholder:text-text-muted"
+                placeholder="Escribe tu meta..."
+              />
               
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3">
+                <button
+                  type="submit"
+                  className="w-full py-4 rounded-[20px] bg-yellow-500 text-white font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-yellow-500/20"
+                >
+                  Guardar
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowReminderInput(false)}
-                  className="flex-1 py-3 rounded-xl border border-[--glass-border] dark:border-white/10 bg-bg-primary/50 text-text-primary font-semibold hover:bg-bg-secondary transition-colors active:scale-95"
+                  className="w-full py-4 rounded-[20px] bg-black/5 dark:bg-white/5 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-xl bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-colors shadow-lg shadow-yellow-500/20 active:scale-95"
-                >
-                  Guardar
                 </button>
               </div>
             </form>
@@ -275,32 +264,27 @@ const WorkoutExerciseCard = ({
         </div>
       )}
 
-      {/* MODAL CALENTAMIENTO */}
+      {/* --- MODAL CALENTAMIENTO --- */}
       {showWarmupInput && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/60 backdrop-blur-md rounded-[2rem] animate-[fade-in_0.2s_ease-out]"
-          onClick={() => setShowWarmupInput(false)}
-        >
-          <div 
-            className="bg-[--glass-bg] border border-[--glass-border] dark:border-white/10 rounded-[2rem] p-6 w-full max-w-xs shadow-2xl animate-[scale-in_0.2s_ease-out]" 
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="p-2 bg-orange-500/10 rounded-full">
-                <Flame size={24} className="text-orange-500" />
-              </div>
-            </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+          <div className="absolute inset-0" onClick={() => setShowWarmupInput(false)} />
+          <div className="glass w-full max-w-sm p-6 sm:p-8 rounded-[32px] shadow-2xl relative z-10 animate-[slide-up_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10">
             
-            <h4 className="text-xl font-bold text-center text-text-primary mb-1">
-              Calentamiento
-            </h4>
-            <p className="text-xs text-center text-text-secondary mb-6 px-2">
-              Genera 3 series progresivas hacia tu peso objetivo.
-            </p>
+            <div className="flex flex-col items-center mb-6">
+              <div className="p-3 bg-orange-500/10 rounded-[20px] mb-4 ring-2 ring-orange-500/30">
+                <Flame size={32} className="text-orange-500" strokeWidth={1.5} />
+              </div>
+              <h4 className="text-2xl font-bold text-text-primary mb-2 tracking-tight text-center">
+                Calentamiento
+              </h4>
+              <p className="text-sm font-medium text-text-secondary text-center px-2 leading-relaxed">
+                Genera 3 series progresivas hacia tu peso objetivo.
+              </p>
+            </div>
 
             <form onSubmit={handleWarmupSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider text-center block">
+              <div>
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-widest text-center block mb-3">
                   Peso Objetivo (kg)
                 </label>
                 <input
@@ -309,24 +293,25 @@ const WorkoutExerciseCard = ({
                   autoFocus
                   value={workingWeight}
                   onChange={(e) => setWorkingWeight(e.target.value)}
-                  className="w-full bg-bg-primary border border-[--glass-border] dark:border-white/10 rounded-2xl px-4 py-4 text-4xl font-black text-center text-text-primary focus:ring-2 focus:ring-accent focus:outline-none [&::-webkit-inner-spin-button]:appearance-none shadow-inner"
+                  className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] px-5 py-6 text-5xl font-black text-center text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all shadow-inner [&::-webkit-inner-spin-button]:appearance-none placeholder:text-text-muted/30"
                   placeholder="0"
                 />
               </div>
               
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3">
+                <button
+                  type="submit"
+                  disabled={!workingWeight}
+                  className="w-full py-4 rounded-[20px] bg-orange-500 text-white font-bold hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-lg shadow-orange-500/20"
+                >
+                  Generar Series
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowWarmupInput(false)}
-                  className="flex-1 py-3 rounded-xl border border-[--glass-border] dark:border-white/10 bg-bg-primary/50 text-text-primary font-semibold hover:bg-bg-secondary transition-colors active:scale-95"
+                  className="w-full py-4 rounded-[20px] bg-black/5 dark:bg-white/5 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 active:scale-95"
-                >
-                  Generar
                 </button>
               </div>
             </form>

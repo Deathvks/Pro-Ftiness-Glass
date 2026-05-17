@@ -4,13 +4,10 @@ import ExerciseGroup from '../RoutineEditor/ExerciseGroup';
 
 const ExerciseList = ({
   groupedExercises,
-  exercises, // Pasamos 'exercises' completos para encontrar el índice
+  exercises, 
   onDragEnd,
-  // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
-  // 1. Aceptamos las props con los nombres actualizados
   activeDropdownTempId,
   setActiveDropdownTempId,
-  // --- FIN DE LA MODIFICACIÓN ---
   onFieldChange,
   onExerciseSelect,
   removeExercise,
@@ -21,15 +18,12 @@ const ExerciseList = ({
 
   return (
     <>
-      <h2 className="text-2xl font-semibold mb-4">Ejercicios</h2>
+      <h2 className="text-2xl font-extrabold mb-6 text-text-primary tracking-tight">Ejercicios</h2>
 
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="exercises">
           {(provided) => (
-            // --- INICIO DE LA MODIFICACIÓN (Revertir a Lista) ---
-            // Volvemos a usar `space-y-6` en lugar de un grid y añadimos el padding inferior para móvil
             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-6 mb-6 pb-28 md:pb-8">
-            {/* --- FIN DE LA MODIFICACIÓN (Revertir a Lista) --- */}
               {groupedExercises.map((group, groupIndex) => {
                 if (!group || group.length === 0) return null;
 
@@ -41,7 +35,6 @@ const ExerciseList = ({
                   return null; 
                 }
 
-                // FIX: @hello-pangea/dnd requiere ESTRICTAMENTE que draggableId y key sean un string.
                 const dragId = group[0].superset_group_id 
                   ? `superset-${group[0].superset_group_id}` 
                   : `exercise-${group[0].tempId || groupIndex}`;
@@ -50,32 +43,22 @@ const ExerciseList = ({
                   <Draggable
                     key={dragId}
                     draggableId={dragId}
-                    index={firstExerciseIndex} // Índice del primer elemento del grupo
-                    isDragDisabled={isSuperset} // Deshabilitar drag para superseries
+                    index={firstExerciseIndex} 
+                    isDragDisabled={isSuperset} 
                   >
-                    {(providedDrag) => (
+                    {(providedDrag, snapshot) => (
                       <div
                         ref={providedDrag.innerRef}
                         {...providedDrag.draggableProps}
-                        // --- INICIO DE LA MODIFICACIÓN (Revertir a Lista) ---
-                        // Eliminamos el `h-full` que era para el grid
-                        // --- FIN DE LA MODIFICACIÓN (Revertir a Lista) ---
+                        className={`transition-all duration-300 ${snapshot.isDragging ? 'z-50 scale-[1.02] shadow-2xl opacity-90' : ''}`}
                       >
                         <ExerciseGroup
                           group={group}
                           groupIndex={groupIndex}
                           isLastGroup={isLastGroup}
                           editedExercises={exercises}
-                          // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
-                          // 2. Pasamos las props con los nombres actualizados
                           activeDropdownTempId={activeDropdownTempId}
-                          // --- FIN DE LA MODIFICACIÓN ---
-                          errors={{}} // Pasar errores si los hubiera
-                          
-                          // Pasamos las funciones de manejo
-                          // --- INICIO DE LA MODIFICACIÓN (FIX PROBLEMA 2) ---
-                          // 3. Pasamos el tempId (string) directamente al hook.
-                          // Ya no convertimos a 'index' (number)
+                          errors={{}} 
                           onFieldChange={(exerciseTempId, field, value) => {
                             onFieldChange(exerciseTempId, field, value);
                           }}
@@ -87,9 +70,7 @@ const ExerciseList = ({
                           }}
                           unlinkGroup={unlinkGroup}
                           linkWithNext={() => createSuperset(group[group.length - 1].tempId)}
-                          
-                          setActiveDropdownIndex={setActiveDropdownTempId} // <- 2. (Continuación)
-                          // --- FIN DE LA MODIFICACIÓN ---
+                          setActiveDropdownIndex={setActiveDropdownTempId}
                           dragHandleProps={isSuperset ? null : providedDrag.dragHandleProps}
                           onReplaceClick={onReplaceClick}
                         />

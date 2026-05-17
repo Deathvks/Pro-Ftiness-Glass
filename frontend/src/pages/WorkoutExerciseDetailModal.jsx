@@ -171,154 +171,178 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out] p-4 sm:p-6"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg max-h-[60vh] md:max-h-[85vh] m-4 p-6 overflow-y-auto animate-[fade-in-up_0.3s_ease-out] bg-bg-primary rounded-2xl border border-glass-border shadow-2xl"
+        className="relative w-full max-w-xl max-h-[85vh] overflow-hidden flex flex-col bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/10 transition"
-        >
-          <X size={24} />
-        </button>
-
-        <h2 className="text-2xl font-bold mb-4 pr-8 break-words text-text-primary">
-          {translatedName}
-        </h2>
-
-        {(localDetails.image_url || localDetails.video_url) ? (
-          <ExerciseMedia
-            details={localDetails}
-            className="w-full mx-auto mb-4 border border-glass-border rounded-xl"
-          />
-        ) : localIsLoading ? (
-          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-xl flex items-center justify-center text-text-muted w-full mx-auto mb-4">
-            <Spinner />
-          </div>
-        ) : (
-          <div className="aspect-video bg-bg-secondary border border-glass-border rounded-xl flex items-center justify-center text-text-muted w-full mx-auto mb-4">
-            <ImageIcon size={48} />
-          </div>
-        )}
-
-        <div className="space-y-3 mb-6">
-          <h3 className="text-lg font-semibold text-text-secondary">
-            {t('details', { ns: 'exercise_ui', defaultValue: 'Detalles' })}
-          </h3>
-
-          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border border-glass-border">
-            <Target size={20} className="text-accent" />
-            <span className="font-medium capitalize text-text-primary">
-              {muscleGroupLabel}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border border-glass-border">
-            <Dumbbell size={20} className="text-accent" />
-            <span className="font-medium text-text-primary">
-              {t('n_sets', { count: exercise.sets, ns: 'exercise_ui' })}
-            </span>
-          </div>
-          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border border-glass-border">
-            <Repeat size={20} className="text-accent" />
-            <span className="font-medium text-text-primary">
-              {t('n_reps', { count: exercise.reps, ns: 'exercise_ui' })}
-            </span>
-          </div>
-          <div className="flex items-center gap-4 p-3 bg-bg-secondary rounded-md border border-glass-border">
-            <Clock size={20} className="text-accent" />
-            <span className="font-medium text-text-primary">
-              {t('n_rest', { count: exercise.rest_seconds || 90, ns: 'exercise_ui' })}
-            </span>
-          </div>
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 sm:p-8 pb-5 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] shrink-0">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-text-primary truncate pr-4">
+            {translatedName}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-secondary hover:text-text-primary active:scale-95 shrink-0"
+          >
+            <X size={20} strokeWidth={2.5} />
+          </button>
         </div>
 
-        <div className="space-y-3">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-text-secondary">
-            <FileText size={20} className="text-accent" />
-            {t('description', { ns: 'exercise_ui' })}
-          </h3>
-
-          {description ? (
-            <div
-              className="prose prose-sm prose-invert max-w-none text-text-primary leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: description }}
+        {/* Content */}
+        <div className="flex-grow overflow-y-auto p-6 sm:p-8 custom-scrollbar">
+          
+          {(localDetails.image_url || localDetails.video_url) ? (
+            <ExerciseMedia
+              details={localDetails}
+              className="w-full mx-auto mb-8 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm"
             />
           ) : localIsLoading ? (
-            <div className="flex justify-center items-center h-24">
-              <Spinner />
+            <div className="aspect-video bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] flex items-center justify-center text-text-muted w-full mx-auto mb-8 shadow-inner">
+              <Spinner size={32} />
             </div>
           ) : (
-            <p className="text-text-muted">
-              {t('no_description_available', { ns: 'exercise_ui' })}
-            </p>
+            <div className="aspect-video bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] flex items-center justify-center text-text-muted w-full mx-auto mb-8 shadow-inner">
+              <ImageIcon size={48} strokeWidth={1.5} className="opacity-50" />
+            </div>
           )}
-        </div>
 
-        {/* --- Sección del Entrenador IA --- */}
-        <div className="mt-6 pt-6 border-t border-glass-border space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold flex items-center gap-2 text-text-primary">
-              <Sparkles className="w-5 h-5 text-accent" />
-              Técnica y Consejos IA
+          <div className="grid grid-cols-2 gap-3 mb-8">
+            <div className="flex items-center gap-3 p-4 bg-black/5 dark:bg-white/5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
+              <div className="p-2 bg-accent/10 rounded-[12px] text-accent shrink-0">
+                <Target size={18} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Músculo</span>
+                <span className="font-bold text-sm text-text-primary capitalize truncate">{muscleGroupLabel}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-black/5 dark:bg-white/5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
+              <div className="p-2 bg-accent/10 rounded-[12px] text-accent shrink-0">
+                <Dumbbell size={18} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Series</span>
+                <span className="font-bold text-sm text-text-primary truncate">{t('n_sets', { count: exercise.sets, ns: 'exercise_ui' })}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-black/5 dark:bg-white/5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
+              <div className="p-2 bg-accent/10 rounded-[12px] text-accent shrink-0">
+                <Repeat size={18} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Reps</span>
+                <span className="font-bold text-sm text-text-primary truncate">{t('n_reps', { count: exercise.reps, ns: 'exercise_ui' })}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-black/5 dark:bg-white/5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
+              <div className="p-2 bg-accent/10 rounded-[12px] text-accent shrink-0">
+                <Clock size={18} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Descanso</span>
+                <span className="font-bold text-sm text-text-primary truncate">{t('n_rest', { count: exercise.rest_seconds || 90, ns: 'exercise_ui' })}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h3 className="flex items-center gap-3 text-lg font-extrabold text-text-primary mb-4 tracking-tight">
+              <div className="p-2 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 text-accent shrink-0">
+                <FileText size={18} strokeWidth={2.5} />
+              </div>
+              {t('description', { ns: 'exercise_ui' })}
             </h3>
-            {remainingUses !== null && (
-              <div className="text-right">
-                <span className={`text-xs font-medium block ${isLimitReached ? 'text-red-500' : 'text-text-secondary'}`}>
-                  Usos restantes: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
-                </span>
-                <span className="text-[10px] text-text-muted block">Se restablece a medianoche</span>
+
+            {description ? (
+              <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-5 sm:p-6 ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none text-text-primary font-medium leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: description }}
+                />
+              </div>
+            ) : localIsLoading ? (
+              <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-8 ring-1 ring-black/5 dark:ring-white/10 flex justify-center items-center">
+                <Spinner size={24} />
+              </div>
+            ) : (
+              <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-6 ring-1 ring-black/5 dark:ring-white/10 text-center">
+                <p className="text-text-secondary font-bold text-sm">
+                  {t('no_description_available', { ns: 'exercise_ui' })}
+                </p>
               </div>
             )}
           </div>
 
-          {!aiExplanation && !isAiLoading && (
-            <button
-              onClick={handleAskAI}
-              disabled={isLimitReached}
-              className={`w-full p-4 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold border border-glass-border ${isLimitReached
-                  ? 'bg-bg-secondary/50 text-text-muted cursor-not-allowed'
-                  : 'bg-bg-secondary text-accent hover:bg-accent/5'
-                }`}
-            >
-              {isLimitReached ? (
-                <>
-                  <AlertCircle className="w-5 h-5" />
-                  Límite Diario Alcanzado
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Pedir explicación experta
-                </>
+          {/* --- Sección del Entrenador IA --- */}
+          <div className="pt-8 border-t border-black/5 dark:border-white/10">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg font-extrabold flex items-center gap-3 text-text-primary tracking-tight">
+                <div className="p-2 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 text-accent shrink-0">
+                  <Sparkles size={18} strokeWidth={2.5} />
+                </div>
+                Técnica y Consejos IA
+              </h3>
+              {remainingUses !== null && (
+                <div className="text-right">
+                  <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider block ${isLimitReached ? 'text-red' : 'text-text-secondary'}`}>
+                    Usos: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
+                  </span>
+                  <span className="text-[9px] text-text-muted font-bold uppercase tracking-widest block mt-0.5">Se restablece a medianoche</span>
+                </div>
               )}
-            </button>
-          )}
-
-          {isAiLoading && (
-            <div className="p-6 rounded-xl bg-bg-secondary border border-glass-border flex flex-col items-center justify-center gap-3">
-              <Loader2 className="w-6 h-6 text-accent animate-spin" />
-              <span className="text-sm text-text-secondary">Analizando biomecánica del ejercicio...</span>
             </div>
-          )}
 
-          {aiError && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-3 items-start">
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-500">{aiError}</p>
-            </div>
-          )}
+            {!aiExplanation && !isAiLoading && (
+              <button
+                onClick={handleAskAI}
+                disabled={isLimitReached}
+                className={`w-full py-4 px-6 rounded-[20px] font-bold flex items-center justify-center gap-2 transition-all active:scale-95 text-sm sm:text-base ring-1 ${isLimitReached
+                    ? 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-muted cursor-not-allowed'
+                    : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-accent hover:ring-accent/50 shadow-sm'
+                  }`}
+              >
+                {isLimitReached ? (
+                  <>
+                    <AlertCircle size={20} strokeWidth={2.5} />
+                    Límite Diario Alcanzado
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={20} strokeWidth={2.5} />
+                    Pedir explicación experta
+                  </>
+                )}
+              </button>
+            )}
 
-          {aiExplanation && (
-            <div className="p-5 rounded-xl bg-bg-secondary border border-glass-border space-y-2 text-sm leading-relaxed whitespace-pre-wrap text-text-primary">
-              {aiExplanation}
-            </div>
-          )}
+            {isAiLoading && (
+              <div className="p-8 rounded-[24px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex flex-col items-center justify-center gap-4 shadow-inner">
+                <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                <span className="text-sm font-bold text-text-secondary">Analizando biomecánica del ejercicio...</span>
+              </div>
+            )}
+
+            {aiError && (
+              <div className="p-5 rounded-[20px] bg-red/10 ring-1 ring-red/30 flex gap-3 items-start shadow-sm mt-2">
+                <AlertCircle className="w-5 h-5 text-red shrink-0 mt-0.5" strokeWidth={2.5} />
+                <p className="text-sm font-bold text-red leading-relaxed">{aiError}</p>
+              </div>
+            )}
+
+            {aiExplanation && (
+              <div className="p-5 sm:p-6 rounded-[24px] bg-accent/5 ring-1 ring-accent/30 space-y-2 text-sm leading-relaxed whitespace-pre-wrap text-text-primary font-medium shadow-inner">
+                {aiExplanation}
+              </div>
+            )}
+          </div>
+
         </div>
-
       </div>
     </div>
   );

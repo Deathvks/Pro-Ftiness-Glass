@@ -51,58 +51,58 @@ const GlobalPrivacyModal = ({ onClose }) => {
 
   const getOptionClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
-    return `flex items-center gap-4 p-4 rounded-xl border transition-all text-left group cursor-pointer relative overflow-hidden
+    return `flex items-center gap-4 p-4 rounded-[20px] transition-all duration-300 text-left group cursor-pointer relative overflow-hidden border-none ring-1
       ${isSelected
-        ? 'bg-accent/10 border-accent shadow-[0_0_15px_-3px_rgba(var(--accent-rgb),0.3)]'
-        : 'bg-glass-base border-glass-border hover:border-accent/30 hover:bg-glass-base/80'
+        ? 'bg-accent/10 ring-accent/50 shadow-md shadow-accent/10 scale-[1.02]'
+        : 'bg-black/5 dark:bg-white/5 ring-transparent hover:bg-black/10 dark:hover:bg-white/10'
       }`;
   };
 
   const getIconContainerClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
-    return `transition-colors flex items-center justify-center
+    return `transition-colors flex items-center justify-center p-2 rounded-[14px]
       ${isSelected
-        ? 'text-accent'
-        : 'text-text-secondary group-hover:text-text-primary'
+        ? 'text-accent bg-accent/10'
+        : 'text-text-secondary bg-black/5 dark:bg-white/5 group-hover:text-text-primary'
       }`;
   };
 
   const getTextClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
-    return `block font-bold text-lg transition-colors ${isSelected ? 'text-accent' : 'text-text-primary'}`;
+    return `block font-bold text-base transition-colors ${isSelected ? 'text-accent' : 'text-text-primary'}`;
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-[fade-in_0.2s_ease-out]">
+      <div className="absolute inset-0" onClick={onClose} />
       <GlassCard
-        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl"
-        style={{ backgroundColor: 'var(--bg-primary)' }}
+        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary z-10"
       >
-        <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent shrink-0">
+        <div className="relative p-6 sm:p-8 pb-4 shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full hover:bg-glass-base text-text-secondary transition-colors z-10"
+            className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors z-10"
           >
-            <X size={20} />
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
 
           <div className="flex flex-col items-center text-center gap-3 mt-2">
-            <div className="text-accent mb-1">
-              <Globe size={36} strokeWidth={1.5} />
+            <div className="w-16 h-16 rounded-[20px] flex items-center justify-center mb-1 ring-2 ring-accent/30 bg-accent/10 text-accent">
+              <Globe size={32} strokeWidth={1.5} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-text-primary">Privacidad del Muro</h2>
-              <p className="text-sm text-text-secondary mt-1 px-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Privacidad del Muro</h2>
+              <p className="text-xs sm:text-sm text-text-secondary mt-2 px-4 leading-relaxed font-medium">
                 ¿Quién puede ver tus entrenamientos al finalizarlos?
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-6 pt-2 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
+        <div className="p-6 pt-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-1 gap-3">
             <button onClick={() => setVisibility('private')} className={getOptionClasses('private')}>
-              <div className={getIconContainerClasses('private')}><Lock size={26} strokeWidth={1.5} /></div>
+              <div className={getIconContainerClasses('private')}><Lock size={20} strokeWidth={2} /></div>
               <div>
                 <span className={getTextClasses('private')}>No subir</span>
                 <span className="text-xs text-text-secondary block mt-0.5">Tus entrenamientos no aparecerán en el muro.</span>
@@ -111,7 +111,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
             </button>
 
             <button onClick={() => setVisibility('friends')} className={getOptionClasses('friends')}>
-              <div className={getIconContainerClasses('friends')}><Users size={26} strokeWidth={1.5} /></div>
+              <div className={getIconContainerClasses('friends')}><Users size={20} strokeWidth={2} /></div>
               <div>
                 <span className={getTextClasses('friends')}>Solo Amigos</span>
                 <span className="text-xs text-text-secondary block mt-0.5">Tus amigos agregados verán tu actividad.</span>
@@ -120,7 +120,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
             </button>
 
             <button onClick={() => setVisibility('public')} className={getOptionClasses('public')}>
-              <div className={getIconContainerClasses('public')}><Globe size={26} strokeWidth={1.5} /></div>
+              <div className={getIconContainerClasses('public')}><Globe size={20} strokeWidth={2} /></div>
               <div>
                 <span className={getTextClasses('public')}>Todo el mundo</span>
                 <span className="text-xs text-text-secondary block mt-0.5">Cualquier usuario podrá ver tus entrenamientos.</span>
@@ -129,26 +129,26 @@ const GlobalPrivacyModal = ({ onClose }) => {
             </button>
           </div>
 
-          {visibility !== 'private' && (
-            <div className="mt-4 p-4 rounded-xl bg-bg-secondary border border-glass-border flex items-center justify-between gap-4 animate-[fade-in_0.3s_ease-out]">
+          <div className={`transition-all duration-300 overflow-hidden ${visibility !== 'private' ? 'max-h-40 opacity-100 mt-6' : 'max-h-0 opacity-0 mt-0'}`}>
+            <div className="p-5 rounded-[24px] bg-black/5 dark:bg-white/5 flex items-center justify-between gap-4">
               <div className="text-left">
                 <span className="block font-bold text-sm text-text-primary">Notificar a mis amigos</span>
-                <span className="text-xs text-text-secondary block mt-0.5">Avisarles cuando publiques un entrenamiento.</span>
+                <span className="text-[10px] sm:text-xs text-text-secondary block mt-1 leading-tight font-medium">Avisarles cuando publiques un entrenamiento.</span>
               </div>
               <button
                 onClick={() => setNotifyFriends(!notifyFriends)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none ${notifyFriends ? 'bg-accent' : 'bg-gray-600'}`}
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none shadow-inner ${notifyFriends ? 'bg-accent shadow-accent/20' : 'bg-gray-400 dark:bg-gray-600'}`}
               >
-                <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${notifyFriends ? 'translate-x-6' : 'translate-x-1'}`} />
+                <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${notifyFriends ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="p-6 pt-0 shrink-0">
+        <div className="p-6 shrink-0 border-t border-black/5 dark:border-white/10 rounded-b-[32px] bg-black/5 dark:bg-white/5">
           <button
             onClick={handleSave}
-            className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
+            className="w-full py-4 rounded-[20px] font-bold text-sm sm:text-base bg-accent text-white hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
           >
             Guardar Cambios
           </button>
@@ -202,58 +202,58 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
 
   const getOptionClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
-    return `flex items-center gap-4 p-4 rounded-xl border transition-all text-left group cursor-pointer relative overflow-hidden
+    return `flex items-center gap-4 p-4 rounded-[20px] transition-all duration-300 text-left group cursor-pointer relative overflow-hidden border-none ring-1
       ${isSelected
-        ? 'bg-accent/10 border-accent shadow-[0_0_15px_-3px_rgba(var(--accent-rgb),0.3)]'
-        : 'bg-glass-base border-glass-border hover:border-accent/30 hover:bg-glass-base/80'
+        ? 'bg-accent/10 ring-accent/50 shadow-md shadow-accent/10 scale-[1.02]'
+        : 'bg-black/5 dark:bg-white/5 ring-transparent hover:bg-black/10 dark:hover:bg-white/10'
       }`;
   };
 
   const getIconContainerClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
-    return `transition-colors flex items-center justify-center
+    return `transition-colors flex items-center justify-center p-2 rounded-[14px]
       ${isSelected
-        ? 'text-accent'
-        : 'text-text-secondary group-hover:text-text-primary'
+        ? 'text-accent bg-accent/10'
+        : 'text-text-secondary bg-black/5 dark:bg-white/5 group-hover:text-text-primary'
       }`;
   };
 
   const getTextClasses = (optionKey) => {
     const isSelected = visibility === optionKey;
-    return `block font-bold text-lg transition-colors ${isSelected ? 'text-accent' : 'text-text-primary'}`;
+    return `block font-bold text-base transition-colors ${isSelected ? 'text-accent' : 'text-text-primary'}`;
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-[fade-in_0.2s_ease-out]">
+      <div className="absolute inset-0" onClick={onClose} />
       <GlassCard
-        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-scale-in border border-glass-border shadow-2xl"
-        style={{ backgroundColor: 'var(--bg-primary)' }}
+        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary z-10"
       >
-        <div className="relative p-6 pb-4 bg-gradient-to-b from-accent/5 to-transparent shrink-0">
+        <div className="relative p-6 sm:p-8 pb-4 shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full hover:bg-glass-base text-text-secondary transition-colors z-10"
+            className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors z-10"
           >
-            <X size={20} />
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
 
           <div className="flex flex-col items-center text-center gap-3 mt-2">
-            <div className="text-accent mb-1">
-              <Share2 size={36} strokeWidth={1.5} />
+            <div className="w-16 h-16 rounded-[20px] flex items-center justify-center mb-1 ring-2 ring-accent/30 bg-accent/10 text-accent">
+              <Share2 size={32} strokeWidth={1.5} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-text-primary">Compartir Rutina</h2>
-              <p className="text-sm text-text-secondary mt-1 px-4">
-                Configura la privacidad para <strong>{routine.name}</strong>
+              <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Compartir Rutina</h2>
+              <p className="text-xs sm:text-sm text-text-secondary mt-2 px-4 leading-relaxed font-medium">
+                Configura la privacidad para <strong className="text-text-primary">{routine.name}</strong>
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-6 pt-2 space-y-6 flex-1 overflow-y-auto scrollbar-hide">
+        <div className="p-6 pt-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-1 gap-3">
             <button onClick={() => handleVisibilityChange('private')} className={getOptionClasses('private')}>
-              <div className={getIconContainerClasses('private')}><Lock size={26} strokeWidth={1.5} /></div>
+              <div className={getIconContainerClasses('private')}><Lock size={20} strokeWidth={2} /></div>
               <div>
                 <span className={getTextClasses('private')}>Privada</span>
                 <span className="text-xs text-text-secondary block mt-0.5">Solo tú puedes ver esta rutina.</span>
@@ -262,7 +262,7 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
             </button>
 
             <button onClick={() => handleVisibilityChange('friends')} className={getOptionClasses('friends')}>
-              <div className={getIconContainerClasses('friends')}><Users size={26} strokeWidth={1.5} /></div>
+              <div className={getIconContainerClasses('friends')}><Users size={20} strokeWidth={2} /></div>
               <div>
                 <span className={getTextClasses('friends')}>Solo Amigos</span>
                 <span className="text-xs text-text-secondary block mt-0.5">Accesible para tus amigos agregados.</span>
@@ -271,7 +271,7 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
             </button>
 
             <button onClick={() => handleVisibilityChange('public')} className={getOptionClasses('public')}>
-              <div className={getIconContainerClasses('public')}><Globe size={26} strokeWidth={1.5} /></div>
+              <div className={getIconContainerClasses('public')}><Globe size={20} strokeWidth={2} /></div>
               <div>
                 <span className={getTextClasses('public')}>Pública</span>
                 <span className="text-xs text-text-secondary block mt-0.5">Cualquiera con el enlace puede verla.</span>
@@ -281,30 +281,30 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
           </div>
 
           <div className={`transition-all duration-300 overflow-hidden ${visibility !== 'private' ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
-            <div className="p-4 rounded-xl bg-glass-base border border-glass-border space-y-2">
-              <label className="text-[10px] font-bold text-accent uppercase tracking-wider flex items-center gap-1">
-                <Link2 size={10} /> Enlace para compartir
+            <div className="p-5 rounded-[24px] bg-black/5 dark:bg-white/5 space-y-3 ring-1 ring-black/5 dark:ring-white/10">
+              <label className="text-[10px] font-bold text-accent uppercase tracking-widest flex items-center gap-1.5">
+                <Link2 size={14} /> Enlace para compartir
               </label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-bg-primary rounded-lg px-3 py-2 border border-glass-border text-xs text-text-secondary font-mono truncate select-all">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-bg-secondary rounded-[16px] px-4 py-3 text-xs text-text-primary font-mono font-medium truncate select-all ring-1 ring-black/5 dark:ring-white/10">
                   {shareUrl}
                 </div>
                 <button
                   onClick={copyLink}
-                  className="p-2 bg-accent text-bg-primary hover:brightness-110 rounded-lg transition-colors shadow-lg shadow-accent/20"
+                  className="p-3 bg-accent text-white hover:scale-105 active:scale-95 rounded-[16px] transition-all shadow-lg shadow-accent/20"
                   title="Copiar enlace"
                 >
-                  <Copy size={18} />
+                  <Copy size={20} />
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-6 pt-0 shrink-0">
+        <div className="p-6 shrink-0 border-t border-black/5 dark:border-white/10 rounded-b-[32px] bg-black/5 dark:bg-white/5">
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-xl font-bold text-sm bg-accent text-bg-secondary hover:brightness-110 transition-all shadow-lg shadow-accent/20"
+            className="w-full py-4 rounded-[20px] font-bold text-sm sm:text-base bg-black/5 dark:bg-white/5 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
           >
             Cerrar
           </button>
@@ -699,16 +699,24 @@ const Routines = ({ setView }) => {
     );
   }
 
-  const baseButtonClasses = 'px-4 py-2 rounded-full font-semibold transition-colors flex items-center gap-2';
-  const activeModeClasses = 'bg-accent text-bg-secondary';
-  const inactiveModeClasses = 'bg-bg-secondary hover:bg-white/10 text-text-secondary';
+  // --- Nueva función para obtener clases de Píldoras con margen seguro (mx-1.5 y my-2) ---
+  const getTabClass = (tabId) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 ${
+    activeTab === tabId
+        ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+        : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+  }`;
 
-  // Añadimos el prop id
+  const getFolderClass = (folderId) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-[20px] transition-all duration-300 whitespace-nowrap flex items-center gap-2 outline-none flex-shrink-0 ${
+    selectedFolder === folderId
+        ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+        : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+  }`;
+
   const RoutineActionButtons = ({ className = '', id }) => (
-    <div className={`flex gap-2 ${className}`} id={id}>
+    <div className={`flex gap-2.5 ${className}`} id={id}>
       <button
         onClick={() => setShowPrivacyModal(true)}
-        className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-glass-base text-text-primary font-semibold transition hover:scale-105 border border-glass-border shadow-sm"
+        className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
         title="Privacidad del Muro"
       >
         <Globe size={18} />
@@ -716,7 +724,7 @@ const Routines = ({ setView }) => {
       </button>
       <button
         onClick={() => setShowAIGenerator(true)}
-        className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-accent/10 text-accent font-semibold transition hover:scale-105 border border-accent/30 dark:border-white/10"
+        className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-accent/10 text-accent font-bold transition hover:scale-105"
         title="Generar rutina con IA"
       >
         <Sparkles size={18} />
@@ -731,7 +739,7 @@ const Routines = ({ setView }) => {
             folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
           });
         }}
-        className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 flex-1 md:flex-none"
+        className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-white font-bold transition hover:scale-105 shadow-lg shadow-accent/30 flex-1 md:flex-none"
       >
         <Plus size={18} />
         Crear Rutina
@@ -756,63 +764,61 @@ const Routines = ({ setView }) => {
         />
       </Helmet>
 
-      <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
+      <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+        <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
           Rutinas
         </h1>
-        {/* Pasamos el ID para escritorio */}
         {activeTab === 'myRoutines' && <RoutineActionButtons id="routines-actions-desktop" />}
       </div>
 
-      <div id="routines-tabs" className={`flex items-center gap-2 mb-6 p-1 rounded-full bg-bg-secondary border border-transparent dark:border dark:border-white/10 w-fit max-w-full overflow-x-auto scrollbar-hide mt-6 md:mt-0`}>
+      {/* Tabs principales con márgenes de seguridad para las sombras */}
+      <div id="routines-tabs" className="flex items-center mb-8 overflow-x-auto py-2 -mx-4 px-2.5 md:mx-0 md:px-0 scrollbar-hide mt-6 md:mt-0">
         <button
           onClick={() => setActiveTab('myRoutines')}
-          className={`${baseButtonClasses} ${activeTab === 'myRoutines' ? activeModeClasses : inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
+          className={getTabClass('myRoutines')}
         >
-          <BookCopy size={16} /> Mis Rutinas
+          <BookCopy size={18} /> Mis Rutinas
         </button>
         <button
           onClick={() => setActiveTab('explore')}
-          className={`${baseButtonClasses} ${activeTab === 'explore' ? activeModeClasses : inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
+          className={getTabClass('explore')}
         >
-          <Compass size={16} /> Explorar
+          <Compass size={18} /> Explorar
         </button>
         <button
           onClick={() => {
             localStorage.setItem('quickCardioOrigin', 'routines');
             setView('quickCardio');
           }}
-          className={`${baseButtonClasses} ${inactiveModeClasses} whitespace-nowrap flex-shrink-0`}
+          className={`mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary`}
         >
-          <Flame size={16} /> Cardio Rápido
+          <Flame size={18} /> Cardio Rápido
         </button>
       </div>
 
       {activeTab === 'myRoutines' && (
-        < RoutineActionButtons id="routines-actions-mobile" className="flex md:hidden w-full mb-6" />
+        < RoutineActionButtons id="routines-actions-mobile" className="flex md:hidden w-full mb-8" />
       )}
 
       {activeTab === 'myRoutines' && (
         <>
-          <div className="mb-6 flex flex-col gap-4">
+          <div className="mb-8 flex flex-col gap-5">
             <div className="max-w-md relative" id="routines-search">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar rutinas..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-bg-secondary border border-transparent dark:border dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                className="w-full pl-11 pr-4 py-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 border border-transparent focus:border-accent/30 focus:outline-none transition-all text-sm font-medium placeholder:text-text-muted text-text-primary"
               />
             </div>
 
+            {/* Subpestañas (Carpetas) con márgenes de seguridad */}
             {routines && routines.length > 0 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="flex items-center overflow-x-auto py-2 scrollbar-hide -mx-4 px-2.5 md:mx-0 md:px-0">
                 <button
                   onClick={() => setSelectedFolder('all')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${selectedFolder === 'all'
-                    ? 'bg-accent/20 border-accent text-accent'
-                    : 'bg-bg-secondary border-transparent dark:border-white/10 text-text-secondary hover:bg-white/5'
-                    }`}
+                  className={getFolderClass('all')}
                 >
                   Todas
                 </button>
@@ -821,22 +827,16 @@ const Routines = ({ setView }) => {
                   <button
                     key={folder}
                     onClick={() => setSelectedFolder(folder)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${selectedFolder === folder
-                      ? 'bg-accent/20 border-accent text-accent'
-                      : 'bg-bg-secondary border-transparent dark:border-white/10 text-text-secondary hover:bg-white/5'
-                      }`}
+                    className={getFolderClass(folder)}
                   >
-                    {selectedFolder === folder ? <FolderOpen size={14} /> : <Folder size={14} />}
+                    {selectedFolder === folder ? <FolderOpen size={16} /> : <Folder size={16} />}
                     {folder}
                   </button>
                 ))}
 
                 <button
                   onClick={() => setSelectedFolder('uncategorized')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${selectedFolder === 'uncategorized'
-                    ? 'bg-accent/20 border-accent text-accent'
-                    : 'bg-bg-secondary border-transparent dark:border-white/10 text-text-secondary hover:bg-white/5'
-                    }`}
+                  className={getFolderClass('uncategorized')}
                 >
                   Otros
                 </button>
@@ -844,7 +844,7 @@ const Routines = ({ setView }) => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map((routine) => {
                 if (!routine) return null;
@@ -871,9 +871,12 @@ const Routines = ({ setView }) => {
                 }
 
                 return (
-                  <GlassCard key={routine.id} className="p-0 overflow-hidden flex flex-col group relative border-transparent dark:border dark:border-white/10">
+                  <GlassCard 
+                    key={routine.id} 
+                    className={`glass p-0 overflow-hidden flex flex-col group relative rounded-[28px] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 border-none ring-1 ring-black/5 dark:ring-white/10 ${isActive ? 'ring-2 ring-accent shadow-accent/20' : ''}`}
+                  >
                     {imageSrc && (
-                      <div className="h-32 sm:h-40 w-full relative shrink-0 overflow-hidden bg-bg-secondary">
+                      <div className="h-32 sm:h-40 w-full relative shrink-0 overflow-hidden bg-black/5 dark:bg-white/5">
                         {isCssBackground(imageSrc) ? (
                           <div
                             className="w-full h-full transition-transform duration-500 group-hover:scale-105"
@@ -887,119 +890,119 @@ const Routines = ({ setView }) => {
                             onError={(e) => { e.target.style.display = 'none'; }}
                           />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary/90 to-transparent opacity-60" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/90 to-transparent opacity-80" />
                         {routine.folder && (
-                          <div className="absolute top-2 right-2 z-20">
-                            <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-xs font-medium text-white border border-transparent dark:border dark:border-white/10 flex items-center gap-1">
-                              <Folder size={12} /> {routine.folder}
+                          <div className="absolute top-3 right-3 z-20">
+                            <span className="px-3 py-1.5 rounded-[12px] bg-black/40 backdrop-blur-md text-xs font-bold text-white flex items-center gap-1.5 shadow-sm">
+                              <Folder size={14} /> {routine.folder}
                             </span>
                           </div>
                         )}
                       </div>
                     )}
 
-                    <div className="p-5 flex-1 flex flex-col">
-                      <div className="flex flex-col gap-1 min-w-0 mb-3">
+                    <div className="p-5 sm:p-6 flex-1 flex flex-col">
+                      <div className="flex flex-col gap-1 min-w-0 mb-4">
                         {!imageSrc && routine.folder && (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-text-muted mb-0.5">
-                            <Folder size={12} /> {routine.folder}
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted mb-1">
+                            <Folder size={14} /> {routine.folder}
                           </span>
                         )}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h2 className="text-lg md:text-xl font-bold text-text-primary leading-tight break-words max-w-full">
+                          <h2 className="text-xl md:text-2xl font-bold text-text-primary leading-tight break-words max-w-full">
                             {routine.name}
                           </h2>
                           {isActive && (
-                            <span className="px-2 py-0.5 rounded-full bg-accent-transparent text-accent text-[10px] uppercase font-bold shrink-0 border border-transparent">
+                            <span className="px-2.5 py-1 rounded-[10px] bg-accent/10 text-accent text-[10px] uppercase font-bold shrink-0">
                               Activo
                             </span>
                           )}
-                          <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] uppercase font-bold shrink-0 border border-transparent flex items-center gap-1">
+                          <span className="px-2.5 py-1 rounded-[10px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] uppercase font-bold shrink-0 flex items-center gap-1">
                             {visibilityIcon} {visibilityText}
                           </span>
                         </div>
                       </div>
 
                       {routine.description && (
-                        <p className="text-sm text-text-secondary line-clamp-2 mb-3">
+                        <p className="text-sm text-text-secondary line-clamp-2 mb-4 leading-relaxed">
                           {routine.description}
                         </p>
                       )}
 
-                      <div className="flex flex-wrap items-center gap-3 mb-4 text-xs font-medium text-text-secondary">
+                      <div className="flex flex-wrap items-center gap-3 mb-5 text-xs font-bold text-text-secondary">
                         {isCompleted && (
-                          <span className="inline-flex items-center gap-1 text-accent font-semibold">
+                          <span className="inline-flex items-center gap-1 text-accent bg-accent/10 px-2 py-1 rounded-[8px]">
                             <CheckCircle size={14} /> Completada
                           </span>
                         )}
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2 py-1 rounded-[8px]">
                           <Dumbbell size={14} /> {totalExercises} ejercicios
                         </span>
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2 py-1 rounded-[8px]">
                           <CalendarClock size={14} /> {lastUsed ? new Date(lastUsed).toLocaleDateString('es-ES') : 'Sin uso'}
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3 mb-4 mt-2">
+                      <div className="flex flex-wrap items-center gap-2 mb-5">
                         <button
                           onClick={() => setSharingRoutineId(routine.id)}
-                          className="text-text-secondary hover:text-accent transition-colors p-1"
+                          className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
                           title="Privacidad"
                         >
-                          <Globe size={20} />
+                          <Globe size={18} />
                         </button>
                         {isCompleted && (
                           <button
                             onClick={() => handleShareClick(routine)}
-                            className="text-text-secondary hover:text-accent transition-colors p-1"
+                            className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
                             title="Compartir"
                           >
-                            <Share2 size={20} />
+                            <Share2 size={18} />
                           </button>
                         )}
                         <button
                           onClick={() => handleEditClick(routine)}
-                          className="text-text-secondary hover:text-accent transition-colors p-1"
+                          className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
                           title="Editar"
                         >
-                          <Edit size={20} />
+                          <Edit size={18} />
                         </button>
                         <button
                           onClick={() => duplicateRoutine(routine)}
-                          className="text-text-secondary hover:text-accent transition-colors p-1"
+                          className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
                           title="Duplicar"
                         >
-                          <Copy size={20} />
+                          <Copy size={18} />
                         </button>
 
                         <div className="flex-1"></div>
 
                         <button
                           onClick={() => handleDeleteClick(routine.id)}
-                          className="text-text-muted hover:text-red transition-colors p-1"
+                          className="p-2.5 rounded-[14px] bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
                           title="Eliminar"
                         >
-                          <Trash2 size={20} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
 
                       {exerciseGroups.length > 0 && (
-                        <div className="mb-4">
-                          <div className="flex flex-col gap-3">
+                        <div className="mb-5 bg-black/5 dark:bg-white/5 rounded-[20px] p-4">
+                          <div className="flex flex-col gap-4">
                             {exerciseGroups.map((group, groupIndex) => (
                               <div key={groupIndex}>
                                 {group.length > 1 && (
-                                  <div className="mb-1 inline-flex items-center gap-1.5 text-accent text-[10px] uppercase font-bold tracking-wider">
+                                  <div className="mb-2 inline-flex items-center gap-1.5 text-accent text-[10px] uppercase font-bold tracking-wider bg-accent/10 px-2 py-0.5 rounded-[8px]">
                                     <Link2 size={12} /> Superserie
                                   </div>
                                 )}
-                                <ul className={`flex flex-col gap-2 ${group.length > 1 ? 'pl-3 border-l-2 border-accent/20' : ''}`}>
+                                <ul className={`flex flex-col gap-2.5 ${group.length > 1 ? 'pl-3 border-l-2 border-accent/30' : ''}`}>
                                   {group.map((ex) => (
                                     <li key={ex.id || ex.tempId} className="flex items-center justify-between text-sm">
-                                      <span className="truncate font-medium text-text-primary pr-2">
+                                      <span className="truncate font-semibold text-text-primary pr-3">
                                         {t(ex.name)}
                                       </span>
-                                      <span className="text-text-muted text-xs whitespace-nowrap">
+                                      <span className="text-text-secondary font-bold text-xs whitespace-nowrap bg-black/5 dark:bg-white/10 px-2 py-1 rounded-[8px]">
                                         {ex.sets}×{ex.reps}
                                       </span>
                                     </li>
@@ -1015,10 +1018,10 @@ const Routines = ({ setView }) => {
                         <button
                           onClick={() => handleStartWorkout(routine)}
                           disabled={isCompleted || isActive || isLoading || isBlockedByOtherWorkout}
-                          className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all
+                          className={`w-full inline-flex items-center justify-center gap-2 py-4 rounded-[20px] font-bold text-sm sm:text-base transition-all
                           ${isCompleted || isActive || isBlockedByOtherWorkout
-                              ? 'bg-bg-secondary text-text-muted cursor-not-allowed border border-transparent dark:border dark:border-white/10'
-                              : 'bg-accent text-bg-secondary hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-0.5'
+                              ? 'bg-black/5 dark:bg-white/5 text-text-muted cursor-not-allowed'
+                              : 'bg-accent text-white hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20'
                             }
                         `}
                         >
@@ -1026,22 +1029,22 @@ const Routines = ({ setView }) => {
                             <Spinner size="small" />
                           ) : isCompleted ? (
                             <>
-                              <CheckCircle size={16} />
+                              <CheckCircle size={20} />
                               Entrenamiento Completado
                             </>
                           ) : isActive ? (
                             <>
-                              <Clock size={16} />
+                              <Clock size={20} />
                               Continuar Entrenamiento
                             </>
                           ) : isBlockedByOtherWorkout ? (
                             <>
-                              <Lock size={16} />
+                              <Lock size={20} />
                               Entrenamiento en Curso
                             </>
                           ) : (
                             <>
-                              <Play size={16} fill="currentColor" />
+                              <Play size={20} fill="currentColor" />
                               Empezar Entrenamiento
                             </>
                           )}
@@ -1053,17 +1056,18 @@ const Routines = ({ setView }) => {
               })
             ) : (
               <div className="lg:col-span-3 md:col-span-2">
-                <GlassCard className="text-center p-10 border-transparent dark:border dark:border-white/10">
-                  <p className="text-text-muted">
+                <GlassCard className="glass text-center p-10 sm:p-16 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px]">
+                  <div className="w-20 h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-6 text-text-muted">
+                    <Folder size={32} />
+                  </div>
+                  <p className="text-text-secondary font-medium">
                     {routines && routines.length > 0
                       ? `No hay rutinas en la carpeta "${selectedFolder === 'uncategorized' ? 'Otros' : selectedFolder}".`
                       : 'Aún no has creado ninguna rutina.'
                     }
                   </p>
-                  <p className="text-text-muted mt-2">
-                    ¡Haz clic en{' '}
-                    <span className="font-semibold">“Crear Rutina”</span> para
-                    empezar!
+                  <p className="text-text-primary font-bold mt-2">
+                    ¡Haz clic en <span className="text-accent">“Crear Rutina”</span> para empezar!
                   </p>
                 </GlassCard>
               </div>
@@ -1092,7 +1096,7 @@ const Routines = ({ setView }) => {
           onCancel={() => setShowDeleteModal(false)}
           message="¿Estás seguro de que quieres borrar esta rutina?"
           onConfirm={confirmDelete}
-          isLoading={isSubmitting}
+          isLoading={isLoading}
           confirmText="Eliminar"
           isDestructive={true}
         />
@@ -1113,7 +1117,7 @@ const Routines = ({ setView }) => {
       />
 
       {isLoading && (
-        <div className="fixed inset-0 z-40 grid place-items-center bg-black/30">
+        <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 backdrop-blur-sm">
           <Spinner />
         </div>
       )}

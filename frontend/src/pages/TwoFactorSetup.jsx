@@ -176,7 +176,7 @@ const TwoFactorSetup = ({ setView }) => {
 
   // --- Renderizado del Input de Código (Individuales) ---
   const renderCodeInput = () => (
-    <div className="flex justify-between gap-2 mb-6 max-w-[280px] mx-auto">
+    <div className="flex justify-between gap-2 sm:gap-3 mb-8 w-full max-w-[340px] mx-auto">
       {otp.map((digit, index) => (
         <input
           key={index}
@@ -190,15 +190,13 @@ const TwoFactorSetup = ({ setView }) => {
           onPaste={handlePaste}
           onFocus={(e) => e.target.select()}
           className={`
-            w-10 h-12 sm:w-11 sm:h-14 rounded-lg border-2 
-            text-xl sm:text-2xl font-bold text-center 
-            outline-none transition-all 
-            bg-bg-secondary text-text-primary caret-accent
-            /* CORRECCIÓN: Borde suave en OLED para estado inactivo */
-            [.oled-theme_&]:border-white/10
+            w-12 h-14 sm:w-14 sm:h-16 rounded-[16px] border-none 
+            text-2xl sm:text-3xl font-extrabold text-center 
+            outline-none transition-all duration-300
+            bg-black/5 dark:bg-white/5 text-text-primary caret-accent
             ${digit
-              ? 'border-accent shadow-lg shadow-accent/20'
-              : 'border-glass-border focus:border-accent focus:shadow-lg focus:shadow-accent/20'
+              ? 'ring-2 ring-accent shadow-md shadow-accent/20 bg-transparent'
+              : 'ring-1 ring-black/5 dark:ring-white/10 focus:ring-2 focus:ring-accent/50'
             }
           `}
         />
@@ -213,7 +211,7 @@ const TwoFactorSetup = ({ setView }) => {
     const content = {
       app: {
         title: "Autenticación por App",
-        icon: <Smartphone size={24} className="text-accent" />,
+        icon: <Smartphone size={28} className="text-accent" />,
         text: `Este método es el más seguro y recomendado.
               
               Funciona mediante una aplicación externa (como Google Authenticator, Authy o Microsoft Authenticator) instalada en tu móvil.
@@ -226,7 +224,7 @@ const TwoFactorSetup = ({ setView }) => {
       },
       email: {
         title: "Autenticación por Email",
-        icon: <Mail size={24} className="text-accent" />,
+        icon: <Mail size={28} className="text-accent" />,
         text: `Este método utiliza tu correo electrónico como segundo factor de seguridad.
               
               1. Cada vez que intentes iniciar sesión, enviaremos un código único a tu email registrado.
@@ -239,27 +237,29 @@ const TwoFactorSetup = ({ setView }) => {
     const data = content[infoModal];
 
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
-        {/* CORRECCIÓN: Borde suave en OLED para el modal */}
-        <div className="relative w-full max-w-md bg-bg-secondary border border-glass-border [.oled-theme_&]:border-white/10 rounded-2xl p-6 shadow-2xl animate-[scale-in_0.2s_ease-out]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="relative w-full max-w-md bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] p-6 sm:p-8 shadow-2xl animate-[scale-in_0.2s_ease-out]">
           <button
             onClick={() => setInfoModal(null)}
-            className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition p-1 hover:bg-white/5 rounded-full"
+            className="absolute top-5 right-5 text-text-secondary hover:text-text-primary transition-colors p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full"
           >
-            <X size={20} />
+            <X size={24} />
           </button>
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg">
+          
+          <h3 className="text-2xl font-extrabold mb-5 flex items-center gap-4 text-text-primary">
+            <div className="p-3 bg-accent/10 rounded-[16px] ring-1 ring-accent/30 shadow-sm shrink-0">
               {data.icon}
             </div>
             {data.title}
           </h3>
-          <div className="text-text-secondary whitespace-pre-line leading-relaxed text-sm">
+          
+          <div className="text-text-secondary font-medium whitespace-pre-line leading-relaxed text-sm sm:text-base mb-8">
             {data.text}
           </div>
+          
           <button
             onClick={() => setInfoModal(null)}
-            className="mt-6 w-full py-3 bg-accent text-bg-secondary font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-accent/20"
+            className="w-full py-4 bg-accent text-white font-bold text-lg rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
           >
             Entendido
           </button>
@@ -273,16 +273,15 @@ const TwoFactorSetup = ({ setView }) => {
     if (!showDisableConfirm) return null;
 
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
-        {/* CORRECCIÓN: Borde suave en OLED para el modal */}
-        <div className="relative w-full max-w-sm bg-bg-secondary border border-glass-border [.oled-theme_&]:border-white/10 rounded-2xl p-6 shadow-2xl animate-[scale-in_0.2s_ease-out]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="relative w-full max-w-sm bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] p-6 sm:p-8 shadow-2xl animate-[scale-in_0.2s_ease-out]">
 
-          <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-red/10 flex items-center justify-center text-red mb-4">
-              <ShieldAlert size={32} />
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="w-20 h-20 rounded-[24px] bg-red/10 ring-1 ring-red/30 flex items-center justify-center text-red mb-5 shadow-sm">
+              <ShieldAlert size={40} strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-bold text-text-primary">¿Desactivar seguridad?</h3>
-            <p className="text-text-secondary text-sm mt-2 leading-relaxed">
+            <h3 className="text-2xl font-extrabold text-text-primary tracking-tight">¿Desactivar seguridad?</h3>
+            <p className="text-text-secondary font-medium text-sm mt-3 leading-relaxed">
               Si desactivas la verificación en dos pasos, tu cuenta será <strong>menos segura</strong>.
               Solo necesitarás tu contraseña para entrar, lo que facilita el acceso a intrusos.
             </p>
@@ -292,14 +291,14 @@ const TwoFactorSetup = ({ setView }) => {
             <button
               onClick={confirmDisable}
               disabled={isLoading}
-              className="w-full py-3 bg-red text-white font-bold rounded-xl hover:bg-red/90 transition shadow-lg shadow-red/20 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-red text-white font-bold text-lg rounded-[20px] hover:bg-red/90 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-red/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100"
             >
-              {isLoading ? <Loader2 size={18} className="animate-spin" /> : 'Sí, desactivar'}
+              {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Sí, desactivar'}
             </button>
             <button
               onClick={() => setShowDisableConfirm(false)}
               disabled={isLoading}
-              className="w-full py-3 bg-transparent border border-glass-border [.oled-theme_&]:border-white/10 text-text-primary font-medium rounded-xl hover:bg-bg-primary transition"
+              className="w-full py-4 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold text-lg rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95"
             >
               Cancelar
             </button>
@@ -315,29 +314,31 @@ const TwoFactorSetup = ({ setView }) => {
       <>
         <DisableConfirmModal />
         <div className="p-4 md:p-8 max-w-2xl mx-auto animate-[fade-in_0.3s_ease-out]">
-          <button onClick={() => setView('settings')} className="flex items-center gap-2 text-text-secondary hover:text-text-primary mb-6 transition">
-            <ArrowLeft size={20} /> Volver
+          <button 
+            onClick={() => setView('settings')} 
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
+          >
+            <ArrowLeft size={18} strokeWidth={2.5} /> Volver
           </button>
 
-          {/* CORRECCIÓN: Borde OLED en GlassCard */}
-          <GlassCard className="p-8 text-center flex flex-col items-center gap-4 [.oled-theme_&]:border-white/10">
-            <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 mb-2">
-              <ShieldCheck size={32} />
+          <GlassCard className="glass p-8 sm:p-12 text-center flex flex-col items-center gap-5 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-xl">
+            <div className="w-24 h-24 rounded-[28px] bg-green/10 ring-1 ring-green/30 flex items-center justify-center text-green mb-2 shadow-sm">
+              <ShieldCheck size={48} strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl font-bold">Protección Activada</h2>
-            <p className="text-text-secondary max-w-md">
+            <h2 className="text-3xl font-extrabold tracking-tight text-text-primary">Protección Activada</h2>
+            <p className="text-text-secondary font-medium max-w-md leading-relaxed">
               Tu cuenta está protegida con verificación en dos pasos mediante
               <strong className="text-text-primary"> {userProfile.two_factor_method === 'email' ? 'Email' : 'Aplicación Autenticadora'}</strong>.
             </p>
 
-            <div className="h-px w-full bg-glass-border my-4" />
+            <div className="h-px w-full bg-black/5 dark:bg-white/10 my-6" />
 
             <button
               onClick={handleDisableClick}
               disabled={isLoading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red text-white hover:bg-red/90 transition shadow-lg shadow-red/20"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 rounded-[20px] bg-red text-white font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-red/20 disabled:opacity-50 disabled:hover:scale-100"
             >
-              {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Unlock size={18} />}
+              {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Unlock size={20} strokeWidth={2.5} />}
               Desactivar 2FA
             </button>
           </GlassCard>
@@ -352,72 +353,73 @@ const TwoFactorSetup = ({ setView }) => {
       <>
         <InfoModal />
         <div className="p-4 md:p-8 max-w-3xl mx-auto animate-[fade-in_0.3s_ease-out]">
-          <button onClick={handleBack} className="flex items-center gap-2 text-text-secondary hover:text-text-primary mb-6 transition">
-            <ArrowLeft size={20} /> Volver
+          <button 
+            onClick={handleBack} 
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
+          >
+            <ArrowLeft size={18} strokeWidth={2.5} /> Volver
           </button>
 
-          <h1 className="text-2xl font-bold mb-2">Verificación en 2 Pasos</h1>
-          <p className="text-text-secondary mb-8">Añade una capa extra de seguridad a tu cuenta eligiendo un método de verificación.</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text-primary mb-3">Verificación en 2 Pasos</h1>
+          <p className="text-text-secondary font-medium mb-10 text-base md:text-lg">Añade una capa extra de seguridad a tu cuenta eligiendo un método de verificación.</p>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 gap-5">
             {/* Opción APP (DESTACADA) */}
-            {/* CORRECCIÓN: Borde OLED en GlassCard */}
             <GlassCard
-              className="relative p-6 flex flex-col items-center text-center gap-4 border border-accent/40 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:border-accent hover:shadow-accent/10 transition cursor-pointer group overflow-hidden bg-accent/5 [.oled-theme_&]:border-white/10"
+              className="glass relative p-8 flex flex-col items-center text-center gap-5 border-none ring-2 ring-accent/50 shadow-xl shadow-accent/10 hover:ring-accent transition-all cursor-pointer group overflow-hidden bg-accent/5 rounded-[32px] hover:-translate-y-1"
               onClick={startAppSetup}
             >
               {/* BADGE RECOMENDADO */}
-              <div className="absolute top-0 left-0 bg-accent text-bg-secondary text-[10px] font-bold px-3 py-1 rounded-br-lg z-10 shadow-sm">
-                RECOMENDADO
+              <div className="absolute top-0 left-0 bg-accent text-white text-[10px] font-black px-4 py-1.5 rounded-br-[24px] rounded-tl-[32px] z-10 shadow-sm tracking-widest uppercase">
+                Recomendado
               </div>
 
               <button
                 onClick={(e) => { e.stopPropagation(); setInfoModal('app'); }}
-                className="absolute top-4 right-4 text-text-muted hover:text-accent transition z-10"
+                className="absolute top-5 right-5 text-text-muted hover:text-accent transition-colors z-10 p-2 hover:bg-accent/10 rounded-full"
                 title="Más información"
               >
-                <HelpCircle size={20} />
+                <HelpCircle size={22} />
               </button>
 
-              <div className="p-4 rounded-full bg-bg-secondary group-hover:bg-accent/10 transition mt-2">
-                <Smartphone size={32} className="text-accent" />
+              <div className="p-5 rounded-[24px] bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 group-hover:scale-110 transition-transform duration-300 mt-4 shadow-sm">
+                <Smartphone size={40} className="text-accent" strokeWidth={1.5} />
               </div>
-              <div>
-                <h3 className="font-bold text-lg">Aplicación Autenticadora</h3>
-                <p className="text-sm text-text-secondary mt-2">Usa Google Authenticator, Authy, etc.</p>
+              <div className="mt-2">
+                <h3 className="font-extrabold text-xl text-text-primary">Aplicación Autenticadora</h3>
+                <p className="text-sm font-medium text-text-secondary mt-2 leading-relaxed">Usa Google Authenticator, Authy, etc.</p>
               </div>
-              <button className="mt-auto text-accent font-medium text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                Configurar <ArrowLeft size={14} className="rotate-180" />
-              </button>
+              <div className="mt-auto pt-4 text-accent font-bold text-sm flex items-center gap-2 group-hover:gap-3 transition-all uppercase tracking-wider">
+                Configurar <ArrowLeft size={16} className="rotate-180" strokeWidth={2.5} />
+              </div>
             </GlassCard>
 
             {/* Opción EMAIL */}
-            {/* CORRECCIÓN: Borde OLED en GlassCard */}
             <GlassCard
-              className="relative p-6 flex flex-col items-center text-center gap-4 hover:border-accent/50 transition cursor-pointer group overflow-hidden [.oled-theme_&]:border-white/10"
+              className="glass relative p-8 flex flex-col items-center text-center gap-5 border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/50 hover:shadow-lg transition-all cursor-pointer group overflow-hidden bg-black/5 dark:bg-white/5 rounded-[32px] hover:-translate-y-1"
               onClick={startEmailSetup}
             >
               <button
                 onClick={(e) => { e.stopPropagation(); setInfoModal('email'); }}
-                className="absolute top-4 right-4 text-text-muted hover:text-accent transition z-10"
+                className="absolute top-5 right-5 text-text-muted hover:text-accent transition-colors z-10 p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full"
                 title="Más información"
               >
-                <HelpCircle size={20} />
+                <HelpCircle size={22} />
               </button>
 
-              <div className="p-4 rounded-full bg-bg-secondary group-hover:bg-accent/10 transition mt-2">
-                <Mail size={32} className="text-accent" />
+              <div className="p-5 rounded-[24px] bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 group-hover:scale-110 transition-transform duration-300 mt-4 shadow-sm">
+                <Mail size={40} className="text-accent" strokeWidth={1.5} />
               </div>
-              <div>
-                <h3 className="font-bold text-lg">Correo Electrónico</h3>
-                <p className="text-sm text-text-secondary mt-2">Recibe un código en tu email cada vez que entres.</p>
+              <div className="mt-2">
+                <h3 className="font-extrabold text-xl text-text-primary">Correo Electrónico</h3>
+                <p className="text-sm font-medium text-text-secondary mt-2 leading-relaxed">Recibe un código en tu email cada vez que entres.</p>
               </div>
-              <button className="mt-auto text-accent font-medium text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                Configurar <ArrowLeft size={14} className="rotate-180" />
-              </button>
+              <div className="mt-auto pt-4 text-accent font-bold text-sm flex items-center gap-2 group-hover:gap-3 transition-all uppercase tracking-wider">
+                Configurar <ArrowLeft size={16} className="rotate-180" strokeWidth={2.5} />
+              </div>
             </GlassCard>
           </div>
-          {isLoading && <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50"><Spinner /></div>}
+          {isLoading && <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"><Spinner size={40} /></div>}
         </div>
       </>
     );
@@ -426,48 +428,56 @@ const TwoFactorSetup = ({ setView }) => {
   // --- RENDERIZADO: PROCESO SETUP (App o Email) ---
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto animate-[fade-in_0.3s_ease-out]">
-      <button onClick={handleBack} className="flex items-center gap-2 text-text-secondary hover:text-text-primary mb-6 transition">
-        <ArrowLeft size={20} /> Cancelar
+      <button 
+        onClick={handleBack} 
+        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
+      >
+        <ArrowLeft size={18} strokeWidth={2.5} /> Cancelar
       </button>
 
-      {/* CORRECCIÓN: Borde OLED en GlassCard */}
-      <GlassCard className="p-8 [.oled-theme_&]:border-white/10">
-        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-          {mode === 'app' ? <Smartphone size={24} className="text-accent" /> : <Mail size={24} className="text-accent" />}
+      <GlassCard className="glass p-6 sm:p-10 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-xl">
+        <h2 className="text-2xl sm:text-3xl font-extrabold mb-8 flex items-center gap-3 text-text-primary tracking-tight">
+          <div className="p-3 bg-accent/10 rounded-[16px] ring-1 ring-accent/30 shadow-sm shrink-0">
+            {mode === 'app' ? <Smartphone size={28} className="text-accent" /> : <Mail size={28} className="text-accent" />}
+          </div>
           {mode === 'app' ? 'Configurar App' : 'Verificar Email'}
         </h2>
 
         {mode === 'app' && qrData && (
-          <div className="flex flex-col items-center mb-8 gap-4">
-            <div className="bg-white p-2 rounded-lg">
-              <img src={qrData.qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+          <div className="flex flex-col items-center mb-10 gap-5">
+            <div className="bg-white p-3 rounded-[24px] shadow-lg ring-1 ring-black/5">
+              <img src={qrData.qrCodeUrl} alt="QR Code" className="w-48 h-48 sm:w-56 sm:h-56 object-contain" />
             </div>
-            <p className="text-sm text-text-secondary text-center">
+            <p className="text-sm font-medium text-text-secondary text-center max-w-sm leading-relaxed">
               Escanea este código QR con tu aplicación de autenticación.
             </p>
-            {/* CORRECCIÓN: Borde OLED en el contenedor del secreto */}
-            <div className="w-full bg-bg-secondary p-3 rounded-lg flex items-center justify-between border border-glass-border [.oled-theme_&]:border-white/10">
-              <span className="font-mono text-sm tracking-wider overflow-hidden text-ellipsis">{qrData.secret}</span>
-              <button onClick={() => copyToClipboard(qrData.secret)} className="p-2 hover:bg-bg-primary rounded text-text-secondary hover:text-accent">
-                <Copy size={16} />
+            
+            <div className="w-full bg-black/5 dark:bg-white/5 p-4 rounded-[20px] flex items-center justify-between ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
+              <span className="font-mono text-sm sm:text-base font-bold tracking-wider overflow-hidden text-ellipsis px-2 text-text-primary">{qrData.secret}</span>
+              <button 
+                onClick={() => copyToClipboard(qrData.secret)} 
+                className="p-3 bg-bg-primary rounded-[12px] text-text-secondary hover:text-accent ring-1 ring-black/5 dark:ring-white/10 shadow-sm transition-all active:scale-95"
+                title="Copiar código"
+              >
+                <Copy size={18} strokeWidth={2.5} />
               </button>
             </div>
           </div>
         )}
 
         {mode === 'email' && (
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4 text-accent">
-              <Mail size={24} />
+          <div className="text-center mb-10">
+            <div className="w-20 h-20 bg-accent/10 rounded-[24px] ring-1 ring-accent/30 flex items-center justify-center mx-auto mb-5 text-accent shadow-sm">
+              <Mail size={40} strokeWidth={1.5} />
             </div>
-            <p className="text-text-secondary">
-              Hemos enviado un código de verificación a <strong>{userProfile.email}</strong>. Introdúcelo abajo.
+            <p className="text-text-secondary font-medium text-base leading-relaxed max-w-sm mx-auto">
+              Hemos enviado un código de verificación a <strong className="text-text-primary">{userProfile.email}</strong>. Introdúcelo abajo.
             </p>
           </div>
         )}
 
-        <div className="max-w-xs mx-auto">
-          <label className="block text-sm font-medium text-text-secondary mb-2 text-center">
+        <div className="max-w-sm mx-auto w-full">
+          <label className="block text-xs font-bold text-text-secondary uppercase tracking-widest mb-4 text-center">
             Código de verificación
           </label>
 
@@ -477,9 +487,9 @@ const TwoFactorSetup = ({ setView }) => {
           <button
             onClick={handleVerifyAndEnable}
             disabled={verifyCode.length < 6 || isLoading}
-            className="w-full bg-accent text-bg-secondary font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-accent/20 hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-accent text-white font-bold text-lg py-4 rounded-[20px] hover:shadow-lg hover:shadow-accent/20 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isLoading ? <Loader2 size={20} className="animate-spin" /> : 'Verificar y Activar'}
+            {isLoading ? <Loader2 size={24} className="animate-spin" /> : 'Verificar y Activar'}
           </button>
         </div>
       </GlassCard>

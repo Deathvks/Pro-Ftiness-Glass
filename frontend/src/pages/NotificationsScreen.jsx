@@ -1,3 +1,4 @@
+/* frontend/src/pages/NotificationsScreen.jsx */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
@@ -5,11 +6,12 @@ import Spinner from '../components/Spinner';
 import { isToday, isYesterday, parseISO } from 'date-fns';
 import {
   Bell, CheckCheck, Trash2, X, Info, AlertTriangle, CheckCircle, AlertCircle,
-  Filter, ChevronDown, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
+  Filter, ChevronDown, ChevronRight, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
   UserPlus, Users, Zap, Award, Settings
 } from 'lucide-react';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
+import GlassCard from '../components/GlassCard';
 
 // --- Imports de Modales Separados ---
 import DeleteNotificationModal from '../components/DeleteNotificationModal';
@@ -35,7 +37,7 @@ const formatTimeWithZone = (date, timeZone) => {
       hour: '2-digit',
       minute: '2-digit',
       timeZone: timeZone
-     }).format(date);
+    }).format(date);
   } catch (e) {
     return new Intl.DateTimeFormat('es-ES', {
       hour: '2-digit',
@@ -77,21 +79,19 @@ const formatDateShortWithZone = (date, timeZone) => {
 
 // --- Sub-componente: Switch Toggle ---
 const ToggleSwitch = ({ checked, onChange, label, description }) => (
-  <div className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+  <div className="flex items-center justify-between py-4 border-b border-glass-border/50 last:border-0">
     <div className="mr-4">
       <p className="text-sm font-bold text-text-primary">{label}</p>
-      {description && <p className="text-xs text-text-secondary mt-0.5">{description}</p>}
+      {description && <p className="text-[10px] sm:text-xs text-text-secondary mt-0.5">{description}</p>}
     </div>
     <button
       onClick={() => onChange(!checked)}
-      className={`
-        relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none
-        ${checked ? 'bg-accent' : 'bg-gray-600'}
+      className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none shadow-inner
+        ${checked ? 'bg-accent shadow-accent/20' : 'bg-gray-400 dark:bg-gray-600'}
       `}
     >
       <span
-        className={`
-          pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out
           ${checked ? 'translate-x-5' : 'translate-x-0'}
         `}
       />
@@ -101,7 +101,6 @@ const ToggleSwitch = ({ checked, onChange, label, description }) => (
 
 // --- Sub-componente: Modal de Configuración ---
 const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily }) => {
-  // Estado local sincronizado con localStorage
   const [engagement, setEngagement] = useState(() => localStorage.getItem('notif_engagement') !== 'false');
   const [daily, setDaily] = useState(() => localStorage.getItem('notif_daily') !== 'false');
 
@@ -112,7 +111,6 @@ const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily 
       if (val) {
         await scheduleEngagement();
       } else {
-        // IDs 2000-2100 usados para engagement
         const pending = await LocalNotifications.getPending();
         const ids = pending.notifications.filter(n => n.id >= 2000 && n.id < 2100).map(n => ({ id: n.id }));
         if (ids.length) await LocalNotifications.cancel({ notifications: ids });
@@ -127,23 +125,23 @@ const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily 
       if (val) {
         await scheduleDaily();
       } else {
-        // IDs 1001 (Login) y 1002 (Meal)
         await LocalNotifications.cancel({ notifications: [{ id: 1001 }, { id: 1002 }] });
       }
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
-      <div className="relative w-full max-w-sm bg-bg-primary border border-glass-border rounded-2xl p-6 shadow-2xl animate-[scale-in_0.2s_ease-out]">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+      <div className="absolute inset-0" onClick={onClose} />
+      <GlassCard className="glass w-full max-w-sm p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-text-primary">Configuración</h3>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-bg-secondary text-text-secondary">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors">
             <X size={20} />
           </button>
         </div>
 
-        <div className="bg-bg-secondary/50 rounded-xl p-4 border border-glass-border space-y-2">
+        <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-5 space-y-1">
           <ToggleSwitch 
             checked={engagement} 
             onChange={handleEngagementChange} 
@@ -160,11 +158,11 @@ const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily 
 
         <button
           onClick={onClose}
-          className="mt-6 w-full py-3 bg-bg-secondary text-text-primary font-bold rounded-xl hover:bg-bg-secondary/80 transition"
+          className="mt-8 w-full py-4 bg-black/5 dark:bg-white/5 text-text-primary font-bold rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
         >
           Cerrar
         </button>
-      </div>
+      </GlassCard>
     </div>
   );
 };
@@ -177,65 +175,63 @@ const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
   const loginDate = date ? parseDateSafe(date) : parseDateSafe(notification.created_at);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
-      <div className="relative w-full max-w-md bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl animate-[scale-in_0.2s_ease-out]">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+      <div className="absolute inset-0" onClick={onClose} />
+      <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10">
 
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition p-1 hover:bg-gray-500/10 rounded-full"
+          className="absolute top-5 right-5 text-text-secondary hover:text-text-primary transition-colors p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full"
         >
           <X size={20} />
         </button>
 
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mb-4">
-            <Shield size={32} />
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent mb-4 ring-2 ring-accent/30">
+            <Shield size={32} strokeWidth={1.5} />
           </div>
-          <h3 className="text-xl font-bold text-text-primary">Detalles de Inicio de Sesión</h3>
-          <p className="text-text-secondary text-sm mt-1">
+          <h3 className="text-xl sm:text-2xl font-bold text-text-primary">Detalles de Inicio</h3>
+          <p className="text-text-secondary text-xs sm:text-sm mt-2">
             Información del dispositivo registrado
           </p>
         </div>
 
-        <div className="space-y-4 bg-bg-primary/50 rounded-xl p-4 border border-glass-border">
+        <div className="space-y-4 bg-black/5 dark:bg-white/5 rounded-[24px] p-5">
           {/* Dispositivo */}
-          <div className="flex gap-3 items-start">
-            <div className="mt-1 p-1.5 bg-blue-500/10 rounded text-blue-500 shrink-0">
-              <Smartphone size={18} />
+          <div className="flex gap-4 items-center">
+            <div className="p-2.5 bg-blue-500/10 rounded-[14px] text-blue-500 shrink-0">
+              <Smartphone size={20} />
             </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Dispositivo / Navegador</p>
-              <p className="text-sm text-text-primary break-words leading-tight mt-0.5">
+            <div className="overflow-hidden min-w-0">
+              <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Dispositivo / Navegador</p>
+              <p className="text-sm font-semibold text-text-primary truncate mt-0.5">
                 {userAgent || 'Desconocido'}
               </p>
             </div>
           </div>
 
           {/* IP */}
-          <div className="flex gap-3 items-start">
-            <div className="mt-1 p-1.5 bg-purple-500/10 rounded text-purple-500 shrink-0">
-              <Globe size={18} />
+          <div className="flex gap-4 items-center">
+            <div className="p-2.5 bg-purple-500/10 rounded-[14px] text-purple-500 shrink-0">
+              <Globe size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Dirección IP</p>
-              <p className="text-sm text-text-primary font-mono mt-0.5">
+              <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Dirección IP</p>
+              <p className="text-sm font-semibold text-text-primary font-mono mt-0.5">
                 {ip || 'Desconocida'}
               </p>
             </div>
           </div>
 
           {/* Fecha */}
-          <div className="flex gap-3 items-start">
-            <div className="mt-1 p-1.5 bg-green-500/10 rounded text-green-500 shrink-0">
-              <Clock size={18} />
+          <div className="flex gap-4 items-center">
+            <div className="p-2.5 bg-green-500/10 rounded-[14px] text-green-500 shrink-0">
+              <Clock size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Fecha y Hora</p>
-              <p className="text-sm text-text-primary mt-0.5">
+              <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Fecha y Hora</p>
+              <p className="text-sm font-semibold text-text-primary mt-0.5">
                 {formatDateFullWithZone(loginDate, timeZone)}
-              </p>
-              <p className="text-xs text-text-muted mt-1">
-                Zona: {timeZone}
               </p>
             </div>
           </div>
@@ -243,11 +239,11 @@ const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
 
         <button
           onClick={onClose}
-          className="mt-6 w-full py-3 bg-accent text-bg-secondary font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-accent/20"
+          className="mt-8 w-full py-4 bg-accent text-bg-primary font-bold rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
         >
           Entendido
         </button>
-      </div>
+      </GlassCard>
     </div>
   );
 };
@@ -383,16 +379,16 @@ const NotificationsScreen = ({ setView }) => {
 
   const getIcon = (n) => {
     const subType = n.data?.type || n.type;
-    if (subType === 'friend_request') return <UserPlus className="text-accent" size={24} />;
-    if (subType === 'friend_accept') return <Users className="text-green-500" size={24} />;
-    if (subType === 'xp' || subType === 'level_up') return <Zap className="text-amber-400" size={24} fill="currentColor" fillOpacity={0.2} />;
-    if (subType === 'badge') return <Award className="text-amber-500" size={24} />;
+    if (subType === 'friend_request') return <div className="p-2.5 rounded-[14px] bg-accent/10 text-accent"><UserPlus size={20} /></div>;
+    if (subType === 'friend_accept') return <div className="p-2.5 rounded-[14px] bg-green-500/10 text-green-500"><Users size={20} /></div>;
+    if (subType === 'xp' || subType === 'level_up') return <div className="p-2.5 rounded-[14px] bg-amber-400/10 text-amber-400"><Zap size={20} fill="currentColor" fillOpacity={0.2} /></div>;
+    if (subType === 'badge') return <div className="p-2.5 rounded-[14px] bg-amber-500/10 text-amber-500"><Award size={20} /></div>;
 
     switch (n.type) {
-      case 'success': return <CheckCircle className="text-green-500" size={24} />;
-      case 'warning': return <AlertTriangle className="text-yellow-500" size={24} />;
-      case 'alert': return <AlertCircle className="text-red-500" size={24} />;
-      default: return <Info className="text-accent" size={24} />;
+      case 'success': return <div className="p-2.5 rounded-[14px] bg-green-500/10 text-green-500"><CheckCircle size={20} /></div>;
+      case 'warning': return <div className="p-2.5 rounded-[14px] bg-yellow-500/10 text-yellow-500"><AlertTriangle size={20} /></div>;
+      case 'alert': return <div className="p-2.5 rounded-[14px] bg-red-500/10 text-red-500"><AlertCircle size={20} /></div>;
+      default: return <div className="p-2.5 rounded-[14px] bg-accent/10 text-accent"><Info size={20} /></div>;
     }
   };
 
@@ -413,7 +409,7 @@ const NotificationsScreen = ({ setView }) => {
   const canLoadMore = notificationPage < notificationTotalPages && activeFilter === 'all';
 
   return (
-    <div className="pb-28 md:pb-8 pt-6 px-4 max-w-2xl mx-auto min-h-full relative">
+    <div className="pb-28 md:pb-8 pt-6 px-4 max-w-3xl mx-auto min-h-full relative animate-[fade-in_0.5s_ease-out]">
 
       {/* Modales */}
       {selectedNotification && (
@@ -447,40 +443,42 @@ const NotificationsScreen = ({ setView }) => {
       {/* Botón Volver */}
       <button
         onClick={() => setView('dashboard')}
-        className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4"
+        className="flex items-center gap-2 text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-4 py-2 rounded-full w-fit"
       >
         <ChevronLeft size={20} />
         Volver
       </button>
 
       {/* Header */}
-      <div className="flex justify-between items-end md:items-center mb-6">
+      <div className="flex justify-between items-end md:items-center mb-8">
 
-        {/* MODIFICACIÓN: Encabezado con degradado en PC */}
-        <h2 className="hidden md:flex text-2xl font-bold items-center gap-3">
-          <Bell className="text-accent" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
+        {/* Encabezado con degradado en PC */}
+        <h2 className="hidden md:flex text-3xl font-extrabold items-center gap-3">
+          <div className="p-2.5 rounded-[16px] bg-black/5 dark:bg-white/5 text-accent shrink-0">
+            <Bell size={24} strokeWidth={2.5} />
+          </div>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
             Notificaciones
           </span>
         </h2>
 
         <div className="md:hidden flex flex-col gap-0.5">
-          <span className="text-lg font-bold text-text-primary">
-            {unreadCount > 0 ? 'Tienes novedades' : 'Todo al día'}
+          <span className="text-2xl font-extrabold text-text-primary tracking-tight">
+            {unreadCount > 0 ? 'Novedades' : 'Al día'}
           </span>
-          <span className="text-xs text-text-muted">
+          <span className="text-xs text-text-secondary font-medium">
             {unreadCount > 0
-              ? `${unreadCount} notificaciones sin leer`
-              : 'No hay alertas pendientes'}
+              ? `${unreadCount} pendientes`
+              : 'No hay alertas'}
           </span>
         </div>
 
         {(isNative || hasNotifications) && (
-          <div className="flex items-center p-1 bg-bg-secondary border border-glass-border rounded-full shadow-sm mb-1 md:mb-0">
+          <div className="flex items-center p-1.5 bg-black/5 dark:bg-white/5 rounded-full mb-1 md:mb-0 shrink-0">
             {isNative && (
               <button
                 onClick={() => setShowSettings(true)}
-                className="p-2 text-text-secondary hover:text-accent hover:bg-accent/10 rounded-full transition-colors"
+                className="p-2.5 text-text-secondary hover:text-accent hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"
                 title="Configuración"
               >
                 <Settings size={18} />
@@ -489,18 +487,17 @@ const NotificationsScreen = ({ setView }) => {
             
             {hasNotifications && (
               <>
-                {isNative && <div className="w-px h-5 bg-glass-border mx-1"></div>}
+                {isNative && <div className="w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>}
                 <button
                   onClick={markAllNotificationsAsRead}
-                  className="p-2 text-accent hover:bg-accent/10 rounded-full transition-colors"
+                  className="p-2.5 text-accent hover:bg-accent/10 rounded-full transition-colors"
                   title="Marcar todas como leídas"
                 >
                   <CheckCheck size={18} />
                 </button>
-                <div className="w-px h-5 bg-glass-border mx-1"></div>
                 <button
                   onClick={requestDeleteAll}
-                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+                  className="p-2.5 text-red-500 hover:bg-red-500/10 rounded-full transition-colors ml-1"
                   title="Borrar todas"
                 >
                   <Trash2 size={18} />
@@ -511,20 +508,18 @@ const NotificationsScreen = ({ setView }) => {
         )}
       </div>
 
-      {/* Filtros */}
+      {/* Filtros Píldoras Flotantes sin bordes */}
       {hasNotifications && (
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar">
+        <div className="flex overflow-x-auto pb-4 pt-1 px-1 -mx-1 gap-2.5 no-scrollbar mask-linear-fade items-center mb-6">
           {filters.map(f => (
             <button
               key={f.id}
               onClick={() => setActiveFilter(f.id)}
-              className={`
-                px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 border
-                ${activeFilter === f.id
-                  ? 'bg-accent text-bg-secondary border-accent shadow-md shadow-accent/20'
-                  : 'bg-bg-secondary text-text-secondary border-glass-border hover:border-accent hover:text-accent'
-                }
-              `}
+              className={`px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 ${
+                  activeFilter === f.id
+                      ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+                      : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+              }`}
             >
               {f.label}
             </button>
@@ -534,72 +529,80 @@ const NotificationsScreen = ({ setView }) => {
 
       {/* Lista */}
       {!hasNotifications ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center opacity-70">
-          <Bell className="w-12 h-12 text-text-muted mb-4 opacity-50" />
-          <p className="text-text-secondary text-lg font-medium">No tienes notificaciones</p>
-          <p className="text-text-muted text-sm mt-1">Te avisaremos cuando ocurra algo importante.</p>
-        </div>
+        <GlassCard className="glass text-center p-10 sm:p-16 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] mt-8">
+          <div className="w-20 h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-6 text-text-muted">
+             <Bell size={32} />
+          </div>
+          <p className="text-text-primary font-bold text-lg">No tienes notificaciones</p>
+          <p className="text-text-secondary font-medium mt-2">Te avisaremos cuando ocurra algo importante.</p>
+        </GlassCard>
       ) : isListEmpty ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center opacity-70 animate-[fade-in_0.3s_ease-out]">
-          <Filter className="w-10 h-10 text-text-muted mb-3 opacity-50" />
-          <p className="text-text-secondary font-medium">No hay notificaciones en este filtro</p>
-        </div>
+        <GlassCard className="glass text-center p-10 sm:p-16 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] mt-8 animate-[fade-in_0.3s_ease-out]">
+          <div className="w-20 h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-6 text-text-muted">
+             <Filter size={32} />
+          </div>
+          <p className="text-text-primary font-bold text-lg">No hay notificaciones</p>
+          <p className="text-text-secondary font-medium mt-2">Prueba a cambiar el filtro superior.</p>
+        </GlassCard>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {Object.entries(groupedNotifications).map(([key, list]) => (
             list.length > 0 && (
               <div key={key} className="animate-[fade-in_0.3s_ease-out]">
-                <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest mb-3 pl-1">
+                <h3 className="text-[10px] sm:text-xs font-bold text-text-muted uppercase tracking-widest mb-4 pl-2">
                   {key === 'hoy' ? 'Hoy' : key === 'ayer' ? 'Ayer' : 'Anterior'}
                 </h3>
                 <div className="space-y-3">
                   {list.map((n) => (
-                    <div
+                    <GlassCard
                       key={n.id}
                       onClick={() => handleNotificationClick(n)}
                       className={`
-                        relative group flex items-start gap-4 p-4 rounded-xl transition-all duration-200 cursor-pointer
+                        glass relative group flex flex-col sm:flex-row sm:items-center gap-4 p-4 sm:p-5 rounded-[24px] transition-all duration-300 cursor-pointer
                         ${n.is_read
-                          ? 'bg-bg-secondary border border-glass-border hover:border-text-muted/30'
-                          : 'bg-bg-secondary border-2 border-accent shadow-lg shadow-accent/5'
+                          ? 'border-none ring-1 ring-black/5 dark:ring-white/10 hover:-translate-y-1 hover:shadow-md'
+                          : 'border-none ring-2 ring-accent shadow-lg shadow-accent/10 hover:-translate-y-1 hover:shadow-xl hover:shadow-accent/20'
                         }
                       `}
                     >
-                      <div className="flex-shrink-0 mt-0.5">{getIcon(n)}</div>
+                      <div className="flex items-start gap-3 sm:gap-4 w-full sm:w-auto sm:flex-1 min-w-0">
+                          <div className="shrink-0 mt-0.5">{getIcon(n)}</div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-semibold mb-1 ${n.is_read ? 'text-text-secondary' : 'text-text-primary'}`}>
-                          {n.title}
-                        </p>
-                        <p className={`text-sm leading-relaxed ${n.is_read ? 'text-text-muted' : 'text-text-secondary'}`}>
-                          {n.message}
-                        </p>
+                          <div className="flex-1 min-w-0 flex flex-col justify-center">
+                            <p className={`text-sm sm:text-base font-bold mb-1 break-words whitespace-normal ${n.is_read ? 'text-text-secondary' : 'text-text-primary'}`}>
+                              {n.title}
+                            </p>
+                            <p className={`text-xs sm:text-sm font-medium leading-relaxed break-words whitespace-normal ${n.is_read ? 'text-text-muted' : 'text-text-secondary'}`}>
+                              {n.message}
+                            </p>
 
-                        {/* Indicadores de acción */}
-                        {n.data && (n.data.ip || n.data.userAgent) && (
-                          <p className="text-xs text-accent mt-2 font-medium flex items-center gap-1">
-                            Ver detalles <ChevronDown size={12} className="-rotate-90" />
-                          </p>
-                        )}
-                        {n.data?.url && (
-                          <p className="text-xs text-accent mt-2 font-medium flex items-center gap-1">
-                            Ver ahora <ChevronDown size={12} className="-rotate-90" />
-                          </p>
-                        )}
+                            {/* Indicadores de acción */}
+                            {n.data && (n.data.ip || n.data.userAgent) && (
+                              <p className="text-[10px] sm:text-xs text-accent mt-3 font-bold uppercase tracking-wider flex items-center gap-1 w-fit bg-accent/10 px-2 py-1 rounded-full">
+                                Detalles de sesión <ChevronRight size={12} />
+                              </p>
+                            )}
+                            {n.data?.url && (
+                              <p className="text-[10px] sm:text-xs text-accent mt-3 font-bold uppercase tracking-wider flex items-center gap-1 w-fit bg-accent/10 px-2 py-1 rounded-full">
+                                Ver contenido <ChevronRight size={12} />
+                              </p>
+                            )}
+                          </div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-2 self-stretch justify-between pl-2">
-                        <span className="text-xs text-text-muted whitespace-nowrap">
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 sm:gap-2 sm:pl-4 sm:border-l sm:border-black/5 dark:sm:border-white/10 pt-3 sm:pt-0 border-t border-black/5 dark:border-white/10 sm:border-t-0 mt-3 sm:mt-0 shrink-0 w-full sm:w-auto">
+                        <span className="text-[10px] sm:text-xs font-bold text-text-muted whitespace-nowrap">
                           {getTimeDisplay(n.created_at)}
                         </span>
                         <button
                           onClick={(e) => { e.stopPropagation(); requestDeleteOne(n.id); }}
-                          className="text-text-muted hover:text-red-500 p-1 rounded-full hover:bg-red-500/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                          className="text-text-muted hover:text-red-500 p-2 rounded-[14px] hover:bg-red-500/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                          title="Eliminar"
                         >
-                          <X size={18} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
-                    </div>
+                    </GlassCard>
                   ))}
                 </div>
               </div>
@@ -607,11 +610,11 @@ const NotificationsScreen = ({ setView }) => {
           ))}
 
           {canLoadMore && (
-            <div className="flex justify-center pt-4 pb-2 animate-[fade-in_0.3s_ease-out]">
+            <div className="flex justify-center pt-6 pb-4 animate-[fade-in_0.3s_ease-out]">
               <button
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-bg-secondary border border-glass-border text-text-secondary hover:text-accent hover:border-accent/50 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="glass flex items-center gap-2 px-8 py-3.5 rounded-full font-bold text-sm border-none ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:text-accent transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoadingMore ? (
                   <>
@@ -621,7 +624,7 @@ const NotificationsScreen = ({ setView }) => {
                 ) : (
                   <>
                     <ChevronDown size={18} />
-                    <span>Cargar más antiguas</span>
+                    <span>Cargar Anteriores</span>
                   </>
                 )}
               </button>

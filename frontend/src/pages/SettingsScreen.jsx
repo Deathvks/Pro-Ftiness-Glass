@@ -1,3 +1,4 @@
+/* frontend/src/pages/SettingsScreen.jsx */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -63,11 +64,10 @@ const isIOS = () => {
   return [
     'iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod'
   ].includes(navigator.platform)
-    // iPad en iOS 13+ detection
     || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 };
 
-// Detección de Android Web o PWA (excluyendo APK nativo)
+// Detección de Android Web o PWA
 const isAndroidWebOrPWA = () => {
   if (typeof navigator === 'undefined') return false;
   const isAndroid = /android/i.test(navigator.userAgent);
@@ -77,9 +77,11 @@ const isAndroidWebOrPWA = () => {
 
 // --- Sub-componentes ---
 const SectionTitle = ({ icon: Icon, title }) => (
-  <div className="flex items-center gap-3 mb-5 text-text-primary px-1">
-    <Icon size={22} className="text-accent" />
-    <h2 className="text-xl font-bold">{title}</h2>
+  <div className="flex items-center gap-3 mb-6 relative z-10">
+    <div className="p-2.5 rounded-[16px] bg-black/5 dark:bg-white/5 text-accent shrink-0">
+      <Icon size={24} strokeWidth={2.5} />
+    </div>
+    <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">{title}</h2>
   </div>
 );
 
@@ -88,59 +90,58 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
   return (
     <Component
       onClick={onClick}
-      className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl border border-transparent transition-all 
-      active:bg-bg-secondary/50 md:hover:bg-bg-secondary/50
+      className={`flex items-center gap-3 sm:gap-4 w-full p-4 rounded-[20px] transition-all duration-300 group text-left
+      ${onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-md' : ''}
       ${danger
-          ? 'text-red active:bg-red/10 md:hover:bg-red/10'
-          : 'text-text-primary md:hover:border-[--glass-border]'}`}
+          ? 'bg-red-500/5 hover:bg-red-500/10 text-red-500'
+          : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary'}`}
     >
-      {/* CORRECCIÓN: flex-shrink-0 para que el icono no se aplaste */}
-      {Icon && <Icon size={22} className={`flex-shrink-0 ${danger ? 'text-red' : 'text-accent'}`} />}
-      <div className="flex-1 text-left min-w-0">
-        {/* CORRECCIÓN: Quitamos truncate y añadimos leading-tight para permitir multilínea */}
+      {Icon && (
+        <div className={`p-2.5 rounded-[14px] shrink-0 transition-transform ${onClick ? 'group-hover:scale-110' : ''} ${danger ? 'bg-red-500/10 text-red-500' : 'bg-black/5 dark:bg-white/5 text-text-secondary group-hover:text-accent'}`}>
+          <Icon size={20} />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
         <div className="text-sm font-bold leading-tight">{title}</div>
-        {subtitle && <div className={`text-xs font-medium truncate ${danger ? 'text-red/70' : 'text-text-secondary'}`}>{subtitle}</div>}
+        {subtitle && <div className={`text-[10px] sm:text-xs font-medium mt-0.5 ${danger ? 'text-red-500/70' : 'text-text-secondary'}`}>{subtitle}</div>}
       </div>
-      {action && <div className="flex-shrink-0 ml-2">{action}</div>}
+      {action && <div className="shrink-0 ml-1 sm:ml-2">{action}</div>}
     </Component>
   );
 };
 
 const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, loading }) => (
-  <div className={`flex items-center justify-between p-3 rounded-2xl transition ${disabled ? 'opacity-50' : 'hover:bg-bg-secondary/30'}`}>
-    {/* MODIFICACIÓN: Añadido flex-1 y min-w-0 para evitar desbordamiento */}
+  <div className={`flex items-center justify-between p-4 rounded-[20px] transition-all duration-300 ${disabled ? 'opacity-50' : 'hover:-translate-y-1 hover:shadow-md bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}>
     <div className="flex items-center gap-4 flex-1 min-w-0">
-      {/* Contenedor de icono con shrink-0 */}
       <div className={`
-        p-2.5 rounded-xl border border-transparent shrink-0
-        ${checked ? 'bg-accent/10 text-accent dark:border-accent/20' : 'bg-text-muted/10 text-text-muted dark:border-white/10 [.oled-theme_&]:bg-transparent'}
+        p-2.5 rounded-[14px] shrink-0 transition-colors
+        ${checked ? 'bg-accent/10 text-accent' : 'bg-black/5 dark:bg-white/5 text-text-muted'}
       `}>
-        <Icon size={22} />
+        <Icon size={20} />
       </div>
       <div className="min-w-0">
-        <div className="text-sm font-bold truncate">{title}</div>
-        <div className="text-xs font-medium text-text-secondary truncate">{subtitle}</div>
+        <div className="text-sm font-bold text-text-primary leading-tight">{title}</div>
+        <div className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">{subtitle}</div>
       </div>
     </div>
-    {loading ? <Spinner size={20} /> : (
+    {loading ? <Spinner size={20} className="mr-3" /> : (
       <button
         role="switch"
         aria-checked={checked}
         onChange={onChange}
         onClick={onChange}
         disabled={disabled}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[--glass-bg] ml-3
-        ${checked ? 'bg-accent' : 'bg-bg-secondary [.light-theme_&]:bg-zinc-300'} 
+        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ml-3 shadow-inner
+        ${checked ? 'bg-accent shadow-accent/20' : 'bg-gray-400 dark:bg-gray-600'} 
         ${disabled ? 'cursor-not-allowed' : ''}
         `}
       >
-        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+        <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
       </button>
     )}
   </div>
 );
 
-// --- Componente Icono Personalizado para TikTok ---
 const TikTokIcon = ({ size = 20, className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -165,7 +166,7 @@ export default function SettingsScreen({
   setAccent,
   setView,
   onLogoutClick,
-  highlight // AÑADIDO: Prop para recibir la sección a resaltar
+  highlight
 }) {
   const { resolvedTheme } = useAppTheme();
 
@@ -194,7 +195,6 @@ export default function SettingsScreen({
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
   const [pendingTheme, setPendingTheme] = useState(null);
 
-  // Estados y Refs para Highlighting
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
 
@@ -224,18 +224,14 @@ export default function SettingsScreen({
 
   const showGooglePlayLink = isAndroidWebOrPWA();
 
-  // --- EFECTO DE SCROLL Y RESALTADO ---
   useEffect(() => {
     if (highlight === 'social_privacy' && socialPrivacyRef.current) {
-      // 1. Scroll suave hacia la sección
       setTimeout(() => {
         socialPrivacyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
 
-      // 2. Activar efecto visual
       setHighlightedSection('social_privacy');
 
-      // 3. Quitar efecto visual después de 2.5 segundos
       const timer = setTimeout(() => {
         setHighlightedSection(null);
       }, 2500);
@@ -312,7 +308,6 @@ export default function SettingsScreen({
     if (autoTimezone) {
       detectAndUpdateTimezone(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoTimezone]);
 
   const handleTimezoneChange = async (newTimezone) => {
@@ -422,13 +417,12 @@ export default function SettingsScreen({
     setShowThemeReloadModal(false);
   };
 
-  const glassCardClass = "p-6 border-transparent dark:border dark:border-white/10";
+  const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
-  // --- CONTENIDO DE LA TARJETA SOPORTE (Extraído para reutilización) ---
   const soporteCard = (
     <GlassCard className={glassCardClass}>
       <SectionTitle icon={Info} title="Soporte y General" />
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3">
 
         {showGooglePlayLink && (
           <a href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419" target="_blank" rel="noopener noreferrer" className="no-underline">
@@ -449,7 +443,7 @@ export default function SettingsScreen({
             icon={Smartphone}
             title="Descargar App Android"
             subtitle="Instalar APK nativo"
-            action={<Download size={18} className="text-accent" />}
+            action={<Download size={18} className="text-accent shrink-0" />}
           />
         </a>
 
@@ -464,15 +458,15 @@ export default function SettingsScreen({
           <SettingsItem icon={Mail} title="Contactar Soporte" subtitle="profitnessglass@gmail.com" />
         </a>
 
-        <div className="my-3 h-px bg-[--glass-border]" />
-
+        <div className="my-2" />
         <SectionTitle icon={Share2} title="Síguenos" />
+        
         <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
           <SettingsItem
             icon={Instagram}
             title="Instagram"
             subtitle="@pro_fitness_glass"
-            action={<ChevronRight size={18} className="text-text-muted" />}
+            action={<ChevronRight size={18} className="text-text-muted shrink-0" />}
           />
         </a>
         <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="no-underline">
@@ -480,7 +474,7 @@ export default function SettingsScreen({
             icon={TikTokIcon}
             title="TikTok"
             subtitle="@pro_fitness_glass"
-            action={<ChevronRight size={18} className="text-text-muted" />}
+            action={<ChevronRight size={18} className="text-text-muted shrink-0" />}
           />
         </a>
         <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="no-underline">
@@ -488,25 +482,27 @@ export default function SettingsScreen({
             icon={Youtube}
             title="YouTube"
             subtitle="@ProFitnessGlass"
-            action={<ChevronRight size={18} className="text-text-muted" />}
+            action={<ChevronRight size={18} className="text-text-muted shrink-0" />}
           />
         </a>
 
-        <div className="my-3 h-px bg-[--glass-border]" />
+        <div className="my-2" />
 
         <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
           <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
         </a>
 
-        <div className="flex md:hidden items-center gap-3 w-full px-4 py-3 rounded-xl border border-transparent text-text-primary">
-          <Binary size={22} className="text-accent" />
-          <div className="flex-1 text-left">
-            <div className="text-sm font-bold">Versión de App</div>
-            <div className="text-xs text-text-secondary font-medium">v{APP_VERSION}</div>
+        <div className="flex md:hidden items-center gap-4 w-full p-4 rounded-[20px] bg-black/5 dark:bg-white/5 text-text-primary">
+          <div className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-accent shrink-0">
+            <Binary size={20} />
+          </div>
+          <div className="flex-1 text-left min-w-0">
+            <div className="text-sm font-bold truncate">Versión de App</div>
+            <div className="text-[10px] sm:text-xs text-text-secondary font-medium truncate mt-0.5">v{APP_VERSION}</div>
           </div>
         </div>
 
-        <div className="my-3 h-px bg-[--glass-border]" />
+        <div className="my-2" />
 
         <SettingsItem
           icon={LogOut}
@@ -519,41 +515,34 @@ export default function SettingsScreen({
   );
 
   return (
-    // CAMBIO: Añadido pt-6 para separar del borde superior en móvil
     <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
-      {/* CORRECCIÓN: Contenedor oculto en móvil (hidden md:flex) para evitar espacios y título degradado visible solo en escritorio */}
       <div className="hidden md:flex items-center justify-between mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
           Ajustes
         </h1>
       </div>
 
-      {/* MODIFICACIÓN: Grid ajustado para Tablets (805px+).
-        - 1 columna por defecto (móvil y tablet vertical/cuadrada)
-        - 2 columnas a partir de 'lg' (1024px, tablet horizontal/laptop pequeña)
-        - 3 columnas a partir de 'xl' (1280px, desktop)
-      */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8 items-start">
 
         {/* --- COLUMNA 1 --- */}
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6 lg:gap-8">
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={Palette} title="Apariencia" />
 
             <div className="mb-8">
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4">Tema</h3>
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Tema</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {['system', 'light', 'dark', 'oled'].map((mode) => (
                   <button
                     key={mode}
                     onClick={() => handleThemeClick(mode)}
-                    className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-2xl border transition-all ${theme === mode
-                      ? 'bg-accent text-bg-secondary border-transparent shadow-lg shadow-accent/20'
-                      : 'border-transparent dark:border-white/10 text-text-secondary hover:bg-bg-secondary bg-transparent dark:bg-white/5 [.oled-theme_&]:bg-transparent'
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-[20px] transition-all duration-300 ${theme === mode
+                      ? 'bg-accent text-white shadow-lg shadow-accent/30 scale-105'
+                      : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
                       }`}
                   >
                     {mode === 'system' && <MonitorCog size={22} />}
@@ -571,46 +560,45 @@ export default function SettingsScreen({
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-4 ml-1">
                 <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
                 {totalPages > 1 && (
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5">
                     <button
                       onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
                       disabled={currentColorPage === 0}
-                      className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                      className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
                     >
                       <ChevronLeft size={16} />
                     </button>
                     <button
                       onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
                       disabled={currentColorPage === totalPages - 1}
-                      className="p-1 rounded hover:bg-bg-secondary disabled:opacity-30"
+                      className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
                     >
                       <ChevronRight size={16} />
                     </button>
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-6 gap-3">
+              <div className="grid grid-cols-6 gap-3 sm:gap-4">
                 {currentColors.map(opt => (
                   <button
                     key={opt.id}
                     onClick={() => setAccent(opt.id)}
                     title={opt.label}
-                    className="group relative flex justify-center items-center"
+                    className="group relative flex justify-center items-center w-full aspect-square"
                   >
                     <span
-                      className="w-9 h-9 rounded-full border transition-transform hover:scale-110"
+                      className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
                       style={{
                         backgroundColor: opt.hex,
-                        borderColor: accent === opt.id ? opt.hex : 'transparent',
-                        boxShadow: accent === opt.id ? `0 0 0 2px var(--bg-primary), 0 0 0 4px ${opt.hex}` : 'none'
+                        boxShadow: accent === opt.id ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
                       }}
                     />
                     {accent === opt.id && (
-                      <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none shadow-sm">
-                        <Check size={16} strokeWidth={3} />
+                      <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+                        <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
                       </span>
                     )}
                   </button>
@@ -618,7 +606,7 @@ export default function SettingsScreen({
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-[--glass-border]">
+            <div className="mt-8">
               <SwitchItem
                 icon={Vibrate}
                 title="Vibración"
@@ -633,9 +621,6 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
 
-          {/* MODIFICACIÓN: Tarjeta Soporte visible en Col 1 hasta 'xl' (3 columnas).
-            Esto cubre Móvil y Tablet/Laptop (1 o 2 columnas) manteniendo la posición "debajo de Apariencia" (o arriba en la columna izquierda).
-          */}
           <div className="block xl:hidden">
             {soporteCard}
           </div>
@@ -664,17 +649,16 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
 
-          {/* MOVIDO AQUI: Seguridad para que esté arriba en tablet */}
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={Shield} title="Seguridad" />
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-3">
 
               <SettingsItem
                 icon={Smartphone}
                 title="Verificación en 2 pasos"
                 onClick={() => setView('twoFactorSetup')}
                 action={
-                  <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-text-muted/20 text-text-muted [.oled-theme_&]:bg-transparent'}`}>
+                  <div className={`px-3 py-1.5 rounded-[10px] text-[10px] font-black tracking-widest shrink-0 ${userProfile?.two_factor_enabled ? 'bg-green-500/20 text-green-500' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
                     {userProfile?.two_factor_enabled ? 'ACTIVADO' : 'DESACTIVADO'}
                   </div>
                 }
@@ -685,16 +669,16 @@ export default function SettingsScreen({
                 title="Exportar Datos"
                 subtitle="Descarga tu historial"
                 action={
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleExport('json'); }}
-                      className="px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-transparent dark:border-white/10 text-[10px] font-bold hover:bg-accent hover:text-white transition-colors [.oled-theme_&]:bg-transparent"
+                      className="px-3 py-2 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] font-bold hover:bg-accent hover:text-white transition-all hover:scale-105 hover:shadow-md"
                     >
                       JSON
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleExport('csv'); }}
-                      className="px-2.5 py-1.5 rounded-lg bg-bg-secondary border border-transparent dark:border-white/10 text-[10px] font-bold hover:bg-accent hover:text-white transition-colors [.oled-theme_&]:bg-transparent"
+                      className="px-3 py-2 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] font-bold hover:bg-accent hover:text-white transition-all hover:scale-105 hover:shadow-md"
                     >
                       CSV
                     </button>
@@ -723,16 +707,16 @@ export default function SettingsScreen({
         </div>
 
         {/* --- COLUMNA 2 --- */}
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6 lg:gap-8">
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={User} title="Perfil" />
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-3">
               <SettingsItem
                 icon={User}
                 title="Datos Físicos"
                 subtitle="Editar peso, altura, objetivos..."
                 onClick={() => setView('physicalProfileEditor')}
-                action={<ChevronRight size={18} className="text-text-muted" />}
+                action={<ChevronRight size={18} className="text-text-muted shrink-0" />}
               />
             </div>
           </GlassCard>
@@ -752,32 +736,32 @@ export default function SettingsScreen({
                 <label className="text-sm font-bold text-text-secondary ml-1">
                   Zona Horaria Manual
                 </label>
-                <div className="flex gap-2 items-center">
-                  <CustomSelect
-                    value={userProfile?.timezone || 'Europe/Madrid'}
-                    onChange={handleTimezoneChange}
-                    options={timezoneOptions}
-                    placeholder="Selecciona zona horaria"
-                    className="flex-1"
-                    disabled={autoTimezone}
-                  />
+                <div className="flex gap-3 items-center">
+                  <div className="flex-1 bg-black/5 dark:bg-white/5 rounded-[20px] p-1">
+                    <CustomSelect
+                      value={userProfile?.timezone || 'Europe/Madrid'}
+                      onChange={handleTimezoneChange}
+                      options={timezoneOptions}
+                      placeholder="Selecciona zona horaria"
+                      disabled={autoTimezone}
+                    />
+                  </div>
                   <button
                     onClick={() => detectAndUpdateTimezone(false)}
                     disabled={isUpdatingTimezone || autoTimezone}
-                    // CORRECCIÓN: Fondo transparente estricto para OLED
-                    className="p-3 rounded-xl border border-transparent dark:border-white/10 text-accent hover:bg-accent/10 transition flex items-center justify-center min-w-[50px] h-[48px] bg-transparent dark:bg-white/5 [.oled-theme_&]:bg-transparent"
+                    className="w-12 h-12 rounded-[20px] text-accent hover:bg-accent/10 transition-all flex items-center justify-center shrink-0 bg-black/5 dark:bg-white/5 hover:scale-105"
                     title="Detectar ahora"
                   >
                     {isUpdatingTimezone ? <Spinner size={20} /> : <Clock size={20} />}
                   </button>
                 </div>
                 {autoTimezone && (
-                  <p className="text-xs text-accent ml-1 flex items-center gap-1 font-bold">
-                    <Check size={12} /> Gestionado automáticamente
+                  <p className="text-xs text-accent ml-1 flex items-center gap-1.5 font-bold">
+                    <Check size={14} /> Gestionado automáticamente
                   </p>
                 )}
                 {!autoTimezone && (
-                  <p className="text-xs text-text-muted ml-1 leading-relaxed font-medium">
+                  <p className="text-[10px] sm:text-xs text-text-muted ml-1 leading-relaxed font-medium">
                     Afecta a la hora de reinicio de tus metas diarias.
                   </p>
                 )}
@@ -785,10 +769,9 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
 
-          {/* Wrapper para el Ref de Scroll y Highlight */}
           <div
             ref={socialPrivacyRef}
-            className={`rounded-2xl transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-lg shadow-accent/20 scale-[1.02]' : ''}`}
+            className={`rounded-[32px] transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-xl shadow-accent/20 scale-[1.02]' : ''}`}
           >
             <GlassCard className={glassCardClass}>
               <SectionTitle icon={Users} title="Privacidad Social" />
@@ -821,13 +804,12 @@ export default function SettingsScreen({
             </GlassCard>
           </div>
 
-          {/* CORRECCIÓN: Usar GlassCard estándar sin lógica especial de transparencia */}
           <GlassCard className={glassCardClass}>
             <ActiveSessions />
           </GlassCard>
         </div>
 
-        {/* --- COLUMNA 3 (Ahora solo visible en Desktop muy grande 'xl') --- */}
+        {/* --- COLUMNA 3 (Solo Desktop 'xl') --- */}
         <div className="hidden xl:flex flex-col gap-8">
           {soporteCard}
         </div>

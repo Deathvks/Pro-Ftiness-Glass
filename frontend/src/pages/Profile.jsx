@@ -1,8 +1,9 @@
+/* frontend/src/pages/Profile.jsx */
 import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, ChevronRight, Save, User, Camera, AlertTriangle,
-  Trophy, Flame, Dumbbell, Crown, Star, Eye
+  Trophy, Flame, Dumbbell, Crown, Star, Eye, X, Shield
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
@@ -56,43 +57,43 @@ const BADGE_DETAILS = {
     name: 'Primer Paso',
     desc: 'Inicia sesión por primera vez',
     icon: User,
-    color: 'text-blue-400',
-    bg: 'bg-blue-400/10'
+    color: 'text-blue-500',
+    bg: 'bg-blue-500/10'
   },
   first_workout: {
     name: 'Primer Sudor',
     desc: 'Completa tu primer entrenamiento',
     icon: Dumbbell,
-    color: 'text-green-400',
-    bg: 'bg-green-400/10'
+    color: 'text-green-500',
+    bg: 'bg-green-500/10'
   },
   streak_3: {
     name: 'En Llamas',
     desc: 'Racha de 3 días',
     icon: Flame,
-    color: 'text-orange-400',
-    bg: 'bg-orange-400/10'
+    color: 'text-orange-500',
+    bg: 'bg-orange-500/10'
   },
   streak_7: {
     name: 'Imparable',
     desc: 'Racha de 7 días',
     icon: Flame,
-    color: 'text-red', // Usando var(--color-red)
+    color: 'text-red',
     bg: 'bg-red/10'
   },
   streak_30: {
     name: 'Leyenda',
     desc: 'Racha de 30 días',
     icon: Crown,
-    color: 'text-yellow-400',
-    bg: 'bg-yellow-400/10'
+    color: 'text-yellow-500',
+    bg: 'bg-yellow-500/10'
   },
   nutrition_master: {
     name: 'Chef',
     desc: 'Registra 5 comidas',
     icon: Star,
-    color: 'text-purple-400',
-    bg: 'bg-purple-400/10'
+    color: 'text-purple-500',
+    bg: 'bg-purple-500/10'
   },
   default: {
     name: 'Insignia',
@@ -220,7 +221,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
     }
   };
 
-  // --- Nueva función para manejar el fin del recorte ---
   const handleCropComplete = async (croppedAreaPixels) => {
     try {
       const croppedFile = await getCroppedImg(tempImage, croppedAreaPixels);
@@ -392,32 +392,31 @@ const Profile = ({ onCancel, setView, navigate }) => {
   };
 
   const baseInputClasses =
-    'w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition';
+    'w-full bg-black/5 dark:bg-white/5 border border-transparent rounded-[20px] px-5 py-4 text-text-primary focus:border-accent/30 focus:ring-accent/20 focus:ring-4 outline-none transition-all font-bold placeholder:text-text-muted placeholder:font-medium';
 
   return (
     <>
       <Helmet>
-        <title>{`Editar Perfil: ${formData.username || 'Usuario'
-          } - Pro Fitness Glass`}</title>
+        <title>{`Editar Perfil: ${formData.username || 'Usuario'} - Pro Fitness Glass`}</title>
       </Helmet>
 
       <div className="w-full max-w-4xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-6 sm:mt-0">
         <button
           onClick={onCancel}
-          className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4"
+          className="flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit active:scale-95"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={20} strokeWidth={2.5} />
           Volver
         </button>
 
-        <h1 className="hidden md:block w-fit text-4xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-muted">
-          Perfil
+        <h1 className="hidden md:block w-fit text-4xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
+          Editar Perfil
         </h1>
 
-        <GlassCard className="p-6">
-          <form onSubmit={handleSave} className="flex flex-col gap-6">
+        <GlassCard className="glass p-6 sm:p-10 rounded-[32px] shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 transition-all duration-300">
+          <form onSubmit={handleSave} className="flex flex-col gap-6 sm:gap-8" noValidate>
             {errors.api && (
-              <p className="text-center text-red mb-4 -mt-2">{errors.api}</p>
+              <p className="text-center text-red font-bold mb-4 -mt-2">{errors.api}</p>
             )}
 
             <div className="flex flex-col items-center gap-4">
@@ -429,7 +428,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
                 className="hidden"
               />
               <div
-                className="relative w-32 h-32 rounded-full cursor-pointer"
+                className="relative w-36 h-36 rounded-[40px] cursor-pointer group hover:scale-105 transition-transform duration-300 shadow-xl bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 p-1"
                 onClick={openImageModal}
                 title="Ver imagen ampliada"
               >
@@ -437,13 +436,13 @@ const Profile = ({ onCancel, setView, navigate }) => {
                   <img
                     src={getProcessedImageUrl(imagePreview)}
                     alt={`Foto de perfil de ${formData.username || 'usuario'}`}
-                    className="w-32 h-32 rounded-full object-cover"
+                    className="w-full h-full rounded-[36px] object-cover"
                     referrerPolicy="no-referrer"
                     onError={(e) => { e.target.onerror = null; }}
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-bg-secondary flex items-center justify-center border border-glass-border">
-                    <User size={64} className="text-text-muted" />
+                  <div className="w-full h-full rounded-[36px] bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                    <User size={64} className="text-text-muted opacity-50" strokeWidth={1.5} />
                   </div>
                 )}
                 <button
@@ -452,22 +451,27 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     e.stopPropagation();
                     fileInputRef.current.click();
                   }}
-                  className="absolute bottom-0 right-0 p-2 bg-accent rounded-full text-bg-secondary hover:scale-110 transition"
+                  className="absolute -bottom-2 -right-2 p-3 bg-accent rounded-[16px] text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300"
                   aria-label="Cambiar foto de perfil"
                 >
-                  <Camera size={20} />
+                  <Camera size={20} strokeWidth={2.5} />
                 </button>
               </div>
               {errors.image && (
-                <p className="form-error-text -mt-3">{errors.image}</p>
+                <p className="form-error-text -mt-2 font-bold">{errors.image}</p>
               )}
             </div>
 
             <div>
-              <h2 className="text-lg font-bold mb-4">Datos Básicos</h2>
-              <div className="flex flex-col gap-4">
+              <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-3 text-text-primary tracking-tight">
+                <div className="p-2.5 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm shrink-0">
+                  <User size={24} strokeWidth={2.5} />
+                </div>
+                Datos Básicos
+              </h2>
+              <div className="flex flex-col gap-5">
                 <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-text-secondary mb-2">
+                  <label htmlFor="username" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
                     Nombre de usuario
                   </label>
                   <input
@@ -478,14 +482,15 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     onChange={handleChange}
                     className={baseInputClasses}
                     maxLength={30}
+                    placeholder="Escribe tu nombre de usuario"
                   />
                   {errors.username && (
-                    <p className="form-error-text mt-1">{errors.username}</p>
+                    <p className="form-error-text mt-2 font-bold px-2">{errors.username}</p>
                   )}
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-2">
-                    Email
+                  <label htmlFor="email" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
+                    Correo Electrónico
                   </label>
                   <input
                     id="email"
@@ -494,27 +499,31 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     value={formData.email}
                     onChange={handleChange}
                     className={baseInputClasses}
+                    placeholder="Escribe tu email"
                   />
                   {errors.email && (
-                    <p className="form-error-text mt-1">{errors.email}</p>
+                    <p className="form-error-text mt-2 font-bold px-2">{errors.email}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-glass-border">
-              <h2 className="text-lg font-bold mb-4">
-                {hasPassword ? 'Cambiar Contraseña' : 'Establecer Contraseña'}
+            <div className="pt-8 border-t border-black/5 dark:border-white/10">
+              <h2 className="text-2xl font-extrabold mb-3 flex items-center gap-3 text-text-primary tracking-tight">
+                <div className="p-2.5 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm shrink-0">
+                  <Shield size={24} strokeWidth={2.5} />
+                </div>
+                {hasPassword ? 'Seguridad y Contraseña' : 'Establecer Contraseña'}
               </h2>
-              <p className="text-sm text-text-secondary mb-4 -mt-3">
+              <p className="text-sm font-medium text-text-secondary mb-6 leading-relaxed px-1">
                 {hasPassword
-                  ? 'Deja los campos en blanco si no quieres cambiar tu contraseña.'
-                  : 'Añade una contraseña para poder iniciar sesión con tu email.'}
+                  ? 'Si dejas estos campos en blanco tu contraseña no cambiará.'
+                  : 'Añade una contraseña para poder iniciar sesión directamente con tu correo electrónico.'}
               </p>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-5">
                 {hasPassword && (
                   <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium text-text-secondary mb-2">
+                    <label htmlFor="currentPassword" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
                       Contraseña Actual
                     </label>
                     <input
@@ -524,17 +533,18 @@ const Profile = ({ onCancel, setView, navigate }) => {
                       value={formData.currentPassword}
                       onChange={handleChange}
                       className={baseInputClasses}
+                      placeholder="Ingresa tu contraseña actual"
                     />
                     {errors.currentPassword && (
-                      <p className="form-error-text mt-1">
+                      <p className="form-error-text mt-2 font-bold px-2">
                         {errors.currentPassword}
                       </p>
                     )}
                   </div>
                 )}
                 <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-text-secondary mb-2">
-                    {hasPassword ? 'Nueva Contraseña' : 'Contraseña'}
+                  <label htmlFor="newPassword" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
+                    {hasPassword ? 'Nueva Contraseña' : 'Contraseña Nueva'}
                   </label>
                   <input
                     id="newPassword"
@@ -543,26 +553,27 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     value={formData.newPassword}
                     onChange={handleChange}
                     className={baseInputClasses}
+                    placeholder="Escribe una nueva contraseña"
                   />
                   {errors.newPassword && (
-                    <p className="form-error-text mt-1">{errors.newPassword}</p>
+                    <p className="form-error-text mt-2 font-bold px-2">{errors.newPassword}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-center pt-6 border-t border-glass-border">
+            <div className="flex justify-center pt-8 border-t border-black/5 dark:border-white/10 mt-2">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 px-6 py-3 w-40 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105 disabled:opacity-70"
+                className="flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto min-w-[200px] rounded-[20px] bg-accent text-white font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
               >
                 {isLoading ? (
-                  <Spinner size={18} />
+                  <Spinner size={24} color="white" />
                 ) : (
                   <>
-                    <Save size={18} />
-                    <span>Guardar</span>
+                    <Save size={20} strokeWidth={2.5} />
+                    <span>Guardar Cambios</span>
                   </>
                 )}
               </button>
@@ -570,31 +581,35 @@ const Profile = ({ onCancel, setView, navigate }) => {
           </form>
         </GlassCard>
 
-        {/* --- NUEVO APARTADO: PERFIL SOCIAL --- */}
-        <GlassCard className="p-6 mt-8">
-          <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-            <User size={20} className="text-accent" />
-            Perfil Social
+        {/* --- APARTADO: PERFIL SOCIAL --- */}
+        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 hover:shadow-xl transition-all duration-300">
+          <h3 className="text-xl font-extrabold text-text-primary mb-3 flex items-center gap-3 tracking-tight">
+            <div className="p-2.5 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 shrink-0">
+              <Eye size={20} className="text-accent" strokeWidth={2.5} />
+            </div>
+            Perfil Social Público
           </h3>
-          <p className="text-sm text-text-secondary mb-4">
-            Así es como otros usuarios ven tu perfil, logros y estadísticas.
-            Puedes personalizar qué información es pública desde los ajustes.
+          <p className="text-sm font-medium text-text-secondary mb-6 leading-relaxed">
+            Así es como otros usuarios ven tu perfil, logros y estadísticas en la comunidad.
+            Puedes personalizar qué información compartir desde la sección de privacidad en Ajustes.
           </p>
           <button
             type="button"
             onClick={handleViewPublicProfile}
-            className="flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto rounded-full bg-accent text-bg-secondary font-bold shadow-lg shadow-accent/20 hover:scale-105 transition-transform active:scale-95"
+            className="flex items-center justify-center gap-2 px-6 py-4 w-full sm:w-auto rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm"
           >
-            <Eye size={18} />
-            <span>Ver mi perfil público</span>
+            <User size={18} strokeWidth={2.5} />
+            <span>Previsualizar Mi Perfil</span>
           </button>
         </GlassCard>
 
-        {/* --- Sección de Insignias --- */}
-        <GlassCard className="p-6 mt-8">
-          <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-            <Trophy size={20} className="text-accent" />
-            Insignias Desbloqueadas
+        {/* --- APARTADO: INSIGNIAS --- */}
+        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 hover:shadow-xl transition-all duration-300">
+          <h3 className="text-xl font-extrabold text-text-primary mb-6 flex items-center gap-3 tracking-tight">
+            <div className="p-2.5 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 shrink-0">
+              <Trophy size={20} className="text-accent" strokeWidth={2.5} />
+            </div>
+            Mis Insignias
           </h3>
 
           {gamification?.unlockedBadges && gamification.unlockedBadges.length > 0 ? (
@@ -607,24 +622,24 @@ const Profile = ({ onCancel, setView, navigate }) => {
               );
 
               return (
-                <div className="relative px-8">
+                <div className="relative px-2 sm:px-12">
                   {totalPages > 1 && (
                     <>
                       <button
                         type="button"
                         onClick={() => setBadgePage(p => Math.max(0, p - 1))}
                         disabled={badgePage === 0}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-full text-text-secondary hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 rounded-[16px] text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10 hidden sm:block active:scale-95 shadow-sm"
                       >
-                        <ChevronLeft size={24} />
+                        <ChevronLeft size={20} strokeWidth={2.5} />
                       </button>
                       <button
                         type="button"
                         onClick={() => setBadgePage(p => Math.min(totalPages - 1, p + 1))}
                         disabled={badgePage === totalPages - 1}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-full text-text-secondary hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 rounded-[16px] text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10 hidden sm:block active:scale-95 shadow-sm"
                       >
-                        <ChevronRight size={24} />
+                        <ChevronRight size={20} strokeWidth={2.5} />
                       </button>
                     </>
                   )}
@@ -633,24 +648,52 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     {currentBadges.map((badgeId) => {
                       const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
                       return (
-                        <div key={badgeId} className={`flex flex-col items-center text-center p-3 rounded-xl border border-white/5 ${badge.bg}`}>
-                          <div className={`p-2 rounded-full mb-2 bg-bg-secondary ${badge.color}`}>
-                            <badge.icon size={24} />
+                        <div key={badgeId} className="flex flex-col items-center text-center p-5 rounded-[24px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 transition-transform hover:-translate-y-1">
+                          <div className={`p-4 rounded-[20px] mb-4 bg-bg-primary shadow-sm ring-1 ring-black/5 dark:ring-white/10 ${badge.color}`}>
+                            <badge.icon size={32} strokeWidth={1.5} />
                           </div>
-                          <span className="font-bold text-sm text-text-primary line-clamp-1">{badge.name}</span>
-                          <span className="text-xs text-text-secondary line-clamp-2">{badge.desc}</span>
+                          <span className="font-extrabold text-sm text-text-primary mb-1">{badge.name}</span>
+                          <span className="text-xs font-medium text-text-secondary">{badge.desc}</span>
                         </div>
                       );
                     })}
                   </div>
 
+                  {/* Controles de página para móvil */}
                   {totalPages > 1 && (
-                    <div className="flex justify-center gap-2 mt-4">
+                    <div className="flex sm:hidden items-center justify-between mt-6 px-2">
+                      <button
+                        onClick={() => setBadgePage(p => Math.max(0, p - 1))}
+                        disabled={badgePage === 0}
+                        className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 disabled:opacity-30 text-text-secondary active:scale-95"
+                      >
+                        <ChevronLeft size={20} strokeWidth={2.5} />
+                      </button>
+                      <div className="flex gap-2">
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === badgePage ? 'bg-accent' : 'bg-black/10 dark:bg-white/20'}`}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setBadgePage(p => Math.min(totalPages - 1, p + 1))}
+                        disabled={badgePage === totalPages - 1}
+                        className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 disabled:opacity-30 text-text-secondary active:scale-95"
+                      >
+                        <ChevronRight size={20} strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Indicadores de página Desktop */}
+                  {totalPages > 1 && (
+                    <div className="hidden sm:flex justify-center gap-2 mt-6">
                       {Array.from({ length: totalPages }).map((_, i) => (
                         <div
                           key={i}
-                          className={`w-1.5 h-1.5 rounded-full transition-colors ${i === badgePage ? 'bg-accent' : 'bg-white/20'
-                            }`}
+                          className={`w-1.5 h-1.5 rounded-full transition-colors ${i === badgePage ? 'bg-accent' : 'bg-black/10 dark:bg-white/20'}`}
                         />
                       ))}
                     </div>
@@ -659,42 +702,46 @@ const Profile = ({ onCancel, setView, navigate }) => {
               );
             })()
           ) : (
-            <div className="text-center p-4 border border-dashed border-glass-border rounded-xl">
-              <p className="text-text-muted text-sm">Aún no has desbloqueado ninguna insignia. ¡Sigue entrenando!</p>
+            <div className="text-center p-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+              <Trophy size={48} className="mx-auto text-text-muted opacity-50 mb-4" strokeWidth={1.5} />
+              <p className="text-text-primary font-extrabold text-lg mb-1">Sin insignias aún</p>
+              <p className="text-text-secondary font-medium text-sm">¡Sigue entrenando para desbloquear recompensas!</p>
             </div>
           )}
         </GlassCard>
 
-        {/* --- Zona de Peligro --- */}
-        <GlassCard className="p-6 mt-8 border border-red/50">
-          <h3 className="text-xl font-bold text-red mb-4 flex items-center gap-2">
-            <AlertTriangle size={20} />
+        {/* --- ZONA DE PELIGRO --- */}
+        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-red/30 bg-red/5">
+          <h3 className="text-xl font-extrabold text-red mb-6 flex items-center gap-3 tracking-tight">
+            <div className="p-2.5 bg-red/10 rounded-[12px] ring-1 ring-red/30 shrink-0">
+              <AlertTriangle size={20} strokeWidth={2.5} />
+            </div>
             Zona de Peligro
           </h3>
-          <div className="flex flex-col gap-4">
-            <div className="flex-1">
-              <p className="text-sm text-text-secondary mb-2">
-                Borra todos tus datos (entrenamientos, nutrición, etc.) pero
-                conserva tu cuenta de usuario.
+          <div className="flex flex-col md:flex-row gap-5">
+            <div className="flex-1 bg-bg-primary rounded-[24px] p-6 ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col">
+              <p className="text-sm text-text-primary font-extrabold mb-2 uppercase tracking-wider">Borrar Mis Datos</p>
+              <p className="text-xs font-medium text-text-secondary mb-6 leading-relaxed flex-1">
+                Elimina todo tu historial de entrenamientos, rutinas y nutrición, pero conserva tu perfil de usuario.
               </p>
               <button
                 type="button"
                 onClick={() => setModalAction('deleteData')}
-                className="w-full sm:w-auto px-4 py-2 rounded-md bg-accent text-bg-secondary font-semibold hover:opacity-90 transition"
+                className="w-full px-4 py-4 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95"
               >
-                Borrar Datos
+                Borrar Historial
               </button>
             </div>
 
-            <div className="flex-1">
-              <p className="text-sm text-text-secondary mb-2">
-                Borra permanentemente tu cuenta y todos tus datos. Esta acción
-                no se puede deshacer.
+            <div className="flex-1 bg-bg-primary rounded-[24px] p-6 ring-1 ring-red/20 shadow-sm flex flex-col">
+              <p className="text-sm text-red font-extrabold mb-2 uppercase tracking-wider">Borrar Cuenta Definitivamente</p>
+              <p className="text-xs font-medium text-red/80 mb-6 leading-relaxed flex-1">
+                Elimina permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.
               </p>
               <button
                 type="button"
                 onClick={() => setModalAction('deleteAccount')}
-                className="w-full sm:w-auto px-4 py-2 rounded-md bg-red/20 text-red font-semibold border border-red/50 hover:bg-red/30 transition"
+                className="w-full px-4 py-4 rounded-[20px] bg-red text-white font-bold hover:bg-red/90 transition-colors shadow-lg shadow-red/20 active:scale-95"
               >
                 Borrar Cuenta
               </button>
@@ -715,6 +762,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
         />
       )}
 
+      {/* --- MODAL DE CONFIRMACIÓN DE BORRADO --- */}
       <DeleteConfirmationModal
         modalAction={modalAction}
         isModalLoading={isModalLoading}
@@ -750,8 +798,8 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black flex flex-col animate-[fade-in_0.2s_ease-out]">
-      <div className="relative flex-1">
+    <div className="fixed inset-0 z-[200] bg-bg-primary flex flex-col animate-[fade-in_0.2s_ease-out]">
+      <div className="relative flex-1 bg-black">
         <Cropper
           image={imageSrc}
           crop={crop}
@@ -764,11 +812,11 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
           onZoomChange={setZoom}
         />
       </div>
-      <div className="bg-bg-primary p-4 pb-8 flex justify-between items-center px-8 border-t border-white/10" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
-        <button type="button" onClick={onCancel} className="text-text-secondary font-medium px-4 py-2 hover:text-white transition">
+      <div className="bg-bg-primary p-5 pb-8 flex justify-between items-center px-6 sm:px-10 border-t border-black/5 dark:border-white/10" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+        <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-[16px] transition-colors active:scale-95">
           Cancelar
         </button>
-        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-bg-secondary font-bold px-6 py-2 rounded-full hover:scale-105 transition">
+        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-white font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
           Recortar
         </button>
       </div>
@@ -776,6 +824,7 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
   );
 };
 
+// --- Componente: Modal de Confirmación de Borrado ---
 const DeleteConfirmationModal = ({
   modalAction,
   isModalLoading,
@@ -791,38 +840,57 @@ const DeleteConfirmationModal = ({
   if (!modalAction) return null;
 
   const isDeleteAccount = modalAction === 'deleteAccount';
-  const title = isDeleteAccount ? 'Borrar Cuenta' : 'Borrar Datos';
+  const title = isDeleteAccount ? 'Borrar Cuenta Definitivamente' : 'Borrar Historial de Datos';
 
-  const passwordText = hasPassword
-    ? ' Escribe tu contraseña actual para confirmar.'
-    : '';
+  const themeConfig = isDeleteAccount 
+    ? {
+        ring: 'ring-red/30',
+        iconBg: 'bg-red/10',
+        iconRing: 'ring-red/30',
+        text: 'text-red',
+        buttonBg: 'bg-red',
+        buttonHover: 'hover:scale-[1.02]',
+        shadow: 'shadow-red/20'
+      }
+    : {
+        ring: 'ring-orange-500/30',
+        iconBg: 'bg-orange-500/10',
+        iconRing: 'ring-orange-500/30',
+        text: 'text-orange-500',
+        buttonBg: 'bg-orange-500',
+        buttonHover: 'hover:scale-[1.02]',
+        shadow: 'shadow-orange-500/20'
+      };
 
   const message = isDeleteAccount
-    ? `¿Estás ABSOLUTAMENTE seguro? Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente.${passwordText}`
-    : `¿Estás seguro? Todos tus registros de entrenamientos, nutrición y progreso serán eliminados. Tu cuenta se conservará.${passwordText}`;
+    ? `¿Estás ABSOLUTAMENTE seguro? Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente.`
+    : `¿Estás seguro? Todos tus registros de entrenamientos, nutrición y progreso serán eliminados. Tu cuenta se conservará.`;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-[fade-in_0.2s_ease-out]">
-      <GlassCard className="w-full max-w-md p-6 sm:p-8">
-        <h3
-          className={`text-2xl font-bold mb-4 ${isDeleteAccount ? 'text-red' : 'text-accent'
-            }`}
-        >
-          {title}
-        </h3>
-        <p className="text-text-secondary mb-6">{message}</p>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[150] p-4 animate-[fade-in_0.2s_ease-out]">
+      <div className="absolute inset-0" onClick={handleModalClose} />
+      <div className={`w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl bg-bg-primary ring-1 ${themeConfig.ring}`}>
+        
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className={`w-20 h-20 rounded-[24px] flex items-center justify-center mb-5 ring-1 shadow-sm ${themeConfig.iconBg} ${themeConfig.text} ${themeConfig.iconRing}`}>
+            <AlertTriangle size={40} strokeWidth={1.5} />
+          </div>
+          <h3 className={`text-2xl font-extrabold tracking-tight ${themeConfig.text}`}>{title}</h3>
+          <p className="text-text-secondary font-medium text-sm mt-3 leading-relaxed">
+            {message}
+          </p>
+          {hasPassword && (
+            <p className="text-sm font-bold text-text-primary mt-3">
+              Escribe tu contraseña para confirmar.
+            </p>
+          )}
+        </div>
 
         {hasPassword && (
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-text-secondary mb-2"
-            >
-              Contraseña Actual
-            </label>
+          <div className="mb-8">
             <input
-              id="confirmPassword"
               type="password"
+              placeholder="Contraseña actual"
               value={modalPassword}
               onChange={(e) => {
                 setModalPassword(e.target.value);
@@ -831,33 +899,31 @@ const DeleteConfirmationModal = ({
               className={baseInputClasses}
               autoFocus
             />
-            {modalError && <p className="form-error-text mt-1">{modalError}</p>}
+            {modalError && <p className="form-error-text text-center text-xs mt-3 font-bold">{modalError}</p>}
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
-          <button
-            onClick={handleModalClose}
-            disabled={isModalLoading}
-            className="px-4 py-2 rounded-md bg-bg-secondary font-medium text-text-primary border border-glass-border hover:bg-bg-tertiary transition w-full sm:w-auto"
-          >
-            Cancelar
-          </button>
-          
-          {/* USANDO bg-red Y text-white PARA ASEGURAR EL COLOR ROJO */}
+        <div className="flex flex-col gap-3">
           <button
             onClick={handleModalConfirm}
             disabled={isModalLoading}
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition w-full sm:w-auto bg-red text-white hover:opacity-90 disabled:opacity-50"
+            className={`flex items-center justify-center gap-2 w-full py-4 rounded-[20px] font-bold transition-all text-white active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg ${themeConfig.buttonBg} ${themeConfig.shadow} ${themeConfig.buttonHover}`}
           >
             {isModalLoading ? (
-              <Spinner size={18} color="#fff" />
+              <Spinner size={20} color="#ffffff" />
             ) : (
-              `Confirmar ${isDeleteAccount ? 'Borrado de Cuenta' : 'Borrado de Datos'}`
+              `Confirmar ${isDeleteAccount ? 'Borrado' : 'Limpieza'}`
             )}
           </button>
+          <button
+            onClick={handleModalClose}
+            disabled={isModalLoading}
+            className="w-full py-4 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95"
+          >
+            Cancelar
+          </button>
         </div>
-      </GlassCard>
+      </div>
     </div>
   );
 };

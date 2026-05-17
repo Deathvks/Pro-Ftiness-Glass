@@ -144,7 +144,7 @@ const ExerciseDetailView = ({
 
   const isOled = theme === 'oled';
   const hasVideo = !!exercise.video_url;
-  const mediaBgClass = (!hasVideo && !finalStartUrl && isOled) ? 'bg-gray-200' : 'bg-bg-primary';
+  const mediaBgClass = (!hasVideo && !finalStartUrl && isOled) ? 'bg-black/10 dark:bg-white/5' : 'bg-black/5 dark:bg-white/5';
 
   const isLimitReached = remainingUses === 0 || (aiError && aiError.toLowerCase().includes('agotado'));
 
@@ -190,23 +190,25 @@ const ExerciseDetailView = ({
     }
   };
 
+  const inputClasses = "w-full text-center px-4 py-3.5 rounded-[16px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:ring-2 focus:ring-accent/50 outline-none transition-all font-bold text-text-primary";
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-shrink-0 p-4 pb-2 border-b border-glass-border">
+      <div className="flex-shrink-0 p-6 sm:p-8 pb-4 border-b border-black/5 dark:border-white/10">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 p-2 -ml-2 mb-2 rounded-lg text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 -ml-2 mb-4 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary transition-colors font-bold w-fit"
         >
-          <ChevronLeft size={24} />
-          <span className="font-semibold">{t('exercise_ui:back', 'Volver')}</span>
+          <ChevronLeft size={20} />
+          <span>{t('exercise_ui:back', 'Volver')}</span>
         </button>
-        <h2 className="text-2xl md:text-3xl font-extrabold text-text-primary break-words whitespace-normal leading-tight">
+        <h2 className="text-3xl md:text-4xl font-extrabold text-text-primary break-words whitespace-normal leading-tight tracking-tight">
           {translatedName}
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className={`mb-6 aspect-video ${mediaBgClass} rounded-xl border border-glass-border overflow-hidden flex items-center justify-center`}>
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
+        <div className={`mb-8 aspect-video ${mediaBgClass} rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex items-center justify-center shadow-inner`}>
           {hasVideo ? (
             <video
               src={exercise.video_url}
@@ -214,7 +216,7 @@ const ExerciseDetailView = ({
               loop
               muted
               playsInline
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain p-2"
             />
           ) : finalStartUrl ? (
             <div className="flex gap-4 w-full h-full p-4">
@@ -223,7 +225,7 @@ const ExerciseDetailView = ({
                   key={`start-${finalStartUrl}`}
                   src={finalStartUrl}
                   alt={`Inicio de ${translatedName}`}
-                  className={`${finalEndUrl && !endImageError ? 'w-1/2' : 'w-full'} h-full object-contain`}
+                  className={`${finalEndUrl && !endImageError ? 'w-1/2' : 'w-full'} h-full object-contain drop-shadow-md`}
                   loading="lazy"
                   onError={() => setStartImageError(true)}
                 />
@@ -233,58 +235,58 @@ const ExerciseDetailView = ({
                   key={`end-${finalEndUrl}`}
                   src={finalEndUrl}
                   alt={`Fin de ${translatedName}`}
-                  className={`${!startImageError ? 'w-1/2' : 'w-full'} h-full object-contain`}
+                  className={`${!startImageError ? 'w-1/2' : 'w-full'} h-full object-contain drop-shadow-md`}
                   loading="lazy"
                   onError={() => setEndImageError(true)}
                 />
               )}
               {startImageError && (!finalEndUrl || endImageError) && (
                  <div className="flex w-full items-center justify-center text-text-muted">
-                    <Dumbbell size={64} opacity={0.5} />
+                    <Dumbbell size={48} className="opacity-50" />
                  </div>
               )}
             </div>
           ) : (
             <div className="flex items-center justify-center text-text-muted">
-              <Dumbbell size={64} opacity={0.5} />
+              <Dumbbell size={48} className="opacity-50" />
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
-            <p className="text-sm text-text-muted">{t('exercise_ui:muscle_group', 'Grupo Muscular')}</p>
-            <p className="font-semibold capitalize">
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="bg-black/5 dark:bg-white/5 p-5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10">
+            <p className="text-[10px] sm:text-xs text-text-secondary uppercase tracking-wider font-bold mb-1">{t('exercise_ui:muscle_group', 'Grupo Muscular')}</p>
+            <p className="font-extrabold text-text-primary capitalize text-sm sm:text-base">
               {translatedMuscle}
             </p>
           </div>
-          <div className="bg-bg-secondary p-4 rounded-lg border border-glass-border">
-            <p className="text-sm text-text-muted">{t('exercise_ui:equipment', 'Equipamiento')}</p>
-            <p className="font-semibold capitalize">
+          <div className="bg-black/5 dark:bg-white/5 p-5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10">
+            <p className="text-[10px] sm:text-xs text-text-secondary uppercase tracking-wider font-bold mb-1">{t('exercise_ui:equipment', 'Equipamiento')}</p>
+            <p className="font-extrabold text-text-primary capitalize text-sm sm:text-base">
               {translatedEquipment}
             </p>
           </div>
         </div>
 
-        <div className="pb-4">
-          <h3 className="text-lg font-semibold mb-2">{t('exercise_ui:description', 'Descripción')}</h3>
-          <p className="text-text-secondary whitespace-pre-line leading-relaxed">
+        <div className="pb-6">
+          <h3 className="text-xl font-bold mb-3 text-text-primary">{t('exercise_ui:description', 'Descripción')}</h3>
+          <p className="text-sm sm:text-base font-medium text-text-secondary whitespace-pre-line leading-relaxed">
             {translatedDescription}
           </p>
         </div>
 
-        <div className="mt-4 pt-6 border-t border-glass-border space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold flex items-center gap-2 text-text-primary">
+        <div className="pt-6 border-t border-black/5 dark:border-white/10 space-y-5">
+          <div className="flex justify-between items-center px-1">
+            <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 text-text-primary tracking-tight">
               <Sparkles className="w-5 h-5 text-accent" />
               Técnica y Consejos IA
             </h3>
             {remainingUses !== null && (
               <div className="text-right">
-                <span className={`text-xs font-medium block ${isLimitReached ? 'text-red-500' : 'text-text-secondary'}`}>
-                  Usos restantes: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
+                <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider block ${isLimitReached ? 'text-red-500' : 'text-accent'}`}>
+                  Usos: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
                 </span>
-                <span className="text-[10px] text-text-muted block">Se restablece a medianoche</span>
+                <span className="text-[9px] sm:text-[10px] text-text-muted block font-medium mt-0.5">Se reinicia a medianoche</span>
               </div>
             )}
           </div>
@@ -293,9 +295,9 @@ const ExerciseDetailView = ({
             <button
               onClick={handleAskAI}
               disabled={isLimitReached}
-              className={`w-full p-4 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 font-bold border border-glass-border ${isLimitReached
-                  ? 'bg-bg-secondary/50 text-text-muted cursor-not-allowed'
-                  : 'bg-bg-secondary text-accent hover:bg-accent/5'
+              className={`w-full p-4 rounded-[20px] flex items-center justify-center gap-2 transition-all active:scale-95 font-bold border-none ring-1 ${isLimitReached
+                  ? 'bg-black/5 dark:bg-white/5 text-text-muted ring-black/5 dark:ring-white/10 cursor-not-allowed'
+                  : 'bg-black/5 dark:bg-white/5 text-accent ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
                 }`}
             >
               {isLimitReached ? (
@@ -313,57 +315,55 @@ const ExerciseDetailView = ({
           )}
 
           {isAiLoading && (
-            <div className="p-6 rounded-xl bg-bg-secondary border border-glass-border flex flex-col items-center justify-center gap-3">
-              <Loader2 className="w-6 h-6 text-accent animate-spin" />
-              <span className="text-sm text-text-secondary">Analizando biomecánica del ejercicio...</span>
+            <div className="p-6 rounded-[24px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex flex-col items-center justify-center gap-4 py-10">
+              <Loader2 className="w-8 h-8 text-accent animate-spin" />
+              <span className="text-sm font-bold text-text-secondary">Analizando biomecánica del ejercicio...</span>
             </div>
           )}
 
           {aiError && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-3 items-start">
+            <div className="p-5 rounded-[20px] bg-red-500/10 ring-1 ring-red-500/20 flex gap-3 items-start animate-[fade-in_0.3s_ease-out]">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-500">{aiError}</p>
+              <p className="text-sm font-bold text-red-500">{aiError}</p>
             </div>
           )}
 
           {aiExplanation && (
-            <div className="p-5 rounded-xl bg-bg-secondary border border-glass-border space-y-2 text-sm leading-relaxed whitespace-pre-wrap text-text-primary">
+            <div className="p-6 rounded-[24px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 space-y-3 text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-text-primary font-medium shadow-inner animate-[fade-in_0.3s_ease-out]">
               {aiExplanation}
             </div>
           )}
         </div>
-
-        <div className="h-6"></div>
       </div>
 
-      <div className="flex-shrink-0 p-4 border-t border-glass-border bg-bg-primary/80 backdrop-blur-sm pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">
+      <div className="flex-shrink-0 p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/80 backdrop-blur-md pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-8">
         {!isReplacing && (
-          <div className="flex gap-4 mb-4">
-            <div>
-              <label className="text-xs text-text-muted">{t('exercise_ui:sets', 'Series')}</label>
+          <div className="flex gap-4 mb-5">
+            <div className="flex-1">
+              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">{t('exercise_ui:sets', 'Series')}</label>
               <input
                 type="number"
                 value={sets}
                 onChange={(e) => setSets(Number(e.target.value))}
-                className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
+                className={inputClasses}
               />
             </div>
-            <div>
-              <label className="text-xs text-text-muted">{t('exercise_ui:reps', 'Reps')}</label>
+            <div className="flex-1">
+              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">{t('exercise_ui:reps', 'Reps')}</label>
               <input
                 type="text"
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
-                className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
+                className={inputClasses}
               />
             </div>
-            <div>
-              <label className="text-xs text-text-muted">{t('exercise_ui:rest_s', 'Desc. (s)')}</label>
+            <div className="flex-1">
+              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">{t('exercise_ui:rest_s', 'Desc. (s)')}</label>
               <input
                 type="number"
                 value={rest}
                 onChange={(e) => setRest(Number(e.target.value))}
-                className="w-full text-center px-3 py-2 rounded-md bg-bg-secondary border border-glass-border"
+                className={inputClasses}
               />
             </div>
           </div>
@@ -372,7 +372,7 @@ const ExerciseDetailView = ({
         {isReplacing ? (
           <button
             onClick={handleAddClick}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition bg-accent text-bg-secondary"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 bg-accent text-white shadow-lg shadow-accent/20"
           >
             <Repeat size={24} />
             {t('exercise_ui:replace_exercise', 'Reemplazar Ejercicio')}
@@ -381,9 +381,9 @@ const ExerciseDetailView = ({
           <button
             onClick={isStaged ? onBack : handleAddClick}
             disabled={false}
-            className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition ${isStaged
-              ? 'bg-green/20 text-green'
-              : 'bg-accent text-bg-secondary'
+            className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 ${isStaged
+              ? 'bg-green-500/20 text-green-500 ring-1 ring-green-500/30'
+              : 'bg-accent text-white shadow-lg shadow-accent/20'
               }`}
           >
             {isStaged ? (

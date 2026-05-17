@@ -70,7 +70,7 @@ const ScaleToFit = ({ children, width = 1080, height = 1920 }) => {
           transform: `scale(${scale})`,
           transformOrigin: 'center center'
         }}
-        className="shrink-0 shadow-2xl"
+        className="shrink-0 shadow-2xl rounded-[3rem] overflow-hidden"
       >
         {children}
       </div>
@@ -84,7 +84,7 @@ const getWeightTrendData = (current, previous, goal) => {
   const absDiff = Math.abs(diff);
 
   if (absDiff < 0.1) {
-    return { icon: Minus, color: 'text-text-muted', bg: 'bg-transparent dark:bg-bg-secondary' };
+    return { icon: Minus, color: 'text-text-muted', bg: 'bg-black/5 dark:bg-white/5' };
   }
 
   const isGaining = diff > 0;
@@ -93,11 +93,11 @@ const getWeightTrendData = (current, previous, goal) => {
   else if (goal === 'lose') isPositiveContext = !isGaining;
 
   let color = 'text-text-secondary';
-  let bg = 'bg-transparent dark:bg-bg-secondary';
+  let bg = 'bg-black/5 dark:bg-white/5';
 
   if (goal === 'gain' || goal === 'lose') {
     color = isPositiveContext ? 'text-green-500' : 'text-red-500';
-    bg = isPositiveContext ? 'bg-transparent dark:bg-green-500/10' : 'bg-transparent dark:bg-red-500/10';
+    bg = isPositiveContext ? 'bg-green-500/10' : 'bg-red-500/10';
   }
 
   return { icon: isGaining ? ArrowUp : ArrowDown, color, bg };
@@ -106,10 +106,10 @@ const getWeightTrendData = (current, previous, goal) => {
 const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconColor = "text-accent", onInfoClick }) => (
   <GlassCard
     onClick={onClick}
-    className="p-5 relative overflow-hidden group cursor-pointer hover:bg-bg-secondary transition-all duration-300 flex flex-col justify-between h-full min-h-[160px] border-transparent dark:border dark:border-white/10 hover:shadow-lg"
+    className="glass p-5 rounded-[28px] relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-full min-h-[160px]"
   >
     <div className="flex justify-between items-start relative z-10">
-      <div className={`p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 ${iconColor} bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent`}>
+      <div className={`p-3 rounded-[20px] transition-transform duration-300 group-hover:scale-110 ${iconColor} bg-black/5 dark:bg-white/5`}>
         <Icon size={24} />
       </div>
     </div>
@@ -452,7 +452,7 @@ const Dashboard = ({ setView }) => {
 
         <GlassCard
           id="tour-gamification"
-          className="w-full lg:w-auto p-5 flex items-center gap-6 bg-bg-secondary/40 rounded-3xl relative overflow-hidden group border-transparent dark:border dark:border-white/10 hover:bg-bg-secondary transition-all cursor-pointer"
+          className="glass w-full lg:w-auto p-5 flex items-center gap-6 rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
           onClick={() => setShowXPModal(true)}
         >
           <div className="relative flex-shrink-0">
@@ -469,17 +469,17 @@ const Dashboard = ({ setView }) => {
                   <Info size={12} />
                 </button>
               </div>
-              <span className="text-[10px] font-bold text-accent bg-transparent dark:bg-accent/10 [.oled-theme_&]:bg-transparent px-2 py-0.5 rounded-full whitespace-nowrap">
+              <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full whitespace-nowrap">
                 {levelData.progress} / {levelData.needed} XP
               </span>
             </div>
 
-            <div className="h-2.5 w-full sm:w-48 bg-bg-primary rounded-full overflow-hidden border border-black/5 dark:border-white/10">
+            <div className="h-2.5 w-full sm:w-48 bg-black/10 dark:bg-white/5 rounded-full overflow-hidden">
               <div className="h-full bg-accent rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]" style={{ width: `${levelData.percentage}%` }} />
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center pl-6 border-l border-white/5 flex-shrink-0">
+          <div className="flex flex-col items-center justify-center pl-6 border-l border-glass-border flex-shrink-0">
             <div className={`transition-all duration-500 mb-1 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.6)]' : 'text-text-muted opacity-30'}`}>
               <Flame size={26} fill={levelData.streak > 0 ? "currentColor" : "none"} />
             </div>
@@ -493,19 +493,19 @@ const Dashboard = ({ setView }) => {
       <div className="grid grid-cols-2 gap-4 mb-8">
         <GlassCard
           onClick={() => canOpenWeeklyRecap && setShowWeeklyRecap(true)}
-          className={`group relative p-4 rounded-2xl overflow-hidden border-transparent dark:border dark:border-white/10 min-h-28 h-full flex items-center bg-gradient-to-br from-accent/20 to-blue-600/10 ${canOpenWeeklyRecap ? 'cursor-pointer' : 'cursor-default opacity-80'}`}
+          className={`glass relative p-5 rounded-[28px] overflow-hidden min-h-[112px] h-full flex items-center group transition-all duration-300 ${canOpenWeeklyRecap ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : 'cursor-default opacity-80'}`}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/30 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-blue-600/10 opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
 
           <div className="relative z-10 flex items-center gap-4 w-full">
-            <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white shadow-lg transition-transform duration-300 ${canOpenWeeklyRecap ? 'bg-gradient-to-tr from-accent to-blue-600 group-hover:scale-110' : 'bg-gray-500/50'}`}>
+            <div className={`w-12 h-12 shrink-0 rounded-[20px] flex items-center justify-center text-white shadow-lg transition-transform duration-300 ${canOpenWeeklyRecap ? 'bg-gradient-to-tr from-accent to-blue-600 group-hover:scale-110' : 'bg-gray-500/50'}`}>
               {isWeeklyRecapUnlocked ? <FaChartPie size={20} /> : <Lock size={20} />}
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight mb-1">
+              <h3 className="text-sm font-bold text-text-primary leading-tight mb-1">
                 {t('Resumen Semanal', { defaultValue: 'Resumen Semanal' })}
               </h3>
-              <p className="text-[10px] text-gray-800 dark:text-gray-200 opacity-90 leading-tight">
+              <p className="text-[10px] text-text-secondary leading-tight">
                 {!isWeeklyRecapUnlocked
                   ? `${t('Disponible en', { defaultValue: 'Disponible en' })}: ${timeUntilSunday}`
                   : (!hasWeeklyData
@@ -520,21 +520,21 @@ const Dashboard = ({ setView }) => {
 
         <GlassCard
           onClick={handlePRCardClick}
-          className={`group relative p-4 rounded-2xl overflow-hidden border-transparent dark:border dark:border-white/10 min-h-28 h-full flex items-center bg-gradient-to-br from-accent/20 to-yellow-600/10 ${latestPRs.length > 0 ? 'cursor-pointer' : 'opacity-80 cursor-default'}`}
+          className={`glass relative p-5 rounded-[28px] overflow-hidden min-h-[112px] h-full flex items-center group transition-all duration-300 ${latestPRs.length > 0 ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : 'opacity-80 cursor-default'}`}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/30 to-yellow-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-yellow-600/10 opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
 
           <div className="relative z-10 flex items-center gap-4 w-full">
-            <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white shadow-lg transition-transform duration-300 ${latestPRs.length > 0 ? 'bg-gradient-to-tr from-accent to-yellow-600 group-hover:scale-110' : 'bg-gray-500/50'}`}>
+            <div className={`w-12 h-12 shrink-0 rounded-[20px] flex items-center justify-center text-white shadow-lg transition-transform duration-300 ${latestPRs.length > 0 ? 'bg-gradient-to-tr from-accent to-yellow-600 group-hover:scale-110' : 'bg-gray-500/50'}`}>
               <FaTrophy size={20} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight mb-1">
+              <h3 className="text-sm font-bold text-text-primary leading-tight mb-1">
                 {latestPRs.length > 1
                   ? t('¡{{count}} Nuevos Récords!', { count: latestPRs.length, defaultValue: `¡${latestPRs.length} Nuevos Récords!` })
                   : t('Último Récord', { defaultValue: 'Último Récord' })}
               </h3>
-              <p className="text-[10px] text-gray-800 dark:text-gray-200 opacity-90 leading-tight">
+              <p className="text-[10px] text-text-secondary leading-tight">
                 {latestPRs.length > 1
                   ? t('Pulsa para verlos todos', { defaultValue: 'Pulsa para verlos todos' })
                   : (latestPRs.length === 1
@@ -547,9 +547,9 @@ const Dashboard = ({ setView }) => {
       </div>
 
       <div id="tour-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <GlassCard className="p-5 flex flex-col justify-between h-full min-h-[160px] border-transparent dark:border dark:border-white/10 hover:shadow-lg relative overflow-hidden group hover:bg-bg-secondary transition-all">
+        <GlassCard className="glass p-5 flex flex-col justify-between h-full min-h-[160px] rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
-            <div className="p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 text-accent bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent">
+            <div className="p-3 rounded-[20px] transition-transform duration-300 group-hover:scale-110 text-accent bg-black/5 dark:bg-white/5">
               <Dumbbell size={24} />
             </div>
             <span className="text-3xl font-black text-text-primary tracking-tight">{weeklySessions}</span>
@@ -563,7 +563,7 @@ const Dashboard = ({ setView }) => {
               return (
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-transparent dark:bg-bg-primary/50 text-transparent'}`}>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-transparent text-transparent border border-glass-border'}`}>
                     {hasWorkout && <Check size={10} strokeWidth={4} />}
                   </div>
                 </div>
@@ -599,18 +599,18 @@ const Dashboard = ({ setView }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <section id="tour-nutrition">
-            <GlassCard className="p-5 sm:p-8 relative overflow-hidden rounded-[2rem] border-transparent dark:border dark:border-white/10 transition-all">
+            <GlassCard className="glass p-5 sm:p-8 relative overflow-hidden rounded-[32px] transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between gap-2 mb-8 sm:mb-10 relative z-10">
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                  <div className="p-2 sm:p-3.5 rounded-2xl text-accent transition-transform bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/20 [.oled-theme_&]:bg-transparent shrink-0">
+                  <div className="p-2 sm:p-3.5 rounded-[20px] text-accent transition-transform bg-black/5 dark:bg-white/5 shrink-0">
                     <Activity className="w-5 h-5 sm:w-[26px] sm:h-[26px]" />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-lg sm:text-2xl font-bold text-white truncate">{t('Nutrición', { defaultValue: 'Nutrición' })}</h2>
-                    <p className="text-[10px] sm:text-xs text-text-muted font-medium mt-0.5 truncate">{t('Resumen del día', { defaultValue: 'Resumen del día' })}</p>
+                    <h2 className="text-lg sm:text-2xl font-bold text-text-primary truncate">{t('Nutrición', { defaultValue: 'Nutrición' })}</h2>
+                    <p className="text-[10px] sm:text-xs text-text-secondary font-medium mt-0.5 truncate">{t('Resumen del día', { defaultValue: 'Resumen del día' })}</p>
                   </div>
                 </div>
-                <button onClick={() => setView('nutrition')} className="shrink-0 whitespace-nowrap text-[10px] sm:text-xs font-bold bg-bg-secondary hover:bg-bg-secondary/80 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-colors flex items-center gap-1 sm:gap-2 text-text-primary">
+                <button onClick={() => setView('nutrition')} className="shrink-0 whitespace-nowrap text-[10px] sm:text-xs font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-3 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-colors flex items-center gap-1 sm:gap-2 text-text-primary">
                   {t('Ver Diario', { defaultValue: 'Ver Diario' })} <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </button>
               </div>
@@ -649,19 +649,18 @@ const Dashboard = ({ setView }) => {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               {[{ name: 'Cinta', key: 'Cinta', icon: Footprints }, { name: 'Bici', key: 'Bici', icon: Bike }, { name: 'Elíptica', key: 'Elíptica', icon: Activity }].map(item => (
-                <GlassCard key={item.key} className="relative p-0 overflow-hidden rounded-[1.5rem] group hover:-translate-y-1 transition-all h-36 cursor-pointer border-transparent dark:border dark:border-white/10 bg-bg-secondary/40 hover:bg-bg-secondary">
+                <GlassCard key={item.key} className="glass relative p-0 overflow-hidden rounded-[24px] group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 h-36 cursor-pointer">
                   <button onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }} className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all">
-                    <div className="p-3.5 rounded-full text-accent group-hover:scale-110 transition-all bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent">
+                    <div className="p-3.5 rounded-[20px] text-accent group-hover:scale-110 transition-all bg-black/5 dark:bg-white/5">
                       <item.icon size={30} />
                     </div>
-                    <span className="text-sm font-bold text-text-secondary group-hover:text-white transition-colors">{t(item.name, { defaultValue: item.name })}</span>
+                    <span className="text-sm font-bold text-text-secondary group-hover:text-text-primary transition-colors">{t(item.name, { defaultValue: item.name })}</span>
                   </button>
                 </GlassCard>
               ))}
-              <GlassCard className="relative p-0 overflow-hidden rounded-[1.5rem] group hover:-translate-y-1 transition-all h-36 cursor-pointer border-transparent dark:border dark:border-white/10 bg-transparent dark:bg-accent/5 hover:bg-accent/10">
-                {/* CAMBIO AQUÍ: Seteamos 'dashboard' en localStorage para limpiar rastros fantasma de navegación */}
+              <GlassCard className="glass relative p-0 overflow-hidden rounded-[24px] group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 h-36 cursor-pointer">
                 <button onClick={() => { localStorage.setItem('quickCardioOrigin', 'dashboard'); setView('quickCardio'); }} className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all">
-                  <div className="p-3.5 rounded-full text-accent group-hover:scale-110 transition-transform bg-transparent shadow-none border-none dark:bg-white/5 dark:shadow-sm dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent">
+                  <div className="p-3.5 rounded-[20px] text-accent group-hover:scale-110 transition-transform bg-accent/10">
                     <LayoutGrid size={30} />
                   </div>
                   <span className="text-sm font-bold text-accent">{t('Explorar', { defaultValue: 'Explorar' })}</span>
@@ -678,7 +677,7 @@ const Dashboard = ({ setView }) => {
                 <Dumbbell size={24} className="text-accent" />
                 <h2 className="text-xl font-bold">{t('Mis Rutinas', { defaultValue: 'Mis Rutinas' })}</h2>
               </div>
-              <button onClick={() => setView('routines', { forceTab: 'myRoutines' })} className="p-2 rounded-full hover:bg-bg-secondary text-text-secondary hover:text-white transition-colors">
+              <button onClick={() => setView('routines', { forceTab: 'myRoutines' })} className="p-2 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors">
                 <ChevronRight size={20} />
               </button>
             </div>
@@ -695,16 +694,16 @@ const Dashboard = ({ setView }) => {
                       if (isActive) { setView('workout'); return; }
                       if (!isCompleted) { await startWorkout(routine); setView('workout'); }
                     }}
-                    className={`group relative p-5 rounded-[1.5rem] transition-all cursor-pointer border-transparent dark:border dark:border-white/5 ${isActive ? '!bg-accent !border-accent text-white shadow-lg shadow-accent/20 scale-[1.02]' : isCompleted ? '!bg-transparent dark:!bg-green-500/10 opacity-70 hover:opacity-100 !border-transparent' : 'bg-bg-secondary/40 hover:bg-bg-secondary hover:shadow-md'}`}
+                    className={`glass relative p-5 rounded-[28px] transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-xl ${isActive ? 'ring-2 ring-accent shadow-accent/20' : isCompleted ? 'opacity-70 hover:opacity-100' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 overflow-hidden">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors border-none ${isActive ? 'bg-white/20' : 'bg-transparent dark:bg-white/5 dark:border dark:border-white/10 [.oled-theme_&]:bg-transparent'}`}>
-                          {isActive ? <Clock size={24} /> : (isCompleted ? <CheckCircle size={24} className="text-green-500" /> : <Play size={24} className={isActive ? 'text-white' : 'text-accent'} fill="currentColor" />)}
+                        <div className={`w-12 h-12 rounded-[20px] flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-accent/20' : 'bg-black/5 dark:bg-white/5'}`}>
+                          {isActive ? <Clock size={24} className="text-accent" /> : (isCompleted ? <CheckCircle size={24} className="text-green-500" /> : <Play size={24} className={isActive ? 'text-white' : 'text-accent'} fill="currentColor" />)}
                         </div>
                         <div className="min-w-0">
-                          <h3 className={`font-bold text-base truncate ${isActive ? 'text-white' : 'text-text-primary'}`}>{routine.name}</h3>
-                          <p className={`text-xs truncate font-medium mt-0.5 ${isActive ? 'text-white/80' : 'text-text-secondary'}`}>
+                          <h3 className={`font-bold text-base truncate ${isActive ? 'text-accent' : 'text-text-primary'}`}>{routine.name}</h3>
+                          <p className={`text-xs truncate font-medium mt-0.5 ${isActive ? 'text-accent/80' : 'text-text-secondary'}`}>
                             {isActive ? t('En curso', { defaultValue: 'En curso' }) : (isCompleted ? t('Completada', { defaultValue: 'Completada' }) : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
                           </p>
                         </div>
@@ -714,9 +713,9 @@ const Dashboard = ({ setView }) => {
                   </GlassCard>
                 );
               }) : (
-                <div className="p-8 rounded-[2rem] bg-bg-secondary/20 border border-dashed border-white/10 text-center flex flex-col items-center gap-3">
+                <div className="glass p-8 rounded-[28px] text-center flex flex-col items-center gap-3">
                   <p className="text-sm text-text-muted">{t('Sin rutinas creadas.', { defaultValue: 'Sin rutinas creadas.' })}</p>
-                  <button onClick={() => setView('routines')} className="text-xs font-bold text-accent bg-transparent dark:bg-accent/10 px-4 py-2 rounded-xl hover:bg-accent/20 transition-colors border border-accent/20">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
+                  <button onClick={() => setView('routines')} className="text-xs font-bold text-accent bg-accent/10 px-4 py-2 rounded-[20px] hover:bg-accent/20 transition-colors">{t('Crear primera rutina', { defaultValue: 'Crear primera rutina' })}</button>
                 </div>
               )}
             </div>
@@ -728,12 +727,12 @@ const Dashboard = ({ setView }) => {
                 <TrophyLucide size={24} className="text-accent" />
                 <h2 className="text-xl font-bold">{t('Peso', { defaultValue: 'Peso' })}</h2>
               </div>
-              <button onClick={() => setShowWeightModal(true)} className="p-2 rounded-full hover:bg-bg-secondary text-text-secondary hover:text-accent transition-colors">
+              <button onClick={() => setShowWeightModal(true)} className="p-2 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors">
                 {todaysWeightLog ? <Edit size={20} /> : <Plus size={20} />}
               </button>
             </div>
 
-            <GlassCard className="p-6 rounded-[2rem] border-transparent dark:border dark:border-white/10 relative overflow-hidden group hover:bg-bg-secondary/80 transition-all duration-300">
+            <GlassCard className="glass p-6 rounded-[32px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <p className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-2">{t('Peso Actual', { defaultValue: 'Peso Actual' })}</p>
@@ -754,7 +753,7 @@ const Dashboard = ({ setView }) => {
                   sortedWeightLog.slice(0, 3).map((log, index) => {
                     const trend = getWeightTrendData(parseFloat(log.weight_kg), parseFloat(sortedWeightLog[index + 1]?.weight_kg), userProfile?.goal);
                     return (
-                      <div key={log.id} className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-bg-primary/50 hover:bg-bg-primary transition-colors border border-transparent dark:border-white/5">
+                      <div key={log.id} className="flex items-center justify-between text-xs py-2 px-3 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
                         <span className="text-text-secondary font-medium">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}</span>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-text-primary text-sm">{parseFloat(log.weight_kg).toFixed(1)}</span>
@@ -793,7 +792,7 @@ const Dashboard = ({ setView }) => {
         >
           <button
             onClick={() => setShowWeeklyRecap(false)}
-            className="absolute z-[110] p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10"
+            className="absolute z-[110] p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all backdrop-blur-md"
             style={{ top: 'max(1rem, env(safe-area-inset-top))', right: '1rem' }}
           >
             <X size={24} />
@@ -807,7 +806,7 @@ const Dashboard = ({ setView }) => {
               </ScaleToFit>
             </div>
             <div className="shrink-0 mb-4">
-              <button onClick={handleShareRecap} disabled={isSharing} className="bg-white text-black px-8 py-4 rounded-full flex items-center gap-3 shadow-lg shadow-white/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100">
+              <button onClick={handleShareRecap} disabled={isSharing} className="glass bg-white/10 text-white px-8 py-4 rounded-full flex items-center gap-3 shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100">
                 {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />}
                 <span className="font-black text-lg tracking-tight">{t('Compartir Resumen', { defaultValue: 'Compartir Resumen' })}</span>
               </button>
@@ -817,22 +816,21 @@ const Dashboard = ({ setView }) => {
       )}
 
       {showPRList && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowPRList(false)}>
-          <div className="w-full max-w-sm bg-bg-secondary rounded-2xl border border-glass-border shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b border-glass-border flex justify-between items-center bg-bg-primary">
-              <h3 className="font-bold text-text-primary">{t('Nuevos Récords', { defaultValue: 'Nuevos Récords' })} ({latestPRs.length})</h3>
-              <button onClick={() => setShowPRList(false)} className="p-1 rounded-full hover:bg-bg-secondary text-text-secondary hover:text-text-primary"><X size={20} /></button>
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]" onClick={() => setShowPRList(false)}>
+          <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 sm:p-8 pb-5 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
+              <h3 className="font-extrabold text-text-primary text-xl tracking-tight">{t('Nuevos Récords', { defaultValue: 'Nuevos Récords' })} ({latestPRs.length})</h3>
+              <button onClick={() => setShowPRList(false)} className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors active:scale-95"><X size={20} strokeWidth={2.5} /></button>
             </div>
-            <div className="p-2 max-h-[60vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-2">
               {latestPRs.map(record => (
-                <button key={record.id} onClick={() => { setSelectedPR(record); setShowPRList(false); setShowPRModal(true); }} className="w-full flex items-center justify-between p-3 hover:bg-bg-primary rounded-xl transition-colors group">
+                <button key={record.id} onClick={() => { setSelectedPR(record); setShowPRList(false); setShowPRModal(true); }} className="w-full flex items-center justify-between p-4 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 rounded-[24px] transition-all active:scale-95 group shadow-sm">
                   <div className="flex flex-col items-start min-w-0 flex-1 pr-4">
-                    <span className="font-semibold text-text-primary text-sm text-left w-full break-words">{t(record.exercise_name || record.exerciseName, { ns: 'exercise_names', defaultValue: record.exercise_name || record.exerciseName })}</span>
-                    <span className="text-xs text-text-secondary">{new Date(record.date).toLocaleDateString()}</span>
+                    <span className="font-extrabold text-text-primary text-sm sm:text-base text-left w-full break-words tracking-tight">{t(record.exercise_name || record.exerciseName, { ns: 'exercise_names', defaultValue: record.exercise_name || record.exerciseName })}</span>
+                    <span className="text-[11px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mt-1">{new Date(record.date).toLocaleDateString()}</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-bold text-accent text-lg">{record.weight_kg || record.weight} kg</span>
-                    <ChevronRight size={16} className="text-text-muted group-hover:text-accent" />
+                  <div className="flex items-center gap-2 shrink-0 bg-accent/10 px-4 py-2 rounded-[16px] ring-1 ring-accent/30 shadow-sm">
+                    <span className="font-black text-accent text-sm sm:text-base">{record.weight_kg || record.weight} kg</span>
                   </div>
                 </button>
               ))}
@@ -849,7 +847,7 @@ const Dashboard = ({ setView }) => {
         >
           <button
             onClick={() => setShowPRModal(false)}
-            className="absolute z-[110] p-2 bg-black/50 rounded-full text-white/80 hover:text-white hover:bg-black/70 transition-all border border-white/10"
+            className="absolute z-[110] p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all backdrop-blur-md"
             style={{ top: 'max(1rem, env(safe-area-inset-top))', right: '1rem' }}
           >
             <X size={24} />
@@ -864,12 +862,12 @@ const Dashboard = ({ setView }) => {
             </div>
             <div className="shrink-0 mb-4 flex items-center justify-center gap-2 sm:gap-3 px-2 w-full max-w-sm">
               {latestPRs.length > 1 && (
-                <button onClick={() => { setShowPRModal(false); setShowPRList(true); }} className="bg-gray-800 text-white px-4 md:px-6 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all">
+                <button onClick={() => { setShowPRModal(false); setShowPRList(true); }} className="glass bg-white/5 text-white px-4 md:px-6 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all border border-white/10">
                   <List size={20} className="shrink-0" />
                   <span className="font-bold text-xs sm:text-sm whitespace-nowrap">{t('Ver Lista', { defaultValue: 'Ver Lista' })}</span>
                 </button>
               )}
-              <button onClick={handleSharePR} disabled={isSharing} className="bg-white text-black px-5 md:px-8 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg shadow-white/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100">
+              <button onClick={handleSharePR} disabled={isSharing} className="glass bg-white/10 text-white px-5 md:px-8 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 border border-white/20">
                 {isSharing ? <Loader2 size={20} className="animate-spin shrink-0" /> : <Share2 size={20} className="shrink-0" />}
                 <span className="font-black text-sm sm:text-lg tracking-tight whitespace-nowrap">{t('Compartir Logro', { defaultValue: 'Compartir Logro' })}</span>
               </button>

@@ -116,8 +116,8 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
     if (selectedDetailItem) {
         return (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s]">
-                <div className="relative w-11/12 max-w-md overflow-hidden m-4 bg-bg-primary rounded-2xl border border-glass-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
+                <div className="relative w-full max-w-md overflow-hidden bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
                     <FoodDetailView
                         food={selectedDetailItem}
                         onClose={() => setSelectedDetailItem(null)}
@@ -137,8 +137,8 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                 return (
                     <div className="flex flex-col space-y-2">
                         {isSearching ? (
-                            <div className="flex justify-center py-8">
-                                <Spinner size={30} />
+                            <div className="flex justify-center py-12">
+                                <Spinner size={32} />
                             </div>
                         ) : searchResults.length > 0 ? (
                             searchResults.map((food, index) => (
@@ -149,23 +149,27 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                                 />
                             ))
                         ) : hasSearched && searchTerm.length >= 3 ? (
-                            <p className="text-center text-text-secondary py-8">
-                                No se encontraron resultados.
-                            </p>
+                            <div className="flex flex-col items-center justify-center py-16 text-center bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 mt-4">
+                                <div className="w-16 h-16 bg-bg-primary rounded-[20px] flex items-center justify-center mb-4 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
+                                    <Search size={28} className="text-text-muted opacity-50" strokeWidth={2} />
+                                </div>
+                                <h3 className="text-lg font-bold text-text-primary mb-1">Sin resultados</h3>
+                                <p className="text-text-secondary text-sm font-medium">No se encontraron alimentos.</p>
+                            </div>
                         ) : !hasSearched && searchTerm.length >= 3 ? (
-                            <p className="text-center text-text-secondary py-8">
-                                Pulsa Enter o en la Lupa para buscar.
-                            </p>
+                            <div className="text-center text-text-secondary py-16 flex flex-col items-center opacity-60">
+                                <p className="font-bold">Pulsa Enter o la Lupa para buscar.</p>
+                            </div>
                         ) : searchTerm.length > 0 && searchTerm.length < 3 ? (
-                            <p className="text-center text-text-secondary py-8">
-                                Escribe al menos 3 letras...
-                            </p>
+                            <div className="text-center text-text-secondary py-16 flex flex-col items-center opacity-60">
+                                <p className="font-bold">Escribe al menos 3 letras...</p>
+                            </div>
                         ) : null}
 
                         {!searchTerm && !isSearching && (
-                            <div className="text-center text-text-secondary py-8 flex flex-col items-center opacity-50">
-                                <Search size={48} className="mb-2" />
-                                <p>Escribe arriba y pulsa Enter</p>
+                            <div className="text-center text-text-secondary py-16 flex flex-col items-center opacity-50">
+                                <Search size={48} className="mb-4" strokeWidth={1.5} />
+                                <p className="font-bold">Escribe arriba y pulsa Enter</p>
                             </div>
                         )}
                     </div>
@@ -219,25 +223,27 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                 <div className="relative flex-grow">
                     {renderContent()}
                 </div>
-                <button onClick={() => setShowScanner(false)} className="mt-4 w-full py-3 bg-bg-secondary text-text-primary font-bold rounded-xl">Cancelar</button>
+                <button onClick={() => setShowScanner(false)} className="mt-4 w-full py-4 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold rounded-[20px] active:scale-95 transition-all">Cancelar</button>
             </div>
         );
     }
 
     return (
         <>
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] p-4 sm:p-0 pb-12 md:pb-0">
-                <div className="relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col h-full max-h-[85dvh] sm:h-auto sm:max-h-[90vh] bg-bg-primary rounded-2xl border border-glass-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                    <div className="p-5 flex items-center justify-between border-b border-glass-border flex-shrink-0">
-                        <h3 className="text-xl font-bold truncate pr-4 text-text-primary">{title}</h3>
-                        <button onClick={onClose} className="p-2 -m-2 rounded-full hover:bg-bg-primary transition flex-shrink-0"><X size={20} className="text-text-secondary" /></button>
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-[fade-in_0.3s_ease-out] p-4 sm:p-0 pb-12 md:pb-0">
+                <div className="relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col h-full max-h-[85dvh] sm:h-auto sm:max-h-[90vh] bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
+                    
+                    {/* Header */}
+                    <div className="p-6 sm:p-8 pb-5 flex items-center justify-between border-b border-black/5 dark:border-white/10 flex-shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
+                        <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate pr-4 text-text-primary">{title}</h3>
+                        <button onClick={onClose} className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex-shrink-0 text-text-secondary hover:text-text-primary active:scale-95"><X size={20} strokeWidth={2.5} /></button>
                     </div>
 
                     <div className="flex-grow overflow-hidden flex flex-col min-h-0">
                         {!(isEditingLog || editingFavorite) && (
-                            <div className="p-5 flex-shrink-0">
+                            <div className="p-6 sm:p-8 pb-4 flex-shrink-0">
                                 {(activeTab === 'search' || activeTab === 'favorites' || activeTab === 'recent') && (
-                                    <div className="relative mb-4 flex items-center">
+                                    <div className="relative mb-6 flex items-center">
                                         <input
                                             type="text"
                                             placeholder={activeTab === 'search' ? "Buscar alimento..." : "Filtrar lista..."}
@@ -245,15 +251,15 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             onKeyDown={activeTab === 'search' ? handleKeyDown : undefined}
                                             autoFocus={activeTab === 'search'}
-                                            className="w-full pl-4 pr-12 py-3 bg-bg-primary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:border-accent"
+                                            className="w-full pl-5 pr-14 py-3.5 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] text-text-primary font-bold placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all shadow-inner"
                                         />
                                         {/* Botón Lupa clickeable para buscar */}
                                         <button
                                             onClick={activeTab === 'search' ? executeSearch : undefined}
-                                            className={`absolute right-3 p-1 rounded-md transition ${activeTab === 'search' ? 'text-accent hover:bg-accent/10 cursor-pointer' : 'text-text-secondary cursor-default'}`}
+                                            className={`absolute right-3 p-2 rounded-[12px] transition-all active:scale-95 ${activeTab === 'search' ? 'bg-accent/10 text-accent hover:bg-accent hover:text-white cursor-pointer' : 'text-text-muted cursor-default'}`}
                                             title="Buscar"
                                         >
-                                            <Search size={20} />
+                                            <Search size={18} strokeWidth={2.5} />
                                         </button>
                                     </div>
                                 )}
@@ -287,17 +293,17 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                             </div>
                         )}
 
-                        <div className="overflow-y-auto px-5 pb-5 flex-grow overscroll-contain">
+                        <div className="overflow-y-auto px-6 sm:px-8 pb-6 sm:pb-8 flex-grow custom-scrollbar">
                             {renderContent()}
                         </div>
                     </div>
 
                     {!(isEditingLog || editingFavorite) && itemsToAdd.length > 0 && (
-                        <div className="p-5 border-t border-glass-border flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-bg-primary z-10">
-                            <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-semibold text-text-primary">Añadir ({itemsToAdd.length})</h4>
+                        <div className="p-6 sm:p-8 border-t border-black/5 dark:border-white/10 flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-bg-primary z-10 rounded-b-[32px]">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="font-extrabold text-text-primary uppercase tracking-wider text-xs">Añadir ({itemsToAdd.length})</h4>
                             </div>
-                            <div className="space-y-2 max-h-32 overflow-y-auto mb-4 pr-1">
+                            <div className="space-y-3 max-h-32 overflow-y-auto mb-5 pr-2 custom-scrollbar">
                                 {itemsToAdd.map(item =>
                                     <SelectedItem key={item.tempId} item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />
                                 )}
@@ -308,9 +314,9 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                                     cancelMealReminder();
                                 }}
                                 disabled={isLoading}
-                                className={`w-full flex items-center justify-center py-3 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold hover:scale-[1.01] transition ${isLoading ? 'opacity-60 cursor-not-allowed' : 'disabled:opacity-60'}`}
+                                className={`w-full flex items-center justify-center py-4 rounded-[20px] bg-accent text-white font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 ${isLoading ? 'opacity-60 cursor-not-allowed' : 'disabled:opacity-60'}`}
                             >
-                                {isLoading ? <Spinner size={20} className="mr-2" /> : <Plus size={18} className="mr-2" />}
+                                {isLoading ? <Spinner size={20} color="white" className="mr-2" /> : <Plus size={20} strokeWidth={2.5} className="mr-2" />}
                                 {isLoading ? 'Guardando...' : `Añadir ${itemsToAdd.length} Alimento${itemsToAdd.length > 1 ? 's' : ''}`}
                             </button>
                         </div>

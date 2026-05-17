@@ -5,20 +5,13 @@ import GlassCard from '../GlassCard';
 import WorkoutExerciseCard from './WorkoutExerciseCard';
 import WorkoutSupersetCard from './WorkoutSupersetCard';
 
-/**
- * Componente que renderiza la lista de grupos de ejercicios (superseries).
- * Decide si renderizar una tarjeta de superserie unificada o tarjetas individuales.
- */
 const WorkoutExerciseList = ({
   exerciseGroups,
-  activeWorkoutExercises, // La lista plana de useAppStore
+  activeWorkoutExercises,
   hasWorkoutStarted,
   onSetSelectedExercise,
   onSetExerciseToReplace,
-  // Nueva prop para pasar hacia abajo
   onShowHistory,
-
-  // --- Props para pasar a los hijos ---
   baseInputClasses,
   onUpdateSet,
   onAddDropset,
@@ -32,9 +25,9 @@ const WorkoutExerciseList = ({
   const { t } = useTranslation('exercise_names');
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 sm:gap-8">
       {exerciseGroups.map((group, groupIndex) => {
-        // --- CASO SUPERSERIE (Más de 1 ejercicio) ---
+        // --- CASO SUPERSERIE ---
         if (group.length > 1) {
           return (
             <WorkoutSupersetCard
@@ -59,25 +52,19 @@ const WorkoutExerciseList = ({
         }
 
         // --- CASO EJERCICIO INDIVIDUAL ---
-        // Si el grupo solo tiene 1, extraemos ese ejercicio
         const exercise = group[0];
+        const actualExIndex = activeWorkoutExercises.findIndex((ex) => ex.id === exercise.id);
 
-        // Buscamos el índice real en la lista plana para las actualizaciones del store
-        const actualExIndex = activeWorkoutExercises.findIndex(
-          (ex) => ex.id === exercise.id
-        );
-
-        // Fallback de seguridad
         if (actualExIndex === -1) {
-          console.error(
-            'Error: No se encontró el ejercicio en activeWorkout',
-            exercise
-          );
+          console.error('Error: No se encontró el ejercicio en activeWorkout', exercise);
           return null;
         }
 
         return (
-          <GlassCard key={actualExIndex} className="p-1 rounded-lg">
+          <GlassCard 
+            key={actualExIndex} 
+            className="glass p-0 sm:p-2 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-lg transition-all"
+          >
             <WorkoutExerciseCard
               t={t}
               exercise={exercise}
@@ -86,7 +73,6 @@ const WorkoutExerciseList = ({
               onSetSelectedExercise={onSetSelectedExercise}
               onSetExerciseToReplace={onSetExerciseToReplace}
               onShowHistory={onShowHistory}
-              // Props para el grid (prop-drilling)
               baseInputClasses={baseInputClasses}
               onUpdateSet={onUpdateSet}
               onAddDropset={onAddDropset}

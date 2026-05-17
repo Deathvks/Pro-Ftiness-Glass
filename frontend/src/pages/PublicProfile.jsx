@@ -1,3 +1,4 @@
+/* frontend/src/pages/PublicProfile.jsx */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -311,7 +312,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
                 <Spinner size={40} />
-                <p className="text-text-tertiary animate-pulse">Cargando perfil...</p>
+                <p className="text-text-tertiary animate-pulse font-medium">Cargando perfil...</p>
             </div>
         );
     }
@@ -327,21 +328,21 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             <div className="p-8 flex flex-col items-center justify-center text-center">
                 {isPrivate ? (
                     <>
-                        <Lock size={64} className="text-accent mb-4 opacity-50" />
-                        <h2 className="text-xl font-bold text-text-primary mb-2">Perfil Privado</h2>
-                        <p className="text-text-tertiary mb-6">Este perfil es privado. Debes añadir a este usuario a tus amigos para ver su actividad.</p>
+                        <Lock size={64} className="text-accent mb-6 opacity-80" strokeWidth={1.5} />
+                        <h2 className="text-2xl font-bold text-text-primary mb-3">Perfil Privado</h2>
+                        <p className="text-text-secondary mb-8 font-medium">Este perfil es privado. Debes añadir a este usuario a tus amigos para ver su actividad.</p>
                     </>
                 ) : (
                     <>
-                        <UserX size={64} className="text-red-400 mb-4 opacity-50" />
-                        <h2 className="text-xl font-bold text-text-primary mb-2">Perfil no encontrado</h2>
-                        <p className="text-text-tertiary mb-6">El usuario no existe o ha restringido su perfil.</p>
+                        <UserX size={64} className="text-red-500 mb-6 opacity-80" strokeWidth={1.5} />
+                        <h2 className="text-2xl font-bold text-text-primary mb-3">Perfil no encontrado</h2>
+                        <p className="text-text-secondary mb-8 font-medium">El usuario no existe o ha restringido su perfil.</p>
                     </>
                 )}
                 <button
                     type="button"
                     onClick={handleGoBack}
-                    className="px-6 py-2 bg-bg-secondary rounded-xl text-text-primary hover:bg-bg-secondary/80 transition"
+                    className="px-8 py-3 bg-black/5 dark:bg-white/5 rounded-full text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors font-bold ring-1 ring-black/5 dark:ring-white/10"
                 >
                     Volver
                 </button>
@@ -362,7 +363,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const visibleBadges = badges.slice(badgePage * BADGES_PER_PAGE, (badgePage + 1) * BADGES_PER_PAGE);
 
     return (
-        <div className="pb-28 md:pb-8 px-4 max-w-4xl mx-auto animate-fade-in flex flex-col gap-6">
+        <div className="pb-28 md:pb-8 px-4 max-w-4xl mx-auto animate-[fade-in_0.5s_ease-out] flex flex-col gap-6">
 
             {viewingStory && (
                 <StoryViewer 
@@ -374,43 +375,43 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             {/* --- MODAL DETALLES RUTINA --- */}
             {viewingRoutine && (
                 <div 
-                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]"
                     onClick={() => setViewingRoutine(null)}
                 >
                     <GlassCard 
-                        className="w-full max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl animate-scale-up"
+                        className="glass w-full max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl animate-[slide-up_0.3s_ease-out] rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-bg-secondary/80 backdrop-blur-md sticky top-0 z-10">
+                        <div className="p-6 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5 sticky top-0 z-10 rounded-t-[32px]">
                             <div className="flex flex-col">
-                                <h3 className="font-bold text-lg text-text-primary line-clamp-1 flex items-center gap-2">
-                                    <Dumbbell size={18} className="text-accent" />
+                                <h3 className="font-extrabold text-xl text-text-primary line-clamp-1 flex items-center gap-2">
+                                    <Dumbbell size={20} className="text-accent" />
                                     {viewingRoutine.name}
                                 </h3>
                                 {viewingRoutine.folder && (
-                                    <span className="text-[10px] text-text-secondary flex items-center gap-1 mt-0.5">
-                                        <Folder size={10} /> {viewingRoutine.folder}
+                                    <span className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-1.5 mt-1">
+                                        <Folder size={12} /> {viewingRoutine.folder}
                                     </span>
                                 )}
                             </div>
                             <button 
                                 onClick={() => setViewingRoutine(null)} 
-                                className="p-2 rounded-full hover:bg-white/10 text-text-secondary hover:text-white transition"
+                                className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors"
                             >
-                                <X size={24} />
+                                <X size={20} />
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto p-4 space-y-5 custom-scrollbar">
+                        <div className="overflow-y-auto p-6 space-y-6 custom-scrollbar">
                             {viewingRoutine.description && (
-                                <div className="bg-bg-primary/20 p-3 rounded-lg border border-white/5">
-                                    <p className="text-sm text-text-secondary italic">"{viewingRoutine.description}"</p>
+                                <div className="bg-black/5 dark:bg-white/5 p-4 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10">
+                                    <p className="text-sm font-medium text-text-secondary italic">"{viewingRoutine.description}"</p>
                                 </div>
                             )}
 
                             <div>
-                                <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    Lista de Ejercicios <span className="bg-white/10 px-1.5 rounded-md text-text-primary">{viewingRoutine.exercises.length}</span>
+                                <h4 className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    Lista de Ejercicios <span className="bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md text-text-primary">{viewingRoutine.exercises.length}</span>
                                 </h4>
                                 <div className="space-y-3">
                                     {viewingRoutine.exercises.map((ex, i) => {
@@ -419,8 +420,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                         const translatedName = getTranslatedExerciseName(ex.name);
 
                                         return (
-                                            <GlassCard key={i} className="p-3 flex gap-4 items-center bg-bg-primary/30 border-white/5 hover:border-accent/30 transition group">
-                                                <div className="w-24 h-24 shrink-0 rounded-lg bg-bg-secondary overflow-hidden border border-white/10 flex items-center justify-center relative shadow-lg">
+                                            <GlassCard key={i} className="p-4 flex gap-4 items-center bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/30 transition-all group">
+                                                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-[16px] bg-bg-primary overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center relative shadow-sm">
                                                     <ExerciseMedia 
                                                         details={{
                                                             video_url: videoSrc,
@@ -429,14 +430,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                                         }}
                                                         className="w-full h-full object-cover" 
                                                     />
-                                                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur px-1.5 py-0.5 rounded text-[10px] font-bold text-white z-10 pointer-events-none">
+                                                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-[10px] font-bold text-white z-10 pointer-events-none">
                                                         #{i + 1}
                                                     </div>
                                                 </div>
 
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-text-primary text-sm line-clamp-2 mb-1">{translatedName}</p>
-                                                    <span className="inline-block text-[10px] px-2 py-0.5 bg-white/5 rounded text-text-secondary">
+                                                    <p className="font-bold text-text-primary text-sm sm:text-base line-clamp-2 mb-1.5">{translatedName}</p>
+                                                    <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-black/5 dark:bg-white/5 rounded-md text-text-secondary">
                                                         Ver detalle al importar
                                                     </span>
                                                 </div>
@@ -447,11 +448,11 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-white/10 bg-bg-secondary/50 backdrop-blur-md">
+                        <div className="p-6 border-t border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-b-[32px]">
                              <button 
                                 onClick={() => { handleDownloadRoutine(viewingRoutine.id); setViewingRoutine(null); }}
                                 disabled={downloadingRoutineId === viewingRoutine.id}
-                                className="w-full py-3 rounded-xl bg-accent hover:opacity-90 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 active:scale-[0.98]"
+                                className="w-full py-4 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
                              >
                                 {downloadingRoutineId === viewingRoutine.id ? (
                                     <Spinner size="small" color="white" />
@@ -485,11 +486,11 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 <button
                     type="button"
                     onClick={handleGoBack}
-                    className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[--glass-border] text-text-secondary hover:text-text-primary hover:bg-accent-transparent transition"
+                    className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-full ring-1 ring-black/5 dark:ring-white/10 bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors font-bold text-sm"
                 >
-                    <ChevronLeft size={18} /> <span className="text-sm font-medium">Volver</span>
+                    <ChevronLeft size={18} /> <span>Volver</span>
                 </button>
-                <h1 className="text-3xl font-extrabold flex-1 text-left ml-4 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
+                <h1 className="text-3xl lg:text-4xl font-extrabold flex-1 text-left ml-6 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
                     Perfil Público
                 </h1>
             </div>
@@ -499,28 +500,28 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 <button
                     type="button"
                     onClick={handleGoBack}
-                    className="cursor-pointer p-2 rounded-xl bg-bg-secondary/50 hover:bg-bg-secondary transition text-text-primary"
+                    className="cursor-pointer p-2.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-primary"
                 >
-                    <ChevronLeft size={24} />
+                    <ChevronLeft size={20} />
                 </button>
-                <h1 className="text-xl font-bold text-text-primary truncate flex-1">
+                <h1 className="text-xl font-bold text-text-primary truncate flex-1 tracking-tight">
                     {profile.username || 'Perfil de Usuario'}
                 </h1>
             </div>
 
             {/* --- PROFILE CARD PRINCIPAL --- */}
-            <GlassCard className="relative overflow-hidden p-6 flex flex-col items-center text-center gap-4">
-                <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-accent/20 to-transparent pointer-events-none" />
+            <GlassCard className="glass relative overflow-hidden p-6 sm:p-8 flex flex-col items-center text-center gap-5 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 transition-all hover:shadow-lg">
+                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-accent/10 to-transparent pointer-events-none" />
 
                 <div 
-                    className={`relative z-10 w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300
+                    className={`relative z-10 w-32 h-32 sm:w-36 sm:h-36 rounded-full flex items-center justify-center transition-all duration-300
                         ${userStory 
-                            ? `p-[3px] cursor-pointer ${
+                            ? `p-1 cursor-pointer ${
                                 userStory.hasUnseen 
-                                ? 'bg-accent shadow-xl shadow-accent/40 animate-pulse-slow' 
-                                : 'bg-gray-400 dark:bg-gray-600'
+                                ? 'ring-2 ring-accent shadow-xl shadow-accent/40 animate-pulse-slow' 
+                                : 'ring-2 ring-black/10 dark:ring-white/20'
                               }`
-                            : 'shadow-xl shadow-accent/20'
+                            : 'ring-1 ring-black/5 dark:ring-white/10 shadow-lg'
                         }
                     `}
                     onClick={() => {
@@ -530,32 +531,32 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     <UserAvatar
                         user={profile} 
                         size="full"
-                        className={`w-full h-full rounded-full object-cover bg-bg-primary ${userStory ? 'border-[4px] border-bg-primary !border-bg-primary' : '!border-none'}`}
+                        className={`w-full h-full rounded-full object-cover bg-bg-primary transition-transform duration-300 ${userStory ? 'hover:scale-105' : ''}`}
                     />
 
                     {profile.show_level_xp && (
-                        <div className="absolute -bottom-2 -right-2 bg-bg-primary border-2 border-accent rounded-full w-10 h-10 flex items-center justify-center font-black text-sm text-text-primary shadow-lg z-20">
+                        <div className="absolute -bottom-2 -right-2 bg-bg-primary ring-2 ring-accent rounded-full w-10 h-10 flex items-center justify-center font-black text-sm text-text-primary shadow-lg z-20">
                             {profile.level || 1}
                         </div>
                     )}
                 </div>
 
                 <div className="z-10">
-                    <h2 className="text-2xl font-bold text-text-primary mb-1 flex items-center justify-center gap-2">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-2 flex items-center justify-center gap-3">
                         {profile.username}
                         {userStory && (
-                            <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">
+                            <span className="text-[10px] bg-accent text-white px-2 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30">
                                 Historia
                             </span>
                         )}
                     </h2>
-                    <p className="text-text-secondary text-sm flex items-center justify-center gap-2">
+                    <p className="text-text-secondary text-sm font-medium flex items-center justify-center gap-2">
                         Miembro desde {profile.createdAt ? new Date(profile.createdAt).getFullYear() : '2024'}
-                        {profile.is_verified && <Shield size={14} className="text-blue-400 fill-blue-400/20" />}
+                        {profile.is_verified && <Shield size={16} className="text-blue-500 fill-blue-500/20" />}
                     </p>
 
                     {profile.lastSeen && (
-                        <p className="text-xs text-text-tertiary mt-1 flex items-center justify-center gap-1">
+                        <p className="text-[11px] sm:text-xs font-bold text-text-tertiary mt-2 flex items-center justify-center gap-1.5 uppercase tracking-wider">
                             <Clock size={12} />
                             Activo {format(new Date(profile.lastSeen), "d 'de' MMMM", { locale: es })}
                         </p>
@@ -567,7 +568,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         {relationshipStatus === 'none' && (
                             <button
                                 onClick={handleSendRequest}
-                                className="flex items-center gap-2 px-6 py-2 bg-accent/10 text-accent font-bold rounded-xl hover:bg-accent/20 transition-all active:scale-95 outline-none focus:outline-none"
+                                className="flex items-center gap-2 px-6 py-3 bg-accent text-white font-bold rounded-full hover:scale-105 transition-all active:scale-95 outline-none focus:outline-none shadow-lg shadow-accent/20"
                             >
                                 <UserPlus size={18} />
                                 Añadir Amigo
@@ -578,14 +579,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                             <div className="flex gap-2">
                                 <button
                                     disabled
-                                    className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-500 font-bold rounded-xl cursor-default"
+                                    className="flex items-center gap-2 px-5 py-3 bg-green-500/10 text-green-500 font-bold rounded-full ring-1 ring-green-500/30 cursor-default"
                                 >
                                     <UserCheck size={18} />
                                     Amigos
                                 </button>
                                 <button
                                     onClick={handleRemoveFriend}
-                                    className="p-2 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition outline-none focus:outline-none"
+                                    className="p-3 bg-red-500/10 text-red-500 rounded-full ring-1 ring-red-500/30 hover:bg-red-500 hover:text-white transition-all outline-none focus:outline-none"
                                     title="Eliminar amigo"
                                 >
                                     <UserX size={20} />
@@ -594,14 +595,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         )}
 
                         {relationshipStatus === 'pending_sent' && (
-                            <button disabled className="flex items-center gap-2 px-6 py-2 bg-bg-secondary text-text-tertiary font-bold rounded-xl cursor-not-allowed">
+                            <button disabled className="flex items-center gap-2 px-6 py-3 bg-black/5 dark:bg-white/5 text-text-tertiary font-bold rounded-full cursor-not-allowed ring-1 ring-black/5 dark:ring-white/10">
                                 <Clock size={18} />
                                 Solicitud Enviada
                             </button>
                         )}
 
                         {relationshipStatus === 'pending_received' && (
-                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-2 bg-accent/10 text-accent font-bold rounded-xl hover:bg-accent/20 transition-all outline-none focus:outline-none">
+                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-3 bg-accent text-white font-bold rounded-full hover:scale-105 transition-all active:scale-95 outline-none focus:outline-none shadow-lg shadow-accent/20">
                                 <UserCheck size={18} />
                                 Responder Solicitud
                             </button>
@@ -613,36 +614,36 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             {/* --- ESTADÍSTICAS --- */}
             {profile.show_level_xp ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <GlassCard className="p-4 flex flex-col items-center justify-center gap-2">
-                        <Trophy className="text-yellow-500 mb-1" size={24} />
-                        <span className="text-2xl font-bold text-text-primary">{profile.xp?.toLocaleString() || 0}</span>
-                        <span className="text-xs text-text-tertiary uppercase tracking-wider">XP Total</span>
+                    <GlassCard className="glass p-5 flex flex-col items-center justify-center gap-2 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-shadow">
+                        <Trophy className="text-yellow-500 mb-1" size={28} strokeWidth={1.5} />
+                        <span className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{profile.xp?.toLocaleString() || 0}</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">XP Total</span>
                     </GlassCard>
 
-                    <GlassCard className="p-4 flex flex-col items-center justify-center gap-2">
-                        <Flame className="text-orange-500 mb-1" size={24} />
-                        <span className="text-2xl font-bold text-text-primary">{profile.streak || 0}</span>
-                        <span className="text-xs text-text-tertiary uppercase tracking-wider">Racha (Días)</span>
+                    <GlassCard className="glass p-5 flex flex-col items-center justify-center gap-2 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-shadow">
+                        <Flame className="text-orange-500 mb-1" size={28} strokeWidth={1.5} />
+                        <span className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{profile.streak || 0}</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">Racha (Días)</span>
                     </GlassCard>
 
-                    <GlassCard className="p-4 flex flex-col items-center justify-center gap-2">
-                        <Medal className="text-purple-500 mb-1" size={24} />
-                        <span className="text-2xl font-bold text-text-primary">{profile.level || 1}</span>
-                        <span className="text-xs text-text-tertiary uppercase tracking-wider">Nivel</span>
+                    <GlassCard className="glass p-5 flex flex-col items-center justify-center gap-2 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-shadow">
+                        <Medal className="text-purple-500 mb-1" size={28} strokeWidth={1.5} />
+                        <span className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{profile.level || 1}</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">Nivel</span>
                     </GlassCard>
 
-                    <GlassCard className="p-4 flex flex-col items-center justify-center gap-2">
-                        <Calendar className="text-blue-500 mb-1" size={24} />
-                        <span className="text-2xl font-bold text-text-primary">
+                    <GlassCard className="glass p-5 flex flex-col items-center justify-center gap-2 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md transition-shadow">
+                        <Calendar className="text-blue-500 mb-1" size={28} strokeWidth={1.5} />
+                        <span className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
                             {profile.workoutsCount || 0}
                         </span>
-                        <span className="text-xs text-text-tertiary uppercase tracking-wider">Entrenos</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">Entrenos</span>
                     </GlassCard>
                 </div>
             ) : (
-                <GlassCard className="p-6 text-center text-text-tertiary">
-                    <Shield size={32} className="mx-auto mb-3 opacity-30" />
-                    <p>Las estadísticas de este usuario son privadas.</p>
+                <GlassCard className="glass p-8 text-center rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                    <Shield size={40} className="mx-auto mb-4 text-text-muted opacity-50" strokeWidth={1.5} />
+                    <p className="text-text-secondary font-medium">Las estadísticas de este usuario son privadas.</p>
                 </GlassCard>
             )}
 
@@ -650,26 +651,26 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             {profile.show_badges && badges.length > 0 && (
                 <div className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2 whitespace-nowrap">
-                            <Medal size={20} className="text-accent" />
+                        <h3 className="text-xl font-extrabold text-text-primary flex items-center gap-2 whitespace-nowrap">
+                            <Medal size={24} className="text-accent" />
                             Insignias Desbloqueadas
                         </h3>
                         {badges.length > BADGES_PER_PAGE && (
-                            <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-lg p-1 border border-glass-border">
+                            <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 rounded-full p-1 ring-1 ring-black/5 dark:ring-white/10">
                                 <button
                                     onClick={() => setBadgePage(p => Math.max(0, p - 1))}
                                     disabled={badgePage === 0}
-                                    className="p-1 hover:bg-white/10 rounded disabled:opacity-30 transition cursor-pointer"
+                                    className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full disabled:opacity-30 transition-colors cursor-pointer text-text-secondary"
                                 >
                                     <ChevronLeft size={16} />
                                 </button>
-                                <span className="text-xs font-mono text-text-secondary px-1 select-none">
+                                <span className="text-xs font-bold text-text-secondary px-1 select-none">
                                     {badgePage + 1}/{totalBadgePages}
                                 </span>
                                 <button
                                     onClick={() => setBadgePage(p => Math.min(totalBadgePages - 1, p + 1))}
                                     disabled={badgePage === totalBadgePages - 1}
-                                    className="p-1 hover:bg-white/10 rounded disabled:opacity-30 transition cursor-pointer"
+                                    className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full disabled:opacity-30 transition-colors cursor-pointer text-text-secondary"
                                 >
                                     <ChevronRight size={16} />
                                 </button>
@@ -681,9 +682,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         {visibleBadges.map((badge, idx) => {
                             const b = resolveBadge(badge);
                             return (
-                                <GlassCard key={idx} className="aspect-square flex flex-col items-center justify-center p-2 gap-2 hover:bg-white/5 transition animate-fade-in">
-                                    <div className="text-3xl">{b.icon}</div>
-                                    <span className="text-[10px] text-center font-medium leading-tight text-text-secondary line-clamp-2">
+                                <GlassCard key={idx} className="glass aspect-square flex flex-col items-center justify-center p-3 gap-3 hover:bg-black/5 dark:hover:bg-white/5 transition-all animate-[fade-in_0.3s_ease-out] rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 hover:shadow-md hover:-translate-y-1">
+                                    <div className="text-4xl sm:text-5xl drop-shadow-sm">{b.icon}</div>
+                                    <span className="text-[10px] sm:text-xs text-center font-bold leading-tight text-text-secondary line-clamp-2">
                                         {b.name}
                                     </span>
                                 </GlassCard>
@@ -695,8 +696,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
             {/* --- RUTINAS PÚBLICAS Y DE AMIGOS --- */}
             <div className="space-y-4">
-                <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
-                    <Dumbbell size={20} className="text-accent" />
+                <h3 className="text-xl font-extrabold text-text-primary flex items-center gap-2">
+                    <Dumbbell size={24} className="text-accent" />
                     Rutinas de {profile.username}
                 </h3>
 
@@ -709,14 +710,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                             return (
                                 <GlassCard 
                                     key={routine.id} 
-                                    className="p-0 overflow-hidden flex flex-col group relative border-transparent hover:border-white/10 transition-all cursor-pointer hover:shadow-lg hover:shadow-accent/10"
+                                    className="glass p-0 overflow-hidden flex flex-col group relative border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] hover:shadow-xl transition-all cursor-pointer bg-black/5 dark:bg-white/5 hover:-translate-y-1"
                                     onClick={() => setViewingRoutine(routine)}
                                 >
                                     {/* Imagen de fondo de la rutina */}
-                                    <div className="h-28 w-full relative shrink-0 overflow-hidden bg-bg-secondary">
+                                    <div className="h-32 sm:h-40 w-full relative shrink-0 overflow-hidden bg-black/5 dark:bg-white/5">
                                         {imageSrc ? (
                                             isCssBackground(imageSrc) ? (
-                                                <div className="w-full h-full" style={{ background: imageSrc }} />
+                                                <div className="w-full h-full transition-transform duration-500 group-hover:scale-105" style={{ background: imageSrc }} />
                                             ) : (
                                                 <img 
                                                     src={getFullImageUrl(imageSrc)} 
@@ -726,46 +727,46 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                                 />
                                             )
                                         ) : (
-                                            <div className="w-full h-full bg-gradient-to-br from-bg-secondary to-bg-primary flex items-center justify-center text-text-muted">
-                                                <Dumbbell size={32} opacity={0.2} />
+                                            <div className="w-full h-full bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 flex items-center justify-center text-text-muted">
+                                                <Dumbbell size={40} className="opacity-20" />
                                             </div>
                                         )}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-bg-secondary via-bg-secondary/20 to-transparent" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/20 to-transparent" />
                                         
                                         {routine.folder && (
-                                            <div className="absolute top-2 right-2 z-20">
-                                                <span className="px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-medium text-white flex items-center gap-1">
-                                                    <Folder size={10} /> {routine.folder}
+                                            <div className="absolute top-3 right-3 z-20">
+                                                <span className="px-3 py-1.5 rounded-[12px] bg-black/60 backdrop-blur-md text-[10px] font-bold text-white flex items-center gap-1.5 shadow-sm">
+                                                    <Folder size={12} /> {routine.folder}
                                                 </span>
                                             </div>
                                         )}
                                     </div>
 
                                     {/* Contenido */}
-                                    <div className="p-4 flex-1 flex flex-col">
-                                        <div className="flex justify-between items-start gap-2 mb-1">
-                                            <h4 className="font-bold text-text-primary line-clamp-1 group-hover:text-accent transition-colors">{routine.name}</h4>
+                                    <div className="p-5 sm:p-6 flex-1 flex flex-col">
+                                        <div className="flex justify-between items-start gap-3 mb-2">
+                                            <h4 className="text-lg sm:text-xl font-extrabold text-text-primary line-clamp-1 group-hover:text-accent transition-colors">{routine.name}</h4>
                                             {isPublic ? (
-                                                <span className="shrink-0 text-[10px] bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                                    <Globe size={10} /> Pública
+                                                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider bg-green-500/10 text-green-500 px-2 py-1 rounded-md flex items-center gap-1">
+                                                    <Globe size={12} /> Pública
                                                 </span>
                                             ) : (
-                                                <span className="shrink-0 text-[10px] bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded flex items-center gap-1">
-                                                    <Users size={10} /> Amigos
+                                                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 px-2 py-1 rounded-md flex items-center gap-1">
+                                                    <Users size={12} /> Amigos
                                                 </span>
                                             )}
                                         </div>
                                         
                                         {routine.description && (
-                                            <p className="text-xs text-text-secondary line-clamp-2 mb-3">
+                                            <p className="text-sm font-medium text-text-secondary line-clamp-2 mb-4 leading-relaxed">
                                                 {routine.description}
                                             </p>
                                         )}
 
                                         {/* PREVIEW DE EJERCICIOS (MINI) */}
                                         {routine.exercises && routine.exercises.length > 0 && (
-                                            <div className="mb-3 space-y-2 bg-bg-primary/30 p-2 rounded-lg border border-white/5">
-                                                <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-1">
+                                            <div className="mb-4 space-y-2.5 bg-black/5 dark:bg-white/5 p-4 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10">
+                                                <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mb-2 px-1">
                                                     Ejercicios ({routine.exercises.length})
                                                 </p>
                                                 {routine.exercises.slice(0, 3).map((ex, i) => {
@@ -775,7 +776,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
                                                     return (
                                                         <div key={i} className="flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-md bg-bg-secondary shrink-0 overflow-hidden border border-white/10 flex items-center justify-center relative">
+                                                            <div className="w-12 h-12 rounded-[12px] bg-bg-primary shrink-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center relative shadow-sm">
                                                                 <ExerciseMedia 
                                                                     details={{
                                                                         video_url: videoSrc,
@@ -784,15 +785,18 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                                                     }}
                                                                     className="w-full h-full object-cover" 
                                                                 />
+                                                                <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-white z-10 pointer-events-none">
+                                                                    #{i + 1}
+                                                                </div>
                                                             </div>
-                                                            <span className="text-xs text-text-secondary font-medium truncate flex-1">
+                                                            <span className="text-sm text-text-secondary font-bold truncate flex-1">
                                                                 {translatedName}
                                                             </span>
                                                         </div>
                                                     );
                                                 })}
                                                 {routine.exercises.length > 3 && (
-                                                    <p className="text-[10px] text-text-muted pl-1">
+                                                    <p className="text-[10px] font-bold text-text-muted pl-2 mt-2 uppercase tracking-wider">
                                                         ... y {routine.exercises.length - 3} más
                                                     </p>
                                                 )}
@@ -806,13 +810,13 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                                     handleDownloadRoutine(routine.id);
                                                 }}
                                                 disabled={downloadingRoutineId === routine.id}
-                                                className="w-full py-2 rounded-lg bg-accent hover:opacity-90 text-xs font-bold text-white flex items-center justify-center gap-2 transition-colors shadow-md shadow-accent/20"
+                                                className="w-full py-3.5 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
                                             >
                                                 {downloadingRoutineId === routine.id ? (
                                                     <Spinner size="small" color="white" />
                                                 ) : (
                                                     <>
-                                                        <Download size={14} /> Importar Rutina
+                                                        <Download size={18} /> Importar Rutina
                                                     </>
                                                 )}
                                             </button>
@@ -823,9 +827,10 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         })}
                     </div>
                 ) : (
-                    <GlassCard className="p-8 flex flex-col items-center justify-center text-center opacity-60">
-                         <Dumbbell size={32} className="text-text-tertiary mb-2" />
-                         <p className="text-text-secondary">Este usuario no tiene rutinas visibles para ti.</p>
+                    <GlassCard className="glass p-10 flex flex-col items-center justify-center text-center rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                         <Dumbbell size={48} className="text-text-muted mb-4 opacity-50" strokeWidth={1.5} />
+                         <p className="text-lg font-bold text-text-primary mb-1">Sin rutinas disponibles</p>
+                         <p className="text-sm font-medium text-text-secondary">Este usuario no tiene rutinas visibles para ti.</p>
                     </GlassCard>
                 )}
             </div>

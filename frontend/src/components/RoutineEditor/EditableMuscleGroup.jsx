@@ -46,10 +46,6 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
     );
   };
 
-  const commonStyles = 'w-full capitalize text-center sm:text-left';
-  // Ajuste: w-full con max-w-full para seguridad.
-  const wrapperStyles = 'mt-1 w-full max-w-full';
-
   // Generamos y ordenamos las opciones alfabéticamente según la traducción
   const sortedOptions = useMemo(() => {
     const options = MUSCLE_GROUP_KEYS.map((key) => ({
@@ -62,9 +58,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
 
   if (isManual) {
     return (
-      // FIX: Añadido min-w-[150px] para asegurar un ancho mínimo constante
-      // independientemente de la longitud de la palabra seleccionada.
-      <div className={`${wrapperStyles} h-10 relative flex items-center min-w-[150px]`}>
+      <div className="w-full relative flex items-center min-w-[150px]">
         <CustomSelect
           value={currentValue}
           onChange={handleSelectChange}
@@ -73,7 +67,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
             ns: 'exercise_ui',
             defaultValue: 'Selecciona grupo...',
           })}
-          className="w-full" // Quitamos min-w-0 para que llene el contenedor padre
+          className="w-full capitalize"
         />
       </div>
     );
@@ -81,8 +75,8 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
 
   // Si NO es manual
   return (
-    <div className={`${wrapperStyles} px-1 sm:px-0`}>
-      <p className={`${commonStyles} truncate p-0 text-text-secondary`}>
+    <div className="w-full px-1">
+      <p className="font-bold text-sm sm:text-base text-text-primary capitalize truncate">
         {t(currentValue, { ns: 'exercise_muscles', defaultValue: currentValue })}
       </p>
     </div>

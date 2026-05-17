@@ -40,43 +40,33 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
     const isPublic = privacy === 'public';
 
     return (
-        <div id="social-privacy-banner"
-            className="mb-6 rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4 shadow-sm backdrop-blur-sm transition-all animate-[fade-in_0.3s_ease-out] max-w-3xl mx-auto"
-            style={{
-                background: 'linear-gradient(to bottom right, var(--color-accent-border), var(--color-accent-transparent))'
-            }}
+        <GlassCard id="social-privacy-banner"
+            className={`glass max-w-3xl mx-auto w-full mb-8 rounded-[32px] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5 border-none transition-all duration-300 hover:shadow-xl ${isPublic ? 'ring-1 ring-accent/30 bg-accent/5' : 'ring-1 ring-black/5 dark:ring-white/10 bg-black/5 dark:bg-white/5'}`}
         >
-            <div
-                className="p-2.5 rounded-full text-white shrink-0 mt-0.5"
-                style={{ backgroundColor: 'var(--color-accent-border)' }}
-            >
-                {isPublic ? <Globe size={20} /> : <Lock size={20} />}
+            <div className={`p-4 rounded-[24px] text-white shrink-0 shadow-lg ${isPublic ? 'bg-accent shadow-accent/30' : 'bg-gray-500 shadow-gray-500/30'}`}>
+                {isPublic ? <Globe size={28} /> : <Lock size={28} />}
             </div>
 
-            <div className="flex-1">
-                <h4 className="text-sm font-bold text-accent mb-1 flex items-center gap-2">
-                    {isPublic ? 'Tu perfil es VISIBLE (Público)' : 'Tu perfil es PRIVADO'}
+            <div className="flex-1 min-w-0">
+                <h4 className={`text-lg font-bold mb-2 ${isPublic ? 'text-accent' : 'text-text-primary'}`}>
+                    {isPublic ? 'Tu perfil es Público' : 'Tu perfil es Privado'}
                 </h4>
 
-                <div className="text-xs text-text-secondary leading-relaxed mb-3 space-y-1">
+                <div className="text-xs sm:text-sm text-text-secondary leading-relaxed mb-4 space-y-1.5 font-medium">
                     {isPublic ? (
                         <>
-                            <p>
-                                Actualmente <strong>todo el mundo puede ver tu perfil</strong> y estadísticas.
-                            </p>
-                            <p className="flex items-start gap-1.5 opacity-80">
-                                <Check size={12} className="mt-0.5 text-accent" />
-                                <span>Apareces en el <strong>Ranking Global</strong> y búsquedas públicas.</span>
+                            <p>Actualmente <strong>todo el mundo puede ver tu perfil</strong> y estadísticas.</p>
+                            <p className="flex items-center gap-1.5 opacity-90">
+                                <Check size={14} className="text-accent shrink-0" />
+                                <span>Apareces en el <strong>Ranking Global</strong> y búsquedas.</span>
                             </p>
                         </>
                     ) : (
                         <>
-                            <p>
-                                Actualmente <strong>solo tus amigos</strong> pueden ver tu actividad.
-                            </p>
-                            <p className="flex items-start gap-1.5 opacity-80">
-                                <X size={12} className="mt-0.5 text-accent" />
-                                <span><strong>No apareces</strong> en el Ranking Global ni en búsquedas públicas.</span>
+                            <p>Actualmente <strong>solo tus amigos</strong> pueden ver tu actividad.</p>
+                            <p className="flex items-center gap-1.5 opacity-90">
+                                <X size={14} className="text-red-500 shrink-0" />
+                                <span><strong>No apareces</strong> en el Ranking Global ni en búsquedas.</span>
                             </p>
                         </>
                     )}
@@ -84,41 +74,41 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
 
                 <button
                     onClick={onNavigate}
-                    className="text-xs font-bold bg-accent/10 hover:bg-accent/20 text-accent px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                    className="text-sm font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary px-5 py-2.5 rounded-full transition-colors flex items-center gap-2 w-fit"
                 >
-                    <Settings size={12} />
+                    <Settings size={16} />
                     Cambiar configuración
                 </button>
             </div>
-        </div>
+        </GlassCard>
     );
 };
 
 // --- Subcomponente: Burbuja de Historia ---
 const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
     return (
-        <div className="flex flex-col items-center gap-1 min-w-[72px] cursor-pointer group relative">
+        <div className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group relative">
             <div
                 className={`
-                    relative p-[3px] rounded-full transition-all duration-300
+                    relative p-1 rounded-full transition-all duration-300
                     ${hasStories
                         ? (hasUnseen
-                            ? 'bg-accent shadow-lg shadow-accent/40 animate-pulse-slow'
-                            : 'bg-gray-300 dark:bg-white/20'
+                            ? 'ring-2 ring-accent shadow-lg shadow-accent/40 animate-pulse-slow bg-bg-primary'
+                            : 'ring-2 ring-black/10 dark:ring-white/20 bg-bg-primary'
                         )
-                        : 'bg-transparent border-2 border-dashed border-gray-300 dark:border-white/20 hover:border-accent dark:hover:border-accent'
+                        : 'ring-2 ring-dashed ring-black/20 dark:ring-white/20 hover:ring-accent bg-bg-primary'
                     }
                 `}
                 onClick={onClick}
             >
-                <div className="p-[2px] bg-bg-primary rounded-full relative z-10">
+                <div className="p-0.5 bg-bg-primary rounded-full relative z-10">
                     <UserAvatar
                         user={{
                             ...user,
                             profile_image_url: user.profile_image_url || user.avatar
                         }}
-                        size={14}
-                        className="w-14 h-14"
+                        size={16}
+                        className="w-16 h-16 sm:w-18 sm:h-18 transition-transform duration-300 group-hover:scale-105"
                     />
                 </div>
 
@@ -128,13 +118,13 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
                             e.stopPropagation();
                             onAdd();
                         }}
-                        className="absolute bottom-0 right-0 bg-accent text-white rounded-full p-1.5 border-2 border-bg-primary hover:scale-110 transition-transform shadow-md z-20"
+                        className="absolute bottom-0 right-0 bg-accent text-white rounded-full p-2 border-4 border-bg-primary hover:scale-110 transition-transform shadow-lg shadow-accent/40 z-20"
                     >
-                        <Plus size={10} strokeWidth={4} />
+                        <Plus size={14} strokeWidth={3} />
                     </button>
                 )}
             </div>
-            <span className={`text-xs font-medium truncate w-16 text-center ${hasUnseen ? 'text-text-primary font-bold' : 'text-text-secondary'}`}>
+            <span className={`text-[11px] sm:text-xs font-bold truncate w-20 text-center mt-1 transition-colors ${hasUnseen ? 'text-text-primary' : 'text-text-secondary group-hover:text-text-primary'}`}>
                 {isMe ? 'Tu historia' : (user.username || 'Usuario').split(' ')[0]}
             </span>
         </div>
@@ -144,67 +134,68 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
 // --- Subcomponente: Modal de Aviso Legal ---
 const StoryTermsModal = ({ onAccept, onReject }) => {
     return (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-[fade-in_0.3s_ease-out]">
-            <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl overflow-hidden shadow-2xl flex flex-col relative">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
+            <div className="absolute inset-0" onClick={onReject} />
+            <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary">
 
-                <div className="p-6 text-center">
-                    <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4 text-accent">
-                        <ShieldAlert size={32} />
+                <div className="text-center">
+                    <div className="w-20 h-20 bg-accent/10 rounded-[24px] flex items-center justify-center mx-auto mb-6 text-accent ring-2 ring-accent/30">
+                        <ShieldAlert size={36} strokeWidth={1.5} />
                     </div>
 
-                    <h3 className="text-xl font-bold text-text-primary mb-2">Historias Efímeras</h3>
-                    <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+                    <h3 className="text-2xl font-bold text-text-primary mb-3">Historias Efímeras</h3>
+                    <p className="text-sm text-text-secondary mb-8 leading-relaxed font-medium">
                         Antes de subir tu primera historia, debes conocer cómo funciona este espacio en nuestra comunidad.
                     </p>
 
                     <div className="space-y-4 text-left mb-8">
-                        <div className="flex gap-3 items-start p-3 bg-white/5 rounded-xl border border-white/5">
-                            <Clock className="text-blue-400 mt-0.5 shrink-0" size={18} />
+                        <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
+                            <Clock className="text-blue-500 mt-0.5 shrink-0" size={20} />
                             <div>
                                 <h4 className="text-sm font-bold text-text-primary">Duración Limitada</h4>
-                                <p className="text-xs text-text-tertiary mt-0.5">
+                                <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
                                     Todo el contenido (fotos y vídeos) se elimina automáticamente de nuestros servidores tras <strong>24 horas</strong>.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex gap-3 items-start p-3 bg-white/5 rounded-xl border border-white/5">
-                            <Users className="text-green-400 mt-0.5 shrink-0" size={18} />
+                        <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
+                            <Users className="text-green-500 mt-0.5 shrink-0" size={20} />
                             <div>
                                 <h4 className="text-sm font-bold text-text-primary">Tú decides quién lo ve</h4>
-                                <p className="text-xs text-text-tertiary mt-0.5">
+                                <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
                                     Puedes elegir entre <strong>Público</strong> (toda la comunidad) o <strong>Solo Amigos</strong> antes de publicar.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex gap-3 items-start p-3 bg-white/5 rounded-xl border border-white/5">
-                            <Lock className="text-purple-400 mt-0.5 shrink-0" size={18} />
+                        <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
+                            <Lock className="text-purple-500 mt-0.5 shrink-0" size={20} />
                             <div>
                                 <h4 className="text-sm font-bold text-text-primary">Responsabilidad</h4>
-                                <p className="text-xs text-text-tertiary mt-0.5">
+                                <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
                                     No subas contenido ofensivo o ilegal. Nos reservamos el derecho de moderación.
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex flex-col gap-3">
                         <button
                             onClick={onAccept}
-                            className="flex-1 order-1 sm:order-2 py-3 px-4 rounded-xl font-bold bg-accent text-white shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm whitespace-nowrap"
+                            className="w-full py-4 rounded-[20px] font-bold bg-accent text-white shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all text-sm sm:text-base"
                         >
                             Aceptar y Continuar
                         </button>
                         <button
                             onClick={onReject}
-                            className="flex-1 order-2 sm:order-1 py-3 px-4 rounded-xl font-medium text-text-secondary hover:bg-white/10 transition-colors text-sm"
+                            className="w-full py-4 rounded-[20px] font-bold text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm sm:text-base"
                         >
                             Cancelar
                         </button>
                     </div>
                 </div>
-            </div>
+            </GlassCard>
         </div>
     );
 };
@@ -216,7 +207,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const [privacy, setPrivacy] = useState('friends');
     const [canUseHDR, setCanUseHDR] = useState(false);
     const [isHDR, setIsHDR] = useState(false);
-    const [showPermissionModal, setShowPermissionModal] = useState(false); // <-- Estado Modal Permisos
+    const [showPermissionModal, setShowPermissionModal] = useState(false); 
 
     const galleryInputRef = useRef(null);
     const cameraPhotoInputRef = useRef(null);
@@ -282,12 +273,11 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const onInputClick = async (e, type) => {
         e.target.value = null;
 
-        // --- Modificación: Verificar permisos nativos antes de abrir galería/cámara ---
         if (Capacitor.isNativePlatform()) {
             try {
                 const status = await CapCamera.requestPermissions();
                 if (status.photos === 'denied' && status.camera === 'denied') {
-                    e.preventDefault(); // Bloquear si no hay permisos
+                    e.preventDefault(); 
                     setShowPermissionModal(true);
                 }
             } catch (error) {
@@ -300,54 +290,55 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 
     return (
         <>
-            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
-                <div className="w-full max-w-md bg-bg-secondary border border-glass-border rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-                    <div className="p-4 border-b border-white/10 flex justify-between items-center">
-                        <h3 className="font-bold text-text-primary">Nueva Historia</h3>
-                        <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full">
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
+                <GlassCard className="glass w-full max-w-md p-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[90vh] bg-bg-primary">
+                    
+                    <div className="p-6 sm:p-8 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5 rounded-t-[32px]">
+                        <h3 className="text-xl font-bold text-text-primary">Nueva Historia</h3>
+                        <button onClick={onClose} className="p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
                             <X size={20} className="text-text-secondary" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center min-h-[300px]">
+                    <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center justify-center min-h-[350px] custom-scrollbar">
                         {!preview ? (
-                            <div className="grid grid-cols-3 gap-3 w-full h-full">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full h-full">
                                 <div
                                     onClick={() => cameraPhotoInputRef.current?.click()}
-                                    className="aspect-square border-2 border-dashed border-accent/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-accent/10 transition-colors group"
+                                    className="aspect-square ring-2 ring-dashed ring-accent/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-accent/5 hover:ring-accent/50 transition-all group"
                                 >
-                                    <div className="p-3 bg-accent/20 rounded-full group-hover:scale-110 transition-transform text-accent">
-                                        <Camera size={28} />
+                                    <div className="p-4 bg-accent/10 rounded-[18px] group-hover:scale-110 transition-transform text-accent">
+                                        <Camera size={32} />
                                     </div>
-                                    <p className="text-accent font-bold text-xs">Foto</p>
+                                    <p className="text-accent font-bold text-sm">Foto</p>
                                 </div>
 
                                 <div
                                     onClick={() => cameraVideoInputRef.current?.click()}
-                                    className="aspect-square border-2 border-dashed border-red-500/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-500/10 transition-colors group"
+                                    className="aspect-square ring-2 ring-dashed ring-red-500/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-red-500/5 hover:ring-red-500/50 transition-all group"
                                 >
-                                    <div className="p-3 bg-red-500/20 rounded-full group-hover:scale-110 transition-transform text-red-400">
-                                        <VideoIcon size={28} />
+                                    <div className="p-4 bg-red-500/10 rounded-[18px] group-hover:scale-110 transition-transform text-red-500">
+                                        <VideoIcon size={32} />
                                     </div>
-                                    <p className="text-red-400 font-bold text-xs">Vídeo</p>
+                                    <p className="text-red-500 font-bold text-sm">Vídeo</p>
                                 </div>
 
                                 <div
                                     onClick={() => galleryInputRef.current?.click()}
-                                    className="aspect-square border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-colors group"
+                                    className="aspect-square ring-2 ring-dashed ring-black/20 dark:ring-white/20 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
                                 >
-                                    <div className="p-3 bg-white/5 rounded-full group-hover:scale-110 transition-transform text-text-secondary">
-                                        <ImageIcon size={28} />
+                                    <div className="p-4 bg-black/5 dark:bg-white/5 rounded-[18px] group-hover:scale-110 transition-transform text-text-secondary">
+                                        <ImageIcon size={32} />
                                     </div>
-                                    <p className="text-text-secondary font-medium text-xs">Galería</p>
+                                    <p className="text-text-secondary font-bold text-sm">Galería</p>
                                 </div>
 
-                                <p className="col-span-3 text-center text-xs text-text-tertiary mt-4">
+                                <p className="col-span-1 sm:col-span-3 text-center text-xs font-medium text-text-tertiary mt-4">
                                     Elige el modo de cámara para asegurar compatibilidad
                                 </p>
                             </div>
                         ) : (
-                            <div className="relative w-full h-[60vh] rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                            <div className="relative w-full h-[55vh] rounded-[24px] overflow-hidden bg-black flex items-center justify-center ring-1 ring-white/10 shadow-inner">
                                 {file?.type?.startsWith('video') ? (
                                     <video
                                         ref={previewVideoRef}
@@ -367,9 +358,9 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                 )}
                                 <button
                                     onClick={() => { setFile(null); setPreview(null); setIsHDR(false); setCanUseHDR(false); }}
-                                    className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-red-500/80 transition-colors z-20"
+                                    className="absolute top-4 right-4 p-2.5 bg-black/60 backdrop-blur-sm text-white rounded-full hover:bg-red-500 transition-colors z-20"
                                 >
-                                    <X size={16} />
+                                    <X size={18} />
                                 </button>
                             </div>
                         )}
@@ -379,40 +370,40 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         <input type="file" accept="video/*" capture="environment" ref={cameraVideoInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'video')} />
                     </div>
 
-                    <div className="p-4 border-t border-white/10 space-y-4 bg-bg-secondary">
-                        <div className="flex gap-2 justify-center">
+                    <div className="p-6 sm:p-8 border-t border-black/5 dark:border-white/10 space-y-5 bg-black/5 dark:bg-white/5 rounded-b-[32px]">
+                        <div className="flex gap-3 justify-center">
                             <button
                                 onClick={() => setPrivacy('friends')}
-                                className={`flex-1 py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
+                                className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
                                     ${privacy === 'friends'
-                                        ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
-                                        : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
+                                        ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                                        : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
                                     }`}
                             >
-                                <Users size={14} /><span>Solo Amigos</span>
+                                <Users size={18} /><span>Amigos</span>
                             </button>
 
                             <button
                                 onClick={() => setPrivacy('public')}
-                                className={`flex-1 py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all border
+                                className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
                                     ${privacy === 'public'
-                                        ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
-                                        : 'bg-white/5 text-text-secondary border-white/5 hover:bg-white/10'
+                                        ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                                        : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
                                     }`}
                             >
-                                <Globe size={14} /><span>Público</span>
+                                <Globe size={18} /><span>Público</span>
                             </button>
 
                             {canUseHDR && (
                                 <button
                                     onClick={toggleHDR}
-                                    className={`flex-initial px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-bold transition-all border
+                                    className={`flex-initial px-4 py-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1
                                         ${isHDR
-                                            ? 'bg-accent text-white border-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow'
-                                            : 'bg-white/5 text-text-secondary border-white/5 opacity-60 hover:opacity-100'
+                                            ? 'bg-accent text-white ring-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow'
+                                            : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 opacity-60 hover:opacity-100'
                                         }`}
                                 >
-                                    <Zap size={14} className={isHDR ? "fill-current" : ""} />
+                                    <Zap size={18} className={isHDR ? "fill-current" : ""} />
                                     HDR {isHDR ? 'ON' : 'OFF'}
                                 </button>
                             )}
@@ -421,12 +412,12 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         <button
                             onClick={handleSubmit}
                             disabled={!file || isUploading}
-                            className="w-full py-3 bg-accent text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-accent/20"
+                            className="w-full py-4 bg-accent text-white font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
                         >
-                            {isUploading ? <Spinner size={20} color="border-white" /> : 'Compartir Historia'}
+                            {isUploading ? <Spinner size={20} color="#ffffff" /> : 'Compartir Historia'}
                         </button>
                     </div>
-                </div>
+                </GlassCard>
             </div>
 
             <PermissionModal
@@ -443,16 +434,16 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
     <button
         onClick={() => onClick(id)}
-        className={`flex items-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm whitespace-nowrap transition-all flex-shrink-0 border active:scale-95
+        className={`flex items-center gap-2 py-2.5 px-5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 flex-shrink-0 outline-none
         ${isActive
-                ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20'
-                : 'bg-white/5 text-text-secondary border-transparent hover:bg-white/10 hover:text-text-primary hover:border-white/20'
+                ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+                : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
             }`}
     >
         <Icon size={18} />
         <span>{label}</span>
         {badge > 0 && (
-            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm ml-1">
+            <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm ml-1">
                 {badge}
             </span>
         )}
@@ -469,35 +460,37 @@ const UserListItem = ({ user, action, subtext, isHighlighted, onNavigate }) => {
     return (
         <div
             onClick={() => onNavigate(user.id)}
-            className={`flex items-center justify-between p-3 border-b border-white/10 last:border-0 transition-all duration-500 cursor-pointer group
+            className={`flex items-center justify-between p-4 mb-3 rounded-[24px] transition-all duration-300 cursor-pointer group
           ${isHighlighted
-                    ? 'bg-accent/10 border-l-2 border-l-accent shadow-[inset_0_0_20px_rgba(var(--accent-rgb),0.1)]'
-                    : 'hover:bg-white/5'
+                    ? 'bg-accent/10 ring-1 ring-accent/30 shadow-md scale-[1.02]'
+                    : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'
                 }`}
         >
-            <div className="flex items-center gap-3">
-                <UserAvatar user={fixedUser} size={10} className="w-10 h-10" />
+            <div className="flex items-center gap-4">
+                <UserAvatar user={fixedUser} size={12} className="w-12 h-12 shadow-sm transition-transform group-hover:scale-105" />
 
                 <div>
-                    <p className={`font-semibold transition-colors line-clamp-1 ${isHighlighted ? 'text-accent' : 'text-text-primary group-hover:text-accent'}`}>
+                    <p className={`font-bold text-base transition-colors line-clamp-1 ${isHighlighted ? 'text-accent' : 'text-text-primary group-hover:text-accent'}`}>
                         {user.username || user.name || 'Usuario'}
                     </p>
-                    <p className="text-xs text-text-tertiary line-clamp-1">
+                    <p className="text-xs font-medium text-text-secondary mt-0.5 line-clamp-1">
                         {subtext || `Nivel ${user.level || 1} • ${user.xp || 0} XP`}
                     </p>
                 </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-3 flex-shrink-0">
                 {action}
-                {!action && <ChevronRight size={16} className="text-white/20" />}
+                {!action && <ChevronRight size={20} className="text-text-muted group-hover:text-text-primary transition-colors" />}
             </div>
         </div>
     );
 };
 
+// --- Input Base Class para Modales ---
+const baseInputClasses = 'w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] px-5 py-4 text-text-primary focus:ring-4 focus:ring-accent/20 outline-none transition-all font-medium placeholder:text-text-muted';
+
 export default function Social({ setView }) {
     const [searchParams, setSearchParams] = useSearchParams();
-    // 1. Establecer "feed" como la pestaña por defecto
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'feed');
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -563,11 +556,9 @@ export default function Social({ setView }) {
         subscribeToSocialEvents();
     }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories, subscribeToStories, subscribeToSocialEvents]);
 
-    // Manejo de params
     useEffect(() => {
         const tab = searchParams.get('tab');
         const highlight = searchParams.get('highlight');
-        // Añadido 'feed' a los tabs permitidos
         if (tab && ['feed', 'friends', 'requests', 'search', 'leaderboard', 'squads'].includes(tab)) setActiveTab(tab);
         if (highlight) {
             setHighlightedId(parseInt(highlight));
@@ -581,7 +572,6 @@ export default function Social({ setView }) {
         setSearchParams({ tab: newTab });
     };
 
-    // Búsqueda
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             if (searchQuery.trim()) {
@@ -791,13 +781,13 @@ export default function Social({ setView }) {
         const paginatedFriends = socialFriends.slice((friendsPage - 1) * FRIENDS_PER_PAGE, friendsPage * FRIENDS_PER_PAGE);
 
         return (
-            <GlassCard className="[.oled-theme_&]:border-white/10">
-                <h3 className="text-lg font-bold text-text-primary mb-4 px-4 pt-4 border-b border-white/5 pb-2">Mis Amigos ({socialFriends.length})</h3>
+            <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                <h3 className="text-2xl font-extrabold text-text-primary mb-6">Mis Amigos <span className="text-text-muted text-lg font-medium">({socialFriends.length})</span></h3>
                 {socialFriends.length === 0 ? (
-                    <div className="text-center py-12 text-text-tertiary">
-                        <Users size={48} className="mx-auto mb-4 opacity-20" />
-                        <p>Aún no tienes amigos agregados.</p>
-                        <button onClick={() => changeTab('search')} className="mt-4 text-accent hover:text-accent/80 font-medium text-sm transition-colors">Buscar personas</button>
+                    <div className="text-center py-16 bg-black/5 dark:bg-white/5 rounded-[24px]">
+                        <Users size={48} className="mx-auto mb-4 text-text-muted opacity-50" />
+                        <p className="text-lg font-bold text-text-primary">Aún no tienes amigos agregados</p>
+                        <button onClick={() => changeTab('search')} className="mt-4 px-6 py-3 bg-accent/10 text-accent font-bold rounded-full hover:bg-accent/20 transition-colors">Buscar personas</button>
                     </div>
                 ) : (
                     <div className="flex flex-col">
@@ -808,17 +798,17 @@ export default function Social({ setView }) {
                                 isHighlighted={highlightedId === friend.id}
                                 onNavigate={goToProfile}
                                 action={
-                                    <button onClick={(e) => handleRemoveFriend(e, friend.id)} className="p-2 text-text-tertiary hover:text-red-400 transition-colors z-10" title="Eliminar amigo"><UserX size={18} /></button>
+                                    <button onClick={(e) => handleRemoveFriend(e, friend.id)} className="p-3 bg-red-500/10 text-red-500 rounded-[14px] hover:bg-red-500 hover:text-white transition-colors z-10" title="Eliminar amigo"><UserX size={18} /></button>
                                 }
                             />
                         ))}
                     </div>
                 )}
                 {totalPages > 1 && (
-                    <div className="flex justify-between items-center p-3 border-t border-white/5">
-                        <button onClick={() => setFriendsPage(p => Math.max(1, p - 1))} disabled={friendsPage === 1} className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-30"><ChevronLeft size={20} /></button>
-                        <span className="text-xs text-text-tertiary">Página {friendsPage} de {totalPages}</span>
-                        <button onClick={() => setFriendsPage(p => Math.min(totalPages, p + 1))} disabled={friendsPage === totalPages} className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-30"><ChevronRight size={20} /></button>
+                    <div className="flex justify-between items-center pt-6 mt-2">
+                        <button onClick={() => setFriendsPage(p => Math.max(1, p - 1))} disabled={friendsPage === 1} className="p-3 bg-black/5 dark:bg-white/5 rounded-full text-text-secondary hover:text-text-primary disabled:opacity-30 transition-colors"><ChevronLeft size={20} /></button>
+                        <span className="text-sm font-bold text-text-secondary">Página {friendsPage} de {totalPages}</span>
+                        <button onClick={() => setFriendsPage(p => Math.min(totalPages, p + 1))} disabled={friendsPage === totalPages} className="p-3 bg-black/5 dark:bg-white/5 rounded-full text-text-secondary hover:text-text-primary disabled:opacity-30 transition-colors"><ChevronRight size={20} /></button>
                     </div>
                 )}
             </GlassCard>
@@ -829,18 +819,22 @@ export default function Social({ setView }) {
         const received = socialRequests?.received || [];
         const sent = socialRequests?.sent || [];
         return (
-            <div className="space-y-6">
-                <GlassCard className="[.oled-theme_&]:border-white/10">
-                    <h3 className="text-lg font-bold text-text-primary mb-4 px-4 pt-4 flex items-center gap-2 border-b border-white/5 pb-2">
-                        Solicitudes Recibidas {received.length > 0 && <span className="bg-accent text-bg-primary text-xs px-2 py-0.5 rounded-full font-bold">{received.length}</span>}
+            <div className="space-y-8">
+                <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                    <h3 className="text-2xl font-extrabold text-text-primary mb-6 flex items-center gap-3">
+                        Solicitudes Recibidas {received.length > 0 && <span className="bg-accent text-white text-sm px-3 py-1 rounded-full font-bold shadow-md shadow-accent/20">{received.length}</span>}
                     </h3>
-                    {received.length === 0 ? <p className="text-text-tertiary text-center py-8 text-sm">No tienes solicitudes pendientes.</p> : (
+                    {received.length === 0 ? (
+                        <div className="text-center py-12 bg-black/5 dark:bg-white/5 rounded-[24px]">
+                            <p className="text-text-secondary font-medium">No tienes solicitudes pendientes.</p>
+                        </div>
+                    ) : (
                         <div className="flex flex-col">
                             {received.map((req) => (
                                 <UserListItem key={req.id} user={req.Requester} onNavigate={goToProfile} subtext="Quiere ser tu amigo" action={
                                     <div className="flex gap-2 z-10">
-                                        <button onClick={(e) => handleRespond(e, req.id, 'accept')} className="p-2 bg-green-500/20 text-green-400 rounded-lg"><Check size={18} /></button>
-                                        <button onClick={(e) => handleRespond(e, req.id, 'reject')} className="p-2 bg-red-500/20 text-red-400 rounded-lg"><X size={18} /></button>
+                                        <button onClick={(e) => handleRespond(e, req.id, 'accept')} className="p-3 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded-[14px] transition-colors"><Check size={20} /></button>
+                                        <button onClick={(e) => handleRespond(e, req.id, 'reject')} className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-[14px] transition-colors"><X size={20} /></button>
                                     </div>
                                 } />
                             ))}
@@ -848,11 +842,11 @@ export default function Social({ setView }) {
                     )}
                 </GlassCard>
                 {sent.length > 0 && (
-                    <GlassCard className="[.oled-theme_&]:border-white/10">
-                        <h3 className="text-lg font-bold text-text-primary mb-4 px-4 pt-4 border-b border-white/5 pb-2">Enviadas</h3>
+                    <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                        <h3 className="text-xl font-bold text-text-primary mb-6">Solicitudes Enviadas</h3>
                         <div className="flex flex-col">
                             {sent.map((req) => (
-                                <UserListItem key={req.id} user={req.Addressee} onNavigate={goToProfile} subtext="Solicitud pendiente" action={<span className="text-xs text-text-tertiary bg-white/5 px-2 py-1 rounded border border-white/5">Esperando</span>} />
+                                <UserListItem key={req.id} user={req.Addressee} onNavigate={goToProfile} subtext="Solicitud pendiente" action={<span className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg">Esperando</span>} />
                             ))}
                         </div>
                     </GlassCard>
@@ -867,19 +861,22 @@ export default function Social({ setView }) {
         const paginatedResults = socialSearchResults.slice((searchPage - 1) * ITEMS_PER_PAGE, searchPage * ITEMS_PER_PAGE);
 
         return (
-            <div className="space-y-4 mx-auto w-full">
+            <div className="space-y-6 mx-auto w-full">
                 <form onSubmit={handleSearch}>
-                    <GlassCard className="flex items-center px-3 py-2 gap-2 focus-within:border-accent/50 transition-colors [.oled-theme_&]:border-white/10">
-                        <Search size={20} className="text-text-tertiary ml-1" />
-                        <input type="text" placeholder="Buscar por nombre de usuario..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none outline-none text-text-primary flex-1 placeholder-text-tertiary text-sm py-2" />
-                        <button type="submit" disabled={isSocialLoading} className="bg-transparent text-text-primary font-bold px-4 py-1.5 rounded-lg active:scale-95 transition-all hover:bg-white/5 text-sm">{isSocialLoading ? <Spinner size={18} /> : 'Buscar'}</button>
+                    <GlassCard className="glass p-3 rounded-full flex items-center gap-3 focus-within:ring-2 focus-within:ring-accent/50 transition-all border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
+                        <Search size={22} className="text-text-muted ml-3 shrink-0" />
+                        <input type="text" placeholder="Buscar por nombre de usuario..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none outline-none text-text-primary flex-1 font-medium placeholder:text-text-muted py-2" />
+                        <button type="submit" disabled={isSocialLoading} className="bg-accent text-white font-bold px-6 py-3 rounded-full active:scale-95 transition-all shadow-md shadow-accent/20 shrink-0">
+                            {isSocialLoading ? <Spinner size={20} color="#fff" /> : 'Buscar'}
+                        </button>
                     </GlassCard>
                 </form>
                 {totalResults > 0 && (
-                    <GlassCard className="[.oled-theme_&]:border-white/10">
-                        <h3 className="text-lg font-bold text-text-primary mb-2 px-4 pt-4 border-b border-white/5 pb-2 flex justify-between items-center">
-                            <span>Resultados</span><span className="text-xs font-medium text-text-tertiary">{totalResults} encontrados</span>
-                        </h3>
+                    <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-text-primary">Resultados</h3>
+                            <span className="text-sm font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-3 py-1 rounded-full">{totalResults} encontrados</span>
+                        </div>
                         <div className="flex flex-col">
                             {paginatedResults.map((user) => {
                                 const isMe = user.id === userProfile?.id;
@@ -888,34 +885,45 @@ export default function Social({ setView }) {
                                 return (
                                     <UserListItem key={user.id} user={user} onNavigate={goToProfile} action={
                                         !isMe && !isFriend && !hasSentRequest ? (
-                                            <button onClick={(e) => handleSendRequest(e, user.id)} className="p-2 bg-accent/20 text-accent rounded-lg z-10"><UserPlus size={18} /></button>
-                                        ) : isFriend ? <span className="text-xs text-green-400 font-medium px-2 py-1 bg-green-500/10 rounded">Amigo</span> : hasSentRequest ? <span className="text-xs text-text-tertiary px-2 py-1 bg-white/5 rounded">Enviada</span> : isMe ? <span className="text-xs text-text-tertiary px-2 py-1 bg-white/5 rounded">Tú</span> : null
+                                            <button onClick={(e) => handleSendRequest(e, user.id)} className="p-3 bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-[14px] transition-colors z-10"><UserPlus size={20} /></button>
+                                        ) : isFriend ? <span className="text-xs font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded-lg">Amigo</span> : hasSentRequest ? <span className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg">Enviada</span> : isMe ? <span className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg">Tú</span> : null
                                     } />
                                 );
                             })}
                         </div>
                         {totalPages > 1 && (
-                            <div className="flex justify-between items-center p-3 border-t border-white/5">
-                                <button onClick={() => setSearchPage(p => Math.max(1, p - 1))} disabled={searchPage === 1} className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-30"><ChevronLeft size={20} /></button>
-                                <span className="text-xs text-text-tertiary">Página {searchPage} de {totalPages}</span>
-                                <button onClick={() => setSearchPage(p => Math.min(totalPages, p + 1))} disabled={searchPage === totalPages} className="p-1 text-text-tertiary hover:text-text-primary disabled:opacity-30"><ChevronRight size={20} /></button>
+                            <div className="flex justify-between items-center pt-6 mt-2">
+                                <button onClick={() => setSearchPage(p => Math.max(1, p - 1))} disabled={searchPage === 1} className="p-3 bg-black/5 dark:bg-white/5 rounded-full text-text-secondary hover:text-text-primary disabled:opacity-30 transition-colors"><ChevronLeft size={20} /></button>
+                                <span className="text-sm font-bold text-text-secondary">Página {searchPage} de {totalPages}</span>
+                                <button onClick={() => setSearchPage(p => Math.min(totalPages, p + 1))} disabled={searchPage === totalPages} className="p-3 bg-black/5 dark:bg-white/5 rounded-full text-text-secondary hover:text-text-primary disabled:opacity-30 transition-colors"><ChevronRight size={20} /></button>
                             </div>
                         )}
                     </GlassCard>
                 )}
-                {totalResults === 0 && searchQuery && !isSocialLoading && <div className="text-center py-8 text-text-tertiary"><p className="text-sm">No se encontraron usuarios.</p></div>}
+                {totalResults === 0 && searchQuery && !isSocialLoading && (
+                    <div className="text-center py-12 bg-black/5 dark:bg-white/5 rounded-[32px] mt-6">
+                        <Search size={40} className="mx-auto mb-4 text-text-muted opacity-50" />
+                        <p className="text-lg font-bold text-text-primary">No se encontraron usuarios</p>
+                    </div>
+                )}
             </div>
         );
     };
 
     const renderLeaderboard = () => (
-        <GlassCard className="overflow-hidden [.oled-theme_&]:border-white/10">
-            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <h3 className="text-lg font-bold text-text-primary flex items-center gap-2"><Trophy className="text-yellow-500" size={20} /> Ranking Global</h3>
-                <span className="text-xs font-medium text-text-tertiary bg-white/10 px-2 py-1 rounded-full">Top 50</span>
+        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-extrabold text-text-primary flex items-center gap-3">
+                    <div className="p-2.5 bg-yellow-500/10 rounded-[16px] text-yellow-500">
+                        <Trophy size={24} />
+                    </div>
+                    Ranking Global
+                </h3>
+                <span className="text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-full uppercase tracking-wider">Top 50</span>
             </div>
+            
             <div className="flex flex-col">
-                <div className="flex text-xs text-text-tertiary p-3 border-b border-white/5 uppercase tracking-wider font-bold bg-white/5">
+                <div className="flex text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-2">
                     <span className="w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-16 text-right">Nivel</span><span className="w-24 text-right">XP</span>
                 </div>
                 {socialLeaderboard.map((user, index) => {
@@ -923,16 +931,16 @@ export default function Social({ setView }) {
                     const fixedUser = { ...user, avatar: getFullImageUrl(user.profile_image_url || user.avatar) };
 
                     return (
-                        <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 border-b border-white/5 last:border-0 cursor-pointer transition-colors hover:bg-white/10 ${isMe ? 'bg-accent/10 border-l-4 border-l-accent pl-2' : ''}`}>
-                            <div className="w-10 flex justify-center font-bold text-text-secondary text-lg">
-                                {index + 1 === 1 ? <Medal size={20} className="text-yellow-400" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-300" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
+                        <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 rounded-[20px] mb-2 cursor-pointer transition-all duration-300 hover:bg-black/5 dark:hover:bg-white/5 ${isMe ? 'bg-accent/10 ring-1 ring-accent/30 scale-[1.02] shadow-sm my-3' : ''}`}>
+                            <div className="w-10 flex justify-center font-black text-text-secondary text-lg shrink-0">
+                                {index + 1 === 1 ? <Medal size={24} className="text-yellow-400 drop-shadow-md" /> : index + 1 === 2 ? <Medal size={24} className="text-gray-400 drop-shadow-md" /> : index + 1 === 3 ? <Medal size={24} className="text-amber-700 drop-shadow-md" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
                             </div>
-                            <div className="flex-1 flex items-center gap-3 min-w-0 pl-2">
-                                <UserAvatar user={fixedUser} size={9} className="w-9 h-9" />
-                                <span className={`truncate text-sm ${isMe ? 'text-accent font-bold' : 'text-text-primary font-medium'}`}>{user.username} {isMe && "(Tú)"}</span>
+                            <div className="flex-1 flex items-center gap-4 min-w-0 pl-2">
+                                <UserAvatar user={fixedUser} size={10} className="w-10 h-10 shadow-sm" />
+                                <span className={`truncate text-sm sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
                             </div>
-                            <div className="w-16 text-right text-sm text-text-secondary font-medium">{user.level}</div>
-                            <div className="w-24 text-right text-sm text-text-primary font-mono font-semibold tracking-tight">{user.xp?.toLocaleString()}</div>
+                            <div className="w-16 text-right text-sm text-text-secondary font-bold shrink-0">{user.level}</div>
+                            <div className="w-24 text-right text-sm text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString()}</div>
                         </div>
                     );
                 })}
@@ -950,45 +958,46 @@ export default function Social({ setView }) {
             const amIAdmin = myMembership?.SquadMember?.role === 'admin';
 
             return (
-                <GlassCard className="overflow-hidden [.oled-theme_&]:border-white/10 animate-[fade-in_0.3s_ease-out]">
-                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                        <div className="flex items-center gap-3">
-                            <button onClick={() => setSelectedSquad(null)} className="p-1 hover:bg-white/10 rounded-full text-text-secondary">
+                <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 overflow-hidden animate-[fade-in_0.3s_ease-out]">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setSelectedSquad(null)} className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary transition-colors shrink-0">
                                 <ArrowLeft size={20} />
                             </button>
                             <div>
-                                <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
-                                    <Shield className="text-accent" size={20} /> {selectedSquad.name}
+                                <h3 className="text-2xl font-extrabold text-text-primary flex items-center gap-2">
+                                    <Shield className="text-accent" size={24} /> {selectedSquad.name}
                                 </h3>
-                                {selectedSquad.description && <p className="text-xs text-text-tertiary">{selectedSquad.description}</p>}
+                                {selectedSquad.description && <p className="text-sm text-text-secondary mt-1 font-medium">{selectedSquad.description}</p>}
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
                             <button
                                 onClick={() => copyInviteCode(selectedSquad.invite_code)}
-                                className="text-xs font-bold text-text-primary bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+                                className="flex-1 sm:flex-initial text-sm font-bold text-text-primary bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-4 py-2.5 rounded-[16px] flex items-center justify-center gap-2 transition-colors"
                             >
-                                <Copy size={14} /> Código
+                                <Copy size={18} /> Código
                             </button>
                             {!amIAdmin ? (
                                 <button
                                     onClick={() => setLeaveSquadConfirmation({ isOpen: true, squadId: selectedSquad.id })}
-                                    className="text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+                                    className="flex-1 sm:flex-initial text-sm font-bold text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-[16px] flex items-center justify-center gap-2 transition-colors"
                                 >
-                                    <LogOut size={14} /> Salir
+                                    <LogOut size={18} /> Salir
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => setDeleteSquadConfirmation({ isOpen: true, squadId: selectedSquad.id })}
-                                    className="text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+                                    className="flex-1 sm:flex-initial text-sm font-bold text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-[16px] flex items-center justify-center gap-2 transition-colors"
                                 >
-                                    <Trash2 size={14} /> Eliminar
+                                    <Trash2 size={18} /> Eliminar
                                 </button>
                             )}
                         </div>
                     </div>
+                    
                     <div className="flex flex-col">
-                        <div className="flex text-xs text-text-tertiary p-3 border-b border-white/5 uppercase tracking-wider font-bold bg-white/5">
+                        <div className="flex text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-2">
                             <span className="w-10 text-center">#</span><span className="flex-1 pl-2">Miembro</span><span className="w-24 text-right">Racha</span><span className="w-24 text-right">XP</span>
                         </div>
                         {selectedSquad.Members?.map((user, index) => {
@@ -996,21 +1005,21 @@ export default function Social({ setView }) {
                             const fixedUser = { ...user, avatar: getFullImageUrl(user.profile_image_url || user.avatar) };
 
                             return (
-                                <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 border-b border-white/5 last:border-0 cursor-pointer transition-colors hover:bg-white/10 ${isMe ? 'bg-accent/10 border-l-4 border-l-accent pl-2' : ''}`}>
-                                    <div className="w-10 flex justify-center font-bold text-text-secondary text-lg">
-                                        {index + 1 === 1 ? <Medal size={20} className="text-yellow-400" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-300" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
+                                <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 rounded-[20px] mb-2 cursor-pointer transition-all duration-300 hover:bg-black/5 dark:hover:bg-white/5 ${isMe ? 'bg-accent/10 ring-1 ring-accent/30 scale-[1.02] shadow-sm my-3' : ''}`}>
+                                    <div className="w-10 flex justify-center font-black text-text-secondary text-lg shrink-0">
+                                        {index + 1 === 1 ? <Medal size={24} className="text-yellow-400 drop-shadow-md" /> : index + 1 === 2 ? <Medal size={24} className="text-gray-400 drop-shadow-md" /> : index + 1 === 3 ? <Medal size={24} className="text-amber-700 drop-shadow-md" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
                                     </div>
-                                    <div className="flex-1 flex items-center gap-3 min-w-0 pl-2">
-                                        <UserAvatar user={fixedUser} size={9} className="w-9 h-9" />
-                                        <div className="flex flex-col">
-                                            <span className={`truncate text-sm ${isMe ? 'text-accent font-bold' : 'text-text-primary font-medium'}`}>{user.username} {isMe && "(Tú)"}</span>
-                                            <span className="text-[10px] text-text-tertiary capitalize">{user.SquadMember?.role}</span>
+                                    <div className="flex-1 flex items-center gap-4 min-w-0 pl-2">
+                                        <UserAvatar user={fixedUser} size={10} className="w-10 h-10 shadow-sm" />
+                                        <div className="flex flex-col min-w-0">
+                                            <span className={`truncate text-sm sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
+                                            <span className="text-[10px] sm:text-xs font-bold text-text-tertiary capitalize mt-0.5 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md w-fit">{user.SquadMember?.role}</span>
                                         </div>
                                     </div>
-                                    <div className="w-24 text-right text-sm text-orange-400 font-bold flex items-center justify-end gap-1">
+                                    <div className="w-24 text-right text-sm sm:text-base text-orange-500 font-extrabold flex items-center justify-end gap-1.5 shrink-0">
                                         🔥 {user.streak || 0}
                                     </div>
-                                    <div className="w-24 text-right text-sm text-text-primary font-mono font-semibold tracking-tight">{user.xp?.toLocaleString() || 0}</div>
+                                    <div className="w-24 text-right text-sm sm:text-base text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString() || 0}</div>
                                 </div>
                             );
                         })}
@@ -1020,48 +1029,48 @@ export default function Social({ setView }) {
         }
 
         return (
-            <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row gap-3">
+            <div className="space-y-8">
+                <div className="flex flex-col sm:flex-row gap-4">
                     <button
                         onClick={() => setShowCreateSquadModal(true)}
-                        className="flex-1 py-3 bg-accent text-white font-bold rounded-xl hover:opacity-90 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
+                        className="flex-1 py-4 bg-accent text-white font-bold rounded-[24px] hover:scale-[1.02] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
                     >
-                        <PlusCircle size={18} className="shrink-0" /> <span className="truncate">Crear Grupo</span>
+                        <PlusCircle size={20} className="shrink-0" /> <span>Crear Grupo</span>
                     </button>
                     <button
                         onClick={() => setShowJoinSquadModal(true)}
-                        className="flex-1 py-3 bg-white/10 text-text-primary font-bold rounded-xl hover:bg-white/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                        className="flex-1 py-4 bg-black/5 dark:bg-white/5 text-text-primary font-bold rounded-[24px] hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center gap-2 transition-all active:scale-95"
                     >
-                        <Hash size={18} className="shrink-0" /> <span className="truncate">Unirse a Grupo</span>
+                        <Hash size={20} className="shrink-0" /> <span>Unirse a Grupo</span>
                     </button>
                 </div>
 
-                <GlassCard className="[.oled-theme_&]:border-white/10">
-                    <h3 className="text-lg font-bold text-text-primary mb-4 px-4 pt-4 border-b border-white/5 pb-2">Mis Grupos</h3>
+                <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                    <h3 className="text-2xl font-extrabold text-text-primary mb-6">Mis Grupos</h3>
                     {mySquads.length === 0 ? (
-                        <div className="text-center py-12 text-text-tertiary">
-                            <Shield size={48} className="mx-auto mb-4 opacity-20" />
-                            <p>No perteneces a ningún grupo.</p>
-                            <p className="text-xs mt-2">Crea uno o únete para competir con tus amigos.</p>
+                        <div className="text-center py-12 bg-black/5 dark:bg-white/5 rounded-[24px]">
+                            <Shield size={48} className="mx-auto mb-4 text-text-muted opacity-50" />
+                            <p className="text-lg font-bold text-text-primary">No perteneces a ningún grupo</p>
+                            <p className="text-sm font-medium text-text-secondary mt-1">Crea uno o únete para competir con tus amigos.</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-3">
                             {mySquads.map((squad) => (
                                 <div
                                     key={squad.id}
                                     onClick={() => loadSquadLeaderboard(squad.id)}
-                                    className="flex items-center justify-between p-4 border-b border-white/10 last:border-0 hover:bg-white/5 transition-colors cursor-pointer"
+                                    className="flex items-center justify-between p-4 rounded-[24px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer group"
                                 >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center text-accent">
-                                            <Shield size={24} />
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-14 h-14 bg-accent/10 rounded-[18px] flex items-center justify-center text-accent shrink-0 group-hover:scale-105 transition-transform">
+                                            <Shield size={28} />
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-text-primary">{squad.name}</p>
-                                            <p className="text-xs text-text-secondary">{squad.description || 'Sin descripción'}</p>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-lg text-text-primary truncate">{squad.name}</p>
+                                            <p className="text-sm font-medium text-text-secondary truncate mt-0.5">{squad.description || 'Sin descripción'}</p>
                                         </div>
                                     </div>
-                                    <ChevronRight size={20} className="text-white/20" />
+                                    <ChevronRight size={24} className="text-text-muted group-hover:text-text-primary transition-colors shrink-0" />
                                 </div>
                             ))}
                         </div>
@@ -1115,55 +1124,69 @@ export default function Social({ setView }) {
 
             {/* Modal Crear Grupo */}
             {showCreateSquadModal && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl relative">
-                        <button onClick={() => setShowCreateSquadModal(false)} className="absolute top-4 right-4 p-1 text-text-secondary hover:text-white"><X size={20} /></button>
-                        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2"><Shield className="text-accent" /> Crear Grupo</h3>
-                        <form onSubmit={handleCreateSquad} className="space-y-4">
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
+                    <div className="absolute inset-0" onClick={() => setShowCreateSquadModal(false)} />
+                    <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary">
+                        <button onClick={() => setShowCreateSquadModal(false)} className="absolute top-6 right-6 p-2 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
+                        
+                        <div className="w-16 h-16 bg-accent/10 rounded-[20px] flex items-center justify-center mb-6 text-accent ring-2 ring-accent/30 mx-auto">
+                            <Shield size={32} />
+                        </div>
+                        
+                        <h3 className="text-2xl font-bold text-text-primary mb-6 text-center">Crear Grupo</h3>
+                        
+                        <form onSubmit={handleCreateSquad} className="space-y-5">
                             <div>
-                                <label className="block text-xs text-text-secondary mb-1">Nombre del Grupo</label>
-                                <input required type="text" maxLength={50} value={squadForm.name} onChange={e => setSquadForm({ ...squadForm, name: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors" />
+                                <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Nombre del Grupo</label>
+                                <input required type="text" maxLength={50} value={squadForm.name} onChange={e => setSquadForm({ ...squadForm, name: e.target.value })} className={baseInputClasses} placeholder="Escribe el nombre" />
                             </div>
                             <div>
-                                <label className="block text-xs text-text-secondary mb-1">Descripción (Opcional)</label>
-                                <input type="text" maxLength={100} value={squadForm.description} onChange={e => setSquadForm({ ...squadForm, description: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors" />
+                                <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Descripción (Opcional)</label>
+                                <input type="text" maxLength={100} value={squadForm.description} onChange={e => setSquadForm({ ...squadForm, description: e.target.value })} className={baseInputClasses} placeholder="¿De qué trata este grupo?" />
                             </div>
-                            <button type="submit" disabled={!squadForm.name.trim()} className="w-full bg-accent text-white font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all mt-4">Crear</button>
+                            <button type="submit" disabled={!squadForm.name.trim()} className="w-full bg-accent text-white font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Crear Grupo</button>
                         </form>
-                    </div>
+                    </GlassCard>
                 </div>
             )}
 
             {/* Modal Unirse a Grupo */}
             {showJoinSquadModal && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl relative">
-                        <button onClick={() => setShowJoinSquadModal(false)} className="absolute top-4 right-4 p-1 text-text-secondary hover:text-white"><X size={20} /></button>
-                        <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2"><Hash className="text-accent" /> Unirse a un Grupo</h3>
-                        <form onSubmit={handleJoinSquad} className="space-y-4">
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
+                    <div className="absolute inset-0" onClick={() => setShowJoinSquadModal(false)} />
+                    <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary">
+                        <button onClick={() => setShowJoinSquadModal(false)} className="absolute top-6 right-6 p-2 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
+                        
+                        <div className="w-16 h-16 bg-accent/10 rounded-[20px] flex items-center justify-center mb-6 text-accent ring-2 ring-accent/30 mx-auto">
+                            <Hash size={32} />
+                        </div>
+
+                        <h3 className="text-2xl font-bold text-text-primary mb-6 text-center">Unirse a un Grupo</h3>
+                        
+                        <form onSubmit={handleJoinSquad} className="space-y-5">
                             <div>
-                                <label className="block text-xs text-text-secondary mb-1">Código de Invitación</label>
-                                <input required type="text" placeholder="Ej: A1B2C3D4" value={squadForm.invite_code} onChange={e => setSquadForm({ ...squadForm, invite_code: e.target.value.toUpperCase() })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors font-mono uppercase tracking-widest text-center" />
+                                <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Código de Invitación</label>
+                                <input required type="text" placeholder="Ej: A1B2C3D4" value={squadForm.invite_code} onChange={e => setSquadForm({ ...squadForm, invite_code: e.target.value.toUpperCase() })} className={`${baseInputClasses} font-mono uppercase tracking-widest text-center text-lg`} />
                             </div>
-                            <button type="submit" disabled={!squadForm.invite_code.trim()} className="w-full bg-accent text-white font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all mt-4">Unirse</button>
+                            <button type="submit" disabled={!squadForm.invite_code.trim()} className="w-full bg-accent text-white font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Unirse</button>
                         </form>
-                    </div>
+                    </GlassCard>
                 </div>
             )}
 
             {/* --- Header --- */}
-            <header className="mb-6 max-w-3xl mx-auto w-full">
+            <header className="mb-8 max-w-3xl mx-auto w-full">
                 <div className="flex justify-between items-end">
                     <div>
                         <div className="hidden md:flex items-center gap-3">
-                            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">
+                            <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
                                 Comunidad
                             </h1>
-                            <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase">
+                            <span className="px-3 py-1 rounded-[10px] bg-accent/10 text-accent text-xs font-black tracking-widest uppercase mt-1">
                                 BETA
                             </span>
                         </div>
-                        <p className="text-text-tertiary text-sm mt-1">Conecta y compite con otros atletas</p>
+                        <p className="text-text-secondary text-sm sm:text-base font-medium mt-2">Conecta y compite con otros atletas</p>
                     </div>
                 </div>
             </header>
@@ -1175,8 +1198,8 @@ export default function Social({ setView }) {
             />
 
             {/* --- Carrusel de Historias --- */}
-            <section id="social-stories" className="mb-8 overflow-x-auto no-scrollbar pb-2 max-w-3xl mx-auto">
-                <div className="flex items-start gap-4 px-1">
+            <section id="social-stories" className="mb-8 overflow-x-auto no-scrollbar pb-4 pt-2 max-w-3xl mx-auto mask-linear-fade">
+                <div className="flex items-start gap-4 px-2">
                     {/* Mi Historia / Subir */}
                     <StoryBubble
                         user={{
@@ -1219,7 +1242,7 @@ export default function Social({ setView }) {
             </section>
 
             {/* --- Pestañas Horizontales --- */}
-            <div id="social-tabs" className="flex overflow-x-auto no-scrollbar gap-2 mb-6 py-2 px-1 md:justify-center">
+            <div id="social-tabs" className="flex overflow-x-auto no-scrollbar gap-2.5 mb-8 py-2 px-1 -mx-1 md:justify-center mask-linear-fade">
                 <TabButton id="feed" icon={Activity} label="Muro" isActive={activeTab === 'feed'} onClick={changeTab} />
                 <TabButton id="friends" icon={Users} label="Amigos" isActive={activeTab === 'friends'} onClick={changeTab} />
                 <TabButton id="squads" icon={Shield} label="Grupos" isActive={activeTab === 'squads'} onClick={changeTab} />

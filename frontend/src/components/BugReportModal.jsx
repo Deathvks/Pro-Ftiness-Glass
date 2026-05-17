@@ -236,60 +236,60 @@ const BugReportModal = ({ onClose }) => {
     const isValid = category && subject.trim().length > 0 && description.trim().length > 0;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 z-[100] animate-[fade-in_0.2s_ease-out]">
 
             {selectedImageForLightbox && (
                 <div
                     className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
                     onClick={() => setSelectedImageForLightbox(null)}
                 >
-                    <button className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full">
-                        <X size={32} />
+                    <button className="absolute top-6 right-6 p-3 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all active:scale-95">
+                        <X size={24} strokeWidth={2.5} />
                     </button>
                     <img
                         src={selectedImageForLightbox}
-                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-[scale-in_0.2s_ease-out]"
+                        className="max-w-full max-h-[90vh] object-contain rounded-[24px] shadow-2xl animate-[scale-in_0.2s_ease-out]"
                         onClick={(e) => e.stopPropagation()}
                         alt="Vista previa completa"
                     />
                 </div>
             )}
 
-            <div className="bg-bg-primary rounded-2xl border border-glass-border max-w-lg w-full shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-lg w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-[slide-up_0.3s_ease-out]">
 
-                <div className="flex items-center justify-between p-5 border-b border-glass-border text-text-primary">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-red-500/10 rounded-lg">
-                            <Bug className="text-red-400" size={24} />
+                <div className="flex items-center justify-between p-6 sm:p-8 pb-5 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5">
+                    <div className="flex items-center gap-4 text-text-primary">
+                        <div className="p-3 bg-red/10 rounded-[16px] ring-1 ring-red/30 shadow-sm shrink-0">
+                            <Bug className="text-red" size={24} strokeWidth={2} />
                         </div>
-                        <h2 className="text-xl font-bold">Reportar un problema</h2>
+                        <h2 className="text-2xl font-extrabold tracking-tight">Reportar un problema</h2>
                     </div>
-                    <button onClick={handleClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
-                        <X size={20} />
+                    <button 
+                        onClick={handleClose} 
+                        className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-secondary hover:text-text-primary active:scale-95"
+                    >
+                        <X size={20} strokeWidth={2.5} />
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto custom-scrollbar">
-                    <div className="relative mb-6 rounded-xl overflow-hidden">
-                        <div className="absolute inset-0 bg-accent opacity-10 pointer-events-none" />
-                        <div className="relative p-4 flex gap-3 text-left">
-                            <AlertCircle className="text-accent shrink-0" size={20} />
-                            <p className="text-sm text-text-secondary leading-relaxed">
-                                Describe el error con detalle. Se enviará información técnica de tu dispositivo automáticamente.
-                            </p>
-                        </div>
+                <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                    <div className="mb-6 p-4 rounded-[20px] bg-accent/10 ring-1 ring-accent/30 flex gap-3 text-left shadow-sm">
+                        <AlertCircle className="text-accent shrink-0 mt-0.5" size={20} />
+                        <p className="text-sm font-medium text-text-primary leading-relaxed">
+                            Describe el error con detalle. Se enviará información técnica de tu dispositivo automáticamente para ayudarnos a resolverlo.
+                        </p>
                     </div>
 
                     {formError && (
-                        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium flex items-center gap-2 animate-[fade-in_0.3s_ease-out]">
-                            <AlertCircle size={18} className="shrink-0" />
+                        <div className="mb-6 p-4 rounded-[20px] bg-red/10 ring-1 ring-red/30 text-red text-sm font-bold flex items-center gap-3 animate-[fade-in_0.3s_ease-out] shadow-sm">
+                            <AlertCircle size={20} className="shrink-0" strokeWidth={2.5} />
                             <span>{formError}</span>
                         </div>
                     )}
 
-                    <form id="bug-form" onSubmit={handleSubmit} className="space-y-5">
+                    <form id="bug-form" onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium mb-2 text-text-secondary text-left">
+                            <label className="block text-[11px] sm:text-xs font-bold mb-2 text-text-secondary text-left uppercase tracking-wider">
                                 Categoría <span className="text-accent">*</span>
                             </label>
                             <CustomSelect
@@ -297,20 +297,20 @@ const BugReportModal = ({ onClose }) => {
                                 onChange={(val) => { setCategory(val); setFormError(''); }}
                                 options={REPORT_CATEGORIES}
                                 placeholder="Selecciona una categoría"
-                                className="w-full"
+                                className="w-full font-bold"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-2 text-text-secondary text-left">
+                            <label className="block text-[11px] sm:text-xs font-bold mb-2 text-text-secondary text-left uppercase tracking-wider">
                                 Asunto <span className="text-accent">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={subject}
                                 onChange={(e) => { setSubject(e.target.value); setFormError(''); }}
-                                placeholder="Ej: Error al guardar rutina"
-                                className="w-full px-4 py-3 bg-bg-secondary border border-glass-border rounded-xl focus:ring-2 focus:ring-accent outline-none text-text-primary transition-all"
+                                placeholder="Ej: Error al guardar rutina..."
+                                className="w-full px-5 py-4 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] focus:ring-2 focus:ring-accent/50 outline-none text-text-primary transition-all font-bold placeholder:text-text-muted placeholder:font-medium shadow-inner"
                                 disabled={isSubmitting}
                                 maxLength={100}
                                 required
@@ -318,23 +318,23 @@ const BugReportModal = ({ onClose }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-2 text-text-secondary text-left">
+                            <label className="block text-[11px] sm:text-xs font-bold mb-2 text-text-secondary text-left uppercase tracking-wider">
                                 Descripción detallada <span className="text-accent">*</span>
                             </label>
                             <textarea
                                 value={description}
                                 onChange={(e) => { setDescription(e.target.value); setFormError(''); }}
-                                placeholder="Explica qué estabas haciendo cuando ocurrió el error..."
-                                className="w-full px-4 py-3 bg-bg-secondary border border-glass-border rounded-xl focus:ring-2 focus:ring-accent outline-none h-32 resize-none text-text-primary custom-scrollbar transition-all"
+                                placeholder="Explica qué estabas haciendo cuando ocurrió el error paso a paso..."
+                                className="w-full px-5 py-4 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] focus:ring-2 focus:ring-accent/50 outline-none h-32 resize-none text-text-primary custom-scrollbar transition-all font-medium placeholder:text-text-muted shadow-inner"
                                 disabled={isSubmitting}
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="flex justify-between items-center text-sm font-medium mb-2 text-text-secondary">
+                            <label className="flex justify-between items-center text-[11px] sm:text-xs font-bold mb-3 text-text-secondary uppercase tracking-wider">
                                 <span>Capturas (Opcional - Máx 5MB)</span>
-                                <span className={`text-xs ${attachments.length >= MAX_FILES ? 'text-accent' : 'text-text-muted'}`}>
+                                <span className={`text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-md ${attachments.length >= MAX_FILES ? 'bg-red/10 text-red ring-1 ring-red/30' : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10'}`}>
                                     {attachments.length}/{MAX_FILES}
                                 </span>
                             </label>
@@ -353,29 +353,30 @@ const BugReportModal = ({ onClose }) => {
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isSubmitting || attachments.length >= MAX_FILES}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-bg-secondary border border-glass-border border-dashed rounded-xl text-text-secondary hover:text-accent hover:border-accent transition-all disabled:opacity-50"
+                                className="w-full flex items-center justify-center gap-2 px-5 py-4 bg-black/5 dark:bg-white/5 border-2 border-dashed border-black/10 dark:border-white/20 rounded-[20px] text-text-secondary font-bold hover:text-accent hover:border-accent/50 hover:bg-accent/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                             >
-                                <ImagePlus size={20} />
-                                <span className="font-medium">Añadir imágenes</span>
+                                <ImagePlus size={20} strokeWidth={2.5} />
+                                <span>Añadir imágenes</span>
                             </button>
 
                             {attachments.length > 0 && (
                                 <div className="flex flex-wrap gap-3 mt-4">
                                     {attachments.map((item, index) => (
-                                        <div key={index} className="relative group w-20 h-20 shrink-0 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in">
+                                        <div key={index} className="relative group w-20 h-20 shrink-0 rounded-[16px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 cursor-zoom-in bg-bg-primary shadow-sm">
                                             <img
                                                 src={item.preview}
-                                                className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                                 onClick={() => setSelectedImageForLightbox(item.preview)}
                                                 alt={`Adjunto ${index + 1}`}
                                             />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-end p-1 pointer-events-none">
+                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-end p-1.5 pointer-events-none">
                                                 <button
                                                     type="button"
                                                     onClick={(e) => { e.stopPropagation(); removeImage(index); }}
-                                                    className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors pointer-events-auto"
+                                                    className="bg-red text-white p-1.5 rounded-full hover:scale-110 transition-transform pointer-events-auto shadow-md"
+                                                    title="Eliminar imagen"
                                                 >
-                                                    <X size={12} />
+                                                    <X size={14} strokeWidth={2.5} />
                                                 </button>
                                             </div>
                                         </div>
@@ -386,21 +387,26 @@ const BugReportModal = ({ onClose }) => {
                     </form>
                 </div>
 
-                <div className="p-5 border-t border-glass-border bg-bg-secondary/30 rounded-b-2xl flex justify-end gap-3 shrink-0">
-                    <button type="button" onClick={handleClose} className="px-5 py-2.5 text-text-secondary hover:bg-white/5 rounded-xl transition-colors" disabled={isSubmitting}>
+                <div className="p-6 sm:p-8 pt-5 border-t border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
+                    <button 
+                        type="button" 
+                        onClick={handleClose} 
+                        className="px-6 py-3.5 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 rounded-[16px] transition-colors active:scale-95" 
+                        disabled={isSubmitting}
+                    >
                         Cancelar
                     </button>
                     <button
                         type="submit"
                         form="bug-form"
                         disabled={isSubmitting || !isValid}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-accent text-bg-primary font-bold rounded-xl shadow-lg shadow-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className="flex items-center justify-center gap-2 px-6 py-3.5 bg-accent text-white font-bold rounded-[20px] shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all"
                     >
                         {isSubmitting ? (
-                            <div className="w-5 h-5 border-2 border-t-transparent border-bg-primary rounded-full animate-spin" />
+                            <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
                         ) : (
                             <>
-                                <Send size={18} />
+                                <Send size={20} strokeWidth={2.5} />
                                 Enviar Reporte
                             </>
                         )}

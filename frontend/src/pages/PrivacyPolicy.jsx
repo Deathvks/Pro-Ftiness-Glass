@@ -23,17 +23,11 @@ const PrivacyPolicy = ({ onBack }) => {
   const PolicyCard = ({ children, className = "", highlight = false }) => {
     return (
       <div className={`
-        rounded-3xl p-6 transition-all border backdrop-blur-md
+        rounded-[32px] p-6 sm:p-8 transition-all duration-300 backdrop-blur-xl ring-1 shadow-lg hover:-translate-y-1
         ${highlight 
-          // Usamos var(--glass-border) para consistencia total en el borde externo
-          ? 'bg-accent/10 border-[var(--glass-border)]' 
-          : 'bg-glass-base border-[var(--glass-border)] shadow-sm' 
+          ? 'bg-accent/5 ring-accent/30 hover:ring-accent/50 hover:shadow-accent/10' 
+          : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 hover:ring-black/10 dark:hover:ring-white/20' 
         }
-        
-        /* Estilos específicos OLED */
-        [.oled-theme_&]:bg-black 
-        [.oled-theme_&]:border-white/10
-        
         ${className}
       `}>
         {children}
@@ -42,78 +36,72 @@ const PrivacyPolicy = ({ onBack }) => {
   };
 
   return (
-    // z-[110] para estar por encima de todo
     <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto custom-scrollbar transition-colors duration-300">
-      {/* SEO Head: Página pública e importante para Google */}
-      {/* CORRECCIÓN: La ruta debe coincidir con la URL real (/privacy-policy) para evitar el aviso de canónica alternativa */}
       <SEOHead 
         title="Política de Privacidad y Eliminación de Datos - Pro Fitness Glass" 
         description="Conoce cómo protegemos tus datos y los pasos para solicitar la eliminación de tu cuenta."
         route="privacy-policy" 
       />
 
-      <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out]">
+      <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-4 sm:mt-0">
         
         {/* Botón Volver */}
         <button 
           onClick={handleBack} 
-          className="group flex items-center gap-2 text-text-secondary font-bold hover:text-accent transition-all mb-6 px-2 outline-none focus:outline-none"
+          className="flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-8 w-fit active:scale-95"
         >
-          <div className="p-1.5 rounded-full bg-glass-base border border-[var(--glass-border)] group-hover:border-accent/50 group-hover:text-accent transition-colors">
-            <ChevronLeft size={20} />
-          </div>
+          <ChevronLeft size={18} strokeWidth={2.5} />
           <span>Volver</span>
         </button>
         
-        <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-text-primary via-accent to-text-primary mb-4">
+        <div className="text-center mb-12 sm:mb-16 px-2">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-text-primary via-accent to-text-primary mb-6 tracking-tight leading-tight">
             Tu Privacidad Importa
           </h1>
-          <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl font-medium text-text-secondary max-w-2xl mx-auto leading-relaxed">
             En <strong>Pro Fitness Glass</strong>, queremos que te sientas como en casa. Aquí te explicamos de forma sencilla y transparente cómo cuidamos tus datos y cómo puedes ejercer tus derechos.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
 
             {/* --- SECCIÓN DESTACADA: Historias --- */}
             <PolicyCard className="md:col-span-2" highlight={true}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-accent text-white rounded-2xl shadow-lg shadow-accent/30">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3.5 bg-accent text-white rounded-[20px] shadow-lg shadow-accent/30 ring-1 ring-white/20">
                   <Clock size={28} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-2xl font-bold text-text-primary">Historias y Contenido Efímero</h2>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">Historias y Contenido Efímero</h2>
               </div>
               
-              <p className="text-text-secondary mb-6 text-lg leading-relaxed">
+              <p className="text-text-secondary font-medium mb-8 text-lg leading-relaxed max-w-3xl">
                 Las historias son para compartir el momento. Nos aseguramos de que sean realmente temporales y seguras para ti:
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* CAMBIO: Aplicado border-[var(--glass-border)] a las tarjetas internas */}
-                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-[var(--glass-border)] transition-colors">
-                    <div className="flex items-center gap-2 mb-2 text-accent font-bold">
-                        <Clock size={18} /> Duración 24h
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="bg-bg-primary/80 backdrop-blur-md p-6 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm transition-all hover:-translate-y-1">
+                    <div className="flex items-center gap-2 mb-3 text-accent font-extrabold tracking-tight text-lg">
+                        <Clock size={20} strokeWidth={2.5} /> Duración 24h
                     </div>
-                    <p className="text-sm text-text-secondary">
+                    <p className="text-sm font-medium text-text-secondary leading-relaxed">
                         Todo lo que subas se <strong>autodestruye</strong> de nuestros servidores tras 24 horas. Sin copias ocultas.
                     </p>
                 </div>
                 
-                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-[var(--glass-border)] transition-colors">
-                    <div className="flex items-center gap-2 mb-2 text-accent font-bold">
-                        <Users size={18} /> Tú Decides
+                <div className="bg-bg-primary/80 backdrop-blur-md p-6 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm transition-all hover:-translate-y-1">
+                    <div className="flex items-center gap-2 mb-3 text-accent font-extrabold tracking-tight text-lg">
+                        <Users size={20} strokeWidth={2.5} /> Tú Decides
                     </div>
-                    <p className="text-sm text-text-secondary">
+                    <p className="text-sm font-medium text-text-secondary leading-relaxed">
                         Elige antes de publicar: <strong>"Público"</strong> para motivar a todos o <strong>"Solo Amigos"</strong> para tu círculo cercano.
                     </p>
                 </div>
                 
-                <div className="bg-bg-primary/50 p-4 rounded-2xl border border-[var(--glass-border)] transition-colors">
-                    <div className="flex items-center gap-2 mb-2 text-accent font-bold">
-                        <HeartHandshake size={18} /> Respeto
+                <div className="bg-bg-primary/80 backdrop-blur-md p-6 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm transition-all hover:-translate-y-1">
+                    <div className="flex items-center gap-2 mb-3 text-accent font-extrabold tracking-tight text-lg">
+                        <HeartHandshake size={20} strokeWidth={2.5} /> Respeto
                     </div>
-                    <p className="text-sm text-text-secondary">
+                    <p className="text-sm font-medium text-text-secondary leading-relaxed">
                         Mantén la comunidad segura. No subas contenido ofensivo o ilegal. Cuidémonos entre todos.
                     </p>
                 </div>
@@ -122,82 +110,100 @@ const PrivacyPolicy = ({ onBack }) => {
 
             {/* --- TARJETA: GPS y Cardio --- */}
             <PolicyCard>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
-                  <MapPin size={24} />
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm">
+                  <MapPin size={24} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-xl font-bold text-text-primary">Ubicación GPS</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Ubicación GPS</h2>
               </div>
-              <p className="text-text-secondary text-sm leading-relaxed mb-3">
+              <p className="text-text-secondary font-medium text-sm leading-relaxed mb-4">
                 Solo usamos tu ubicación cuando activas el modo <strong>"Cardio"</strong> para registrar tu ruta, velocidad y distancia con precisión.
               </p>
-              <ul className="text-sm text-text-secondary space-y-2 list-disc list-inside marker:text-accent">
-                <li>El GPS se apaga automáticamente al terminar el ejercicio.</li>
-                <li>El mapa de tu recorrido se guarda de forma <strong>privada</strong> en tu historial.</li>
+              <ul className="text-sm font-medium text-text-secondary space-y-3 list-none">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span>El GPS se apaga automáticamente al terminar el ejercicio.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span>El mapa de tu recorrido se guarda de forma <strong>privada</strong> en tu historial.</span>
+                </li>
               </ul>
             </PolicyCard>
 
             {/* --- TARJETA: Almacenamiento Local --- */}
             <PolicyCard>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
-                  <Cookie size={24} />
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm">
+                  <Cookie size={24} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-xl font-bold text-text-primary">Tus Preferencias</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Tus Preferencias</h2>
               </div>
-              <p className="text-text-secondary text-sm leading-relaxed mb-3">
+              <p className="text-text-secondary font-medium text-sm leading-relaxed mb-4">
                 Usamos la memoria de tu dispositivo para recordar cosas simples y mejorar tu experiencia, sin rastreo publicitario.
               </p>
-              <ul className="text-sm text-text-secondary space-y-2 list-disc list-inside marker:text-accent">
-                <li><strong>Personalización:</strong> Tu tema (Oscuro/Claro) y colores favoritos.</li>
-                <li><strong>Sesión Activa:</strong> Para que no tengas que escribir tu contraseña cada vez que entras.</li>
+              <ul className="text-sm font-medium text-text-secondary space-y-3 list-none">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span><strong>Personalización:</strong> Tu tema (Oscuro/Claro) y colores favoritos.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span><strong>Sesión Activa:</strong> Para que no tengas que escribir tu contraseña cada vez que entras.</span>
+                </li>
               </ul>
             </PolicyCard>
 
             {/* --- TARJETA: Google Auth --- */}
             <PolicyCard>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
-                  <Globe size={24} />
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm">
+                  <Globe size={24} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-xl font-bold text-text-primary">Acceso con Google</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Acceso con Google</h2>
               </div>
-              <p className="text-text-secondary text-sm leading-relaxed mb-3">
+              <p className="text-text-secondary font-medium text-sm leading-relaxed mb-4">
                 Si usas Google para entrar, utilizamos su sistema seguro. Nosotros <strong>nunca</strong> vemos ni guardamos tu contraseña de Google.
               </p>
-              <ul className="text-sm text-text-secondary space-y-2 list-disc list-inside marker:text-accent">
-                <li>Solo recibimos tu nombre, email y foto para crear tu perfil.</li>
-                <li>La seguridad depende directamente de los estándares de Google.</li>
+              <ul className="text-sm font-medium text-text-secondary space-y-3 list-none">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span>Solo recibimos tu nombre, email y foto para crear tu perfil.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span>La seguridad depende directamente de los estándares de Google.</span>
+                </li>
               </ul>
             </PolicyCard>
 
             {/* --- TARJETA: Notificaciones --- */}
             <PolicyCard>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
-                  <Bell size={24} />
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm">
+                  <Bell size={24} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-xl font-bold text-text-primary">Notificaciones</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Notificaciones</h2>
               </div>
-              <p className="text-text-secondary text-sm leading-relaxed mb-3">
-                Solo te avisaremos para ayudarte a cumplir tus metas. Puedes desactivarlas cuando quieras.
+              <p className="text-text-secondary font-medium text-sm leading-relaxed mb-5">
+                Solo te avisaremos para ayudarte a cumplir tus metas. Puedes desactivarlas cuando quieras desde los ajustes.
               </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-[var(--glass-border)]">Recordatorios</span>
-                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-[var(--glass-border)]">Temporizador</span>
-                <span className="text-xs bg-bg-primary px-2 py-1 rounded-md text-text-tertiary border border-[var(--glass-border)]">Logros</span>
+              <div className="flex flex-wrap gap-2.5">
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-[10px] text-text-secondary ring-1 ring-black/5 dark:ring-white/10 shadow-sm">Recordatorios</span>
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-[10px] text-text-secondary ring-1 ring-black/5 dark:ring-white/10 shadow-sm">Temporizador</span>
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-[10px] text-text-secondary ring-1 ring-black/5 dark:ring-white/10 shadow-sm">Logros</span>
               </div>
             </PolicyCard>
 
             {/* --- TARJETA: Cámara --- */}
             <PolicyCard>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
-                  <Camera size={24} />
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm">
+                  <Camera size={24} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-xl font-bold text-text-primary">Cámara y Fotos</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Cámara y Fotos</h2>
               </div>
-              <p className="text-text-secondary text-sm leading-relaxed">
+              <p className="text-text-secondary font-medium text-sm leading-relaxed">
                 Necesitamos la cámara para escanear alimentos o subir fotos de progreso. Las fotos que subes a tu diario son privadas y se guardan de forma segura solo para ti.
               </p>
             </PolicyCard>
@@ -205,46 +211,49 @@ const PrivacyPolicy = ({ onBack }) => {
             {/* --- TARJETA: Eliminación (Full Width) --- */}
             <div className="md:col-span-2">
                 <PolicyCard>
-                    <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
-                                <Trash2 size={24} />
-                                </div>
-                                <h2 className="text-xl font-bold text-text-primary">Eliminación de Cuenta y Datos</h2>
-                            </div>
-                            
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="font-bold text-text-primary mb-2">Opción 1: Desde la App (Instantáneo)</h3>
-                                    <p className="text-text-secondary text-sm mb-2">
-                                        Si tienes la aplicación instalada, sigue estos pasos para borrar tu cuenta y todos tus datos (historial, fotos, perfil) de forma inmediata e irreversible:
-                                    </p>
-                                    <ol className="list-decimal list-inside text-sm text-text-secondary space-y-1 ml-2">
-                                        <li>Abre <strong>Pro Fitness Glass</strong> y ve a tu <strong>Perfil</strong>.</li>
-                                        <li>Toca el botón de <strong>Ajustes (⚙️)</strong> o <strong>Editar Perfil</strong>.</li>
-                                        <li>Baja hasta el final y selecciona <strong>"Eliminar Cuenta"</strong>.</li>
-                                        <li>Confirma la acción.</li>
-                                    </ol>
-                                </div>
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="p-3 bg-red/10 text-red rounded-[16px] ring-1 ring-red/30 shadow-sm shrink-0">
+                        <Trash2 size={24} strokeWidth={2.5} />
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Eliminación de Cuenta y Datos</h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                        <div className="bg-bg-primary/50 p-6 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col h-full">
+                            <h3 className="font-extrabold text-text-primary mb-3 text-lg">Opción 1: Desde la App (Instantáneo)</h3>
+                            <p className="text-text-secondary font-medium text-sm mb-4 leading-relaxed">
+                                Si tienes la aplicación instalada, sigue estos pasos para borrar tu cuenta y todos tus datos (historial, fotos, perfil) de forma inmediata e irreversible:
+                            </p>
+                            <ol className="list-decimal list-inside text-sm font-bold text-text-secondary space-y-2.5 ml-2 marker:text-accent mt-auto">
+                                <li>Abre <strong className="text-text-primary">Pro Fitness Glass</strong> y ve a tu Perfil.</li>
+                                <li>Toca el botón de <strong className="text-text-primary">Ajustes</strong> o Editar Perfil.</li>
+                                <li>Baja hasta el final y selecciona <strong className="text-red">"Eliminar Cuenta"</strong>.</li>
+                                <li>Confirma la acción introduciendo tu contraseña.</li>
+                            </ol>
+                        </div>
 
-                                <div className="border-t border-[var(--glass-border)] pt-4">
-                                    <h3 className="font-bold text-text-primary mb-2">Opción 2: Solicitud Web (Sin acceso a la App)</h3>
-                                    <p className="text-text-secondary text-sm mb-2">
-                                        Si ya no tienes la aplicación o no puedes acceder, puedes solicitar la eliminación manual de tus datos:
-                                    </p>
-                                    <ul className="text-sm text-text-secondary space-y-2 ml-2">
-                                        <li>
-                                            Envía un correo a <a href="mailto:profitnessglass@gmail.com" className="text-accent hover:underline font-bold">profitnessglass@gmail.com</a>
-                                        </li>
-                                        <li>Asunto: <strong>"Solicitud de Eliminación de Datos"</strong></li>
-                                        <li>Incluye tu nombre de usuario o el email con el que te registraste.</li>
-                                    </ul>
-                                    <p className="text-xs text-text-tertiary mt-2 italic">
-                                        Procesaremos tu solicitud y eliminaremos todos tus datos en un plazo máximo de 30 días, confirmándote por correo cuando se haya completado.
-                                    </p>
-                                </div>
-                            </div>
+                        <div className="bg-bg-primary/50 p-6 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col h-full">
+                            <h3 className="font-extrabold text-text-primary mb-3 text-lg">Opción 2: Solicitud Web (Sin acceso)</h3>
+                            <p className="text-text-secondary font-medium text-sm mb-4 leading-relaxed">
+                                Si ya no tienes la aplicación o no puedes acceder, puedes solicitar la eliminación manual de tus datos:
+                            </p>
+                            <ul className="text-sm font-bold text-text-secondary space-y-2.5 ml-2 list-none mb-4">
+                                <li className="flex items-start gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                                    <span>Envía un correo a <a href="mailto:profitnessglass@gmail.com" className="text-accent hover:underline">profitnessglass@gmail.com</a></span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                                    <span>Asunto: <strong className="text-text-primary">"Solicitud de Eliminación de Datos"</strong></span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                                    <span>Incluye tu nombre de usuario o el email con el que te registraste.</span>
+                                </li>
+                            </ul>
+                            <p className="text-[11px] font-medium text-text-tertiary mt-auto p-3 bg-black/5 dark:bg-white/5 rounded-[12px] leading-relaxed">
+                                Procesaremos tu solicitud y eliminaremos todos tus datos en un plazo máximo de 30 días, confirmándote por correo cuando se haya completado.
+                            </p>
                         </div>
                     </div>
                 </PolicyCard>
@@ -252,33 +261,33 @@ const PrivacyPolicy = ({ onBack }) => {
 
             {/* --- TARJETA: Legal --- */}
             <PolicyCard>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-accent/20 text-accent rounded-xl">
-                  <Shield size={24} />
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm">
+                  <Shield size={24} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-xl font-bold text-text-primary">Responsabilidad</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Responsabilidad</h2>
               </div>
-              <p className="text-text-secondary text-sm leading-relaxed">
-                <strong>Pro Fitness Glass</strong> es una herramienta para ayudarte, pero no sustituye a un médico. Úsala con responsabilidad y consulta a un profesional antes de cambios drásticos en tu salud.
+              <p className="text-text-secondary font-medium text-sm leading-relaxed">
+                <strong>Pro Fitness Glass</strong> es una herramienta para ayudarte, pero no sustituye a un médico. Úsala con responsabilidad y consulta a un profesional antes de realizar cambios drásticos en tu salud o alimentación.
               </p>
             </PolicyCard>
 
             {/* --- TARJETA: Contacto --- */}
-            <div className="bg-gradient-to-br from-bg-secondary to-bg-primary border border-[var(--glass-border)] rounded-3xl p-6 flex flex-col justify-center items-center text-center hover:border-accent/30 transition-colors [.oled-theme_&]:bg-black [.oled-theme_&]:border-white/20">
-              <div className="p-3 bg-accent/20 text-accent rounded-full mb-3">
-                <Mail size={24} />
+            <div className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] p-8 flex flex-col justify-center items-center text-center hover:ring-accent/30 hover:shadow-lg transition-all duration-300 backdrop-blur-xl">
+              <div className="p-4 bg-accent/10 text-accent rounded-[20px] mb-5 ring-1 ring-accent/30 shadow-sm">
+                <Mail size={32} strokeWidth={2} />
               </div>
-              <h2 className="text-lg font-bold text-text-primary mb-1">¿Tienes dudas?</h2>
-              <p className="text-xs text-text-secondary mb-3">Estamos aquí para ayudarte en lo que necesites.</p>
-              <a href="mailto:profitnessglass@gmail.com" className="text-accent font-bold text-lg hover:underline">
+              <h2 className="text-2xl font-extrabold text-text-primary mb-2 tracking-tight">¿Tienes dudas?</h2>
+              <p className="text-sm font-medium text-text-secondary mb-6 max-w-sm">Estamos aquí para ayudarte en lo que necesites. Escríbenos en cualquier momento.</p>
+              <a href="mailto:profitnessglass@gmail.com" className="px-6 py-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-full text-accent font-extrabold text-lg sm:text-xl shadow-sm hover:scale-105 active:scale-95 transition-all">
                 profitnessglass@gmail.com
               </a>
             </div>
 
         </div>
         
-        <div className="mt-10 text-center">
-            <p className="text-xs text-text-tertiary opacity-50">
+        <div className="mt-16 mb-8 text-center">
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-text-tertiary opacity-60">
                 Última actualización: {currentDate}
             </p>
         </div>

@@ -127,7 +127,6 @@ export default function App() {
     return Capacitor.isNativePlatform() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   }, []);
 
-  // --- NUEVO VIGILANTE DE TOKEN INSTANTÁNEO ---
   useEffect(() => {
     if (!isAuthenticated || sessionExpired) return;
 
@@ -138,11 +137,8 @@ export default function App() {
       }
     };
 
-    // Escuchar cambios desde otras pestañas
     window.addEventListener('storage', checkTokenExistence);
-    // Escuchar foco de ventana (ej. salir de F12 a la web)
     window.addEventListener('focus', checkTokenExistence);
-    // Intervalo de 1 segundo para hacerlo verdaderamente instantáneo en la misma pestaña
     const intervalId = setInterval(checkTokenExistence, 1000);
 
     return () => {
@@ -151,7 +147,6 @@ export default function App() {
       clearInterval(intervalId);
     };
   }, [isAuthenticated, sessionExpired]);
-  // --- FIN NUEVO VIGILANTE ---
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -414,7 +409,6 @@ export default function App() {
             />
         )}
 
-        {/* --- MODAL GLOBAL DE PERMISOS --- */}
         <PermissionModal 
             isOpen={showGlobalPermissionModal} 
             onClose={() => setShowGlobalPermissionModal(false)} 
@@ -489,25 +483,25 @@ export default function App() {
       <APKUpdater />
       <AndroidDownloadPrompt />
 
-      {/* --- INICIO MODAL DE SESIÓN CADUCADA --- */}
       {sessionExpired && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-bg-primary p-6 rounded-2xl shadow-xl max-w-sm w-full text-center border border-bg-secondary flex flex-col items-center">
-            <AlertTriangle size={48} className="text-red-500 mb-4" />
-            <h2 className="text-xl font-bold text-text-primary mb-2">Sesión Caducada</h2>
-            <p className="text-text-secondary mb-6 text-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-md p-4">
+          <div className="glass p-8 max-w-sm w-full text-center flex flex-col items-center animate-fade-in-up">
+            <AlertTriangle size={48} className="text-red-500 mb-4 drop-shadow-md" />
+            <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary mb-2 tracking-tight">
+              Sesión Caducada
+            </h2>
+            <p className="text-text-secondary mb-8 text-[15px] leading-relaxed">
               Tu sesión ha expirado por seguridad o has cerrado sesión. Por favor, recarga para continuar.
             </p>
             <button 
               onClick={() => window.location.reload()}
-              className="w-full bg-accent text-white font-bold py-3 px-4 rounded-xl active:scale-95 transition-all"
+              className="w-full bg-accent text-bg-primary font-bold py-3.5 px-4 rounded-2xl active:scale-95 transition-all shadow-lg shadow-accent/30"
             >
               Recargar Aplicación
             </button>
           </div>
         </div>
       )}
-      {/* --- FIN MODAL DE SESIÓN CADUCADA --- */}
 
       <Routes>
         <Route path="/privacy" element={

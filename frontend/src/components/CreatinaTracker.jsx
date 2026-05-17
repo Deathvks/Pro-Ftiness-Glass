@@ -125,10 +125,10 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
     };
 
     const getStreakColor = (streak) => {
-        if (streak >= 30) return 'text-green-400';
-        if (streak >= 14) return 'text-blue-400';
-        if (streak >= 7) return 'text-yellow-400';
-        return 'text-gray-400';
+        if (streak >= 30) return 'text-green';
+        if (streak >= 14) return 'text-blue-500';
+        if (streak >= 7) return 'text-yellow-500';
+        return 'text-text-muted';
     };
 
     useEffect(() => {
@@ -216,74 +216,144 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[100]">
-                <div className="bg-bg-primary rounded-2xl border border-glass-border max-w-5xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl">
-                    <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-b border-glass-border">
-                        <div className="flex items-center gap-3">
-                            <Zap className="text-accent" size={28} />
-                            <h2 className="text-xl sm:text-2xl font-bold">Seguimiento de Creatina</h2>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-[fade-in_0.2s_ease-out]">
+                <div className="bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-5xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
+                    
+                    <div className="flex-shrink-0 flex items-center justify-between p-6 sm:p-8 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-accent/10 rounded-[16px] ring-1 ring-accent/30 text-accent shadow-sm">
+                                <Zap size={24} strokeWidth={2.5} />
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-text-primary">Creatina</h2>
                         </div>
-                        <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors"><X size={24} /></button>
+                        <button onClick={onClose} className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-secondary hover:text-text-primary active:scale-95">
+                            <X size={20} strokeWidth={2.5} />
+                        </button>
                     </div>
 
-                    <div className="flex-grow overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-6 custom-scrollbar">
-                        <div className="space-y-4 sm:space-y-6">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                                <GlassCard className="p-3 sm:p-4 text-center"><div className="flex items-center justify-center mb-2"><Calendar className="text-blue-400" size={24} /></div><p className="text-xl sm:text-2xl font-bold">{stats.totalDays}</p><p className="text-xs sm:text-sm text-text-muted">Días totales</p></GlassCard>
-                                <GlassCard className="p-3 sm:p-4 text-center"><div className="flex items-center justify-center mb-2"><TrendingUp className={getStreakColor(stats.currentStreak)} size={24} /></div><p className={`text-xl sm:text-2xl font-bold ${getStreakColor(stats.currentStreak)}`}>{stats.currentStreak}</p><p className="text-xs sm:text-sm text-text-muted">Racha actual</p></GlassCard>
-                                <GlassCard className="p-3 sm:p-4 text-center"><div className="flex items-center justify-center mb-2"><Zap className="text-accent" size={24} /></div><p className="text-xl sm:text-2xl font-bold">{stats.averageGrams.toFixed(1)}g</p><p className="text-xs sm:text-sm text-text-muted">Promedio</p></GlassCard>
-                                <GlassCard className="p-3 sm:p-4 text-center"><div className="flex items-center justify-center mb-2"><Calendar className="text-green-400" size={24} /></div><p className="text-xl sm:text-2xl font-bold">{stats.thisWeekDays}/7</p><p className="text-xs sm:text-sm text-text-muted">Esta semana</p></GlassCard>
+                    <div className="flex-grow overflow-y-auto p-6 sm:p-8 pb-24 sm:pb-8 custom-scrollbar">
+                        <div className="space-y-6 sm:space-y-8">
+                            
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
+                                <GlassCard className="glass p-5 text-center rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col items-center justify-center gap-2">
+                                    <Calendar className="text-blue-500 mb-1" size={28} strokeWidth={1.5} />
+                                    <p className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{stats.totalDays}</p>
+                                    <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">Días totales</p>
+                                </GlassCard>
+                                <GlassCard className="glass p-5 text-center rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col items-center justify-center gap-2">
+                                    <TrendingUp className={`${getStreakColor(stats.currentStreak)} mb-1`} size={28} strokeWidth={1.5} />
+                                    <p className={`text-2xl sm:text-3xl font-black tracking-tight ${getStreakColor(stats.currentStreak)}`}>{stats.currentStreak}</p>
+                                    <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">Racha actual</p>
+                                </GlassCard>
+                                <GlassCard className="glass p-5 text-center rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col items-center justify-center gap-2">
+                                    <Zap className="text-accent mb-1" size={28} strokeWidth={1.5} />
+                                    <p className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{stats.averageGrams.toFixed(1)}<span className="text-lg">g</span></p>
+                                    <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">Promedio</p>
+                                </GlassCard>
+                                <GlassCard className="glass p-5 text-center rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col items-center justify-center gap-2">
+                                    <Calendar className="text-green mb-1" size={28} strokeWidth={1.5} />
+                                    <p className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{stats.thisWeekDays}/7</p>
+                                    <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">Esta semana</p>
+                                </GlassCard>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                                <GlassCard className="p-4 sm:p-6">
-                                    <h3 className="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2"><Calendar size={20} />{formatDateForDisplay(selectedDate)}</h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                                
+                                {/* Formulario para añadir toma */}
+                                <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                                    <h3 className="text-lg sm:text-xl font-extrabold mb-6 flex items-center gap-2 text-text-primary tracking-tight">
+                                        <Calendar size={20} className="text-accent" />
+                                        {formatDateForDisplay(selectedDate)}
+                                    </h3>
+                                    
                                     {dailyLogs.length < 2 ? (
-                                        <form onSubmit={handleSubmit} className="space-y-4">
+                                        <form onSubmit={handleSubmit} className="space-y-5">
                                             <div>
-                                                <label className="block text-sm font-medium mb-2">Añadir nueva toma ({dailyLogs.length + 1} de 2)</label>
-                                                <input type="number" step="0.1" min="0.1" value={grams} onChange={(e) => setGrams(e.target.value)} className="w-full px-4 py-2 bg-bg-secondary border border-glass-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" placeholder="Ej: 5.0" disabled={isSubmitting} />
+                                                <label className="block text-[11px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 px-1">
+                                                    Añadir nueva toma ({dailyLogs.length + 1} de 2)
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.1" 
+                                                    min="0.1" 
+                                                    value={grams} 
+                                                    onChange={(e) => setGrams(e.target.value)} 
+                                                    className="w-full px-5 py-4 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-accent/50 text-text-primary font-bold placeholder:text-text-muted transition-all shadow-inner" 
+                                                    placeholder="Ej: 5.0" 
+                                                    disabled={isSubmitting} 
+                                                />
                                             </div>
-                                            <div className="flex gap-3">
-                                                <button type="submit" disabled={isSubmitting || !grams} className="flex items-center gap-2 px-4 py-2 bg-accent text-bg-secondary rounded-lg hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Plus size={16} />{isSubmitting ? 'Guardando...' : 'Añadir Toma'}</button>
+                                            <div className="pt-2">
+                                                <button 
+                                                    type="submit" 
+                                                    disabled={isSubmitting || !grams} 
+                                                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-accent text-white font-bold rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20"
+                                                >
+                                                    <Plus size={20} strokeWidth={2.5} />
+                                                    {isSubmitting ? 'Guardando...' : 'Añadir Toma'}
+                                                </button>
                                             </div>
                                         </form>
                                     ) : (
-                                        <div className="text-center py-6"><p className="font-semibold">Límite diario alcanzado</p><p className="text-sm text-text-muted">Has registrado las 2 tomas de hoy.</p></div>
+                                        <div className="text-center py-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+                                            <p className="font-extrabold text-lg text-text-primary mb-1">Límite diario alcanzado</p>
+                                            <p className="text-sm font-medium text-text-secondary">Has registrado las 2 tomas de hoy.</p>
+                                        </div>
                                     )}
                                 </GlassCard>
 
-                                <GlassCard className="p-4 sm:p-6">
-                                    <h3 className="text-lg sm:text-xl font-bold mb-4">Historial Reciente</h3>
+                                {/* Historial Reciente */}
+                                <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col">
+                                    <h3 className="text-lg sm:text-xl font-extrabold mb-6 text-text-primary tracking-tight">Historial Reciente</h3>
+                                    
                                     {isLoading ? (
-                                        <div className="text-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div><p className="text-text-muted mt-2">Cargando...</p></div>
+                                        <div className="flex-1 flex flex-col justify-center items-center py-10">
+                                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-transparent border-accent mx-auto"></div>
+                                            <p className="text-text-secondary font-bold mt-4">Cargando...</p>
+                                        </div>
                                     ) : creatinaLogs.length > 0 ? (
-                                        <>
-                                            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                        <div className="flex-1 flex flex-col">
+                                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar flex-1">
                                                 {paginatedLogs.map((log) => (
-                                                    <div key={log.id} className="flex justify-between items-center p-3 bg-bg-secondary rounded-lg border border-glass-border">
+                                                    <div key={log.id} className="flex justify-between items-center p-4 bg-black/5 dark:bg-white/5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 transition-all hover:shadow-sm">
                                                         <div>
-                                                            <p className="font-medium text-sm sm:text-base">{formatDateToShort(log.log_date)}</p>
-                                                            <p className="text-xs sm:text-sm text-text-muted">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' })}</p>
+                                                            <p className="font-extrabold text-sm sm:text-base text-text-primary">{formatDateToShort(log.log_date)}</p>
+                                                            <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mt-0.5">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' })}</p>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <p className="font-bold text-accent text-sm sm:text-base">{log.grams}g</p>
-                                                            <button onClick={() => handleEditLog(log)} className="p-1 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"><Edit size={16} /></button>
-                                                            <button onClick={() => handleDeleteClick(log)} className="p-1 text-red-400 hover:bg-red-500/20 rounded transition-colors"><Trash2 size={16} /></button>
+                                                        <div className="flex items-center gap-4">
+                                                            <p className="font-black text-accent text-lg sm:text-xl font-mono">{log.grams}g</p>
+                                                            <div className="flex items-center gap-1.5 border-l border-black/10 dark:border-white/20 pl-3">
+                                                                <button onClick={() => handleEditLog(log)} className="p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95" title="Editar">
+                                                                    <Edit size={16} strokeWidth={2.5} />
+                                                                </button>
+                                                                <button onClick={() => handleDeleteClick(log)} className="p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95" title="Eliminar">
+                                                                    <Trash2 size={16} strokeWidth={2.5} />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
                                             </div>
+                                            
                                             {totalPages > 1 && (
-                                                <div className="flex justify-center items-center gap-4 mt-4">
-                                                    <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="p-2 rounded-full hover:bg-white/10 disabled:opacity-50 transition"><ChevronLeft /></button>
-                                                    <span className="text-sm text-text-secondary">Página {currentPage} de {totalPages}</span>
-                                                    <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="p-2 rounded-full hover:bg-white/10 disabled:opacity-50 transition"><ChevronRight /></button>
+                                                <div className="flex justify-between items-center mt-6 pt-4 border-t border-black/5 dark:border-white/10 shrink-0">
+                                                    <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:text-text-primary disabled:opacity-30 transition-all active:scale-95">
+                                                        <ChevronLeft size={18} strokeWidth={2.5} />
+                                                    </button>
+                                                    <span className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest">Página {currentPage} de {totalPages}</span>
+                                                    <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:text-text-primary disabled:opacity-30 transition-all active:scale-95">
+                                                        <ChevronRight size={18} strokeWidth={2.5} />
+                                                    </button>
                                                 </div>
                                             )}
-                                        </>
+                                        </div>
                                     ) : (
-                                        <div className="text-center py-8 text-text-muted"><Zap size={48} className="mx-auto mb-4 opacity-50" /><p>No hay registros</p><p className="text-sm">¡Comienza tu seguimiento!</p></div>
+                                        <div className="flex-1 flex flex-col justify-center items-center py-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+                                            <Zap size={40} className="text-text-muted opacity-50 mb-3" strokeWidth={1.5} />
+                                            <p className="font-extrabold text-text-primary mb-1">No hay registros</p>
+                                            <p className="text-sm font-medium text-text-secondary">¡Comienza tu seguimiento!</p>
+                                        </div>
                                     )}
                                 </GlassCard>
                             </div>
@@ -292,25 +362,56 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                 </div>
             </div>
 
+            {/* Modal de Edición */}
             {showEditModal && editingLog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110]">
-                    <div className="bg-bg-primary rounded-xl border border-glass-border max-w-md w-full shadow-2xl">
-                        <div className="flex items-center justify-between p-6 border-b border-glass-border"><h3 className="text-xl font-bold">Editar Registro</h3><button onClick={handleCloseEditModal} className="p-2 rounded-full hover:bg-white/10"><X size={20} /></button></div>
-                        <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
-                            <div><label className="block text-sm font-medium mb-2">Fecha</label><p className="bg-bg-secondary px-3 py-2 rounded-lg border border-glass-border">{formatDateForDisplay(editingLog.log_date)}</p></div>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[110] animate-[fade-in_0.2s_ease-out]">
+                    <div className="bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-md w-full shadow-2xl animate-[slide-up_0.2s_ease-out]">
+                        
+                        <div className="flex items-center justify-between p-6 sm:p-8 pb-5 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
+                            <h3 className="text-xl font-extrabold text-text-primary tracking-tight">Editar Registro</h3>
+                            <button onClick={handleCloseEditModal} className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-secondary hover:text-text-primary active:scale-95">
+                                <X size={20} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleSaveEdit} className="p-6 sm:p-8 space-y-6">
                             <div>
-                                <label className="block text-sm font-medium mb-2">Gramos de creatina</label>
-                                <input type="number" step="0.1" min="0.1" value={editGrams} onChange={(e) => setEditGrams(e.target.value)} className="w-full px-4 py-2 bg-bg-secondary border border-glass-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" required autoFocus />
+                                <label className="block text-[11px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 px-1">Fecha</label>
+                                <p className="bg-black/5 dark:bg-white/5 px-5 py-4 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 font-bold text-text-primary cursor-not-allowed opacity-80">
+                                    {formatDateForDisplay(editingLog.log_date)}
+                                </p>
                             </div>
-                            <div className="flex gap-3 pt-4">
-                                <button type="submit" disabled={isSubmitting || !editGrams} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-accent text-bg-secondary rounded-lg hover:bg-accent/90 disabled:opacity-50"><Save size={16} />{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
-                                <button type="button" onClick={handleCloseEditModal} disabled={isSubmitting} className="px-4 py-2 bg-gray-500/20 rounded-lg hover:bg-gray-500/30">Cancelar</button>
+                            
+                            <div>
+                                <label className="block text-[11px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 px-1">Gramos de creatina</label>
+                                <input 
+                                    type="number" 
+                                    step="0.1" 
+                                    min="0.1" 
+                                    value={editGrams} 
+                                    onChange={(e) => setEditGrams(e.target.value)} 
+                                    className="w-full px-5 py-4 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-accent/50 text-text-primary font-bold transition-all shadow-inner" 
+                                    required 
+                                    autoFocus 
+                                />
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-black/5 dark:border-white/10 mt-4">
+                                <button type="button" onClick={handleCloseEditModal} disabled={isSubmitting} className="w-full sm:flex-1 px-6 py-4 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95">
+                                    Cancelar
+                                </button>
+                                <button type="submit" disabled={isSubmitting || !editGrams} className="w-full sm:flex-[2] flex items-center justify-center gap-2 px-6 py-4 bg-accent text-white font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 transition-all active:scale-95 shadow-lg shadow-accent/20">
+                                    <Save size={20} strokeWidth={2.5} />
+                                    {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+                                </button>
                             </div>
                         </form>
+
                     </div>
                 </div>
             )}
 
+            {/* Modal de Confirmación */}
             {logToDelete && (
                 <ConfirmationModal
                     message={`¿Eliminar registro de ${logToDelete.grams}g?`}

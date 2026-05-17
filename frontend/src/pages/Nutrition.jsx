@@ -32,16 +32,16 @@ const DateNavigator = ({ selectedDate, onDateChange }) => {
 
     return (
         <div id="date-navigator" className="flex items-center justify-between mb-8 mt-6 sm:mt-0">
-            <button onClick={() => changeDay(-1)} className="p-2 rounded-full hover:bg-white/10 transition">
+            <button onClick={() => changeDay(-1)} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
                 <ChevronLeft />
             </button>
             <div className="text-center">
-                <p className="text-xl font-bold">
+                <p className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
                     {formattedDate}
                 </p>
-                {isToday && <span className="text-xs font-semibold text-accent">HOY</span>}
+                {isToday && <span className="text-[10px] font-black text-accent uppercase tracking-widest mt-1 block">HOY</span>}
             </div>
-            <button onClick={() => changeDay(1)} disabled={isToday} className="p-2 rounded-full hover:bg-white/10 transition disabled:opacity-50">
+            <button onClick={() => changeDay(1)} disabled={isToday} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50">
                 <ChevronRight />
             </button>
         </div>
@@ -77,16 +77,16 @@ const MealImage = ({ src, alt, className, onClick }) => {
     if (!imgSrc || hasError) {
         return (
             <div
-                className={`flex-shrink-0 bg-bg-secondary/50 overflow-hidden border border-glass-border flex items-center justify-center ${className}`}
+                className={`flex-shrink-0 bg-black/5 dark:bg-white/5 overflow-hidden flex items-center justify-center rounded-[16px] ${className}`}
                 onClick={onClick}
             >
-                <ImageIcon size={20} className="text-text-muted opacity-70" />
+                <ImageIcon size={20} className="text-text-muted opacity-50" />
             </div>
         );
     }
 
     return (
-        <div className={`flex-shrink-0 bg-bg-primary overflow-hidden border border-glass-border ${className}`} onClick={onClick}>
+        <div className={`flex-shrink-0 bg-black/5 dark:bg-white/5 overflow-hidden rounded-[16px] shadow-sm ${className}`} onClick={onClick}>
             <img
                 src={imgSrc}
                 alt={alt}
@@ -540,30 +540,30 @@ const Nutrition = ({ setView }) => {
             </Helmet>
 
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 mt-10 md:mt-0 gap-4">
-                <h1 id="nutrition-header" className="hidden md:block text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary">Nutrición</h1>
+                <h1 id="nutrition-header" className="hidden md:block text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">Nutrición</h1>
             </div>
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
 
             {isLoading && !isSubmitting ? (
-                <div className="flex justify-center items-center py-10"><Spinner size={40} /></div>
+                <div className="flex justify-center items-center py-20"><Spinner size={40} /></div>
             ) : (
                 <>
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-                        <GlassCard className="lg:col-span-3 p-6 border-glass-border">
+                        <GlassCard className="glass lg:col-span-3 p-6 rounded-[32px] shadow-xl">
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold">Resumen del Día</h2>
-                                <div className="flex bg-bg-secondary p-1 rounded-lg border border-glass-border">
+                                <h2 className="text-xl font-bold text-text-primary">Resumen del Día</h2>
+                                <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-[14px]">
                                     <button
                                         onClick={() => setSummaryView('grid')}
-                                        className={`p-1.5 rounded-md transition-all ${summaryView === 'grid' ? 'bg-bg-primary text-accent shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                                        className={`p-1.5 rounded-[10px] transition-all ${summaryView === 'grid' ? 'bg-bg-primary text-accent shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
                                         title="Vista de cuadrícula"
                                     >
                                         <LayoutGrid size={16} />
                                     </button>
                                     <button
                                         onClick={() => setSummaryView('chart')}
-                                        className={`p-1.5 rounded-md transition-all ${summaryView === 'chart' ? 'bg-bg-primary text-accent shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                                        className={`p-1.5 rounded-[10px] transition-all ${summaryView === 'chart' ? 'bg-bg-primary text-accent shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
                                         title="Vista de gráfico"
                                     >
                                         <PieChart size={16} />
@@ -605,7 +605,7 @@ const Nutrition = ({ setView }) => {
                                     />
 
                                     <div
-                                        className="cursor-pointer transition-transform hover:scale-[1.02]"
+                                        className="cursor-pointer transition-transform hover:-translate-y-1 hover:shadow-xl rounded-[28px]"
                                         onClick={() => setModal({ type: 'sugar' })}
                                     >
                                         <StatCard
@@ -621,7 +621,7 @@ const Nutrition = ({ setView }) => {
                                 <div className="flex flex-col items-center justify-center py-2 animate-[fade-in_0.3s_ease-out]" onClick={() => setHoveredMacro(null)}>
                                     <div className="relative w-48 h-48 sm:w-56 sm:h-56 mb-8">
                                         <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 drop-shadow-lg">
-                                            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-glass-border" strokeWidth="4" />
+                                            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-black/5 dark:text-white/5" strokeWidth="4" />
 
                                             {totalMacroCals > 0 && (
                                                 <>
@@ -644,7 +644,7 @@ const Nutrition = ({ setView }) => {
 
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full">
                                         <div
-                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-all border ${hoveredMacro === 'protein' ? 'bg-bg-primary shadow-sm scale-105 border-red-500/50' : 'bg-bg-secondary border-glass-border'}`}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-[24px] cursor-pointer transition-all ${hoveredMacro === 'protein' ? 'bg-bg-primary shadow-md scale-105 border border-red-500/50' : 'bg-black/5 dark:bg-white/5 border border-transparent'}`}
                                             onMouseEnter={() => setHoveredMacro('protein')}
                                             onMouseLeave={() => setHoveredMacro(null)}
                                         >
@@ -657,7 +657,7 @@ const Nutrition = ({ setView }) => {
                                         </div>
 
                                         <div
-                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-all border ${hoveredMacro === 'carbs' ? 'bg-bg-primary shadow-sm scale-105 border-blue-500/50' : 'bg-bg-secondary border-glass-border'}`}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-[24px] cursor-pointer transition-all ${hoveredMacro === 'carbs' ? 'bg-bg-primary shadow-md scale-105 border border-blue-500/50' : 'bg-black/5 dark:bg-white/5 border border-transparent'}`}
                                             onMouseEnter={() => setHoveredMacro('carbs')}
                                             onMouseLeave={() => setHoveredMacro(null)}
                                         >
@@ -670,7 +670,7 @@ const Nutrition = ({ setView }) => {
                                         </div>
 
                                         <div
-                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-all border ${hoveredMacro === 'fats' ? 'bg-bg-primary shadow-sm scale-105 border-green-500/50' : 'bg-bg-secondary border-glass-border'}`}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-[24px] cursor-pointer transition-all ${hoveredMacro === 'fats' ? 'bg-bg-primary shadow-md scale-105 border border-green-500/50' : 'bg-black/5 dark:bg-white/5 border border-transparent'}`}
                                             onMouseEnter={() => setHoveredMacro('fats')}
                                             onMouseLeave={() => setHoveredMacro(null)}
                                         >
@@ -686,7 +686,7 @@ const Nutrition = ({ setView }) => {
                                             onClick={(e) => { e.stopPropagation(); setModal({ type: 'sugar' }); }}
                                             onMouseEnter={() => setHoveredMacro('sugar')}
                                             onMouseLeave={() => setHoveredMacro(null)}
-                                            className={`flex flex-col items-center justify-center p-3 rounded-2xl cursor-pointer transition-transform border ${hoveredMacro === 'sugar' ? 'scale-105' : 'hover:scale-105'} ${isSugarHigh ? 'shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-bg-secondary border-glass-border'}`}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-[24px] cursor-pointer transition-all border ${hoveredMacro === 'sugar' ? 'scale-105 border-pink-500/50' : 'hover:scale-105 border-transparent'} ${isSugarHigh ? 'shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/5 dark:bg-white/5'}`}
                                             style={isSugarHigh ? { backgroundColor: '#ef4444', borderColor: '#ef4444' } : (hoveredMacro === 'sugar' ? { borderColor: 'rgba(236,72,153,0.5)', backgroundColor: 'var(--bg-primary)' } : {})}
                                         >
                                             <div className="flex items-center gap-1.5 mb-1">
@@ -708,17 +708,17 @@ const Nutrition = ({ setView }) => {
                         <div className="lg:col-span-2 space-y-4">
                             <GlassCard
                                 id="water-tracker"
-                                className="p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-colors border-glass-border"
+                                className="glass p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-xl transition-all duration-300 rounded-[28px]"
                                 onClick={() => setModal({ type: 'water', data: null })}
                             >
-                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-glass-border relative z-10">
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-glass-border/50 relative z-10">
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-lg font-bold text-text-primary">Agua</h2>
                                         <span className="text-sm font-semibold text-text-muted">
                                             ({waterLog?.quantity_ml || 0} / {waterTarget} ml)
                                         </span>
                                     </div>
-                                    <div className="p-1.5 rounded-full bg-white/5 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                    <div className="p-1.5 rounded-[12px] bg-black/5 dark:bg-white/5 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                                         <Edit size={18} />
                                     </div>
                                 </div>
@@ -735,7 +735,7 @@ const Nutrition = ({ setView }) => {
                                         </span>
                                     </div>
 
-                                    <div className="w-full h-2 bg-bg-secondary rounded-full overflow-hidden border border-glass-border">
+                                    <div className="w-full h-2.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-500"
                                             style={{ width: `${Math.min(100, ((waterLog?.quantity_ml || 0) / waterTarget) * 100)}%` }}
@@ -743,30 +743,30 @@ const Nutrition = ({ setView }) => {
                                     </div>
                                 </div>
 
-                                <div className="absolute -bottom-8 -right-8 text-blue-500/5 rotate-12 pointer-events-none transition-transform group-hover:scale-110 duration-700">
+                                <div className="absolute -bottom-8 -right-8 text-blue-500/10 dark:text-blue-500/5 rotate-12 pointer-events-none transition-transform group-hover:scale-110 duration-700">
                                     <Droplet size={140} />
                                 </div>
                             </GlassCard>
 
                             <GlassCard
-                                className="p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-colors border-glass-border"
+                                className="glass p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-xl transition-all duration-300 rounded-[28px]"
                                 onClick={() => setShowCreatinaTracker(true)}
                             >
-                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-glass-border relative z-10">
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-glass-border/50 relative z-10">
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-lg font-bold text-text-primary">Creatina</h2>
                                         <span className="text-sm font-semibold text-text-muted">
                                             (~{creatineTarget}g/día)
                                         </span>
                                     </div>
-                                    <div className="p-1.5 rounded-full bg-white/5 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                    <div className="p-1.5 rounded-[12px] bg-black/5 dark:bg-white/5 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
                                         <Plus size={18} />
                                     </div>
                                 </div>
 
                                 <div className="flex flex-col items-center justify-center py-2 relative z-10 gap-3">
                                     <div className={`relative transition-all duration-500 ${todaysCreatineLog?.length > 0 ? 'scale-110' : 'scale-100'}`}>
-                                        <div className={`p-4 rounded-full border-4 transition-all duration-500 ${todaysCreatineLog?.length > 0 ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_30px_rgba(168,85,247,0.5)]' : 'bg-transparent border-glass-border text-text-muted'}`}>
+                                        <div className={`p-4 rounded-[20px] transition-all duration-500 ${todaysCreatineLog?.length > 0 ? 'bg-purple-500 text-white shadow-[0_0_30px_rgba(168,85,247,0.5)]' : 'bg-black/5 dark:bg-white/5 text-text-muted'}`}>
                                             {todaysCreatineLog?.length > 0 ? (
                                                 <Check size={40} strokeWidth={4} />
                                             ) : (
@@ -782,7 +782,7 @@ const Nutrition = ({ setView }) => {
                                             </span>
                                             <span className="text-sm font-bold text-text-secondary uppercase tracking-wider">Tomas</span>
                                         </div>
-                                        <span className={`text-xs font-medium mt-1 ${todaysCreatineLog?.length > 0 ? 'text-purple-400' : 'text-text-muted/50'}`}>
+                                        <span className={`text-xs font-medium mt-1 ${todaysCreatineLog?.length > 0 ? 'text-purple-500 dark:text-purple-400' : 'text-text-muted/70'}`}>
                                             {todaysCreatineLog?.length > 0 ? '¡Registrado!' : 'Toca para registrar'}
                                         </span>
                                     </div>
@@ -797,10 +797,10 @@ const Nutrition = ({ setView }) => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         {Object.entries(meals).map(([mealType, logs]) => (
-                            <GlassCard key={mealType} className="p-5 flex flex-col border border-glass-border">
-                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-glass-border">
+                            <GlassCard key={mealType} className="glass p-5 sm:p-6 flex flex-col rounded-[28px] hover:shadow-xl transition-all duration-300 group">
+                                <div className="flex justify-between items-center mb-5 pb-3 border-b border-glass-border/50">
                                     <div className="flex items-baseline gap-2">
-                                        <h2 className="text-lg font-bold capitalize text-text-primary">
+                                        <h2 className="text-xl font-bold capitalize text-text-primary">
                                             {{ breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealType]}
                                         </h2>
                                         {mealTotals[mealType] > 0 && (
@@ -813,7 +813,7 @@ const Nutrition = ({ setView }) => {
                                         {logs.length > 1 && (
                                             <button
                                                 onClick={() => setMealGroupToDelete(mealType)}
-                                                className="p-1.5 rounded-full text-red-500 hover:bg-red-500/10 transition"
+                                                className="p-1.5 rounded-[12px] text-red-500 hover:bg-red-500/10 transition-colors"
                                                 title="Eliminar todos los alimentos de esta comida"
                                             >
                                                 <Trash2 size={18} />
@@ -822,7 +822,7 @@ const Nutrition = ({ setView }) => {
                                         <button
                                             id={mealType === 'breakfast' ? 'add-food-btn' : undefined}
                                             onClick={() => setModal({ type: 'food', data: { mealType } })}
-                                            className="p-1.5 rounded-full text-accent hover:bg-accent-transparent transition"
+                                            className="p-1.5 rounded-[12px] bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
                                             title="Añadir comida"
                                         >
                                             <Plus size={20} />
@@ -842,12 +842,12 @@ const Nutrition = ({ setView }) => {
                                             <div
                                                 key={log.id}
                                                 onClick={() => setViewLog(log)}
-                                                className="bg-bg-primary/40 hover:bg-bg-secondary/60 border border-transparent hover:border-glass-border hover:shadow-sm transition-all duration-200 rounded-xl p-3 flex items-center gap-3 cursor-pointer group"
+                                                className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors duration-200 rounded-[20px] p-3 sm:p-4 flex items-center gap-3 cursor-pointer group/item"
                                             >
                                                 <MealImage
                                                     src={displayImage}
                                                     alt={log.description}
-                                                    className="w-14 h-14 rounded-lg shadow-sm shrink-0"
+                                                    className="w-14 h-14 shrink-0"
                                                 />
 
                                                 <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
@@ -891,17 +891,17 @@ const Nutrition = ({ setView }) => {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex flex-col items-center gap-1 pl-2 border-l border-glass-border opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                <div className="flex flex-col items-center gap-1 pl-2 border-l border-glass-border opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setModal({ type: 'food', data: { ...log, mealType } }); }}
-                                                        className="p-1.5 rounded-md hover:bg-white/10 text-text-secondary hover:text-accent transition-colors"
+                                                        className="p-1.5 rounded-[10px] hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors"
                                                         title="Editar"
                                                     >
                                                         <Edit size={16} />
                                                     </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setLogToDelete(log); }}
-                                                        className="p-1.5 rounded-md hover:bg-white/10 text-text-secondary hover:text-red-400 transition-colors"
+                                                        className="p-1.5 rounded-[10px] hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-red-400 transition-colors"
                                                         title="Eliminar"
                                                     >
                                                         <Trash2 size={16} />
@@ -910,13 +910,13 @@ const Nutrition = ({ setView }) => {
                                             </div>
                                         );
                                     }) : (
-                                        <div className="flex flex-col items-center justify-center py-8 text-text-muted/50 rounded-xl">
+                                        <div className="flex flex-col items-center justify-center py-8 text-text-muted/50 rounded-[20px] bg-black/5 dark:bg-white/5 border border-dashed border-glass-border">
                                             <p className="text-xs font-medium">Sin registros</p>
                                             <button
                                                 onClick={() => setModal({ type: 'food', data: { mealType } })}
-                                                className="mt-2 text-xs text-accent hover:underline flex items-center gap-1"
+                                                className="mt-2 text-xs font-bold text-accent bg-accent/10 px-4 py-2 rounded-xl hover:bg-accent/20 flex items-center gap-1 transition-colors"
                                             >
-                                                <Plus size={12} /> Añadir
+                                                <Plus size={14} /> Añadir Comida
                                             </button>
                                         </div>
                                     )}
@@ -928,16 +928,16 @@ const Nutrition = ({ setView }) => {
             )}
 
             {viewLog && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
                     <div className="absolute inset-0" onClick={() => setViewLog(null)} />
-                    <GlassCard className="w-full max-w-md p-0 overflow-hidden relative z-10 animate-scale-in flex flex-col max-h-[85vh] sm:max-h-[90vh] bg-bg-primary border border-glass-border">
+                    <GlassCard className="glass w-full max-w-md p-0 overflow-hidden relative z-10 animate-[slide-up_0.3s_ease-out] flex flex-col max-h-[85vh] sm:max-h-[90vh] rounded-[32px] shadow-2xl">
 
-                        <div className="relative h-64 bg-bg-secondary flex items-center justify-center shrink-0">
+                        <div className="relative h-64 bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0">
                             {getLogImage(viewLog) ? (
                                 <img
                                     src={getLogImage(viewLog)}
                                     alt={viewLog.description}
-                                    className="w-full h-full object-contain"
+                                    className="w-full h-full object-cover"
                                     onError={(e) => {
                                         e.target.style.display = 'none';
                                     }}
@@ -948,27 +948,27 @@ const Nutrition = ({ setView }) => {
 
                             <button
                                 onClick={() => setViewLog(null)}
-                                className="absolute top-4 right-4 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors backdrop-blur-md"
+                                className="absolute top-5 right-5 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors backdrop-blur-md"
                             >
                                 <X size={20} />
                             </button>
-                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                                <h3 className="text-2xl font-bold text-white leading-tight break-words shadow-sm">
+                            <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/80 to-transparent">
+                                <h3 className="text-2xl font-bold text-white leading-tight break-words drop-shadow-md">
                                     {viewLog.description}
                                 </h3>
                             </div>
                         </div>
 
-                        <div className="p-6 overflow-y-auto flex-1 min-h-0">
-                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-glass-border">
+                        <div className="p-6 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-glass-border/50">
                                 <div className="flex flex-col">
-                                    <span className="text-sm text-text-secondary">Calorías Totales</span>
+                                    <span className="text-sm font-semibold text-text-secondary uppercase tracking-widest">Calorías</span>
                                     <span className="text-4xl font-black text-accent">{viewLog.calories} <span className="text-lg font-medium text-text-muted">kcal</span></span>
                                 </div>
                                 {viewLog.weight_g && (
                                     <div className="flex flex-col items-end">
-                                        <span className="text-sm text-text-secondary flex items-center gap-1"><Scale size={14} /> Peso</span>
-                                        <span className="text-xl font-bold text-text-primary">{viewLog.weight_g} g</span>
+                                        <span className="text-sm font-semibold text-text-secondary uppercase tracking-widest flex items-center gap-1"><Scale size={14} /> Peso</span>
+                                        <span className="text-2xl font-bold text-text-primary">{viewLog.weight_g}g</span>
                                     </div>
                                 )}
                             </div>
@@ -976,41 +976,41 @@ const Nutrition = ({ setView }) => {
                             <h4 className="font-semibold text-text-primary mb-4">Macronutrientes</h4>
 
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
-                                    <div className="p-2 rounded-full bg-red-500/10 mb-1.5 shrink-0">
+                                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-[20px] flex flex-col items-center min-w-0">
+                                    <div className="p-2 rounded-[14px] bg-red-500/10 mb-2 shrink-0">
                                         <Beef size={18} style={{ color: '#ef4444' }} />
                                     </div>
-                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#ef4444' }}>{Number(viewLog.protein_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-xl font-bold truncate w-full text-center" style={{ color: '#ef4444' }}>{Number(viewLog.protein_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
                                     <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Proteína</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
-                                    <div className="p-2 rounded-full bg-blue-500/10 mb-1.5 shrink-0">
+                                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-[20px] flex flex-col items-center min-w-0">
+                                    <div className="p-2 rounded-[14px] bg-blue-500/10 mb-2 shrink-0">
                                         <Wheat size={18} style={{ color: '#3b82f6' }} />
                                     </div>
-                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#3b82f6' }}>{Number(viewLog.carbs_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-xl font-bold truncate w-full text-center" style={{ color: '#3b82f6' }}>{Number(viewLog.carbs_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
                                     <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Carbos</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
-                                    <div className="p-2 rounded-full bg-green-500/10 mb-1.5 shrink-0">
+                                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-[20px] flex flex-col items-center min-w-0">
+                                    <div className="p-2 rounded-[14px] bg-green-500/10 mb-2 shrink-0">
                                         <Salad size={18} style={{ color: '#22c55e' }} />
                                     </div>
-                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#22c55e' }}>{Number(viewLog.fats_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-xl font-bold truncate w-full text-center" style={{ color: '#22c55e' }}>{Number(viewLog.fats_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
                                     <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Grasas</span>
                                 </div>
-                                <div className="bg-bg-secondary/50 p-3 sm:p-2 md:p-3 rounded-xl border border-glass-border flex flex-col items-center min-w-0">
-                                    <div className="p-2 rounded-full bg-pink-500/10 mb-1.5 shrink-0">
+                                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-[20px] flex flex-col items-center min-w-0">
+                                    <div className="p-2 rounded-[14px] bg-pink-500/10 mb-2 shrink-0">
                                         <IceCream size={18} style={{ color: '#ec4899' }} />
                                     </div>
-                                    <span className="text-xl sm:text-base md:text-lg font-bold truncate w-full text-center" style={{ color: '#ec4899' }}>{Number(viewLog.sugars_g || viewLog.sugar_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
+                                    <span className="text-xl font-bold truncate w-full text-center" style={{ color: '#ec4899' }}>{Number(viewLog.sugars_g || viewLog.sugar_g || 0).toFixed(1).replace(/\.0$/, '')}g</span>
                                     <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium truncate w-full text-center">Azúcar</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-glass-border bg-bg-secondary/30 shrink-0">
+                        <div className="p-5 border-t border-glass-border/50 shrink-0">
                             <button
                                 onClick={() => setViewLog(null)}
-                                className="w-full py-3 rounded-xl bg-bg-secondary hover:bg-bg-primary border border-glass-border font-semibold text-text-primary transition-colors shadow-sm"
+                                className="w-full py-4 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 font-bold text-text-primary transition-colors shadow-sm"
                             >
                                 Cerrar
                             </button>

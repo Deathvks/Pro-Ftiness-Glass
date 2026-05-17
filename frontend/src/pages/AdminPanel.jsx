@@ -67,7 +67,7 @@ const LoginMethodBadge = ({ user }) => {
   const method = getMethod();
 
   return (
-    <div title={`Registrado vía ${method.type}`} className={`w-5 h-5 flex items-center justify-center rounded-full overflow-hidden shrink-0 ${method.bg} ring-2 ring-bg-secondary relative group`}>
+    <div title={`Registrado vía ${method.type}`} className={`w-5 h-5 flex items-center justify-center rounded-full overflow-hidden shrink-0 ${method.bg} ring-2 ring-bg-primary relative group`}>
       {method.isApp ? (
         <Smartphone size={10} className="text-white" />
       ) : (
@@ -102,7 +102,7 @@ const StatusIndicator = ({ lastSeen }) => {
     return (
       <div className="flex items-center justify-center gap-1.5">
         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-        <span className="text-xs font-medium text-green-500">Online</span>
+        <span className="text-xs font-bold text-green-500">Online</span>
       </div>
     );
   }
@@ -110,7 +110,7 @@ const StatusIndicator = ({ lastSeen }) => {
   return (
     <div className="flex items-center justify-center gap-1.5">
       <div className="w-2 h-2 rounded-full bg-text-muted" />
-      <span className="text-xs font-medium text-text-muted">Offline</span>
+      <span className="text-xs font-bold text-text-muted">Offline</span>
     </div>
   );
 };
@@ -319,22 +319,25 @@ const AdminPanel = ({ onCancel }) => {
   }, [reports, reportPage]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-2 pb-24 md:p-4 md:pb-8 lg:p-8 animate-[fade-in_0.5s_ease-out]">
-      <button onClick={onCancel} className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4">
+    <div className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
+      <button 
+        onClick={onCancel} 
+        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
+      >
         <ChevronLeft size={20} />
         Volver a Ajustes
       </button>
 
       {/* Título oculto en móvil */}
-      <h1 className="hidden md:block text-4xl font-extrabold mb-8">Panel de Administración</h1>
+      <h1 className="hidden md:block text-4xl font-extrabold mb-8 tracking-tight text-text-primary">Panel de Administración</h1>
 
-      {/* Navegación de Pestañas */}
-      <div className="flex gap-4 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+      {/* Navegación de Pestañas (Modificado a flex-wrap para evitar recortes) */}
+      <div className="flex flex-wrap gap-3 mb-8">
         <button
           onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === 'users'
-            ? 'bg-accent text-white dark:text-bg-primary'
-            : 'bg-glass-light border border-glass-border text-text-secondary hover:bg-black/5 dark:hover:bg-white/5'
+          className={`flex items-center gap-2 px-6 py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 ${activeTab === 'users'
+            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
           <Users size={20} />
@@ -342,31 +345,31 @@ const AdminPanel = ({ onCancel }) => {
         </button>
         <button
           onClick={() => setActiveTab('reports')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === 'reports'
-            ? 'bg-accent text-white dark:text-bg-primary'
-            : 'bg-glass-light border border-glass-border text-text-secondary hover:bg-black/5 dark:hover:bg-white/5'
+          className={`flex items-center gap-2 px-6 py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 ${activeTab === 'reports'
+            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
           <Bug size={20} />
           Reportes
           {reports.length > 0 && activeTab !== 'reports' && (
-            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{reports.length}</span>
+            <span className="bg-red text-white text-[10px] font-black px-2 py-0.5 rounded-full">{reports.length}</span>
           )}
         </button>
       </div>
 
-      <GlassCard className="p-4 sm:p-6 shadow-sm">
+      <GlassCard className="glass p-6 sm:p-8 shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px]">
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
-            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 mb-6">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-5 mb-8">
               
               {/* Título + Contador */}
               <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold whitespace-nowrap mr-auto">
+                <h2 className="text-2xl font-extrabold whitespace-nowrap mr-auto text-text-primary">
                   Lista de Usuarios
                 </h2>
-                <span className="bg-accent/10 text-accent text-xs font-extrabold px-3 py-1 rounded-full border border-glass-border">
+                <span className="bg-accent/10 text-accent text-[10px] sm:text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full ring-1 ring-accent/30">
                   {users.length} Totales
                 </span>
               </div>
@@ -376,18 +379,18 @@ const AdminPanel = ({ onCancel }) => {
                 
                 {/* Buscador Inteligente */}
                 <div className="relative flex-1 sm:w-64 min-w-[200px]">
-                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
                   <input
                     type="text"
                     placeholder="Buscar usuario o email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all text-sm text-text-primary placeholder-text-muted"
+                    className="w-full pl-11 pr-10 py-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all text-sm font-bold text-text-primary placeholder:text-text-muted"
                   />
                   {searchQuery && (
                     <button 
                       onClick={() => setSearchQuery('')} 
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors p-1"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors p-1"
                     >
                       <X size={16} />
                     </button>
@@ -404,16 +407,16 @@ const AdminPanel = ({ onCancel }) => {
                       { value: 'default', label: 'Última Actividad' },
                       { value: 'alpha', label: 'Alfabético' }
                     ]}
-                    className="w-full"
+                    className="w-full text-sm font-bold"
                   />
                 </div>
 
                 {/* Botón Crear */}
                 <button
                   onClick={() => setIsCreatingUser(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-white dark:text-bg-secondary font-bold transition hover:scale-[1.02] active:scale-95 whitespace-nowrap flex-1 sm:flex-none shadow-lg shadow-accent/20"
+                  className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-[20px] bg-accent text-white font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap flex-1 sm:flex-none shadow-lg shadow-accent/20"
                 >
-                  <Plus size={18} />
+                  <Plus size={20} strokeWidth={2.5} />
                   <span className="hidden sm:inline">Crear Usuario</span>
                   <span className="sm:hidden">Crear</span>
                 </button>
@@ -421,42 +424,42 @@ const AdminPanel = ({ onCancel }) => {
             </div>
 
             {isLoading ? (
-              <div className="flex justify-center items-center py-10"><Spinner /></div>
+              <div className="flex justify-center items-center py-12"><Spinner size={32} /></div>
             ) : processedUsers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center animate-[fade-in_0.3s_ease-out]">
-                <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center mb-4 border border-glass-border">
-                  <Search size={32} className="text-text-muted opacity-50" />
+              <div className="flex flex-col items-center justify-center py-16 text-center animate-[fade-in_0.3s_ease-out] bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 mt-4">
+                <div className="w-20 h-20 bg-bg-primary rounded-[24px] flex items-center justify-center mb-5 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
+                  <Search size={36} className="text-text-muted opacity-50" strokeWidth={1.5} />
                 </div>
-                <h3 className="text-lg font-bold text-text-primary mb-1">Sin coincidencias</h3>
-                <p className="text-text-secondary text-sm">No se ha encontrado ningún usuario con esos datos.</p>
+                <h3 className="text-xl font-extrabold text-text-primary mb-2">Sin coincidencias</h3>
+                <p className="text-text-secondary font-medium text-sm">No se ha encontrado ningún usuario con esos datos.</p>
               </div>
             ) : (
               <>
                 {/* Tabla Desktop (md en adelante) */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="border-b border-glass-border text-text-secondary text-sm">
+                <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="border-b border-black/5 dark:border-white/10 text-text-secondary text-xs uppercase tracking-wider font-bold">
                       <tr>
-                        <th className="p-3">Usuario</th>
-                        <th className="p-3">Email</th>
-                        <th className="p-3">Fecha Registro</th>
-                        <th className="p-3 text-center">Estado</th>
-                        <th className="p-3 text-center">Rol</th>
-                        <th className="p-3 text-center">Verificado</th>
-                        <th className="p-3 text-center">Acciones</th>
+                        <th className="p-4 pl-2">Usuario</th>
+                        <th className="p-4">Email</th>
+                        <th className="p-4">Fecha Registro</th>
+                        <th className="p-4 text-center">Estado</th>
+                        <th className="p-4 text-center">Rol</th>
+                        <th className="p-4 text-center">Verificado</th>
+                        <th className="p-4 text-center pr-2">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {processedUsers.map(user => (
-                        <tr key={user.id} className="border-b border-glass-border last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                          <td className="p-3 font-semibold align-middle">
-                            <div className="flex items-center gap-3">
-                              <div className="relative">
+                        <tr key={user.id} className="border-b border-black/5 dark:border-white/10 last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                          <td className="p-4 pl-2 font-bold text-text-primary align-middle">
+                            <div className="flex items-center gap-4">
+                              <div className="relative shrink-0">
                                 {/* Avatar Foto */}
                                 {getAvatarUrl(user) ? (
-                                  <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-10 h-10 rounded-full object-cover border border-glass-border shadow-sm bg-bg-secondary" />
+                                  <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-12 h-12 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-bg-primary" />
                                 ) : (
-                                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold uppercase border border-glass-border shadow-sm">
+                                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent font-extrabold text-lg uppercase ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                                     {(user.username || user.name || '?').charAt(0)}
                                   </div>
                                 )}
@@ -465,40 +468,40 @@ const AdminPanel = ({ onCancel }) => {
                                   <LoginMethodBadge user={user} />
                                 </div>
                               </div>
-                              <span>{user.username || user.name}</span>
+                              <span className="truncate max-w-[150px]">{user.username || user.name}</span>
                             </div>
                           </td>
-                          <td className="p-3 text-text-secondary align-middle text-sm">{user.email}</td>
-                          <td className="p-3 text-text-muted align-middle text-sm font-mono">
+                          <td className="p-4 text-text-secondary align-middle text-sm font-medium">{user.email}</td>
+                          <td className="p-4 text-text-muted align-middle text-sm font-mono font-medium">
                             {formatDateSafe(getUserDate(user))}
                           </td>
-                          <td className="p-3 align-middle text-center">
+                          <td className="p-4 align-middle text-center">
                             <StatusIndicator lastSeen={user.lastSeen} />
                           </td>
-                          <td className="p-3 align-middle text-center">
-                            <span className={`inline-flex items-center px-2 py-1 text-xs font-bold rounded-full capitalize ${user.role === 'admin' ? 'bg-accent/10 text-accent' : 'bg-bg-secondary text-text-secondary'}`}>
+                          <td className="p-4 align-middle text-center">
+                            <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
                               {user.role}
                             </span>
                           </td>
-                          <td className="p-3 align-middle text-center">
+                          <td className="p-4 align-middle text-center">
                             <div className="flex justify-center items-center gap-1.5">
                               {user.is_verified ? (
                                 <>
-                                  <CheckCircle size={18} className="text-green-500" />
-                                  <span className="text-xs font-bold text-green-500">Sí</span>
+                                  <CheckCircle size={18} className="text-green-500" strokeWidth={2.5} />
+                                  <span className="text-xs font-bold text-green-500 uppercase tracking-wider">Sí</span>
                                 </>
                               ) : (
                                 <>
-                                  <XCircle size={18} className="text-red-500" />
-                                  <span className="text-xs font-bold text-red-500">No</span>
+                                  <XCircle size={18} className="text-red" strokeWidth={2.5} />
+                                  <span className="text-xs font-bold text-red uppercase tracking-wider">No</span>
                                 </>
                               )}
                             </div>
                           </td>
-                          <td className="p-3 align-middle text-center">
+                          <td className="p-4 pr-2 align-middle text-center">
                             <div className="flex justify-center gap-2">
-                              <button onClick={() => setUserToEdit(user)} className="p-2 text-text-secondary hover:text-accent transition"><Edit size={16} /></button>
-                              <button onClick={() => setUserToDelete(user)} className="p-2 text-text-secondary hover:text-red transition"><Trash2 size={16} /></button>
+                              <button onClick={() => setUserToEdit(user)} className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95"><Edit size={18} /></button>
+                              <button onClick={() => setUserToDelete(user)} className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={18} /></button>
                             </div>
                           </td>
                         </tr>
@@ -508,17 +511,17 @@ const AdminPanel = ({ onCancel }) => {
                 </div>
 
                 {/* Vista Tarjetas Móvil (Menos de md) */}
-                <div className="md:hidden space-y-3">
+                <div className="md:hidden space-y-4">
                   {processedUsers.map(user => (
-                    <div key={user.id} className="bg-glass-light border border-glass-border rounded-xl p-4 text-left">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1 min-w-0 pr-2 flex items-center gap-3">
+                    <div key={user.id} className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 text-left">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1 min-w-0 pr-2 flex items-center gap-4">
                           <div className="relative shrink-0">
                             {/* Avatar Foto */}
                             {getAvatarUrl(user) ? (
-                              <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-10 h-10 rounded-full object-cover border border-glass-border bg-bg-secondary" />
+                              <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-14 h-14 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary shadow-sm" />
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold uppercase border border-glass-border">
+                              <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center text-accent font-extrabold text-lg uppercase ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                                 {(user.username || user.name || '?').charAt(0)}
                               </div>
                             )}
@@ -528,21 +531,21 @@ const AdminPanel = ({ onCancel }) => {
                             </div>
                           </div>
                           <div className="flex flex-col overflow-hidden">
-                            <h3 className="font-bold text-base truncate text-text-primary">{user.username || user.name}</h3>
-                            <p className="text-text-secondary text-xs truncate">{user.email}</p>
+                            <h3 className="font-extrabold text-lg truncate text-text-primary">{user.username || user.name}</h3>
+                            <p className="text-text-secondary font-medium text-xs truncate mt-0.5">{user.email}</p>
                           </div>
                         </div>
-                        <div className="flex gap-1 shrink-0">
-                          <button onClick={() => setUserToEdit(user)} className="p-2 bg-black/5 dark:bg-white/5 rounded-lg text-text-secondary hover:text-accent transition"><Edit size={16} /></button>
-                          <button onClick={() => setUserToDelete(user)} className="p-2 bg-black/5 dark:bg-white/5 rounded-lg text-text-secondary hover:text-red transition"><Trash2 size={16} /></button>
+                        <div className="flex flex-col gap-2 shrink-0">
+                          <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95"><Edit size={16} /></button>
+                          <button onClick={() => setUserToDelete(user)} className="p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={16} /></button>
                         </div>
                       </div>
 
                       {/* Información en Grid compacto */}
-                      <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs mt-3 border-t border-glass-border pt-3">
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs mt-2 border-t border-black/5 dark:border-white/10 pt-4">
                         <div className="flex items-center gap-2">
-                          <Calendar size={12} className="text-text-muted" />
-                          <span className="text-text-muted">{formatDateSafe(getUserDate(user))}</span>
+                          <Calendar size={14} className="text-text-muted" />
+                          <span className="text-text-muted font-mono font-medium">{formatDateSafe(getUserDate(user))}</span>
                         </div>
 
                         <div className="flex items-center justify-end gap-2">
@@ -550,23 +553,23 @@ const AdminPanel = ({ onCancel }) => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="text-text-muted">Rol:</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${user.role === 'admin' ? 'bg-accent/20 text-accent' : 'bg-black/10 dark:bg-white/10 text-text-secondary'}`}>
+                          <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Rol:</span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
                             {user.role}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-end gap-1.5">
-                          <span className="text-text-muted">Verif:</span>
+                          <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Verif:</span>
                           {user.is_verified ? (
                             <div className="flex items-center gap-1">
-                              <CheckCircle size={12} className="text-green-500" />
-                              <span className="text-green-500 font-bold">Sí</span>
+                              <CheckCircle size={14} className="text-green-500" strokeWidth={2.5} />
+                              <span className="text-green-500 font-bold uppercase tracking-wider">Sí</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1">
-                              <XCircle size={12} className="text-red-500" />
-                              <span className="text-red-500 font-bold">No</span>
+                              <XCircle size={14} className="text-red" strokeWidth={2.5} />
+                              <span className="text-red font-bold uppercase tracking-wider">No</span>
                             </div>
                           )}
                         </div>
@@ -580,53 +583,54 @@ const AdminPanel = ({ onCancel }) => {
         ) : (
           /* --- CONTENIDO PESTAÑA REPORTES --- */
           <>
-            <div className="mb-6 text-left">
-              <h2 className="text-xl font-bold">Reportes de Problemas</h2>
-              <p className="text-text-muted text-sm">Feedback técnico enviado por los usuarios.</p>
+            <div className="mb-8 text-left">
+              <h2 className="text-2xl font-extrabold text-text-primary mb-2">Reportes de Problemas</h2>
+              <p className="text-text-secondary font-medium text-sm">Feedback técnico enviado por los usuarios.</p>
             </div>
 
             {isLoading ? (
-              <div className="flex justify-center items-center py-10"><Spinner /></div>
+              <div className="flex justify-center items-center py-12"><Spinner size={32} /></div>
             ) : reports.length === 0 ? (
-              <div className="text-center py-12 text-text-muted">
-                <CheckSquare size={48} className="mx-auto mb-4 opacity-50" />
-                <p>¡Todo limpio! No hay reportes pendientes.</p>
+              <div className="text-center py-16 text-text-muted bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+                <CheckSquare size={48} className="mx-auto mb-4 opacity-50" strokeWidth={1.5} />
+                <p className="font-bold text-lg">¡Todo limpio!</p>
+                <p className="text-sm font-medium mt-1">No hay reportes pendientes.</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
-                <div className="space-y-4 text-left">
+              <div className="flex flex-col gap-5">
+                <div className="space-y-5 text-left">
                   {currentReports.map((report) => (
-                    <div key={report.id} className="bg-bg-secondary/30 border border-glass-border rounded-xl p-4 md:p-6 hover:bg-bg-secondary/50 transition-colors animate-[fade-in_0.3s_ease-out]">
-                      <div className="flex flex-col md:flex-row gap-4 justify-between items-start">
-                        <div className="flex-1 space-y-3">
+                    <div key={report.id} className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 md:p-6 hover:shadow-md transition-all animate-[fade-in_0.3s_ease-out]">
+                      <div className="flex flex-col md:flex-row gap-5 justify-between items-start">
+                        <div className="flex-1 space-y-4">
                           <div className="flex flex-wrap items-center gap-3">
-                            <span className="px-2.5 py-0.5 bg-accent text-white dark:text-bg-primary text-[10px] font-extrabold rounded-full uppercase tracking-wider">
+                            <span className="px-3 py-1 bg-accent/10 text-accent ring-1 ring-accent/30 text-[10px] font-black rounded-md uppercase tracking-widest">
                               {REPORT_CATEGORY_LABELS[report.category] || report.category}
                             </span>
-                            <span className="text-xs text-text-muted">{formatDateSafe(report.created_at)}</span>
-                            <span className="text-xs text-accent font-medium">@{report.username || 'Anónimo'}</span>
+                            <span className="text-xs font-mono font-medium text-text-muted">{formatDateSafe(report.created_at)}</span>
+                            <span className="text-xs text-text-primary font-bold bg-black/5 dark:bg-white/5 px-2 py-1 rounded-md">@{report.username || 'Anónimo'}</span>
                           </div>
-                          <h3 className="text-lg font-bold text-text-primary">{report.subject}</h3>
+                          <h3 className="text-xl font-extrabold text-text-primary leading-tight">{report.subject}</h3>
 
-                          <p className="text-text-secondary whitespace-pre-wrap text-sm leading-relaxed">
+                          <p className="text-text-secondary whitespace-pre-wrap text-sm leading-relaxed font-medium bg-bg-primary/50 p-4 rounded-[16px] ring-1 ring-black/5 dark:ring-white/10">
                             {report.description}
                           </p>
 
                           {report.images && report.images.length > 0 && (
                             <>
-                              <div className="text-xs font-bold text-text-muted uppercase tracking-wider mt-4 mb-2">
+                              <div className="text-[10px] font-bold text-text-secondary uppercase tracking-widest mt-5 mb-3">
                                 Imágenes adjuntadas
                               </div>
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-3">
                                 {report.images.map((img, idx) => (
                                   <div
                                     key={idx}
-                                    className="relative group w-16 h-16 rounded-lg overflow-hidden border border-glass-border cursor-zoom-in bg-black/5 dark:bg-white/5"
+                                    className="relative group w-20 h-20 rounded-[16px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 cursor-zoom-in bg-bg-primary shadow-sm"
                                     onClick={() => setSelectedImageForLightbox(`${API_URL}${img}`)}
                                   >
-                                    <img src={`${API_URL}${img}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="bug-snap" />
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <ZoomIn size={16} className="text-white drop-shadow-md" />
+                                    <img src={`${API_URL}${img}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" alt="bug-snap" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <ZoomIn size={20} className="text-white" strokeWidth={2.5} />
                                     </div>
                                   </div>
                                 ))}
@@ -635,13 +639,13 @@ const AdminPanel = ({ onCancel }) => {
                           )}
 
                           {report.deviceInfo && (
-                            <div className="mt-4 flex flex-wrap gap-3 text-xs text-text-muted">
-                              <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 px-2 py-1 rounded">
-                                {report.deviceInfo.userAgent?.includes('Mobile') ? <Smartphone size={12} /> : <Monitor size={12} />}
+                            <div className="mt-5 flex flex-wrap gap-3 text-[11px] font-bold text-text-muted">
+                              <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 px-2.5 py-1.5 rounded-md">
+                                {report.deviceInfo.userAgent?.includes('Mobile') ? <Smartphone size={14} /> : <Monitor size={14} />}
                                 <span>{report.deviceInfo.platform}</span>
                               </div>
-                              <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 px-2 py-1 rounded">
-                                <Globe size={12} />
+                              <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 px-2.5 py-1.5 rounded-md">
+                                <Globe size={14} />
                                 <span className="truncate max-w-[150px]" title={report.deviceInfo.userAgent}>{report.deviceInfo.userAgent}</span>
                               </div>
                             </div>
@@ -650,9 +654,9 @@ const AdminPanel = ({ onCancel }) => {
 
                         <button
                           onClick={() => setReportToDelete(report)}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-600 dark:text-green-500 hover:bg-green-500/20 rounded-lg font-medium transition-colors shrink-0 mt-4 md:mt-0 w-full md:w-auto justify-center"
+                          className="flex items-center gap-2 px-5 py-3.5 bg-green-500/10 text-green-600 dark:text-green-500 hover:bg-green-500 hover:text-white ring-1 ring-green-500/30 hover:ring-green-500 rounded-[20px] font-bold transition-all active:scale-95 shrink-0 mt-2 md:mt-0 w-full md:w-auto justify-center shadow-sm"
                         >
-                          <CheckSquare size={18} />
+                          <CheckSquare size={20} strokeWidth={2.5} />
                           Resolver
                         </button>
                       </div>
@@ -661,23 +665,23 @@ const AdminPanel = ({ onCancel }) => {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-glass-border">
+                  <div className="flex items-center justify-center gap-4 mt-6 pt-6 border-t border-black/5 dark:border-white/10">
                     <button
                       onClick={() => setReportPage(p => Math.max(1, p - 1))}
                       disabled={reportPage === 1}
-                      className="p-2 rounded-xl bg-bg-secondary text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white transition-all shadow-sm"
+                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white hover:ring-accent transition-all active:scale-95 shadow-sm"
                     >
-                      <ChevronLeft size={20} />
+                      <ChevronLeft size={20} strokeWidth={2.5} />
                     </button>
-                    <span className="text-sm font-bold text-text-secondary">
+                    <span className="text-sm font-bold text-text-secondary uppercase tracking-widest">
                       Página <span className="text-accent">{reportPage}</span> de {totalPages}
                     </span>
                     <button
                       onClick={() => setReportPage(p => Math.min(totalPages, p + 1))}
                       disabled={reportPage === totalPages}
-                      className="p-2 rounded-xl bg-bg-secondary text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white transition-all shadow-sm"
+                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white hover:ring-accent transition-all active:scale-95 shadow-sm"
                     >
-                      <ChevronRight size={20} />
+                      <ChevronRight size={20} strokeWidth={2.5} />
                     </button>
                   </div>
                 )}
@@ -693,13 +697,13 @@ const AdminPanel = ({ onCancel }) => {
           className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
           onClick={() => setSelectedImageForLightbox(null)}
         >
-          <button className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors">
-            <X size={32} />
+          <button className="absolute top-6 right-6 p-3 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all active:scale-95">
+            <X size={24} strokeWidth={2.5} />
           </button>
           <img
             src={selectedImageForLightbox}
             alt="Reporte ampliado"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-[scale-in_0.2s_ease-out]"
+            className="max-w-full max-h-[90vh] object-contain rounded-[24px] shadow-2xl animate-[scale-in_0.3s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

@@ -18,6 +18,7 @@ import useAppStore from '../../store/useAppStore';
 import PixabayModal from './PixabayModal';
 import Cropper from 'react-easy-crop';
 import PermissionModal from '../PermissionModal';
+import GlassCard from '../GlassCard';
 
 const PREDEFINED_BACKGROUNDS = [
     'linear-gradient(135deg, var(--color-accent) 0%, var(--bg-primary) 100%)',
@@ -210,34 +211,36 @@ const RoutineHeader = ({
         setIsFolderOpen(false);
     };
 
+    const inputClasses = "w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] px-5 py-4 text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all font-bold placeholder:text-text-muted";
+
     return (
         <>
             <button
                 onClick={onCancel}
-                className="flex items-center gap-2 text-text-secondary font-semibold hover:text-text-primary transition mb-4"
+                className="flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit"
             >
                 <ChevronLeft size={20} />
                 Volver a Rutinas
             </button>
 
-            <h1 className="text-3xl font-bold mb-6 text-center">
+            <h1 className="text-3xl md:text-4xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight md:text-left text-center">
                 {id ? 'Editar Rutina' : 'Crear Nueva Rutina'}
             </h1>
 
             {validationError && (
-                <div className="bg-red/20 border border-red text-red px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
-                    <Info size={18} />
+                <div className="bg-red-500/10 ring-1 ring-red-500/20 text-red-500 px-5 py-4 rounded-[20px] mb-8 flex items-center gap-3 font-bold animate-[fade-in_0.3s_ease-out]">
+                    <Info size={20} className="shrink-0" />
                     <span>{validationError}</span>
                 </div>
             )}
 
-            <div className="mb-6 bg-bg-secondary rounded-xl p-4 border border-glass-border shadow-sm">
-                <label className="block text-sm font-medium text-text-secondary mb-3">
+            <GlassCard className="glass p-6 sm:p-8 rounded-[32px] shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 transition-all duration-300">
+                <label className="block text-sm font-bold text-text-secondary mb-4 px-1">
                     Imagen de Portada
                 </label>
 
-                <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
-                    <div className="relative w-40 sm:w-48 aspect-video bg-bg-primary rounded-lg overflow-hidden border border-glass-border flex items-center justify-center flex-shrink-0 group shadow-sm">
+                <div className="flex flex-col md:flex-row gap-6 items-center md:items-start w-full">
+                    <div className="relative w-full max-w-[240px] md:w-48 aspect-video bg-black/5 dark:bg-white/5 rounded-[24px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center flex-shrink-0 group shadow-md">
                         {imageUrl && !imgError ? (
                             <>
                                 {isCssBackground(imageUrl) ? (
@@ -252,59 +255,60 @@ const RoutineHeader = ({
                                 )}
                                 <button
                                     onClick={() => { setImageUrl(null); setImgError(false); }}
-                                    className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
+                                    className="absolute top-2 right-2 p-2 bg-black/60 backdrop-blur-sm text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10"
                                     title="Eliminar imagen"
                                 >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={16} />
                                 </button>
                             </>
                         ) : (
                             <div className="text-text-tertiary flex flex-col items-center">
-                                <ImageIcon size={28} className="mb-2 opacity-50" />
-                                <span className="text-xs font-medium">Sin imagen</span>
+                                <ImageIcon size={32} className="mb-2 opacity-50" />
+                                <span className="text-sm font-bold">Sin imagen</span>
                             </div>
                         )}
                         {(isUploadingImage || isDownloadingPixabay) && (
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-20">
-                                <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
                             </div>
                         )}
                     </div>
 
-                    <div className="flex-1 w-full space-y-4">
+                    <div className="flex-1 min-w-0 w-full space-y-5">
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={handleUploadClick}
-                                className="flex items-center justify-center sm:justify-start flex-1 sm:flex-none gap-2 px-4 py-2 bg-glass-highlight border border-glass-border rounded-lg hover:bg-glass-heavy hover:border-accent/50 transition-all text-sm font-medium"
+                                className="flex items-center justify-center sm:justify-start flex-1 sm:flex-none gap-2 px-5 py-3 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] hover:bg-black/10 dark:hover:bg-white/10 transition-all text-sm font-bold text-text-primary active:scale-95"
                                 disabled={isUploadingImage || isDownloadingPixabay}
                             >
-                                <Upload size={16} />
+                                <Upload size={18} />
                                 {isUploadingImage ? 'Subiendo...' : 'Subir foto'}
                             </button>
                             
                             <button
                                 onClick={() => setIsPixabayOpen(true)}
-                                className="flex items-center justify-center sm:justify-start flex-1 sm:flex-none gap-2 px-4 py-2 bg-glass-highlight border border-glass-border rounded-lg hover:bg-glass-heavy hover:border-accent/50 transition-all text-sm font-medium"
+                                className="flex items-center justify-center sm:justify-start flex-1 sm:flex-none gap-2 px-5 py-3 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] hover:bg-black/10 dark:hover:bg-white/10 transition-all text-sm font-bold text-text-primary active:scale-95"
                             >
-                                <Search size={16} />
+                                <Search size={18} />
                                 Buscar en Pixabay
                             </button>
                             
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                         </div>
 
-                        <div className="text-center sm:text-left">
-                            <span className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-2 block">
-                                O elige un estilo
+                        <div className="text-center sm:text-left pt-2 w-full">
+                            <span className="text-[10px] sm:text-xs text-text-tertiary uppercase tracking-widest font-bold mb-3 block px-1">
+                                O elige un estilo de color
                             </span>
-                            <div className="flex gap-3 overflow-x-auto p-2 scrollbar-hide justify-start">
+                            {/* CAMBIADO: Reemplazado overflow-x-auto por flex-wrap para evitar el problema de scroll en PC */}
+                            <div className="flex flex-wrap gap-3 py-2 justify-center sm:justify-start px-1 w-full">
                                 {PREDEFINED_BACKGROUNDS.map((bg, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setImageUrl(bg)}
-                                        className={`relative w-16 h-12 rounded-md overflow-hidden border-2 flex-shrink-0 transition-all ${imageUrl === bg
-                                            ? 'border-accent ring-2 ring-accent/30 scale-105'
-                                            : 'border-transparent opacity-70 hover:opacity-100 hover:border-glass-border'
+                                        className={`relative w-16 h-12 sm:w-20 sm:h-14 rounded-[16px] overflow-hidden ring-2 flex-shrink-0 transition-all border-none ${imageUrl === bg
+                                            ? 'ring-accent shadow-md shadow-accent/30 scale-105 opacity-100'
+                                            : 'ring-transparent opacity-60 hover:opacity-100 hover:ring-black/10 dark:hover:ring-white/20'
                                             }`}
                                     >
                                         <div className="w-full h-full" style={{ background: bg }} />
@@ -314,84 +318,88 @@ const RoutineHeader = ({
                         </div>
                     </div>
                 </div>
-            </div>
+            </GlassCard>
 
-            <div className="mb-6 space-y-4">
-                <input
-                    type="text"
-                    placeholder="Nombre de la rutina"
-                    value={routineName}
-                    onChange={(e) => setRoutineName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent text-lg placeholder-text-tertiary"
-                />
+            <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 space-y-6 mb-8">
+                <div>
+                    <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Nombre de la rutina</label>
+                    <input
+                        type="text"
+                        placeholder="Ej: Pierna y Glúteo"
+                        value={routineName}
+                        onChange={(e) => setRoutineName(e.target.value)}
+                        className={inputClasses}
+                    />
+                </div>
 
                 <div className="relative" ref={folderWrapperRef}>
+                    <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Carpeta</label>
                     <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none">
-                            <Folder size={18} />
+                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
+                            <Folder size={20} />
                         </div>
 
                         <input
                             type="text"
-                            placeholder="Carpeta (Selecciona o escribe una nueva)"
+                            placeholder="Selecciona o escribe una nueva"
                             value={folder}
                             onChange={(e) => {
                                 setFolder(e.target.value);
                                 setIsFolderOpen(true);
                             }}
                             onFocus={() => setIsFolderOpen(true)}
-                            className="w-full pl-11 pr-10 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent placeholder-text-tertiary"
+                            className={`${inputClasses} pl-12 pr-12`}
                         />
 
                         <button
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-accent transition-colors p-1"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors p-1"
                             onClick={() => setIsFolderOpen(!isFolderOpen)}
                             type="button"
                         >
                             <ChevronDown
-                                size={18}
-                                className={`transition-transform duration-200 ${isFolderOpen ? 'rotate-180' : ''}`}
+                                size={20}
+                                className={`transition-transform duration-300 ${isFolderOpen ? 'rotate-180' : ''}`}
                             />
                         </button>
                     </div>
 
                     {isFolderOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary border border-glass-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
                             {filteredFolders.length > 0 ? (
-                                <ul>
+                                <ul className="py-2">
                                     {filteredFolders.map((f) => (
                                         <li
                                             key={f}
                                             onClick={() => handleSelectFolder(f)}
-                                            className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors text-text-primary"
+                                            className="px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors font-bold text-text-primary"
                                         >
-                                            <Folder size={16} className="text-accent" />
+                                            <Folder size={18} className="text-accent" />
                                             <span className="flex-1">{f}</span>
-                                            {folder === f && <Check size={16} className="text-accent" />}
+                                            {folder === f && <Check size={18} className="text-accent" />}
                                         </li>
                                     ))}
                                     {folder && !uniqueFolders.includes(folder) && (
                                         <li
                                             onClick={() => handleSelectFolder(folder)}
-                                            className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 border-t border-glass-border text-accent font-medium"
+                                            className="px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer flex items-center gap-3 border-t border-black/5 dark:border-white/10 text-accent font-bold mt-2"
                                         >
-                                            <Plus size={16} />
+                                            <Plus size={18} />
                                             <span>Crear nueva: "{folder}"</span>
                                         </li>
                                     )}
                                 </ul>
                             ) : (
-                                <ul>
+                                <ul className="py-2">
                                     {folder ? (
                                         <li
                                             onClick={() => handleSelectFolder(folder)}
-                                            className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 text-accent font-medium"
+                                            className="px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer flex items-center gap-3 text-accent font-bold"
                                         >
-                                            <Plus size={16} />
+                                            <Plus size={18} />
                                             <span>Crear carpeta: "{folder}"</span>
                                         </li>
                                     ) : (
-                                        <li className="px-4 py-4 text-center text-text-tertiary text-sm italic">
+                                        <li className="px-6 py-6 text-center text-text-tertiary text-sm font-medium">
                                             Escribe para crear una carpeta o selecciona una existente.
                                         </li>
                                     )}
@@ -401,14 +409,17 @@ const RoutineHeader = ({
                     )}
                 </div>
 
-                <textarea
-                    placeholder="Descripción (opcional)"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl bg-bg-secondary border border-glass-border focus:outline-none focus:ring-2 focus:ring-accent placeholder-text-tertiary"
-                />
-            </div>
+                <div>
+                    <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Descripción (opcional)</label>
+                    <textarea
+                        placeholder="Añade detalles sobre la rutina..."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows={3}
+                        className={`${inputClasses} resize-none`}
+                    />
+                </div>
+            </GlassCard>
 
             {/* --- MODAL DE RECORTE DE IMAGEN --- */}
             {isCropping && tempImage && (
@@ -448,8 +459,8 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[200] bg-black flex flex-col animate-[fade-in_0.2s_ease-out]">
-            <div className="relative flex-1">
+        <div className="fixed inset-0 z-[200] bg-bg-primary flex flex-col animate-[fade-in_0.2s_ease-out]">
+            <div className="relative flex-1 bg-black/90">
                 <Cropper
                     image={imageSrc}
                     crop={crop}
@@ -462,11 +473,11 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
                     onZoomChange={setZoom}
                 />
             </div>
-            <div className="bg-bg-primary p-4 pb-8 flex justify-between items-center px-8 border-t border-white/10" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
-                <button type="button" onClick={onCancel} className="text-text-secondary font-medium px-4 py-2 hover:text-white transition">
+            <div className="bg-bg-secondary p-5 pb-8 flex justify-between items-center px-6 sm:px-10 border-t border-glass-border/50" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+                <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
                     Cancelar
                 </button>
-                <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-bg-secondary font-bold px-6 py-2 rounded-full hover:scale-105 transition">
+                <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-white font-bold px-8 py-3 rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent/20">
                     Recortar
                 </button>
             </div>

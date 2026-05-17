@@ -235,20 +235,20 @@ const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
 
 const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
     <ScrollRevealCard delay={delay} className="h-full">
-        <div className="h-full p-6 rounded-3xl bg-glass-base border border-glass-border backdrop-blur-md flex flex-col items-center text-center hover:border-accent/40 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
+        <div className="h-full p-6 sm:p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl flex flex-col items-center text-center hover:ring-accent/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform-gpu" />
-            <div className="relative z-10 p-5 rounded-2xl bg-accent/10 text-accent mb-8 group-hover:bg-accent group-hover:text-white transition-all duration-500 group-hover:scale-110 shadow-sm transform-gpu">
+            <div className="relative z-10 p-4 rounded-[20px] bg-accent/10 text-accent mb-6 group-hover:bg-accent group-hover:text-white transition-all duration-500 group-hover:scale-110 ring-1 ring-accent/30 shadow-sm transform-gpu">
                 <Icon size={32} strokeWidth={1.5} />
             </div>
-            <h3 className="relative z-10 font-bold text-text-primary text-xl mb-4">{title}</h3>
-            <p className="relative z-10 text-sm text-text-secondary leading-relaxed">{desc}</p>
+            <h3 className="relative z-10 font-bold text-text-primary text-xl mb-3">{title}</h3>
+            <p className="relative z-10 text-sm font-medium text-text-secondary leading-relaxed">{desc}</p>
         </div>
     </ScrollRevealCard>
 );
 
 const BentoCard = ({ children, className = "", delay = 0, bgIcon: BgIcon, bgIconColor = "text-text-primary" }) => (
     <ScrollRevealCard delay={delay} className={className}>
-        <div className="h-full p-8 rounded-[2rem] bg-gradient-to-br from-glass-base via-glass-base/50 to-transparent border border-glass-border backdrop-blur-xl hover:border-accent/30 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
+        <div className="h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl hover:ring-accent/50 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform-gpu"></div>
 
             {BgIcon && (
@@ -290,15 +290,15 @@ const MockupGallery = () => {
             <ScrollRevealCard delay={200}>
                 <button
                     onClick={() => scroll('left')}
-                    className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-glass-base/90 hover:bg-bg-secondary text-text-primary hover:text-accent rounded-full items-center justify-center backdrop-blur-md border border-glass-border hover:border-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110 transform-gpu"
+                    className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary hover:text-accent rounded-[16px] items-center justify-center backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110 transform-gpu"
                 >
-                    <ChevronLeft size={24} />
+                    <ChevronLeft size={24} strokeWidth={2.5} />
                 </button>
                 <button
                     onClick={() => scroll('right')}
-                    className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-glass-base/90 hover:bg-bg-secondary text-text-primary hover:text-accent rounded-full items-center justify-center backdrop-blur-md border border-glass-border hover:border-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110 transform-gpu"
+                    className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary hover:text-accent rounded-[16px] items-center justify-center backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/50 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl hover:scale-110 transform-gpu"
                 >
-                    <ChevronRight size={24} />
+                    <ChevronRight size={24} strokeWidth={2.5} />
                 </button>
 
                 <div
@@ -428,7 +428,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     </div>
 
                     {/* --- NAVBAR --- */}
-                    <nav className={`sticky top-0 z-50 transition-all duration-500 border-b transform-gpu ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-glass-border shadow-sm' : 'bg-transparent border-transparent'}`} aria-label="Navegación principal">
+                    <nav className={`sticky top-0 z-50 transition-all duration-500 border-b transform-gpu ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-black/5 dark:border-white/10 shadow-sm' : 'bg-transparent border-transparent'}`} aria-label="Navegación principal">
                         <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full relative z-10">
                             <div
                                 className="flex items-center gap-4 cursor-pointer group"
@@ -443,26 +443,26 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <div className="flex items-center gap-3 sm:gap-5">
                                 <a
                                     href="/privacy"
-                                    className="flex items-center gap-2.5 text-xs font-medium text-text-secondary hover:text-accent transition-colors mr-1 outline-none border-none focus:outline-none"
+                                    className="flex items-center gap-2.5 text-xs font-bold text-text-secondary hover:text-accent transition-colors mr-1 outline-none border-none focus:outline-none"
                                     title="Política de Privacidad"
                                 >
                                     <Shield size={16} className="md:hidden" />
-                                    <span className="hidden md:inline">Privacidad</span>
+                                    <span className="hidden md:inline uppercase tracking-wider">Privacidad</span>
                                 </a>
 
                                 <button
                                     onClick={onLogin}
-                                    className="text-sm font-semibold text-text-secondary hover:text-accent transition-colors px-4 py-2 hover:bg-glass-base rounded-lg"
+                                    className="text-sm font-bold text-text-primary hover:text-accent transition-colors px-5 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] active:scale-95"
                                 >
                                     Iniciar Sesión
                                 </button>
 
                                 <button
                                     onClick={onRegister}
-                                    className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-6 py-2.5 rounded-full transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-3"
+                                    className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-6 py-2.5 rounded-[16px] transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
                                 >
                                     Empezar
-                                    <ChevronRight size={16} strokeWidth={3} />
+                                    <ChevronRight size={18} strokeWidth={3} />
                                 </button>
                             </div>
                         </div>
@@ -473,12 +473,12 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                         <div className="h-32 sm:h-28 md:h-12 lg:h-6 w-full mb-8 sm:mb-16 md:mb-6 lg:mb-4 pointer-events-none" aria-hidden="true"></div>
 
-                        <div className={`inline-flex items-center gap-3 px-5 py-2 rounded-full bg-glass-base border border-white/20 dark:border-white/10 mb-8 backdrop-blur-md shadow-sm transition-all duration-1000 delay-100 transform-gpu ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                        <div className={`inline-flex items-center gap-3 px-5 py-2 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 mb-8 backdrop-blur-xl shadow-sm transition-all duration-1000 delay-100 transform-gpu ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                             <span className="relative flex h-2.5 w-2.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
                             </span>
-                            <span className="text-xs font-bold text-text-primary tracking-wide uppercase">Versión {appVersion}</span>
+                            <span className="text-[10px] sm:text-xs font-black text-text-primary tracking-widest uppercase">Versión {appVersion}</span>
                         </div>
 
                         <div className={`space-y-6 max-w-5xl mx-auto transition-all duration-1000 delay-200 transform-gpu ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
@@ -499,15 +499,15 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto justify-center mb-8">
                                 <button
                                     onClick={onRegister}
-                                    className="group relative inline-flex items-center justify-center gap-4 px-8 py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-bold text-lg transition-all transform hover:-translate-y-1 active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20 overflow-hidden z-20 transform-gpu"
+                                    className="group relative inline-flex items-center justify-center gap-3 px-10 py-4 bg-accent hover:bg-accent/90 text-white rounded-[24px] font-bold text-lg transition-all transform hover:-translate-y-1 active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20 overflow-hidden z-20 transform-gpu"
                                 >
                                     <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
                                     Empezar Gratis
-                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRight size={22} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                                 <button
                                     onClick={onLogin}
-                                    className="inline-flex items-center justify-center gap-4 px-8 py-4 bg-glass-base hover:bg-glass-border text-text-primary rounded-2xl font-bold text-lg transition-all border border-glass-border hover:border-accent/30 hover:-translate-y-1 z-20 transform-gpu"
+                                    className="inline-flex items-center justify-center gap-4 px-10 py-4 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary rounded-[24px] font-bold text-lg transition-all ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/30 hover:-translate-y-1 z-20 transform-gpu active:scale-95"
                                 >
                                     Ya tengo cuenta
                                 </button>
@@ -515,17 +515,17 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                             {/* GOOGLE PLAY BADGE PROMO */}
                             <div className="relative group inline-block z-20 mt-2 transform-gpu">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-2xl blur-lg opacity-40 group-hover:opacity-80 transition duration-500 animate-gradient-x transform-gpu"></div>
+                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-[28px] blur-lg opacity-40 group-hover:opacity-80 transition duration-500 animate-gradient-x transform-gpu"></div>
                                 <a
                                     href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="relative flex items-center justify-center gap-5 px-8 py-3 bg-black/90 backdrop-blur-md border border-white/10 text-white rounded-2xl font-bold transition-all transform-gpu hover:scale-105 active:scale-95 shadow-2xl"
+                                    className="relative flex items-center justify-center gap-5 px-8 py-3.5 bg-black/90 backdrop-blur-md border border-white/10 text-white rounded-[24px] font-bold transition-all transform-gpu hover:scale-105 active:scale-95 shadow-2xl"
                                     style={{ WebkitTransform: 'translateZ(0)' }}
                                 >
                                     <FaGooglePlay style={{ fill: 'url(#play-grad-vibrant)' }} className="text-3xl drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" />
                                     <div className="flex flex-col text-left leading-none">
-                                        <span className="text-[10px] text-gray-400 font-semibold tracking-wider mb-1">CONSIGUELA EN</span>
+                                        <span className="text-[10px] text-gray-400 font-bold tracking-widest mb-1">CONSIGUELA EN</span>
                                         <span className="text-xl font-black tracking-tight text-white">Google Play</span>
                                     </div>
 
@@ -547,15 +547,15 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             {apkDownloadUrl && (
                                 <a
                                     href={apkDownloadUrl}
-                                    className="mt-6 inline-flex items-center justify-center gap-3 text-xs font-medium text-text-tertiary hover:text-accent transition-colors z-20 transform-gpu"
+                                    className="mt-6 inline-flex items-center justify-center gap-2 text-xs font-bold text-text-tertiary hover:text-accent transition-colors z-20 transform-gpu uppercase tracking-wider"
                                 >
-                                    <Download size={14} />
+                                    <Download size={16} strokeWidth={2.5} />
                                     Descargar APK directamente
                                 </a>
                             )}
 
                             <p className="mt-6 text-sm font-medium text-text-secondary z-20">
-                                Sin tarjeta de crédito. <span className="text-accent font-bold">100% Gratuito.</span>
+                                Sin tarjeta de crédito. <span className="text-accent font-extrabold tracking-wide">100% Gratuito.</span>
                             </p>
                         </div>
 
@@ -567,7 +567,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <ScrollRevealCard>
                                 <div className="flex items-center justify-center gap-5 mb-14">
                                     <div className="h-px w-16 bg-gradient-to-r from-transparent to-accent/50"></div>
-                                    <h2 className="text-sm font-bold text-accent tracking-[0.2em] uppercase">
+                                    <h2 className="text-xs font-black text-accent tracking-[0.25em] uppercase drop-shadow-sm">
                                         Todo lo que necesitas
                                     </h2>
                                     <div className="h-px w-16 bg-gradient-to-l from-transparent to-accent/50"></div>
@@ -577,16 +577,16 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left">
 
                                 <BentoCard className="md:col-span-2" delay={100} bgIcon={Dumbbell} bgIconColor="text-blue-500">
-                                    <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <Dumbbell size={32} />
+                                    <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-[20px] ring-1 ring-blue-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
+                                        <Dumbbell size={28} strokeWidth={2} />
                                     </div>
-                                    <h3 className="text-3xl font-bold text-text-primary mb-4 group-hover:text-blue-400 transition-colors relative z-10">Rutinas Avanzadas</h3>
-                                    <p className="text-text-secondary mb-8 max-w-md text-lg leading-relaxed relative z-10">
+                                    <h3 className="text-3xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-blue-400 transition-colors relative z-10">Rutinas Avanzadas</h3>
+                                    <p className="text-text-secondary font-medium mb-8 max-w-md text-lg leading-relaxed relative z-10">
                                         Diseña entrenamientos con superseries, dropsets y descansos personalizados. Registra pesos, RPE y notas en tiempo real.
                                     </p>
-                                    <div className="flex gap-4 flex-wrap relative z-10">
+                                    <div className="flex gap-3 flex-wrap relative z-10">
                                         {['Superseries', 'Historial', '1RM Estimado'].map(tag => (
-                                            <span key={tag} className="px-4 py-2 bg-bg-secondary/50 rounded-lg text-xs font-bold font-mono text-text-secondary border border-glass-border group-hover:border-blue-500/30 group-hover:text-blue-400 transition-colors">
+                                            <span key={tag} className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-md text-[10px] font-black uppercase tracking-wider text-text-secondary ring-1 ring-black/5 dark:ring-white/10 group-hover:ring-blue-500/30 group-hover:text-blue-400 transition-colors">
                                                 {tag}
                                             </span>
                                         ))}
@@ -594,44 +594,44 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </BentoCard>
 
                                 <BentoCard delay={200} bgIcon={Bot} bgIconColor="text-purple-500">
-                                    <div className="w-14 h-14 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <Sparkles size={32} />
+                                    <div className="w-14 h-14 bg-purple-500/10 text-purple-500 rounded-[20px] ring-1 ring-purple-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
+                                        <Sparkles size={28} strokeWidth={2} />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-text-primary mb-4 group-hover:text-purple-400 transition-colors relative z-10">IA Integrada</h3>
-                                    <p className="text-text-secondary mb-6 leading-relaxed relative z-10">
+                                    <h3 className="text-2xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-purple-400 transition-colors relative z-10">IA Integrada</h3>
+                                    <p className="text-text-secondary font-medium mb-6 leading-relaxed relative z-10">
                                         Asistente inteligente para generar entrenamientos personalizados desde cero con un solo clic.
                                     </p>
                                     <div className="flex gap-3 flex-wrap relative z-10 mt-auto">
-                                        <span className="px-3 py-1.5 bg-purple-500/10 rounded-md text-[10px] font-bold text-purple-400 border border-purple-500/20">Auto-Ajuste</span>
+                                        <span className="px-3 py-1.5 bg-purple-500/10 rounded-md text-[10px] font-black uppercase tracking-wider text-purple-400 ring-1 ring-purple-500/30">Auto-Ajuste</span>
                                     </div>
                                 </BentoCard>
 
                                 <BentoCard delay={300} bgIcon={Apple} bgIconColor="text-green-500">
-                                    <div className="w-14 h-14 bg-green-500/10 text-green-500 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <Utensils size={32} />
+                                    <div className="w-14 h-14 bg-green-500/10 text-green-500 rounded-[20px] ring-1 ring-green-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
+                                        <Utensils size={28} strokeWidth={2} />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-text-primary mb-4 group-hover:text-green-400 transition-colors relative z-10">Nutrición & Macros</h3>
-                                    <p className="text-text-secondary mb-4 leading-relaxed relative z-10">
+                                    <h3 className="text-2xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-green-400 transition-colors relative z-10">Nutrición & Macros</h3>
+                                    <p className="text-text-secondary font-medium mb-4 leading-relaxed relative z-10">
                                         Base de datos verificada. Escanea códigos de barras y controla tus calorías diarias sin estrés.
                                     </p>
                                 </BentoCard>
 
                                 <BentoCard delay={400} bgIcon={LineChart} bgIconColor="text-yellow-500">
-                                    <div className="w-14 h-14 bg-yellow-500/10 text-yellow-500 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-yellow-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <LineChart size={32} />
+                                    <div className="w-14 h-14 bg-yellow-500/10 text-yellow-500 rounded-[20px] ring-1 ring-yellow-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-yellow-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
+                                        <LineChart size={28} strokeWidth={2} />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-text-primary mb-4 group-hover:text-yellow-500 transition-colors relative z-10">Análisis Visual</h3>
-                                    <p className="text-text-secondary mb-4 leading-relaxed relative z-10">
+                                    <h3 className="text-2xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-yellow-500 transition-colors relative z-10">Análisis Visual</h3>
+                                    <p className="text-text-secondary font-medium mb-4 leading-relaxed relative z-10">
                                         Gráficos interactivos de tu peso, volumen de carga y medidas para ver tu evolución real.
                                     </p>
                                 </BentoCard>
 
                                 <BentoCard delay={500} bgIcon={Globe} bgIconColor="text-orange-500">
-                                    <div className="w-14 h-14 bg-orange-500/10 text-orange-500 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <Users size={32} />
+                                    <div className="w-14 h-14 bg-orange-500/10 text-orange-500 rounded-[20px] ring-1 ring-orange-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
+                                        <Users size={28} strokeWidth={2} />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-text-primary mb-4 group-hover:text-orange-400 transition-colors relative z-10">Comunidad</h3>
-                                    <p className="text-text-secondary mb-8 leading-relaxed relative z-10">
+                                    <h3 className="text-2xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-orange-400 transition-colors relative z-10">Comunidad</h3>
+                                    <p className="text-text-secondary font-medium mb-8 leading-relaxed relative z-10">
                                         Comparte tus logros, sube historias de tus entrenos y encuentra motivación con tus amigos.
                                     </p>
                                     <div className="flex items-center gap-5 relative z-10">
@@ -639,7 +639,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                             {[0, 1, 2].map((index) => {
                                                 const userImage = communityUsers[index];
                                                 return (
-                                                    <div key={index} className="w-10 h-10 rounded-full bg-glass-border border-2 border-bg-primary flex items-center justify-center overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:z-10 relative shadow-md">
+                                                    <div key={index} className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 ring-2 ring-bg-primary flex items-center justify-center overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:z-10 relative shadow-md">
                                                         {userImage ? (
                                                             <img
                                                                 src={userImage}
@@ -648,7 +648,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                                                 onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                                                             />
                                                         ) : null}
-                                                        <div style={{ display: userImage ? 'none' : 'flex' }} className="w-full h-full items-center justify-center bg-glass-base">
+                                                        <div style={{ display: userImage ? 'none' : 'flex' }} className="w-full h-full items-center justify-center bg-black/5 dark:bg-white/5">
                                                             <Users size={14} className="text-text-tertiary" />
                                                         </div>
                                                     </div>
@@ -664,7 +664,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         {/* --- SECCIÓN 2: CARACTERÍSTICAS TÉCNICAS --- */}
                         <div className="w-full mt-32 relative z-10">
                             <ScrollRevealCard>
-                                <h2 className="text-4xl md:text-5xl font-black text-center mb-16">
+                                <h2 className="text-4xl md:text-5xl font-black tracking-tight text-center mb-16">
                                     Diseñado para <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple-500">Rendir</span>
                                 </h2>
                             </ScrollRevealCard>
@@ -700,40 +700,40 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS --- */}
                         <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
                             <ScrollRevealCard>
-                                <div className="p-8 md:p-12 rounded-[2rem] bg-glass-base border border-glass-border backdrop-blur-xl relative overflow-hidden transform-gpu">
+                                <div className="p-8 md:p-12 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl relative overflow-hidden transform-gpu">
                                     <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                                         <Shield size={200} />
                                     </div>
 
                                     <div className="flex items-center gap-5 mb-8 relative z-10">
-                                        <div className="p-4 bg-blue-500/20 text-blue-400 rounded-2xl">
-                                            <Shield size={32} />
+                                        <div className="p-4 bg-blue-500/10 text-blue-500 rounded-[20px] ring-1 ring-blue-500/30">
+                                            <Shield size={32} strokeWidth={2} />
                                         </div>
-                                        <h3 className="text-2xl md:text-3xl font-bold text-text-primary">Transparencia y Uso de Datos</h3>
+                                        <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-primary">Transparencia y Uso de Datos</h3>
                                     </div>
 
-                                    <p className="text-text-secondary text-lg leading-relaxed mb-8 relative z-10">
+                                    <p className="text-text-secondary font-medium text-lg leading-relaxed mb-8 relative z-10">
                                         En <strong>Pro Fitness Glass</strong>, tu privacidad es fundamental. Solo solicitamos los datos estrictamente necesarios para ofrecerte la mejor experiencia posible:
                                     </p>
 
-                                    <ul className="space-y-5 text-text-secondary mb-10 relative z-10">
+                                    <ul className="space-y-5 text-text-secondary font-medium mb-10 relative z-10">
                                         <li className="flex items-start gap-4">
-                                            <Check size={20} className="text-green-400 shrink-0 mt-1" />
-                                            <span><strong>Inicio de Sesión con Google:</strong> Solicitamos acceso a tu dirección de correo electrónico y nombre de perfil público. Esto se usa <em>exclusivamente</em> para crear tu cuenta, identificarte de forma segura y permitirte sincronizar tu progreso entre dispositivos.</span>
+                                            <Check size={20} className="text-green-500 shrink-0 mt-1" strokeWidth={2.5} />
+                                            <span><strong className="text-text-primary">Inicio de Sesión con Google:</strong> Solicitamos acceso a tu dirección de correo electrónico y nombre de perfil público. Esto se usa <em>exclusivamente</em> para crear tu cuenta, identificarte de forma segura y permitirte sincronizar tu progreso entre dispositivos.</span>
                                         </li>
                                         <li className="flex items-start gap-4">
-                                            <Check size={20} className="text-green-400 shrink-0 mt-1" />
-                                            <span><strong>Salud y Progreso:</strong> Tus rutinas, pesos y medidas se almacenan de forma segura en nuestros servidores para generar tus gráficas. Tú tienes el control absoluto sobre qué información haces pública en la comunidad.</span>
+                                            <Check size={20} className="text-green-500 shrink-0 mt-1" strokeWidth={2.5} />
+                                            <span><strong className="text-text-primary">Salud y Progreso:</strong> Tus rutinas, pesos y medidas se almacenan de forma segura en nuestros servidores para generar tus gráficas. Tú tienes el control absoluto sobre qué información haces pública en la comunidad.</span>
                                         </li>
                                         <li className="flex items-start gap-4">
-                                            <Check size={20} className="text-green-400 shrink-0 mt-1" />
-                                            <span><strong>Sin venta de datos:</strong> Tus datos te pertenecen. No vendemos ni compartimos tu información personal con terceros para fines publicitarios.</span>
+                                            <Check size={20} className="text-green-500 shrink-0 mt-1" strokeWidth={2.5} />
+                                            <span><strong className="text-text-primary">Sin venta de datos:</strong> Tus datos te pertenecen. No vendemos ni compartimos tu información personal con terceros para fines publicitarios.</span>
                                         </li>
                                     </ul>
 
                                     <div className="relative z-10">
-                                        <a href="/privacy" className="inline-flex items-center gap-3 text-accent font-bold px-6 py-3 bg-accent/10 hover:bg-accent/20 rounded-xl transition-colors">
-                                            Leer la Política de Privacidad completa <ChevronRight size={18} />
+                                        <a href="/privacy" className="inline-flex items-center gap-2 text-accent font-bold px-6 py-3.5 bg-accent/10 hover:bg-accent hover:text-white rounded-[20px] transition-all active:scale-95">
+                                            Leer la Política de Privacidad <ChevronRight size={18} strokeWidth={2.5} />
                                         </a>
                                     </div>
                                 </div>
@@ -743,19 +743,19 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         {/* --- CTA FINAL --- */}
                         <div className="mt-32 w-full max-w-4xl relative z-20">
                             <ScrollRevealCard delay={200}>
-                                <div className="p-1 rounded-[2.5rem] bg-gradient-to-r from-accent/50 via-purple-500/30 to-accent/50 animate-gradient-x shadow-2xl shadow-accent/20 transform-gpu">
-                                    <div className="bg-bg-primary rounded-[2.2rem] p-12 md:p-20 text-center relative overflow-hidden group">
+                                <div className="p-1 rounded-[40px] bg-gradient-to-r from-accent/50 via-purple-500/30 to-accent/50 animate-gradient-x shadow-2xl shadow-accent/20 transform-gpu">
+                                    <div className="bg-bg-primary rounded-[36px] p-12 md:p-20 text-center relative overflow-hidden group">
                                         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent opacity-50 group-hover:opacity-80 transition-opacity duration-700"></div>
                                         <div className="relative z-10">
                                             <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tight">¿Listo para el cambio?</h2>
-                                            <p className="text-text-secondary text-xl mb-12 max-w-2xl mx-auto leading-relaxed">
+                                            <p className="text-text-secondary font-medium text-xl mb-12 max-w-2xl mx-auto leading-relaxed">
                                                 Únete hoy mismo a Pro Fitness Glass. Sin trucos, sin pagos ocultos, solo herramientas profesionales para tu mejor versión.
                                             </p>
 
                                             <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
                                                 <button
                                                     onClick={onRegister}
-                                                    className="w-full sm:w-auto px-12 py-4 bg-accent text-white rounded-2xl font-black text-xl shadow-xl shadow-accent/30 hover:scale-105 hover:shadow-accent/50 transition-all duration-300 hover:-translate-y-1 transform-gpu"
+                                                    className="w-full sm:w-auto px-12 py-4 bg-accent text-white rounded-[24px] font-black text-xl shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all duration-300 transform-gpu"
                                                 >
                                                     Comenzar Gratis
                                                 </button>
@@ -763,13 +763,13 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                                     href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="w-full sm:w-auto relative flex items-center justify-center gap-4 px-8 py-3 bg-black border border-white/10 text-white rounded-2xl transition-all transform-gpu hover:scale-105 shadow-xl hover:shadow-blue-500/20 group"
+                                                    className="w-full sm:w-auto relative flex items-center justify-center gap-4 px-8 py-3 bg-black border border-white/10 text-white rounded-[24px] transition-all transform-gpu hover:scale-[1.02] active:scale-95 shadow-xl hover:shadow-blue-500/20 group"
                                                     style={{ WebkitTransform: 'translateZ(0)' }}
                                                 >
                                                     <FaGooglePlay style={{ fill: 'url(#play-grad-vibrant)' }} className="text-2xl group-hover:animate-pulse" />
                                                     <div className="flex flex-col text-left leading-none">
-                                                        <span className="text-[9px] text-gray-400 font-semibold tracking-wider mb-0.5">DISPONIBLE EN</span>
-                                                        <span className="text-lg font-black tracking-tight">Google Play</span>
+                                                        <span className="text-[9px] text-gray-400 font-bold tracking-widest uppercase mb-0.5">Disponible en</span>
+                                                        <span className="text-lg font-black tracking-tight text-white">Google Play</span>
                                                     </div>
 
                                                     <span
@@ -786,10 +786,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                                     </span>
                                                 </a>
                                             </div>
-
-                                            <p className="mt-8 text-sm font-medium text-text-secondary z-20">
-                                                Sin tarjeta de crédito. <span className="text-accent font-bold">100% Gratuito.</span>
-                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -799,10 +795,9 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     </main>
 
                     {/* --- FOOTER LEGAL Y SOCIAL --- */}
-                    <footer className="p-10 pb-16 text-center border-t border-glass-border bg-glass-base/30 backdrop-blur-xl relative z-20 transform-gpu">
+                    <footer className="p-10 pb-16 text-center border-t border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 backdrop-blur-xl relative z-20 transform-gpu">
 
-                        {/* Modificado: flex-wrap añadido para que salten a dos líneas en móviles pequeños */}
-                        <div className="flex flex-wrap justify-center gap-5 sm:gap-8 mb-8 px-4">
+                        <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-8 px-4">
                             <a href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#4285F4] transition-all transform hover:scale-125 hover:-translate-y-1">
                                 <FaGooglePlay size={26} />
                             </a>
@@ -815,7 +810,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#FF0000] transition-all transform hover:scale-125 hover:-translate-y-1">
                                 <Youtube size={28} />
                             </a>
-                            <a href="https://github.com/Deathvks/Pro-Ftiness-Glass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-white transition-all transform hover:scale-125 hover:-translate-y-1">
+                            <a href="https://github.com/Deathvks/Pro-Ftiness-Glass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-text-primary transition-all transform hover:scale-125 hover:-translate-y-1">
                                 <Github size={28} />
                             </a>
                             <a href="https://pro-fitness-glass.zeabur.app" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-accent transition-all transform hover:scale-125 hover:-translate-y-1">
@@ -823,16 +818,16 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             </a>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-medium mb-8">
-                            <a href="/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-3 hover:underline decoration-accent underline-offset-4">
+                        <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-bold mb-8 tracking-wide">
+                            <a href="/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
                                 Política de Privacidad
                             </a>
-                            <span className="hidden sm:block text-text-secondary/20">•</span>
-                            <a href="/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-3 hover:underline decoration-accent underline-offset-4">
+                            <span className="hidden sm:block text-text-secondary/30">•</span>
+                            <a href="/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
                                 Términos del Servicio
                             </a>
                         </div>
-                        <p className="text-xs text-text-tertiary opacity-60">
+                        <p className="text-xs font-bold text-text-tertiary uppercase tracking-widest opacity-60">
                             © {currentYear} Pro Fitness Glass. Desarrollado con pasión y cafeína. v{appVersion}
                         </p>
                     </footer>
