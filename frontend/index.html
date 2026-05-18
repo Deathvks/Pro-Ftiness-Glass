@@ -25,6 +25,7 @@
   <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  
   <meta name="theme-color" content="" />
 
   <link rel="icon" type="image/png" href="/favicon-32x32.png?v=2" />
@@ -34,6 +35,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Pro Fitness" />
+  
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
   <link rel="preconnect" href="https://accounts.google.com" crossorigin />
@@ -241,6 +243,7 @@
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') effectiveTheme = systemDark ? 'dark' : 'light';
 
+        // --- SEPARAMOS COLOR DE FONDO Y COLOR DE CABECERA ---
         var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000' };
         var headerColors = { light: '#ffffff', dark: '#1e293b', oled: '#000000' };
 
@@ -254,12 +257,17 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        root.style.backgroundColor = selectedBgColor;
+        // 1. FORZAMOS EL BODY Y EL HTML AL COLOR DEL HEADER (Para que iOS pinte el notch de ese color)
+        root.style.backgroundColor = selectedHeaderColor;
         var setBodyColor = function() {
-            if(document.body) document.body.style.backgroundColor = selectedBgColor;
+            if(document.body) document.body.style.backgroundColor = selectedHeaderColor;
         };
         if(document.body) setBodyColor();
         else document.addEventListener('DOMContentLoaded', setBodyColor);
+
+        // 2. FORZAMOS QUE LA PANTALLA DE CARGA (SPLASH) RESPETE EL FONDO PRINCIPAL
+        var splash = document.querySelector('.app-splash-screen');
+        if(splash) splash.style.backgroundColor = selectedBgColor;
 
         var updateMeta = function(name, content) {
             var meta = document.querySelector('meta[name="' + name + '"]');
@@ -271,8 +279,8 @@
             meta.content = content;
         };
         
+        // 3. ACTUALIZAMOS META THEME-COLOR CON EL HEADER COLOR
         updateMeta("theme-color", selectedHeaderColor);
-        updateMeta("apple-mobile-web-app-status-bar-style", "default");
 
       } catch (e) {
         console.error('Splash init error', e);

@@ -204,7 +204,8 @@
     /* FIX IOS: Usar dynamic viewport height para no chocar con las barras de safari/notches */
     height: 100vh;
     height: 100dvh;
-    background-color: var(--bg-primary);
+    /* 🔴 MAGIA IOS: Forzamos el "Fondo base" al color del HEADER para que el Notch lo lea */
+    background-color: var(--bg-secondary);
     transition: background-color 0.3s ease;
     overscroll-behavior: none;
   }
@@ -220,7 +221,8 @@
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
-    background-color: var(--bg-primary);
+    /* 🔴 MAGIA IOS: Forzamos el "Fondo base" al color del HEADER para que el Notch lo lea */
+    background-color: var(--bg-secondary);
     transition: background-color 0.3s ease;
     box-sizing: border-box;
     overscroll-behavior: none;
@@ -228,6 +230,9 @@
 
   /* #root ahora siempre vive dentro del espacio completamente libre y seguro */
   #root {
+    /* 🔴 MAGIA IOS: Y forzamos a la app real a que se pinte encima con el fondo PRIMARY */
+    background-color: var(--bg-primary);
+    transition: background-color 0.3s ease;
     isolation: isolate;
     position: absolute;
     top: 0;
@@ -260,8 +265,6 @@
   button:focus-visible {
     @apply outline-none;
   }
-
-  /* ELIMINADO el override estricto de box-shadow: none !important; que rompía los anillos de Tailwind */
 
   /* --- GLASSMORPHISM UNIVERSAL --- */
   .glass,
