@@ -23,14 +23,12 @@
   --color-red: #ef4444;
   --color-neutral: #6b7280;
 
-  /* Glassmorphism - GLOBAL DEFAULT (Darkish) */
+  /* Glassmorphism - GLOBAL DEFAULT (Premium Dark) */
   --glass-blur: 24px;
-  --glass-radius: 28px;
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-bg: rgba(30, 41, 59, 0.55);
-  --glass-highlight: rgba(255, 255, 255, 0.15);
-  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  --glass-shadow-inner: rgba(255, 255, 255, 0.05);
+  --glass-radius: 32px; /* Actualizado al nuevo estándar */
+  --glass-bg: rgba(255, 255, 255, 0.05); /* Adaptable dark */
+  --glass-border: rgba(255, 255, 255, 0.10); /* Anillo sutil */
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
@@ -42,25 +40,21 @@
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
 
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-bg: rgba(30, 41, 59, 0.55);
-  --glass-highlight: rgba(255, 255, 255, 0.15);
-  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  --glass-shadow-inner: rgba(255, 255, 255, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 .light-theme {
-  --bg-primary: #eef2f6;
+  --bg-primary: #f8fafc; /* Un blanco roto más limpio y premium */
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
 
-  --glass-border: rgba(255, 255, 255, 0.8);
-  --glass-bg: rgba(255, 255, 255, 0.6);
-  --glass-highlight: rgba(255, 255, 255, 1);
-  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
-  --glass-shadow-inner: rgba(255, 255, 255, 0.5);
+  --glass-bg: rgba(0, 0, 0, 0.03); /* Fondo oscurecido muy sutil */
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
 }
 
 .oled-theme {
@@ -70,11 +64,9 @@
   --text-secondary: #a3a3a3;
   --text-muted: #525252;
 
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-bg: rgba(15, 15, 15, 0.6); 
-  --glass-highlight: rgba(255, 255, 255, 0.05);
-  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  --glass-shadow-inner: rgba(255, 255, 255, 0.02);
+  --glass-bg: rgba(255, 255, 255, 0.05); 
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 /* 4) PALETAS DE ACENTO */
@@ -209,8 +201,9 @@
 
   html {
     width: 100%;
-    /* FIX IOS DEFINITIVO: 100vh en PWA standalone fuerza a cubrir toda la pantalla física, ignorando los recortes de iOS */
+    /* FIX IOS: Usar dynamic viewport height para no chocar con las barras de safari/notches */
     height: 100vh;
+    height: 100dvh;
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
     overscroll-behavior: none;
@@ -218,7 +211,6 @@
 
   body {
     @apply text-text-primary antialiased;
-    /* FIX IOS: Body anclado absoluto a la pantalla física para evitar que se desplace o acorte */
     position: fixed;
     top: 0;
     left: 0;
@@ -226,6 +218,7 @@
     bottom: 0;
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
@@ -268,13 +261,7 @@
     @apply outline-none;
   }
 
-  input:focus,
-  textarea:focus,
-  select:focus {
-    box-shadow: none !important;
-    border-color: var(--color-accent) !important;
-    outline: none !important;
-  }
+  /* ELIMINADO el override estricto de box-shadow: none !important; que rompía los anillos de Tailwind */
 
   /* --- GLASSMORPHISM UNIVERSAL --- */
   .glass,
@@ -287,18 +274,14 @@
     -webkit-backdrop-filter: blur(var(--glass-blur));
     
     border: 1px solid var(--glass-border);
-    border-top-color: var(--glass-highlight);
-    
-    box-shadow: 
-      inset 0 1px 1px var(--glass-shadow-inner),
-      var(--glass-shadow);
+    box-shadow: var(--glass-shadow);
   }
 
   .form-error-text {
-    @apply text-red text-sm mt-1;
+    @apply text-red font-bold text-sm mt-1;
   }
 
-  /* Checkbox */
+  /* Checkbox adaptado a la nueva estética */
   input[type="checkbox"] {
     background-color: transparent !important;
     border: 1px solid var(--glass-border) !important;
@@ -306,6 +289,8 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     outline: none !important;
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
   }
 
   input[type="checkbox"]:checked {
@@ -317,12 +302,12 @@
   input[type="checkbox"]:focus,
   input[type="checkbox"]:focus-visible {
     outline: none !important;
-    box-shadow: none !important;
+    box-shadow: 0 0 0 2px var(--color-accent-transparent) !important;
   }
 
   .light-theme input[type="checkbox"] {
-    background-color: white !important;
-    border-color: #d1d5db !important;
+    background-color: rgba(0,0,0,0.05) !important;
+    border-color: rgba(0,0,0,0.1) !important;
   }
 
   .light-theme input[type="checkbox"]:checked {
@@ -337,6 +322,7 @@
     color: white;
     font-size: 12px;
     line-height: 14px;
+    font-weight: bold;
   }
 
   /* QR Scanner */
@@ -357,7 +343,7 @@
   .scanner-wrapper>div,
   .scanner-wrapper #qr-shaded-region {
     border: none !important;
-    border-radius: 0.5rem;
+    border-radius: 1.5rem;
   }
 
   .scanner-wrapper #qr-shaded-region * {
@@ -414,6 +400,18 @@
     0% {
       opacity: 0;
       transform: translateY(6px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slide-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
     }
 
     100% {
