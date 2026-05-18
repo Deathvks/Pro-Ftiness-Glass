@@ -21,8 +21,8 @@ export default function SEOHead({ title, description, route, noIndex = false }) 
         canonicalUrl = canonicalUrl.slice(0, -1);
     }
 
-    // --- NUEVO: Estado para el color del Notch / Status Bar ---
-    const [themeColor, setThemeColor] = useState('#0f172a'); // Oscuro por defecto
+    // --- CORRECCIÓN: Estado para el color del Notch basado en el HEADER (--bg-secondary) ---
+    const [themeColor, setThemeColor] = useState('#1e293b');
 
     useEffect(() => {
         const updateThemeColor = () => {
@@ -30,20 +30,19 @@ export default function SEOHead({ title, description, route, noIndex = false }) 
                 const isOled = document.documentElement.classList.contains('oled-theme');
                 const isLight = document.documentElement.classList.contains('light-theme');
                 
-                // Estos HEX coinciden exactamente con tus variables CSS de index.html
+                // Estos HEX coinciden exactamente con la variable --bg-secondary de tu index.css
                 if (isOled) {
-                    setThemeColor('#000000'); // Negro puro OLED
+                    setThemeColor('#000000'); // Header en OLED
                 } else if (isLight) {
-                    setThemeColor('#eef2f6'); // Fondo claro
+                    setThemeColor('#ffffff'); // Header en Claro
                 } else {
-                    setThemeColor('#0f172a'); // Fondo oscuro (Slate 900)
+                    setThemeColor('#1e293b'); // Header en Oscuro (este era el que fallaba)
                 }
             }
         };
 
-        // Ejecutar al montar la vista
         updateThemeColor();
-
+        
         // Observador que vigila si el usuario cambia el tema en tiempo real desde los Ajustes
         const observer = new MutationObserver(updateThemeColor);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
@@ -65,7 +64,7 @@ export default function SEOHead({ title, description, route, noIndex = false }) 
             <link rel="canonical" href={canonicalUrl} />
             <meta property="og:url" content={canonicalUrl} />
 
-            {/* --- NUEVO: Etiqueta dinámica para fusionar el Notch con el fondo --- */}
+            {/* Etiqueta dinámica para fusionar el Notch con el Header */}
             <meta name="theme-color" content={themeColor} />
         </Helmet>
     );
