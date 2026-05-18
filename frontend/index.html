@@ -34,7 +34,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Pro Fitness" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
   <link rel="preconnect" href="https://accounts.google.com" crossorigin />
   <link rel="dns-prefetch" href="https://accounts.google.com" />
@@ -49,21 +49,16 @@
 
   <style>
     :root {
-      /* Valores por defecto */
       --accent-r: 34;
       --accent-g: 197;
       --accent-b: 94; 
-      
-      /* Base Glass Colors */
       --glass-base: 26, 35, 53;
       --glass-opacity: 0.65;
       --glass-border-opacity: 0.2;
-      
-      /* New Glass Properties */
       --glass-blur: 24px;
       --glass-radius: 28px;
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      --bg-color: #0c111b; /* Default to dark */
+      --bg-color: #0c111b;
     }
 
     html.light-theme {
@@ -246,14 +241,11 @@
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') effectiveTheme = systemDark ? 'dark' : 'light';
 
-        // --- CORRECCIÓN: Separamos color de fondo general y color de cabecera ---
         var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000' };
         var headerColors = { light: '#ffffff', dark: '#1e293b', oled: '#000000' };
 
         var selectedBgColor = bgColors[effectiveTheme] || bgColors.dark;
         var selectedHeaderColor = headerColors[effectiveTheme] || headerColors.dark;
-        
-        var statusBarStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
 
         root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
         if (savedTheme === 'system') {
@@ -262,7 +254,6 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // El fondo del body usa el Bg Color
         root.style.backgroundColor = selectedBgColor;
         var setBodyColor = function() {
             if(document.body) document.body.style.backgroundColor = selectedBgColor;
@@ -280,9 +271,8 @@
             meta.content = content;
         };
         
-        // El Notch usa el Header Color
         updateMeta("theme-color", selectedHeaderColor);
-        updateMeta("apple-mobile-web-app-status-bar-style", statusBarStyle);
+        updateMeta("apple-mobile-web-app-status-bar-style", "default");
 
       } catch (e) {
         console.error('Splash init error', e);

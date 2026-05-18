@@ -21,7 +21,6 @@ export default function SEOHead({ title, description, route, noIndex = false }) 
         canonicalUrl = canonicalUrl.slice(0, -1);
     }
 
-    // --- CORRECCIÓN: Estado para el color del Notch basado en el HEADER (--bg-secondary) ---
     const [themeColor, setThemeColor] = useState('#1e293b');
 
     useEffect(() => {
@@ -30,20 +29,18 @@ export default function SEOHead({ title, description, route, noIndex = false }) 
                 const isOled = document.documentElement.classList.contains('oled-theme');
                 const isLight = document.documentElement.classList.contains('light-theme');
                 
-                // Estos HEX coinciden exactamente con la variable --bg-secondary de tu index.css
                 if (isOled) {
-                    setThemeColor('#000000'); // Header en OLED
+                    setThemeColor('#000000');
                 } else if (isLight) {
-                    setThemeColor('#ffffff'); // Header en Claro
+                    setThemeColor('#ffffff');
                 } else {
-                    setThemeColor('#1e293b'); // Header en Oscuro (este era el que fallaba)
+                    setThemeColor('#1e293b');
                 }
             }
         };
 
         updateThemeColor();
         
-        // Observador que vigila si el usuario cambia el tema en tiempo real desde los Ajustes
         const observer = new MutationObserver(updateThemeColor);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
@@ -64,8 +61,8 @@ export default function SEOHead({ title, description, route, noIndex = false }) 
             <link rel="canonical" href={canonicalUrl} />
             <meta property="og:url" content={canonicalUrl} />
 
-            {/* Etiqueta dinámica para fusionar el Notch con el Header */}
             <meta name="theme-color" content={themeColor} />
+            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         </Helmet>
     );
 }
