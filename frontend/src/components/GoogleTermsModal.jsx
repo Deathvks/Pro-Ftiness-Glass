@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { ShieldCheck, X, ExternalLink, AlertTriangle, Info } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
-import GlassCard from './GlassCard';
 
 const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy }) => {
   const googleParentRef = useRef(null);
@@ -48,7 +47,8 @@ const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy })
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
       <div className="w-full max-w-md animate-[scale-in_0.3s_ease-out]">
-        <GlassCard className="relative p-6 md:p-8 flex flex-col gap-6">
+        {/* Cambiado GlassCard por un div con fondo sólido y estilos de tarjeta modal */}
+        <div className="relative p-6 md:p-8 flex flex-col gap-6 bg-bg-primary border border-glass-border rounded-2xl shadow-2xl">
           {/* Botón cerrar */}
           <button 
             onClick={onClose} 
@@ -115,8 +115,8 @@ const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy })
                 className="relative w-full h-12 flex justify-center items-center group" 
                 ref={googleParentRef}
             >
-                {/* Capa Visual */}
-                <div className="absolute inset-0 w-full h-full bg-accent text-bg-secondary rounded-md flex items-center justify-center gap-3 font-bold shadow-lg transition group-hover:scale-[1.02] group-hover:shadow-accent/25 pointer-events-none z-0">
+                {/* Capa Visual - Forzamos el texto a blanco para contrastar con el acento en cualquier tema */}
+                <div className="absolute inset-0 w-full h-full bg-accent text-white rounded-xl flex items-center justify-center gap-3 font-bold shadow-lg transition group-hover:scale-[1.02] group-hover:shadow-accent/25 pointer-events-none z-0">
                     <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                         <FcGoogle size={20} />
                     </div>
@@ -138,13 +138,13 @@ const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy })
 
             <button
               onClick={onClose}
-              className="w-full py-3 rounded-md font-semibold text-text-secondary hover:bg-white/5 transition"
+              className="w-full py-3 rounded-xl font-semibold text-text-secondary hover:bg-bg-secondary transition"
             >
               Cancelar
             </button>
           </div>
 
-        </GlassCard>
+        </div>
       </div>
     </div>
   );

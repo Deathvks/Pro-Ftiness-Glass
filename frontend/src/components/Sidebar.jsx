@@ -47,7 +47,6 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
   const [imgError, setImgError] = useState(false); 
   const [showAIModal, setShowAIModal] = useState(false);
 
-  // Estado del Sidebar
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
@@ -144,9 +143,8 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
             <AIInfoModal onClose={() => setShowAIModal(false)} />
         )}
 
-        <nav className={`hidden md:flex flex-col h-full border-r border-glass-border bg-[--glass-bg] backdrop-blur-[var(--glass-blur)] overflow-y-auto overflow-x-hidden z-40 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
+        <nav className={`hidden md:flex flex-col h-full border-r border-glass-border bg-glass-bg backdrop-blur-glass shadow-lg overflow-y-auto overflow-x-hidden z-40 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
         
-        {/* Cabecera del Sidebar (Solo Logo + Título) */}
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start px-2'} mb-8 shrink-0`}>
             <button 
                 onClick={() => navigate('dashboard')} 
@@ -175,7 +173,6 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
         </div>
 
         <div className="mt-auto flex flex-col gap-1 shrink-0 pt-6">
-            {/* Se reemplaza el borde fuerte por border-glass-border para que se integre con el tema suave */}
             <SidebarItem
                 label={`IA: ${aiRemaining}/${aiLimit}`}
                 icon={<Sparkles size={22} className={isAILimitReached ? 'text-text-muted' : 'text-accent'} />}
@@ -202,7 +199,6 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 isCollapsed={isCollapsed}
             />
 
-            {/* BOTÓN DE CONTRAER/EXPANDIR INTEGRADO COMO ITEM */}
             <SidebarItem
                 label={isCollapsed ? "Expandir" : "Contraer"}
                 icon={isCollapsed ? <ChevronRight size={22} /> : <ChevronLeft size={22} />}

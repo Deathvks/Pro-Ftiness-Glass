@@ -483,9 +483,9 @@ export default function App() {
       <AndroidDownloadPrompt />
 
       {sessionExpired && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-md p-4">
-          <div className="glass p-8 max-w-sm w-full text-center flex flex-col items-center animate-fade-in-up">
-            <AlertTriangle size={48} className="text-red-500 mb-4 drop-shadow-md" />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.3s_ease-out]">
+          <div className="bg-bg-primary border border-glass-border p-8 max-w-sm w-full rounded-2xl shadow-2xl text-center flex flex-col items-center animate-[scale-in_0.3s_ease-out]">
+            <AlertTriangle size={48} className="text-red mb-4 drop-shadow-md" />
             <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary mb-2 tracking-tight">
               Sesión Caducada
             </h2>
@@ -494,7 +494,7 @@ export default function App() {
             </p>
             <button 
               onClick={() => window.location.reload()}
-              className="w-full bg-accent text-bg-primary font-bold py-3.5 px-4 rounded-2xl active:scale-95 transition-all shadow-lg shadow-accent/30"
+              className="w-full bg-accent text-white font-bold py-3.5 px-4 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md shadow-accent/20"
             >
               Recargar Aplicación
             </button>
