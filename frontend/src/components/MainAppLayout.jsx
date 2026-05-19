@@ -282,18 +282,14 @@ export default function MainAppLayout({
   const isAILimitReached = parseInt(aiRemaining, 10) === 0;
 
   return (
-    <div className="relative flex w-full h-full overflow-hidden bg-bg-primary">
+    <div 
+      className="relative flex w-full h-full overflow-hidden" 
+      // MAGIA 1: Todo el lienzo principal adopta el color del header.
+      // Así es imposible que el Notch absorba un color incorrecto en la parte alta.
+      style={{ backgroundColor: 'var(--header-solid)' }}
+    >
 
-      {/* Bloque sólido para asegurar que el Notch/Isla Dinámica siempre tenga el color del header */}
-      <div 
-        className="md:hidden fixed top-0 inset-x-0 z-50 pointer-events-none"
-        style={{ 
-          height: 'env(safe-area-inset-top, 0px)',
-          backgroundColor: 'var(--header-solid)'
-        }}
-      />
-
-      {/* Sidebar (Desktop) pasándole nuestro handleNavClick personalizado */}
+      {/* Sidebar (Desktop) */}
       <Sidebar
         view={view}
         navigate={handleNavClick}
@@ -307,9 +303,19 @@ export default function MainAppLayout({
       {/* CONTENEDOR MÓVIL: Flex Columna para separar Header y Main */}
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
+        {/* --- FONDOS ABSOLUTOS DE COLOR (bg-primary) --- */}
+        {/* MAGIA 2: En móvil, el color de fondo bg-primary de la app empieza EXACTAMENTE donde termina el header (56px = h-14 + notch). Arriba de eso, reina el var(--header-solid) del contenedor padre */}
+        <div 
+          className="md:hidden absolute inset-x-0 bottom-0 bg-bg-primary z-0 pointer-events-none"
+          style={{ top: 'calc(56px + env(safe-area-inset-top, 0px))' }}
+        ></div>
+        
+        {/* En escritorio (no hay header top móvil), el bg-primary sí ocupa toda la pantalla */}
+        <div className="hidden md:block absolute inset-0 bg-bg-primary z-0 pointer-events-none"></div>
+
         {/* --- HEADER --- */}
         <header 
-          className="md:hidden shrink-0 w-full border-b border-glass-border z-40"
+          className="md:hidden shrink-0 w-full border-b border-glass-border z-40 relative"
           style={{ 
             backgroundColor: 'var(--header-solid)',
             paddingTop: 'env(safe-area-inset-top, 0px)'
@@ -334,7 +340,6 @@ export default function MainAppLayout({
 
             {/* Botones de Header (IA + Notif + Ajustes) */}
             <div className="flex items-center shrink-0">
-              {/* Nuevo Botón de IA */}
               <div className="flex items-center justify-center mr-1 sm:mr-2">
                 <button
                   onClick={() => setShowAIModal(true)}
@@ -348,7 +353,6 @@ export default function MainAppLayout({
                 </button>
               </div>
 
-              {/* Botón de Notificaciones */}
               <div
                 className={`
                       flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
@@ -371,7 +375,6 @@ export default function MainAppLayout({
                 </button>
               </div>
 
-              {/* Botón de Ajustes */}
               <div
                 className={`
                       flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
@@ -394,10 +397,10 @@ export default function MainAppLayout({
           </div>
         </header>
 
-        {/* --- MAIN: Único contenedor que hace scroll --- */}
+        {/* --- MAIN: Único contenedor que hace scroll (z-10 para flotar sobre los fondos absolutos) --- */}
         <main
           ref={mainContentRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden relative"
+          className="flex-1 overflow-y-auto overflow-x-hidden relative z-10"
         >
           <Suspense fallback={<LoadingFallback />}>
             <React.Fragment key={`${view}-${viewResetKey}`}>
