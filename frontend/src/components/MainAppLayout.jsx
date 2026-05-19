@@ -267,13 +267,12 @@ export default function MainAppLayout({
       {/* CONTENEDOR MÓVIL: Flex Columna para separar Header y Main */}
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* --- HEADER: Estilo Glass con variables --- */}
+        {/* --- HEADER: Color Sólido (Fix definitivo iOS Notch) --- */}
         <header 
-          className="md:hidden shrink-0 w-full border-b border-glass-border z-40 pt-[max(env(safe-area-inset-top),0px)]"
+          className="md:hidden shrink-0 w-full border-b border-glass-border z-40"
           style={{ 
-            backgroundColor: 'var(--glass-bg)', 
-            backdropFilter: 'blur(var(--glass-blur))',
-            WebkitBackdropFilter: 'blur(var(--glass-blur))'
+            backgroundColor: 'var(--header-solid)',
+            paddingTop: 'max(env(safe-area-inset-top), 0px)'
           }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
