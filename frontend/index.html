@@ -245,7 +245,9 @@
 
         // --- SEPARAMOS COLOR DE FONDO Y COLOR DE CABECERA ---
         var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000' };
-        var headerColors = { light: '#ffffff', dark: '#1e293b', oled: '#000000' };
+        
+        // CORRECCIÓN MATEMÁTICA PARA EL NOTCH (Coincide visualmente con el header glass)
+        var headerColors = { light: '#f1f3f4', dark: '#1b2335', oled: '#0d0d0d' };
 
         var selectedBgColor = bgColors[effectiveTheme] || bgColors.dark;
         var selectedHeaderColor = headerColors[effectiveTheme] || headerColors.dark;

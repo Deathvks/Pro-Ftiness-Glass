@@ -25,9 +25,9 @@
 
   /* Glassmorphism - GLOBAL DEFAULT (Premium Dark) */
   --glass-blur: 24px;
-  --glass-radius: 32px; /* Actualizado al nuevo estándar */
-  --glass-bg: rgba(255, 255, 255, 0.05); /* Adaptable dark */
-  --glass-border: rgba(255, 255, 255, 0.10); /* Anillo sutil */
+  --glass-radius: 32px;
+  --glass-bg: rgba(255, 255, 255, 0.05); 
+  --glass-border: rgba(255, 255, 255, 0.10); 
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
@@ -43,18 +43,24 @@
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  /* Color exacto resultante visualmente del header glass sobre bg-primary */
+  --header-solid: #1b2335; 
 }
 
 .light-theme {
-  --bg-primary: #f8fafc; /* Un blanco roto más limpio y premium */
+  --bg-primary: #f8fafc; 
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
 
-  --glass-bg: rgba(0, 0, 0, 0.03); /* Fondo oscurecido muy sutil */
+  --glass-bg: rgba(0, 0, 0, 0.03); 
   --glass-border: rgba(0, 0, 0, 0.05);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+
+  /* Color exacto resultante visualmente del header glass sobre bg-primary */
+  --header-solid: #f1f3f4;
 }
 
 .oled-theme {
@@ -67,6 +73,9 @@
   --glass-bg: rgba(255, 255, 255, 0.05); 
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+
+  /* Color exacto resultante visualmente del header glass sobre bg-primary */
+  --header-solid: #0d0d0d;
 }
 
 /* 4) PALETAS DE ACENTO */
@@ -201,11 +210,10 @@
 
   html {
     width: 100%;
-    /* FIX IOS: Usar dynamic viewport height para no chocar con las barras de safari/notches */
     height: 100vh;
     height: 100dvh;
-    /* 🔴 MAGIA IOS: Forzamos el "Fondo base" al color del HEADER para que el Notch lo lea */
-    background-color: var(--bg-secondary);
+    /* 🔴 MAGIA IOS: Usamos el color calculado EXACTO del header visual */
+    background-color: var(--header-solid);
     transition: background-color 0.3s ease;
     overscroll-behavior: none;
   }
@@ -221,16 +229,14 @@
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
-    /* 🔴 MAGIA IOS: Forzamos el "Fondo base" al color del HEADER para que el Notch lo lea */
-    background-color: var(--bg-secondary);
+    /* 🔴 MAGIA IOS: Usamos el color calculado EXACTO del header visual */
+    background-color: var(--header-solid);
     transition: background-color 0.3s ease;
     box-sizing: border-box;
     overscroll-behavior: none;
   }
 
-  /* #root ahora siempre vive dentro del espacio completamente libre y seguro */
   #root {
-    /* 🔴 MAGIA IOS: Y forzamos a la app real a que se pinte encima con el fondo PRIMARY */
     background-color: var(--bg-primary);
     transition: background-color 0.3s ease;
     isolation: isolate;
@@ -284,7 +290,6 @@
     @apply text-red font-bold text-sm mt-1;
   }
 
-  /* Checkbox adaptado a la nueva estética */
   input[type="checkbox"] {
     background-color: transparent !important;
     border: 1px solid var(--glass-border) !important;
@@ -458,7 +463,6 @@
   }
 }
 
-/* Prevenir auto-zoom en inputs en iOS (iPhone/iPad) */
 @supports (-webkit-touch-callout: none) {
   input, select, textarea {
     font-size: 16px !important;

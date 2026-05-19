@@ -10,11 +10,11 @@ const THEME_COLORS = {
   light: '#f7fafc',
 };
 
-// Añadimos los colores del header específicos
+// Colores matemáticos exactos del header glass superpuesto al background
 const HEADER_COLORS = {
-  oled: '#000000',
-  dark: '#1e293b',
-  light: '#ffffff',
+  oled: '#0d0d0d',
+  dark: '#1b2335',
+  light: '#f1f3f4',
 };
 
 export const useAppTheme = () => {
@@ -152,7 +152,6 @@ export const useAppTheme = () => {
     return THEME_COLORS.dark;
   }, [resolvedTheme]);
 
-  // Nuevo hook extraído para la cabecera
   const headerColor = useMemo(() => {
     if (resolvedTheme === 'oled') return HEADER_COLORS.oled;
     if (resolvedTheme === 'light') return HEADER_COLORS.light;
@@ -166,6 +165,6 @@ export const useAppTheme = () => {
     setAccent, 
     resolvedTheme, 
     themeColor,
-    headerColor // Lo exportamos
+    headerColor 
   };
 };
