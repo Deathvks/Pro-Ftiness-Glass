@@ -1,13 +1,20 @@
 /* frontend/src/hooks/useAppTheme.js */
 import { useState, useLayoutEffect, useMemo } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { NavigationBar } from '@capgo/capacitor-navigation-bar'; // <--- CORRECCIÓN IMPORT
+import { NavigationBar } from '@capgo/capacitor-navigation-bar';
 import useAppStore from '../store/useAppStore';
 
 const THEME_COLORS = {
   oled: '#000000',
   dark: '#0c111b',
   light: '#f7fafc',
+};
+
+// Añadimos los colores del header específicos
+const HEADER_COLORS = {
+  oled: '#000000',
+  dark: '#1e293b',
+  light: '#ffffff',
 };
 
 export const useAppTheme = () => {
@@ -27,7 +34,6 @@ export const useAppTheme = () => {
     return 'green';
   });
 
-  // Estado para el tema resuelto (el que realmente se ve: light/dark/oled)
   const [resolvedTheme, setResolvedTheme] = useState('dark');
 
   const setTheme = (newTheme) => {
@@ -44,35 +50,33 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // --- EFECTO PRINCIPAL DE TEMA ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
     const body = document.body;
 
     const updateAppearance = () => {
-      // 1. Calcular Tema Efectivo (resolver 'system')
       let effectiveTheme = theme;
       if (theme === 'system') {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
-      // Actualizamos estado para consumidores
       setResolvedTheme(effectiveTheme);
 
-      // 2. Determinar Color HEX
       let color = THEME_COLORS.dark;
+      let headerColorStr = HEADER_COLORS.dark;
+      
       if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
+        headerColorStr = HEADER_COLORS.oled;
       } else if (effectiveTheme === 'light') {
         color = THEME_COLORS.light;
+        headerColorStr = HEADER_COLORS.light;
       }
 
-      // 3. Bloquear transiciones temporalmente
       body.style.transition = 'none';
       root.style.transition = 'none';
 
-      // 4. Aplicar Clases CSS al ROOT
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'dark');
       
       const classTheme = effectiveTheme === 'oled' ? 'oled' : (effectiveTheme === 'light' ? 'light' : 'dark');
@@ -82,7 +86,6 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // 5. Sincronización de fondo
       root.style.backgroundColor = color;
       body.style.backgroundColor = color;
 
@@ -90,13 +93,13 @@ export const useAppTheme = () => {
       // eslint-disable-next-line no-unused-expressions
       body.offsetHeight;
 
-      // 6. Meta Tags (PWA/Web)
+      // Actualizar theme-color usando el HEADER_COLOR para afectar al notch en iOS (PWA/Web)
       const metaName = "theme-color";
       let metaTheme = document.querySelector(`meta[name="${metaName}"]`);
       if (metaTheme) metaTheme.remove();
       metaTheme = document.createElement('meta');
       metaTheme.name = metaName;
-      metaTheme.content = color;
+      metaTheme.content = headerColorStr; 
       document.head.appendChild(metaTheme);
 
       const statusStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
@@ -111,10 +114,8 @@ export const useAppTheme = () => {
         document.head.appendChild(metaStatus);
       }
 
-      // 7. Navigation Bar Nativa (Android) - SOLUCIÓN AL PROBLEMA DE FONDO BLANCO
       if (Capacitor.isNativePlatform()) {
         const isLight = effectiveTheme === 'light';
-        // CORRECCIÓN: Llamamos a la función desde el objeto importado
         NavigationBar.setNavigationBarColor({ 
             color: color, 
             darkButtons: isLight 
@@ -123,7 +124,6 @@ export const useAppTheme = () => {
         });
       }
 
-      // 8. Restaurar transiciones
       setTimeout(() => {
         body.style.transition = '';
         root.style.transition = '';
@@ -140,18 +140,23 @@ export const useAppTheme = () => {
     return () => mediaQuery.removeEventListener('change', handleSystemChange);
   }, [theme]);
 
-  // --- EFECTO DE ACENTO ---
   useLayoutEffect(() => {
     const root = document.documentElement;
     const classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));
     root.className = classes.join(' ') + ` accent-${accent}`;
   }, [accent]);
 
-  // Memorizamos el color actual para exportarlo
   const themeColor = useMemo(() => {
     if (resolvedTheme === 'oled') return THEME_COLORS.oled;
     if (resolvedTheme === 'light') return THEME_COLORS.light;
     return THEME_COLORS.dark;
+  }, [resolvedTheme]);
+
+  // Nuevo hook extraído para la cabecera
+  const headerColor = useMemo(() => {
+    if (resolvedTheme === 'oled') return HEADER_COLORS.oled;
+    if (resolvedTheme === 'light') return HEADER_COLORS.light;
+    return HEADER_COLORS.dark;
   }, [resolvedTheme]);
 
   return { 
@@ -160,6 +165,7 @@ export const useAppTheme = () => {
     accent, 
     setAccent, 
     resolvedTheme, 
-    themeColor     
+    themeColor,
+    headerColor // Lo exportamos
   };
 };

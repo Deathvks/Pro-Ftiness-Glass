@@ -78,7 +78,8 @@ export default function App() {
     handleShowPolicy
   } = useAppNavigation();
 
-  const { theme, setTheme, accent, setAccent, resolvedTheme, themeColor } = useAppTheme();
+  // Obtenemos el nuevo headerColor del hook
+  const { theme, setTheme, accent, setAccent, resolvedTheme, themeColor, headerColor } = useAppTheme();
   
   const timer = useWorkoutTimer();
   const { t } = useTranslation('translation');
@@ -170,9 +171,11 @@ export default function App() {
     if (Capacitor.isNativePlatform()) {
       const applyNativeTheme = async () => {
         try {
-          await StatusBar.setBackgroundColor({ color: themeColor });
+          // Asignamos el headerColor a la barra de estado superior
+          await StatusBar.setBackgroundColor({ color: headerColor });
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
+          // La barra de navegación inferior sigue con el fondo general
           await NavigationBar.setColor({ color: themeColor });
           await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (error) {
@@ -181,8 +184,12 @@ export default function App() {
       };
       applyNativeTheme();
     }
+    
+    // Forzamos el HTML al color del header (fundamental para el notch de iOS) 
+    // y el body al fondo del tema general
+    document.documentElement.style.backgroundColor = headerColor;
     document.body.style.backgroundColor = themeColor;
-  }, [themeColor, resolvedTheme]);
+  }, [themeColor, headerColor, resolvedTheme]);
 
   useEffect(() => {
     if (isAuthenticated && !isLoading && Capacitor.isNativePlatform()) {
@@ -476,7 +483,7 @@ export default function App() {
         <meta property="og:site_name" content="Pro Fitness Glass" />
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
-        <meta name="theme-color" content={themeColor} />
+        <meta name="theme-color" content={headerColor} />
       </Helmet>
 
       <VersionUpdater />
