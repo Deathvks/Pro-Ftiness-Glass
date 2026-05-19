@@ -169,6 +169,53 @@ export default function MainAppLayout({
     }
   }, [userProfile, showCodeVerificationModal, showEmailVerificationModal, setShowEmailVerificationModal, setVerificationEmail, addToast]);
 
+  // --- SINCRONIZACIÓN ESTRICTA DEL THEME COLOR PARA EL NOTCH EN iOS ---
+  useEffect(() => {
+    const syncThemeColors = () => {
+      const root = document.documentElement;
+      // Extraemos el color hexadecimal computado real en base al tema actual
+      const headerColor = getComputedStyle(root).getPropertyValue('--header-solid').trim();
+      if (!headerColor) return;
+
+      // 1. Actualizamos el meta tag theme-color que usa iOS PWA para pintar la barra superior
+      let metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (!metaTheme) {
+        metaTheme = document.createElement('meta');
+        metaTheme.name = 'theme-color';
+        document.head.appendChild(metaTheme);
+      }
+      metaTheme.setAttribute('content', headerColor);
+
+      // 2. Forzamos html y body para que el efecto overscroll de Safari muestre el color correcto
+      root.style.setProperty('background-color', headerColor, 'important');
+      if (document.body) {
+        document.body.style.setProperty('background-color', headerColor, 'important');
+      }
+    };
+
+    // Ejecutamos inmediatamente y con retrasos para garantizar que el DOM y CSS han cargado
+    syncThemeColors();
+    const t1 = setTimeout(syncThemeColors, 100);
+    const t2 = setTimeout(syncThemeColors, 500);
+
+    // Observador para detectar en tiempo real cuando el usuario cambia de tema (clase en <html>)
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          syncThemeColors();
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      observer.disconnect();
+    };
+  }, []);
+
   // FIX PWA iOS: Forzamos metaetiquetas de viewport y status bar
   useEffect(() => {
     let metaViewport = document.querySelector('meta[name=viewport]');
@@ -248,7 +295,7 @@ export default function MainAppLayout({
 
   // Renderizado del layout principal
   return (
-    <div className="relative flex w-full h-full overflow-hidden">
+    <div className="relative flex w-full h-full overflow-hidden bg-bg-primary">
 
       {/* 🔴 TRUCO DEFINITIVO PARA iOS SAFARI 🔴 
           Esta capa aplica el bg-primary pero dejando el notch totalmente transparente, 
@@ -256,11 +303,8 @@ export default function MainAppLayout({
       */}
       <div 
         className="absolute inset-x-0 bottom-0 bg-bg-primary z-[-20] md:!top-0"
-        style={{ top: 'max(env(safe-area-inset-top), 0px)' }}
+        style={{ top: 'env(safe-area-inset-top, 0px)' }}
       ></div>
-
-      {/* Fondo decorativo */}
-      <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
 
       {/* Sidebar (Desktop) pasándole nuestro handleNavClick personalizado */}
       <Sidebar
@@ -281,7 +325,7 @@ export default function MainAppLayout({
           className="md:hidden shrink-0 w-full border-b border-glass-border z-40"
           style={{ 
             backgroundColor: 'var(--header-solid)',
-            paddingTop: 'max(env(safe-area-inset-top), 0px)'
+            paddingTop: 'env(safe-area-inset-top, 0px)'
           }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
@@ -376,7 +420,7 @@ export default function MainAppLayout({
           </Suspense>
 
           {/* FIX: Espaciador final calculado dinámicamente. Como usamos 100vh, el contenedor llega al final. Este hueco evita que las listas queden ocultas detrás del navbar */}
-          <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
+          <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom, 0px))' }}></div>
         </main>
 
       </div>
@@ -385,7 +429,7 @@ export default function MainAppLayout({
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
-          height: 'calc(120px + env(safe-area-inset-bottom))',
+          height: 'calc(120px + env(safe-area-inset-bottom, 0px))',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
@@ -396,7 +440,7 @@ export default function MainAppLayout({
       {/* --- NAVBAR: Píldora Flotante con estilo Glass --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 0px))' }}
       >
         <nav
           className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 glass rounded-full overflow-hidden relative"
