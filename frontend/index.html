@@ -26,6 +26,10 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
+  <meta name="theme-color" content="#f1f3f4" media="(prefers-color-scheme: light)" id="theme-color-light" />
+  <meta name="theme-color" content="#1b2335" media="(prefers-color-scheme: dark)" id="theme-color-dark" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
   <link rel="icon" type="image/png" href="/favicon-32x32.png?v=2" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
   <link rel="manifest" href="/manifest.json?v=2" />
@@ -33,8 +37,6 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Pro Fitness" />
-  
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <link rel="preconnect" href="https://accounts.google.com" crossorigin />
   <link rel="dns-prefetch" href="https://accounts.google.com" />
@@ -97,7 +99,8 @@
       height: 100vh;
       z-index: 9999;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background-color: var(--bg-color); 
+      /* Eliminado el background-color sólido, lo inyectamos con gradiente por JS para proteger el Notch */
+      background-color: transparent; 
       color: #ffffff;
       opacity: 1;
       transition: opacity 0.3s ease;
@@ -254,6 +257,24 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
+        // 🔴 ACTUALIZAMOS LAS ETIQUETAS NATIVAS ANTES DE PINTAR
+        if (savedTheme !== 'system') {
+          var lightMeta = document.getElementById('theme-color-light');
+          var darkMeta = document.getElementById('theme-color-dark');
+          if (lightMeta) lightMeta.remove();
+          if (darkMeta) darkMeta.remove();
+          
+          var meta = document.createElement('meta');
+          meta.name = 'theme-color';
+          meta.content = selectedHeaderColor;
+          document.head.appendChild(meta);
+        } else {
+          var lightMeta = document.getElementById('theme-color-light');
+          var darkMeta = document.getElementById('theme-color-dark');
+          if (lightMeta) lightMeta.content = headerColors.light;
+          if (darkMeta) darkMeta.content = headerColors.dark;
+        }
+
         // Forzamos el color del HTML y BODY de manera estricta para Safari
         root.style.setProperty('background-color', selectedHeaderColor, 'important');
         var setBodyColor = function() {
@@ -264,20 +285,12 @@
         if(document.body) setBodyColor();
         else document.addEventListener('DOMContentLoaded', setBodyColor);
 
+        // 🔴 EL TRUCO DEL SPLASH SCREEN: Pintamos solo la zona del notch con el color del Header
+        // El resto se pinta de bg-color, engañando al escáner de la app de iOS
         var splash = document.querySelector('.app-splash-screen');
-        if(splash) splash.style.backgroundColor = selectedBgColor;
-
-        var updateMeta = function(name, content) {
-            var meta = document.querySelector('meta[name="' + name + '"]');
-            if (!meta) {
-                meta = document.createElement('meta');
-                meta.name = name;
-                document.head.appendChild(meta);
-            }
-            meta.content = content;
-        };
-        
-        updateMeta("theme-color", selectedHeaderColor);
+        if(splash) {
+           splash.style.background = 'linear-gradient(to bottom, ' + selectedHeaderColor + ' 0%, ' + selectedHeaderColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' 100%)';
+        }
 
       } catch (e) {
         console.error('Splash init error', e);

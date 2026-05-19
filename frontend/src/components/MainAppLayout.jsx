@@ -139,49 +139,6 @@ export default function MainAppLayout({
     }
   }, [userProfile, showCodeVerificationModal, showEmailVerificationModal, setShowEmailVerificationModal, setVerificationEmail, addToast]);
 
-  // --- SINCRONIZACIÓN MILIMÉTRICA Y FORZADA DEL COLOR PARA iOS ---
-  useEffect(() => {
-    const THEME_COLORS = { light: '#f1f3f4', dark: '#1b2335', oled: '#0d0d0d' };
-
-    const syncThemeColors = () => {
-      const root = document.documentElement;
-      const theme = root.classList.contains('light-theme') ? 'light' : 
-                    root.classList.contains('oled-theme') ? 'oled' : 'dark';
-      
-      const headerColor = THEME_COLORS[theme];
-
-      let metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (!metaTheme) {
-        metaTheme = document.createElement('meta');
-        metaTheme.name = 'theme-color';
-        document.head.appendChild(metaTheme);
-      }
-      metaTheme.setAttribute('content', headerColor);
-
-      // Engañamos al sistema forzando el body para que el safe-area nativo absorba este color
-      root.style.setProperty('background-color', headerColor, 'important');
-      if (document.body) {
-        document.body.style.setProperty('background-color', headerColor, 'important');
-      }
-    };
-
-    syncThemeColors();
-    const t1 = setTimeout(syncThemeColors, 100);
-
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class') syncThemeColors();
-      });
-    });
-
-    observer.observe(document.documentElement, { attributes: true });
-
-    return () => {
-      clearTimeout(t1);
-      observer.disconnect();
-    };
-  }, []);
-
   useEffect(() => {
     const handleStorageChange = () => {
       if (localStorage.getItem('cookie_consent') === 'accepted' && cookieConsent !== 'accepted') {
@@ -229,8 +186,6 @@ export default function MainAppLayout({
   const isAILimitReached = parseInt(aiRemaining, 10) === 0;
 
   return (
-    // 🔴 LA CLAVE: El contenedor más externo tiene el color del header. 
-    // Esto fuerza a iOS a extender el color hacia la barra de estado superior.
     <div 
       className="relative flex w-full h-full overflow-hidden" 
       style={{ backgroundColor: 'var(--header-solid)' }}
@@ -247,8 +202,6 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* --- HEADER --- */}
-        {/* Usamos padding-top para que el notch lo dibuje limpiamente */}
         <header 
           className="md:hidden shrink-0 w-full border-b border-glass-border z-40 relative"
           style={{ 
@@ -312,8 +265,6 @@ export default function MainAppLayout({
           </div>
         </header>
 
-        {/* --- MAIN --- */}
-        {/* 🔴 Aquí es donde limitamos el fondo oscuro, por debajo del header */}
         <main
           ref={mainContentRef}
           className="flex-1 overflow-y-auto overflow-x-hidden relative"
