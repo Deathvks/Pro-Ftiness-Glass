@@ -235,7 +235,6 @@
   }
 
   #root {
-    /* 🔴 EL SECRETO: Hacemos que la raíz sea del color del header para engañar al notch de iOS */
     background-color: var(--header-solid) !important;
     transition: background-color 0.3s ease;
     isolation: isolate;
@@ -383,24 +382,6 @@
 
   * {
     scrollbar-width: none;
-  }
-
-  @keyframes roam-blob {
-    0% {
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    33% {
-      transform: translate(-60%, -40%) scale(1.15);
-    }
-
-    66% {
-      transform: translate(-40%, -60%) scale(0.9);
-    }
-
-    100% {
-      transform: translate(-50%, -50%) scale(1);
-    }
   }
 
   @keyframes fade-in-up {

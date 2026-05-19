@@ -173,11 +173,9 @@ export default function MainAppLayout({
   useEffect(() => {
     const syncThemeColors = () => {
       const root = document.documentElement;
-      // Extraemos el color hexadecimal computado real en base al tema actual
       const headerColor = getComputedStyle(root).getPropertyValue('--header-solid').trim();
       if (!headerColor) return;
 
-      // 1. Actualizamos el meta tag theme-color que usa iOS PWA para pintar la barra superior
       let metaTheme = document.querySelector('meta[name="theme-color"]');
       if (!metaTheme) {
         metaTheme = document.createElement('meta');
@@ -186,19 +184,16 @@ export default function MainAppLayout({
       }
       metaTheme.setAttribute('content', headerColor);
 
-      // 2. Forzamos html y body para que el efecto overscroll de Safari muestre el color correcto
       root.style.setProperty('background-color', headerColor, 'important');
       if (document.body) {
         document.body.style.setProperty('background-color', headerColor, 'important');
       }
     };
 
-    // Ejecutamos inmediatamente y con retrasos para garantizar que el DOM y CSS han cargado
     syncThemeColors();
     const t1 = setTimeout(syncThemeColors, 100);
     const t2 = setTimeout(syncThemeColors, 500);
 
-    // Observador para detectar en tiempo real cuando el usuario cambia de tema (clase en <html>)
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class') {
@@ -252,7 +247,6 @@ export default function MainAppLayout({
       setAiLimit(localStorage.getItem('ai_daily_limit') || '5');
     };
 
-    // Función para comprobar si hemos cambiado de día y resetear si es necesario
     const checkMidnightReset = () => {
       const lastDate = localStorage.getItem('ai_last_date');
       const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
@@ -261,25 +255,19 @@ export default function MainAppLayout({
         localStorage.removeItem('ai_remaining_uses');
         localStorage.removeItem('ai_daily_limit');
         localStorage.setItem('ai_last_date', today);
-        updateAILimits(); // Actualiza el header y sidebar instantáneamente
-        window.dispatchEvent(new Event('ai_limit_updated')); // Avisa a los modales si están abiertos
+        updateAILimits();
+        window.dispatchEvent(new Event('ai_limit_updated'));
       } else {
-        updateAILimits(); // Por si venimos de un focus o evento y solo queremos sincronizar
+        updateAILimits();
       }
     };
 
-    // VIGILANTE SILENCIOSO: Cada minuto revisa si ya es medianoche en España
-    const midnightChecker = setInterval(checkMidnightReset, 60000); // 60.000 ms = 1 minuto
-
-    // Revisión inmediata al montar el componente
+    const midnightChecker = setInterval(checkMidnightReset, 60000);
     checkMidnightReset();
 
     window.addEventListener('storage', handleStorageChange);
-    // Escuchamos storage (otras pestañas)
     window.addEventListener('storage', checkMidnightReset);
-    // Escuchamos focus (volvemos a la app desde el background en móvil)
     window.addEventListener('focus', checkMidnightReset);
-    // Escuchamos nuestro evento custom (cuando el aiService obtiene respuesta fresca)
     window.addEventListener('ai_limit_updated', checkMidnightReset);
 
     return () => {
@@ -293,18 +281,17 @@ export default function MainAppLayout({
 
   const isAILimitReached = parseInt(aiRemaining, 10) === 0;
 
-  // Renderizado del layout principal
   return (
     <div className="relative flex w-full h-full overflow-hidden bg-bg-primary">
 
-      {/* 🔴 TRUCO DEFINITIVO PARA iOS SAFARI 🔴 
-          Esta capa aplica el bg-primary pero dejando el notch totalmente transparente, 
-          permitiendo que iOS lea por debajo el color exacto var(--header-solid) del #root
-      */}
+      {/* Bloque sólido para asegurar que el Notch/Isla Dinámica siempre tenga el color del header */}
       <div 
-        className="absolute inset-x-0 bottom-0 bg-bg-primary z-[-20] md:!top-0"
-        style={{ top: 'env(safe-area-inset-top, 0px)' }}
-      ></div>
+        className="md:hidden fixed top-0 inset-x-0 z-50 pointer-events-none"
+        style={{ 
+          height: 'env(safe-area-inset-top, 0px)',
+          backgroundColor: 'var(--header-solid)'
+        }}
+      />
 
       {/* Sidebar (Desktop) pasándole nuestro handleNavClick personalizado */}
       <Sidebar
@@ -413,13 +400,11 @@ export default function MainAppLayout({
           className="flex-1 overflow-y-auto overflow-x-hidden relative"
         >
           <Suspense fallback={<LoadingFallback />}>
-            {/* React.Fragment con una key que se actualiza forzará el desmontaje completo */}
             <React.Fragment key={`${view}-${viewResetKey}`}>
               {currentViewComponent}
             </React.Fragment>
           </Suspense>
 
-          {/* FIX: Espaciador final calculado dinámicamente. Como usamos 100vh, el contenedor llega al final. Este hueco evita que las listas queden ocultas detrás del navbar */}
           <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom, 0px))' }}></div>
         </main>
 
@@ -507,7 +492,6 @@ export default function MainAppLayout({
         />
       )}
 
-      {/* Botón Flotante de "Volver al Entreno" */}
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => handleNavClick('workout')}
