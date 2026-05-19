@@ -78,7 +78,6 @@ export default function App() {
     handleShowPolicy
   } = useAppNavigation();
 
-  // Obtenemos el nuevo headerColor del hook
   const { theme, setTheme, accent, setAccent, resolvedTheme, themeColor, headerColor } = useAppTheme();
   
   const timer = useWorkoutTimer();
@@ -171,11 +170,9 @@ export default function App() {
     if (Capacitor.isNativePlatform()) {
       const applyNativeTheme = async () => {
         try {
-          // Asignamos el headerColor a la barra de estado superior
           await StatusBar.setBackgroundColor({ color: headerColor });
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
-          // La barra de navegación inferior sigue con el fondo general
           await NavigationBar.setColor({ color: themeColor });
           await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (error) {
@@ -184,11 +181,6 @@ export default function App() {
       };
       applyNativeTheme();
     }
-    
-    // Forzamos el HTML al color del header (fundamental para el notch de iOS) 
-    // y el body al fondo del tema general
-    document.documentElement.style.backgroundColor = headerColor;
-    document.body.style.backgroundColor = themeColor;
   }, [themeColor, headerColor, resolvedTheme]);
 
   useEffect(() => {

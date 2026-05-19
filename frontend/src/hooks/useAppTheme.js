@@ -86,33 +86,17 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      root.style.backgroundColor = color;
-      body.style.backgroundColor = color;
+      // 🔴 FIX DEFINITIVO iOS: Forzamos root y body al color del HEADER blindado con important
+      // para evitar que el scroll o los recálculos devuelvan el notch al color del fondo
+      root.style.setProperty('background-color', headerColorStr, 'important');
+      body.style.setProperty('background-color', headerColorStr, 'important');
 
       // Force Reflow
       // eslint-disable-next-line no-unused-expressions
       body.offsetHeight;
 
-      // Actualizar theme-color usando el HEADER_COLOR para afectar al notch en iOS (PWA/Web)
-      const metaName = "theme-color";
-      let metaTheme = document.querySelector(`meta[name="${metaName}"]`);
-      if (metaTheme) metaTheme.remove();
-      metaTheme = document.createElement('meta');
-      metaTheme.name = metaName;
-      metaTheme.content = headerColorStr; 
-      document.head.appendChild(metaTheme);
-
-      const statusStyle = effectiveTheme === 'light' ? 'default' : 'black-translucent';
-      const metaStatusName = "apple-mobile-web-app-status-bar-style";
-      let metaStatus = document.querySelector(`meta[name="${metaStatusName}"]`);
-
-      if (!metaStatus || metaStatus.getAttribute('content') !== statusStyle) {
-        if (metaStatus) metaStatus.remove();
-        metaStatus = document.createElement('meta');
-        metaStatus.name = metaStatusName;
-        metaStatus.content = statusStyle;
-        document.head.appendChild(metaStatus);
-      }
+      // NOTA: Se ha eliminado toda la inyección manual de meta-tags theme-color y status-bar
+      // para evitar duplicados que rompían el renderizado en Safari iOS. De eso se ocupa App.jsx (Helmet).
 
       if (Capacitor.isNativePlatform()) {
         const isLight = effectiveTheme === 'light';
