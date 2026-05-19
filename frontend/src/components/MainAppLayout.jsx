@@ -248,7 +248,16 @@ export default function MainAppLayout({
 
   // Renderizado del layout principal
   return (
-    <div className="relative flex w-full h-full overflow-hidden bg-bg-primary">
+    <div className="relative flex w-full h-full overflow-hidden">
+
+      {/* 🔴 TRUCO DEFINITIVO PARA iOS SAFARI 🔴 
+          Esta capa aplica el bg-primary pero dejando el notch totalmente transparente, 
+          permitiendo que iOS lea por debajo el color exacto var(--header-solid) del #root
+      */}
+      <div 
+        className="absolute inset-x-0 bottom-0 bg-bg-primary z-[-20] md:!top-0"
+        style={{ top: 'max(env(safe-area-inset-top), 0px)' }}
+      ></div>
 
       {/* Fondo decorativo */}
       <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-accent rounded-full opacity-20 filter blur-3xl -z-10 animate-roam-blob"></div>
@@ -267,7 +276,7 @@ export default function MainAppLayout({
       {/* CONTENEDOR MÓVIL: Flex Columna para separar Header y Main */}
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* --- HEADER: Color Sólido (Fix definitivo iOS Notch) --- */}
+        {/* --- HEADER --- */}
         <header 
           className="md:hidden shrink-0 w-full border-b border-glass-border z-40"
           style={{ 
