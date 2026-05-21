@@ -2,8 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
-import { Camera } from '@capacitor/camera';
-import { Geolocation } from '@capacitor/geolocation';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import useAppStore from '../store/useAppStore';
 
@@ -41,57 +39,25 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     checkCookieConsent();
   }, [checkCookieConsent]);
 
-  // --- LÓGICA DE PERMISOS SECUENCIAL ---
+  // --- LÓGICA DE PERMISOS NO INTRUSIVA ---
   const checkAndRequestPermissions = useCallback(async () => {
     if (!isAuthenticated || Capacitor.getPlatform() !== 'android') return;
 
-    let missing = '';
-
-    // 1. Verificamos Cámara / Galería
+    // Solo pedimos las notificaciones nativas si el estado es 'prompt' (nunca preguntado).
+    // Si el usuario las denegó, simplemente lo respetamos y NO bloqueamos la app.
     try {
-      let camStatus = await Camera.checkPermissions();
-      if (camStatus.camera === 'prompt' || camStatus.photos === 'prompt') {
-        camStatus = await Camera.requestPermissions();
+      let notifStatus = await LocalNotifications.checkPermissions();
+      if (notifStatus.display === 'prompt') {
+        await LocalNotifications.requestPermissions();
       }
-      if (camStatus.camera === 'denied' || camStatus.photos === 'denied') {
-        missing = 'Cámara / Galería';
-      }
-    } catch (e) { console.warn("Error cámara:", e); }
-
-    // 2. Si la cámara está OK, verificamos Ubicación
-    if (!missing) {
-      try {
-        let geoStatus = await Geolocation.checkPermissions();
-        if (geoStatus.location === 'prompt') {
-          geoStatus = await Geolocation.requestPermissions();
-        }
-        if (geoStatus.location === 'denied') {
-          missing = 'Ubicación';
-        }
-      } catch (e) { console.warn("Error GPS:", e); }
+    } catch (e) { 
+      console.warn("Error Notificaciones:", e); 
     }
 
-    // 3. Si ubicación está OK, verificamos Notificaciones
-    if (!missing) {
-      try {
-        let notifStatus = await LocalNotifications.checkPermissions();
-        if (notifStatus.display === 'prompt') {
-          notifStatus = await LocalNotifications.requestPermissions();
-        }
-        if (notifStatus.display === 'denied') {
-          missing = 'Notificaciones';
-        }
-      } catch (e) { console.warn("Error Notificaciones:", e); }
-    }
-
-    // Finalmente comprobamos si faltó alguno
-    if (missing) {
-      setMissingPermissionName(missing);
-      setShowGlobalPermissionModal(true);
-    } else {
-      setShowGlobalPermissionModal(false);
-      setMissingPermissionName('');
-    }
+    // Aseguramos que el modal bloqueante nunca atrape al usuario al inicio.
+    // La cámara y el GPS deben pedirse de forma individual cuando vayan a usarse en su sección.
+    setShowGlobalPermissionModal(false);
+    setMissingPermissionName('');
   }, [isAuthenticated]);
 
   // Ejecutamos la comprobación al cargar si está autenticado
@@ -190,7 +156,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         // Al volver a la app, limpiamos la notificación
         if (NativeTimer) NativeTimer.stopTimer().catch(() => {});
         
-        // Volvemos a comprobar los permisos por si el usuario viene de los ajustes de Android
+        // Volvemos a comprobar los permisos (silenciosamente) por si los activó en ajustes
         if (isAuthenticated) {
             checkAndRequestPermissions();
         }

@@ -300,19 +300,19 @@ const QuickCardio = ({ onBack, setView }) => {
         </h1>
 
         {/* Contenedor Flex para el Botón Atrás + Menú de Pestañas (Mobile & Desktop) */}
-        <div className="flex items-center gap-2 max-w-full overflow-hidden">
+        <div className="flex items-center gap-2 sm:gap-3 max-w-full py-1">
 
           {/* Botón Volver Atrás */}
           <button
             onClick={handleGoBack}
             title="Volver"
-            className="p-2.5 shrink-0 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-secondary shadow-sm"
+            className="ml-1 p-2.5 shrink-0 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-secondary shadow-sm relative z-10"
           >
             <ChevronLeft size={20} strokeWidth={2.5} />
           </button>
 
           {/* Menú Deslizable de Pestañas (Igual a Rutinas) */}
-          <div ref={scrollContainerRef} className="flex items-center overflow-x-auto py-2 -mx-4 px-2.5 md:mx-0 md:px-0 scrollbar-hide w-full">
+          <div ref={scrollContainerRef} className="flex items-center overflow-x-auto py-2 pl-1 pr-4 -mr-4 md:mx-0 md:px-0 scrollbar-hide flex-1">
             <button
               onClick={() => handleTabChange('myRoutines')}
               className={getTabClass(false)}

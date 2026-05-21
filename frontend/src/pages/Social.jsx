@@ -134,9 +134,9 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
 // --- Subcomponente: Modal de Aviso Legal ---
 const StoryTermsModal = ({ onAccept, onReject }) => {
     return (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 animate-[fade-in_0.2s_ease-out]">
             <div className="absolute inset-0" onClick={onReject} />
-            <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary">
+            <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary max-h-[90vh] overflow-y-auto custom-scrollbar">
 
                 <div className="text-center">
                     <div className="w-20 h-20 bg-accent/10 rounded-[24px] flex items-center justify-center mx-auto mb-6 text-accent ring-2 ring-accent/30">
@@ -275,70 +275,88 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 
         if (Capacitor.isNativePlatform()) {
             try {
-                const status = await CapCamera.requestPermissions();
-                if (status.photos === 'denied' && status.camera === 'denied') {
-                    e.preventDefault(); 
+                const status = await CapCamera.checkPermissions();
+                const targetPerm = (type === 'camera' || type === 'video') ? status.camera : status.photos;
+
+                if (targetPerm === 'denied') {
+                    // Si está denegado, prevenimos abrir la cámara y mostramos aviso para ir a ajustes
+                    e.preventDefault();
                     setShowPermissionModal(true);
+                } else if (targetPerm === 'prompt' || targetPerm === 'prompt-with-rationale') {
+                    // Si nunca se ha preguntado, prevenimos el clic nativo y pedimos permiso
+                    e.preventDefault(); 
+                    const request = await CapCamera.requestPermissions();
+                    const newPerm = (type === 'camera' || type === 'video') ? request.camera : request.photos;
+                    
+                    if (newPerm === 'denied') {
+                        setShowPermissionModal(true);
+                    } else if (newPerm === 'granted' || newPerm === 'limited') {
+                        // Si nos da permiso, lanzamos de nuevo el click programáticamente
+                        setTimeout(() => {
+                            if (type === 'camera') cameraPhotoInputRef.current?.click();
+                            if (type === 'video') cameraVideoInputRef.current?.click();
+                            if (type === 'gallery') galleryInputRef.current?.click();
+                        }, 100);
+                    }
                 }
+                // Si es 'granted' o 'limited', dejamos que el evento e fluya nativamente.
             } catch (error) {
-                console.warn('Error al solicitar permisos:', error);
-                e.preventDefault();
-                setShowPermissionModal(true);
+                console.warn('Error al gestionar permisos:', error);
             }
         }
     };
 
     return (
         <>
-            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
-                <GlassCard className="glass w-full max-w-md p-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[90vh] bg-bg-primary">
+            <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 animate-[fade-in_0.2s_ease-out]">
+                <GlassCard className="glass w-full max-w-md p-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[95vh] sm:max-h-[90vh] bg-bg-primary overflow-hidden">
                     
-                    <div className="p-6 sm:p-8 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5 rounded-t-[32px]">
+                    <div className="p-5 sm:p-8 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
                         <h3 className="text-xl font-bold text-text-primary">Nueva Historia</h3>
                         <button onClick={onClose} className="p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
                             <X size={20} className="text-text-secondary" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center justify-center min-h-[350px] custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-5 sm:p-8 flex flex-col custom-scrollbar">
                         {!preview ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full h-full">
+                            <div className="grid grid-cols-3 gap-3 sm:gap-4 w-full my-auto">
                                 <div
                                     onClick={() => cameraPhotoInputRef.current?.click()}
-                                    className="aspect-square ring-2 ring-dashed ring-accent/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-accent/5 hover:ring-accent/50 transition-all group"
+                                    className="aspect-square ring-2 ring-dashed ring-accent/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-accent/5 hover:ring-accent/50 transition-all group"
                                 >
-                                    <div className="p-4 bg-accent/10 rounded-[18px] group-hover:scale-110 transition-transform text-accent">
-                                        <Camera size={32} />
+                                    <div className="p-3 sm:p-4 bg-accent/10 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-accent">
+                                        <Camera size={28} />
                                     </div>
-                                    <p className="text-accent font-bold text-sm">Foto</p>
+                                    <p className="text-accent font-bold text-xs sm:text-sm">Foto</p>
                                 </div>
 
                                 <div
                                     onClick={() => cameraVideoInputRef.current?.click()}
-                                    className="aspect-square ring-2 ring-dashed ring-red-500/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-red-500/5 hover:ring-red-500/50 transition-all group"
+                                    className="aspect-square ring-2 ring-dashed ring-red-500/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-red-500/5 hover:ring-red-500/50 transition-all group"
                                 >
-                                    <div className="p-4 bg-red-500/10 rounded-[18px] group-hover:scale-110 transition-transform text-red-500">
-                                        <VideoIcon size={32} />
+                                    <div className="p-3 sm:p-4 bg-red-500/10 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-red-500">
+                                        <VideoIcon size={28} />
                                     </div>
-                                    <p className="text-red-500 font-bold text-sm">Vídeo</p>
+                                    <p className="text-red-500 font-bold text-xs sm:text-sm">Vídeo</p>
                                 </div>
 
                                 <div
                                     onClick={() => galleryInputRef.current?.click()}
-                                    className="aspect-square ring-2 ring-dashed ring-black/20 dark:ring-white/20 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
+                                    className="aspect-square ring-2 ring-dashed ring-black/20 dark:ring-white/20 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
                                 >
-                                    <div className="p-4 bg-black/5 dark:bg-white/5 rounded-[18px] group-hover:scale-110 transition-transform text-text-secondary">
-                                        <ImageIcon size={32} />
+                                    <div className="p-3 sm:p-4 bg-black/5 dark:bg-white/5 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-text-secondary">
+                                        <ImageIcon size={28} />
                                     </div>
-                                    <p className="text-text-secondary font-bold text-sm">Galería</p>
+                                    <p className="text-text-secondary font-bold text-xs sm:text-sm">Galería</p>
                                 </div>
 
-                                <p className="col-span-1 sm:col-span-3 text-center text-xs font-medium text-text-tertiary mt-4">
+                                <p className="col-span-3 text-center text-[11px] sm:text-xs font-medium text-text-tertiary mt-4">
                                     Elige el modo de cámara para asegurar compatibilidad
                                 </p>
                             </div>
                         ) : (
-                            <div className="relative w-full h-[55vh] rounded-[24px] overflow-hidden bg-black flex items-center justify-center ring-1 ring-white/10 shadow-inner">
+                            <div className="relative w-full h-[45vh] sm:h-[55vh] rounded-[24px] overflow-hidden bg-black flex items-center justify-center ring-1 ring-white/10 shadow-inner my-auto">
                                 {file?.type?.startsWith('video') ? (
                                     <video
                                         ref={previewVideoRef}
@@ -370,7 +388,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         <input type="file" accept="video/*" capture="environment" ref={cameraVideoInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'video')} />
                     </div>
 
-                    <div className="p-6 sm:p-8 border-t border-black/5 dark:border-white/10 space-y-5 bg-black/5 dark:bg-white/5 rounded-b-[32px]">
+                    <div className="p-5 sm:p-8 border-t border-black/5 dark:border-white/10 space-y-5 bg-black/5 dark:bg-white/5">
                         <div className="flex gap-3 justify-center">
                             <button
                                 onClick={() => setPrivacy('friends')}
