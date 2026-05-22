@@ -65,13 +65,13 @@ const ExerciseListItem = ({
       
       {/* Textos */}
       <div className="flex-1 min-w-0">
-        <p className="font-bold text-base text-text-primary group-hover:text-accent transition-colors truncate">
+        <p className="font-bold text-base text-text-primary group-hover:text-accent transition-colors line-clamp-2 leading-tight">
           {translatedName}
         </p>
-        <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider truncate mt-0.5">
+        <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider truncate mt-1">
           {translatedMuscle}
         </p>
-        <p className="text-xs font-medium text-text-muted truncate mt-1">
+        <p className="text-xs font-medium text-text-muted truncate mt-0.5">
           {cleanDescription}
         </p>
       </div>
@@ -92,7 +92,7 @@ const ExerciseListItem = ({
             disabled={isStaged}
             className={`p-3.5 rounded-[16px] transition-all duration-300 active:scale-95 shadow-sm ${
               isStaged
-                ? 'bg-green/10 text-green ring-1 ring-green/30'
+                ? 'bg-green-500/10 text-green-500 ring-1 ring-green-500/30'
                 : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 hover:bg-accent hover:text-white hover:ring-accent'
             }`}
             title={isStaged ? t('exercise_ui:added', 'Añadido') : t('exercise_ui:add_to_cart', 'Añadir al carrito')}

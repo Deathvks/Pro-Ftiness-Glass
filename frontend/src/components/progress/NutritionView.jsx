@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+/* frontend/src/components/progress/NutritionView.jsx */
+import React, { useEffect, useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { NutritionCharts } from './ProgressCharts';
 
@@ -48,24 +49,27 @@ const NutritionView = ({ axisColor }) => {
     const isNextDisabled = date.getFullYear() === new Date().getFullYear() && date.getMonth() === new Date().getMonth();
 
     return (
-        <div className="flex flex-col gap-4">
-            {/* Controles Superiores (Sin bordes ni fondos) */}
-            <div className="flex items-center justify-between gap-3 w-full">
+        <div className="flex flex-col gap-6 animate-[fade-in_0.4s_ease-out]">
+            {/* Controles de navegación */}
+            <div className="flex items-center justify-between gap-3 w-full bg-black/5 dark:bg-white/5 p-2 rounded-full ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                 <button 
                     onClick={() => changeMonth(-1)} 
-                    className="p-2 rounded-lg hover:bg-white/10 transition text-text-secondary hover:text-text-primary"
+                    className="p-3 rounded-full bg-bg-primary text-text-secondary hover:text-text-primary transition-all active:scale-95 shadow-sm"
                 >
-                    <ChevronLeft size={20} />
+                    <ChevronLeft size={20} strokeWidth={2.5} />
                 </button>
-                <h2 className="text-sm font-semibold capitalize text-text-primary tracking-wide">
+                
+                <h2 className="text-sm font-black capitalize text-text-primary tracking-widest flex items-center gap-2">
+                    <CalendarIcon size={16} className="text-accent" />
                     {date.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
                 </h2>
+                
                 <button 
                     onClick={() => changeMonth(1)} 
                     disabled={isNextDisabled}
-                    className="p-2 rounded-lg hover:bg-white/10 transition text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                    className="p-3 rounded-full bg-bg-primary text-text-secondary hover:text-text-primary transition-all active:scale-95 shadow-sm disabled:opacity-30 disabled:active:scale-100 disabled:cursor-not-allowed"
                 >
-                    <ChevronRight size={20} />
+                    <ChevronRight size={20} strokeWidth={2.5} />
                 </button>
             </div>
             

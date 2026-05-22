@@ -117,42 +117,41 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
 
     return (
         <div
-            className={`heatmap-container relative group cursor-pointer transition-all duration-300 hover:border-cyan-500/30 select-none ${!darkMode ? 'light-mode' : ''}`}
+            className={`relative group cursor-pointer transition-all duration-300 select-none bg-black/5 dark:bg-white/5 rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 overflow-hidden shadow-inner ${!darkMode ? 'light-mode' : ''}`}
             onClick={handleContainerClick}
             title="Haz click en un músculo para ver su nombre, o en el fondo para girar"
         >
+            {/* Badge Frente / Espalda */}
             <div className="absolute top-4 right-4 z-10 pointer-events-none">
-                <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full backdrop-blur-sm transition-colors border ${darkMode
-                    ? 'text-cyan-400/50 border-cyan-400/20 bg-black/20 group-hover:text-cyan-400 group-hover:border-cyan-400/50'
-                    : 'text-cyan-700 border-cyan-700/20 bg-white/40 group-hover:text-cyan-600 group-hover:border-cyan-600/50'
-                    }`}>
+                <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 group-hover:bg-black/10 dark:group-hover:bg-white/10 group-hover:text-text-primary shadow-sm backdrop-blur-md">
                     {modelType === 'anterior' ? 'Frente' : 'Espalda'}
                 </span>
             </div>
 
+            {/* Tooltip con nombre de músculo */}
             {selectedMuscleLabel && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none animate-[scale-in_0.1s_ease-out]">
-                    <div className="bg-black/80 backdrop-blur-md text-white text-sm font-bold px-4 py-2 rounded-full border border-white/10 shadow-xl whitespace-nowrap">
+                    <div className="bg-bg-primary text-text-primary text-sm font-black px-5 py-2.5 rounded-full ring-1 ring-black/5 dark:ring-white/10 shadow-xl whitespace-nowrap drop-shadow-md">
                         {selectedMuscleLabel}
                     </div>
                 </div>
             )}
 
-            <div className="w-full h-full flex justify-center items-center py-2">
-                <div style={{ width: '100%', maxWidth: '200px', height: '350px' }}>
+            <div className="w-full flex justify-center items-center py-12 px-6">
+                <div style={{ width: '100%', maxWidth: '240px', height: '400px' }} className="transition-transform duration-500 group-hover:scale-105">
                     <Model
                         data={formattedData}
                         type={modelType}
                         style={{ width: '100%', height: '100%' }}
-                        contentStyle={{ paddingTop: '0.5rem' }}
-                        bodyColor={darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(50, 50, 50, 0.1)"}
+                        contentStyle={{ padding: '1rem' }}
+                        bodyColor={darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"}
                         highlightedColors={colors}
                         onClick={handleMuscleClick}
                     />
                 </div>
             </div>
 
-            <div className={`absolute bottom-2 w-full text-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity ${darkMode ? 'text-white/30' : 'text-black/30'}`}>
+            <div className="absolute bottom-4 w-full text-center text-[10px] font-bold uppercase tracking-widest text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">
                 Click en fondo para girar
             </div>
         </div>

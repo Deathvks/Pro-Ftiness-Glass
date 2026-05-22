@@ -72,24 +72,24 @@ const RecordsView = () => {
   const getExerciseIcon = (exerciseName) => {
     const name = exerciseName.toLowerCase();
     if (name.includes('press') || name.includes('bench') || name.includes('sentadilla') || name.includes('peso muerto')) {
-      return <Weight className="w-5 h-5 text-yellow-800" />;
+      return <Weight size={24} strokeWidth={1.5} />;
     }
-    return <Award className="w-5 h-5 text-yellow-800" />;
+    return <Award size={24} strokeWidth={1.5} />;
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64"><Spinner size={32} /></div>
+      <div className="flex justify-center items-center h-64 animate-[fade-in_0.3s_ease-out]"><Spinner size={32} /></div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red">{error}</p>
+      <div className="text-center py-12 px-4 bg-red-500/10 rounded-[32px] ring-1 ring-red-500/20 animate-[fade-in_0.3s_ease-out]">
+        <p className="text-red-500 font-bold mb-4">{error}</p>
         <button 
           onClick={() => { setCurrentPage(1); setSelectedExercise('all'); }}
-          className="mt-4 px-4 py-2 bg-accent text-bg-secondary rounded hover:opacity-90 transition"
+          className="px-6 py-3 bg-red-500 text-white font-bold rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-red-500/20"
         >
           {tCommon('Reintentar', { defaultValue: 'Reintentar' })}
         </button>
@@ -98,12 +98,15 @@ const RecordsView = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h3 className="text-xl font-semibold text-text-primary flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-yellow-500" />
+    <div className="space-y-6 animate-[fade-in_0.4s_ease-out]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+        <h3 className="text-xl sm:text-2xl font-extrabold text-text-primary flex items-center gap-3 tracking-tight">
+          <div className="p-2.5 bg-yellow-500/10 rounded-[16px] text-yellow-500 ring-1 ring-yellow-500/20 shadow-sm">
+            <Trophy size={24} strokeWidth={2} />
+          </div>
           {tCommon('Récords Personales', { defaultValue: 'Récords Personales' })}
         </h3>
+        
         {exerciseNames.length > 0 && (
           <div className="w-full sm:w-64">
             <CustomSelect
@@ -117,43 +120,46 @@ const RecordsView = () => {
       </div>
 
       {records.length === 0 ? (
-        <div className="text-center py-12">
-          <Trophy className="w-12 h-12 text-text-muted mx-auto mb-4" />
-          <p className="text-text-secondary">
+        <div className="text-center py-16 px-4 bg-black/5 dark:bg-white/5 rounded-[32px] ring-1 ring-black/5 dark:ring-white/10">
+          <div className="w-20 h-20 bg-bg-primary rounded-[24px] mx-auto flex items-center justify-center mb-6 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
+            <Trophy size={36} className="text-yellow-500 opacity-80" strokeWidth={1.5} />
+          </div>
+          <h3 className="text-xl font-extrabold text-text-primary mb-2 tracking-tight">
             {selectedExercise === 'all' 
-              ? tCommon('No tienes récords personales registrados aún.', { defaultValue: 'No tienes récords personales registrados aún.' }) 
+              ? tCommon('No tienes récords registrados aún.', { defaultValue: 'No tienes récords registrados aún.' }) 
               : tCommon('No se encontraron récords para este ejercicio.', { defaultValue: 'No se encontraron récords para este ejercicio.' })
             }
-          </p>
+          </h3>
+          <p className="text-sm font-medium text-text-secondary">Sigue entrenando para superar tus límites.</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {records.map((record) => (
               <div 
                 key={record.id}
-                className="bg-bg-secondary rounded-lg p-4 shadow-sm border border-transparent dark:border dark:border-white/10 hover:shadow-md transition-shadow"
+                className="bg-black/5 dark:bg-white/5 rounded-[24px] p-5 ring-1 ring-black/5 dark:ring-white/10 hover:shadow-lg hover:-translate-y-1 transition-all group duration-300"
               >
-                <div className="flex flex-col xs:flex-row items-start xs:items-center xs:justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0 w-full xs:w-auto">
-                    <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
+                <div className="flex flex-col xs:flex-row items-start xs:items-center xs:justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1 min-w-0 w-full xs:w-auto">
+                    <div className="p-3.5 bg-yellow-500/10 rounded-[20px] flex-shrink-0 text-yellow-600 ring-1 ring-yellow-500/20 group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-sm">
                       {getExerciseIcon(record.exercise_name)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-text-primary truncate text-sm sm:text-base">
-                        {/* 3. Tu lógica aquí también era correcta, ahora 't' funcionará */}
+                      <h4 className="font-extrabold text-text-primary leading-tight text-base sm:text-lg tracking-tight transition-colors group-hover:text-accent">
                         {t(record.exercise_name, { defaultValue: record.exercise_name })}
                       </h4>
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
-                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-text-secondary flex-shrink-0" />
+                      <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-text-tertiary uppercase tracking-wider mt-1.5">
+                        <Calendar size={12} />
                         <span className="truncate">{formatDate(record.date)}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex justify-center xs:justify-end xs:flex-shrink-0 w-full xs:w-auto">
-                    <div className="text-xl sm:text-2xl font-bold text-accent text-center xs:text-right">
-                      {record.weight_kg}kg
+                  {/* Peso (Fondo transparente) */}
+                  <div className="flex justify-center xs:justify-end xs:flex-shrink-0 w-full xs:w-auto mt-2 xs:mt-0">
+                    <div className="text-2xl sm:text-3xl font-black text-accent text-center xs:text-right font-mono tracking-tighter drop-shadow-sm">
+                      {record.weight_kg}<span className="text-sm font-bold text-text-tertiary ml-0.5 tracking-normal">kg</span>
                     </div>
                   </div>
                 </div>
@@ -162,25 +168,25 @@ const RecordsView = () => {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 sm:gap-4 mt-6">
+            <div className="flex justify-center items-center gap-4 pt-6">
               <button
                 onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg bg-bg-secondary text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent-transparent hover:text-accent transition border border-transparent dark:border dark:border-white/10"
+                className="p-3 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary transition-colors ring-1 ring-black/5 dark:ring-white/10 active:scale-95"
               >
-                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                <ChevronLeft size={20} strokeWidth={2.5} />
               </button>
               
-              <span className="text-xs sm:text-sm text-text-secondary px-2">
-                {tCommon('Página', { defaultValue: 'Página' })} {currentPage} {tCommon('de', { defaultValue: 'de' })} {totalPages}
+              <span className="text-xs sm:text-sm font-bold text-text-secondary uppercase tracking-wider px-2">
+                {tCommon('Página', { defaultValue: 'Página' })} <span className="text-text-primary">{currentPage}</span> / {totalPages}
               </span>
               
               <button
                 onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg bg-bg-secondary text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent-transparent hover:text-accent transition border border-transparent dark:border dark:border-white/10"
+                className="p-3 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary transition-colors ring-1 ring-black/5 dark:ring-white/10 active:scale-95"
               >
-                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                <ChevronRight size={20} strokeWidth={2.5} />
               </button>
             </div>
           )}

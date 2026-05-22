@@ -336,7 +336,8 @@ const ExerciseDetailView = ({
         </div>
       </div>
 
-      <div className="flex-shrink-0 p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/80 backdrop-blur-md pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-8">
+      {/* FOOTER CORREGIDO CON PB-28 PARA MÓVILES */}
+      <div className="flex-shrink-0 p-5 sm:p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/90 backdrop-blur-md pb-28 md:pb-8 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(255,255,255,0.02)]">
         {!isReplacing && (
           <div className="flex gap-4 mb-5">
             <div className="flex-1">
