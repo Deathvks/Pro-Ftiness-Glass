@@ -72,41 +72,10 @@ export const createAuthSlice = (set, get) => ({
     },
 
     // Inicia sesión con Google
-    // MODIFICADO: Ahora guarda también el userProfile si viene en la respuesta.
-    handleGoogleLogin: async (googleToken) => {
-        const response = await authService.googleLogin(googleToken);
-
-        // --- INICIO MODIFICACIÓN 2FA ---
-        if (response.requires2FA) {
-            set({
-                twoFactorPending: {
-                    userId: response.userId,
-                    method: response.method
-                }
-            });
-            return;
-        }
-        // --- FIN MODIFICACIÓN 2FA ---
-
-        // MODIFICACIÓN: Extraemos 'user' además del token
-        const { token, user } = response;
-
-        localStorage.removeItem('fittrack_token');
-        localStorage.setItem('pro_fitness_token', token);
-
-        // Guardamos userProfile inmediatamente (aquí suele venir la foto de Google)
-        set({
-            token,
-            isAuthenticated: true,
-            twoFactorPending: null,
-            userProfile: user || null,
-            sessionExpired: false
-        });
-    },
-
-    // --- INICIO MODIFICACIÓN DISCORD ---
-    handleDiscordLogin: async (discordToken) => {
-        const response = await authService.discordLogin(discordToken);
+    handleGoogleLogin: async (payload) => {
+        // CORRECCIÓN: Compatibilidad con LoginScreen.jsx (si llega string, lo hace objeto)
+        const finalPayload = typeof payload === 'string' ? { token: payload } : payload;
+        const response = await authService.googleLogin(finalPayload);
 
         if (response.requires2FA) {
             set({
@@ -131,11 +100,12 @@ export const createAuthSlice = (set, get) => ({
             sessionExpired: false
         });
     },
-    // --- FIN MODIFICACIÓN DISCORD ---
 
-    // --- INICIO MODIFICACIÓN FACEBOOK ---
-    handleFacebookLogin: async (facebookToken) => {
-        const response = await authService.facebookLogin(facebookToken);
+    // Inicia sesión con Discord
+    handleDiscordLogin: async (payload) => {
+        // CORRECCIÓN: Compatibilidad con LoginScreen.jsx
+        const finalPayload = typeof payload === 'string' ? { token: payload } : payload;
+        const response = await authService.discordLogin(finalPayload);
 
         if (response.requires2FA) {
             set({
@@ -160,11 +130,40 @@ export const createAuthSlice = (set, get) => ({
             sessionExpired: false
         });
     },
-    // --- FIN MODIFICACIÓN FACEBOOK ---
 
-    // --- INICIO MODIFICACIÓN X ---
+    // Inicia sesión con Facebook
+    handleFacebookLogin: async (payload) => {
+        // CORRECCIÓN: Compatibilidad con LoginScreen.jsx
+        const finalPayload = typeof payload === 'string' ? { token: payload } : payload;
+        const response = await authService.facebookLogin(finalPayload);
+
+        if (response.requires2FA) {
+            set({
+                twoFactorPending: {
+                    userId: response.userId,
+                    method: response.method
+                }
+            });
+            return;
+        }
+
+        const { token, user } = response;
+
+        localStorage.removeItem('fittrack_token');
+        localStorage.setItem('pro_fitness_token', token);
+
+        set({
+            token,
+            isAuthenticated: true,
+            twoFactorPending: null,
+            userProfile: user || null,
+            sessionExpired: false
+        });
+    },
+
+    // Inicia sesión con X
     handleXLogin: async (payload) => {
-        // payload contiene { code, redirectUri, codeVerifier }
+        // payload siempre suele ser objeto { code, redirectUri, codeVerifier }
         const response = await authService.xLogin(payload);
 
         if (response.requires2FA) {
@@ -190,11 +189,12 @@ export const createAuthSlice = (set, get) => ({
             sessionExpired: false
         });
     },
-    // --- FIN MODIFICACIÓN X ---
 
-    // --- INICIO DE LA MODIFICACIÓN: Añadido GitHub Login ---
-    handleGithubLogin: async (code) => {
-        const response = await authService.githubLogin(code);
+    // Inicia sesión con GitHub
+    handleGithubLogin: async (payload) => {
+        // CORRECCIÓN: Compatibilidad con LoginScreen.jsx (GitHub usa 'code')
+        const finalPayload = typeof payload === 'string' ? { code: payload } : payload;
+        const response = await authService.githubLogin(finalPayload);
 
         if (response.requires2FA) {
             set({
@@ -219,11 +219,10 @@ export const createAuthSlice = (set, get) => ({
             sessionExpired: false
         });
     },
-    // --- FIN DE LA MODIFICACIÓN ---
 
-    // --- INICIO DE LA MODIFICACIÓN: Añadido Spotify Login ---
+    // Inicia sesión con Spotify
     handleSpotifyLogin: async (payload) => {
-        // payload contiene { code, redirectUri }
+        // payload siempre suele ser objeto { code, redirectUri }
         const response = await authService.spotifyLogin(payload);
 
         if (response.requires2FA) {
@@ -249,7 +248,6 @@ export const createAuthSlice = (set, get) => ({
             sessionExpired: false
         });
     },
-    // --- FIN DE LA MODIFICACIÓN ---
 
     // --- INICIO MODIFICACIÓN 2FA ---
     // Nueva acción para completar el login con el código 2FA

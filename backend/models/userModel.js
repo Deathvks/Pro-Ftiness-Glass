@@ -1,6 +1,7 @@
 /* backend/models/userModel.js */
 import { Model, DataTypes } from 'sequelize';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto'; // Añadido para generar el código de referido
 import sequelize from '../db.js';
 
 class User extends Model {
@@ -57,13 +58,11 @@ User.init({
     allowNull: true,
     unique: true
   },
-  // --- INICIO DE LA MODIFICACIÓN: Añadido spotify_id ---
   spotify_id: {
     type: DataTypes.STRING(255),
     allowNull: true,
     unique: true
   },
-  // --- FIN DE LA MODIFICACIÓN ---
   role: {
     type: DataTypes.STRING,
     defaultValue: 'user'
@@ -96,7 +95,7 @@ User.init({
     allowNull: true
   },
 
-  // --- Metas Nutricionales (NUEVO) ---
+  // --- Metas Nutricionales ---
   target_calories: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
@@ -144,10 +143,9 @@ User.init({
     type: DataTypes.DATE,
     allowNull: true,
   },
-  // --- NUEVOS CAMPOS DE PRIVACIDAD ---
   is_public_profile: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true, // Público por defecto
+    defaultValue: true,
     allowNull: false
   },
   show_level_xp: {
@@ -229,6 +227,19 @@ User.init({
   last_ai_request_date: {
     type: DataTypes.DATEONLY,
     allowNull: true
+  },
+
+  // --- SISTEMA DE REFERIDOS ---
+  referred_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'ID del usuario que invitó a este usuario'
+  },
+  referral_code: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: true,
+    comment: 'Código único para que este usuario invite a otros'
   }
 
 }, {
@@ -239,6 +250,12 @@ User.init({
   createdAt: 'created_at',
   updatedAt: false,
   hooks: {
+    beforeCreate: (user) => {
+      // Si no tiene código de referido, le generamos uno aleatorio de 8 caracteres
+      if (!user.referral_code) {
+        user.referral_code = crypto.randomBytes(4).toString('hex').toUpperCase();
+      }
+    },
     beforeSave: async (user, options) => {
       if (user.changed('password_hash') && user.password_hash) {
         const salt = await bcrypt.genSalt(10);

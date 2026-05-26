@@ -352,7 +352,6 @@ const StoryViewer = ({ userId, onClose }) => {
   useLayoutEffect(() => {
     setProgress(0);
     setIsPaused(false);
-    // OPTIMIZACIÓN: No activamos buffering por defecto para evitar spinner inmediato
     setMediaLoaded(false);
     setMediaError(false);
     setShowLikesList(false); 
@@ -444,7 +443,6 @@ const StoryViewer = ({ userId, onClose }) => {
   };
   
   const handleVideoCanPlay = () => {
-      // Intento agresivo de reproducir en cuanto sea posible
       if (videoRef.current && !isPaused && !showDeleteConfirm && !showLikesList) {
           videoRef.current.play().catch(() => {});
       }
@@ -508,11 +506,13 @@ const StoryViewer = ({ userId, onClose }) => {
       if (isPaused) setIsPaused(false);
   };
 
+  // --- SOLUCIÓN: MARCAR COMO VISTA ---
   useEffect(() => {
-    if (currentStory && !currentStory.viewed && storyData?.userId) {
-      markStoryAsViewed(storyData.userId, currentStory.id);
+    // Solo marcamos como vista si el usuario realmente la está viendo en pantalla (mediaLoaded)
+    if (currentStory && !currentStory.viewed && mediaLoaded) {
+      markStoryAsViewed(currentStory.id);
     }
-  }, [currentIndex, currentStory, storyData, markStoryAsViewed]);
+  }, [currentIndex, currentStory, mediaLoaded, markStoryAsViewed]);
 
   const handleDownload = async (e) => {
     e.stopPropagation();
@@ -589,7 +589,6 @@ const StoryViewer = ({ userId, onClose }) => {
     return (
       <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in">
         <div className="w-full max-w-sm bg-bg-secondary/90 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden">
-            {/* Efecto de fondo */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-accent/20 rounded-full blur-[50px] pointer-events-none" />
 
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/5 relative z-10">
@@ -770,7 +769,7 @@ const StoryViewer = ({ userId, onClose }) => {
                         preload="auto"
                         muted={isMuted}
                         onLoadedMetadata={handleVideoLoadedMetadata}
-                        onCanPlay={handleVideoCanPlay} // Intento agresivo de play
+                        onCanPlay={handleVideoCanPlay}
                         onError={(e) => { 
                             console.error("Video Error:", e.nativeEvent); 
                             setMediaError(true); 

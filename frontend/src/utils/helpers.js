@@ -1,4 +1,5 @@
 /* frontend/src/utils/helpers.js */
+
 export const calculateCalories = (durationInSeconds, userWeight = 75) => {
   const MET_VALUE = 5.0;
   const hours = durationInSeconds / 3600;
@@ -87,3 +88,65 @@ export const normalizeText = (text) => {
     .trim();                  // Elimina espacios al inicio y final
 };
 // --- FIN DE LA MODIFICACIÓN (I18N FIX) ---
+
+// --- NUEVO: ESTIMACIÓN DE TIEMPO DE RUTINA ---
+/**
+ * Calcula el tiempo estimado (en minutos) de una rutina en base a sus ejercicios, repeticiones y el objetivo del usuario.
+ */
+export const calculateRoutineEstimatedTime = (exercises, userGoal = 'maintenance') => {
+  if (!exercises || exercises.length === 0) return 0;
+
+  let totalSeconds = 0;
+
+  // Agrupamos por superserie para no duplicar los descansos
+  const groups = {};
+  exercises.forEach(ex => {
+    const groupId = ex.superset_group_id || `single_${ex.id || ex.tempId || Math.random()}`;
+    if (!groups[groupId]) groups[groupId] = [];
+    groups[groupId].push(ex);
+  });
+
+  Object.values(groups).forEach(group => {
+    const maxSets = Math.max(...group.map(ex => parseInt(ex.sets, 10) || 0), 0);
+    if (maxSets === 0) return;
+
+    // 1. Tiempo Activo (ejecución de los ejercicios)
+    let activeTime = 0;
+    group.forEach(ex => {
+      const sets = parseInt(ex.sets, 10) || 0;
+      let reps = 10; // Promedio por defecto
+      
+      // Manejamos si las repeticiones vienen como rango (ej: "8-12")
+      if (typeof ex.reps === 'string') {
+         const parts = ex.reps.split('-');
+         if (parts.length > 1) reps = (parseInt(parts[0], 10) + parseInt(parts[1], 10)) / 2;
+         else reps = parseInt(ex.reps, 10) || 10;
+      } else if (typeof ex.reps === 'number') {
+         reps = ex.reps;
+      }
+      
+      // Asumimos 4 segundos por repetición (Tiempo Bajo Tensión promedio)
+      activeTime += sets * reps * 4; 
+    });
+
+    // 2. Tiempo de Descanso adaptado al objetivo del usuario
+    let baseRest = 60;
+    if (userGoal === 'gain_muscle') baseRest = 45; // Descansos más cortos
+    else if (userGoal === 'lose_weight') baseRest = 75; // Descansos más largos
+    
+    // Tomamos el descanso configurado o el base
+    const maxRest = Math.max(...group.map(ex => parseInt(ex.rest_seconds, 10) || baseRest));
+    
+    // Aplicamos el factor del objetivo incluso sobre el descanso elegido por el usuario
+    let restMultiplier = 1;
+    if (userGoal === 'gain_muscle') restMultiplier = 0.85; 
+    if (userGoal === 'lose_weight') restMultiplier = 1.15; 
+
+    const restTime = maxSets * (maxRest * restMultiplier);
+
+    totalSeconds += activeTime + restTime;
+  });
+
+  // Retornamos los minutos totales (mínimo 1 minuto)
+  return Math.max(1, Math.round(totalSeconds / 60));
+};

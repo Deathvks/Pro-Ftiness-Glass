@@ -5,8 +5,9 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube, Play
+  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube, Play, LockOpen, Lock
 } from 'lucide-react';
+import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -160,15 +161,10 @@ const TikTokIcon = ({ size = 20, className }) => (
 );
 
 export default function SettingsScreen({
-  theme = 'system',
-  setTheme,
-  accent = 'green',
-  setAccent,
   setView,
   onLogoutClick,
   highlight
 }) {
-  const { resolvedTheme } = useAppTheme();
 
   const {
     userProfile,
@@ -185,6 +181,13 @@ export default function SettingsScreen({
   }));
 
   const { addToast } = useToast();
+  
+  // Usamos el hook centralizado para probar el tema
+  const { 
+    theme, activeTheme, setTheme, accent, setAccent, 
+    startThemeTest, isTestingTheme, testTimeLeft 
+  } = useAppTheme();
+
   const [currentColorPage, setCurrentColorPage] = useState(0);
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
@@ -197,6 +200,8 @@ export default function SettingsScreen({
 
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
+
+  const isGalaxyUnlocked = (userProfile?.referralCount || 0) >= 3;
 
   const [autoTimezone, setAutoTimezone] = useState(() => {
     return localStorage.getItem('settings_auto_timezone') === 'true';
@@ -419,6 +424,9 @@ export default function SettingsScreen({
 
   const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
+  // Verificación de si Galaxia está activo para bloquear la cuadrícula de colores
+  const isGalaxyActive = activeTheme === 'galaxy';
+
   const soporteCard = (
     <GlassCard className={glassCardClass}>
       <SectionTitle icon={Info} title="Soporte y General" />
@@ -533,14 +541,14 @@ export default function SettingsScreen({
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={Palette} title="Apariencia" />
 
-            <div className="mb-8">
+            <div className="mb-6">
               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Tema</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {['system', 'light', 'dark', 'oled'].map((mode) => (
                   <button
                     key={mode}
                     onClick={() => handleThemeClick(mode)}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-[20px] transition-all duration-300 ${theme === mode
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-[20px] transition-all duration-300 ${theme === mode && !isTestingTheme
                       ? 'bg-accent text-white shadow-lg shadow-accent/30 scale-105'
                       : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
                       }`}
@@ -559,6 +567,51 @@ export default function SettingsScreen({
               </div>
             </div>
 
+            {/* --- SECCIÓN GALAXIA --- */}
+            <div className="mb-8">
+              <div className={`p-4 rounded-[20px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20 scale-[1.02]' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-[14px] ${isGalaxyUnlocked ? 'bg-[#a855f7]/20 text-[#a855f7]' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
+                       <FaMeteor size={22} />
+                    </div>
+                    <div>
+                      <div className={`text-sm font-bold ${isGalaxyUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#a855f7] to-[#3b82f6]' : 'text-text-primary'}`}>
+                        Tema Galaxia
+                      </div>
+                      <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1 mt-0.5">
+                        {isGalaxyUnlocked ? (
+                          <><LockOpen size={12} className="text-green-500" /> Desbloqueado</>
+                        ) : (
+                          <><Lock size={12} className="text-text-muted" /> Invita a 3 amigos</>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    {isGalaxyUnlocked ? (
+                       <button 
+                         onClick={() => setTheme('galaxy')} 
+                         className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${theme === 'galaxy' ? 'bg-[#a855f7] text-white shadow-lg shadow-[#a855f7]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#a855f7]/20 text-[#a855f7]'}`}
+                       >
+                         {theme === 'galaxy' ? 'Activo' : 'Aplicar'}
+                       </button>
+                    ) : (
+                       <button 
+                         onClick={() => startThemeTest(10)} 
+                         disabled={isTestingTheme} 
+                         className="px-4 py-2 rounded-full text-xs font-bold bg-[#a855f7]/20 text-[#a855f7] hover:bg-[#a855f7]/30 transition-all flex items-center justify-center gap-1.5 disabled:opacity-80 whitespace-nowrap min-w-[110px]"
+                       >
+                         {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar 10s'}
+                       </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* ---------------------- */}
+
             <div>
               <div className="flex justify-between items-center mb-4 ml-1">
                 <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
@@ -566,14 +619,14 @@ export default function SettingsScreen({
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
-                      disabled={currentColorPage === 0}
+                      disabled={currentColorPage === 0 || isGalaxyActive}
                       className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
                     >
                       <ChevronLeft size={16} />
                     </button>
                     <button
                       onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={currentColorPage === totalPages - 1}
+                      disabled={currentColorPage === totalPages - 1 || isGalaxyActive}
                       className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
                     >
                       <ChevronRight size={16} />
@@ -581,28 +634,37 @@ export default function SettingsScreen({
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-6 gap-3 sm:gap-4">
-                {currentColors.map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setAccent(opt.id)}
-                    title={opt.label}
-                    className="group relative flex justify-center items-center w-full aspect-square"
-                  >
-                    <span
-                      className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                      style={{
-                        backgroundColor: opt.hex,
-                        boxShadow: accent === opt.id ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                      }}
-                    />
-                    {accent === opt.id && (
-                      <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                        <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                      </span>
-                    )}
-                  </button>
-                ))}
+              
+              {/* BLOQUEO DE ACENTOS SI GALAXIA ESTÁ ACTIVO */}
+              <div className={`transition-all duration-300 ${isGalaxyActive ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
+                <div className="grid grid-cols-6 gap-3 sm:gap-4">
+                  {currentColors.map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setAccent(opt.id)}
+                      title={opt.label}
+                      className="group relative flex justify-center items-center w-full aspect-square"
+                    >
+                      <span
+                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
+                        style={{
+                          backgroundColor: opt.hex,
+                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
+                        }}
+                      />
+                      {accent === opt.id && !isGalaxyActive && (
+                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {isGalaxyActive && (
+                  <p className="text-[10px] sm:text-xs text-[#a855f7] font-bold mt-4 ml-1 flex items-center gap-1.5">
+                    <Info size={14} /> El Tema Galaxia usa su propio acento morado estelar.
+                  </p>
+                )}
               </div>
             </div>
 

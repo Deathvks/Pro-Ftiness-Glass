@@ -1,231 +1,433 @@
 /* frontend/src/components/WelcomeModal.jsx */
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-  Sparkles, ChevronRight, Share2, Activity, Users, Flame,
-  MessageSquare, Zap, Dumbbell, Check, ArrowUpRight, LineChart,
-  Bell
+  ChevronRight, Users, Zap, LineChart
 } from 'lucide-react';
+import { FaMeteor } from 'react-icons/fa6';
 import { APP_VERSION } from '../config/version';
 
 const WelcomeModal = ({ onClose }) => {
-  // Tomamos la versión completa y extraemos solo el número mayor (ej: de "6.0.1" sacamos "6")
   const appVersion = `v${APP_VERSION}`;
   const majorVersion = APP_VERSION.split('.')[0];
 
   const handleGetStarted = () => {
-    if (onClose) {
-      onClose();
-    }
+    if (onClose) onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-[fade-in_0.3s_ease-out]">
+    <>
+      <style>{`
+        @keyframes wm-fade-backdrop {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes wm-slide-card {
+          from { opacity: 0; transform: translateY(28px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)    scale(1);    }
+        }
+        @keyframes wm-spin-ring {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes wm-pulse-glow {
+          0%, 100% { opacity: 0.5; transform: scale(1);    }
+          50%       { opacity: 1;   transform: scale(1.12); }
+        }
+        @keyframes wm-shimmer-text {
+          0%   { background-position: 0%   50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0%   50%; }
+        }
+        @keyframes wm-badge-pop {
+          0%   { transform: scale(0.6) rotate(-6deg); opacity: 0; }
+          70%  { transform: scale(1.1) rotate(2deg);  opacity: 1; }
+          100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
+        }
+        @keyframes wm-card-in {
+          from { opacity: 0; transform: translateX(-10px); }
+          to   { opacity: 1; transform: translateX(0);     }
+        }
+        @keyframes wm-count-tick {
+          from { transform: translateY(6px); opacity: 0; }
+          to   { transform: translateY(0);   opacity: 1; }
+        }
 
-      {/* Contenedor del Modal */}
-      <div className="relative w-full max-w-[480px] bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-[slide-up_0.3s_ease-out]">
+        .wm-backdrop {
+          animation: wm-fade-backdrop 0.35s ease-out both;
+        }
+        .wm-card {
+          animation: wm-slide-card 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+        }
+        .wm-spin-ring {
+          animation: wm-spin-ring 10s linear infinite;
+        }
+        .wm-glow-orb {
+          animation: wm-pulse-glow 3s ease-in-out infinite;
+        }
+        .wm-badge {
+          animation: wm-badge-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s both;
+        }
+        .wm-feature-1 { animation: wm-card-in 0.4s ease-out 0.25s both; }
+        .wm-feature-2 { animation: wm-card-in 0.4s ease-out 0.35s both; }
+        .wm-feature-3 { animation: wm-card-in 0.4s ease-out 0.45s both; }
+        .wm-feature-4 { animation: wm-card-in 0.4s ease-out 0.55s both; }
+        .wm-btn-in    { animation: wm-card-in 0.4s ease-out 0.65s both; }
 
-        {/* Decoración de fondo interna */}
-        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-accent/20 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[100px] pointer-events-none"></div>
+        .wm-shimmer {
+          background: linear-gradient(
+            120deg,
+            var(--text-primary) 0%,
+            var(--color-accent) 35%,
+            var(--text-primary) 55%,
+            var(--color-accent) 80%,
+            var(--text-primary) 100%
+          );
+          background-size: 300% 100%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: wm-shimmer-text 5s linear infinite;
+        }
 
-        {/* Scroll interno */}
-        <div className="overflow-y-auto custom-scrollbar p-6 sm:p-8 flex flex-col h-full relative z-10">
+        .wm-feature-card {
+          position: relative;
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          padding: 18px 20px;
+          border-radius: 20px;
+          border: 1px solid transparent;
+          background-clip: padding-box;
+          transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+          overflow: hidden;
+        }
+        .wm-feature-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background: var(--glass-bg);
+          z-index: 0;
+        }
+        .wm-feature-card:hover {
+          transform: translateX(4px);
+        }
+        .wm-feature-card > * {
+          position: relative;
+          z-index: 1;
+        }
 
-          {/* --- Cabecera Dinámica --- */}
-          <div className="text-center mb-10 flex flex-col items-center mt-2">
-            <div className="mb-6 relative group">
-              <div className="absolute inset-0 bg-accent/40 blur-2xl rounded-full group-hover:bg-accent/60 transition-all duration-500"></div>
-              
-              {/* Contenedor del Icono Dinámico */}
-              <div className="relative w-28 h-28 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] flex items-center justify-center shadow-xl backdrop-blur-xl transform group-hover:scale-105 transition-transform duration-500">
-                <span className="text-6xl font-black text-accent drop-shadow-lg tracking-tighter">
-                  v{majorVersion}
-                </span>
-              </div>
-              
-              {/* Badge */}
-              <div className="absolute -top-3 -right-6 bg-accent text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-accent/40 animate-bounce z-20 whitespace-nowrap tracking-widest">
-                NUEVA ERA
-              </div>
-            </div>
+        .wm-accent-line {
+          position: absolute;
+          left: 0; top: 20%; bottom: 20%;
+          width: 3px;
+          border-radius: 0 3px 3px 0;
+        }
 
-            <h1 className="text-3xl font-extrabold bg-gradient-to-r from-text-primary via-accent to-text-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_3s_infinite_linear] tracking-tight mb-3">
-              Inteligencia & Comunidad
-            </h1>
-            <p className="text-text-secondary font-medium text-sm leading-relaxed max-w-[90%] mx-auto">
-              Pro Fitness Glass da el salto con gamificación en grupos, IA y un modo avanzado para entrenadores.
-            </p>
-          </div>
+        .wm-icon-wrap {
+          flex-shrink: 0;
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
 
-          <div className="space-y-5 mb-8">
+        .wm-num {
+          position: absolute;
+          top: 14px;
+          right: 16px;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          opacity: 0.18;
+          font-variant-numeric: tabular-nums;
+        }
 
-            {/* --- BLOQUE 1: EFECTO WRAPPED / ASSETS VIRALES --- */}
-            <div className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 sm:p-6 backdrop-blur-xl hover:ring-[#ec4899]/50 hover:shadow-lg hover:shadow-[#ec4899]/10 hover:-translate-y-1 transition-all duration-300 group">
-              <h2 className="text-xs font-bold text-text-primary mb-5 flex items-center gap-2 uppercase tracking-widest">
-                <Share2 size={18} className="text-[#ec4899] shrink-0" strokeWidth={2.5} /> Efecto Wrapped
-              </h2>
-              <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-28 bg-gradient-to-br from-purple-500 to-[#ec4899] rounded-[20px] overflow-hidden shadow-md group-hover:scale-[1.02] transition-transform duration-500 flex flex-col p-4 justify-center">
-                  <div className="text-[10px] text-white/80 uppercase tracking-widest mb-1 font-bold">NUEVO RÉCORD (PR)</div>
-                  <div className="text-3xl font-black text-white tracking-tight leading-none mb-1">100 KG</div>
-                  <div className="text-[11px] font-bold text-white/90 uppercase tracking-wider">PRESS BANCA</div>
-                  <div className="absolute bottom-3 right-3 bg-white text-[#ec4899] p-1.5 rounded-full shadow-lg">
-                    <ArrowUpRight size={16} strokeWidth={3} />
-                  </div>
+        .wm-btn {
+          width: 100%;
+          padding: 16px 24px;
+          border-radius: 18px;
+          border: none;
+          background: var(--color-accent);
+          color: #fff;
+          font-weight: 800;
+          font-size: 15px;
+          letter-spacing: 0.06em;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+          box-shadow: 0 8px 32px -4px color-mix(in srgb, var(--color-accent) 50%, transparent);
+          position: relative;
+          overflow: hidden;
+        }
+        .wm-btn::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+        }
+        .wm-btn:hover  { transform: translateY(-2px); filter: brightness(1.08); }
+        .wm-btn:active { transform: scale(0.97); }
+
+        .wm-divider {
+          height: 1px;
+          background: linear-gradient(to right, transparent, var(--glass-border), transparent);
+          margin: 4px 0;
+        }
+      `}</style>
+
+      {/* Backdrop */}
+      <div
+        className="wm-backdrop"
+        style={{
+          position: 'fixed', inset: 0, zIndex: 150,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '16px',
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}
+      >
+        {/* Modal Card */}
+        <div
+          className="wm-card"
+          style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '440px',
+            maxHeight: '90vh',
+            borderRadius: '28px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--glass-border)',
+            boxShadow: '0 40px 80px -10px rgba(0,0,0,0.5), 0 0 0 0.5px var(--glass-border)',
+          }}
+        >
+          {/* Ambient glow layers */}
+          <div style={{
+            position: 'absolute', top: '-30%', left: '-20%',
+            width: '70%', height: '70%',
+            background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 70%)',
+            pointerEvents: 'none', zIndex: 0,
+          }} />
+          <div style={{
+            position: 'absolute', bottom: '-20%', right: '-15%',
+            width: '55%', height: '55%',
+            background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 70%)',
+            pointerEvents: 'none', zIndex: 0,
+          }} />
+
+          {/* Scrollable content */}
+          <div style={{
+            overflowY: 'auto', padding: '32px 28px 28px',
+            display: 'flex', flexDirection: 'column', gap: '0',
+            position: 'relative', zIndex: 1,
+          }}>
+
+            {/* ── Hero ── */}
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+
+              {/* Version medallion */}
+              <div style={{ position: 'relative', display: 'inline-flex', marginBottom: '20px' }}>
+                {/* Spinning ring */}
+                <svg
+                  className="wm-spin-ring"
+                  width="104" height="104"
+                  style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}
+                  viewBox="0 0 104 104"
+                >
+                  <circle cx="52" cy="52" r="48"
+                    fill="none"
+                    stroke="url(#ring-grad)"
+                    strokeWidth="1.5"
+                    strokeDasharray="60 240"
+                    strokeLinecap="round"
+                  />
+                  <defs>
+                    <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.9"/>
+                      <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+
+                {/* Glow orb */}
+                <div className="wm-glow-orb" style={{
+                  position: 'absolute', inset: '-8px',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 30%, transparent), transparent 70%)',
+                  pointerEvents: 'none',
+                }} />
+
+                {/* Center medallion */}
+                <div style={{
+                  width: '80px', height: '80px',
+                  borderRadius: '22px',
+                  background: 'color-mix(in srgb, var(--color-accent) 12%, var(--bg-secondary))',
+                  border: '1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 4px 20px -4px color-mix(in srgb, var(--color-accent) 30%, transparent)',
+                }}>
+                  <span style={{
+                    fontSize: '32px', fontWeight: 900,
+                    color: 'var(--color-accent)',
+                    letterSpacing: '-2px',
+                    lineHeight: 1,
+                  }}>v{majorVersion}</span>
                 </div>
+
+                {/* Badge */}
+                <div className="wm-badge" style={{
+                  position: 'absolute', top: '-10px', right: '-22px',
+                  background: 'var(--color-accent)',
+                  color: '#fff',
+                  fontSize: '9px', fontWeight: 900,
+                  letterSpacing: '0.15em',
+                  padding: '4px 10px',
+                  borderRadius: '99px',
+                  boxShadow: '0 4px 16px -2px color-mix(in srgb, var(--color-accent) 60%, transparent)',
+                  whiteSpace: 'nowrap',
+                }}>NUEVA ERA</div>
               </div>
-              <p className="mt-5 text-[13px] font-medium text-text-secondary text-center leading-relaxed">
-                Genera imágenes increíbles de tus PRs y resúmenes semanales automáticamente. ¡Listos para presumir en Instagram y TikTok!
+
+              {/* Title */}
+              <h1 className="wm-shimmer" style={{
+                fontSize: '26px', fontWeight: 900,
+                margin: '0 0 10px',
+                letterSpacing: '-0.5px',
+                lineHeight: 1.15,
+              }}>
+                Potencia & Comunidad
+              </h1>
+
+              <p style={{
+                fontSize: '13.5px',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.65,
+                margin: 0,
+                maxWidth: '320px',
+                marginInline: 'auto',
+              }}>
+                Descubre las nuevas herramientas de Pro Fitness Glass: comunidad, recompensas y analíticas avanzadas.
               </p>
             </div>
 
-            {/* --- BLOQUE 2: ONBOARDING EMOCIONAL --- */}
-            <div className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 sm:p-6 backdrop-blur-xl hover:ring-green-500/50 hover:shadow-lg hover:shadow-green-500/10 hover:-translate-y-1 transition-all duration-300 group">
-              <h2 className="text-xs font-bold text-text-primary mb-5 flex items-center gap-2 uppercase tracking-widest">
-                <Activity size={18} className="text-green-500 shrink-0" strokeWidth={2.5} /> Onboarding Emocional
-              </h2>
-              <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] h-24 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] overflow-hidden shadow-sm group-hover:scale-[1.02] transition-transform duration-500 flex items-center p-4 gap-4">
-                  <div className="w-10 h-10 rounded-[12px] bg-green-500/10 flex items-center justify-center shrink-0 ring-1 ring-green-500/30">
-                    <LineChart size={20} className="text-green-500" strokeWidth={2.5} />
-                  </div>
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <div className="text-[9px] text-text-muted uppercase font-bold tracking-widest mb-0.5">Para el 15 de Agosto</div>
-                    <div className="text-sm font-extrabold text-text-primary truncate tracking-tight">Lograrás pesar 75kg</div>
-                    <div className="w-full h-1.5 bg-black/5 dark:bg-white/5 rounded-full mt-2.5 overflow-hidden">
-                      <div className="h-full bg-green-500 w-[80%] rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
-                    </div>
-                  </div>
+            {/* ── Divider ── */}
+            <div className="wm-divider" style={{ marginBottom: '20px' }} />
+
+            {/* ── Feature Cards ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+
+              {/* Galaxia */}
+              <div className="wm-feature-card wm-feature-1" style={{
+                background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
+                border: '1px solid rgba(168,85,247,0.35)',
+                boxShadow: '0 4px 20px -8px rgba(168,85,247,0.3)',
+              }}>
+                {/* Textura de estrellas de fondo para la capa galáctica */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `
+                    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                    radial-gradient(1.5px 1.5px at 70px 10px, #ffffff, rgba(0,0,0,0)),
+                    radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
+                    url('https://www.transparenttextures.com/patterns/stardust.png')
+                  `,
+                  opacity: 0.4,
+                  pointerEvents: 'none',
+                  zIndex: 0
+                }}></div>
+                <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
+                <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.25)' }}>
+                  <FaMeteor size={18} style={{ color: '#a855f7' }} />
                 </div>
-              </div>
-              <p className="mt-5 text-[13px] font-medium text-text-secondary text-center leading-relaxed">
-                Nuevo Quiz interactivo. Descubre tu potencial y mira la proyección de tus resultados antes de registrarte.
-              </p>
-            </div>
-
-            {/* --- BLOQUE 3: GRUPOS Y GAMIFICACIÓN --- */}
-            <div className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 sm:p-6 backdrop-blur-xl hover:ring-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 group">
-              <h2 className="text-xs font-bold text-text-primary mb-5 flex items-center gap-2 uppercase tracking-widest">
-                <Users size={18} className="text-blue-500 shrink-0" strokeWidth={2.5} /> Grupos de Rachas
-              </h2>
-              <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] overflow-hidden shadow-sm group-hover:scale-[1.02] transition-transform duration-500 p-3.5 flex flex-col gap-2.5">
-                  <div className="flex justify-between items-center bg-black/5 dark:bg-white/5 px-3 py-2.5 rounded-[14px] ring-1 ring-black/5 dark:ring-white/10">
-                    <div className="flex items-center gap-2.5 text-xs font-bold text-text-primary">
-                      <span className="text-yellow-500 w-3 text-center">1</span> 
-                      <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-[9px] shadow-sm">AM</div>
-                      Juan
-                    </div>
-                    <div className="flex gap-1.5 text-[11px] font-bold items-center text-text-secondary">
-                      <Flame size={14} className="text-orange-500 fill-orange-500/20" /> 15
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center bg-accent/10 ring-1 ring-accent/30 px-3 py-2.5 rounded-[14px] shadow-sm">
-                    <div className="flex items-center gap-2.5 text-xs font-bold text-text-primary">
-                      <span className="text-text-muted w-3 text-center">2</span> 
-                      <div className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[9px] shadow-sm">TU</div>
-                      Tú
-                    </div>
-                    <div className="flex gap-1.5 text-[11px] font-bold items-center text-text-secondary">
-                      <Flame size={14} className="text-orange-500 fill-orange-500/20" /> 14
-                    </div>
-                  </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Tema Galaxia</p>
+                  <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
+                    Desbloquea el nuevo tema estelar animado. ¡Personaliza tu dashboard como nunca antes con cielos estrellados!
+                  </p>
                 </div>
+                <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
               </div>
-              <p className="mt-5 text-[13px] font-medium text-text-secondary text-center leading-relaxed">
-                Crea grupos privados con tus amigos. Compite en rankings cerrados y envía avisos antes de que pierdan su racha.
-              </p>
-            </div>
 
-            {/* --- BLOQUE 4: ENTRENADOR IA --- */}
-            <div className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 sm:p-6 backdrop-blur-xl hover:ring-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300 group">
-              <h2 className="text-xs font-bold text-text-primary mb-5 flex items-center gap-2 uppercase tracking-widest">
-                <MessageSquare size={18} className="text-purple-500 shrink-0" strokeWidth={2.5} /> Entrenador Virtual IA
-              </h2>
-              <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] overflow-hidden shadow-sm group-hover:scale-[1.02] transition-transform duration-500 p-4">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 blur-2xl rounded-full"></div>
-                  <div className="flex gap-4 items-center">
-                    <div className="w-10 h-10 rounded-[12px] bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 ring-1 ring-purple-500/20">
-                      <Zap size={20} className="fill-purple-500/20" />
-                    </div>
-                    <div className="flex-1 bg-black/5 dark:bg-white/5 rounded-[16px] p-3 ring-1 ring-black/5 dark:ring-white/10 relative z-10 shadow-inner">
-                      <p className="text-[11px] font-medium text-text-primary leading-relaxed italic">
-                        "Estancamiento detectado en Sentadilla. ¿Bajamos un 10% el peso y subimos repeticiones hoy?"
-                      </p>
-                    </div>
-                  </div>
+              {/* Referidos */}
+              <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
+                <div className="wm-accent-line" style={{ background: 'var(--color-accent)' }} />
+                <div className="wm-icon-wrap" style={{ background: 'var(--color-accent-transparent)', border: '1px solid var(--color-accent-border)' }}>
+                  <Users size={18} style={{ color: 'var(--color-accent)' }} />
                 </div>
-              </div>
-              <p className="mt-5 text-[13px] font-medium text-text-secondary text-center leading-relaxed">
-                Sugerencias Inteligentes que detectan tus estancamientos y analizan desequilibrios musculares en tu rutina actual.
-              </p>
-            </div>
-
-            {/* --- BLOQUE 5: MODO ENTRENADOR --- */}
-            <div className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 sm:p-6 backdrop-blur-xl hover:ring-accent/50 hover:shadow-lg hover:shadow-accent/10 hover:-translate-y-1 transition-all duration-300 group">
-              <h2 className="text-xs font-bold text-text-primary mb-5 flex items-center gap-2 uppercase tracking-widest">
-                <Dumbbell size={18} className="text-accent shrink-0" strokeWidth={2.5} /> Modo Entrenador Pro
-              </h2>
-              <div className="flex justify-center">
-                <div className="relative w-full max-w-[260px] bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] overflow-hidden shadow-sm group-hover:scale-[1.02] transition-transform duration-500 flex flex-col p-4 gap-4">
-                  <div className="flex justify-between items-center text-xs font-extrabold text-text-primary border-b border-black/5 dark:border-white/10 pb-3">
-                    <span>Mis Clientes</span>
-                    <span className="text-accent bg-accent/10 ring-1 ring-accent/30 px-2 py-1 rounded-[8px] font-mono text-[9px] tracking-widest">8/10 GRATIS</span>
-                  </div>
-                  <div className="flex flex-col gap-2.5">
-                    <div className="flex justify-between items-center bg-black/5 dark:bg-white/5 px-3 py-2.5 rounded-[14px] ring-1 ring-black/5 dark:ring-white/10">
-                      <div className="flex items-center gap-2.5 text-xs font-bold text-text-primary"><div className="w-2 h-2 bg-accent rounded-full animate-pulse shadow-[0_0_8px_var(--accent)]"></div> Carlos S.</div>
-                      <div className="text-[9px] font-bold uppercase tracking-wider bg-green-500/10 text-green-500 ring-1 ring-green-500/30 px-2 py-1 rounded-[8px] flex items-center gap-1.5"><Check size={12} strokeWidth={3} /> Dieta Ok</div>
-                    </div>
-                    <div className="flex justify-between items-center bg-black/5 dark:bg-white/5 px-3 py-2.5 rounded-[14px] ring-1 ring-black/5 dark:ring-white/10">
-                      <div className="flex items-center gap-2.5 text-xs font-bold text-text-primary"><div className="w-2 h-2 bg-blue-500 rounded-full"></div> Laura M.</div>
-                      <div className="text-[9px] font-bold uppercase tracking-wider bg-accent/10 text-accent ring-1 ring-accent/30 px-2 py-1 rounded-[8px] flex items-center gap-1.5"><Check size={12} strokeWidth={3} /> Entrenó</div>
-                    </div>
-                  </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--color-accent)', margin: '0 0 4px', textTransform: 'uppercase' }}>Sistema de Referidos</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
+                    Invita a 3 amigos nuevos con tu enlace único. Cuando se registren, desbloquearás contenido exclusivo y recompensas especiales.
+                  </p>
                 </div>
+                <span className="wm-num" style={{ color: 'var(--color-accent)' }}>02</span>
               </div>
-              <p className="mt-5 text-[13px] font-medium text-text-secondary text-center leading-relaxed">
-                ¿Eres PT? Regístrate y gestiona las rutinas y dietas de hasta 10 clientes directamente desde tu panel sin coste adicional.
-              </p>
+
+              {/* Dashboard */}
+              <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
+                <div className="wm-accent-line" style={{ background: '#3b82f6' }} />
+                <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                  <LineChart size={18} style={{ color: '#3b82f6' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Dashboard Insights</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
+                    Nuevas analíticas personalizadas para entender tu progreso y optimizar tu rendimiento semanal de forma automática.
+                  </p>
+                </div>
+                <span className="wm-num" style={{ color: '#3b82f6' }}>03</span>
+              </div>
+
+              {/* Optimización */}
+              <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
+                <div className="wm-accent-line" style={{ background: '#f59e0b' }} />
+                <div className="wm-icon-wrap" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  <Zap size={18} style={{ color: '#f59e0b' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f59e0b', margin: '0 0 4px', textTransform: 'uppercase' }}>Optimización</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
+                    Hemos mejorado la estabilidad general, corregido errores de sincronización y optimizado los tiempos de carga.
+                  </p>
+                </div>
+                <span className="wm-num" style={{ color: '#f59e0b' }}>04</span>
+              </div>
+
             </div>
 
-            {/* --- BLOQUE 6: FIXES Y NOTIFICACIONES --- */}
-            <div className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 sm:p-6 backdrop-blur-xl hover:ring-yellow-500/50 hover:shadow-lg hover:shadow-yellow-500/10 hover:-translate-y-1 transition-all duration-300 flex items-start sm:items-center gap-4 group">
-              <div className="w-12 h-12 rounded-[16px] bg-yellow-500/10 text-yellow-500 flex items-center justify-center shrink-0 ring-1 ring-yellow-500/30">
-                <Bell size={24} strokeWidth={2} />
-              </div>
-              <div>
-                <h2 className="text-xs font-bold text-text-primary mb-2 uppercase tracking-widest">
-                  Alertas & Mejoras
-                </h2>
-                <p className="text-[13px] font-medium text-text-secondary leading-relaxed">
-                  Nuevo sistema de notificaciones push, alertas de descanso, y corrección masiva de errores para una experiencia fluida.
-                </p>
-              </div>
-            </div>
+            {/* ── Footer ── */}
+            <div className="wm-btn-in">
+              <button className="wm-btn" onClick={handleGetStarted}>
+                <span style={{ position: 'relative', zIndex: 1 }}>DESCUBRIR LA V{majorVersion}</span>
+                <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
+              </button>
 
-          </div>
-
-          {/* --- Footer --- */}
-          <div className="mt-auto pt-4">
-            <button
-              onClick={handleGetStarted}
-              className="w-full py-4 bg-accent text-white font-bold text-lg rounded-[20px] transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20 flex items-center justify-center gap-3"
-            >
-              <span>DESCUBRIR LA V{majorVersion}</span>
-              <ChevronRight size={20} strokeWidth={2.5} />
-            </button>
-
-            <div className="text-center mt-5">
-              <span className="text-[10px] text-text-tertiary uppercase tracking-widest font-bold">
+              <p style={{
+                textAlign: 'center',
+                margin: '14px 0 0',
+                fontSize: '10px',
+                letterSpacing: '0.15em',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+              }}>
                 Build {appVersion}
-              </span>
+              </p>
             </div>
+
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

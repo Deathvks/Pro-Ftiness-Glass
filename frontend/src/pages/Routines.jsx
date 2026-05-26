@@ -36,6 +36,7 @@ import TemplateRoutines from './TemplateRoutines';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
 import RoutineTourGuide from '../components/RoutineTourGuide';
+import { calculateRoutineEstimatedTime } from '../utils/helpers';
 
 const GlobalPrivacyModal = ({ onClose }) => {
   const { addToast } = useToast();
@@ -329,6 +330,7 @@ const Routines = ({ setView }) => {
     activeWorkout,
     completedRoutineIdsToday,
     fetchTodaysCompletedRoutines,
+    userProfile, // <-- Añadido para acceder al goal
   } = useAppStore((state) => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
@@ -340,6 +342,7 @@ const Routines = ({ setView }) => {
     activeWorkout: state.activeWorkout,
     completedRoutineIdsToday: state.completedRoutineIdsToday,
     fetchTodaysCompletedRoutines: state.fetchTodaysCompletedRoutines,
+    userProfile: state.userProfile, // <-- Añadido
   }));
 
   const LS_KEY_EDITING = 'routinesEditingState_v2';
@@ -858,6 +861,9 @@ const Routines = ({ setView }) => {
                 const lastUsed = lastUsedMap.get(routine.id);
                 const totalExercises = exercisesToGroup.length;
                 const imageSrc = routine.imageUrl || routine.image_url;
+                
+                // Calculamos el tiempo estimado
+                const estimatedTime = calculateRoutineEstimatedTime(exercisesToGroup, userProfile?.goal);
 
                 let visibilityIcon = <Lock size={12} />;
                 let visibilityText = 'Privada';
@@ -935,6 +941,9 @@ const Routines = ({ setView }) => {
                             <CheckCircle size={14} /> Completada
                           </span>
                         )}
+                        <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2 py-1 rounded-[8px]">
+                          <Clock size={14} /> ~{estimatedTime} min
+                        </span>
                         <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2 py-1 rounded-[8px]">
                           <Dumbbell size={14} /> {totalExercises} ejercicios
                         </span>

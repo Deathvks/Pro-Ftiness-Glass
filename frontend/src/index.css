@@ -44,7 +44,6 @@
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 
-  /* Color exacto resultante visualmente del header glass sobre bg-primary */
   --header-solid: #1b2335; 
 }
 
@@ -59,7 +58,6 @@
   --glass-border: rgba(0, 0, 0, 0.05);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
 
-  /* Color exacto resultante visualmente del header glass sobre bg-primary */
   --header-solid: #f1f3f4;
 }
 
@@ -74,8 +72,93 @@
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 
-  /* Color exacto resultante visualmente del header glass sobre bg-primary */
   --header-solid: #0d0d0d;
+}
+
+/* --- TEMA GALAXIA --- */
+.galaxy-theme {
+  --bg-primary: transparent !important; 
+  --bg-secondary: rgba(255, 255, 255, 0.03) !important;
+  --header-solid: transparent !important; 
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+
+  /* FORZAR ACENTO GALAXIA */
+  --color-accent: #a855f7 !important;
+  --color-accent-transparent: rgba(168, 85, 247, 0.12) !important;
+  --color-accent-border: rgba(168, 85, 247, 0.28) !important;
+
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(168, 85, 247, 0.25);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes starry-background {
+  from { background-position: 0 0; }
+  to { background-position: -400px 400px; }
+}
+
+@keyframes meteor-shower {
+  0% { transform: rotate(35deg) translateX(-30vw); opacity: 0; }
+  5% { opacity: 1; }
+  15% { transform: rotate(35deg) translateX(120vw); opacity: 0; }
+  100% { transform: rotate(35deg) translateX(120vw); opacity: 0; }
+}
+
+/* El body solo tiene el color oscuro y los destellos grandes quietos */
+.galaxy-theme body {
+  background-color: #080814 !important;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.12), transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.12), transparent 40%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.galaxy-theme #root {
+  background-color: transparent !important;
+}
+
+/* La capa de estrellas moviéndose independientemente */
+.galaxy-theme #root::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 70px 120px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 210px 180px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 270px 80px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 320px 240px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 80px 310px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 350px 360px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 190px 290px, #ffffff, rgba(0,0,0,0));
+  background-size: 400px 400px;
+  background-repeat: repeat;
+  animation: starry-background 80s linear infinite;
+  opacity: 0.7;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* El meteorito por encima de las estrellas */
+.galaxy-theme #root::after {
+  content: '';
+  position: absolute;
+  top: -50px;
+  left: 20vw;
+  width: 250px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255,255,255,0), #fff);
+  filter: drop-shadow(0 0 8px #a855f7) drop-shadow(0 0 15px #3b82f6);
+  border-radius: 50%;
+  z-index: -1;
+  animation: meteor-shower 6s linear infinite;
+  pointer-events: none;
 }
 
 /* 4) PALETAS DE ACENTO */

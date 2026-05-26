@@ -36,8 +36,8 @@ const LevelBadge = ({ level = 1, size = 'md', showName = false, className = '' }
             {/* Contenedor del Anillo */}
             <div className={`relative flex items-center justify-center rounded-full bg-gradient-to-br ${tier.colors} ${s.wrapper} shadow-2xl ${tier.glow} transform transition-all duration-300 hover:scale-105 hover:rotate-3 cursor-pointer`}>
                 
-                {/* Círculo Interior Oscuro */}
-                <div className={`bg-bg-primary rounded-full flex flex-col items-center justify-center relative overflow-hidden ${s.inner}`}>
+                {/* Círculo Interior Oscuro (Aislado del tema para que no se vuelva transparente) */}
+                <div className={`bg-white dark:bg-[#0f172a] rounded-full flex flex-col items-center justify-center relative overflow-hidden ${s.inner}`}>
                     {/* Brillo sutil de fondo */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${tier.colors} opacity-20`}></div>
                     
@@ -48,7 +48,7 @@ const LevelBadge = ({ level = 1, size = 'md', showName = false, className = '' }
                 </div>
 
                 {/* Sello/Gema con el Icono flotando abajo */}
-                <div className={`absolute ${s.iconBox} rounded-full bg-bg-primary flex items-center justify-center p-[2px] shadow-lg z-20`}>
+                <div className={`absolute ${s.iconBox} rounded-full bg-white dark:bg-[#0f172a] flex items-center justify-center p-[2px] shadow-lg z-20`}>
                     <div className={`w-full h-full rounded-full bg-gradient-to-br ${tier.colors} flex items-center justify-center shadow-inner`}>
                         <Icon size={s.icon} className="text-white drop-shadow-md" strokeWidth={3} />
                     </div>

@@ -79,9 +79,14 @@ export const getMyProfile = async (req, res, next) => {
     }
     // -----------------------------
 
+    // --- INICIO MODIFICACIÓN: Contar los referidos de este usuario ---
+    const referralCount = await User.count({ where: { referred_by: req.user.userId } });
+    // --- FIN MODIFICACIÓN ---
+
     const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'], raw: true });
     const userData = user.toJSON();
     userData.hasPassword = !!(userWithPass && userWithPass.password_hash);
+    userData.referralCount = referralCount; // Se añade el conteo al payload
 
     // Normalizar fecha
     if (userData.last_activity_date) {

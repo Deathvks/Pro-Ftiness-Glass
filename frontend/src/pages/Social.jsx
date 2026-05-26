@@ -279,11 +279,9 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                 const targetPerm = (type === 'camera' || type === 'video') ? status.camera : status.photos;
 
                 if (targetPerm === 'denied') {
-                    // Si está denegado, prevenimos abrir la cámara y mostramos aviso para ir a ajustes
                     e.preventDefault();
                     setShowPermissionModal(true);
                 } else if (targetPerm === 'prompt' || targetPerm === 'prompt-with-rationale') {
-                    // Si nunca se ha preguntado, prevenimos el clic nativo y pedimos permiso
                     e.preventDefault(); 
                     const request = await CapCamera.requestPermissions();
                     const newPerm = (type === 'camera' || type === 'video') ? request.camera : request.photos;
@@ -291,7 +289,6 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                     if (newPerm === 'denied') {
                         setShowPermissionModal(true);
                     } else if (newPerm === 'granted' || newPerm === 'limited') {
-                        // Si nos da permiso, lanzamos de nuevo el click programáticamente
                         setTimeout(() => {
                             if (type === 'camera') cameraPhotoInputRef.current?.click();
                             if (type === 'video') cameraVideoInputRef.current?.click();
@@ -299,7 +296,6 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         }, 100);
                     }
                 }
-                // Si es 'granted' o 'limited', dejamos que el evento e fluya nativamente.
             } catch (error) {
                 console.warn('Error al gestionar permisos:', error);
             }
@@ -565,14 +561,22 @@ export default function Social({ setView }) {
         subscribeToSocialEvents
     } = useAppStore();
 
+    // Carga inicial (sin las historias)
     useEffect(() => {
         fetchFriends();
         fetchFriendRequests();
         fetchLeaderboard();
-        fetchStories();
         subscribeToStories();
         subscribeToSocialEvents();
-    }, [fetchFriends, fetchFriendRequests, fetchLeaderboard, fetchStories, subscribeToStories, subscribeToSocialEvents]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Carga de historias EXACTAMENTE cuando ya tenemos nuestro ID
+    useEffect(() => {
+        if (userProfile?.id) {
+            fetchStories(userProfile.id);
+        }
+    }, [userProfile?.id, fetchStories]);
 
     useEffect(() => {
         const tab = searchParams.get('tab');
@@ -1138,7 +1142,18 @@ export default function Social({ setView }) {
 
             {showTermsModal && <StoryTermsModal onAccept={handleAcceptTerms} onReject={handleRejectTerms} />}
             {showUploadModal && <UploadStoryModal onClose={() => setShowUploadModal(false)} onUpload={handleUploadStory} isUploading={isUploadingStory} />}
-            {viewingStoryUserId && <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />}
+            
+            {/* Modal envolvente del Visor de Historias */}
+            {viewingStoryUserId && (
+                <div 
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 animate-[fade-in_0.2s_ease-out]"
+                    onClick={() => setViewingStoryUserId(null)}
+                >
+                    <div onClick={(e) => e.stopPropagation()} className="w-full h-full sm:max-w-md sm:h-[90vh] sm:rounded-[32px] overflow-hidden relative shadow-2xl">
+                        <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />
+                    </div>
+                </div>
+            )}
 
             {/* Modal Crear Grupo */}
             {showCreateSquadModal && (

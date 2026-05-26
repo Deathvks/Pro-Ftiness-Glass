@@ -56,24 +56,24 @@ export const resetPassword = (resetData) => {
     });
 };
 
-export const googleLogin = (token) => {
+export const googleLogin = (payload) => {
     return apiClient('/auth/google-login', {
         method: 'POST',
-        body: { token },
+        body: payload,
     });
 };
 
-export const discordLogin = (token) => {
+export const discordLogin = (payload) => {
     return apiClient('/auth/discord-login', {
         method: 'POST',
-        body: { token },
+        body: payload,
     });
 };
 
-export const facebookLogin = (token) => {
+export const facebookLogin = (payload) => {
     return apiClient('/auth/facebook-login', {
         method: 'POST',
-        body: { token },
+        body: payload,
     });
 };
 
@@ -86,10 +86,10 @@ export const xLogin = (payload) => {
 };
 
 // --- INICIO DE LA MODIFICACIÓN: Añadido githubLogin ---
-export const githubLogin = (code) => {
+export const githubLogin = (payload) => {
     return apiClient('/auth/github-login', {
         method: 'POST',
-        body: { code },
+        body: payload,
     });
 };
 // --- FIN DE LA MODIFICACIÓN ---

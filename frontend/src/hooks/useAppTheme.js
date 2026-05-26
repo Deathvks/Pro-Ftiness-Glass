@@ -1,10 +1,11 @@
 /* frontend/src/hooks/useAppTheme.js */
-import { useState, useLayoutEffect, useMemo } from 'react';
+import { useState, useLayoutEffect, useMemo, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { NavigationBar } from '@capgo/capacitor-navigation-bar';
 import useAppStore from '../store/useAppStore';
 
 const THEME_COLORS = {
+  galaxy: '#080814',
   oled: '#000000',
   dark: '#0c111b',
   light: '#f7fafc',
@@ -12,10 +13,23 @@ const THEME_COLORS = {
 
 // Colores matemáticos exactos del header glass superpuesto al background
 const HEADER_COLORS = {
+  galaxy: '#080814',
   oled: '#0d0d0d',
   dark: '#1b2335',
   light: '#f1f3f4',
 };
+
+// --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS ---
+// Al estar fuera del hook, el contador y el estado sobreviven aunque cambies de pantalla
+let isTestingGlobal = false;
+let testTimeLeftGlobal = 0;
+let testIntervalGlobal = null;
+let listeners = [];
+
+const notifyThemeListeners = () => {
+  listeners.forEach(listener => listener());
+};
+// ----------------------------------------------
 
 export const useAppTheme = () => {
   const cookieConsent = useAppStore(state => state.cookieConsent);
@@ -34,9 +48,28 @@ export const useAppTheme = () => {
     return 'green';
   });
 
+  // Estados locales sincronizados con el global para que la UI se actualice
+  const [isTestingTheme, setIsTestingTheme] = useState(isTestingGlobal);
+  const [testTimeLeft, setTestTimeLeft] = useState(testTimeLeftGlobal);
   const [resolvedTheme, setResolvedTheme] = useState('dark');
 
+  useEffect(() => {
+    const updateState = () => {
+      setIsTestingTheme(isTestingGlobal);
+      setTestTimeLeft(testTimeLeftGlobal);
+    };
+    listeners.push(updateState);
+    return () => {
+      listeners = listeners.filter(l => l !== updateState);
+    };
+  }, []);
+
   const setTheme = (newTheme) => {
+    // Si el usuario cambia de tema manualmente, cancelamos cualquier prueba activa
+    if (isTestingGlobal) {
+      cancelThemeTest();
+    }
+
     if (cookieConsent) {
       localStorage.setItem('theme', newTheme);
     }
@@ -50,14 +83,43 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
+  // --- LÓGICA DE PRUEBA DE TEMA ---
+  const startThemeTest = (durationSecs = 10) => {
+    if (testIntervalGlobal) clearInterval(testIntervalGlobal);
+    
+    isTestingGlobal = true;
+    testTimeLeftGlobal = durationSecs;
+    notifyThemeListeners();
+
+    testIntervalGlobal = setInterval(() => {
+      testTimeLeftGlobal -= 1;
+      if (testTimeLeftGlobal <= 0) {
+        isTestingGlobal = false;
+        clearInterval(testIntervalGlobal);
+      }
+      notifyThemeListeners();
+    }, 1000);
+  };
+
+  const cancelThemeTest = () => {
+    isTestingGlobal = false;
+    testTimeLeftGlobal = 0;
+    if (testIntervalGlobal) clearInterval(testIntervalGlobal);
+    notifyThemeListeners();
+  };
+  // --------------------------------
+
+  // Tema real que se aplicará al DOM (si está en prueba fuerza galaxia, sino el normal)
+  const activeTheme = isTestingTheme ? 'galaxy' : theme;
+
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
     const body = document.body;
 
     const updateAppearance = () => {
-      let effectiveTheme = theme;
-      if (theme === 'system') {
+      let effectiveTheme = activeTheme;
+      if (activeTheme === 'system') {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
@@ -66,7 +128,10 @@ export const useAppTheme = () => {
       let color = THEME_COLORS.dark;
       let headerColorStr = HEADER_COLORS.dark;
       
-      if (effectiveTheme === 'oled') {
+      if (effectiveTheme === 'galaxy') {
+        color = THEME_COLORS.galaxy;
+        headerColorStr = HEADER_COLORS.galaxy;
+      } else if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
         headerColorStr = HEADER_COLORS.oled;
       } else if (effectiveTheme === 'light') {
@@ -77,26 +142,20 @@ export const useAppTheme = () => {
       body.style.transition = 'none';
       root.style.transition = 'none';
 
-      root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'dark');
+      root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'dark');
       
-      const classTheme = effectiveTheme === 'oled' ? 'oled' : (effectiveTheme === 'light' ? 'light' : 'dark');
+      const classTheme = effectiveTheme === 'galaxy' ? 'galaxy' : (effectiveTheme === 'oled' ? 'oled' : (effectiveTheme === 'light' ? 'light' : 'dark'));
       root.classList.add(`${classTheme}-theme`);
 
       if (effectiveTheme !== 'light') {
         root.classList.add('dark');
       }
 
-      // 🔴 FIX DEFINITIVO iOS: Forzamos root y body al color del HEADER blindado con important
-      // para evitar que el scroll o los recálculos devuelvan el notch al color del fondo
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
 
-      // Force Reflow
       // eslint-disable-next-line no-unused-expressions
-      body.offsetHeight;
-
-      // NOTA: Se ha eliminado toda la inyección manual de meta-tags theme-color y status-bar
-      // para evitar duplicados que rompían el renderizado en Safari iOS. De eso se ocupa App.jsx (Helmet).
+      body.offsetHeight; // Force reflow
 
       if (Capacitor.isNativePlatform()) {
         const isLight = effectiveTheme === 'light';
@@ -117,12 +176,12 @@ export const useAppTheme = () => {
     updateAppearance();
 
     const handleSystemChange = () => {
-      if (theme === 'system') updateAppearance();
+      if (activeTheme === 'system') updateAppearance();
     };
 
     mediaQuery.addEventListener('change', handleSystemChange);
     return () => mediaQuery.removeEventListener('change', handleSystemChange);
-  }, [theme]);
+  }, [activeTheme]); // Ahora reacciona al activeTheme en tiempo real
 
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -131,24 +190,31 @@ export const useAppTheme = () => {
   }, [accent]);
 
   const themeColor = useMemo(() => {
+    if (resolvedTheme === 'galaxy') return THEME_COLORS.galaxy;
     if (resolvedTheme === 'oled') return THEME_COLORS.oled;
     if (resolvedTheme === 'light') return THEME_COLORS.light;
     return THEME_COLORS.dark;
   }, [resolvedTheme]);
 
   const headerColor = useMemo(() => {
+    if (resolvedTheme === 'galaxy') return HEADER_COLORS.galaxy;
     if (resolvedTheme === 'oled') return HEADER_COLORS.oled;
     if (resolvedTheme === 'light') return HEADER_COLORS.light;
     return HEADER_COLORS.dark;
   }, [resolvedTheme]);
 
   return { 
-    theme, 
+    theme, // El tema guardado del usuario
+    activeTheme, // El tema que se está mostrando (prueba o real)
     setTheme, 
     accent, 
     setAccent, 
     resolvedTheme, 
     themeColor,
-    headerColor 
+    headerColor,
+    startThemeTest,
+    cancelThemeTest,
+    isTestingTheme,
+    testTimeLeft
   };
 };

@@ -219,23 +219,28 @@ const WorkoutExerciseCard = ({
 
       {/* --- MODAL RECORDATORIO --- */}
       {showReminderInput && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
           <div className="absolute inset-0" onClick={() => setShowReminderInput(false)} />
-          <div className="glass w-full max-w-sm p-6 sm:p-8 rounded-[32px] shadow-2xl relative z-10 animate-[slide-up_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10">
-            
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="glass bg-bg-primary w-full max-w-sm p-6 sm:p-8 rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl relative z-10 animate-[slide-up_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10"
+          >
+            {/* Indicador de arrastre para móviles */}
+            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-6 sm:hidden" />
+
             <div className="flex flex-col items-center mb-6">
               <div className="p-3 bg-yellow-500/10 rounded-[20px] mb-4 ring-2 ring-yellow-500/30">
                 <Target size={32} className="text-yellow-500" strokeWidth={1.5} />
               </div>
-              <h4 className="text-2xl font-bold text-text-primary mb-2 tracking-tight text-center">
+              <h4 className="text-2xl font-extrabold text-text-primary mb-2 tracking-tight text-center">
                 Meta / Recordatorio
               </h4>
               <p className="text-sm font-medium text-text-secondary text-center px-2 leading-relaxed">
-                Añade un objetivo para tu próximo entrenamiento (ej. Levantar 100kg, intentar 1RM).
+                Añade un objetivo para tu próximo entrenamiento (ej. Levantar 100kg).
               </p>
             </div>
 
-            <form onSubmit={handleReminderSubmit} className="space-y-6">
+            <form onSubmit={handleReminderSubmit} className="space-y-6 pb-6 sm:pb-0">
               <textarea
                 autoFocus
                 value={reminderText}
@@ -266,15 +271,20 @@ const WorkoutExerciseCard = ({
 
       {/* --- MODAL CALENTAMIENTO --- */}
       {showWarmupInput && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
           <div className="absolute inset-0" onClick={() => setShowWarmupInput(false)} />
-          <div className="glass w-full max-w-sm p-6 sm:p-8 rounded-[32px] shadow-2xl relative z-10 animate-[slide-up_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10">
-            
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="glass bg-bg-primary w-full max-w-sm p-6 sm:p-8 rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl relative z-10 animate-[slide-up_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10"
+          >
+            {/* Indicador de arrastre para móviles */}
+            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-6 sm:hidden" />
+
             <div className="flex flex-col items-center mb-6">
               <div className="p-3 bg-orange-500/10 rounded-[20px] mb-4 ring-2 ring-orange-500/30">
                 <Flame size={32} className="text-orange-500" strokeWidth={1.5} />
               </div>
-              <h4 className="text-2xl font-bold text-text-primary mb-2 tracking-tight text-center">
+              <h4 className="text-2xl font-extrabold text-text-primary mb-2 tracking-tight text-center">
                 Calentamiento
               </h4>
               <p className="text-sm font-medium text-text-secondary text-center px-2 leading-relaxed">
@@ -282,7 +292,7 @@ const WorkoutExerciseCard = ({
               </p>
             </div>
 
-            <form onSubmit={handleWarmupSubmit} className="space-y-6">
+            <form onSubmit={handleWarmupSubmit} className="space-y-6 pb-6 sm:pb-0">
               <div>
                 <label className="text-xs font-bold text-text-secondary uppercase tracking-widest text-center block mb-3">
                   Peso Objetivo (kg)

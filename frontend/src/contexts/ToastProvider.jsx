@@ -4,46 +4,15 @@ import { createPortal } from 'react-dom';
 import { ToastContext } from './ToastContext';
 import { Toaster, sileo } from 'sileo';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { CheckCircle2, AlertCircle, Info, XCircle } from 'lucide-react';
 
 const ToastProvider = ({ children }) => {
   const { resolvedTheme } = useAppTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Aseguramos que el componente esté montado antes de usar el Portal (evita errores SSR)
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // --- CONFIGURACIÓN DE ESTILOS POR TEMA ---
-  const currentThemeStyles = useMemo(() => {
-    switch (resolvedTheme) {
-      case 'oled':
-        return {
-          bg: '#000000',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          titleColor: '#ffffff',
-          descColor: '#d1d5db',
-          shadow: '0 4px 20px rgba(0,0,0,0.8)'
-        };
-      case 'dark':
-        return {
-          bg: '#1f2937', 
-          border: '1px solid #374151', 
-          titleColor: '#f9fafb', 
-          descColor: '#9ca3af', 
-          shadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)'
-        };
-      case 'light':
-      default:
-        return {
-          bg: '#ffffff', 
-          border: '1px solid #e5e7eb', 
-          titleColor: '#111827', 
-          descColor: '#4b5563', 
-          shadow: '0 4px 12px rgba(0, 0, 0, 0.08)' 
-        };
-    }
-  }, [resolvedTheme]);
 
   // --- ESTILOS GLOBALES DE LIMPIEZA Y Z-INDEX SUPREMO ---
   const globalCleanStyles = `
@@ -54,16 +23,16 @@ const ToastProvider = ({ children }) => {
       padding: 0 !important;
       margin: 0 !important;
       z-index: 2147483647 !important;
+      overflow: visible !important;
     }
-    .custom-toast-root svg {
-      display: none !important;
+    .custom-toast-root > svg {
+      display: none !important; /* Oculta los iconos por defecto de Sileo */
     }
     
-    /* FIX DEFINITIVO PARA EL NOTCH: Atacamos el atributo exacto donde Sonner/Sileo se ancla */
+    /* FIX DEFINITIVO PARA EL NOTCH */
     [data-sonner-toaster][data-y-position="top"],
     [data-sileo-toaster] {
       z-index: 2147483647 !important;
-      /* Usamos max() para que coja el área segura, y si falla o es 0, coja 55px (que salva cualquier notch/Dynamic Island) */
       top: max(env(safe-area-inset-top), 55px) !important;
       margin-top: 10px !important;
     }
@@ -74,45 +43,83 @@ const ToastProvider = ({ children }) => {
   `;
 
   const addToast = useCallback((message, type = 'info') => {
-    
     const titles = {
       success: 'Completado',
       error: 'Error',
       warning: 'Atención',
       info: 'Información'
     };
+    
+    // Iconos y colores basados en el tipo
+    const typeConfig = {
+      success: { icon: CheckCircle2, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+      error: { icon: XCircle, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+      warning: { icon: AlertCircle, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+      info: { icon: Info, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' }
+    };
+
     const titleText = titles[type] || titles.info;
+    const config = typeConfig[type] || typeConfig.info;
+    const IconComponent = config.icon;
+
+    // Colores base (adaptables a oscuro/claro de forma genérica)
+    const isDark = resolvedTheme === 'dark' || resolvedTheme === 'oled';
+    const bgBase = isDark ? 'rgba(30, 30, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)';
+    const textColor = isDark ? '#ffffff' : '#111827';
+    const subtextColor = isDark ? '#9ca3af' : '#4b5563';
+    const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+    const shadowClass = isDark ? '0 8px 32px rgba(0,0,0,0.5)' : '0 8px 32px rgba(0,0,0,0.1)';
 
     const customContent = (
       <div style={{
-        backgroundColor: currentThemeStyles.bg,
-        border: currentThemeStyles.border,
-        borderRadius: '16px',
-        padding: '12px 16px',
-        boxShadow: currentThemeStyles.shadow,
+        backgroundColor: bgBase,
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: `1px solid ${borderColor}`,
+        borderRadius: '24px',
+        padding: '16px',
+        boxShadow: shadowClass,
         display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        minWidth: '250px',
+        alignItems: 'center',
+        gap: '12px',
+        minWidth: '280px',
         maxWidth: '350px',
         position: 'relative',
         zIndex: 2147483647
       }}>
-        <span style={{ 
-            color: currentThemeStyles.titleColor, 
-            fontWeight: '700', 
-            fontSize: '0.875rem' 
+        {/* Icono con fondo de color suave */}
+        <div style={{
+          backgroundColor: config.bg,
+          color: config.color,
+          padding: '10px',
+          borderRadius: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
         }}>
-          {titleText}
-        </span>
-        
-        <span style={{ 
-            color: currentThemeStyles.descColor, 
-            fontSize: '0.75rem', 
-            fontWeight: '500' 
-        }}>
-          {message}
-        </span>
+          <IconComponent size={24} strokeWidth={2.5} />
+        </div>
+
+        {/* Textos */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+          <span style={{ 
+            color: textColor, 
+            fontWeight: '800', 
+            fontSize: '14px',
+            letterSpacing: '-0.02em'
+          }}>
+            {titleText}
+          </span>
+          <span style={{ 
+            color: subtextColor, 
+            fontSize: '12px', 
+            fontWeight: '600',
+            lineHeight: '1.4'
+          }}>
+            {message}
+          </span>
+        </div>
       </div>
     );
 
@@ -123,7 +130,7 @@ const ToastProvider = ({ children }) => {
       fill: 'transparent',
       styles: {
         title: 'hidden',
-        description: 'p-0 m-0',
+        description: 'p-0 m-0 w-full',
         view: { background: 'transparent', boxShadow: 'none', zIndex: 2147483647 } 
       }
     };
@@ -138,7 +145,7 @@ const ToastProvider = ({ children }) => {
     const method = typeMap[type] || sileo.info;
     method({ title: null, ...options }); 
 
-  }, [currentThemeStyles]);
+  }, [resolvedTheme]);
 
   const contextValue = useMemo(() => ({ showToast: addToast, addToast }), [addToast]);
 
@@ -151,7 +158,7 @@ const ToastProvider = ({ children }) => {
       {mounted && createPortal(
         <Toaster 
           position="top-center" 
-          offset="60px" /* Forzamos mediante la prop nativa que baje 60px desde el borde */
+          offset="60px" 
           className="!z-[2147483647]"
           style={{ zIndex: 2147483647 }} 
           toastOptions={{ className: '!z-[2147483647]', style: { zIndex: 2147483647 } }} 

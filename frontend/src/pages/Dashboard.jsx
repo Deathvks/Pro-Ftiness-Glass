@@ -7,9 +7,14 @@ import {
   Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
   Bike, Activity, Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
-  LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List
+  LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy
 } from 'lucide-react';
 import { FaChartPie, FaTrophy } from 'react-icons/fa';
+import { FaMeteor } from 'react-icons/fa6'; 
+
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 import GlassCard from '../components/GlassCard';
 import BodyWeightModal from '../components/BodyWeightModal';
@@ -30,6 +35,8 @@ import SEOHead from '../components/SEOHead';
 
 import WeeklyRecapCard from '../components/WeeklyRecapCard';
 import PRShareCard from '../components/PRShareCard';
+import DashboardInsights from '../components/Dashboard/DashboardInsights';
+import { useAppTheme } from '../hooks/useAppTheme'; 
 
 const ScaleToFit = ({ children, width = 1080, height = 1920 }) => {
   const containerRef = useRef(null);
@@ -138,6 +145,9 @@ const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconC
 const Dashboard = ({ setView }) => {
   const { addToast } = useToast();
   const { t } = useTranslation(['translation', 'exercise_names']);
+  
+  // Usamos el hook centralizado para probar el tema
+  const { startThemeTest, isTestingTheme, testTimeLeft } = useAppTheme(); 
 
   const {
     routines, workoutLog, bodyWeightLog, userProfile, logBodyWeight,
@@ -385,25 +395,55 @@ const Dashboard = ({ setView }) => {
         return;
       }
 
-      const file = new File([blob], `share-${Date.now()}.png`, { type: 'image/png' });
+      if (Capacitor.isNativePlatform()) {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+          try {
+            const base64data = reader.result.split(',')[1];
+            const fileName = `share-${Date.now()}.png`;
 
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: title || t('Mi Progreso', { defaultValue: 'Mi Progreso' })
-          });
-          addToast(t('¡Compartido con éxito!', { defaultValue: '¡Compartido con éxito!' }), 'success');
-        } catch (error) {
-          if (error.name !== 'AbortError') downloadFallback(blob);
-        }
+            const savedFile = await Filesystem.writeFile({
+              path: fileName,
+              data: base64data,
+              directory: Directory.Cache
+            });
+
+            await Share.share({
+              title: title || t('Mi Progreso', { defaultValue: 'Mi Progreso' }),
+              url: savedFile.uri,
+              dialogTitle: t('Compartir', { defaultValue: 'Compartir' })
+            });
+
+            addToast(t('¡Compartido con éxito!', { defaultValue: '¡Compartido con éxito!' }), 'success');
+          } catch (err) {
+            console.error('Error sharing native:', err);
+            addToast(t('Error al compartir', { defaultValue: 'Error al compartir' }), 'error');
+          } finally {
+            setIsSharing(false);
+          }
+        };
       } else {
-        downloadFallback(blob);
+        const file = new File([blob], `share-${Date.now()}.png`, { type: 'image/png' });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: title || t('Mi Progreso', { defaultValue: 'Mi Progreso' })
+            });
+            addToast(t('¡Compartido con éxito!', { defaultValue: '¡Compartido con éxito!' }), 'success');
+          } catch (error) {
+            if (error.name !== 'AbortError') downloadFallback(blob);
+          }
+        } else {
+          downloadFallback(blob);
+        }
+        setIsSharing(false);
       }
     } catch (error) {
       console.error('Error generating image:', error);
       addToast(t('Error al generar la imagen', { defaultValue: 'Error al generar la imagen' }), 'error');
-    } finally {
       setIsSharing(false);
     }
   };
@@ -422,6 +462,40 @@ const Dashboard = ({ setView }) => {
 
   const handleSharePR = () => shareImage(prCardRef, t('Nuevo Récord', { defaultValue: 'Nuevo Récord' }));
   const handleShareRecap = () => shareImage(weeklyRecapRef, t('Resumen Semanal', { defaultValue: 'Resumen Semanal' }));
+
+  const referralCount = userProfile?.referralCount || 0;
+  const maxReferrals = 3;
+  const referralProgress = Math.min((referralCount / maxReferrals) * 100, 100);
+  const isCampaignComplete = referralCount >= maxReferrals;
+  const referralLink = `${window.location.origin}/register?ref=${userProfile?.referral_code || ''}`;
+
+  const handleCopyReferral = () => {
+    navigator.clipboard.writeText(referralLink);
+    addToast(t('¡Enlace copiado al portapapeles!', { defaultValue: '¡Enlace copiado al portapapeles!' }), 'success');
+  };
+
+  const handleShareReferral = async () => {
+    const shareData = {
+      title: t('Únete a Pro Fitness Glass', { defaultValue: 'Únete a Pro Fitness Glass' }),
+      text: t('¡Regístrate con mi enlace y transformemos nuestro cuerpo juntos!', { defaultValue: '¡Regístrate con mi enlace y transformemos nuestro cuerpo juntos!' }),
+      url: referralLink,
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Share.share({
+          ...shareData,
+          dialogTitle: t('Compartir Invitación', { defaultValue: 'Compartir Invitación' })
+        });
+      } catch (e) {}
+    } else if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (e) {}
+    } else {
+      handleCopyReferral();
+    }
+  };
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-28 md:p-10 md:pb-8 animate-[fade-in_0.5s_ease-out]">
@@ -544,6 +618,83 @@ const Dashboard = ({ setView }) => {
             </div>
           </div>
         </GlassCard>
+      </div>
+
+      {/* CAMPAÑA REFERIDOS: TEMA GALAXIA */}
+      <GlassCard className="mb-8 glass p-6 sm:p-8 rounded-[32px] relative overflow-hidden border border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/10 group">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/10 via-transparent to-[#3b82f6]/10 pointer-events-none" />
+        <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#a855f7]/20 rounded-full blur-3xl pointer-events-none group-hover:bg-[#a855f7]/30 transition-colors duration-500" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex-1 w-full text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+              <div className="p-2 bg-[#a855f7]/20 rounded-xl animate-pulse drop-shadow-[0_0_10px_rgba(168,85,247,0.6)]">
+                <FaMeteor className="text-[#a855f7]" size={20} />
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#a855f7] to-[#3b82f6] tracking-tight">
+                {t('Desbloquea el Tema Galaxia', { defaultValue: 'Desbloquea el Tema Galaxia' })}
+              </h3>
+            </div>
+            <p className="text-xs sm:text-sm text-text-secondary mb-5 max-w-lg mx-auto md:mx-0 font-medium">
+              {t('Invita a 3 amigos nuevos con tu enlace único. Cuando se registren, desbloquearás automáticamente el tema Galaxia exclusivo.', { defaultValue: 'Invita a 3 amigos nuevos con tu enlace único. Cuando se registren, desbloquearás automáticamente el tema Galaxia exclusivo.' })}
+            </p>
+            
+            <div className="space-y-1.5 w-full max-w-md mx-auto md:mx-0">
+              <div className="flex justify-between items-center text-[10px] sm:text-xs font-bold text-text-muted uppercase tracking-widest">
+                <span>{t('Progreso de la misión', { defaultValue: 'Progreso de la misión' })}</span>
+                <span className={`px-2 py-0.5 rounded-full ${isCampaignComplete ? 'bg-green-500/10 text-green-500' : 'bg-[#a855f7]/10 text-[#a855f7]'}`}>
+                  {referralCount} / {maxReferrals}
+                </span>
+              </div>
+              <div className="h-3 w-full bg-black/10 dark:bg-white/5 rounded-full overflow-hidden p-0.5 shadow-inner">
+                <div 
+                  className={`h-full rounded-full transition-all duration-1000 ease-out ${isCampaignComplete ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gradient-to-r from-[#a855f7] to-[#3b82f6] shadow-[0_0_10px_rgba(168,85,247,0.5)]'}`} 
+                  style={{ width: `${referralProgress}%` }} 
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full md:w-auto shrink-0 flex flex-col gap-2.5">
+             {isCampaignComplete ? (
+               <div className="flex items-center justify-center gap-2 bg-green-500/10 text-green-500 px-6 py-3.5 rounded-[20px] border border-green-500/20 font-bold text-sm shadow-sm">
+                 <CheckCircle size={18} />
+                 {t('¡Tema Desbloqueado!', { defaultValue: '¡Tema Desbloqueado!' })}
+               </div>
+             ) : (
+               <>
+                 <button 
+                   onClick={handleShareReferral}
+                   className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] text-white px-6 py-3.5 rounded-[20px] font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[#a855f7]/25"
+                 >
+                   <Share2 size={18} />
+                   {t('Compartir Invitación', { defaultValue: 'Compartir Invitación' })}
+                 </button>
+                 <div className="flex items-center gap-2">
+                   <button 
+                     onClick={handleCopyReferral}
+                     className="flex-1 flex items-center justify-center gap-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary px-4 py-2.5 rounded-[20px] font-semibold text-xs transition-colors border border-glass-border"
+                   >
+                     <Copy size={14} />
+                     {t('Copiar', { defaultValue: 'Copiar' })}
+                   </button>
+                   <button 
+                     onClick={() => startThemeTest(10)}
+                     disabled={isTestingTheme}
+                     className="flex-1 flex items-center justify-center gap-2 bg-[#a855f7]/10 hover:bg-[#a855f7]/20 text-[#a855f7] px-4 py-2.5 rounded-[20px] font-bold text-xs transition-colors border border-[#a855f7]/30 disabled:opacity-50 whitespace-nowrap min-w-[110px]"
+                   >
+                     <FaMeteor size={14} />
+                     {isTestingTheme ? `Probando ${testTimeLeft}s` : t('Probar 10s', { defaultValue: 'Probar 10s' })}
+                   </button>
+                 </div>
+               </>
+             )}
+          </div>
+        </div>
+      </GlassCard>
+
+      <div className="mb-10">
+        <DashboardInsights />
       </div>
 
       <div id="tour-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">

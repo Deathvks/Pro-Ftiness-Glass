@@ -122,9 +122,9 @@ const RegisterScreen = ({ showLogin }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [showVerification, setShowVerification] = useState(false);
     const [registeredEmail, setRegisteredEmail] = useState('');
+    const [referralCode, setReferralCode] = useState(''); // Añadido estado para código referido
 
     const [showInfoModal, setShowInfoModal] = useState(false);
-
     const { addToast } = useToast();
 
     const [showGoogleModal, setShowGoogleModal] = useState(false);
@@ -144,6 +144,15 @@ const RegisterScreen = ({ showLogin }) => {
         window.addEventListener('storage', checkConsent);
         return () => window.removeEventListener('storage', checkConsent);
     }, []);
+
+    // Extraer referralCode de la URL al cargar
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const ref = searchParams.get('ref');
+        if (ref) {
+            setReferralCode(ref);
+        }
+    }, [location.search]);
 
     useEffect(() => {
         const hash = window.location.hash;
@@ -247,7 +256,8 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleXLogin) {
-                await handleXLogin({ code, redirectUri, codeVerifier });
+                // Pasando referralCode integrado
+                await handleXLogin({ code, redirectUri, codeVerifier, referralCode });
                 sessionStorage.removeItem('x_code_verifier');
             } else {
                 throw new Error("Error de configuración interna.");
@@ -281,7 +291,8 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleGithubLogin) {
-                await handleGithubLogin(code);
+                // Pasando referralCode integrado
+                await handleGithubLogin({ code, referralCode });
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -316,7 +327,8 @@ const RegisterScreen = ({ showLogin }) => {
             const redirectUri = window.location.origin + window.location.pathname;
 
             if (handleSpotifyLogin) {
-                await handleSpotifyLogin({ code, redirectUri });
+                // Pasando referralCode integrado
+                await handleSpotifyLogin({ code, redirectUri, referralCode });
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -342,7 +354,8 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleFacebookLogin) {
-                await handleFacebookLogin(token);
+                // Pasando referralCode integrado
+                await handleFacebookLogin({ token, referralCode });
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -375,7 +388,8 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleDiscordLogin) {
-                await handleDiscordLogin(token);
+                // Pasando referralCode integrado
+                await handleDiscordLogin({ token, referralCode });
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -409,7 +423,8 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleGoogleLogin) {
-                await handleGoogleLogin(token);
+                // Pasando referralCode integrado
+                await handleGoogleLogin({ token, referralCode });
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -497,11 +512,13 @@ const RegisterScreen = ({ showLogin }) => {
         setIsLoading(true);
 
         try {
+            // Añadido referralCode a la petición principal
             const response = await registerUser({
                 username,
                 email,
                 password,
-                social_privacy: 'private'
+                social_privacy: 'private',
+                referralCode
             });
 
             addToast(response.message, 'success');
@@ -601,7 +618,7 @@ const RegisterScreen = ({ showLogin }) => {
                             <input
                                 type="text"
                                 placeholder="Nombre de usuario"
-                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:ring-accent/20 focus:ring-4 outline-none transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
+                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 maxLength={30}
@@ -613,7 +630,7 @@ const RegisterScreen = ({ showLogin }) => {
                             <input
                                 type="email"
                                 placeholder="Email"
-                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:ring-accent/20 focus:ring-4 outline-none transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
+                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />
@@ -624,7 +641,7 @@ const RegisterScreen = ({ showLogin }) => {
                             <input
                                 type="password"
                                 placeholder="Contraseña"
-                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:ring-accent/20 focus:ring-4 outline-none transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
+                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />

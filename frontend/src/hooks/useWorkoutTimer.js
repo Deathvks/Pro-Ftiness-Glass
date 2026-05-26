@@ -1,49 +1,66 @@
 /* frontend/src/hooks/useWorkoutTimer.js */
 import { useState, useEffect } from 'react';
 import useAppStore from '../store/useAppStore';
+import { useToast } from './useToast';
+
+// Límite de 4 horas en segundos (4 * 60 * 60)
+const MAX_WORKOUT_DURATION = 14400;
 
 /**
  * Hook para gestionar el cronómetro del entrenamiento (el 'timer' en segundos).
- * Se suscribe al estado del workout en Zustand (workoutStartTime, 
- * isWorkoutPaused, workoutAccumulatedTime) y calcula el tiempo
- * total transcurrido, actualizándose cada segundo.
+ * Aplica un límite de 4h, tras el cual autoguarda y finaliza la sesión.
  */
 export const useWorkoutTimer = () => {
-  // Estado local para el valor del 'timer' en segundos
   const [timer, setTimer] = useState(0);
+  const { addToast } = useToast();
 
-  // Suscripción selectiva a los estados de Zustand que afectan al cronómetro
-  const { workoutStartTime, isWorkoutPaused, workoutAccumulatedTime } = useAppStore(state => ({
+  const { 
+    workoutStartTime, 
+    isWorkoutPaused, 
+    workoutAccumulatedTime,
+    finishWorkout
+  } = useAppStore(state => ({
     workoutStartTime: state.workoutStartTime,
     isWorkoutPaused: state.isWorkoutPaused,
     workoutAccumulatedTime: state.workoutAccumulatedTime,
+    finishWorkout: state.finishWorkout,
   }));
 
-  // Efecto que maneja el intervalo del cronómetro
   useEffect(() => {
     let interval = null;
 
-    // Si el entrenamiento ha comenzado y NO está pausado
     if (workoutStartTime && !isWorkoutPaused) {
-      // Iniciar un intervalo que se ejecuta cada segundo
       interval = setInterval(() => {
-        // Calcular el tiempo transcurrido desde la última vez que se (re)anudó
         const elapsed = Date.now() - workoutStartTime;
-        // El timer total es el tiempo acumulado + el tiempo transcurrido
-        setTimer(Math.floor((workoutAccumulatedTime + elapsed) / 1000));
+        const currentTimer = Math.floor((workoutAccumulatedTime + elapsed) / 1000);
+        
+        if (currentTimer >= MAX_WORKOUT_DURATION) {
+          clearInterval(interval);
+          setTimer(MAX_WORKOUT_DURATION);
+          
+          // Autoguardado al alcanzar el límite de tiempo
+          const handleAutoFinish = async () => {
+            if (finishWorkout) {
+              try {
+                await finishWorkout();
+                addToast('Entrenamiento guardado automáticamente (Límite de 4h)', 'info');
+              } catch (error) {
+                console.error("Error en autoguardado:", error);
+              }
+            }
+          };
+          
+          handleAutoFinish();
+        } else {
+          setTimer(currentTimer);
+        }
       }, 1000);
     } else {
-      // Si está pausado o no ha comenzado, mostrar solo el tiempo acumulado
       setTimer(Math.floor(workoutAccumulatedTime / 1000));
     }
 
-    // Función de limpieza:
-    // Se ejecuta cuando el componente se desmonta o cuando
-    // alguna de las dependencias (ej: isWorkoutPaused) cambia.
     return () => clearInterval(interval);
+  }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime, finishWorkout, addToast]);
 
-  }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime]); // Dependencias
-
-  // Devolver el estado del timer
   return timer;
 };
