@@ -146,7 +146,6 @@ const Dashboard = ({ setView }) => {
   const { addToast } = useToast();
   const { t } = useTranslation(['translation', 'exercise_names']);
   
-  // Usamos el hook centralizado para probar el tema
   const { startThemeTest, isTestingTheme, testTimeLeft } = useAppTheme(); 
 
   const {
@@ -567,9 +566,10 @@ const Dashboard = ({ setView }) => {
       <div className="grid grid-cols-2 gap-4 mb-8">
         <GlassCard
           onClick={() => canOpenWeeklyRecap && setShowWeeklyRecap(true)}
-          className={`glass relative p-5 rounded-[28px] overflow-hidden min-h-[112px] h-full flex items-center group transition-all duration-300 ${canOpenWeeklyRecap ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : 'cursor-default opacity-80'}`}
+          className={`glass relative p-5 rounded-[28px] overflow-hidden isolate min-h-[112px] h-full flex items-center group transition-all duration-300 ${canOpenWeeklyRecap ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : 'cursor-default opacity-80'}`}
+          style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-blue-600/10 opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-accent/20 to-blue-600/10 opacity-50 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
           <div className="relative z-10 flex items-center gap-4 w-full">
             <div className={`w-12 h-12 shrink-0 rounded-[20px] flex items-center justify-center text-white shadow-lg transition-transform duration-300 ${canOpenWeeklyRecap ? 'bg-gradient-to-tr from-accent to-blue-600 group-hover:scale-110' : 'bg-gray-500/50'}`}>
@@ -594,9 +594,10 @@ const Dashboard = ({ setView }) => {
 
         <GlassCard
           onClick={handlePRCardClick}
-          className={`glass relative p-5 rounded-[28px] overflow-hidden min-h-[112px] h-full flex items-center group transition-all duration-300 ${latestPRs.length > 0 ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : 'opacity-80 cursor-default'}`}
+          className={`glass relative p-5 rounded-[28px] overflow-hidden isolate min-h-[112px] h-full flex items-center group transition-all duration-300 ${latestPRs.length > 0 ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : 'opacity-80 cursor-default'}`}
+          style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-yellow-600/10 opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-accent/20 to-yellow-600/10 opacity-50 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
           <div className="relative z-10 flex items-center gap-4 w-full">
             <div className={`w-12 h-12 shrink-0 rounded-[20px] flex items-center justify-center text-white shadow-lg transition-transform duration-300 ${latestPRs.length > 0 ? 'bg-gradient-to-tr from-accent to-yellow-600 group-hover:scale-110' : 'bg-gray-500/50'}`}>
@@ -620,9 +621,12 @@ const Dashboard = ({ setView }) => {
         </GlassCard>
       </div>
 
-      {/* CAMPAÑA REFERIDOS: TEMA GALAXIA */}
-      <GlassCard className="mb-8 glass p-6 sm:p-8 rounded-[32px] relative overflow-hidden border border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/10 group">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/10 via-transparent to-[#3b82f6]/10 pointer-events-none" />
+      {/* CAMPAÑA REFERIDOS: TEMA GALAXIA CON FIX DE MÁSCARA PARA IOS */}
+      <GlassCard 
+        className="mb-8 glass p-6 sm:p-8 rounded-[32px] relative overflow-hidden isolate border border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/10 group"
+        style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
+      >
+        <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-[#a855f7]/10 via-transparent to-[#3b82f6]/10 pointer-events-none" />
         <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#a855f7]/20 rounded-full blur-3xl pointer-events-none group-hover:bg-[#a855f7]/30 transition-colors duration-500" />
         
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
