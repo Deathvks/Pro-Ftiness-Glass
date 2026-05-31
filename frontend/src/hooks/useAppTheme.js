@@ -48,7 +48,6 @@ export const useAppTheme = () => {
     return 'green';
   });
 
-  // Estados locales sincronizados con el global para que la UI se actualice
   const [isTestingTheme, setIsTestingTheme] = useState(isTestingGlobal);
   const [testTimeLeft, setTestTimeLeft] = useState(testTimeLeftGlobal);
   const [resolvedTheme, setResolvedTheme] = useState('dark');
@@ -81,7 +80,6 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  // --- LÓGICA DE PRUEBA DE TEMA ---
   const startThemeTest = (durationSecs = 10) => {
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
     
@@ -105,7 +103,6 @@ export const useAppTheme = () => {
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
     notifyThemeListeners();
   };
-  // --------------------------------
 
   const activeTheme = isTestingTheme ? 'galaxy' : theme;
 
@@ -148,25 +145,15 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // Forzar color de fondo base para el safe-area
+      // 🔴 FORZADO DE FONDOS
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
 
-      // --- FIX DEFINITIVO PARA EL NOTCH DE IOS ---
-      // Copiamos lo que hacían los otros temas: 
-      // Actualizamos ambas etiquetas explícitamente (Clara y Oscura) para que iOS 
-      // lea el color correcto sin importar en qué modo esté el teléfono.
-      const lightMeta = document.getElementById('theme-color-light');
-      const darkMeta = document.getElementById('theme-color-dark');
-      
-      if (lightMeta) lightMeta.setAttribute('content', headerColorStr);
-      if (darkMeta) darkMeta.setAttribute('content', headerColorStr);
-      
-      // Por si Capacitor/React ha inyectado alguna otra etiqueta genérica, la cazamos también:
-      document.querySelectorAll('meta[name="theme-color"]:not([id])').forEach(tag => {
-          tag.setAttribute('content', headerColorStr);
-      });
-      // --------------------------------
+      // 🔴 FIX DEFINITIVO DEL NOTCH DE IOS: Buscamos la etiqueta maestra y le ponemos el color
+      const metaColor = document.getElementById('dynamic-theme-color');
+      if (metaColor) {
+          metaColor.setAttribute('content', headerColorStr);
+      }
 
       // eslint-disable-next-line no-unused-expressions
       body.offsetHeight; // Forzar el repintado de la pantalla (Reflow)
@@ -180,7 +167,7 @@ export const useAppTheme = () => {
             darkButtons: isLight 
         }).catch((err) => console.warn("NavigationBar error:", err));
 
-        // 2. Status Bar superior (Color de los iconos en el Notch: Hora, batería, etc.)
+        // 2. Status Bar superior (Color de los iconos)
         StatusBar.setStyle({ 
             style: isLight ? Style.Light : Style.Dark 
         }).catch((err) => console.warn("StatusBar style error:", err));

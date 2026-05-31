@@ -26,8 +26,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
-  <meta name="theme-color" content="#f1f3f4" media="(prefers-color-scheme: light)" id="theme-color-light" />
-  <meta name="theme-color" content="#1b2335" media="(prefers-color-scheme: dark)" id="theme-color-dark" />
+  <meta name="theme-color" content="#1b2335" id="dynamic-theme-color" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <link rel="icon" type="image/png" href="/favicon-32x32.png?v=2" />
@@ -42,12 +41,6 @@
   <link rel="dns-prefetch" href="https://accounts.google.com" />
 
   <meta name="google-site-verification" content="ARC8lM_i6d5sVoiyNVFvw28qpbyy-Xr7xI5eZBHmaSo" />
-
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Pro Fitness Glass - Tu App de Fitness" />
-  <meta property="og:description" content="Entrena inteligente. Registra tus rutinas y nutrición fácilmente." />
-  <meta property="og:image" content="/logo.webp" />
-  <meta property="og:site_name" content="Pro Fitness Glass" />
 
   <style>
     :root {
@@ -252,6 +245,7 @@
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') effectiveTheme = systemDark ? 'dark' : 'light';
 
+        // 🔴 AQUÍ ESTABA EL ERROR EN TU CÓDIGO: ¡Faltaba mapear los colores del Galaxia!
         var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
         var headerColors = { light: '#f1f3f4', dark: '#1b2335', oled: '#0d0d0d', galaxy: '#080814' };
 
@@ -265,12 +259,11 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // 🔴 ACTUALIZAMOS LAS ETIQUETAS SIN DESTRUIRLAS
-        var lightMeta = document.getElementById('theme-color-light');
-        var darkMeta = document.getElementById('theme-color-dark');
-        
-        if (lightMeta) lightMeta.content = selectedHeaderColor;
-        if (darkMeta) darkMeta.content = selectedHeaderColor;
+        // Modificamos directamente nuestra etiqueta maestra
+        var metaColor = document.getElementById('dynamic-theme-color');
+        if(metaColor) {
+            metaColor.setAttribute('content', selectedHeaderColor);
+        }
 
         // Forzamos el color del HTML y BODY de manera estricta para Safari
         root.style.setProperty('background-color', selectedHeaderColor, 'important');
@@ -282,7 +275,7 @@
         if(document.body) setBodyColor();
         else document.addEventListener('DOMContentLoaded', setBodyColor);
 
-        // 🔴 TRUCO DEL SPLASH SCREEN
+        // Truco del Splash Screen
         var splash = document.querySelector('.app-splash-screen');
         if(splash) {
            splash.style.background = 'linear-gradient(to bottom, ' + selectedHeaderColor + ' 0%, ' + selectedHeaderColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' 100%)';
