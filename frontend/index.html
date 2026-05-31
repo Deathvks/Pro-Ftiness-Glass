@@ -265,12 +265,12 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // 🔴 DESTRUIMOS TODAS LAS ETIQUETAS "theme-color" Y CREAMOS UNA SOLA
-        document.querySelectorAll('meta[name="theme-color"]').forEach(function(el) { el.remove(); });
-        var meta = document.createElement('meta');
-        meta.name = 'theme-color';
-        meta.content = selectedHeaderColor;
-        document.head.appendChild(meta);
+        // 🔴 ACTUALIZAMOS LAS ETIQUETAS SIN DESTRUIRLAS
+        var lightMeta = document.getElementById('theme-color-light');
+        var darkMeta = document.getElementById('theme-color-dark');
+        
+        if (lightMeta) lightMeta.content = selectedHeaderColor;
+        if (darkMeta) darkMeta.content = selectedHeaderColor;
 
         // Forzamos el color del HTML y BODY de manera estricta para Safari
         root.style.setProperty('background-color', selectedHeaderColor, 'important');

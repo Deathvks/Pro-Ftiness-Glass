@@ -148,30 +148,24 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // Forzar color de fondo base para prevenir transparencias extrañas en el notch
+      // Forzar color de fondo base para el safe-area
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
 
       // --- FIX DEFINITIVO PARA EL NOTCH DE IOS ---
-      // Safari ignora los meta tags nuevos, así que MUTAMOS el existente en lugar de destruirlo.
-      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-          metaThemeColor.setAttribute('content', headerColorStr);
-      } else {
-          metaThemeColor = document.createElement('meta');
-          metaThemeColor.name = 'theme-color';
-          metaThemeColor.setAttribute('content', headerColorStr);
-          document.head.appendChild(metaThemeColor);
-      }
-
-      // Asegurar que iOS respete la barra de estado translúcida superior
-      let appleStatusStyle = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      if (!appleStatusStyle) {
-          appleStatusStyle = document.createElement('meta');
-          appleStatusStyle.name = 'apple-mobile-web-app-status-bar-style';
-          document.head.appendChild(appleStatusStyle);
-      }
-      appleStatusStyle.setAttribute('content', 'black-translucent');
+      // Copiamos lo que hacían los otros temas: 
+      // Actualizamos ambas etiquetas explícitamente (Clara y Oscura) para que iOS 
+      // lea el color correcto sin importar en qué modo esté el teléfono.
+      const lightMeta = document.getElementById('theme-color-light');
+      const darkMeta = document.getElementById('theme-color-dark');
+      
+      if (lightMeta) lightMeta.setAttribute('content', headerColorStr);
+      if (darkMeta) darkMeta.setAttribute('content', headerColorStr);
+      
+      // Por si Capacitor/React ha inyectado alguna otra etiqueta genérica, la cazamos también:
+      document.querySelectorAll('meta[name="theme-color"]:not([id])').forEach(tag => {
+          tag.setAttribute('content', headerColorStr);
+      });
       // --------------------------------
 
       // eslint-disable-next-line no-unused-expressions
