@@ -77,21 +77,19 @@ html.oled-theme {
 
 /* --- TEMA GALAXIA --- */
 html.galaxy-theme {
-  /* Ahora sí: Colores sólidos para que Toasts, Notificaciones y Modales se vean perfectos */
-  --bg-primary: #080814 !important; 
-  --bg-secondary: #0d0d1f !important;
-  --header-solid: #080814 !important; 
+  /* Colores sólidos puros y sin !important para que Tailwind los procese bien */
+  --bg-primary: #080814; 
+  --bg-secondary: #0d0d1f;
+  --header-solid: #080814; 
 
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --text-muted: #64748b;
 
-  /* FORZAR ACENTO GALAXIA */
-  --color-accent: #a855f7 !important;
-  --color-accent-transparent: rgba(168, 85, 247, 0.12) !important;
-  --color-accent-border: rgba(168, 85, 247, 0.28) !important;
+  --color-accent: #a855f7;
+  --color-accent-transparent: rgba(168, 85, 247, 0.12);
+  --color-accent-border: rgba(168, 85, 247, 0.28);
 
-  /* Cristal Galaxia: Ajustado para que el fondo se vea bien y los bordes destaquen */
   --glass-blur: 4px; 
   --glass-bg: rgba(8, 8, 20, 0.4); 
   --glass-border: rgba(168, 85, 247, 0.25);
@@ -111,7 +109,7 @@ html.galaxy-theme {
   100% { transform: rotate(35deg) translate3d(120vw, 0, 0); opacity: 0; }
 }
 
-/* El body solo tiene el color oscuro y los destellos grandes quietos */
+/* El body de Galaxia debe llevar !important solo aquí para que iOS Notch lo asuma */
 html.galaxy-theme body {
   background-color: var(--bg-primary) !important;
   background-image: 
@@ -122,12 +120,11 @@ html.galaxy-theme body {
   background-size: cover;
 }
 
-/* Dejamos el root transparente SÓLO para que el body (estrellas) se vea a través del fondo de la app */
 html.galaxy-theme #root {
   background-color: transparent !important;
 }
 
-/* OPTIMIZACIÓN: Capa de estrellas gigante para moverla con transform (Usa la GPU) */
+/* Capa de estrellas */
 html.galaxy-theme #root::before {
   content: '';
   position: absolute;
@@ -154,7 +151,7 @@ html.galaxy-theme #root::before {
   perspective: 1000px;
 }
 
-/* OPTIMIZACIÓN: Meteorito usando box-shadow en lugar de filter para evitar lag */
+/* Meteorito */
 html.galaxy-theme #root::after {
   content: '';
   position: absolute;

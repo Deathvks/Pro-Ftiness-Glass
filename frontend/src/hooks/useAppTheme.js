@@ -145,14 +145,24 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // 🔴 FORZADO DE FONDOS
+      // Forzar color de fondo base
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
 
-      // 🔴 FIX DEFINITIVO DEL NOTCH DE IOS: Buscamos la etiqueta maestra y le ponemos el color
+      // 🔴 FIX DEL NOTCH: Encontramos la etiqueta maestra única del index.html y le aplicamos el color
       const metaColor = document.getElementById('dynamic-theme-color');
       if (metaColor) {
           metaColor.setAttribute('content', headerColorStr);
+      } else {
+          // Por si fallara algo o se eliminase, la recreamos para asegurar
+          let newMeta = document.querySelector('meta[name="theme-color"]');
+          if (!newMeta) {
+              newMeta = document.createElement('meta');
+              newMeta.name = 'theme-color';
+              newMeta.id = 'dynamic-theme-color';
+              document.head.appendChild(newMeta);
+          }
+          newMeta.setAttribute('content', headerColorStr);
       }
 
       // eslint-disable-next-line no-unused-expressions
