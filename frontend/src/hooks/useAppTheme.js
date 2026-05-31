@@ -148,19 +148,30 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // Forzar color de fondo base
+      // Forzar color de fondo base para prevenir transparencias extrañas en el notch
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
 
       // --- FIX DEFINITIVO PARA EL NOTCH DE IOS ---
-      // 1. Destruimos cualquier etiqueta theme-color previa (soluciona el conflicto de media queries)
-      document.querySelectorAll('meta[name="theme-color"]').forEach(el => el.remove());
-      
-      // 2. Creamos una única etiqueta inamovible con el color exacto del tema
-      const metaThemeColor = document.createElement('meta');
-      metaThemeColor.name = 'theme-color';
-      metaThemeColor.setAttribute('content', headerColorStr);
-      document.head.appendChild(metaThemeColor);
+      // Safari ignora los meta tags nuevos, así que MUTAMOS el existente en lugar de destruirlo.
+      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+          metaThemeColor.setAttribute('content', headerColorStr);
+      } else {
+          metaThemeColor = document.createElement('meta');
+          metaThemeColor.name = 'theme-color';
+          metaThemeColor.setAttribute('content', headerColorStr);
+          document.head.appendChild(metaThemeColor);
+      }
+
+      // Asegurar que iOS respete la barra de estado translúcida superior
+      let appleStatusStyle = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if (!appleStatusStyle) {
+          appleStatusStyle = document.createElement('meta');
+          appleStatusStyle.name = 'apple-mobile-web-app-status-bar-style';
+          document.head.appendChild(appleStatusStyle);
+      }
+      appleStatusStyle.setAttribute('content', 'black-translucent');
       // --------------------------------
 
       // eslint-disable-next-line no-unused-expressions

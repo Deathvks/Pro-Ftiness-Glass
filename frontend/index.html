@@ -86,6 +86,15 @@
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       --bg-color: #000000;
     }
+    
+    html.galaxy-theme {
+      --glass-base: 8, 8, 20;
+      --glass-opacity: 0.15;
+      --glass-border-opacity: 0.2;
+      --glass-blur: 2px;
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --bg-color: #080814;
+    }
 
     .app-splash-screen {
       display: flex;
@@ -99,7 +108,6 @@
       height: 100vh;
       z-index: 9999;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      /* Eliminado el background-color sólido, lo inyectamos con gradiente por JS para proteger el Notch */
       background-color: transparent; 
       color: #ffffff;
       opacity: 1;
@@ -244,36 +252,25 @@
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') effectiveTheme = systemDark ? 'dark' : 'light';
 
-        var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000' };
-        var headerColors = { light: '#f1f3f4', dark: '#1b2335', oled: '#0d0d0d' };
+        var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
+        var headerColors = { light: '#f1f3f4', dark: '#1b2335', oled: '#0d0d0d', galaxy: '#080814' };
 
         var selectedBgColor = bgColors[effectiveTheme] || bgColors.dark;
         var selectedHeaderColor = headerColors[effectiveTheme] || headerColors.dark;
 
-        root.classList.remove('light-theme', 'dark-theme', 'oled-theme');
+        root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme');
         if (savedTheme === 'system') {
           root.classList.add(systemDark ? 'dark-theme' : 'light-theme');
         } else {
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // 🔴 ACTUALIZAMOS LAS ETIQUETAS NATIVAS ANTES DE PINTAR
-        if (savedTheme !== 'system') {
-          var lightMeta = document.getElementById('theme-color-light');
-          var darkMeta = document.getElementById('theme-color-dark');
-          if (lightMeta) lightMeta.remove();
-          if (darkMeta) darkMeta.remove();
-          
-          var meta = document.createElement('meta');
-          meta.name = 'theme-color';
-          meta.content = selectedHeaderColor;
-          document.head.appendChild(meta);
-        } else {
-          var lightMeta = document.getElementById('theme-color-light');
-          var darkMeta = document.getElementById('theme-color-dark');
-          if (lightMeta) lightMeta.content = headerColors.light;
-          if (darkMeta) darkMeta.content = headerColors.dark;
-        }
+        // 🔴 DESTRUIMOS TODAS LAS ETIQUETAS "theme-color" Y CREAMOS UNA SOLA
+        document.querySelectorAll('meta[name="theme-color"]').forEach(function(el) { el.remove(); });
+        var meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        meta.content = selectedHeaderColor;
+        document.head.appendChild(meta);
 
         // Forzamos el color del HTML y BODY de manera estricta para Safari
         root.style.setProperty('background-color', selectedHeaderColor, 'important');
@@ -285,8 +282,7 @@
         if(document.body) setBodyColor();
         else document.addEventListener('DOMContentLoaded', setBodyColor);
 
-        // 🔴 EL TRUCO DEL SPLASH SCREEN: Pintamos solo la zona del notch con el color del Header
-        // El resto se pinta de bg-color, engañando al escáner de la app de iOS
+        // 🔴 TRUCO DEL SPLASH SCREEN
         var splash = document.querySelector('.app-splash-screen');
         if(splash) {
            splash.style.background = 'linear-gradient(to bottom, ' + selectedHeaderColor + ' 0%, ' + selectedHeaderColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' 100%)';
