@@ -2,7 +2,7 @@
 import { useState, useLayoutEffect, useMemo, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { NavigationBar } from '@capgo/capacitor-navigation-bar';
-import { StatusBar, Style } from '@capacitor/status-bar'; // <-- Añadido plugin de Notch
+import { StatusBar, Style } from '@capacitor/status-bar';
 import useAppStore from '../store/useAppStore';
 
 const THEME_COLORS = {
@@ -148,21 +148,23 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
+      // Forzar color de fondo base
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
 
-      // --- FIX PARA EL NOTCH DE IOS ---
-      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (!metaThemeColor) {
-        metaThemeColor = document.createElement('meta');
-        metaThemeColor.name = 'theme-color';
-        document.head.appendChild(metaThemeColor);
-      }
+      // --- FIX DEFINITIVO PARA EL NOTCH DE IOS ---
+      // 1. Destruimos cualquier etiqueta theme-color previa (soluciona el conflicto de media queries)
+      document.querySelectorAll('meta[name="theme-color"]').forEach(el => el.remove());
+      
+      // 2. Creamos una única etiqueta inamovible con el color exacto del tema
+      const metaThemeColor = document.createElement('meta');
+      metaThemeColor.name = 'theme-color';
       metaThemeColor.setAttribute('content', headerColorStr);
+      document.head.appendChild(metaThemeColor);
       // --------------------------------
 
       // eslint-disable-next-line no-unused-expressions
-      body.offsetHeight; // Force reflow
+      body.offsetHeight; // Forzar el repintado de la pantalla (Reflow)
 
       if (Capacitor.isNativePlatform()) {
         const isLight = effectiveTheme === 'light';
@@ -173,11 +175,12 @@ export const useAppTheme = () => {
             darkButtons: isLight 
         }).catch((err) => console.warn("NavigationBar error:", err));
 
-        // 2. Status Bar superior (Notch iOS y Android)
+        // 2. Status Bar superior (Color de los iconos en el Notch: Hora, batería, etc.)
         StatusBar.setStyle({ 
             style: isLight ? Style.Light : Style.Dark 
         }).catch((err) => console.warn("StatusBar style error:", err));
 
+        // 3. Fondo del status bar (Exclusivo Android)
         if (Capacitor.getPlatform() === 'android') {
             StatusBar.setBackgroundColor({ color: headerColorStr }).catch(() => {});
         }
