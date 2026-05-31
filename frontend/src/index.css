@@ -33,7 +33,7 @@
 
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
 
-.dark-theme {
+html.dark-theme {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --text-primary: #e5e7eb;
@@ -47,7 +47,7 @@
   --header-solid: #1b2335; 
 }
 
-.light-theme {
+html.light-theme {
   --bg-primary: #f8fafc; 
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
@@ -61,7 +61,7 @@
   --header-solid: #f1f3f4;
 }
 
-.oled-theme {
+html.oled-theme {
   --bg-primary: #000000;
   --bg-secondary: #000000;
   --text-primary: #ffffff;
@@ -76,10 +76,11 @@
 }
 
 /* --- TEMA GALAXIA --- */
-.galaxy-theme {
-  --bg-primary: transparent !important; 
-  --bg-secondary: rgba(255, 255, 255, 0.03) !important;
-  --header-solid: transparent !important; 
+html.galaxy-theme {
+  /* Ahora sí: Colores sólidos para que Toasts, Notificaciones y Modales se vean perfectos */
+  --bg-primary: #080814 !important; 
+  --bg-secondary: #0d0d1f !important;
+  --header-solid: #080814 !important; 
 
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
@@ -90,11 +91,11 @@
   --color-accent-transparent: rgba(168, 85, 247, 0.12) !important;
   --color-accent-border: rgba(168, 85, 247, 0.28) !important;
 
-  /* SOLUCIÓN: Transparencia extrema y menos blur para que las estrellas traspasen el cristal */
-  --glass-blur: 2px; 
-  --glass-bg: rgba(8, 8, 20, 0.15); 
-  --glass-border: rgba(168, 85, 247, 0.20);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  /* Cristal Galaxia: Ajustado para que el fondo se vea bien y los bordes destaquen */
+  --glass-blur: 4px; 
+  --glass-bg: rgba(8, 8, 20, 0.4); 
+  --glass-border: rgba(168, 85, 247, 0.25);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* OPTIMIZACIÓN: Se usa transform 3D en lugar de background-position */
@@ -111,8 +112,8 @@
 }
 
 /* El body solo tiene el color oscuro y los destellos grandes quietos */
-.galaxy-theme body {
-  background-color: #080814 !important;
+html.galaxy-theme body {
+  background-color: var(--bg-primary) !important;
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.12), transparent 40%),
     radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.12), transparent 40%);
@@ -121,12 +122,13 @@
   background-size: cover;
 }
 
-.galaxy-theme #root {
+/* Dejamos el root transparente SÓLO para que el body (estrellas) se vea a través del fondo de la app */
+html.galaxy-theme #root {
   background-color: transparent !important;
 }
 
 /* OPTIMIZACIÓN: Capa de estrellas gigante para moverla con transform (Usa la GPU) */
-.galaxy-theme #root::before {
+html.galaxy-theme #root::before {
   content: '';
   position: absolute;
   top: -50vh; left: -50vw; 
@@ -147,14 +149,13 @@
   opacity: 0.7;
   z-index: -2;
   pointer-events: none;
-  /* Aceleración por hardware */
   will-change: transform;
   backface-visibility: hidden;
   perspective: 1000px;
 }
 
 /* OPTIMIZACIÓN: Meteorito usando box-shadow en lugar de filter para evitar lag */
-.galaxy-theme #root::after {
+html.galaxy-theme #root::after {
   content: '';
   position: absolute;
   top: -50px;
@@ -167,7 +168,6 @@
   z-index: -1;
   animation: meteor-shower 6s linear infinite;
   pointer-events: none;
-  /* Aceleración por hardware */
   will-change: transform, opacity;
 }
 
