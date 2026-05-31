@@ -9,7 +9,6 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
 
     const micronutrients = item.micronutrients;
 
-    // 1. Lógica para construir la URL correcta de la imagen
     const getImageUrl = (url, updatedAt) => {
         if (!url) return null;
         if (url.startsWith('http')) return url;
@@ -25,13 +24,11 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                 return `${fullUrl}${separator}v=${ts}`;
             }
         }
-
         return fullUrl;
     };
 
     const displayImage = getImageUrl(item.image_url, item.updated_at);
 
-    // 2. Lista simplificada de micronutrientes
     const simpleMicrosList = [
         { key: 'vitamin-c_100g', name: 'Vit C' },
         { key: 'vitamin-a_100g', name: 'Vit A' },
@@ -56,7 +53,6 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
 
     const hasMicros = availableMicros.length > 0;
 
-    // Helper para macros seguros
     const protein = item.protein_g || item.protein || 0;
     const carbs = item.carbs_g || item.carbs || 0;
     const fats = item.fats_g || item.fat || item.fats || 0;
@@ -64,15 +60,14 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
 
     return (
         <div
-            className="flex flex-wrap items-center justify-between p-3 rounded-lg bg-bg-primary hover:bg-bg-secondary transition-colors border border-glass-border cursor-pointer group"
+            className="flex flex-wrap items-center justify-between p-3 mb-2 rounded-2xl bg-bg-primary border border-glass-border hover:bg-bg-secondary transition-all duration-300 cursor-pointer group"
             onClick={(e) => {
                 if (e.target.closest('button')) return;
                 onAdd(item);
             }}
         >
             <div className="flex items-center flex-1 min-w-0 mr-3">
-                {/* --- SECCIÓN DE IMAGEN --- */}
-                <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-gray-700 overflow-hidden mr-3 border border-glass-border flex items-center justify-center relative">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-bg-secondary overflow-hidden mr-4 border border-glass-border flex items-center justify-center relative group-hover:scale-105 transition-transform duration-300">
                     {displayImage && !imgError ? (
                         <img
                             src={displayImage}
@@ -81,22 +76,32 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                             onError={() => setImgError(true)}
                         />
                     ) : (
-                        <div className="text-gray-500">
-                            <ImageIcon size={20} />
+                        <div className="text-text-muted opacity-60">
+                            <ImageIcon size={24} />
                         </div>
                     )}
                 </div>
 
-                {/* --- DETALLES TEXTO --- */}
-                <div className="min-w-0 flex-1">
-                    <p className="font-semibold truncate text-text-primary">{item.name || item.description}</p>
-                    <p className="text-xs text-text-muted flex items-center gap-1">
-                        <span>{Math.round(item.calories)} kcal</span>
-                        {item.weight_g && <span>• {formatNumber(item.weight_g, 1)}g</span>}
-                        {item.brand && <span className="truncate hidden sm:inline">• {item.brand}</span>}
-                    </p>
-                    {/* --- NUEVA LÍNEA DE MACROS CON CSS INLINE --- */}
-                    <div className="text-[10px] flex items-center gap-2 mt-0.5 font-medium">
+                <div className="min-w-0 flex-1 py-1">
+                    <p className="font-extrabold text-sm sm:text-base line-clamp-2 leading-tight text-text-primary group-hover:text-accent transition-colors duration-300">{item.name || item.description}</p>
+                    
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-[11px] font-black text-text-primary bg-bg-secondary border border-glass-border px-2 py-0.5 rounded-md">
+                            {Math.round(item.calories)} kcal
+                        </span>
+                        {item.weight_g && (
+                            <span className="text-[11px] font-bold text-text-secondary border border-glass-border px-2 py-0.5 rounded-md">
+                                {formatNumber(item.weight_g, 1)}g
+                            </span>
+                        )}
+                        {item.brand && (
+                            <span className="truncate hidden sm:inline text-[11px] font-bold text-text-tertiary max-w-[80px]">
+                                {item.brand}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="text-[10px] sm:text-[11px] flex items-center gap-2.5 mt-1.5 font-extrabold opacity-90">
                         <span style={{ color: '#ef4444' }}>P: {formatNumber(protein, 1)}</span>
                         <span style={{ color: '#3b82f6' }}>C: {formatNumber(carbs, 1)}</span>
                         <span style={{ color: '#22c55e' }}>G: {formatNumber(fats, 1)}</span>
@@ -105,8 +110,7 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                 </div>
             </div>
 
-            {/* --- BOTONES DE ACCIÓN --- */}
-            <div className="flex items-center flex-shrink-0 z-10">
+            <div className="flex items-center flex-shrink-0 gap-1.5 z-10">
                 {hasMicros && (
                     <button
                         onClick={(e) => {
@@ -114,10 +118,10 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                             setShowMicros(s => !s);
                         }}
                         type="button"
-                        className={`p-2 rounded-full ${showMicros ? 'text-accent bg-accent/10' : 'text-text-muted'} hover:text-accent hover:bg-accent/10 transition`}
+                        className={`p-2.5 rounded-xl transition-all duration-300 outline-none ${showMicros ? 'text-accent bg-accent/20 border border-accent/30' : 'text-text-muted hover:text-accent hover:bg-glass-bg border border-transparent hover:border-glass-border'}`}
                         title="Mostrar micronutrientes"
                     >
-                        <Microscope size={16} />
+                        <Microscope size={18} />
                     </button>
                 )}
 
@@ -128,10 +132,10 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                             onEdit(item);
                         }}
                         type="button"
-                        className="p-2 rounded-full text-text-muted hover:text-accent hover:bg-accent/10 transition"
+                        className="p-2.5 rounded-xl text-text-muted hover:text-accent hover:bg-glass-bg border border-transparent hover:border-glass-border transition-all active:scale-95 outline-none"
                         title="Editar favorito"
                     >
-                        <Edit size={16} />
+                        <Edit size={18} />
                     </button>
                 )}
 
@@ -142,35 +146,42 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
                             onDelete(item);
                         }}
                         type="button"
-                        className="p-2 rounded-full text-text-muted hover:text-red hover:bg-red/10 transition"
+                        className="p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all active:scale-95 flex-shrink-0 outline-none"
                         title="Eliminar de favoritos"
                     >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                     </button>
                 )}
 
                 <button
                     type="button"
-                    className="p-2 rounded-full text-accent group-hover:bg-accent-transparent transition pointer-events-none"
+                    className="p-2.5 rounded-xl text-white bg-accent group-hover:scale-105 transition-all pointer-events-none"
                     title="Añadir a la lista"
                     aria-hidden="true"
                     tabIndex={-1}
                 >
-                    <Plus size={18} />
+                    <Plus size={18} strokeWidth={3} />
                 </button>
             </div>
 
-            {/* --- MICRONUTRIENTES (Desplegable) --- */}
             {hasMicros && showMicros && (
                 <div
-                    className="w-full mt-2 p-2 bg-bg-secondary rounded-md border border-glass-border cursor-default"
+                    className="w-full mt-3 p-3 sm:p-4 bg-bg-secondary rounded-xl border border-glass-border cursor-default"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <h5 className="text-xs font-bold text-text-primary mb-1">Micronutrientes (por 100g):</h5>
-                    <div className="text-xs text-text-muted grid grid-cols-2 sm:grid-cols-3 gap-x-2">
-                        {availableMicros.map((microString, index) => (
-                            <span key={index}>{microString}</span>
-                        ))}
+                    <h5 className="text-[11px] font-black text-accent mb-2.5 uppercase tracking-widest flex items-center gap-1.5">
+                        <Microscope size={14} /> Micronutrientes <span className="text-text-muted lowercase font-medium tracking-normal">(por 100g)</span>
+                    </h5>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {availableMicros.map((microString, index) => {
+                            const [name, value] = microString.split(':');
+                            return (
+                                <div key={index} className="flex justify-between items-center bg-bg-primary px-2.5 py-1.5 rounded-lg border border-glass-border">
+                                    <span className="text-xs font-bold text-text-primary">{name}</span>
+                                    <span className="text-[11px] font-extrabold text-accent">{value}</span>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}

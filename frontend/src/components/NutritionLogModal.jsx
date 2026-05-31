@@ -36,11 +36,10 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [hasSearched, setHasSearched] = useState(false); // Para saber si ya se intentó buscar algo
+    const [hasSearched, setHasSearched] = useState(false);
 
     const [selectedDetailItem, setSelectedDetailItem] = useState(null);
 
-    // NUEVO: Función manual para ejecutar la búsqueda (Reemplaza al useEffect automático)
     const executeSearch = async () => {
         if (searchTerm.trim().length < 3) return;
 
@@ -58,15 +57,13 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
         }
     };
 
-    // NUEVO: Capturar cuando el usuario presiona "Enter"
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
-            e.preventDefault(); // Evita que se envíen formularios por accidente
+            e.preventDefault();
             executeSearch();
         }
     };
 
-    // Limpiar resultados si cambias de pestaña
     useEffect(() => {
         if (activeTab !== 'search') {
             setSearchResults([]);
@@ -233,15 +230,15 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-[fade-in_0.3s_ease-out] p-4 sm:p-0 pb-12 md:pb-0">
                 <div className="relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col h-full max-h-[85dvh] sm:h-auto sm:max-h-[90vh] bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
                     
-                    {/* Header */}
+                    {/* Header: Cambio aquí para line-clamp-2 y leading-tight en el título */}
                     <div className="p-6 sm:p-8 pb-5 flex items-center justify-between border-b border-black/5 dark:border-white/10 flex-shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
-                        <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight truncate pr-4 text-text-primary">{title}</h3>
+                        <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight line-clamp-2 leading-tight pr-4 text-text-primary">{title}</h3>
                         <button onClick={onClose} className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex-shrink-0 text-text-secondary hover:text-text-primary active:scale-95"><X size={20} strokeWidth={2.5} /></button>
                     </div>
 
                     <div className="flex-grow overflow-hidden flex flex-col min-h-0">
                         {!(isEditingLog || editingFavorite) && (
-                            <div className="p-6 sm:p-8 pb-4 flex-shrink-0">
+                            <div className="p-6 sm:p-8 pt-6 pb-4 flex-shrink-0">
                                 {(activeTab === 'search' || activeTab === 'favorites' || activeTab === 'recent') && (
                                     <div className="relative mb-6 flex items-center">
                                         <input
@@ -253,7 +250,6 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                                             autoFocus={activeTab === 'search'}
                                             className="w-full pl-5 pr-14 py-3.5 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] text-text-primary font-bold placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all shadow-inner"
                                         />
-                                        {/* Botón Lupa clickeable para buscar */}
                                         <button
                                             onClick={activeTab === 'search' ? executeSearch : undefined}
                                             className={`absolute right-3 p-2 rounded-[12px] transition-all active:scale-95 ${activeTab === 'search' ? 'bg-accent/10 text-accent hover:bg-accent hover:text-white cursor-pointer' : 'text-text-muted cursor-default'}`}
@@ -293,7 +289,8 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                             </div>
                         )}
 
-                        <div className="overflow-y-auto px-6 sm:px-8 pb-6 sm:pb-8 flex-grow custom-scrollbar">
+                        {/* Contenido: Si estamos editando y el título creció, usamos pt-4 para que el form no se pegue al borde */}
+                        <div className={`overflow-y-auto px-6 sm:px-8 pb-6 sm:pb-8 flex-grow custom-scrollbar ${(isEditingLog || editingFavorite) ? 'pt-4' : ''}`}>
                             {renderContent()}
                         </div>
                     </div>

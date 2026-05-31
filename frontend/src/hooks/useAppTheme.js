@@ -2,6 +2,7 @@
 import { useState, useLayoutEffect, useMemo, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { NavigationBar } from '@capgo/capacitor-navigation-bar';
+import { StatusBar, Style } from '@capacitor/status-bar'; // <-- Añadido plugin de Notch
 import useAppStore from '../store/useAppStore';
 
 const THEME_COLORS = {
@@ -20,7 +21,6 @@ const HEADER_COLORS = {
 };
 
 // --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS ---
-// Al estar fuera del hook, el contador y el estado sobreviven aunque cambies de pantalla
 let isTestingGlobal = false;
 let testTimeLeftGlobal = 0;
 let testIntervalGlobal = null;
@@ -65,11 +65,9 @@ export const useAppTheme = () => {
   }, []);
 
   const setTheme = (newTheme) => {
-    // Si el usuario cambia de tema manualmente, cancelamos cualquier prueba activa
     if (isTestingGlobal) {
       cancelThemeTest();
     }
-
     if (cookieConsent) {
       localStorage.setItem('theme', newTheme);
     }
@@ -109,7 +107,6 @@ export const useAppTheme = () => {
   };
   // --------------------------------
 
-  // Tema real que se aplicará al DOM (si está en prueba fuerza galaxia, sino el normal)
   const activeTheme = isTestingTheme ? 'galaxy' : theme;
 
   useLayoutEffect(() => {
@@ -154,17 +151,36 @@ export const useAppTheme = () => {
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
 
+      // --- FIX PARA EL NOTCH DE IOS ---
+      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (!metaThemeColor) {
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.name = 'theme-color';
+        document.head.appendChild(metaThemeColor);
+      }
+      metaThemeColor.setAttribute('content', headerColorStr);
+      // --------------------------------
+
       // eslint-disable-next-line no-unused-expressions
       body.offsetHeight; // Force reflow
 
       if (Capacitor.isNativePlatform()) {
         const isLight = effectiveTheme === 'light';
+        
+        // 1. Barra de navegación inferior (Android)
         NavigationBar.setNavigationBarColor({ 
             color: color, 
             darkButtons: isLight 
-        }).catch((err) => {
-            console.warn("Error setting NavigationBar color:", err);
-        });
+        }).catch((err) => console.warn("NavigationBar error:", err));
+
+        // 2. Status Bar superior (Notch iOS y Android)
+        StatusBar.setStyle({ 
+            style: isLight ? Style.Light : Style.Dark 
+        }).catch((err) => console.warn("StatusBar style error:", err));
+
+        if (Capacitor.getPlatform() === 'android') {
+            StatusBar.setBackgroundColor({ color: headerColorStr }).catch(() => {});
+        }
       }
 
       setTimeout(() => {
@@ -181,7 +197,7 @@ export const useAppTheme = () => {
 
     mediaQuery.addEventListener('change', handleSystemChange);
     return () => mediaQuery.removeEventListener('change', handleSystemChange);
-  }, [activeTheme]); // Ahora reacciona al activeTheme en tiempo real
+  }, [activeTheme]); 
 
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -204,8 +220,8 @@ export const useAppTheme = () => {
   }, [resolvedTheme]);
 
   return { 
-    theme, // El tema guardado del usuario
-    activeTheme, // El tema que se está mostrando (prueba o real)
+    theme, 
+    activeTheme, 
     setTheme, 
     accent, 
     setAccent, 

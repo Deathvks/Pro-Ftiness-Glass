@@ -29,9 +29,9 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
 
     return (
         <div className="mt-2">
-            <label className="block text-sm font-medium text-text-secondary mb-2">Foto de la Comida (Opcional)</label>
+            <label className="block text-[11px] font-black text-text-secondary mb-2 px-1 uppercase tracking-widest">Foto de la Comida (Opcional)</label>
             <div
-                className="relative w-full h-40 bg-bg-primary border-2 border-dashed border-glass-border rounded-lg flex items-center justify-center cursor-pointer hover:border-accent transition-colors"
+                className="relative w-full h-40 bg-bg-primary border-2 border-dashed border-glass-border rounded-2xl flex items-center justify-center cursor-pointer hover:border-accent transition-colors group"
                 onClick={handleImageClick}
             >
                 <input
@@ -43,25 +43,25 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
                     capture="environment"
                 />
                 {isUploading ? (
-                    <Spinner />
+                    <Spinner size={32} />
                 ) : imageUrl ? (
                     <>
                         <img
                             src={imageUrl.startsWith('http') || imageUrl.startsWith('blob:') ? imageUrl : `${BACKEND_BASE_URL}${imageUrl}`}
                             alt="Previsualización"
-                            className="max-w-full max-h-full object-contain rounded-lg"
+                            className="max-w-full max-h-full object-contain rounded-xl p-1"
                         />
                         <button
                             onClick={handleRemoveImage}
-                            className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 text-white hover:bg-black/80 transition-opacity"
+                            className="absolute top-2 right-2 bg-black/60 rounded-full p-2 text-white hover:bg-red-500 transition-colors"
                         >
-                            <X size={16} />
+                            <X size={16} strokeWidth={3} />
                         </button>
                     </>
                 ) : (
-                    <div className="text-center text-text-muted">
-                        <Camera size={32} className="mx-auto" />
-                        <p className="mt-1 text-sm">Añadir foto</p>
+                    <div className="text-center text-text-muted group-hover:text-accent transition-colors">
+                        <Camera size={36} className="mx-auto mb-2 opacity-80" strokeWidth={1.5} />
+                        <p className="text-sm font-bold">Añadir foto</p>
                     </div>
                 )}
             </div>
@@ -70,8 +70,8 @@ const ImageUpload = ({ imageUrl, onImageUpload, isUploading }) => {
 };
 
 const InputField = ({ label, name, value, onChange, placeholder = '', inputMode = 'text', required = false, type = 'text', className = '' }) => (
-    <div>
-        <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+    <div className={className}>
+        <label className="block text-[11px] font-black text-text-secondary mb-1.5 px-1 uppercase tracking-widest">{label}</label>
         <input
             name={name}
             type={type}
@@ -79,7 +79,7 @@ const InputField = ({ label, name, value, onChange, placeholder = '', inputMode 
             value={value}
             onChange={onChange}
             required={required}
-            className={`w-full bg-bg-primary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition ${className}`}
+            className="w-full bg-bg-primary border border-glass-border rounded-xl px-4 py-3.5 text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all font-bold placeholder:text-text-muted shadow-sm"
             placeholder={placeholder}
         />
     </div>
@@ -100,10 +100,10 @@ const CalculatedMacrosGraph = ({ calories, protein, carbs, fats, sugars }) => {
     const fPct = totalMacroCals > 0 ? (fCals / totalMacroCals) * 100 : 0;
 
     return (
-        <div className="mt-4 p-4 rounded-xl bg-bg-secondary border border-glass-border animate-[fade-in_0.3s_ease-out]">
-            <div className="flex items-center gap-6">
-                <div className="relative w-24 h-24 shrink-0">
-                    <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 drop-shadow-sm">
+        <div className="mt-6 p-5 rounded-2xl bg-bg-secondary border border-glass-border animate-[fade-in_0.3s_ease-out]">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="relative w-28 h-28 shrink-0">
+                    <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90">
                         <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-glass-border" strokeWidth="6" />
                         {totalMacroCals > 0 && (
                             <>
@@ -114,40 +114,40 @@ const CalculatedMacrosGraph = ({ calories, protein, carbs, fats, sugars }) => {
                             </>
                         )}
                     </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-lg font-black text-text-primary">{Math.round(calories) || 0}</span>
-                        <span className="text-[10px] font-semibold text-text-muted leading-none">kcal</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center mt-1">
+                        <span className="text-2xl font-black text-text-primary leading-none">{Math.round(calories) || 0}</span>
+                        <span className="text-[10px] font-bold text-text-muted mt-0.5 uppercase tracking-widest">kcal</span>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 flex-1">
-                    <div className="flex flex-col">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4 flex-1 w-full">
+                    <div className="flex flex-col bg-bg-primary px-3 py-2 rounded-xl border border-glass-border">
                         <div className="flex items-center gap-1.5 mb-0.5">
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ef4444' }}></div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Prot</span>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Prot</span>
                         </div>
-                        <span className="text-sm font-bold text-text-primary">{protein || 0}g</span>
+                        <span className="text-sm font-extrabold text-text-primary">{protein || 0}g</span>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col bg-bg-primary px-3 py-2 rounded-xl border border-glass-border">
                         <div className="flex items-center gap-1.5 mb-0.5">
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#3b82f6' }}></div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Carbs</span>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Carbs</span>
                         </div>
-                        <span className="text-sm font-bold text-text-primary">{carbs || 0}g</span>
+                        <span className="text-sm font-extrabold text-text-primary">{carbs || 0}g</span>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col bg-bg-primary px-3 py-2 rounded-xl border border-glass-border">
                         <div className="flex items-center gap-1.5 mb-0.5">
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22c55e' }}></div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Grasas</span>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Grasas</span>
                         </div>
-                        <span className="text-sm font-bold text-text-primary">{fats || 0}g</span>
+                        <span className="text-sm font-extrabold text-text-primary">{fats || 0}g</span>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col bg-bg-primary px-3 py-2 rounded-xl border border-glass-border">
                         <div className="flex items-center gap-1.5 mb-0.5">
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#ec4899' }}></div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">Azúcar</span>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Azúcar</span>
                         </div>
-                        <span className="text-sm font-bold text-pink-500">{sugars || 0}g</span>
+                        <span className="text-sm font-extrabold text-pink-500">{sugars || 0}g</span>
                     </div>
                 </div>
             </div>
@@ -364,7 +364,7 @@ const ManualEntryForm = ({
     };
 
     return (
-        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4 animate-[fade-in_0.3s] pt-2">
+        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-5 animate-[fade-in_0.3s_ease-out] pt-3 pb-6">
             <InputField
                 label="Descripción"
                 name="description"
@@ -380,12 +380,12 @@ const ManualEntryForm = ({
                 isUploading={isUploading}
             />
 
-            <div className="flex items-center justify-between mt-2">
-                <label className="text-sm font-medium text-text-secondary">Valores por 100g</label>
+            <div className="flex items-center justify-between mt-4 p-4 rounded-[20px] bg-bg-secondary border border-glass-border">
+                <label className="text-sm font-extrabold text-text-primary">Valores por 100g</label>
                 <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={isPer100g} onChange={(e) => setIsPer100g(e.target.checked)} />
-                    <div className="w-10 h-6 bg-bg-primary rounded-full border border-glass-border peer-checked:bg-accent transition-colors"></div>
-                    <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4"></div>
+                    <div className="w-12 h-7 bg-bg-primary rounded-full border border-glass-border peer-checked:bg-accent transition-colors"></div>
+                    <div className="absolute left-1.5 top-1 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-5 shadow-sm"></div>
                 </label>
             </div>
 
@@ -410,8 +410,10 @@ const ManualEntryForm = ({
                             onChange={handleChange}
                             inputMode="decimal"
                             required={isPer100g}
+                            className="w-full sm:w-1/2"
                         />
                     </div>
+                    
                     <CalculatedMacrosGraph
                         calories={calculatedMacros.calories}
                         protein={calculatedMacros.protein_g}
@@ -433,6 +435,7 @@ const ManualEntryForm = ({
                         <InputField label="Grasas (g)" name="fats_g" value={formData.fats_g} onChange={handleChange} inputMode="decimal" />
                         <InputField label="Azúcar (g)" name="sugars_g" value={formData.sugars_g} onChange={handleChange} inputMode="decimal" />
                     </div>
+                    
                     <CalculatedMacrosGraph
                         calories={calculatedMacros.calories}
                         protein={calculatedMacros.protein_g}
@@ -443,43 +446,45 @@ const ManualEntryForm = ({
                 </>
             )}
 
-            <button
-                type="button"
-                onClick={handleFavoriteChange}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-transform active:scale-95 mt-1 border border-glass-border
+            <div className="mt-4 space-y-3">
+                <button
+                    type="button"
+                    onClick={handleFavoriteChange}
+                    className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-extrabold transition-all active:scale-95 border border-glass-border
                     ${isFavorite
-                        ? 'bg-accent/10 text-accent border-accent/20'
-                        : 'bg-bg-secondary text-text-primary hover:bg-accent/5 hover:text-accent'
+                        ? 'bg-accent/10 text-accent border-accent/30'
+                        : 'bg-bg-secondary text-text-primary hover:bg-glass-bg'
                     }`}
-            >
-                <Star
-                    size={18}
-                    className={`transition-all ${isFavorite ? 'fill-accent' : ''}`}
-                />
-                {isFavorite
-                    ? (isEditing && !editingFavorite ? 'En favoritos (Guardado)' : (isOriginallyFavorite ? 'Actualizar favorito' : 'Guardar en favoritos'))
-                    : (isOriginallyFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos')
-                }
-            </button>
+                >
+                    <Star
+                        size={18}
+                        className={`transition-all ${isFavorite ? 'fill-accent scale-110' : ''}`}
+                    />
+                    {isFavorite
+                        ? (isEditing && !editingFavorite ? 'En favoritos (Guardado)' : (isOriginallyFavorite ? 'Actualizar favorito' : 'Guardar en favoritos'))
+                        : (isOriginallyFavorite ? 'Eliminar de favoritos' : 'Añadir a favoritos')
+                    }
+                </button>
 
-            {isEditing || editingFavorite ? (
-                <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-bg-secondary disabled:opacity-50 mt-2 hover:brightness-110">
-                    {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Guardar Cambios</>}
-                </button>
-            ) : editingListItem ? (
-                <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-bg-secondary disabled:opacity-50 mt-2 hover:brightness-110">
-                    {isLoading || isUploading ? <Spinner /> : <><Save size={18} className="mr-2" /> Actualizar Comida</>}
-                </button>
-            ) : (
-                <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                    <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-bg-secondary text-accent hover:bg-white/5 disabled:opacity-50 border border-glass-border`}>
-                        {isLoading || isUploading ? <Spinner /> : <><Plus size={18} className="mr-2" /> Añadir a la lista</>}
+                {isEditing || editingFavorite ? (
+                    <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-white disabled:opacity-50 hover:brightness-110 active:scale-95">
+                        {isLoading || isUploading ? <Spinner size={24} color="#ffffff" /> : <><Save size={20} className="mr-2" strokeWidth={2.5} /> Guardar Cambios</>}
                     </button>
-                    <button type="button" onClick={handleSaveAndClose} disabled={isLoading || isUploading} className={`w-full flex items-center justify-center py-3 rounded-xl font-bold transition bg-accent text-bg-secondary hover:brightness-110 disabled:opacity-50`}>
-                        {isLoading || isUploading ? <Spinner /> : <><Check size={18} className="mr-2" /> Añadir y Guardar</>}
+                ) : editingListItem ? (
+                    <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-white disabled:opacity-50 hover:brightness-110 active:scale-95">
+                        {isLoading || isUploading ? <Spinner size={24} color="#ffffff" /> : <><Save size={20} className="mr-2" strokeWidth={2.5} /> Actualizar Comida</>}
                     </button>
-                </div>
-            )}
+                ) : (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-bg-secondary text-accent border border-glass-border hover:bg-glass-bg active:scale-95 disabled:opacity-50">
+                            {isLoading || isUploading ? <Spinner size={24} /> : <><Plus size={20} className="mr-2" strokeWidth={2.5} /> Añadir a la lista</>}
+                        </button>
+                        <button type="button" onClick={handleSaveAndClose} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-white hover:brightness-110 active:scale-95 disabled:opacity-50">
+                            {isLoading || isUploading ? <Spinner size={24} color="#ffffff" /> : <><Check size={20} className="mr-2" strokeWidth={2.5} /> Añadir y Guardar</>}
+                        </button>
+                    </div>
+                )}
+            </div>
         </form>
     );
 };

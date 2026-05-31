@@ -1,5 +1,5 @@
 /* frontend/src/components/ExerciseMedia.jsx */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { useAppTheme } from '../hooks/useAppTheme';
 
@@ -11,20 +11,12 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
  * Componente para mostrar la imagen o vídeo del ejercicio.
  * Acepta 'details' (el objeto del ejercicio), 'src' directo, y 'className'.
  */
-const ExerciseMedia = ({ details, src, videoSrc, className = '' }) => {
+const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const { theme } = useAppTheme();
 
-  // Reseteamos el estado si cambian los detalles del ejercicio
-  useEffect(() => {
-    setImageError(false);
-    setVideoError(false);
-  }, [details, src, videoSrc]);
-
   // --- LÓGICA INTELIGENTE DE EXTRACCIÓN ---
-  // Buscamos la imagen en todas las posibles rutas y anidaciones de la app.
-  // Priorizamos image_url_start porque es la que trae el nuevo seeder.
   const rawImageUrl = src || 
     details?.image_url_start || 
     details?.image_url || 
@@ -39,9 +31,16 @@ const ExerciseMedia = ({ details, src, videoSrc, className = '' }) => {
     details?.exercise?.video_url ||
     details?.exercise_details?.video_url;
 
+  // SOLUCIÓN: Reseteamos el estado SOLO si cambia de verdad la URL de la imagen o el vídeo.
+  // Evita el parpadeo constante al actualizar series o repeticiones en el objeto details.
+  useEffect(() => {
+    setImageError(false);
+    setVideoError(false);
+  }, [rawImageUrl, rawVideoUrl]);
+
   // Construcción segura de la URL final
   const getBestImageUrl = (url) => {
-    if (!url) return null;
+    if (!url || url.trim() === '') return null;
     if (url.startsWith('http')) return url;
     
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
@@ -61,7 +60,7 @@ const ExerciseMedia = ({ details, src, videoSrc, className = '' }) => {
   const finalImageUrl = getBestImageUrl(rawImageUrl);
 
   const getVideoUrl = (url) => {
-    if (!url) return null;
+    if (!url || url.trim() === '') return null;
     if (url.startsWith('http')) return url;
     const safeUrl = url.startsWith('/') ? url : `/${url}`;
     return `${BACKEND_BASE_URL}${safeUrl}`;
@@ -69,14 +68,14 @@ const ExerciseMedia = ({ details, src, videoSrc, className = '' }) => {
   
   const videoUrl = getVideoUrl(rawVideoUrl);
 
-  // Lógica de contraste para Oscuro y OLED:
-  const isDarkTheme = theme === 'oled' || theme === 'dark';
+  // Lógica de contraste para Oscuro, OLED y Galaxia:
+  const isDarkTheme = theme === 'oled' || theme === 'dark' || theme === 'galaxy';
   const imageBgClass = isDarkTheme ? 'bg-gray-200' : 'bg-bg-secondary';
   
   // Fondo característico para los placeholders
   const placeholderBgClass = 'bg-accent/10 text-accent';
 
-  // Fallback si no hay ningún recurso asignado
+  // Fallback directo si no hay ningún recurso asignado (evita renderizar etiquetas vacías)
   if (!finalImageUrl && !videoUrl) {
     return (
       <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
@@ -119,12 +118,24 @@ const ExerciseMedia = ({ details, src, videoSrc, className = '' }) => {
     );
   }
 
-  // Fallback final si la imagen falla y no hay video
+  // Fallback final si la imagen falla y no hay video (onError activado)
   return (
     <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
       <ImageIcon size={48} className="opacity-60" />
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // SOLUCIÓN: Comparador estricto para React.memo. 
+  // Congela el componente si cambian las reps/series pero NO cambia el archivo de imagen.
+  const extractMedia = (d) => {
+    if (!d) return '';
+    return `${d.image_url_start || ''}|${d.image_url || ''}|${d.video_url || ''}|${d.exercise?.image_url_start || ''}`;
+  };
+
+  return prevProps.src === nextProps.src &&
+         prevProps.videoSrc === nextProps.videoSrc &&
+         prevProps.className === nextProps.className &&
+         extractMedia(prevProps.details) === extractMedia(nextProps.details);
+});
 
 export default ExerciseMedia;
