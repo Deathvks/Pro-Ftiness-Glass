@@ -12,7 +12,6 @@ const THEME_COLORS = {
   light: '#f7fafc',
 };
 
-// Colores matemáticos exactos del header glass superpuesto al background
 const HEADER_COLORS = {
   galaxy: '#080814',
   oled: '#0d0d0d',
@@ -29,7 +28,6 @@ let listeners = [];
 const notifyThemeListeners = () => {
   listeners.forEach(listener => listener());
 };
-// ----------------------------------------------
 
 export const useAppTheme = () => {
   const cookieConsent = useAppStore(state => state.cookieConsent);
@@ -64,19 +62,13 @@ export const useAppTheme = () => {
   }, []);
 
   const setTheme = (newTheme) => {
-    if (isTestingGlobal) {
-      cancelThemeTest();
-    }
-    if (cookieConsent) {
-      localStorage.setItem('theme', newTheme);
-    }
+    if (isTestingGlobal) cancelThemeTest();
+    if (cookieConsent) localStorage.setItem('theme', newTheme);
     setThemeState(newTheme);
   };
 
   const setAccent = (newAccent) => {
-    if (cookieConsent) {
-      localStorage.setItem('accent', newAccent);
-    }
+    if (cookieConsent) localStorage.setItem('accent', newAccent);
     setAccentState(newAccent);
   };
 
@@ -133,11 +125,7 @@ export const useAppTheme = () => {
         headerColorStr = HEADER_COLORS.light;
       }
 
-      body.style.transition = 'none';
-      root.style.transition = 'none';
-
       root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'dark');
-      
       const classTheme = effectiveTheme === 'galaxy' ? 'galaxy' : (effectiveTheme === 'oled' ? 'oled' : (effectiveTheme === 'light' ? 'light' : 'dark'));
       root.classList.add(`${classTheme}-theme`);
 
@@ -145,53 +133,32 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // Forzar color de fondo base
-      root.style.setProperty('background-color', headerColorStr, 'important');
-      body.style.setProperty('background-color', headerColorStr, 'important');
-
-      // 🔴 FIX DEL NOTCH: Encontramos la etiqueta maestra única del index.html y le aplicamos el color
+      // Actualizamos la única meta etiqueta para el notch superior en navegadores PWA
       const metaColor = document.getElementById('dynamic-theme-color');
       if (metaColor) {
           metaColor.setAttribute('content', headerColorStr);
-      } else {
-          // Por si fallara algo o se eliminase, la recreamos para asegurar
-          let newMeta = document.querySelector('meta[name="theme-color"]');
-          if (!newMeta) {
-              newMeta = document.createElement('meta');
-              newMeta.name = 'theme-color';
-              newMeta.id = 'dynamic-theme-color';
-              document.head.appendChild(newMeta);
-          }
-          newMeta.setAttribute('content', headerColorStr);
       }
 
+      // Forzar repintado para iOS Safe Area
       // eslint-disable-next-line no-unused-expressions
-      body.offsetHeight; // Forzar el repintado de la pantalla (Reflow)
+      body.offsetHeight; 
 
       if (Capacitor.isNativePlatform()) {
         const isLight = effectiveTheme === 'light';
         
-        // 1. Barra de navegación inferior (Android)
         NavigationBar.setNavigationBarColor({ 
             color: color, 
             darkButtons: isLight 
         }).catch((err) => console.warn("NavigationBar error:", err));
 
-        // 2. Status Bar superior (Color de los iconos)
         StatusBar.setStyle({ 
             style: isLight ? Style.Light : Style.Dark 
         }).catch((err) => console.warn("StatusBar style error:", err));
 
-        // 3. Fondo del status bar (Exclusivo Android)
         if (Capacitor.getPlatform() === 'android') {
             StatusBar.setBackgroundColor({ color: headerColorStr }).catch(() => {});
         }
       }
-
-      setTimeout(() => {
-        body.style.transition = '';
-        root.style.transition = '';
-      }, 50);
     };
 
     updateAppearance();

@@ -33,7 +33,7 @@
 
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
 
-html.dark-theme {
+.dark-theme {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --text-primary: #e5e7eb;
@@ -47,7 +47,7 @@ html.dark-theme {
   --header-solid: #1b2335; 
 }
 
-html.light-theme {
+.light-theme {
   --bg-primary: #f8fafc; 
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
@@ -61,7 +61,7 @@ html.light-theme {
   --header-solid: #f1f3f4;
 }
 
-html.oled-theme {
+.oled-theme {
   --bg-primary: #000000;
   --bg-secondary: #000000;
   --text-primary: #ffffff;
@@ -76,8 +76,7 @@ html.oled-theme {
 }
 
 /* --- TEMA GALAXIA --- */
-html.galaxy-theme {
-  /* Colores sólidos puros y sin !important para que Tailwind los procese bien */
+.galaxy-theme {
   --bg-primary: #080814; 
   --bg-secondary: #0d0d1f;
   --header-solid: #080814; 
@@ -86,10 +85,12 @@ html.galaxy-theme {
   --text-secondary: #cbd5e1;
   --text-muted: #64748b;
 
+  /* FORZAR ACENTO GALAXIA */
   --color-accent: #a855f7;
   --color-accent-transparent: rgba(168, 85, 247, 0.12);
   --color-accent-border: rgba(168, 85, 247, 0.28);
 
+  /* SOLUCIÓN: Transparencia extrema y menos blur para que las estrellas traspasen el cristal */
   --glass-blur: 4px; 
   --glass-bg: rgba(8, 8, 20, 0.4); 
   --glass-border: rgba(168, 85, 247, 0.25);
@@ -109,9 +110,8 @@ html.galaxy-theme {
   100% { transform: rotate(35deg) translate3d(120vw, 0, 0); opacity: 0; }
 }
 
-/* El body de Galaxia debe llevar !important solo aquí para que iOS Notch lo asuma */
-html.galaxy-theme body {
-  background-color: var(--bg-primary) !important;
+/* El body solo tiene el color oscuro y los destellos grandes quietos */
+.galaxy-theme body {
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.12), transparent 40%),
     radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.12), transparent 40%);
@@ -120,12 +120,12 @@ html.galaxy-theme body {
   background-size: cover;
 }
 
-html.galaxy-theme #root {
+.galaxy-theme #root {
   background-color: transparent !important;
 }
 
-/* Capa de estrellas */
-html.galaxy-theme #root::before {
+/* OPTIMIZACIÓN: Capa de estrellas gigante para moverla con transform (Usa la GPU) */
+.galaxy-theme #root::before {
   content: '';
   position: absolute;
   top: -50vh; left: -50vw; 
@@ -146,13 +146,14 @@ html.galaxy-theme #root::before {
   opacity: 0.7;
   z-index: -2;
   pointer-events: none;
+  /* Aceleración por hardware */
   will-change: transform;
   backface-visibility: hidden;
   perspective: 1000px;
 }
 
-/* Meteorito */
-html.galaxy-theme #root::after {
+/* OPTIMIZACIÓN: Meteorito usando box-shadow en lugar de filter para evitar lag */
+.galaxy-theme #root::after {
   content: '';
   position: absolute;
   top: -50px;
@@ -165,6 +166,7 @@ html.galaxy-theme #root::after {
   z-index: -1;
   animation: meteor-shower 6s linear infinite;
   pointer-events: none;
+  /* Aceleración por hardware */
   will-change: transform, opacity;
 }
 
@@ -303,7 +305,6 @@ html.galaxy-theme #root::after {
     height: 100vh;
     height: 100dvh;
     background-color: var(--header-solid) !important;
-    transition: background-color 0.3s ease;
     overscroll-behavior: none;
   }
 
@@ -319,14 +320,12 @@ html.galaxy-theme #root::after {
     height: 100dvh;
     overflow: hidden;
     background-color: var(--header-solid) !important;
-    transition: background-color 0.3s ease;
     box-sizing: border-box;
     overscroll-behavior: none;
   }
 
   #root {
     background-color: var(--header-solid) !important;
-    transition: background-color 0.3s ease;
     isolation: isolate;
     position: absolute;
     top: 0;
