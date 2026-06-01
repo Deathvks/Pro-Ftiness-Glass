@@ -133,13 +133,17 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // Actualizamos la única meta etiqueta para el notch superior en navegadores PWA
+      // 🔴 FORZAMOS COLOR SÓLIDO PARA IOS. (Notches superior e inferior)
+      root.style.setProperty('background-color', headerColorStr, 'important');
+      body.style.setProperty('background-color', headerColorStr, 'important');
+
+      // Actualizamos la meta etiqueta maestra
       const metaColor = document.getElementById('dynamic-theme-color');
       if (metaColor) {
           metaColor.setAttribute('content', headerColorStr);
       }
 
-      // Forzar repintado para iOS Safe Area
+      // Forzar repintado
       // eslint-disable-next-line no-unused-expressions
       body.offsetHeight; 
 

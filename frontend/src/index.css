@@ -33,7 +33,7 @@
 
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
 
-.dark-theme {
+html.dark-theme {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --text-primary: #e5e7eb;
@@ -47,7 +47,7 @@
   --header-solid: #1b2335; 
 }
 
-.light-theme {
+html.light-theme {
   --bg-primary: #f8fafc; 
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
@@ -61,7 +61,7 @@
   --header-solid: #f1f3f4;
 }
 
-.oled-theme {
+html.oled-theme {
   --bg-primary: #000000;
   --bg-secondary: #000000;
   --text-primary: #ffffff;
@@ -76,7 +76,7 @@
 }
 
 /* --- TEMA GALAXIA --- */
-.galaxy-theme {
+html.galaxy-theme {
   --bg-primary: #080814; 
   --bg-secondary: #0d0d1f;
   --header-solid: #080814; 
@@ -85,19 +85,16 @@
   --text-secondary: #cbd5e1;
   --text-muted: #64748b;
 
-  /* FORZAR ACENTO GALAXIA */
   --color-accent: #a855f7;
   --color-accent-transparent: rgba(168, 85, 247, 0.12);
   --color-accent-border: rgba(168, 85, 247, 0.28);
 
-  /* SOLUCIÓN: Transparencia extrema y menos blur para que las estrellas traspasen el cristal */
   --glass-blur: 4px; 
   --glass-bg: rgba(8, 8, 20, 0.4); 
   --glass-border: rgba(168, 85, 247, 0.25);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-/* OPTIMIZACIÓN: Se usa transform 3D en lugar de background-position */
 @keyframes starry-background {
   0% { transform: translate3d(0, 0, 0); }
   100% { transform: translate3d(-400px, 400px, 0); }
@@ -110,8 +107,8 @@
   100% { transform: rotate(35deg) translate3d(120vw, 0, 0); opacity: 0; }
 }
 
-/* El body solo tiene el color oscuro y los destellos grandes quietos */
-.galaxy-theme body {
+html.galaxy-theme #root {
+  background-color: var(--header-solid) !important;
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.12), transparent 40%),
     radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.12), transparent 40%);
@@ -120,40 +117,34 @@
   background-size: cover;
 }
 
-.galaxy-theme #root {
-  background-color: transparent !important;
-}
-
-/* OPTIMIZACIÓN: Capa de estrellas gigante para moverla con transform (Usa la GPU) */
-.galaxy-theme #root::before {
+html.galaxy-theme #root::before {
   content: '';
   position: absolute;
   top: -50vh; left: -50vw; 
   width: 200vw; height: 200vh;
   background-image: 
-    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(1.5px 1.5px at 70px 120px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 210px 180px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 270px 80px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(1.5px 1.5px at 320px 240px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 80px 310px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(2px 2px at 350px 360px, #ffffff, rgba(0,0,0,0)),
-    radial-gradient(1px 1px at 190px 290px, #ffffff, rgba(0,0,0,0));
+    radial-gradient(circle 1px at 20px 30px, #ffffff, transparent),
+    radial-gradient(circle 1.5px at 70px 120px, #ffffff, transparent),
+    radial-gradient(circle 1px at 140px 50px, #ffffff, transparent),
+    radial-gradient(circle 2px at 210px 180px, #ffffff, transparent),
+    radial-gradient(circle 1px at 270px 80px, #ffffff, transparent),
+    radial-gradient(circle 1.5px at 320px 240px, #ffffff, transparent),
+    radial-gradient(circle 1px at 80px 310px, #ffffff, transparent),
+    radial-gradient(circle 2px at 350px 360px, #ffffff, transparent),
+    radial-gradient(circle 1px at 190px 290px, #ffffff, transparent);
   background-size: 400px 400px;
   background-repeat: repeat;
   animation: starry-background 80s linear infinite;
   opacity: 0.7;
-  z-index: -2;
+  z-index: 9998;
   pointer-events: none;
-  /* Aceleración por hardware */
+  mix-blend-mode: screen;
   will-change: transform;
   backface-visibility: hidden;
   perspective: 1000px;
 }
 
-/* OPTIMIZACIÓN: Meteorito usando box-shadow en lugar de filter para evitar lag */
-.galaxy-theme #root::after {
+html.galaxy-theme #root::after {
   content: '';
   position: absolute;
   top: -50px;
@@ -163,10 +154,10 @@
   background: linear-gradient(90deg, rgba(255,255,255,0), #fff);
   box-shadow: 0 0 10px 2px rgba(168, 85, 247, 0.4), 0 0 20px 4px rgba(59, 130, 246, 0.2);
   border-radius: 50%;
-  z-index: -1;
+  z-index: 9999;
   animation: meteor-shower 6s linear infinite;
   pointer-events: none;
-  /* Aceleración por hardware */
+  mix-blend-mode: screen;
   will-change: transform, opacity;
 }
 
