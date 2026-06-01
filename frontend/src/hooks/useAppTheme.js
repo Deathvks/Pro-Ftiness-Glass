@@ -61,10 +61,41 @@ export const useAppTheme = () => {
     };
   }, []);
 
+  // 🔴 REANUDAR TEST TRAS REINICIO EN iOS
+  useEffect(() => {
+    const pendingTest = localStorage.getItem('pending_theme_test');
+    if (pendingTest) {
+      localStorage.removeItem('pending_theme_test');
+      startThemeTest(parseInt(pendingTest, 10), true);
+    }
+  }, []);
+
+  const restoreOriginalThemeAndReload = () => {
+    const original = localStorage.getItem('original_theme_before_test');
+    if (original) {
+      localStorage.setItem('theme', original);
+      localStorage.removeItem('original_theme_before_test');
+    }
+    window.location.reload();
+  };
+
   const setTheme = (newTheme) => {
-    if (isTestingGlobal) cancelThemeTest();
+    // Limpiamos intervalos de test sin disparar el cancel que reinicia la app
+    isTestingGlobal = false;
+    testTimeLeftGlobal = 0;
+    if (testIntervalGlobal) clearInterval(testIntervalGlobal);
+    notifyThemeListeners();
+
+    localStorage.removeItem('original_theme_before_test');
+    localStorage.removeItem('pending_theme_test');
+
     if (cookieConsent) localStorage.setItem('theme', newTheme);
     setThemeState(newTheme);
+
+    // 🔴 REINICIO EN iOS AL ESTABLECER DEFINITIVAMENTE
+    if (Capacitor.getPlatform() === 'ios') {
+      window.location.reload();
+    }
   };
 
   const setAccent = (newAccent) => {
@@ -72,8 +103,17 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  const startThemeTest = (durationSecs = 10) => {
+  const startThemeTest = (durationSecs = 10, isResuming = false) => {
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
+
+    // 🔴 SI ES iOS Y EMPIEZA EL TEST, GUARDAR ORIGINAL Y REINICIAR (EL CRONÓMETRO ESPERA)
+    if (Capacitor.getPlatform() === 'ios' && !isResuming) {
+      localStorage.setItem('original_theme_before_test', theme);
+      localStorage.setItem('theme', 'galaxy');
+      localStorage.setItem('pending_theme_test', durationSecs.toString());
+      window.location.reload();
+      return;
+    }
     
     isTestingGlobal = true;
     testTimeLeftGlobal = durationSecs;
@@ -84,6 +124,9 @@ export const useAppTheme = () => {
       if (testTimeLeftGlobal <= 0) {
         isTestingGlobal = false;
         clearInterval(testIntervalGlobal);
+        if (Capacitor.getPlatform() === 'ios') {
+          restoreOriginalThemeAndReload();
+        }
       }
       notifyThemeListeners();
     }, 1000);
@@ -94,6 +137,10 @@ export const useAppTheme = () => {
     testTimeLeftGlobal = 0;
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
     notifyThemeListeners();
+    
+    if (Capacitor.getPlatform() === 'ios') {
+      restoreOriginalThemeAndReload();
+    }
   };
 
   const activeTheme = isTestingTheme ? 'galaxy' : theme;
@@ -133,45 +180,32 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // 🔴 FORZAMOS COLOR SÓLIDO PARA IOS. (Notches superior e inferior)
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
 
-      // Actualizamos la meta etiqueta maestra
       const metaColor = document.getElementById('dynamic-theme-color');
       if (metaColor) {
           metaColor.setAttribute('content', headerColorStr);
       }
 
-      // Forzar repintado sincrónico del DOM
       // eslint-disable-next-line no-unused-expressions
       body.offsetHeight; 
 
       if (Capacitor.isNativePlatform()) {
         const isLight = effectiveTheme === 'light';
         
-        const applyNativeColors = () => {
-          NavigationBar.setNavigationBarColor({ 
-              color: color, 
-              darkButtons: isLight 
-          }).catch((err) => console.warn("NavigationBar error:", err));
+        NavigationBar.setNavigationBarColor({ 
+            color: color, 
+            darkButtons: isLight 
+        }).catch((err) => console.warn("NavigationBar error:", err));
 
-          StatusBar.setStyle({ 
-              style: isLight ? Style.Light : Style.Dark 
-          }).catch((err) => console.warn("StatusBar style error:", err));
+        StatusBar.setStyle({ 
+            style: isLight ? Style.Light : Style.Dark 
+        }).catch((err) => console.warn("StatusBar style error:", err));
 
-          if (Capacitor.getPlatform() === 'android') {
-              StatusBar.setBackgroundColor({ color: headerColorStr }).catch(() => {});
-          }
-        };
-
-        // Red de seguridad: Doble requestAnimationFrame para asegurar que iOS 
-        // haya completado el renderizado de la capa antes de actualizar plugins nativos.
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            applyNativeColors();
-          });
-        });
+        if (Capacitor.getPlatform() === 'android') {
+            StatusBar.setBackgroundColor({ color: headerColorStr }).catch(() => {});
+        }
       }
     };
 
