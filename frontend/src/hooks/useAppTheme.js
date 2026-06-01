@@ -66,20 +66,12 @@ export const useAppTheme = () => {
     const pendingTest = localStorage.getItem('pending_theme_test');
     if (pendingTest) {
       localStorage.removeItem('pending_theme_test');
-      startThemeTest(parseInt(pendingTest, 10), true);
+      // Arranca el test temporal en memoria sin forzar recarga de nuevo
+      startThemeTest(parseInt(pendingTest, 10), false);
     }
   }, []);
 
-  const restoreOriginalThemeAndReload = () => {
-    const original = localStorage.getItem('original_theme_before_test');
-    if (original) {
-      localStorage.setItem('theme', original);
-      localStorage.removeItem('original_theme_before_test');
-    }
-    window.location.reload();
-  };
-
-  const setTheme = (newTheme) => {
+  const setTheme = (newTheme, forceReload = false) => {
     isTestingGlobal = false;
     testTimeLeftGlobal = 0;
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
@@ -91,8 +83,8 @@ export const useAppTheme = () => {
     if (cookieConsent) localStorage.setItem('theme', newTheme);
     setThemeState(newTheme);
 
-    // 🔴 REINICIO EN iOS AL ESTABLECER DEFINITIVAMENTE
-    if (Capacitor.getPlatform() === 'ios') {
+    // 🔴 REINICIO EN iOS SI SE SOLICITA AL ESTABLECER DEFINITIVAMENTE
+    if (forceReload) {
       window.location.reload();
     }
   };
@@ -102,11 +94,11 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  const startThemeTest = (durationSecs = 10, isResuming = false) => {
+  const startThemeTest = (durationSecs = 10, forceReload = false) => {
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
 
-    // 🔴 SI ES iOS Y EMPIEZA EL TEST, GUARDAR ORIGINAL Y REINICIAR (EL CRONÓMETRO ESPERA)
-    if (Capacitor.getPlatform() === 'ios' && !isResuming) {
+    // 🔴 SI SE SOLICITA RECARGA (iOS), GUARDAR EL ESTADO Y REINICIAR (EL CRONÓMETRO ESPERA)
+    if (forceReload) {
       localStorage.setItem('original_theme_before_test', theme);
       localStorage.setItem('theme', 'galaxy');
       localStorage.setItem('pending_theme_test', durationSecs.toString());
@@ -123,8 +115,13 @@ export const useAppTheme = () => {
       if (testTimeLeftGlobal <= 0) {
         isTestingGlobal = false;
         clearInterval(testIntervalGlobal);
-        if (Capacitor.getPlatform() === 'ios') {
-          restoreOriginalThemeAndReload();
+        
+        // Al acabar, si hay un tema original guardado (iOS), se restaura y recarga
+        const original = localStorage.getItem('original_theme_before_test');
+        if (original) {
+          localStorage.setItem('theme', original);
+          localStorage.removeItem('original_theme_before_test');
+          window.location.reload();
         }
       }
       notifyThemeListeners();
@@ -137,8 +134,12 @@ export const useAppTheme = () => {
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
     notifyThemeListeners();
     
-    if (Capacitor.getPlatform() === 'ios') {
-      restoreOriginalThemeAndReload();
+    // Si cancela a medias, miramos si guardó estado de iOS para restaurar y recargar
+    const original = localStorage.getItem('original_theme_before_test');
+    if (original) {
+      localStorage.setItem('theme', original);
+      localStorage.removeItem('original_theme_before_test');
+      window.location.reload();
     }
   };
 

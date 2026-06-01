@@ -38,6 +38,15 @@ import PRShareCard from '../components/PRShareCard';
 import DashboardInsights from '../components/Dashboard/DashboardInsights';
 import { useAppTheme } from '../hooks/useAppTheme'; 
 
+// Detección simple de iOS para PWA/Nativo
+const isIOS = () => {
+  if (typeof navigator === 'undefined') return false;
+  return [
+    'iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod'
+  ].includes(navigator.platform)
+    || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+};
+
 const ScaleToFit = ({ children, width = 1080, height = 1920 }) => {
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -684,7 +693,7 @@ const Dashboard = ({ setView }) => {
                    </button>
                    <button 
                      onClick={() => {
-                       if (Capacitor.getPlatform() === 'ios') {
+                       if (isIOS()) {
                          setShowIosReloadModal(true);
                        } else {
                          startThemeTest(10);
@@ -1060,7 +1069,7 @@ const Dashboard = ({ setView }) => {
               <button
                 onClick={() => {
                   setShowIosReloadModal(false);
-                  startThemeTest(10);
+                  startThemeTest(10, true);
                 }}
                 className="flex-1 py-3.5 rounded-[20px] font-bold text-white bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-lg shadow-accent/20"
               >
