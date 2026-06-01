@@ -195,7 +195,7 @@ export default function SettingsScreen({
   const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
 
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
-  const [pendingThemeAction, setPendingThemeAction] = useState(null); // { type: 'apply', payload: 'dark' } o { type: 'test', payload: 10 }
+  const [pendingThemeAction, setPendingThemeAction] = useState(null);
 
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
@@ -413,13 +413,13 @@ export default function SettingsScreen({
     }
   };
 
+  // 🔴 CORRECCIÓN: Le pasamos 'true' a setTheme y startThemeTest
+  // para que gestionen el guardado local antes de recargar.
   const confirmThemeReload = () => {
     if (pendingThemeAction?.type === 'apply') {
-      setTheme(pendingThemeAction.payload);
-      if (!window.Capacitor?.isNativePlatform?.()) window.location.reload();
+      setTheme(pendingThemeAction.payload, true);
     } else if (pendingThemeAction?.type === 'test') {
-      startThemeTest(pendingThemeAction.payload);
-      if (!window.Capacitor?.isNativePlatform?.()) window.location.reload();
+      startThemeTest(pendingThemeAction.payload, true);
     }
     setShowThemeReloadModal(false);
     setPendingThemeAction(null);
