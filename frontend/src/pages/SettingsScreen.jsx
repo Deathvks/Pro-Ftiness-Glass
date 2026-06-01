@@ -182,7 +182,6 @@ export default function SettingsScreen({
 
   const { addToast } = useToast();
   
-  // Usamos el hook centralizado para probar el tema
   const { 
     theme, activeTheme, setTheme, accent, setAccent, 
     startThemeTest, isTestingTheme, testTimeLeft 
@@ -196,7 +195,7 @@ export default function SettingsScreen({
   const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
 
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
-  const [pendingTheme, setPendingTheme] = useState(null);
+  const [pendingThemeAction, setPendingThemeAction] = useState(null); // { type: 'apply', payload: 'dark' } o { type: 'test', payload: 10 }
 
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
@@ -407,7 +406,7 @@ export default function SettingsScreen({
 
   const handleThemeClick = (mode) => {
     if (isIOS()) {
-      setPendingTheme(mode);
+      setPendingThemeAction({ type: 'apply', payload: mode });
       setShowThemeReloadModal(true);
     } else {
       setTheme(mode);
@@ -415,11 +414,15 @@ export default function SettingsScreen({
   };
 
   const confirmThemeReload = () => {
-    if (pendingTheme) {
-      setTheme(pendingTheme);
-      window.location.reload();
+    if (pendingThemeAction?.type === 'apply') {
+      setTheme(pendingThemeAction.payload);
+      if (!window.Capacitor?.isNativePlatform?.()) window.location.reload();
+    } else if (pendingThemeAction?.type === 'test') {
+      startThemeTest(pendingThemeAction.payload);
+      if (!window.Capacitor?.isNativePlatform?.()) window.location.reload();
     }
     setShowThemeReloadModal(false);
+    setPendingThemeAction(null);
   };
 
   const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
@@ -592,14 +595,21 @@ export default function SettingsScreen({
                   <div>
                     {isGalaxyUnlocked ? (
                        <button 
-                         onClick={() => setTheme('galaxy')} 
+                         onClick={() => handleThemeClick('galaxy')} 
                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${theme === 'galaxy' ? 'bg-[#a855f7] text-white shadow-lg shadow-[#a855f7]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#a855f7]/20 text-[#a855f7]'}`}
                        >
                          {theme === 'galaxy' ? 'Activo' : 'Aplicar'}
                        </button>
                     ) : (
                        <button 
-                         onClick={() => startThemeTest(10)} 
+                         onClick={() => {
+                           if (isIOS()) {
+                             setPendingThemeAction({ type: 'test', payload: 10 });
+                             setShowThemeReloadModal(true);
+                           } else {
+                             startThemeTest(10);
+                           }
+                         }} 
                          disabled={isTestingTheme} 
                          className="px-4 py-2 rounded-full text-xs font-bold bg-[#a855f7]/20 text-[#a855f7] hover:bg-[#a855f7]/30 transition-all flex items-center justify-center gap-1.5 disabled:opacity-80 whitespace-nowrap min-w-[110px]"
                        >

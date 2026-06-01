@@ -63,7 +63,9 @@ const ToastProvider = ({ children }) => {
     const IconComponent = config.icon;
 
     // Colores base (adaptables a oscuro/claro de forma genérica)
-    const isDark = resolvedTheme === 'dark' || resolvedTheme === 'oled';
+    // 🔴 AQUÍ ESTABA EL ERROR: Faltaba incluir 'galaxy' como tema oscuro
+    const isDark = resolvedTheme === 'dark' || resolvedTheme === 'oled' || resolvedTheme === 'galaxy';
+    
     const bgBase = isDark ? 'rgba(30, 30, 30, 0.85)' : 'rgba(255, 255, 255, 0.85)';
     const textColor = isDark ? '#ffffff' : '#111827';
     const subtextColor = isDark ? '#9ca3af' : '#4b5563';

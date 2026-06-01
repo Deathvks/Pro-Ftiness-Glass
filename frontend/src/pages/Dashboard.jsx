@@ -180,6 +180,7 @@ const Dashboard = ({ setView }) => {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showXPModal, setShowXPModal] = useState(false);
   const [showSugarModal, setShowSugarModal] = useState(false);
+  const [showIosReloadModal, setShowIosReloadModal] = useState(false);
   const [modal, setModal] = useState({ type: null });
   const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
@@ -621,7 +622,6 @@ const Dashboard = ({ setView }) => {
         </GlassCard>
       </div>
 
-      {/* CAMPAÑA REFERIDOS: TEMA GALAXIA CON FIX DE MÁSCARA PARA IOS */}
       <GlassCard 
         className="mb-8 glass p-6 sm:p-8 rounded-[32px] relative overflow-hidden isolate border border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/10 group"
         style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
@@ -683,7 +683,13 @@ const Dashboard = ({ setView }) => {
                      {t('Copiar', { defaultValue: 'Copiar' })}
                    </button>
                    <button 
-                     onClick={() => startThemeTest(10)}
+                     onClick={() => {
+                       if (Capacitor.getPlatform() === 'ios') {
+                         setShowIosReloadModal(true);
+                       } else {
+                         startThemeTest(10);
+                       }
+                     }}
                      disabled={isTestingTheme}
                      className="flex-1 flex items-center justify-center gap-2 bg-[#a855f7]/10 hover:bg-[#a855f7]/20 text-[#a855f7] px-4 py-2.5 rounded-[20px] font-bold text-xs transition-colors border border-[#a855f7]/30 disabled:opacity-50 whitespace-nowrap min-w-[110px]"
                    >
@@ -1025,6 +1031,40 @@ const Dashboard = ({ setView }) => {
               <button onClick={handleSharePR} disabled={isSharing} className="glass bg-white/10 text-white px-5 md:px-8 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 border border-white/20">
                 {isSharing ? <Loader2 size={20} className="animate-spin shrink-0" /> : <Share2 size={20} className="shrink-0" />}
                 <span className="font-black text-sm sm:text-lg tracking-tight whitespace-nowrap">{t('Compartir Logro', { defaultValue: 'Compartir Logro' })}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL REINICIO IOS ANTES DE PROBAR */}
+      {showIosReloadModal && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]">
+          <div className="bg-bg-primary ring-1 ring-glass-border p-6 sm:p-8 rounded-[32px] max-w-sm w-full shadow-2xl animate-[slide-up_0.3s_ease-out]">
+            <div className="flex items-center gap-3 mb-4">
+              <TriangleAlert className="text-accent" size={28} />
+              <h3 className="text-xl font-black text-text-primary tracking-tight">
+                {t('Reinicio necesario', { defaultValue: 'Reinicio necesario' })}
+              </h3>
+            </div>
+            <p className="text-sm font-medium text-text-secondary mb-8">
+              {t('En iOS es necesario recargar la página para aplicar los cambios y ver el tema correctamente.', { defaultValue: 'En iOS es necesario recargar la página para aplicar los cambios y ver el tema correctamente.' })}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowIosReloadModal(false)}
+                className="flex-1 py-3.5 rounded-[20px] font-bold text-text-primary bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-glass-border"
+              >
+                {t('Cancelar', { defaultValue: 'Cancelar' })}
+              </button>
+              <button
+                onClick={() => {
+                  setShowIosReloadModal(false);
+                  startThemeTest(10);
+                }}
+                className="flex-1 py-3.5 rounded-[20px] font-bold text-white bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-lg shadow-accent/20"
+              >
+                {t('Recargar', { defaultValue: 'Recargar' })}
               </button>
             </div>
           </div>

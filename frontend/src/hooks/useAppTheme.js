@@ -80,7 +80,6 @@ export const useAppTheme = () => {
   };
 
   const setTheme = (newTheme) => {
-    // Limpiamos intervalos de test sin disparar el cancel que reinicia la app
     isTestingGlobal = false;
     testTimeLeftGlobal = 0;
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
