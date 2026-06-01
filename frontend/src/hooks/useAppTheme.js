@@ -143,25 +143,35 @@ export const useAppTheme = () => {
           metaColor.setAttribute('content', headerColorStr);
       }
 
-      // Forzar repintado
+      // Forzar repintado sincrónico del DOM
       // eslint-disable-next-line no-unused-expressions
       body.offsetHeight; 
 
       if (Capacitor.isNativePlatform()) {
         const isLight = effectiveTheme === 'light';
         
-        NavigationBar.setNavigationBarColor({ 
-            color: color, 
-            darkButtons: isLight 
-        }).catch((err) => console.warn("NavigationBar error:", err));
+        const applyNativeColors = () => {
+          NavigationBar.setNavigationBarColor({ 
+              color: color, 
+              darkButtons: isLight 
+          }).catch((err) => console.warn("NavigationBar error:", err));
 
-        StatusBar.setStyle({ 
-            style: isLight ? Style.Light : Style.Dark 
-        }).catch((err) => console.warn("StatusBar style error:", err));
+          StatusBar.setStyle({ 
+              style: isLight ? Style.Light : Style.Dark 
+          }).catch((err) => console.warn("StatusBar style error:", err));
 
-        if (Capacitor.getPlatform() === 'android') {
-            StatusBar.setBackgroundColor({ color: headerColorStr }).catch(() => {});
-        }
+          if (Capacitor.getPlatform() === 'android') {
+              StatusBar.setBackgroundColor({ color: headerColorStr }).catch(() => {});
+          }
+        };
+
+        // Red de seguridad: Doble requestAnimationFrame para asegurar que iOS 
+        // haya completado el renderizado de la capa antes de actualizar plugins nativos.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            applyNativeColors();
+          });
+        });
       }
     };
 

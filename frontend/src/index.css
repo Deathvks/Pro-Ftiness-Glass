@@ -96,8 +96,8 @@ html.galaxy-theme {
 }
 
 @keyframes starry-background {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-400px, 400px, 0); }
+  0% { background-position: 0 0; }
+  100% { background-position: -400px 400px; }
 }
 
 @keyframes meteor-shower {
@@ -112,68 +112,37 @@ html.galaxy-theme body {
   background-image: none !important;
 }
 
-/* 🔴 FIX iOS NOTCH BUG: Bloques sólidos que forzan el repintado sobre el Safe Area */
-html.galaxy-theme body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top, 0px);
-  background-color: var(--header-solid) !important;
-  z-index: 2147483647; /* Por encima de cualquier cosa */
-  pointer-events: none;
-  transform: translateZ(0); /* Aceleración por GPU para evitar caché del viejo color */
-}
-
-html.galaxy-theme body::after {
-  content: '';
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-bottom, 0px);
-  background-color: var(--header-solid) !important;
-  z-index: 2147483647;
-  pointer-events: none;
-  transform: translateZ(0);
-}
-
 html.galaxy-theme #root {
   background-color: var(--header-solid) !important;
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.12), transparent 40%),
     radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.12), transparent 40%);
-  background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
+  contain: paint; /* Fundamental para que iOS corte el fondo y no invada el notch */
 }
 
 html.galaxy-theme #root::before {
   content: '';
   position: absolute;
-  top: -50vh; left: -50vw; 
-  width: 200vw; height: 200vh;
+  inset: 0; /* Sustituye el top: -50vh para no salirse de #root */
   background-image: 
-    radial-gradient(circle 1px at 20px 30px, #ffffff, transparent),
-    radial-gradient(circle 1.5px at 70px 120px, #ffffff, transparent),
-    radial-gradient(circle 1px at 140px 50px, #ffffff, transparent),
-    radial-gradient(circle 2px at 210px 180px, #ffffff, transparent),
-    radial-gradient(circle 1px at 270px 80px, #ffffff, transparent),
-    radial-gradient(circle 1.5px at 320px 240px, #ffffff, transparent),
-    radial-gradient(circle 1px at 80px 310px, #ffffff, transparent),
-    radial-gradient(circle 2px at 350px 360px, #ffffff, transparent),
-    radial-gradient(circle 1px at 190px 290px, #ffffff, transparent);
+    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 70px 120px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 210px 180px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 270px 80px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 320px 240px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 80px 310px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 350px 360px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 190px 290px, #ffffff, rgba(0,0,0,0));
   background-size: 400px 400px;
   background-repeat: repeat;
   animation: starry-background 80s linear infinite;
   opacity: 0.7;
-  z-index: -1;
+  z-index: -1; /* Devuelto a -1 para que no tape la UI */
   pointer-events: none;
   mix-blend-mode: screen;
-  will-change: transform;
-  backface-visibility: hidden;
-  perspective: 1000px;
 }
 
 html.galaxy-theme #root::after {
@@ -190,7 +159,6 @@ html.galaxy-theme #root::after {
   animation: meteor-shower 6s linear infinite;
   pointer-events: none;
   mix-blend-mode: screen;
-  will-change: transform, opacity;
 }
 
 /* 4) PALETAS DE ACENTO */
