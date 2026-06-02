@@ -1,9 +1,9 @@
 /* backend/controllers/userController.js */
 import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import models from '../models/index.js';
 import { createNotification } from '../services/notificationService.js';
-// IMPORTANTE: Importamos el procesador para comprimir imágenes de perfil (ahorro de espacio)
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 import { addXp, checkStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
@@ -23,22 +23,15 @@ const {
   WorkoutLogSet
 } = models;
 
-// --- HELPER: Cálculo de Nivel (Misma fórmula que en gamificationService) ---
 const calculateLevel = (xp) => Math.max(1, Math.floor((-350 + Math.sqrt(202500 + 200 * xp)) / 100));
 
-/**
- * Helper para encontrar y eliminar todos los ficheros de un usuario.
- * OPTIMIZADO: Usa Promise.all para concurrencia y consultas raw para memoria.
- */
 const deleteAllUserFiles = async (userId, userInstance) => {
   const pathsToDelete = new Set();
 
-  // 1. Imagen de perfil
   if (userInstance && userInstance.profile_image_url) {
     pathsToDelete.add(userInstance.profile_image_url);
   }
 
-  // 2. Imágenes de logs (Paralelo y RAW)
   const [nutritionLogs, favoriteMeals] = await Promise.all([
     NutritionLog.findAll({ 
       where: { user_id: userId }, 
@@ -55,11 +48,9 @@ const deleteAllUserFiles = async (userId, userInstance) => {
   nutritionLogs.forEach((log) => log.image_url && pathsToDelete.add(log.image_url));
   favoriteMeals.forEach((meal) => meal.image_url && pathsToDelete.add(meal.image_url));
 
-  // 3. Borrar ficheros en paralelo (No bloqueante)
   await Promise.all([...pathsToDelete].map(relativePath => deleteFile(relativePath)));
 };
 
-// Obtener el perfil del usuario autenticado
 export const getMyProfile = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.userId, {
@@ -70,25 +61,26 @@ export const getMyProfile = async (req, res, next) => {
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // --- AUTO-REPARACIÓN LIGERA ---
     const correctLevel = calculateLevel(user.xp || 0);
     if (user.level !== correctLevel) {
-      // Usamos update directo para evitar triggers innecesarios si solo es fix
       await user.update({ level: correctLevel }, { hooks: false });
-      user.level = correctLevel; // Actualizamos objeto en memoria
+      user.level = correctLevel;
     }
-    // -----------------------------
 
-    // --- INICIO MODIFICACIÓN: Contar los referidos de este usuario ---
+    if (!user.referral_code) {
+      const newCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+      await user.update({ referral_code: newCode }, { hooks: false });
+      user.referral_code = newCode;
+    }
+
     const referralCount = await User.count({ where: { referred_by: req.user.userId } });
-    // --- FIN MODIFICACIÓN ---
-
     const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'], raw: true });
+    
     const userData = user.toJSON();
     userData.hasPassword = !!(userWithPass && userWithPass.password_hash);
-    userData.referralCount = referralCount; // Se añade el conteo al payload
+    userData.referralCount = referralCount;
+    userData.referral_code = user.referral_code;
 
-    // Normalizar fecha
     if (userData.last_activity_date) {
       const d = new Date(userData.last_activity_date);
       if (!isNaN(d.getTime())) {
@@ -96,7 +88,6 @@ export const getMyProfile = async (req, res, next) => {
       }
     }
 
-    // Parseo seguro de badges
     if (typeof userData.unlocked_badges === 'string') {
       try {
         userData.unlocked_badges = JSON.parse(userData.unlocked_badges);
@@ -118,13 +109,11 @@ export const exportMyData = async (req, res, next) => {
     const { userId } = req.user;
     const format = req.query.format || 'json';
 
-    // 1. Obtener Datos en Paralelo (Mucho más rápido)
     const [user, bodyWeightLogs, nutritionLogs, personalRecords, workoutLogs] = await Promise.all([
       User.findByPk(userId, { attributes: { exclude: ['password_hash'] } }),
       BodyWeightLog.findAll({ where: { user_id: userId }, order: [['log_date', 'DESC']], raw: true }),
       NutritionLog.findAll({ where: { user_id: userId }, order: [['log_date', 'DESC']], raw: true }),
       PersonalRecord.findAll({ where: { user_id: userId }, raw: true }),
-      // WorkoutLog mantenemos estructura completa para el CSV
       WorkoutLog.findAll({
         where: { user_id: userId },
         include: [
@@ -139,7 +128,6 @@ export const exportMyData = async (req, res, next) => {
       })
     ]);
 
-    // 2. Formatear y Enviar
     if (format === 'json') {
       const data = {
         profile: user,
@@ -189,7 +177,6 @@ export const exportMyData = async (req, res, next) => {
   }
 };
 
-// Endpoint de Gamificación
 export const updateGamificationStats = async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -203,14 +190,12 @@ export const updateGamificationStats = async (req, res, next) => {
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
-    // Login Diario Optimizado
     if (reason === 'Login Diario') {
       const todayStr = new Date().toISOString().split('T')[0];
       const result = await checkStreak(userId, todayStr);
 
       if (!result.success) throw new Error(result.error || 'Error procesando racha');
 
-      // Reload ligero
       await user.reload({ attributes: ['xp', 'level', 'streak', 'last_activity_date', 'unlocked_badges'] });
 
       let currentBadges = [];
@@ -237,7 +222,6 @@ export const updateGamificationStats = async (req, res, next) => {
       });
     }
 
-    // --- LÓGICA MANUAL ---
     const updates = {};
     const oldXp = user.xp;
     const oldLevel = user.level;
@@ -257,7 +241,6 @@ export const updateGamificationStats = async (req, res, next) => {
       updates.unlocked_badges = Array.isArray(finalBadges) ? JSON.stringify(finalBadges) : finalBadges;
     }
 
-    // Notificaciones
     if (xp !== undefined && xp > oldXp) {
       const diff = xp - oldXp;
       if (diff > 0) {
@@ -279,7 +262,6 @@ export const updateGamificationStats = async (req, res, next) => {
 
     await user.update(updates);
 
-    // Respuesta
     let returnDate = updates.last_activity_date || user.last_activity_date;
     if (returnDate) returnDate = new Date(returnDate).toISOString().split('T')[0];
 
@@ -348,7 +330,6 @@ export const updateMyProfile = async (req, res, next) => {
     await t.commit();
 
     if (weightUpdated) {
-      // Async para no bloquear
       const todayStr = new Date().toISOString().split('T')[0];
       addXp(userId, WEIGHT_UPDATE_XP, 'Peso registrado (Perfil)').catch(console.error);
       checkStreak(userId, todayStr).catch(console.error);
@@ -371,6 +352,7 @@ export const updateMyProfile = async (req, res, next) => {
     const userWithPass = await User.findByPk(userId, { attributes: ['password_hash'], raw: true });
     const userData = updatedUser.toJSON();
     userData.hasPassword = !!(userWithPass && userWithPass.password_hash);
+    userData.referral_code = updatedUser.referral_code;
 
     if (userData.unlocked_badges && typeof userData.unlocked_badges === 'string') {
       try { userData.unlocked_badges = JSON.parse(userData.unlocked_badges); } catch (e) { userData.unlocked_badges = []; }
@@ -384,7 +366,6 @@ export const updateMyProfile = async (req, res, next) => {
 };
 
 export const updateMyAccount = async (req, res, next) => {
-  // Variable para la nueva imagen si se sube una
   let newImagePath = null;
 
   try {
@@ -394,8 +375,6 @@ export const updateMyAccount = async (req, res, next) => {
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
-    // --- OPTIMIZACIÓN: Procesamiento de Imagen ---
-    // Si viene archivo (Multipart), lo procesamos con el servicio
     if (req.file) {
       try {
         const processed = await processUploadedFile(req.file);
@@ -404,7 +383,6 @@ export const updateMyAccount = async (req, res, next) => {
         return res.status(400).json({ error: 'Error procesando imagen: ' + uploadError.message });
       }
     } else if (req.processedImagePath) {
-      // Fallback para middleware legacy
       newImagePath = req.processedImagePath;
     }
 
@@ -449,7 +427,6 @@ export const updateMyAccount = async (req, res, next) => {
     if (Object.keys(fieldsToUpdate).length > 0) {
       await user.update(fieldsToUpdate);
       
-      // Limpieza de imagen antigua
       if (newImagePath && oldImageUrl) {
         await deleteFile(oldImageUrl);
       }
@@ -471,6 +448,7 @@ export const updateMyAccount = async (req, res, next) => {
     await user.reload();
     const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
     userWithoutPassword.hasPassword = !!user.password_hash;
+    userWithoutPassword.referral_code = user.referral_code;
 
     if (userWithoutPassword.unlocked_badges && typeof userWithoutPassword.unlocked_badges === 'string') {
       try { userWithoutPassword.unlocked_badges = JSON.parse(userWithoutPassword.unlocked_badges); } catch (e) { userWithoutPassword.unlocked_badges = []; }
@@ -479,7 +457,6 @@ export const updateMyAccount = async (req, res, next) => {
     res.json(userWithoutPassword);
 
   } catch (error) {
-    // Si falló algo y habíamos subido imagen nueva, borrarla
     if (newImagePath) await deleteFile(newImagePath);
 
     if (error.name === 'SequelizeUniqueConstraintError') {
@@ -514,10 +491,8 @@ export const clearMyData = async (req, res, next) => {
       }
     }
 
-    // Borrado físico (sin esperar al cron)
     await deleteAllUserFiles(userId, user);
 
-    // Borrado lógico masivo
     const deleteOpts = { where: { user_id: userId }, transaction: t };
     await Promise.all([
       Routine.destroy(deleteOpts),

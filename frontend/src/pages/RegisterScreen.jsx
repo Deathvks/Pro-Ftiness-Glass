@@ -122,7 +122,7 @@ const RegisterScreen = ({ showLogin }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [showVerification, setShowVerification] = useState(false);
     const [registeredEmail, setRegisteredEmail] = useState('');
-    const [referralCode, setReferralCode] = useState(''); // Añadido estado para código referido
+    const [referralCode, setReferralCode] = useState(''); 
 
     const [showInfoModal, setShowInfoModal] = useState(false);
     const { addToast } = useToast();
@@ -145,12 +145,19 @@ const RegisterScreen = ({ showLogin }) => {
         return () => window.removeEventListener('storage', checkConsent);
     }, []);
 
-    // Extraer referralCode de la URL al cargar
+    // 🔴 SOLUCIÓN REFERIDOS: Extraer referralCode y guardarlo en localStorage
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
         const ref = searchParams.get('ref');
         if (ref) {
             setReferralCode(ref);
+            localStorage.setItem('pending_ref', ref);
+        } else {
+            // Si vuelve de una redirección sin la URL original, recuperamos el código guardado
+            const savedRef = localStorage.getItem('pending_ref');
+            if (savedRef) {
+                setReferralCode(savedRef);
+            }
         }
     }, [location.search]);
 
@@ -256,9 +263,10 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleXLogin) {
-                // Pasando referralCode integrado
-                await handleXLogin({ code, redirectUri, codeVerifier, referralCode });
+                const currentRef = referralCode || localStorage.getItem('pending_ref');
+                await handleXLogin({ code, redirectUri, codeVerifier, referralCode: currentRef });
                 sessionStorage.removeItem('x_code_verifier');
+                localStorage.removeItem('pending_ref'); // Limpieza tras uso exitoso
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -291,8 +299,9 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleGithubLogin) {
-                // Pasando referralCode integrado
-                await handleGithubLogin({ code, referralCode });
+                const currentRef = referralCode || localStorage.getItem('pending_ref');
+                await handleGithubLogin({ code, referralCode: currentRef });
+                localStorage.removeItem('pending_ref'); // Limpieza
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -327,8 +336,9 @@ const RegisterScreen = ({ showLogin }) => {
             const redirectUri = window.location.origin + window.location.pathname;
 
             if (handleSpotifyLogin) {
-                // Pasando referralCode integrado
-                await handleSpotifyLogin({ code, redirectUri, referralCode });
+                const currentRef = referralCode || localStorage.getItem('pending_ref');
+                await handleSpotifyLogin({ code, redirectUri, referralCode: currentRef });
+                localStorage.removeItem('pending_ref'); // Limpieza
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -354,8 +364,9 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleFacebookLogin) {
-                // Pasando referralCode integrado
-                await handleFacebookLogin({ token, referralCode });
+                const currentRef = referralCode || localStorage.getItem('pending_ref');
+                await handleFacebookLogin({ token, referralCode: currentRef });
+                localStorage.removeItem('pending_ref'); // Limpieza
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -388,8 +399,9 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleDiscordLogin) {
-                // Pasando referralCode integrado
-                await handleDiscordLogin({ token, referralCode });
+                const currentRef = referralCode || localStorage.getItem('pending_ref');
+                await handleDiscordLogin({ token, referralCode: currentRef });
+                localStorage.removeItem('pending_ref'); // Limpieza
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -423,8 +435,9 @@ const RegisterScreen = ({ showLogin }) => {
             }
 
             if (handleGoogleLogin) {
-                // Pasando referralCode integrado
-                await handleGoogleLogin({ token, referralCode });
+                const currentRef = referralCode || localStorage.getItem('pending_ref');
+                await handleGoogleLogin({ token, referralCode: currentRef });
+                localStorage.removeItem('pending_ref'); // Limpieza
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -512,13 +525,14 @@ const RegisterScreen = ({ showLogin }) => {
         setIsLoading(true);
 
         try {
-            // Añadido referralCode a la petición principal
+            const currentRef = referralCode || localStorage.getItem('pending_ref');
+            
             const response = await registerUser({
                 username,
                 email,
                 password,
                 social_privacy: 'private',
-                referralCode
+                referralCode: currentRef
             });
 
             addToast(response.message, 'success');
@@ -526,6 +540,7 @@ const RegisterScreen = ({ showLogin }) => {
 
             localStorage.removeItem('onboarding_data');
             localStorage.removeItem('onboarding_step');
+            localStorage.removeItem('pending_ref'); // Limpiamos tras registro normal
 
             if (quizData) {
                 localStorage.setItem('temp_onboarding_data', JSON.stringify(quizData));

@@ -246,6 +246,9 @@ export const googleLogin = async (req, res, next) => {
 
     const { email, name, googleId, picture } = googleUser;
     let user = await User.findOne({ where: { email } });
+    
+    // Resolvemos el referido independientemente de si el usuario ya existía o no
+    const referred_by = await resolveReferral(referralCode);
 
     if (user) {
       if (!user.google_id) {
@@ -265,6 +268,12 @@ export const googleLogin = async (req, res, next) => {
             user.profile_image_url = picture;
             updated = true;
         }
+      }
+      
+      // Si el usuario existía pero NO tenía referidor asignado, se lo asignamos ahora
+      if (!user.referred_by && referred_by) {
+        user.referred_by = referred_by;
+        updated = true;
       }
 
       if (updated) await user.save();
@@ -293,8 +302,6 @@ export const googleLogin = async (req, res, next) => {
         username = `${baseUsername}${counter}`;
         counter++;
       }
-
-      const referred_by = await resolveReferral(referralCode);
 
       user = await User.create({
         name: name || baseUsername,
@@ -374,6 +381,9 @@ export const discordLogin = async (req, res, next) => {
     const picture = discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordId}/${discordUser.avatar}.png` : null;
 
     let user = await User.findOne({ where: { email } });
+    
+    // Resolvemos el referido independientemente
+    const referred_by = await resolveReferral(referralCode);
 
     if (user) {
       if (!user.discord_id) return res.status(409).json({ error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' });
@@ -391,6 +401,12 @@ export const discordLogin = async (req, res, next) => {
             user.profile_image_url = picture;
             updated = true;
         }
+      }
+      
+      // Inyección de referido si aplica
+      if (!user.referred_by && referred_by) {
+        user.referred_by = referred_by;
+        updated = true;
       }
 
       if (updated) await user.save();
@@ -418,8 +434,6 @@ export const discordLogin = async (req, res, next) => {
         username = `${baseUsername}${counter}`;
         counter++;
       }
-
-      const referred_by = await resolveReferral(referralCode);
 
       user = await User.create({
         name: discordUser.global_name || discordUser.username || baseUsername,
@@ -497,6 +511,7 @@ export const facebookLogin = async (req, res, next) => {
     const picture = fbUser.picture?.data?.url || null;
 
     let user = await User.findOne({ where: { email } });
+    const referred_by = await resolveReferral(referralCode);
 
     if (user) {
       if (!user.facebook_id) return res.status(409).json({ error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' });
@@ -514,6 +529,11 @@ export const facebookLogin = async (req, res, next) => {
             user.profile_image_url = picture;
             updated = true;
         }
+      }
+      
+      if (!user.referred_by && referred_by) {
+        user.referred_by = referred_by;
+        updated = true;
       }
 
       if (updated) await user.save();
@@ -541,8 +561,6 @@ export const facebookLogin = async (req, res, next) => {
         username = `${baseUsername}${counter}`;
         counter++;
       }
-
-      const referred_by = await resolveReferral(referralCode);
 
       user = await User.create({
         name: fbUser.name || baseUsername,
@@ -641,13 +659,13 @@ export const xLogin = async (req, res, next) => {
     const picture = xUser.profile_image_url ? xUser.profile_image_url.replace('_normal', '') : null;
 
     let user = await User.findOne({ where: { x_id: xId } });
-
     if (!user) user = await User.findOne({ where: { email } });
+    
+    const referred_by = await resolveReferral(referralCode);
 
     if (user) {
       if (!user.x_id) {
         user.x_id = xId;
-        await user.save();
       }
 
       let updated = false;
@@ -664,8 +682,14 @@ export const xLogin = async (req, res, next) => {
             updated = true;
         }
       }
+      
+      if (!user.referred_by && referred_by) {
+        user.referred_by = referred_by;
+        updated = true;
+      }
 
-      if (updated) await user.save();
+      // IMPORTANTE: Para guardar x_id o referidos u otras cosas.
+      await user.save();
 
       if (user.two_factor_enabled) {
         if (user.two_factor_method === 'email') {
@@ -689,8 +713,6 @@ export const xLogin = async (req, res, next) => {
         username = `${baseUsername}${counter}`;
         counter++;
       }
-
-      const referred_by = await resolveReferral(referralCode);
 
       user = await User.create({
         name: xUser.name || baseUsername,
@@ -799,6 +821,7 @@ export const githubLogin = async (req, res, next) => {
     const picture = githubUser.avatar_url || null;
 
     let user = await User.findOne({ where: { email } });
+    const referred_by = await resolveReferral(referralCode);
 
     if (user) {
       if (!user.github_id) return res.status(409).json({ error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' });
@@ -816,6 +839,11 @@ export const githubLogin = async (req, res, next) => {
             user.profile_image_url = picture;
             updated = true;
         }
+      }
+      
+      if (!user.referred_by && referred_by) {
+        user.referred_by = referred_by;
+        updated = true;
       }
 
       if (updated) await user.save();
@@ -842,8 +870,6 @@ export const githubLogin = async (req, res, next) => {
         username = `${baseUsername}${counter}`;
         counter++;
       }
-
-      const referred_by = await resolveReferral(referralCode);
 
       user = await User.create({
         name: githubUser.name || baseUsername,
@@ -946,6 +972,7 @@ export const spotifyLogin = async (req, res, next) => {
     const name = spotifyUser.display_name;
 
     let user = await User.findOne({ where: { email } });
+    const referred_by = await resolveReferral(referralCode);
 
     if (user) {
       if (!user.spotify_id) return res.status(409).json({ error: 'Este correo ya está registrado. Por favor, inicia sesión con tu contraseña.' });
@@ -963,6 +990,11 @@ export const spotifyLogin = async (req, res, next) => {
             user.profile_image_url = picture;
             updated = true;
         }
+      }
+      
+      if (!user.referred_by && referred_by) {
+        user.referred_by = referred_by;
+        updated = true;
       }
 
       if (updated) await user.save();
@@ -989,8 +1021,6 @@ export const spotifyLogin = async (req, res, next) => {
         username = `${baseUsername}${counter}`;
         counter++;
       }
-
-      const referred_by = await resolveReferral(referralCode);
 
       user = await User.create({
         name: name || baseUsername,

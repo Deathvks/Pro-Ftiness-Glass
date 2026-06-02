@@ -14,6 +14,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { resend2FACode, initGoogleAuth, signInWithGoogle } from '../services/authService';
 import SEOHead from '../components/SEOHead';
 import { Capacitor } from '@capacitor/core';
+import { useLocation } from 'react-router-dom';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
     <div className="flex w-full min-h-[100dvh] bg-bg-primary overflow-hidden">
@@ -105,6 +106,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const cancelTwoFactor = useAppStore(state => state.cancelTwoFactor);
 
     const { addToast } = useToast();
+    const location = useLocation();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -133,6 +135,15 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         window.addEventListener('storage', checkConsent);
         return () => window.removeEventListener('storage', checkConsent);
     }, []);
+
+    // 🔴 CAPTURAR CÓDIGO REFERIDO DESDE URL
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const ref = searchParams.get('ref');
+        if (ref) {
+            localStorage.setItem('pending_ref', ref);
+        }
+    }, [location.search]);
 
     useEffect(() => {
         const hash = window.location.hash;
@@ -220,13 +231,15 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
             const redirectUri = window.location.origin + window.location.pathname;
             const codeVerifier = sessionStorage.getItem('x_code_verifier');
+            const currentRef = localStorage.getItem('pending_ref');
 
             if (!codeVerifier) {
                 throw new Error("No se encontró el verificador de seguridad.");
             }
 
-            await handleXLogin({ code, redirectUri, codeVerifier });
+            await handleXLogin({ code, redirectUri, codeVerifier, referralCode: currentRef });
             sessionStorage.removeItem('x_code_verifier');
+            localStorage.removeItem('pending_ref');
             setIsLoading(false);
         } catch (err) {
             const msg = err.message || 'Error con X.';
@@ -244,7 +257,9 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             localStorage.removeItem('onboarding_data');
             localStorage.removeItem('onboarding_step');
 
-            await handleFacebookLogin(token);
+            const currentRef = localStorage.getItem('pending_ref');
+            await handleFacebookLogin({ token, referralCode: currentRef });
+            localStorage.removeItem('pending_ref');
             setIsLoading(false);
         } catch (err) {
             const msg = err.message || 'Error con Facebook.';
@@ -276,7 +291,9 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             localStorage.removeItem('onboarding_data');
             localStorage.removeItem('onboarding_step');
 
-            await handleGithubLogin(code);
+            const currentRef = localStorage.getItem('pending_ref');
+            await handleGithubLogin({ code, referralCode: currentRef });
+            localStorage.removeItem('pending_ref');
             setIsLoading(false);
         } catch (err) {
             const msg = err.message || 'Error con GitHub.';
@@ -302,7 +319,10 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             localStorage.removeItem('onboarding_step');
 
             const redirectUri = window.location.origin + window.location.pathname;
-            await handleSpotifyLogin({ code, redirectUri });
+            const currentRef = localStorage.getItem('pending_ref');
+
+            await handleSpotifyLogin({ code, redirectUri, referralCode: currentRef });
+            localStorage.removeItem('pending_ref');
             setIsLoading(false);
         } catch (err) {
             const msg = err.message || 'Error con Spotify.';
@@ -320,7 +340,9 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             localStorage.removeItem('onboarding_data');
             localStorage.removeItem('onboarding_step');
 
-            await handleDiscordLogin(token);
+            const currentRef = localStorage.getItem('pending_ref');
+            await handleDiscordLogin({ token, referralCode: currentRef });
+            localStorage.removeItem('pending_ref');
             setIsLoading(false);
         } catch (err) {
             const msg = err.message || 'Error con Discord.';
@@ -346,7 +368,9 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             localStorage.removeItem('onboarding_data');
             localStorage.removeItem('onboarding_step');
 
-            await handleGoogleLogin(token);
+            const currentRef = localStorage.getItem('pending_ref');
+            await handleGoogleLogin({ token, referralCode: currentRef });
+            localStorage.removeItem('pending_ref');
             setIsLoading(false);
         } catch (err) {
             const msg = err.message || 'Error con Google.';
@@ -426,6 +450,9 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             localStorage.removeItem('temp_onboarding_data');
             localStorage.removeItem('onboarding_data');
             localStorage.removeItem('onboarding_step');
+            
+            // Si hace un login normal con su cuenta correctamente, podemos borrar el ref
+            localStorage.removeItem('pending_ref');
 
             await handleLogin({ email, password });
             setIsLoading(false);
@@ -593,7 +620,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                             <input
                                 type="email"
                                 placeholder="Email"
-                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[20px] px-5 py-4 text-text-primary focus:border-accent focus:ring-accent/20 focus:ring-4 outline-none transition-all text-sm font-medium placeholder:text-text-muted"
+                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[20px] px-5 py-4 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-sm font-medium placeholder:text-text-muted"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />
@@ -604,7 +631,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                             <input
                                 type="password"
                                 placeholder="Contraseña"
-                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[20px] px-5 py-4 text-text-primary focus:border-accent focus:ring-accent/20 focus:ring-4 outline-none transition-all text-sm font-medium placeholder:text-text-muted"
+                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[20px] px-5 py-4 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-sm font-medium placeholder:text-text-muted"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
