@@ -38,7 +38,6 @@ import PRShareCard from '../components/PRShareCard';
 import DashboardInsights from '../components/Dashboard/DashboardInsights';
 import { useAppTheme } from '../hooks/useAppTheme'; 
 
-// Detección simple de iOS para PWA/Nativo
 const isIOS = () => {
   if (typeof navigator === 'undefined') return false;
   return [
@@ -472,10 +471,12 @@ const Dashboard = ({ setView }) => {
   const handleSharePR = () => shareImage(prCardRef, t('Nuevo Récord', { defaultValue: 'Nuevo Récord' }));
   const handleShareRecap = () => shareImage(weeklyRecapRef, t('Resumen Semanal', { defaultValue: 'Resumen Semanal' }));
 
+  const isAdmin = userProfile?.role === 'admin';
   const referralCount = userProfile?.referralCount || 0;
   const maxReferrals = 3;
-  const referralProgress = Math.min((referralCount / maxReferrals) * 100, 100);
-  const isCampaignComplete = referralCount >= maxReferrals;
+  const displayReferralCount = isAdmin ? maxReferrals : referralCount;
+  const referralProgress = isAdmin ? 100 : Math.min((referralCount / maxReferrals) * 100, 100);
+  const isCampaignComplete = referralCount >= maxReferrals || isAdmin;
   const referralLink = `${window.location.origin}/register?ref=${userProfile?.referral_code || ''}`;
 
   const handleCopyReferral = () => {
@@ -655,13 +656,13 @@ const Dashboard = ({ setView }) => {
             <div className="space-y-1.5 w-full max-w-md mx-auto md:mx-0">
               <div className="flex justify-between items-center text-[10px] sm:text-xs font-bold text-text-muted uppercase tracking-widest">
                 <span>{t('Progreso de la misión', { defaultValue: 'Progreso de la misión' })}</span>
-                <span className={`px-2 py-0.5 rounded-full ${isCampaignComplete ? 'bg-green-500/10 text-green-500' : 'bg-[#a855f7]/10 text-[#a855f7]'}`}>
-                  {referralCount} / {maxReferrals}
+                <span className="px-2 py-0.5 rounded-full bg-[#a855f7]/10 text-[#a855f7]">
+                  {displayReferralCount} / {maxReferrals}
                 </span>
               </div>
               <div className="h-3 w-full bg-black/10 dark:bg-white/5 rounded-full overflow-hidden p-0.5 shadow-inner">
                 <div 
-                  className={`h-full rounded-full transition-all duration-1000 ease-out ${isCampaignComplete ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gradient-to-r from-[#a855f7] to-[#3b82f6] shadow-[0_0_10px_rgba(168,85,247,0.5)]'}`} 
+                  className="h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#a855f7] to-[#3b82f6] shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
                   style={{ width: `${referralProgress}%` }} 
                 />
               </div>
@@ -670,7 +671,7 @@ const Dashboard = ({ setView }) => {
 
           <div className="w-full md:w-auto shrink-0 flex flex-col gap-2.5">
              {isCampaignComplete ? (
-               <div className="flex items-center justify-center gap-2 bg-green-500/10 text-green-500 px-6 py-3.5 rounded-[20px] border border-green-500/20 font-bold text-sm shadow-sm">
+               <div className="flex items-center justify-center gap-2 bg-[#a855f7]/10 text-[#a855f7] px-6 py-3.5 rounded-[20px] border border-[#a855f7]/20 font-bold text-sm shadow-sm">
                  <CheckCircle size={18} />
                  {t('¡Tema Desbloqueado!', { defaultValue: '¡Tema Desbloqueado!' })}
                </div>
@@ -818,7 +819,7 @@ const Dashboard = ({ setView }) => {
               <h2 className="text-xl font-bold">{t('Cardio Rápido', { defaultValue: 'Cardio Rápido' })}</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              {[{ name: 'Cinta', key: 'Cinta', icon: Footprints }, { name: 'Bici', key: 'Bici', icon: Bike }, { name: 'Elíptica', key: 'Elíptica', icon: Activity }].map(item => (
+              {[{ name: 'Cinta', key: 'Cinta', icon: Footprints }, { name: 'Bici', key: 'Bici', icon: Activity }].map(item => (
                 <GlassCard key={item.key} className="glass relative p-0 overflow-hidden rounded-[24px] group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 h-36 cursor-pointer">
                   <button onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }} className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all">
                     <div className="p-3.5 rounded-[20px] text-accent group-hover:scale-110 transition-all bg-black/5 dark:bg-white/5">

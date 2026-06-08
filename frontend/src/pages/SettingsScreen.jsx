@@ -200,7 +200,8 @@ export default function SettingsScreen({
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
 
-  const isGalaxyUnlocked = (userProfile?.referralCount || 0) >= 3;
+  // AÑADIDO: Administradores tienen el tema Galaxia desbloqueado
+  const isGalaxyUnlocked = (userProfile?.referralCount || 0) >= 3 || userProfile?.role === 'admin';
 
   const [autoTimezone, setAutoTimezone] = useState(() => {
     return localStorage.getItem('settings_auto_timezone') === 'true';
@@ -413,8 +414,6 @@ export default function SettingsScreen({
     }
   };
 
-  // 🔴 CORRECCIÓN: Le pasamos 'true' a setTheme y startThemeTest
-  // para que gestionen el guardado local antes de recargar.
   const confirmThemeReload = () => {
     if (pendingThemeAction?.type === 'apply') {
       setTheme(pendingThemeAction.payload, true);
