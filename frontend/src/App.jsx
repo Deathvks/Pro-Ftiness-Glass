@@ -111,6 +111,8 @@ export default function App() {
     restTimerMode,
     myStories,
     sessionExpired,
+    cookieConsent,
+    showWelcomeModal,
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -121,6 +123,8 @@ export default function App() {
     restTimerMode: state.restTimerMode,
     myStories: state.myStories,
     sessionExpired: state.sessionExpired,
+    cookieConsent: state.cookieConsent,
+    showWelcomeModal: state.showWelcomeModal,
   }));
 
   const isInstalledApp = useMemo(() => {
@@ -201,12 +205,13 @@ export default function App() {
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
       const isAlreadyEnabled = userProfile?.twoFactorEnabled || userProfile?.isTwoFactorEnabled;
 
-      if (!hasSeenPromo && !isAlreadyEnabled) {
+      // EL ORDEN IMPORTA: El 2FA espera a que las cookies y el WelcomeModal hayan terminado
+      if (!hasSeenPromo && !isAlreadyEnabled && cookieConsent !== null && !showWelcomeModal) {
         const timer = setTimeout(() => setShow2FAPromo(true), 2000);
         return () => clearTimeout(timer);
       }
     }
-  }, [isAuthenticated, userProfile, isLoading]);
+  }, [isAuthenticated, userProfile, isLoading, cookieConsent, showWelcomeModal]);
 
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
 
@@ -448,7 +453,6 @@ export default function App() {
         noIndex: true
     };
   }, [isLandingPage, fullPageTitle, currentDescription]);
-
 
   if (isInitialLoad) {
     return <InitialLoadingSkeleton />;

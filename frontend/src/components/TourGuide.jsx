@@ -254,7 +254,24 @@ const TourGuide = () => {
 
     // Función recursiva para iniciar el tour solo si no hay modales activos
     const checkModalsAndStart = () => {
-      // Buscamos elementos que cumplan el patrón de modales de la app
+      const state = useAppStore.getState();
+
+      // 1. Esperar a que se resuelvan las cookies y el modal de bienvenida
+      if (state.cookieConsent === null || state.showWelcomeModal) {
+        timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+        return;
+      }
+
+      // 2. Esperar al modal de 2FA (que tiene un delay de 2s en App.jsx)
+      const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
+      const isAlreadyEnabled = state.userProfile?.twoFactorEnabled || state.userProfile?.isTwoFactorEnabled;
+
+      if (!hasSeenPromo && !isAlreadyEnabled) {
+        timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+        return;
+      }
+
+      // 3. Buscamos elementos que cumplan el patrón de modales de la app
       const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
         const className = el.className || '';
         return typeof className === 'string' && className.includes('z-') && !className.includes('-z-');
