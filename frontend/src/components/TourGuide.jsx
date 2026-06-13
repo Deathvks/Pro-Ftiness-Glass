@@ -32,21 +32,17 @@ const TourGuide = () => {
           -webkit-backdrop-filter: blur(12px) !important;
           max-width: calc(100vw - 32px) !important;
           
-          /* FIX: Forzar respeto por las áreas seguras del móvil (Notch y Gestos) 
-             Usamos transform para forzar el desplazamiento si el top está pillado por JS */
-          transform: translateY(env(safe-area-inset-top, 0px)) !important;
+          /* FIX iPHONE: Quitamos transform y usamos margin para evitar 
+             que Safari desconecte los botones táctiles del popover */
+          margin-top: env(safe-area-inset-top, 16px) !important;
           margin-bottom: env(safe-area-inset-bottom, 16px) !important;
           z-index: 999999 !important;
         }
 
         /* --- FLECHAS CON BORDE (Técnica de doble triángulo) --- */
-        
-        /* 1. Base de la flecha (actúa como el borde) */
         .driver-popover-arrow {
           border-width: 8px !important;
         }
-        
-        /* 2. Pseudo-elemento para el relleno (color de fondo) */
         .driver-popover-arrow::after {
           content: "";
           position: absolute;
@@ -55,7 +51,6 @@ const TourGuide = () => {
           border-color: transparent;
         }
 
-        /* Flecha Lado IZQUIERDO (Apunta a la DERECHA) */
         .driver-popover-arrow-side-left.driver-popover-arrow {
           border-left-color: var(--glass-border) !important;
           border-right-color: transparent !important;
@@ -68,7 +63,6 @@ const TourGuide = () => {
           top: -8px;
         }
 
-        /* Flecha Lado DERECHO (Apunta a la IZQUIERDA) */
         .driver-popover-arrow-side-right.driver-popover-arrow {
           border-right-color: var(--glass-border) !important;
           border-left-color: transparent !important;
@@ -81,7 +75,6 @@ const TourGuide = () => {
           top: -8px;
         }
 
-        /* Flecha Lado SUPERIOR (Apunta ABAJO) */
         .driver-popover-arrow-side-top.driver-popover-arrow {
           border-top-color: var(--glass-border) !important;
           border-bottom-color: transparent !important;
@@ -94,7 +87,6 @@ const TourGuide = () => {
           left: -8px;
         }
 
-        /* Flecha Lado INFERIOR (Apunta ARRIBA) */
         .driver-popover-arrow-side-bottom.driver-popover-arrow {
           border-bottom-color: var(--glass-border) !important;
           border-top-color: transparent !important;
@@ -141,6 +133,8 @@ const TourGuide = () => {
           transition: all 0.2s !important;
           text-shadow: none !important;
           outline: none !important;
+          touch-action: manipulation !important;
+          -webkit-tap-highlight-color: transparent !important;
         }
         
         /* Botón Atrás */
@@ -160,8 +154,6 @@ const TourGuide = () => {
           background-color: var(--accent) !important;
           border: 1px solid var(--accent) !important;
           box-shadow: 0 4px 12px -2px rgba(0,0,0,0.3) !important;
-          
-          /* POR DEFECTO (Dark/OLED): Texto Blanco */
           color: #ffffff !important;
         }
 
@@ -199,10 +191,52 @@ const TourGuide = () => {
       showProgress: true,
       animate: true,
       allowClose: true,
+      smoothScroll: false, 
       doneBtnText: '¡A entrenar!',
       nextBtnText: 'Siguiente',
       prevBtnText: 'Atrás',
       progressText: '{{current}} / {{total}}',
+      
+      // FIX DEFINITIVO iPHONE PWA: Forzamos la acción táctil directamente al evento nativo del botón
+      onPopoverRender: (popover, { config, state }) => {
+        const forceTouchAction = (btn, action) => {
+          if (!btn) return;
+          const fireAction = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            action();
+          };
+          btn.ontouchend = fireAction;
+          btn.onclick = fireAction;
+        };
+
+        forceTouchAction(popover.nextButton, () => {
+          if (!driverRef.current) return;
+          if (state.activeIndex === config.steps.length - 1) {
+            driverRef.current.destroy();
+          } else {
+            driverRef.current.moveNext();
+          }
+        });
+
+        forceTouchAction(popover.previousButton, () => {
+          if (driverRef.current) driverRef.current.movePrevious();
+        });
+
+        forceTouchAction(popover.closeButton, () => {
+          if (driverRef.current) driverRef.current.destroy();
+        });
+      },
+      
+      // FIX SCROLL: Forzamos el scroll sobre tu nuevo MainAppLayout
+      onHighlightStarted: (element) => {
+        if (!element) return;
+        const node = element.node || document.querySelector(element.element);
+        if (node && typeof node.scrollIntoView === 'function') {
+          node.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
+      },
+
       steps: [
         {
           element: '#tour-gamification',
@@ -252,17 +286,16 @@ const TourGuide = () => {
       }
     });
 
-    // Función recursiva para iniciar el tour solo si no hay modales activos
     const checkModalsAndStart = () => {
       const state = useAppStore.getState();
 
-      // 1. Esperar a que se resuelvan las cookies y el modal de bienvenida
+      // 1. Prioridad: Esperar a que se resuelvan las cookies y el modal de bienvenida
       if (state.cookieConsent === null || state.showWelcomeModal) {
         timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
         return;
       }
 
-      // 2. Esperar al modal de 2FA (que tiene un delay de 2s en App.jsx)
+      // 2. Prioridad: Esperar a la promo del 2FA 
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
       const isAlreadyEnabled = state.userProfile?.twoFactorEnabled || state.userProfile?.isTwoFactorEnabled;
 
@@ -271,7 +304,7 @@ const TourGuide = () => {
         return;
       }
 
-      // 3. Buscamos elementos que cumplan el patrón de modales de la app
+      // 3. Prioridad: Chequeo de otros modales activos en la pantalla
       const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
         const className = el.className || '';
         return typeof className === 'string' && className.includes('z-') && !className.includes('-z-');
@@ -280,7 +313,7 @@ const TourGuide = () => {
       if (activeModals.length > 0) {
         timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
       } else {
-        driverRef.current.drive();
+        if (driverRef.current) driverRef.current.drive();
       }
     };
 
