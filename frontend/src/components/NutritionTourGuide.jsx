@@ -12,6 +12,7 @@ const NutritionTourGuide = () => {
 
   const driverRef = useRef(null);
   const timeoutRef = useRef(null);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     // --- Inyección de Estilos Personalizados (Tema Glassmorphism Ajustado) ---
@@ -28,14 +29,12 @@ const NutritionTourGuide = () => {
           border-radius: 16px !important;
           box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5) !important;
           padding: 20px !important;
-          backdrop-filter: blur(12px) !important;
-          -webkit-backdrop-filter: blur(12px) !important;
           max-width: calc(100vw - 32px) !important;
           
-          /* FIX: Forzar respeto por las áreas seguras del móvil (Notch y Gestos) 
-             Usamos transform para forzar el desplazamiento si el top está pillado por JS */
-          transform: translateY(env(safe-area-inset-top, 0px)) !important;
+          /* FIX iPHONE PWA: Quitamos backdrop-filter y transform para evitar el bloqueo táctil */
+          margin-top: env(safe-area-inset-top, 16px) !important;
           margin-bottom: env(safe-area-inset-bottom, 16px) !important;
+          
           max-height: calc(100vh - env(safe-area-inset-top, 40px) - env(safe-area-inset-bottom, 30px) - 64px) !important;
           overflow-y: auto !important;
           z-index: 999999 !important;
@@ -129,7 +128,7 @@ const NutritionTourGuide = () => {
           gap: 8px !important;
           justify-content: flex-end !important;
         }
-        .driver-popover-footer button {
+        .driver-popover-footer button, .driver-popover-close-btn { 
           font-family: inherit !important;
           border-radius: 10px !important;
           padding: 8px 16px !important;
@@ -138,7 +137,10 @@ const NutritionTourGuide = () => {
           cursor: pointer !important;
           transition: all 0.2s !important;
           text-shadow: none !important;
-          outline: none !important;
+          outline: none !important; 
+          /* FIX TÁCTIL iPHONE */
+          touch-action: manipulation !important; 
+          -webkit-tap-highlight-color: transparent !important;
         }
         
         /* Botón Atrás */
@@ -195,14 +197,54 @@ const NutritionTourGuide = () => {
       showProgress: true,
       animate: true,
       allowClose: true,
+      smoothScroll: false, 
       doneBtnText: '¡Entendido!',
       nextBtnText: 'Siguiente',
       prevBtnText: 'Atrás',
       progressText: '{{current}} / {{total}}',
+      
+      // FIX DEFINITIVO iPHONE PWA
+      onPopoverRender: (popover, { config, state }) => {
+        const forceTouchAction = (btn, action) => {
+          if (!btn) return;
+          const fireAction = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            action();
+          };
+          btn.ontouchend = fireAction;
+          btn.onclick = fireAction;
+        };
+
+        forceTouchAction(popover.nextButton, () => {
+          if (!driverRef.current) return;
+          if (state.activeIndex === config.steps.length - 1) {
+            driverRef.current.destroy();
+          } else {
+            driverRef.current.moveNext();
+          }
+        });
+
+        forceTouchAction(popover.previousButton, () => {
+          if (driverRef.current) driverRef.current.movePrevious();
+        });
+
+        forceTouchAction(popover.closeButton, () => {
+          if (driverRef.current) driverRef.current.destroy();
+        });
+      },
+      
+      // FIX SCROLL
+      onHighlightStarted: (element) => {
+        if (!element) return;
+        const node = element.node || document.querySelector(element.element);
+        if (node && typeof node.scrollIntoView === 'function') {
+          node.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
+      },
+
       steps: [
         {
-          // Quitamos el element: '#nutrition-header' porque está oculto en móvil.
-          // Esto forzará a que el primer paso sea un popover de bienvenida centrado en la pantalla.
           popover: {
             title: 'Tu Panel de Nutrición',
             description: 'Gestiona tus comidas diarias, controla tus macros y mantén tu hidratación al día desde aquí.',
@@ -251,12 +293,30 @@ const NutritionTourGuide = () => {
         }
       ],
       onDestroyed: () => {
+        hasStartedRef.current = false;
         completeNutritionTour();
       }
     });
 
-    // Función recursiva para iniciar el tour solo si no hay modales activos
     const checkModalsAndStart = () => {
+      const state = useAppStore.getState();
+
+      // 1. Prioridad: Esperar a que se resuelvan las cookies y el modal de bienvenida
+      if (state.cookieConsent === null || state.showWelcomeModal) {
+        timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+        return;
+      }
+
+      // 2. Prioridad: Esperar a la promo del 2FA 
+      const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
+      const isAlreadyEnabled = state.userProfile?.twoFactorEnabled || state.userProfile?.isTwoFactorEnabled;
+
+      if (!hasSeenPromo && !isAlreadyEnabled) {
+        timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+        return;
+      }
+
+      // 3. Prioridad: Chequeo de otros modales activos
       const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
         const className = el.className || '';
         return typeof className === 'string' && className.includes('z-') && !className.includes('-z-');
@@ -265,7 +325,10 @@ const NutritionTourGuide = () => {
       if (activeModals.length > 0) {
         timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
       } else {
-        driverRef.current.drive();
+        if (!hasStartedRef.current && driverRef.current) {
+          hasStartedRef.current = true;
+          driverRef.current.drive();
+        }
       }
     };
 

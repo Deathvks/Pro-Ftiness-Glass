@@ -12,6 +12,7 @@ const RoutineTourGuide = () => {
 
     const driverRef = useRef(null);
     const timeoutRef = useRef(null);
+    const hasStartedRef = useRef(false);
 
     useEffect(() => {
         const styleId = 'driver-js-routine-theme';
@@ -27,11 +28,12 @@ const RoutineTourGuide = () => {
           border-radius: 16px !important;
           box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5) !important;
           padding: 20px !important;
-          backdrop-filter: blur(12px) !important;
-          -webkit-backdrop-filter: blur(12px) !important;
           max-width: calc(100vw - 32px) !important;
-          transform: translateY(env(safe-area-inset-top, 0px)) !important;
+          
+          /* FIX iPHONE PWA: Quitamos backdrop-filter y transform para evitar el bloqueo táctil */
+          margin-top: env(safe-area-inset-top, 16px) !important;
           margin-bottom: env(safe-area-inset-bottom, 16px) !important;
+          
           max-height: calc(100vh - env(safe-area-inset-top, 40px) - env(safe-area-inset-bottom, 30px) - 64px) !important;
           overflow-y: auto !important;
           z-index: 999999 !important;
@@ -57,7 +59,12 @@ const RoutineTourGuide = () => {
 
         /* Botones */
         .driver-popover-footer { margin-top: 0 !important; display: flex !important; gap: 8px !important; justify-content: flex-end !important; }
-        .driver-popover-footer button { font-family: inherit !important; border-radius: 10px !important; padding: 8px 16px !important; font-size: 13px !important; font-weight: 600 !important; cursor: pointer !important; transition: all 0.2s !important; text-shadow: none !important; outline: none !important; }
+        .driver-popover-footer button, .driver-popover-close-btn { 
+          font-family: inherit !important; border-radius: 10px !important; padding: 8px 16px !important; font-size: 13px !important; font-weight: 600 !important; cursor: pointer !important; transition: all 0.2s !important; text-shadow: none !important; outline: none !important; 
+          /* FIX TÁCTIL iPHONE */
+          touch-action: manipulation !important; 
+          -webkit-tap-highlight-color: transparent !important;
+        }
         .driver-popover-footer button.driver-popover-prev-btn { border: 1px solid var(--glass-border) !important; background-color: transparent !important; color: var(--text-secondary) !important; }
         .driver-popover-footer button.driver-popover-prev-btn:hover { background-color: var(--bg-primary) !important; color: var(--text-primary) !important; }
         .driver-popover-footer button.driver-popover-next-btn, .driver-popover-footer button.driver-popover-done-btn { background-color: var(--accent) !important; border: 1px solid var(--accent) !important; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.3) !important; color: #ffffff !important; }
@@ -75,10 +82,52 @@ const RoutineTourGuide = () => {
             showProgress: true,
             animate: true,
             allowClose: true,
+            smoothScroll: false, // Desactivado para no chocar con MainLayout
             doneBtnText: '¡Entendido!',
             nextBtnText: 'Siguiente',
             prevBtnText: 'Atrás',
             progressText: '{{current}} / {{total}}',
+            
+            // FIX DEFINITIVO iPHONE PWA: Forzamos la acción táctil directamente al evento nativo del botón
+            onPopoverRender: (popover, { config, state }) => {
+                const forceTouchAction = (btn, action) => {
+                    if (!btn) return;
+                    const fireAction = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        action();
+                    };
+                    btn.ontouchend = fireAction;
+                    btn.onclick = fireAction;
+                };
+
+                forceTouchAction(popover.nextButton, () => {
+                    if (!driverRef.current) return;
+                    if (state.activeIndex === config.steps.length - 1) {
+                        driverRef.current.destroy();
+                    } else {
+                        driverRef.current.moveNext();
+                    }
+                });
+
+                forceTouchAction(popover.previousButton, () => {
+                    if (driverRef.current) driverRef.current.movePrevious();
+                });
+
+                forceTouchAction(popover.closeButton, () => {
+                    if (driverRef.current) driverRef.current.destroy();
+                });
+            },
+            
+            // FIX SCROLL
+            onHighlightStarted: (element) => {
+                if (!element) return;
+                const node = element.node || document.querySelector(element.element);
+                if (node && typeof node.scrollIntoView === 'function') {
+                    node.scrollIntoView({ behavior: 'instant', block: 'center' });
+                }
+            },
+
             steps: [
                 {
                     popover: {
@@ -95,7 +144,6 @@ const RoutineTourGuide = () => {
                     }
                 },
                 {
-                    // Ajuste clave: Determinamos si usamos el ID del móvil o de escritorio
                     element: window.innerWidth < 768 ? '#routines-actions-mobile' : '#routines-actions-desktop',
                     popover: {
                         title: 'Acciones Principales',
@@ -114,6 +162,7 @@ const RoutineTourGuide = () => {
                 }
             ],
             onDestroyed: () => {
+                hasStartedRef.current = false;
                 completeRoutineTour();
             }
         });
@@ -127,7 +176,10 @@ const RoutineTourGuide = () => {
             if (activeModals.length > 0) {
                 timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
             } else {
-                driverRef.current.drive();
+                if (!hasStartedRef.current && driverRef.current) {
+                    hasStartedRef.current = true;
+                    driverRef.current.drive();
+                }
             }
         };
 
