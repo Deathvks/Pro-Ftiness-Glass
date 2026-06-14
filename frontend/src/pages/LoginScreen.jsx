@@ -17,8 +17,10 @@ import { Capacitor } from '@capacitor/core';
 import { useLocation } from 'react-router-dom';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
-    <div className="flex w-full min-h-[100dvh] bg-bg-primary overflow-hidden">
-        <div className="hidden lg:flex flex-col justify-center items-center w-[30%] min-h-[100dvh] relative border-r border-glass-border p-8 overflow-hidden bg-bg-primary">
+    <div className="flex flex-col lg:flex-row w-full h-[100dvh] bg-bg-primary overflow-hidden">
+        
+        {/* Panel Izquierdo (PC) */}
+        <div className="hidden lg:flex flex-col justify-center items-center w-[30%] h-full relative border-r border-glass-border p-8 overflow-hidden shrink-0 bg-bg-primary">
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
 
             <div className="absolute top-1/4 -left-10 w-48 h-48 bg-accent/30 rounded-full mix-blend-screen filter blur-[60px] animate-[pulse_4s_ease-in-out_infinite]"></div>
@@ -71,23 +73,29 @@ const SplitLayout = ({ children, onShowPolicy }) => (
             </div>
         </div>
 
-        <div className="flex flex-col items-center flex-1 w-full lg:w-[70%] h-[100dvh] overflow-y-auto relative z-10">
-            <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none"></div>
+        {/* Panel Derecho (Móvil y PC) - Scroll propio con gestión de áreas seguras */}
+        <div className="flex-1 w-full lg:w-[70%] h-full overflow-y-auto relative z-10 bg-bg-primary custom-scrollbar">
+            <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none min-h-[100dvh]"></div>
 
-            <div className="flex-grow w-full min-h-[2rem]"></div>
+            {/* Contenedor que centra con my-auto si sobra espacio, y baja el padding superior por debajo del Notch de iOS */}
+            <div 
+                className="flex flex-col min-h-full w-full px-4 sm:px-6 lg:px-8"
+                style={{ 
+                    paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 24px))', 
+                    paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 24px))' 
+                }}
+            >
+                <div className="my-auto mx-auto w-full max-w-md text-center relative z-10 animate-[fade-in_0.5s_ease-out] py-4">
+                    {children}
 
-            <div className="w-full max-w-md text-center relative z-10 animate-[fade-in_0.5s_ease-out] flex-shrink-0 px-4">
-                {children}
-
-                <div className="mt-6 sm:mt-8 text-xs text-text-muted px-2">
-                    Al continuar, aceptas nuestros{' '}
-                    <a href="/terms" className="text-accent hover:underline transition-all">Términos de Servicio</a>
-                    {' '}y nuestra{' '}
-                    <button onClick={onShowPolicy} className="text-accent hover:underline transition-all">Política de Privacidad</button>.
+                    <div className="mt-6 sm:mt-8 text-xs text-text-muted px-2">
+                        Al continuar, aceptas nuestros{' '}
+                        <a href="/terms" className="text-accent hover:underline transition-all">Términos de Servicio</a>
+                        {' '}y nuestra{' '}
+                        <button onClick={onShowPolicy} className="text-accent hover:underline transition-all">Política de Privacidad</button>.
+                    </div>
                 </div>
             </div>
-
-            <div className="flex-grow w-full min-h-[2rem]"></div>
         </div>
     </div>
 );
@@ -382,7 +390,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const loginWithGoogle = useGoogleLogin({
         onSuccess: (tokenResponse) => processGoogleToken(tokenResponse.access_token),
-        onError: () => { },
+        onError: () => { addToast('No se pudo conectar con Google.', 'error'); },
     });
 
     const handleGoogleClick = async () => {
@@ -406,14 +414,17 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         }
     };
 
-    const onModalSuccess = (credentialResponse) => {
-        if (credentialResponse.credential) {
-            processGoogleToken(credentialResponse.credential);
+    const onModalSuccess = (tokenResponse) => {
+        if (tokenResponse.access_token) {
+            processGoogleToken(tokenResponse.access_token);
+        } else if (tokenResponse.credential) { // Respaldo por si acaso
+            processGoogleToken(tokenResponse.credential);
         }
     };
 
     const onModalError = () => {
         setShowGoogleModal(false);
+        addToast('No se pudo conectar con Google.', 'error');
     };
 
     useEffect(() => {

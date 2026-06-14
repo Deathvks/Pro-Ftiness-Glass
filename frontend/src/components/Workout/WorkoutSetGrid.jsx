@@ -40,17 +40,18 @@ const WorkoutSetGrid = ({
   }, [baseInputClasses]);
 
   return (
-    <div className="grid grid-cols-[auto_1fr_1fr_auto_auto] gap-2 items-center">
-      {/* Cabecera */}
+    <div className="grid grid-cols-[auto_1.2fr_1fr_1fr_auto_auto] gap-2 items-center">
+      {/* Cabecera ajustada para móvil */}
       <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">Serie</div>
-      <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">Peso (kg)</div>
+      <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">kg</div>
       <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">Reps</div>
-      <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">Dropset</div>
-      <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">Descanso</div>
+      <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">RIR</div>
+      <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">DS</div>
+      <div className="text-center font-bold text-text-tertiary uppercase tracking-wider text-[10px]">Reloj</div>
 
       {/* Filas */}
       {setsDone.map((set, setIndex) => {
-        // Lógica para detectar si la serie actual ya está completada
+        // Lógica para detectar si la serie actual ya está completada (RIR es opcional)
         const hasWeight = set.weight_kg !== null && set.weight_kg !== undefined && String(set.weight_kg).trim() !== '';
         const hasReps = set.reps !== null && set.reps !== undefined && String(set.reps).trim() !== '';
         const isSetCompleted = hasWeight && hasReps;
@@ -109,6 +110,20 @@ const WorkoutSetGrid = ({
               className={inputClasses}
               disabled={!hasWorkoutStarted}
               readOnly={!hasWorkoutStarted}
+            />
+
+            {/* Input: RIR (Acepta decimales como 1.5, 2, etc.) */}
+            <input
+              type="text"
+              placeholder="-"
+              inputMode="decimal"
+              value={set.rir !== undefined && set.rir !== null ? set.rir : ''}
+              onChange={hasWorkoutStarted ? (e) => onUpdateSet(actualExIndex, setIndex, 'rir', normalizeDecimalInput(e.target.value)) : undefined}
+              onClick={!hasWorkoutStarted ? onDisabledInputClick : undefined}
+              className={inputClasses}
+              disabled={!hasWorkoutStarted}
+              readOnly={!hasWorkoutStarted}
+              title="Reps in Reserve (opcional)"
             />
 
             {/* Botón: Dropset */}

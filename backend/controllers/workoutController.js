@@ -195,6 +195,8 @@ export const logWorkoutSession = async (req, res, next) => {
             weight_kg: parseFloat(set.weight_kg) || 0,
             is_dropset: set.is_dropset || false,
             is_warmup: set.is_warmup || false,
+            // --- NUEVO CAMPO RIR ---
+            rir: set.rir !== undefined && set.rir !== null && set.rir !== '' ? parseFloat(set.rir) : null,
           }));
         
         if (setsToCreate.length > 0) {

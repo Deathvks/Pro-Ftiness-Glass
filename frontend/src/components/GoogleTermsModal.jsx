@@ -1,55 +1,36 @@
 /* frontend/src/components/GoogleTermsModal.jsx */
-import React, { useState, useRef, useEffect } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
+import React, { useState, useEffect } from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
 import { ShieldCheck, X, ExternalLink, AlertTriangle, Info } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 
 const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy }) => {
-  const googleParentRef = useRef(null);
-  const [googleBtnWidth, setGoogleBtnWidth] = useState('300');
   const [previouslyDeclined, setPreviouslyDeclined] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      // Ajustar ancho del botón
-      if (googleParentRef.current) {
-        const width = googleParentRef.current.offsetWidth;
-        setGoogleBtnWidth(width > 400 ? '400' : width.toString());
-      }
-      
-      // Verificar si el usuario ya había rechazado las cookies anteriormente
       const consent = localStorage.getItem('cookie_consent');
       setPreviouslyDeclined(consent === 'declined');
     }
   }, [isOpen]);
 
-  const handleGoogleSuccess = (response) => {
-    // LÓGICA MODIFICADA:
-    // Si el usuario NO había rechazado antes (es la primera vez o era null), aceptamos cookies globales.
-    // Si el usuario YA había rechazado ('declined'), NO cambiamos el estado global a 'accepted'.
-    // Esto permite el login (onSuccess) pero mantiene la preferencia del usuario de "sin cookies de personalización".
-    
-    if (!previouslyDeclined) {
-        localStorage.setItem('cookie_consent', 'accepted');
-        // Disparamos evento para que otros componentes (como el banner) se actualicen
-        window.dispatchEvent(new Event('storage'));
-    }
-    
-    // Si previouslyDeclined es true, no tocamos localStorage. 
-    // El login procede, pero la próxima vez que entre, el sistema verá que no es 'accepted' 
-    // y volverá a mostrar este modal (comportamiento deseado).
-    
-    onSuccess(response);
-  };
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: (response) => {
+        if (!previouslyDeclined) {
+            localStorage.setItem('cookie_consent', 'accepted');
+            window.dispatchEvent(new Event('storage'));
+        }
+        onSuccess(response);
+    },
+    onError: onError
+  });
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
       <div className="w-full max-w-md animate-[scale-in_0.3s_ease-out]">
-        {/* Cambiado GlassCard por un div con fondo sólido y estilos de tarjeta modal */}
         <div className="relative p-6 md:p-8 flex flex-col gap-6 bg-bg-primary border border-glass-border rounded-2xl shadow-2xl">
-          {/* Botón cerrar */}
           <button 
             onClick={onClose} 
             className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition p-1"
@@ -57,7 +38,6 @@ const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy })
             <X size={24} />
           </button>
 
-          {/* Contenido Informativo */}
           <div className="flex flex-col items-center text-center gap-4">
             <div className={`p-4 rounded-full mb-2 ${previouslyDeclined ? 'bg-orange-500/10 text-orange-500' : 'bg-accent/10 text-accent'}`}>
               {previouslyDeclined ? <AlertTriangle size={40} /> : <ShieldCheck size={40} />}
@@ -75,7 +55,7 @@ const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy })
                    </p>
                    <p>
                      Al continuar aquí, permites el <strong>acceso con Google</strong> puntualmente, pero 
-                     <strong> NO se activarán</strong> las funciones de personalización (temas, preferencias) que rechazaste en Ajustes.
+                     <strong> NO se activarán</strong> las funciones de personalización que rechazaste en Ajustes.
                    </p>
                    <p className="mt-2 font-semibold underline cursor-pointer" onClick={onShowPolicy}>
                      Para usar todas las funciones, activa las cookies en Ajustes.
@@ -108,33 +88,16 @@ const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy })
             )}
           </div>
 
-          {/* Botones de Acción */}
           <div className="flex flex-col gap-3 mt-2">
-            {/* Botón de Aceptar (Wrapper del GoogleLogin) */}
-            <div 
-                className="relative w-full h-12 flex justify-center items-center group" 
-                ref={googleParentRef}
+            <button 
+                onClick={() => loginWithGoogle()}
+                className="w-full h-12 bg-accent text-white rounded-xl flex items-center justify-center gap-3 font-bold shadow-lg transition hover:scale-[1.02] hover:shadow-accent/25"
             >
-                {/* Capa Visual - Forzamos el texto a blanco para contrastar con el acento en cualquier tema */}
-                <div className="absolute inset-0 w-full h-full bg-accent text-white rounded-xl flex items-center justify-center gap-3 font-bold shadow-lg transition group-hover:scale-[1.02] group-hover:shadow-accent/25 pointer-events-none z-0">
-                    <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
-                        <FcGoogle size={20} />
-                    </div>
-                    <span>{previouslyDeclined ? 'Continuar (Solo Login)' : 'Aceptar y Continuar'}</span>
+                <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
+                    <FcGoogle size={20} />
                 </div>
-
-                {/* Capa Funcional */}
-                <div className="absolute inset-0 w-full h-full opacity-0 z-10 overflow-hidden flex justify-center items-center">
-                    <GoogleLogin
-                        onSuccess={handleGoogleSuccess}
-                        onError={onError}
-                        width={googleBtnWidth}
-                        text="continue_with"
-                        shape="rectangular"
-                        locale="es"
-                    />
-                </div>
-            </div>
+                <span>{previouslyDeclined ? 'Continuar (Solo Login)' : 'Aceptar y Continuar'}</span>
+            </button>
 
             <button
               onClick={onClose}

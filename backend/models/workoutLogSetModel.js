@@ -35,13 +35,17 @@ const WorkoutLogSet = sequelize.define(
       allowNull: false,
       defaultValue: false,
     },
-    // --- INICIO DE LA MODIFICACIÓN ---
     is_warmup: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     },
-    // --- FIN DE LA MODIFICACIÓN ---
+    // --- NUEVO CAMPO RIR ---
+    rir: {
+      type: DataTypes.DECIMAL(3, 1), // Permite valores como 1.5, 2.0, etc.
+      allowNull: true,
+      defaultValue: null,
+    },
   },
   {
     tableName: 'workout_log_sets',

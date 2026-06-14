@@ -79,13 +79,19 @@ const SplitLayout = ({ children, onShowPolicy }) => (
             </div>
         </div>
 
-        {/* Panel Derecho - Scroll propio pero compactado para no usarlo si es posible */}
-        <div className="w-full lg:w-[70%] h-full overflow-y-auto relative z-10 custom-scrollbar bg-bg-primary">
-            <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none min-h-full"></div>
+        {/* Panel Derecho (Móvil y PC) - Scroll propio con gestión de áreas seguras */}
+        <div className="flex-1 w-full lg:w-[70%] h-full overflow-y-auto relative z-10 bg-bg-primary custom-scrollbar">
+            <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none min-h-[100dvh]"></div>
 
-            <div className="flex flex-col justify-center items-center min-h-full w-full px-4 lg:px-8 py-6">
-                
-                <div className="w-full max-w-md text-center relative z-10 shrink-0 animate-[fade-in_0.5s_ease-out]">
+            {/* Contenedor que centra con my-auto si sobra espacio, y baja el padding superior por debajo del Notch de iOS */}
+            <div 
+                className="flex flex-col min-h-full w-full px-4 sm:px-6 lg:px-8"
+                style={{ 
+                    paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 24px))', 
+                    paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 24px))' 
+                }}
+            >
+                <div className="my-auto mx-auto w-full max-w-md text-center relative z-10 shrink-0 animate-[fade-in_0.5s_ease-out] py-4">
                     {children}
 
                     <div className="mt-4 lg:mt-6 text-xs text-text-muted px-2">
@@ -95,7 +101,6 @@ const SplitLayout = ({ children, onShowPolicy }) => (
                         <button onClick={onShowPolicy} className="text-accent hover:underline transition-all">Política de Privacidad</button>.
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -145,7 +150,6 @@ const RegisterScreen = ({ showLogin }) => {
         return () => window.removeEventListener('storage', checkConsent);
     }, []);
 
-    // 🔴 SOLUCIÓN REFERIDOS: Extraer referralCode y guardarlo en localStorage
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
         const ref = searchParams.get('ref');
@@ -153,7 +157,6 @@ const RegisterScreen = ({ showLogin }) => {
             setReferralCode(ref);
             localStorage.setItem('pending_ref', ref);
         } else {
-            // Si vuelve de una redirección sin la URL original, recuperamos el código guardado
             const savedRef = localStorage.getItem('pending_ref');
             if (savedRef) {
                 setReferralCode(savedRef);
@@ -266,7 +269,7 @@ const RegisterScreen = ({ showLogin }) => {
                 const currentRef = referralCode || localStorage.getItem('pending_ref');
                 await handleXLogin({ code, redirectUri, codeVerifier, referralCode: currentRef });
                 sessionStorage.removeItem('x_code_verifier');
-                localStorage.removeItem('pending_ref'); // Limpieza tras uso exitoso
+                localStorage.removeItem('pending_ref'); 
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -301,7 +304,7 @@ const RegisterScreen = ({ showLogin }) => {
             if (handleGithubLogin) {
                 const currentRef = referralCode || localStorage.getItem('pending_ref');
                 await handleGithubLogin({ code, referralCode: currentRef });
-                localStorage.removeItem('pending_ref'); // Limpieza
+                localStorage.removeItem('pending_ref'); 
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -338,7 +341,7 @@ const RegisterScreen = ({ showLogin }) => {
             if (handleSpotifyLogin) {
                 const currentRef = referralCode || localStorage.getItem('pending_ref');
                 await handleSpotifyLogin({ code, redirectUri, referralCode: currentRef });
-                localStorage.removeItem('pending_ref'); // Limpieza
+                localStorage.removeItem('pending_ref'); 
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -366,7 +369,7 @@ const RegisterScreen = ({ showLogin }) => {
             if (handleFacebookLogin) {
                 const currentRef = referralCode || localStorage.getItem('pending_ref');
                 await handleFacebookLogin({ token, referralCode: currentRef });
-                localStorage.removeItem('pending_ref'); // Limpieza
+                localStorage.removeItem('pending_ref'); 
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -401,7 +404,7 @@ const RegisterScreen = ({ showLogin }) => {
             if (handleDiscordLogin) {
                 const currentRef = referralCode || localStorage.getItem('pending_ref');
                 await handleDiscordLogin({ token, referralCode: currentRef });
-                localStorage.removeItem('pending_ref'); // Limpieza
+                localStorage.removeItem('pending_ref'); 
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -437,7 +440,7 @@ const RegisterScreen = ({ showLogin }) => {
             if (handleGoogleLogin) {
                 const currentRef = referralCode || localStorage.getItem('pending_ref');
                 await handleGoogleLogin({ token, referralCode: currentRef });
-                localStorage.removeItem('pending_ref'); // Limpieza
+                localStorage.removeItem('pending_ref'); 
             } else {
                 throw new Error("Error de configuración interna.");
             }
@@ -479,9 +482,11 @@ const RegisterScreen = ({ showLogin }) => {
         }
     };
 
-    const onModalSuccess = (credentialResponse) => {
-        if (credentialResponse.credential) {
-            processGoogleToken(credentialResponse.credential);
+    const onModalSuccess = (tokenResponse) => {
+        if (tokenResponse.access_token) {
+            processGoogleToken(tokenResponse.access_token);
+        } else if (tokenResponse.credential) {
+            processGoogleToken(tokenResponse.credential);
         }
     };
 
@@ -540,7 +545,7 @@ const RegisterScreen = ({ showLogin }) => {
 
             localStorage.removeItem('onboarding_data');
             localStorage.removeItem('onboarding_step');
-            localStorage.removeItem('pending_ref'); // Limpiamos tras registro normal
+            localStorage.removeItem('pending_ref'); 
 
             if (quizData) {
                 localStorage.setItem('temp_onboarding_data', JSON.stringify(quizData));

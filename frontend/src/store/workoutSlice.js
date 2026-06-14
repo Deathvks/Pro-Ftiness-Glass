@@ -233,6 +233,7 @@ export const createWorkoutSlice = (set, get) => ({
           weight_kg: '',
           is_dropset: false,
           is_warmup: false,
+          rir: null, // NUEVO CAMPO
         })),
         exercise_list_id: fullDetails?.id || null,
         muscle_group: ex.muscle_group || fullDetails?.muscle_group || null,
@@ -324,6 +325,7 @@ export const createWorkoutSlice = (set, get) => ({
       weight_kg: '',
       is_dropset: true,
       is_warmup: false,
+      rir: null, // NUEVO CAMPO
     });
     const newState = {
       activeWorkout: { ...session, exercises: newExercises },
@@ -377,6 +379,7 @@ export const createWorkoutSlice = (set, get) => ({
         weight_kg: calculatedW,
         is_dropset: false,
         is_warmup: true,
+        rir: null, // NUEVO CAMPO
       };
     });
 
@@ -420,6 +423,7 @@ export const createWorkoutSlice = (set, get) => ({
         weight_kg: '',
         is_dropset: false,
         is_warmup: false,
+        rir: null, // NUEVO CAMPO
       })),
       id: uuidv4(),
       exercise_list_id: newExercise.id,

@@ -67,72 +67,83 @@ const WorkoutHeader = ({
       
       {/* --- FONDO DINÁMICO --- */}
       {hasValidImage ? (
-        // Opción A: Imagen real (Truco de desenfoque trasero + contención + Degradado negro puro para OLED)
-        <div className="absolute inset-0 z-0 bg-black">
-          {/* Capa 1: Fondo borroso que llena la tarjeta con los colores de la imagen */}
+        <div className="absolute inset-0 z-0" style={{ backgroundColor: 'var(--bg-primary)' }}>
+          {/* Capa 1: Fondo borroso */}
           <img
             src={finalImageUrl}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-125"
+            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-50 scale-125"
           />
-          {/* Capa 2: Imagen contenida para no recortar nada */}
+          {/* Capa 2: Imagen contenida */}
           <img
             src={finalImageUrl}
             alt={`Portada de ${routineName}`}
-            className="absolute inset-0 w-full h-full object-contain opacity-90 drop-shadow-2xl"
+            className="absolute inset-0 w-full h-full object-contain opacity-80"
             onError={() => setImageError(true)}
           />
-          {/* Capa 3: Degradado oscuro */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/30" />
+          
+          {/* Capa 3: Degradado superior e inferior (Scrim) usando variables de tema */}
+          <div 
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(to bottom, 
+                var(--bg-primary) 0%, 
+                transparent 30%, 
+                transparent 70%, 
+                var(--bg-primary) 100%)`
+            }}
+          />
+          {/* Capa 4: Veladura base para asegurar legibilidad en el centro */}
+          <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundColor: 'var(--bg-primary)' }} />
         </div>
       ) : isCssGradient ? (
         // Opción B: Es un degradado CSS
         <div className="absolute inset-0 z-0" style={{ background: routineImage }}>
-           {/* Capa oscura pura encima del degradado */}
-           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          {/* Usamos el color de fondo primario para el overlay para adaptarlo al tema (claro/oscuro) */}
+          <div className="absolute inset-0 backdrop-blur-sm opacity-80" style={{ backgroundColor: 'var(--bg-primary)' }} />
         </div>
       ) : (
-        // Opción C: No hay imagen (Fallback integrado con el tema de la app)
+        // Opción C: No hay imagen
         <div className="absolute inset-0 z-0 bg-black/5 dark:bg-white/5" />
       )}
 
-      {/* Determinar el color del texto si hay fondo o no */}
-      <div className={`relative z-10 p-6 sm:p-8 flex flex-col items-center text-center ${hasValidImage || isCssGradient ? 'text-white' : 'text-text-primary'}`}>
+      {/* Contenido (Texto se adapta al tema con text-text-primary). Añadido w-full para restringir el ancho */}
+      <div className="relative z-10 p-6 sm:p-8 flex flex-col items-center text-center text-text-primary w-full">
         
         {/* Botón Volver */}
         <div className="w-full flex justify-start mb-6">
           <button
             onClick={onBackClick}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/20 dark:bg-white/10 backdrop-blur-md ring-1 ring-white/10 text-sm font-bold hover:bg-black/40 dark:hover:bg-white/20 hover:scale-105 transition-all active:scale-95 shadow-sm text-white"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-bg-secondary/60 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 text-sm font-bold hover:bg-bg-secondary/80 hover:scale-105 transition-all active:scale-95 shadow-sm text-text-primary"
           >
             <ChevronLeft size={18} strokeWidth={2.5} />
             Atrás
           </button>
         </div>
 
-        {/* Título de la Rutina */}
-        <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 drop-shadow-lg px-2 break-words text-balance tracking-tight">
+        {/* Título de la Rutina forzado a saltar línea si es necesario */}
+        <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 px-2 w-full break-words whitespace-normal leading-tight tracking-tight">
           {routineName}
         </h1>
 
         {/* Aviso de Iniciar Cronómetro */}
         {!hasWorkoutStarted && (
-          <div className="mb-6 mt-2 flex items-center gap-2 px-4 py-2 rounded-full bg-accent/20 ring-1 ring-accent/30 text-accent text-[10px] sm:text-xs font-bold uppercase tracking-widest animate-pulse shadow-sm backdrop-blur-md">
+          <div className="mb-6 mt-2 flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 ring-1 ring-accent/30 text-accent text-[10px] sm:text-xs font-bold uppercase tracking-widest animate-pulse shadow-sm backdrop-blur-md">
             <Timer size={14} /> Toca Play para Empezar
           </div>
         )}
 
         {/* Cronómetro Gigante */}
-        <div className={`font-mono text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter drop-shadow-lg mb-10 transition-colors duration-500 ${hasWorkoutStarted && !isWorkoutPaused ? 'text-accent' : (hasValidImage || isCssGradient ? 'text-white/90' : 'text-text-primary')}`}>
+        <div className={`font-mono text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter drop-shadow-sm mb-10 transition-colors duration-500 ${hasWorkoutStarted && !isWorkoutPaused ? 'text-accent' : 'text-text-primary'}`}>
           {formatTime(timer)}
         </div>
 
-        {/* Controles (Píldora flotante tipo Dynamic Island) */}
-        <div className="flex items-center gap-1 sm:gap-2 p-2 sm:p-2.5 rounded-full bg-black/60 dark:bg-black/80 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl text-white">
+        {/* Controles (Píldora flotante tipo Dynamic Island adaptada al tema Glass) */}
+        <div className="flex items-center gap-1 sm:gap-2 p-2 sm:p-2.5 rounded-full bg-bg-secondary/80 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 shadow-xl text-text-primary">
           
           <button
             onClick={onShowHeatmap}
-            className="p-3.5 sm:p-4 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+            className="p-3.5 sm:p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
             title="Mapa Muscular"
           >
             <Activity size={24} />
@@ -140,20 +151,20 @@ const WorkoutHeader = ({
           
           <button
             onClick={onShowCalculator}
-            className="p-3.5 sm:p-4 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+            className="p-3.5 sm:p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
             title="Calculadora de Discos"
           >
             <Calculator size={24} />
           </button>
 
-          <div className="w-[1px] h-8 bg-white/20 mx-1 sm:mx-2" />
+          <div className="w-[1px] h-8 bg-black/10 dark:bg-white/10 mx-1 sm:mx-2" />
 
           {/* Botón Principal (Play/Pause) */}
           <button
             onClick={onTogglePause}
             className={`p-4 sm:p-5 rounded-full transition-all flex items-center justify-center active:scale-90 ${
               hasWorkoutStarted && !isWorkoutPaused
-                ? 'bg-white/10 text-white hover:bg-white/20 ring-1 ring-white/10'
+                ? 'bg-black/5 dark:bg-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/20 ring-1 ring-black/5 dark:ring-white/10'
                 : 'bg-accent text-white hover:scale-105 shadow-lg shadow-accent/40 ring-1 ring-accent/50'
             }`}
           >
@@ -164,11 +175,11 @@ const WorkoutHeader = ({
             )}
           </button>
 
-          <div className="w-[1px] h-8 bg-white/20 mx-1 sm:mx-2" />
+          <div className="w-[1px] h-8 bg-black/10 dark:bg-white/10 mx-1 sm:mx-2" />
 
           <button
             onClick={onFinishClick}
-            className="p-3.5 sm:p-4 rounded-full text-red-500/80 hover:text-red-500 hover:bg-red-500/20 transition-all active:scale-95"
+            className="p-3.5 sm:p-4 rounded-full text-red-500/80 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-95"
             title="Finalizar Entrenamiento"
           >
             <Square size={24} fill="currentColor" />

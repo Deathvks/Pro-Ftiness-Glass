@@ -53,24 +53,39 @@ const WorkoutExerciseCard = ({
 
   const getWeight = (set) => parseFloat(set?.weight_kg || set?.weight || 0);
   const getReps = (set) => parseInt(set?.reps || 0, 10);
+  
+  // NUEVO: Obtenemos el RIR para el cálculo avanzado de 1RM
+  const getRir = (set) => {
+    const val = parseFloat(set?.rir);
+    return isNaN(val) ? 0 : val;
+  };
 
   let estimated1RM = parseFloat(exercise.last_performance?.estimated_1rm || 0);
 
+  // Si no viene calculado del backend, lo calculamos al vuelo mejorado con el RIR
   if (!estimated1RM || estimated1RM === 0) {
     if (exercise.last_performance?.sets?.length > 0) {
       const validSets = exercise.last_performance.sets.filter(s => getWeight(s) > 0 && getReps(s) > 0);
 
       if (validSets.length > 0) {
-        let bestSet = validSets[0];
-        for (let i = 1; i < validSets.length; i++) {
-          if (getWeight(validSets[i]) > getWeight(bestSet)) {
-            bestSet = validSets[i];
+        let best1RM = 0;
+        
+        for (let i = 0; i < validSets.length; i++) {
+          const weight = getWeight(validSets[i]);
+          const reps = getReps(validSets[i]);
+          const rir = getRir(validSets[i]);
+          
+          // Sumamos el RIR a las repeticiones para calcular el potencial real
+          const effectiveReps = reps + rir;
+          const current1RM = calculate1RM(weight, effectiveReps);
+          
+          if (current1RM > best1RM) {
+            best1RM = current1RM;
           }
         }
         
-        const finalWeight = getWeight(bestSet);
-        if (finalWeight > 0) {
-          estimated1RM = calculate1RM(finalWeight, getReps(bestSet));
+        if (best1RM > 0) {
+          estimated1RM = Math.round(best1RM * 100) / 100;
         }
       }
     }

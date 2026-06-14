@@ -134,21 +134,70 @@ export const analyzeRoutine = (exercises = [], answers = {}) => {
 
 export const checkStagnation = (history = []) => {
   if (!history || history.length < 3) return null;
-  const recent = history.slice(0, 3);
+  
+  // Asumimos que index 0 es el más reciente (ordenado por fecha desc)
+  // Tomamos hasta 4 sesiones para poder evaluar tendencias prolongadas
+  const recent = history.slice(0, 4); 
+  
   const weights = recent.map(session => {
     if (!session.sets || !Array.isArray(session.sets)) return 0;
+    // Obtenemos el peso máximo levantado en esa sesión
     return Math.max(...session.sets.map(s => parseFloat(s.weight || 0)), 0);
   });
-  if (weights.some(w => w === 0)) return null;
-  const isStalled = weights[0] <= weights[1] && weights[1] <= weights[2];
-  if (isStalled) {
+  
+  // Si en las últimas 3 no hay pesos registrados (ej. ejercicios de peso corporal o errores), saltamos
+  if (weights.slice(0, 3).some(w => w === 0)) return null;
+
+  const w0 = weights[0]; // Sesión más reciente
+  const w1 = weights[1]; // Sesión anterior
+  const w2 = weights[2]; // Hace 2 sesiones
+  const w3 = weights.length > 3 ? weights[3] : null;
+
+  // 1. Detección de REGRESIÓN (Bajada de rendimiento notable)
+  if (w0 < w1 && w1 <= w2) {
     return {
       isStalled: true,
-      title: 'Estancamiento Detectado',
-      text: 'Llevas 3 sesiones sin subir cargas.',
-      actions: ['Semana de descarga', 'Drop sets', 'Cambio de ejercicio']
+      type: 'regression',
+      title: '📉 Rendimiento en Bajada',
+      text: 'Has levantado menos peso que en tus sesiones anteriores. Es normal tener días malos, pero vigílalo.',
+      actions: [
+        'Revisa tu descanso y alimentación (¿Estás durmiendo mal o en déficit calórico muy agresivo?).',
+        'Podrías estar acumulando fatiga del sistema nervioso. Valora tomarte una semana de descarga.',
+        'Si sientes molestias articulares, cambia temporalmente a una variante con mancuernas o poleas.'
+      ]
     };
   }
+
+  // 2. Detección de ESTANCAMIENTO SEVERO (4 sesiones exactas con la misma carga)
+  if (w3 !== null && w0 === w1 && w1 === w2 && w2 === w3) {
+    return {
+      isStalled: true,
+      type: 'stagnation_severe',
+      title: '🧱 Estancamiento Prolongado',
+      text: 'Llevas 4 sesiones seguidas tirando exactamente con el mismo peso máximo.',
+      actions: [
+        'Cambia el rango de repeticiones (ej. si haces 10-12, baja a 5-8 metiendo más peso).',
+        'Aplica técnicas de intensidad como Rest-Pause o Drop sets en tu última serie.',
+        'Sustituye este ejercicio por una variante biomecánicamente similar durante 4 semanas.'
+      ]
+    };
+  }
+
+  // 3. Detección de ESTANCAMIENTO NORMAL (3 sesiones sin poder subir de peso)
+  if (w0 <= w1 && w1 <= w2 && w0 === w2) {
+    return {
+      isStalled: true,
+      type: 'stagnation',
+      title: '⚠️ Meseta de Rendimiento',
+      text: 'Llevas 3 sesiones sin lograr superar tus marcas.',
+      actions: [
+        'Intenta añadir micro-discos (0.5kg o 1.25kg) en lugar de hacer saltos grandes de peso.',
+        'Céntrate en progresar sumando repeticiones con este peso antes de intentar volver a subir la carga.',
+        'Aumenta el tiempo de descanso entre tus series efectivas a 2-3 minutos.'
+      ]
+    };
+  }
+
   return null;
 };
 
