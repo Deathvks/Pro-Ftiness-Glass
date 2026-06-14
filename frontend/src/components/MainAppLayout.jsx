@@ -101,6 +101,7 @@ export default function MainAppLayout({
   const [isDraggingDrop, setIsDraggingDrop] = useState(false);
   const [itemWidth, setItemWidth] = useState(0);
   const [navWidth, setNavWidth] = useState(0);
+  const [isInitialRender, setIsInitialRender] = useState(true);
 
   // --- REFS PARA EL MOTOR DE GESTOS (SWIPE) DEL CONTENIDO ---
   const swipeContainerRef = useRef(null);
@@ -309,18 +310,29 @@ export default function MainAppLayout({
 
   // --- LÓGICA DE LA GOTA LÍQUIDA EN NAVBAR ---
   useEffect(() => {
+    if (!navRef.current) return;
+
     const updateSize = () => {
       if (navRef.current) {
         setItemWidth(navRef.current.offsetWidth / navItems.length);
         setNavWidth(navRef.current.offsetWidth);
       }
     };
+
+    // Calcular en el render inicial
     updateSize();
+
+    // ResizeObserver asegura que los recálculos del safe-area de iOS ajusten el ancho en tiempo real
+    const resizeObserver = new ResizeObserver(() => {
+      updateSize();
+    });
+    
+    resizeObserver.observe(navRef.current);
     window.addEventListener('resize', updateSize);
-    const timeout = setTimeout(updateSize, 100);
+    
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener('resize', updateSize);
-      clearTimeout(timeout);
     };
   }, [navItems.length]);
 
@@ -332,9 +344,14 @@ export default function MainAppLayout({
         let targetX = (activeIndex + 0.5) * itemWidth;
         targetX = Math.max(halfItem, Math.min(targetX, navWidth - halfItem));
         setDragX(targetX);
+        
+        if (isInitialRender) {
+          // Desactivar la transición inicial para que aparezca "de golpe" en su sitio
+          setTimeout(() => setIsInitialRender(false), 50);
+        }
       }
     }
-  }, [view, isDraggingDrop, itemWidth, navWidth, navItems]);
+  }, [view, isDraggingDrop, itemWidth, navWidth, navItems, isInitialRender]);
 
   const handleDropDragStart = () => {
     setIsDraggingDrop(true);
@@ -454,6 +471,10 @@ export default function MainAppLayout({
   }, [cookieConsent, handleAcceptCookies]);
 
   const isAILimitReached = parseInt(aiRemaining, 10) === 0;
+
+  // Determinar si debemos mostrar la gota. Se oculta al entrar en ajustes o al recargar de cero si no está en el menú principal.
+  const activeIndex = navItems.findIndex(item => item.id === view);
+  const isDropVisible = activeIndex !== -1 && dragX > 0;
 
   return (
     <div 
@@ -583,7 +604,8 @@ export default function MainAppLayout({
               style={{
                 left: 0,
                 transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) scale(${isDraggingDrop ? '1.15, 0.85' : '1, 1'})`,
-                transition: isDraggingDrop ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                opacity: isDropVisible ? 1 : 0,
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.02) 100%)',
                 backdropFilter: 'blur(8px) brightness(1.2)',
                 WebkitBackdropFilter: 'blur(8px) brightness(1.2)',
@@ -643,9 +665,10 @@ export default function MainAppLayout({
               style={{
                 left: 0,
                 transform: `translate3d(calc(${dragX}px - 50%), -50%, 0)`,
-                transition: isDraggingDrop ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
                 WebkitBackfaceVisibility: 'hidden',
                 willChange: 'transform',
+                display: isDropVisible ? 'block' : 'none',
               }}
               onClick={(e) => {
                 if (hasDraggedRef.current) {
