@@ -23,7 +23,7 @@
   --color-red: #ef4444;
   --color-neutral: #6b7280;
 
-  /* Glassmorphism - TRUE LIQUID GLASS (Dark Base) */
+  /* Glassmorphism - TRUE LIQUID Glass (Dark Base) */
   --glass-blur: 32px;
   --glass-radius: 32px;
   --glass-bg: rgba(255, 255, 255, 0.02);
@@ -64,14 +64,12 @@ html.light-theme {
   --text-muted: #94a3b8;
 
   --glass-blur: 40px; 
-  /* Tinte ligeramente grisáceo (slate) para despegarlo del fondo blanco */
   --glass-bg: rgba(226, 232, 240, 0.4); 
   --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.1) 100%);
   --glass-border: rgba(0, 0, 0, 0.08); 
   --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 1), inset 0px -1px 1px rgba(0, 0, 0, 0.05);
   --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
   --glass-saturation: 180%;
-  /* Bajar el brillo oscurece sutilmente lo que hay debajo del cristal, dando volumen */
   --glass-brightness: 0.94;
 
   --header-solid: #f1f3f4;
@@ -320,6 +318,19 @@ html.galaxy-theme #root::after {
     overscroll-behavior: none;
   }
 
+  /* TRUCO PARA IOS PWA: Capa protectora para pintar siempre el safe area */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 0px);
+    background-color: var(--header-solid) !important;
+    z-index: 999999;
+    pointer-events: none;
+  }
+
   #root {
     background-color: var(--header-solid) !important;
     isolation: isolate;
@@ -363,12 +374,11 @@ html.galaxy-theme #root::after {
     background-image: var(--glass-gradient);
     border-radius: var(--glass-radius);
     
-    /* Efecto óptico nativo de Apple: Saturación y Brillo junto al Blur */
+    /* Efecto óptico nativo de Apple */
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)) brightness(var(--glass-brightness));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)) brightness(var(--glass-brightness));
     
     border: 1px solid var(--glass-border);
-    /* Se combina el Drop Shadow exterior y el Inset Shadow (Highlight) para el bisel superior */
     box-shadow: var(--glass-shadow), var(--glass-highlight);
   }
 
