@@ -576,16 +576,7 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* Capa de difuminado que nace desde abajo para disimular el contenido pasando detrás de la píldora */}
-      <div 
-        className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
-        style={{
-          height: 'calc(100px + env(safe-area-inset-bottom))',
-          background: 'linear-gradient(to top, var(--bg-primary) 30%, transparent 100%)',
-        }}
-      ></div>
-
-      {/* --- PÍLDORA FLOTANTE ORIGINAL RECUPERADA --- */}
+      {/* --- PÍLDORA FLOTANTE --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4"
         style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
