@@ -258,15 +258,16 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // Modificamos directamente nuestra etiqueta maestra
+        // Meta tag para que iOS coloree la barra de estado si no es PWA
         var metaColor = document.getElementById('dynamic-theme-color');
         if(metaColor) {
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        // Limpiamos backgrounds inyectados y dejamos que CSS se encargue nativamente
-        root.style.setProperty('background-color', selectedHeaderColor, 'important');
-        root.style.removeProperty('background'); // Quitamos el degradado problemático
+        // SOLUCIÓN DEFINITIVA: Tanto HTML como BODY tienen el color de fondo primario.
+        // Cero degradados, cero bloque sólido en el notch inferior.
+        root.style.setProperty('background-color', selectedBgColor, 'important');
+        root.style.removeProperty('background');
 
         var setBodyColor = function() {
             if(document.body) {
