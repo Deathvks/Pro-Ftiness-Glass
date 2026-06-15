@@ -294,54 +294,38 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE */
 @layer components {
 
-  /* FIX DEFINITIVO: Fondo transparente/primary para evitar bloques oscuros abajo */
   html {
     width: 100%;
     height: 100%;
-    background-color: var(--bg-primary) !important;
+    background-color: var(--header-solid) !important; /* Manda el color del Notch al SO iOS */
     overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply text-text-primary antialiased;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    /* 🔴 ELIMINADO: position: fixed (ESTO CAUSABA EL BLOQUE INFERIOR) */
+    margin: 0;
+    padding: 0;
     width: 100%;
-    height: 100%;
-    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100dvh; /* Obliga al body a tapar TODO el agujero inferior */
     background-color: var(--bg-primary) !important;
+    overflow: hidden;
     box-sizing: border-box;
     overscroll-behavior: none;
-  }
-
-  /* CAPA PROTECTORA DEL NOTCH SUPERIOR:
-     Se pinta del color del header SIEMPRE. Así al abrir/cerrar la app no se rompe. */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: env(safe-area-inset-top, 0px);
-    background-color: var(--header-solid) !important;
-    z-index: 999999;
-    pointer-events: none;
+    display: flex;
+    flex-direction: column;
   }
 
   #root {
     background-color: transparent !important;
-    isolation: isolate;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    flex: 1;
     width: 100%;
-    height: 100%;
+    position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   main {

@@ -263,11 +263,12 @@
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        // SOLUCIÓN AL "SANGRADO": El HTML debe tener el color bg-primary. 
-        // Si el body en iOS se queda corto por el safe-area inferior, se verá este color y no el oscuro del header.
-        root.style.setProperty('background-color', selectedBgColor, 'important');
+        // SOLUCIÓN LIMPIA: El HTML se pinta del color de cabecera. Así iOS colorea el Notch superior
+        // perfectamente cuando abres y cierras la PWA.
+        root.style.setProperty('background-color', selectedHeaderColor, 'important');
         root.style.removeProperty('background'); 
 
+        // El BODY toma el color de fondo para el resto de la app
         var setBodyColor = function() {
             if(document.body) {
               document.body.style.setProperty('background-color', selectedBgColor, 'important');
