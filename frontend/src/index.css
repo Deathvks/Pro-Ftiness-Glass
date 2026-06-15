@@ -294,12 +294,12 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE */
 @layer components {
 
-  /* 🔴 LA CLAVE DE LA SOLUCIÓN: Alturas absolutas cerradas al 100% de la ventana */
+  /* 🔴 SOLUCIÓN DEFINITIVA PARA LA ESTRUCTURA PWA DE iOS */
   html {
     width: 100%;
-    height: 100vh;
-    height: 100dvh; /* Usa la ventana visual estricta del móvil */
-    background-color: var(--header-solid) !important; 
+    height: 100%;
+    /* Ponemos bg-primary para que el Notch Inferior se camufle con el fondo y no cree un "bloque" visual */
+    background-color: var(--bg-primary) !important; 
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
   }
@@ -308,29 +308,25 @@ html.galaxy-theme #root::after {
     @apply text-text-primary antialiased;
     margin: 0;
     padding: 0;
-    width: 100%;
-    height: 100%; /* En lugar de min-height */
+    
+    /* En lugar de min-height o fixed, position: absolute anclado asegura que se llene todo el marco físico de la pantalla, evitando el bug de 100dvh que encogía la app y desplazaba todo */
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    
+    overflow: hidden; 
     background-color: var(--bg-primary) !important;
-    overflow: hidden; /* Corta el scroll infinito de la página web */
     box-sizing: border-box;
     overscroll-behavior: none;
   }
 
   #root {
     width: 100%;
-    height: 100%; /* Obliga a que root tome solo el 100% y no crezca por el contenido */
+    height: 100%; 
     background-color: transparent !important;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-  }
-
-  /* 🔴 LA MAGIA PARA LA PWA DE iOS: Elimina el bloque inferior */
-  @media (display-mode: standalone) {
-    html, body, #root {
-      height: 100%; 
-    }
   }
 
   h1, h2, h3 {
