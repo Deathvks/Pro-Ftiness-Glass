@@ -326,6 +326,13 @@ html.galaxy-theme #root::after {
     flex-direction: column;
   }
 
+  /* 🔴 LA MAGIA PARA LA PWA DE iOS: Elimina el bloque inferior */
+  @media (display-mode: standalone) {
+    html, body, #root {
+      height: 100%; 
+    }
+  }
+
   h1, h2, h3 {
     @apply text-text-primary;
   }
