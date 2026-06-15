@@ -556,39 +556,41 @@ export default function MainAppLayout({
         <main
           ref={mainContentRef}
           className="flex-1 overflow-y-auto overflow-x-hidden relative"
-          style={{ backgroundColor: 'var(--bg-primary)', touchAction: 'pan-y' }}
+          style={{ backgroundColor: 'transparent', touchAction: 'pan-y' }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
-          <div ref={swipeContainerRef} className="min-h-full w-full">
+          <div ref={swipeContainerRef} className="min-h-full w-full relative z-0">
             <Suspense fallback={<LoadingFallback />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
                 {currentViewComponent}
               </React.Fragment>
             </Suspense>
 
-            {/* Espaciador inferior ajustado para la nueva altura del Navbar nativo */}
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + env(safe-area-inset-bottom))' }}></div>
+            {/* Espacio extra al final para que el contenido no quede oculto detrás de la píldora flotante */}
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      {/* --- NUEVO NAVBAR INFERIOR NATIVO DE ANCHO COMPLETO --- */}
+      {/* Capa de difuminado que nace desde abajo para disimular el contenido pasando detrás de la píldora */}
+      <div 
+        className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
+        style={{
+          height: 'calc(100px + env(safe-area-inset-bottom))',
+          background: 'linear-gradient(to top, var(--bg-primary) 30%, transparent 100%)',
+        }}
+      ></div>
+
+      {/* --- PÍLDORA FLOTANTE ORIGINAL RECUPERADA --- */}
       <div
-        className="md:hidden fixed bottom-0 left-0 w-full z-50 pointer-events-auto"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4"
+        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
       >
-        {/* Fondo Glass que se extiende por TODO el safe-area-inset-bottom gracias a su posición absoluta */}
-        <div 
-          className="absolute inset-0 glass -z-10 border-t border-glass-border"
-          style={{ borderRadius: 0, borderBottom: 'none', borderLeft: 'none', borderRight: 'none' }}
-        ></div>
-        
-        {/* Contenedor de iconos con altura estándar de iOS (64px) */}
-        <div className="flex items-center w-full h-[64px] relative px-1 sm:px-2">
+        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3 shadow-2xl border border-glass-border">
           
           <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
             
@@ -712,7 +714,7 @@ export default function MainAppLayout({
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => handleNavClick('workout')}
-          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>
