@@ -131,7 +131,7 @@ html.galaxy-theme {
 }
 
 html.galaxy-theme #root {
-  background-color: var(--header-solid) !important;
+  background-color: var(--bg-primary) !important;
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.12), transparent 40%),
     radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.12), transparent 40%);
@@ -298,7 +298,7 @@ html.galaxy-theme #root::after {
     width: 100%;
     height: 100vh;
     height: 100dvh;
-    background-color: var(--header-solid) !important;
+    background-color: var(--bg-primary) !important;
     overscroll-behavior: none;
   }
 
@@ -313,12 +313,12 @@ html.galaxy-theme #root::after {
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
-    background-color: var(--header-solid) !important;
+    background-color: var(--bg-primary) !important;
     box-sizing: border-box;
     overscroll-behavior: none;
   }
 
-  /* TRUCO PARA IOS PWA: Capa protectora para pintar siempre el safe area */
+  /* TRUCO PARA IOS PWA: Capa protectora para pintar siempre el safe area superior con el color del header */
   body::before {
     content: '';
     position: fixed;
@@ -332,7 +332,7 @@ html.galaxy-theme #root::after {
   }
 
   #root {
-    background-color: var(--header-solid) !important;
+    background-color: var(--bg-primary) !important;
     isolation: isolate;
     position: absolute;
     top: 0;

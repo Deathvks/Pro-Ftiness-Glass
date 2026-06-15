@@ -258,17 +258,18 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // Modificamos directamente nuestra etiqueta maestra
+        // Modificamos directamente nuestra etiqueta maestra (Status bar superior)
         var metaColor = document.getElementById('dynamic-theme-color');
         if(metaColor) {
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        // Forzamos el color del HTML y BODY de manera estricta para Safari
-        root.style.setProperty('background-color', selectedHeaderColor, 'important');
+        // Forzamos el color del HTML y BODY de manera estricta para Safari a bg-primary 
+        // para que la parte inferior de la pantalla ocupe todo sin cortes
+        root.style.setProperty('background-color', selectedBgColor, 'important');
         var setBodyColor = function() {
             if(document.body) {
-              document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
+              document.body.style.setProperty('background-color', selectedBgColor, 'important');
             }
         };
         if(document.body) setBodyColor();

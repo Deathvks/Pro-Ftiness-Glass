@@ -479,7 +479,7 @@ export default function MainAppLayout({
   return (
     <div 
       className="relative flex w-full h-full overflow-hidden" 
-      style={{ backgroundColor: 'var(--header-solid)' }}
+      style={{ backgroundColor: 'var(--bg-primary)' }}
     >
       <Sidebar
         view={view}
@@ -583,10 +583,7 @@ export default function MainAppLayout({
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
           height: 'calc(120px + env(safe-area-inset-bottom))',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
+          background: 'linear-gradient(to top, var(--bg-primary) 15%, transparent 100%)',
         }}
       ></div>
 
