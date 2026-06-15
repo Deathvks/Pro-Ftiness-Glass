@@ -140,14 +140,21 @@ const RegisterScreen = ({ showLogin }) => {
         initGoogleAuth();
     }, []);
 
+    // 🔴 AHORA ESCUCHA TANTO EL EVENTO DE STORAGE COMO EL EVENTO CUSTOM DEL MODAL
     useEffect(() => {
         const checkConsent = () => {
             const consent = localStorage.getItem('cookie_consent');
             setHasConsented(consent === 'accepted');
         };
         checkConsent();
+        
         window.addEventListener('storage', checkConsent);
-        return () => window.removeEventListener('storage', checkConsent);
+        window.addEventListener('cookie_consent_updated', checkConsent);
+        
+        return () => {
+            window.removeEventListener('storage', checkConsent);
+            window.removeEventListener('cookie_consent_updated', checkConsent);
+        };
     }, []);
 
     useEffect(() => {
@@ -482,19 +489,6 @@ const RegisterScreen = ({ showLogin }) => {
         }
     };
 
-    const onModalSuccess = (tokenResponse) => {
-        if (tokenResponse.access_token) {
-            processGoogleToken(tokenResponse.access_token);
-        } else if (tokenResponse.credential) {
-            processGoogleToken(tokenResponse.credential);
-        }
-    };
-
-    const onModalError = () => {
-        setShowGoogleModal(false);
-        addToast('No se pudo conectar con Google.', 'error');
-    };
-
     const validateForm = () => {
         const newErrors = {};
         if (!username.trim()) {
@@ -817,8 +811,10 @@ const RegisterScreen = ({ showLogin }) => {
             <GoogleTermsModal
                 isOpen={showGoogleModal}
                 onClose={() => setShowGoogleModal(false)}
-                onSuccess={onModalSuccess}
-                onError={onModalError}
+                onAccept={() => {
+                    setShowGoogleModal(false);
+                    loginWithGoogle();
+                }}
                 onShowPolicy={() => setShowPolicy(true)}
             />
         </>

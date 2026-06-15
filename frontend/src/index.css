@@ -55,7 +55,7 @@ html.dark-theme {
   --header-solid: #1b2335; 
 }
 
-/* --- MODO CLARO (EFECTO LIQUID GLASS IOS) --- */
+/* --- MODO CLARO (EFECTO LIQUID Glass IOS) --- */
 html.light-theme {
   --bg-primary: #f8fafc; 
   --bg-secondary: #ffffff;
@@ -296,8 +296,7 @@ html.galaxy-theme #root::after {
 
   html {
     width: 100%;
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
     background-color: var(--bg-primary) !important;
     overscroll-behavior: none;
   }
@@ -310,8 +309,7 @@ html.galaxy-theme #root::after {
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
     overflow: hidden;
     background-color: var(--bg-primary) !important;
     box-sizing: border-box;

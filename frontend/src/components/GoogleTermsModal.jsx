@@ -1,10 +1,9 @@
 /* frontend/src/components/GoogleTermsModal.jsx */
 import React, { useState, useEffect } from 'react';
-import { useGoogleLogin } from '@react-oauth/google';
 import { ShieldCheck, X, ExternalLink, AlertTriangle, Info } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 
-const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy }) => {
+const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
   const [previouslyDeclined, setPreviouslyDeclined] = useState(false);
 
   useEffect(() => {
@@ -14,18 +13,17 @@ const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy })
     }
   }, [isOpen]);
 
-  const loginWithGoogle = useGoogleLogin({
-    onSuccess: (response) => {
-        if (!previouslyDeclined) {
-            localStorage.setItem('cookie_consent', 'accepted');
-            window.dispatchEvent(new Event('storage'));
-        }
-        onSuccess(response);
-    },
-    onError: onError
-  });
-
   if (!isOpen) return null;
+
+  const handleContinue = () => {
+    if (!previouslyDeclined) {
+        localStorage.setItem('cookie_consent', 'accepted');
+        // Usamos un evento personalizado para que la ventana actual sí se entere al instante
+        window.dispatchEvent(new Event('cookie_consent_updated'));
+    }
+    // Llamamos al padre para que ejecute su propio Google Login de forma centralizada
+    onAccept(); 
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
@@ -90,7 +88,7 @@ const GoogleTermsModal = ({ isOpen, onClose, onSuccess, onError, onShowPolicy })
 
           <div className="flex flex-col gap-3 mt-2">
             <button 
-                onClick={() => loginWithGoogle()}
+                onClick={handleContinue}
                 className="w-full h-12 bg-accent text-white rounded-xl flex items-center justify-center gap-3 font-bold shadow-lg transition hover:scale-[1.02] hover:shadow-accent/25"
             >
                 <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
