@@ -294,66 +294,50 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE */
 @layer components {
 
+  /* 🔴 LA CLAVE DE LA SOLUCIÓN: Alturas absolutas cerradas al 100% de la ventana */
   html {
     width: 100%;
-    height: 100%;
-    background-color: var(--header-solid) !important; /* Manda el color del Notch al SO iOS */
+    height: 100vh;
+    height: 100dvh; /* Usa la ventana visual estricta del móvil */
+    background-color: var(--header-solid) !important; 
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply text-text-primary antialiased;
-    /* 🔴 ELIMINADO: position: fixed (ESTO CAUSABA EL BLOQUE INFERIOR) */
     margin: 0;
     padding: 0;
     width: 100%;
-    min-height: 100vh;
-    min-height: 100dvh; /* Obliga al body a tapar TODO el agujero inferior */
+    height: 100%; /* En lugar de min-height */
     background-color: var(--bg-primary) !important;
-    overflow: hidden;
+    overflow: hidden; /* Corta el scroll infinito de la página web */
     box-sizing: border-box;
     overscroll-behavior: none;
-    display: flex;
-    flex-direction: column;
   }
 
   #root {
-    background-color: transparent !important;
-    flex: 1;
     width: 100%;
+    height: 100%; /* Obliga a que root tome solo el 100% y no crezca por el contenido */
+    background-color: transparent !important;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
   }
 
-  main {
-    height: 100%;
-  }
-
-  h1,
-  h2,
-  h3 {
+  h1, h2, h3 {
     @apply text-text-primary;
   }
 
   /* --- GLOBAL INPUT OVERRIDES --- */
-  input:focus,
-  textarea:focus,
-  select:focus,
-  button:focus,
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible,
-  button:focus-visible {
+  input:focus, textarea:focus, select:focus, button:focus,
+  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
     @apply outline-none;
   }
 
   /* --- TRUE LIQUID GLASS UNIVERSAL --- */
-  .glass,
-  .bg-glass-bg,
-  .bg-\[--glass-bg\] {
+  .glass, .bg-glass-bg, .bg-\[--glass-bg\] {
     background-color: var(--glass-bg);
     background-image: var(--glass-gradient);
     border-radius: var(--glass-radius);
@@ -414,12 +398,8 @@ html.galaxy-theme #root::after {
 
   /* QR Scanner */
   @keyframes scan {
-    0% {
-      transform: translateY(0);
-    }
-    100% {
-      transform: translateY(240px);
-    }
+    0% { transform: translateY(0); }
+    100% { transform: translateY(240px); }
   }
 
   .scan-line {
@@ -465,25 +445,13 @@ html.galaxy-theme #root::after {
   }
 
   @keyframes fade-in-up {
-    0% {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    0% { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
   
   @keyframes slide-up {
-    0% {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes fade-in {
@@ -492,25 +460,13 @@ html.galaxy-theme #root::after {
   }
 
   @keyframes toast-in {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
 
   @keyframes toast-out {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
   }
 }
 

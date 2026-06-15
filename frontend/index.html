@@ -263,12 +263,11 @@
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        // SOLUCIÓN LIMPIA: El HTML se pinta del color de cabecera. Así iOS colorea el Notch superior
-        // perfectamente cuando abres y cierras la PWA.
-        root.style.setProperty('background-color', selectedHeaderColor, 'important');
+        // 🔴 CORRECCIÓN CLAVE: El HTML y el BODY comparten el bg-primary SIEMPRE.
+        // Cero bloques de color del header colándose por la parte inferior.
+        root.style.setProperty('background-color', selectedBgColor, 'important');
         root.style.removeProperty('background'); 
 
-        // El BODY toma el color de fondo para el resto de la app
         var setBodyColor = function() {
             if(document.body) {
               document.body.style.setProperty('background-color', selectedBgColor, 'important');

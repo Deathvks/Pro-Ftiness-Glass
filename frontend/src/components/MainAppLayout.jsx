@@ -474,6 +474,7 @@ export default function MainAppLayout({
 
   return (
     <div 
+      /* ESTRUCTURA ORIGINAL RESTAURADA: Esto hace que el PC Sidebar vuelva a ocupar todo el espacio */
       className="relative flex w-full h-full overflow-hidden" 
       style={{ backgroundColor: 'var(--bg-primary)' }}
     >
@@ -552,7 +553,7 @@ export default function MainAppLayout({
           </div>
         </header>
 
-        {/* --- CONTENEDOR PRINCIPAL CON SWIPE EVENT LISTENERS --- */}
+        {/* --- CONTENEDOR PRINCIPAL --- */}
         <main
           ref={mainContentRef}
           className="flex-1 overflow-y-auto overflow-x-hidden relative"
@@ -569,14 +570,13 @@ export default function MainAppLayout({
               </React.Fragment>
             </Suspense>
 
-            {/* Espacio extra al final para que el contenido no quede oculto detrás de la píldora flotante */}
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(120px + env(safe-area-inset-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      {/* --- CAPA DE DIFUMINADO ORIGINAL RESTAURADA --- */}
+      {/* --- CAPA DE DIFUMINADO ORIGINAL RESTAURADA EXACTAMENTE COMO LA TENÍAS --- */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
@@ -590,12 +590,12 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* --- PÍLDORA FLOTANTE ORIGINAL RESTAURADA --- */}
+      {/* --- PÍLDORA FLOTANTE ORIGINAL RESTAURADA EXACTAMENTE COMO LA TENÍAS --- */}
       <div
-        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4"
+        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
       >
-        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
+        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3 shadow-2xl border border-glass-border">
           
           <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
             
@@ -618,7 +618,7 @@ export default function MainAppLayout({
             >
             </div>
 
-            {/* Iconos del navbar con iluminación en tiempo real */}
+            {/* Iconos del navbar */}
             {navItems.map((item, index) => {
               const isActive = view === item.id;
               let isVisuallyActive = isActive;
@@ -651,7 +651,7 @@ export default function MainAppLayout({
               );
             })}
 
-            {/* --- CONTROLADOR DE ARRASTRE INVISIBLE DE LA GOTA --- */}
+            {/* --- CONTROLADOR DE ARRASTRE INVISIBLE --- */}
             <div
               ref={dropRef}
               onTouchStart={handleDropDragStart}
@@ -690,7 +690,6 @@ export default function MainAppLayout({
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {/* --- EL ORDEN IMPORTA: Cookies primero, Welcome Modal si las cookies están OK --- */}
       {cookieConsent === null && (
         <CookieConsentBanner 
           onAccept={handleAcceptCookies} 
