@@ -131,7 +131,7 @@ html.galaxy-theme {
 }
 
 html.galaxy-theme #root {
-  background-color: var(--bg-primary) !important;
+  background-color: transparent !important;
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.12), transparent 40%),
     radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.12), transparent 40%);
@@ -294,10 +294,12 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE */
 @layer components {
 
-  html {
+  html, body {
     width: 100%;
     height: 100%;
-    background-color: var(--bg-primary) !important;
+    /* El famoso Split-Gradient para arreglar los rebotes de iOS y la barra de estado */
+    background: linear-gradient(to bottom, var(--header-solid) 0%, var(--header-solid) 50%, var(--bg-primary) 50%, var(--bg-primary) 100%) !important;
+    background-attachment: fixed !important;
     overscroll-behavior: none;
   }
 
@@ -308,29 +310,13 @@ html.galaxy-theme #root::after {
     left: 0;
     right: 0;
     bottom: 0;
-    width: 100%;
-    height: 100%;
     overflow: hidden;
-    background-color: var(--bg-primary) !important;
     box-sizing: border-box;
-    overscroll-behavior: none;
   }
 
-  /* TRUCO PARA IOS PWA: Capa protectora para pintar siempre el safe area superior con el color del header */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: env(safe-area-inset-top, 0px);
-    background-color: var(--header-solid) !important;
-    z-index: 999999;
-    pointer-events: none;
-  }
-
+  /* Root transparente para que el rebote revele el split-gradient del body */
   #root {
-    background-color: var(--bg-primary) !important;
+    background-color: transparent !important;
     isolation: isolate;
     position: absolute;
     top: 0;

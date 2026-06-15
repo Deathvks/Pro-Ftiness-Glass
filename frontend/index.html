@@ -264,12 +264,14 @@
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        // Forzamos el color del HTML y BODY de manera estricta para Safari a bg-primary 
-        // para que la parte inferior de la pantalla ocupe todo sin cortes
-        root.style.setProperty('background-color', selectedBgColor, 'important');
+        // TRUCO PWA iOS: Gradient dividido. La mitad de arriba es del color de la cabecera (Status bar), 
+        // y la mitad de abajo es del fondo. Así solucionamos el renderizado del Status Bar y los rebotes al hacer scroll.
+        var splitBg = 'linear-gradient(to bottom, ' + selectedHeaderColor + ' 0%, ' + selectedHeaderColor + ' 50%, ' + selectedBgColor + ' 50%, ' + selectedBgColor + ' 100%)';
+        root.style.setProperty('background', splitBg, 'important');
         var setBodyColor = function() {
             if(document.body) {
-              document.body.style.setProperty('background-color', selectedBgColor, 'important');
+              document.body.style.setProperty('background', splitBg, 'important');
+              document.body.style.setProperty('background-attachment', 'fixed', 'important');
             }
         };
         if(document.body) setBodyColor();

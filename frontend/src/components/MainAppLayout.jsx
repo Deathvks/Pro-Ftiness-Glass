@@ -319,10 +319,8 @@ export default function MainAppLayout({
       }
     };
 
-    // Calcular en el render inicial
     updateSize();
 
-    // ResizeObserver asegura que los recálculos del safe-area de iOS ajusten el ancho en tiempo real
     const resizeObserver = new ResizeObserver(() => {
       updateSize();
     });
@@ -346,7 +344,6 @@ export default function MainAppLayout({
         setDragX(targetX);
         
         if (isInitialRender) {
-          // Desactivar la transición inicial para que aparezca "de golpe" en su sitio
           setTimeout(() => setIsInitialRender(false), 50);
         }
       }
@@ -472,7 +469,6 @@ export default function MainAppLayout({
 
   const isAILimitReached = parseInt(aiRemaining, 10) === 0;
 
-  // Determinar si debemos mostrar la gota. Se oculta al entrar en ajustes o al recargar de cero si no está en el menú principal.
   const activeIndex = navItems.findIndex(item => item.id === view);
   const isDropVisible = activeIndex !== -1 && dragX > 0;
 
@@ -573,25 +569,26 @@ export default function MainAppLayout({
               </React.Fragment>
             </Suspense>
 
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
+            {/* Espaciador inferior ajustado para la nueva altura del Navbar nativo */}
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + env(safe-area-inset-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      <div 
-        className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
-        style={{
-          height: 'calc(120px + env(safe-area-inset-bottom))',
-          background: 'linear-gradient(to top, var(--bg-primary) 15%, transparent 100%)',
-        }}
-      ></div>
-
+      {/* --- NUEVO NAVBAR INFERIOR NATIVO DE ANCHO COMPLETO --- */}
       <div
-        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+        className="md:hidden fixed bottom-0 left-0 w-full z-50 pointer-events-auto"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
+        {/* Fondo Glass que se extiende por TODO el safe-area-inset-bottom gracias a su posición absoluta */}
+        <div 
+          className="absolute inset-0 glass -z-10 border-t border-glass-border"
+          style={{ borderRadius: 0, borderBottom: 'none', borderLeft: 'none', borderRight: 'none' }}
+        ></div>
+        
+        {/* Contenedor de iconos con altura estándar de iOS (64px) */}
+        <div className="flex items-center w-full h-[64px] relative px-1 sm:px-2">
           
           <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
             
@@ -715,7 +712,7 @@ export default function MainAppLayout({
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => handleNavClick('workout')}
-          className="fixed right-4 bottom-28 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>
