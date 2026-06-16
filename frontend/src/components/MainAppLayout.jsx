@@ -576,6 +576,20 @@ export default function MainAppLayout({
 
       </div>
 
+      {/* --- CAPA DE SEGURIDAD: blinda la franja del home indicator en iOS PWA ---
+          Sin esto, en algunos dispositivos/vistas la franja del safe-area inferior
+          puede mostrar "en crudo" (sin difuminar) lo que haya scrolleado justo detrás
+          (p. ej. un botón o card con color de acento), por un comportamiento poco
+          fiable de mask-image + backdrop-filter de WebKit exactamente en esa franja.
+          Esta capa opaca garantiza que ahí siempre se vea el color de fondo del tema. */}
+      <div
+        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-30"
+        style={{
+          height: 'env(safe-area-inset-bottom)',
+          backgroundColor: 'var(--bg-primary)',
+        }}
+      ></div>
+
       {/* --- CAPA DE DIFUMINADO ORIGINAL RESTAURADA --- */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
