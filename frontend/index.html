@@ -245,10 +245,7 @@
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') effectiveTheme = systemDark ? 'dark' : 'light';
 
-        var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
         var headerColors = { light: '#f1f3f4', dark: '#1b2335', oled: '#0d0d0d', galaxy: '#080814' };
-
-        var selectedBgColor = bgColors[effectiveTheme] || bgColors.dark;
         var selectedHeaderColor = headerColors[effectiveTheme] || headerColors.dark;
 
         root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme');
@@ -258,21 +255,19 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // Mantenemos el theme-color de meta para Android
         var metaColor = document.getElementById('dynamic-theme-color');
         if(metaColor) {
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        // CORRECCIÓN: El HTML debe tener el color del fondo principal, no el de la cabecera.
-        // Esto evita que la PWA en iOS pinte la "safe area" inferior del color equivocado.
-        root.style.setProperty('background-color', selectedBgColor, 'important');
+        // CORRECCIÓN: El HTML y el BODY deben tener el color del HEADER para que el Notch Superior 
+        // reciba el color correcto al entrar/salir de la PWA. El fondo inferior ya está cubierto por #root.
+        root.style.setProperty('background-color', selectedHeaderColor, 'important');
         root.style.removeProperty('background'); 
 
-        // El BODY toma el color de fondo
         var setBodyColor = function() {
             if(document.body) {
-              document.body.style.setProperty('background-color', selectedBgColor, 'important');
+              document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
               document.body.style.removeProperty('background');
             }
         };
