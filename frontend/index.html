@@ -258,16 +258,18 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
+        // Mantenemos el theme-color de meta para Android
         var metaColor = document.getElementById('dynamic-theme-color');
         if(metaColor) {
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        // 🔴 CORRECCIÓN CLAVE: El HTML y el BODY comparten el bg-primary SIEMPRE.
-        // Cero bloques de color del header colándose por la parte inferior.
+        // CORRECCIÓN: El HTML debe tener el color del fondo principal, no el de la cabecera.
+        // Esto evita que la PWA en iOS pinte la "safe area" inferior del color equivocado.
         root.style.setProperty('background-color', selectedBgColor, 'important');
         root.style.removeProperty('background'); 
 
+        // El BODY toma el color de fondo
         var setBodyColor = function() {
             if(document.body) {
               document.body.style.setProperty('background-color', selectedBgColor, 'important');
