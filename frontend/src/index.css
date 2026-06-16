@@ -8,7 +8,6 @@
 /* 2) VARIABLES (Modo oscuro por defecto - True Liquid Glass) */
 :root {
   --bg-primary: #0f172a;
-  --bg-primary-rgb: 15, 23, 42;
   --bg-secondary: #1e293b;
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
@@ -40,7 +39,6 @@
 
 html.dark-theme {
   --bg-primary: #0f172a;
-  --bg-primary-rgb: 15, 23, 42;
   --bg-secondary: #1e293b;
   --text-primary: #e5e7eb;
   --text-secondary: #9ca3af;
@@ -60,7 +58,6 @@ html.dark-theme {
 /* --- MODO CLARO (EFECTO LIQUID Glass IOS) --- */
 html.light-theme {
   --bg-primary: #f8fafc; 
-  --bg-primary-rgb: 248, 250, 252;
   --bg-secondary: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #64748b;
@@ -80,7 +77,6 @@ html.light-theme {
 
 html.oled-theme {
   --bg-primary: #000000;
-  --bg-primary-rgb: 0, 0, 0;
   --bg-secondary: #000000;
   --text-primary: #ffffff;
   --text-secondary: #a3a3a3;
@@ -101,7 +97,6 @@ html.oled-theme {
 /* --- TEMA GALAXIA --- */
 html.galaxy-theme {
   --bg-primary: #080814; 
-  --bg-primary-rgb: 8, 8, 20;
   --bg-secondary: #0d0d1f;
   --header-solid: #080814; 
 
@@ -299,39 +294,34 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE */
 @layer components {
 
-  /* 🔴 SOLUCIÓN DEFINITIVA PARA LA ESTRUCTURA PWA DE iOS */
-  html {
-    width: 100%;
-    height: 100%;
-    /* Ponemos bg-primary para que el Notch Inferior se camufle con el fondo y no cree un "bloque" visual */
-    background-color: var(--bg-primary) !important; 
-    overscroll-behavior: none;
-    -webkit-text-size-adjust: 100%;
-  }
-
-  body {
-    @apply text-text-primary antialiased;
+  /* 🔴 SOLUCIÓN DEFINTIVA PWA iOS: Fijamos todo al borde físico de la pantalla de forma estricta */
+  html, body {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0; /* Anclado a las 4 esquinas */
+    width: 100vw;
+    height: 100vh; /* 100vh aquí fuerza al navegador a usar el alto real incluyendo safe-areas */
     margin: 0;
     padding: 0;
-    
-    /* En lugar de min-height o fixed, position: absolute anclado asegura que se llene todo el marco físico de la pantalla, evitando el bug de 100dvh que encogía la app y desplazaba todo */
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    
-    overflow: hidden; 
-    background-color: var(--bg-primary) !important;
-    box-sizing: border-box;
+    overflow: hidden;
     overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    box-sizing: border-box;
+  }
+  
+  body {
+    @apply text-text-primary antialiased;
+    /* No ponemos background aquí, dejamos que el script del index.html lo gestione para que 
+       el Notch superior sea del color de la cabecera */
   }
 
+  /* #root rellenará hasta abajo cubriendo ese "hueco del acento" con el fondo verdadero de la app */
   #root {
-    width: 100%;
-    height: 100%; 
-    background-color: transparent !important;
-    position: relative;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0; /* Forza el llenado físico total */
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    background-color: transparent !important;
   }
 
   h1, h2, h3 {

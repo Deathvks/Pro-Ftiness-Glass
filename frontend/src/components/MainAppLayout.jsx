@@ -569,18 +569,18 @@ export default function MainAppLayout({
               </React.Fragment>
             </Suspense>
 
-            {/* Espacio extra al final para que el contenido no quede oculto detrás de la píldora flotante */}
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
+            {/* Espacio extra al final ajustado */}
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(85px + env(safe-area-inset-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      {/* --- CAPA DE DIFUMINADO ORIGINAL RESTAURADA --- */}
+      {/* --- CAPA DE DIFUMINADO ORIGINAL RESTAURADA Y ACORTADA --- */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
-          height: 'calc(120px + env(safe-area-inset-bottom))',
+          height: 'calc(100px + env(safe-area-inset-bottom, 0px))', /* Reducido de 120px a 100px */
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
@@ -590,10 +590,10 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* --- PÍLDORA FLOTANTE (Padding ajustado para matar el espacio enorme) --- */}
+      {/* --- PÍLDORA FLOTANTE (Padding ajustado para no irse tan arriba) --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))' }}
+        style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }} /* Altura más natural */
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           
