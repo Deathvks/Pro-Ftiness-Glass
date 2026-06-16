@@ -576,17 +576,22 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* --- CAPA DE DIFUMINADO ORIGINAL RESTAURADA --- */}
+      {/* --- CAPA DE DIFUMINADO (sin mask-image) ---
+          mask-image + backdrop-filter no se renderiza de forma fiable en esta PWA
+          standalone de iOS: en vez de desvanecerse en degradado, el corte se vuelve
+          "duro" y deja ver sin difuminar lo que haya detrás (de ahí el bloque
+          rectangular de color que se veía). En vez de enmascarar el blur, pintamos
+          directamente un degradado opaco con el color real de fondo del tema
+          (--bg-primary-rgb): así, sea lo que sea que haya detrás, hacia el final del
+          degradado SIEMPRE se ve el color de fondo correcto, sin depender de que el
+          navegador aplique bien la máscara. */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
           height: 'calc(120px + env(safe-area-inset-bottom))',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
-          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
-          transform: 'translateZ(0)',
-          willChange: 'transform'
+          background: 'linear-gradient(to top, rgba(var(--bg-primary-rgb), 1) 0%, rgba(var(--bg-primary-rgb), 0.92) 22%, rgba(var(--bg-primary-rgb), 0.55) 55%, rgba(var(--bg-primary-rgb), 0) 100%)',
         }}
       ></div>
 
