@@ -294,11 +294,10 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE */
 @layer components {
 
-  /* 🔴 SOLUCIÓN DEFINITIVA PARA LA ESTRUCTURA PWA DE iOS */
   html {
     width: 100%;
-    height: 100%;
-    /* Ponemos bg-primary para que el Notch Inferior se camufle con el fondo y no cree un "bloque" visual */
+    height: 100vh; /* Fallback */
+    height: -webkit-fill-available; /* MAGIA PWA iOS: Fuerza a ocupar hasta el borde físico real */
     background-color: var(--bg-primary) !important; 
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
@@ -309,9 +308,12 @@ html.galaxy-theme #root::after {
     margin: 0;
     padding: 0;
     
-    /* En lugar de min-height o fixed, position: absolute anclado asegura que se llene todo el marco físico de la pantalla, evitando el bug de 100dvh que encogía la app y desplazaba todo */
-    position: absolute;
+    /* Anclamos el body a las cuatro esquinas de la pantalla para evitar rebotes y asegurar llenado */
+    position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: 100vh; /* Fallback */
+    height: -webkit-fill-available;
     
     overflow: hidden; 
     background-color: var(--bg-primary) !important;
