@@ -294,34 +294,50 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE */
 @layer components {
 
-  /* 🔴 SOLUCIÓN DEFINTIVA PWA iOS: Fijamos todo al borde físico de la pantalla de forma estricta */
-  html, body {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0; /* Anclado a las 4 esquinas */
-    width: 100vw;
-    height: 100vh; /* 100vh aquí fuerza al navegador a usar el alto real incluyendo safe-areas */
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+  html {
+    width: 100%;
+    height: 100%;
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
-    box-sizing: border-box;
-  }
-  
-  body {
-    @apply text-text-primary antialiased;
-    /* No ponemos background aquí, dejamos que el script del index.html lo gestione para que 
-       el Notch superior sea del color de la cabecera */
   }
 
-  /* #root rellenará hasta abajo cubriendo ese "hueco del acento" con el fondo verdadero de la app */
+  body {
+    @apply text-text-primary antialiased;
+    margin: 0;
+    padding: 0;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    overscroll-behavior: none;
+  }
+
+  /* 🔴 HACK DEFINITIVO PARA IOS PWA: Bloque invisible que se incrusta hacia el área del Notch inferior (Home Indicator).
+      Como Safari detecta que este bloque llega "más abajo" de lo normal, el color que se pinta
+      en ese hueco siempre será tu fondo de app (--bg-primary) en vez de la cabecera. */
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -100px;
+    left: 0;
+    right: 0;
+    height: 150px;
+    background-color: var(--bg-primary) !important;
+    z-index: -100;
+    pointer-events: none;
+  }
+
   #root {
+    width: 100%;
+    height: 100%;
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0; /* Forza el llenado físico total */
+    top: 0; left: 0; right: 0; bottom: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    background-color: transparent !important;
+    background-color: var(--bg-primary) !important;
   }
 
   h1, h2, h3 {
@@ -334,7 +350,7 @@ html.galaxy-theme #root::after {
     @apply outline-none;
   }
 
-  /* --- TRUE LIQUID GLASS UNIVERSAL --- */
+  /* --- TRUE LIQUID Glass UNIVERSAL --- */
   .glass, .bg-glass-bg, .bg-\[--glass-bg\] {
     background-color: var(--glass-bg);
     background-image: var(--glass-gradient);
