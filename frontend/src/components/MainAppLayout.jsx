@@ -475,7 +475,7 @@ export default function MainAppLayout({
   return (
     <div 
       className="relative flex flex-1 w-full h-full overflow-hidden" 
-      style={{ backgroundColor: 'var(--bg-primary)' }}
+      style={{ backgroundColor: 'var(--header-solid)' }}
     >
       <Sidebar
         view={view}
@@ -556,7 +556,7 @@ export default function MainAppLayout({
         <main
           ref={mainContentRef}
           className="flex-1 overflow-y-auto overflow-x-hidden relative"
-          style={{ backgroundColor: 'transparent', touchAction: 'pan-y' }}
+          style={{ backgroundColor: 'var(--bg-primary)', touchAction: 'pan-y' }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}
           onTouchEnd={handleContentTouchEnd}
@@ -569,18 +569,18 @@ export default function MainAppLayout({
               </React.Fragment>
             </Suspense>
 
-            {/* Espacio extra al final ajustado */}
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(85px + env(safe-area-inset-bottom))' }}></div>
+            {/* Espacio extra al final visual idéntico al original */}
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      {/* --- CAPA DE DIFUMINADO ORIGINAL RESTAURADA Y ACORTADA --- */}
+      {/* --- CAPA DE DIFUMINADO ORIGINAL --- */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
-          height: 'calc(100px + env(safe-area-inset-bottom, 0px))', /* Reducido de 120px a 100px */
+          height: 'calc(120px + env(safe-area-inset-bottom))',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
@@ -590,13 +590,12 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* --- PÍLDORA FLOTANTE (Padding ajustado para no irse tan arriba) --- */}
+      {/* --- PÍLDORA FLOTANTE ORIGINAL CON LA GOTA NUEVA INTEGRADA --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }} /* Altura más natural */
+        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
-          
           <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
             
             {/* --- GOTA VISUAL LÍQUIDA --- */}
@@ -676,7 +675,6 @@ export default function MainAppLayout({
                   e.stopPropagation();
                   return;
                 }
-                
                 if (!isDraggingDrop) {
                   const activeIndex = navItems.findIndex(item => item.id === view);
                   if (activeIndex !== -1) handleNavClick(navItems[activeIndex].id);
