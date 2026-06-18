@@ -123,6 +123,7 @@ export default function MainAppLayout({
       if (mainContentRef.current) {
         mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
+      setViewResetKey(prev => prev + 1);
     } else {
       navigate(itemId);
     }
@@ -130,7 +131,7 @@ export default function MainAppLayout({
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  // EFECTO DE TRANSICIÓN: Desliza la nueva pantalla al entrar
+  // EFECTO DE TRANSICIÓN
   useEffect(() => {
     if (prevViewRef.current !== view) {
       isTransitioningRef.current = true;
@@ -562,21 +563,22 @@ export default function MainAppLayout({
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
-          <div ref={swipeContainerRef} className="min-h-full w-full relative z-0">
+          {/* El swipeContainerRef ahora usa flex-col para evitar colapsos */}
+          <div ref={swipeContainerRef} className="flex flex-col min-h-full w-full relative z-0">
             <Suspense fallback={<LoadingFallback />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
                 {currentViewComponent}
               </React.Fragment>
             </Suspense>
 
-            {/* Espacio extra al final visual idéntico al original */}
+            {/* Este es TU margen inferior idéntico al que me pasaste */}
             <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      {/* --- CAPA DE DIFUMINADO ORIGINAL --- */}
+      {/* --- TU CAPA DE DIFUMINADO 100% ORIGINAL --- */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
@@ -590,12 +592,13 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* --- PÍLDORA FLOTANTE ORIGINAL CON LA GOTA NUEVA INTEGRADA --- */}
+      {/* --- TU PÍLDORA FLOTANTE ORIGINAL CON LA GOTA MÁGICA DENTRO --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
         style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
+          
           <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
             
             {/* --- GOTA VISUAL LÍQUIDA --- */}
@@ -617,7 +620,7 @@ export default function MainAppLayout({
             >
             </div>
 
-            {/* Iconos del navbar con iluminación en tiempo real */}
+            {/* Iconos del navbar */}
             {navItems.map((item, index) => {
               const isActive = view === item.id;
               let isVisuallyActive = isActive;
@@ -650,7 +653,7 @@ export default function MainAppLayout({
               );
             })}
 
-            {/* --- CONTROLADOR DE ARRASTRE INVISIBLE DE LA GOTA --- */}
+            {/* --- CONTROLADOR DE ARRASTRE --- */}
             <div
               ref={dropRef}
               onTouchStart={handleDropDragStart}
@@ -675,6 +678,7 @@ export default function MainAppLayout({
                   e.stopPropagation();
                   return;
                 }
+                
                 if (!isDraggingDrop) {
                   const activeIndex = navItems.findIndex(item => item.id === view);
                   if (activeIndex !== -1) handleNavClick(navItems[activeIndex].id);
@@ -688,7 +692,6 @@ export default function MainAppLayout({
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {/* --- EL ORDEN IMPORTA: Cookies primero, Welcome Modal si las cookies están OK --- */}
       {cookieConsent === null && (
         <CookieConsentBanner 
           onAccept={handleAcceptCookies} 

@@ -5,7 +5,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 2) VARIABLES (Modo oscuro por defecto - True Liquid Glass) */
+/* 2) VARIABLES (modo oscuro por defecto) */
 :root {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
@@ -23,16 +23,12 @@
   --color-red: #ef4444;
   --color-neutral: #6b7280;
 
-  /* Glassmorphism - TRUE LIQUID Glass (Dark Base) */
-  --glass-blur: 32px;
+  /* Glassmorphism - GLOBAL DEFAULT (Premium Dark) */
+  --glass-blur: 24px;
   --glass-radius: 32px;
-  --glass-bg: rgba(255, 255, 255, 0.02);
-  --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
-  --glass-border: rgba(255, 255, 255, 0.1); 
-  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.2), inset 0px -1px 1px rgba(0, 0, 0, 0.3);
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-  --glass-saturation: 180%;
-  --glass-brightness: 1.1;
+  --glass-bg: rgba(255, 255, 255, 0.05); 
+  --glass-border: rgba(255, 255, 255, 0.10); 
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
@@ -44,18 +40,13 @@ html.dark-theme {
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
 
-  --glass-bg: rgba(255, 255, 255, 0.02);
-  --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.2), inset 0px -1px 1px rgba(0, 0, 0, 0.3);
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-  --glass-saturation: 180%;
-  --glass-brightness: 1.1;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 
   --header-solid: #1b2335; 
 }
 
-/* --- MODO CLARO (EFECTO LIQUID Glass IOS) --- */
 html.light-theme {
   --bg-primary: #f8fafc; 
   --bg-secondary: #ffffff;
@@ -63,14 +54,9 @@ html.light-theme {
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
 
-  --glass-blur: 40px; 
-  --glass-bg: rgba(226, 232, 240, 0.4); 
-  --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.1) 100%);
-  --glass-border: rgba(0, 0, 0, 0.08); 
-  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 1), inset 0px -1px 1px rgba(0, 0, 0, 0.05);
-  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-  --glass-saturation: 180%;
-  --glass-brightness: 0.94;
+  --glass-bg: rgba(0, 0, 0, 0.03); 
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
 
   --header-solid: #f1f3f4;
 }
@@ -82,14 +68,9 @@ html.oled-theme {
   --text-secondary: #a3a3a3;
   --text-muted: #525252;
 
-  --glass-blur: 32px;
-  --glass-bg: rgba(255, 255, 255, 0.01); 
-  --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.1), inset 0px -1px 1px rgba(0, 0, 0, 0.5);
-  --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  --glass-saturation: 120%;
-  --glass-brightness: 1.0;
+  --glass-bg: rgba(255, 255, 255, 0.05); 
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 
   --header-solid: #0d0d0d;
 }
@@ -108,14 +89,10 @@ html.galaxy-theme {
   --color-accent-transparent: rgba(168, 85, 247, 0.12);
   --color-accent-border: rgba(168, 85, 247, 0.28);
 
-  --glass-blur: 24px; 
-  --glass-bg: rgba(8, 8, 20, 0.3); 
-  --glass-gradient: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+  --glass-blur: 4px; 
+  --glass-bg: rgba(8, 8, 20, 0.4); 
   --glass-border: rgba(168, 85, 247, 0.25);
-  --glass-highlight: inset 0px 1px 1px rgba(168, 85, 247, 0.3), inset 0px -1px 1px rgba(0, 0, 0, 0.4);
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-  --glass-saturation: 150%;
-  --glass-brightness: 1.1;
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes starry-background {
@@ -291,13 +268,12 @@ html.galaxy-theme #root::after {
   --color-accent-border: rgba(115, 115, 115, 0.28);
 }
 
-/* 5) COMPONENTES BASE (¡ESTRUCTURA ORIGINAL INTACTA!) */
+/* 5) COMPONENTES BASE (FIX IOS BETA: Cero alturas) */
 @layer components {
 
   html {
     width: 100%;
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
     background-color: var(--header-solid) !important;
     overscroll-behavior: none;
   }
@@ -310,8 +286,8 @@ html.galaxy-theme #root::after {
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 100vh;
-    height: 100dvh;
+    /* 🔴 MAGIA: Eliminamos 100vh y 100dvh. Safari ya no puede recortarlo.
+       top:0 y bottom:0 garantizan la cobertura física completa. */
     overflow: hidden;
     background-color: var(--header-solid) !important;
     box-sizing: border-box;
@@ -327,7 +303,7 @@ html.galaxy-theme #root::after {
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 100%;
+    /* 🔴 SIN HEIGHT */
     overflow: hidden;
   }
 
@@ -345,17 +321,16 @@ html.galaxy-theme #root::after {
     @apply outline-none;
   }
 
-  /* --- TRUE LIQUID GLASS UNIVERSAL NUEVO --- */
+  /* --- GLASSMORPHISM UNIVERSAL --- */
   .glass, .bg-glass-bg, .bg-\[--glass-bg\] {
     background-color: var(--glass-bg);
-    background-image: var(--glass-gradient);
     border-radius: var(--glass-radius);
     
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)) brightness(var(--glass-brightness));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation)) brightness(var(--glass-brightness));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow), var(--glass-highlight);
+    box-shadow: var(--glass-shadow);
   }
 
   .form-error-text {
