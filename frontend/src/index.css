@@ -288,13 +288,12 @@ html.galaxy-theme #root::after {
   --color-accent-border: rgba(115, 115, 115, 0.28);
 }
 
-/* 5) COMPONENTES BASE */
+/* 5) COMPONENTES BASE (¡AQUÍ ESTÁ EL FIX PWA PARA IOS!) */
 @layer components {
 
   html {
     width: 100%;
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
     background-color: var(--header-solid) !important;
     overscroll-behavior: none;
   }
@@ -307,8 +306,7 @@ html.galaxy-theme #root::after {
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
     overflow: hidden;
     background-color: var(--header-solid) !important;
     box-sizing: border-box;
@@ -350,7 +348,7 @@ html.galaxy-theme #root::after {
     @apply outline-none;
   }
 
-  /* --- GLASSMORPHISM UNIVERSAL --- */
+  /* --- GLASSMORPHISM UNIVERSAL (TU CÓDIGO INTACTO) --- */
   .glass,
   .bg-glass-bg,
   .bg-\[--glass-bg\] {

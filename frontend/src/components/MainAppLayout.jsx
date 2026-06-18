@@ -118,8 +118,11 @@ export default function MainAppLayout({
       localStorage.setItem('routinesForceTab', 'myRoutines');
       localStorage.removeItem('quickCardioOrigin');
     }
+    
     if (view === itemId) {
-      if (mainContentRef.current) mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      if (mainContentRef.current) {
+        mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       setViewResetKey(prev => prev + 1);
     } else {
       navigate(itemId);
@@ -128,7 +131,7 @@ export default function MainAppLayout({
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  // EFECTO DE TRANSICIÓN ANIMADA
+  // EFECTO DE TRANSICIÓN
   useEffect(() => {
     if (prevViewRef.current !== view) {
       isTransitioningRef.current = true;
@@ -389,6 +392,7 @@ export default function MainAppLayout({
     }
   };
 
+  // --- RESTO DE EFECTOS ---
   useEffect(() => {
     if (userProfile) {
       fetchNotifications();
@@ -465,12 +469,13 @@ export default function MainAppLayout({
   }, [cookieConsent, handleAcceptCookies]);
 
   const isAILimitReached = parseInt(aiRemaining, 10) === 0;
+
   const activeIndex = navItems.findIndex(item => item.id === view);
   const isDropVisible = activeIndex !== -1 && dragX > 0;
 
   return (
     <div 
-      className="relative flex w-full h-full overflow-hidden" 
+      className="relative flex flex-1 w-full h-full overflow-hidden" 
       style={{ backgroundColor: 'var(--header-solid)' }}
     >
       <Sidebar
@@ -548,6 +553,7 @@ export default function MainAppLayout({
           </div>
         </header>
 
+        {/* --- CONTENEDOR PRINCIPAL CON SWIPE EVENT LISTENERS --- */}
         <main
           ref={mainContentRef}
           className="flex-1 overflow-y-auto overflow-x-hidden relative"
@@ -557,19 +563,22 @@ export default function MainAppLayout({
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
-          <div ref={swipeContainerRef} className="w-full relative z-0">
+          {/* El swipeContainerRef ahora usa flex-col para evitar colapsos */}
+          <div ref={swipeContainerRef} className="flex flex-col min-h-full w-full relative z-0">
             <Suspense fallback={<LoadingFallback />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
                 {currentViewComponent}
               </React.Fragment>
             </Suspense>
 
+            {/* Este es TU margen inferior idéntico al que me pasaste */}
             <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
+      {/* --- TU CAPA DE DIFUMINADO 100% ORIGINAL --- */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
@@ -578,109 +587,140 @@ export default function MainAppLayout({
           WebkitBackdropFilter: 'blur(12px)',
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
           WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
+          transform: 'translateZ(0)',
+          willChange: 'transform'
         }}
       ></div>
 
+      {/* --- TU PÍLDORA FLOTANTE ORIGINAL CON LA GOTA MÁGICA DENTRO --- */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
         style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
       >
-        <nav ref={navRef} className="pointer-events-auto flex justify-evenly items-center w-full max-w-sm h-16 glass rounded-full overflow-hidden relative">
+        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           
-          {/* --- GOTA VISUAL LÍQUIDA --- */}
-          <div
-            className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
-            style={{
-              left: 0,
-              transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) scale(${isDraggingDrop ? '1.15, 0.85' : '1, 1'})`,
-              opacity: isDropVisible ? 1 : 0,
-              transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%)',
-              backdropFilter: 'blur(8px) brightness(1.2)',
-              WebkitBackdropFilter: 'blur(8px) brightness(1.2)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              boxShadow: 'inset 0px 4px 6px rgba(255,255,255,0.2), inset 0px -2px 6px rgba(0,0,0,0.05)',
-            }}
-          >
-          </div>
-
-          {navItems.map((item, index) => {
-            const isActive = view === item.id;
-            let isVisuallyActive = isActive;
+          <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
             
-            if (isDraggingDrop && itemWidth > 0) {
-              const nearestIndex = Math.max(0, Math.min(Math.round((dragX / itemWidth) - 0.5), navItems.length - 1));
-              isVisuallyActive = index === nearestIndex;
-            }
+            {/* --- GOTA VISUAL LÍQUIDA --- */}
+            <div
+              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
+              style={{
+                left: 0,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) scale(${isDraggingDrop ? '1.15, 0.85' : '1, 1'})`,
+                opacity: isDropVisible ? 1 : 0,
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(8px) brightness(1.2)',
+                WebkitBackdropFilter: 'blur(8px) brightness(1.2)',
+                WebkitBackfaceVisibility: 'hidden',
+                willChange: 'transform',
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: 'inset 0px 4px 6px rgba(255,255,255,0.4), inset 0px -2px 6px rgba(0,0,0,0.05), 0px 4px 10px rgba(0,0,0,0.15)',
+              }}
+            >
+            </div>
 
-            const isSocial = item.id === 'social';
-            const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
-
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 ease-out active:scale-90 animate-fade-in-up outline-none focus:outline-none ring-0 ${isVisuallyActive ? 'text-accent' : 'text-text-secondary'}`}
-                style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
-              >
-                <div className={`transition-transform duration-300 transform-gpu ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
-                  {item.icon}
-                  {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>}
-                </div>
-              </button>
-            );
-          })}
-
-          {/* --- CONTROLADOR DE ARRASTRE INVISIBLE DE LA GOTA --- */}
-          <div
-            ref={dropRef}
-            onTouchStart={handleDropDragStart}
-            onTouchMove={handleDropDragMove}
-            onTouchEnd={handleDropDragEnd}
-            onTouchCancel={handleDropDragEnd}
-            onMouseDown={handleDropDragStart}
-            onMouseMove={handleDropDragMove}
-            onMouseUp={handleDropDragEnd}
-            onMouseLeave={handleDropDragEnd}
-            className="absolute top-1/2 w-[60px] h-12 rounded-[24px] cursor-grab active:cursor-grabbing z-[10] touch-none"
-            style={{
-              left: 0,
-              transform: `translate3d(calc(${dragX}px - 50%), -50%, 0)`,
-              transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
-              WebkitBackfaceVisibility: 'hidden',
-              display: isDropVisible ? 'block' : 'none',
-            }}
-            onClick={(e) => {
-              if (hasDraggedRef.current) {
-                e.stopPropagation();
-                return;
+            {/* Iconos del navbar */}
+            {navItems.map((item, index) => {
+              const isActive = view === item.id;
+              let isVisuallyActive = isActive;
+              
+              if (isDraggingDrop && itemWidth > 0) {
+                const nearestIndex = Math.max(0, Math.min(Math.round((dragX / itemWidth) - 0.5), navItems.length - 1));
+                isVisuallyActive = index === nearestIndex;
               }
-              if (!isDraggingDrop) {
-                const activeIndex = navItems.findIndex(item => item.id === view);
-                if (activeIndex !== -1) handleNavClick(navItems[activeIndex].id);
-              }
-            }}
-          />
-        </nav>
+
+              const isSocial = item.id === 'social';
+              const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavClick(item.id)}
+                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? 'text-accent' : 'text-text-secondary'}`}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <div 
+                    className={`transition-transform duration-300 transform-gpu ${isVisuallyActive ? 'scale-110' : 'scale-100 group-hover:scale-110'} relative`} 
+                    style={{ WebkitBackfaceVisibility: 'hidden' }}
+                  >
+                    {item.icon}
+                    {pendingCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* --- CONTROLADOR DE ARRASTRE --- */}
+            <div
+              ref={dropRef}
+              onTouchStart={handleDropDragStart}
+              onTouchMove={handleDropDragMove}
+              onTouchEnd={handleDropDragEnd}
+              onTouchCancel={handleDropDragEnd}
+              onMouseDown={handleDropDragStart}
+              onMouseMove={handleDropDragMove}
+              onMouseUp={handleDropDragEnd}
+              onMouseLeave={handleDropDragEnd}
+              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] cursor-grab active:cursor-grabbing z-[10] touch-none"
+              style={{
+                left: 0,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0)`,
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                WebkitBackfaceVisibility: 'hidden',
+                willChange: 'transform',
+                display: isDropVisible ? 'block' : 'none',
+              }}
+              onClick={(e) => {
+                if (hasDraggedRef.current) {
+                  e.stopPropagation();
+                  return;
+                }
+                
+                if (!isDraggingDrop) {
+                  const activeIndex = navItems.findIndex(item => item.id === view);
+                  if (activeIndex !== -1) handleNavClick(navItems[activeIndex].id);
+                }
+              }}
+            />
+
+          </nav>
+        </div>
       </div>
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {showWelcomeModal && <WelcomeModal onClose={closeWelcomeModal} />}
-      {showAIModal && <AIInfoModal onClose={() => setShowAIModal(false)} />}
-      
       {cookieConsent === null && (
-        <CookieConsentBanner onAccept={handleAcceptCookies} onDecline={handleDeclineCookies} onShowPolicy={handleShowPolicy} />
+        <CookieConsentBanner 
+          onAccept={handleAcceptCookies} 
+          onDecline={handleDeclineCookies} 
+          onShowPolicy={handleShowPolicy} 
+        />
+      )}
+
+      {showWelcomeModal && cookieConsent !== null && (
+        <WelcomeModal onClose={closeWelcomeModal} />
+      )}
+      
+      {showAIModal && (
+        <AIInfoModal onClose={() => setShowAIModal(false)} />
       )}
 
       {showLogoutConfirm && (
-        <ConfirmationModal message="¿Estás seguro de que quieres cerrar sesión?" onConfirm={confirmLogout} onCancel={() => setShowLogoutConfirm(false)} confirmText="Cerrar Sesión" />
+        <ConfirmationModal 
+          message="¿Estás seguro de que quieres cerrar sesión?" 
+          onConfirm={confirmLogout} 
+          onCancel={() => setShowLogoutConfirm(false)} 
+          confirmText="Cerrar Sesión" 
+        />
       )}
 
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => handleNavClick('workout')}
-          className="fixed right-4 bottom-28 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>
@@ -692,11 +732,33 @@ export default function MainAppLayout({
       </div>
 
       {showEmailVerificationModal && userProfile && (
-        <EmailVerificationModal currentEmail={verificationEmail} onEmailUpdated={(newEmail) => { setVerificationEmail(newEmail); setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} onCodeSent={() => { setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} />
+        <EmailVerificationModal 
+          currentEmail={verificationEmail} 
+          onEmailUpdated={(newEmail) => { 
+            setVerificationEmail(newEmail); 
+            setShowEmailVerificationModal(false); 
+            setShowCodeVerificationModal(true); 
+          }} 
+          onCodeSent={() => { 
+            setShowEmailVerificationModal(false); 
+            setShowCodeVerificationModal(true); 
+          }} 
+        />
       )}
 
       {showCodeVerificationModal && (
-        <EmailVerification email={verificationEmail} onSuccess={() => { setShowCodeVerificationModal(false); fetchInitialData(); }} onBack={() => { setShowCodeVerificationModal(false); setShowEmailVerificationModal(true); }} backButtonText="Volver" />
+        <EmailVerification 
+          email={verificationEmail} 
+          onSuccess={() => { 
+            setShowCodeVerificationModal(false); 
+            fetchInitialData(); 
+          }} 
+          onBack={() => { 
+            setShowCodeVerificationModal(false); 
+            setShowEmailVerificationModal(true); 
+          }} 
+          backButtonText="Volver" 
+        />
       )}
 
       <AndroidDownloadPrompt />
