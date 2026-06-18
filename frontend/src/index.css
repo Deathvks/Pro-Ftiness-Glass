@@ -167,113 +167,134 @@ html.galaxy-theme #root::after {
   --color-accent-transparent: rgba(34, 197, 94, 0.12);
   --color-accent-border: rgba(34, 197, 94, 0.28);
 }
+
 .accent-blue {
   --color-accent: #3b82f6;
   --color-accent-transparent: rgba(59, 130, 246, 0.12);
   --color-accent-border: rgba(59, 130, 246, 0.28);
 }
+
 .accent-violet {
   --color-accent: #8b5cf6;
   --color-accent-transparent: rgba(139, 92, 246, 0.12);
   --color-accent-border: rgba(139, 92, 246, 0.28);
 }
+
 .accent-amber {
   --color-accent: #f59e0b;
   --color-accent-transparent: rgba(245, 158, 11, 0.12);
   --color-accent-border: rgba(245, 158, 11, 0.28);
 }
+
 .accent-rose {
   --color-accent: #f43f5e;
   --color-accent-transparent: rgba(244, 63, 94, 0.12);
   --color-accent-border: rgba(244, 63, 94, 0.28);
 }
+
 .accent-teal {
   --color-accent: #14b8a6;
   --color-accent-transparent: rgba(20, 184, 166, 0.12);
   --color-accent-border: rgba(20, 184, 166, 0.28);
 }
+
 .accent-cyan {
   --color-accent: #06b6d4;
   --color-accent-transparent: rgba(6, 182, 212, 0.12);
   --color-accent-border: rgba(6, 182, 212, 0.28);
 }
+
 .accent-orange {
   --color-accent: #f97316;
   --color-accent-transparent: rgba(249, 115, 22, 0.12);
   --color-accent-border: rgba(249, 115, 22, 0.28);
 }
+
 .accent-lime {
   --color-accent: #84cc16;
   --color-accent-transparent: rgba(132, 204, 22, 0.12);
   --color-accent-border: rgba(132, 204, 22, 0.28);
 }
+
 .accent-fuchsia {
   --color-accent: #d946ef;
   --color-accent-transparent: rgba(217, 70, 239, 0.12);
   --color-accent-border: rgba(217, 70, 239, 0.28);
 }
+
 .accent-emerald {
   --color-accent: #10b981;
   --color-accent-transparent: rgba(16, 185, 129, 0.12);
   --color-accent-border: rgba(16, 185, 129, 0.28);
 }
+
 .accent-indigo {
   --color-accent: #6366f1;
   --color-accent-transparent: rgba(99, 102, 241, 0.12);
   --color-accent-border: rgba(99, 102, 241, 0.28);
 }
+
 .accent-purple {
   --color-accent: #a855f7;
   --color-accent-transparent: rgba(168, 85, 247, 0.12);
   --color-accent-border: rgba(168, 85, 247, 0.28);
 }
+
 .accent-pink {
   --color-accent: #ec4899;
   --color-accent-transparent: rgba(236, 72, 153, 0.12);
   --color-accent-border: rgba(236, 72, 153, 0.28);
 }
+
 .accent-red {
   --color-accent: #ef4444;
   --color-accent-transparent: rgba(239, 68, 68, 0.12);
   --color-accent-border: rgba(239, 68, 68, 0.28);
 }
+
 .accent-yellow {
   --color-accent: #eab308;
   --color-accent-transparent: rgba(234, 179, 8, 0.12);
   --color-accent-border: rgba(234, 179, 8, 0.28);
 }
+
 .accent-sky {
   --color-accent: #0ea5e9;
   --color-accent-transparent: rgba(14, 165, 233, 0.12);
   --color-accent-border: rgba(14, 165, 233, 0.28);
 }
+
 .accent-slate {
   --color-accent: #64748b;
   --color-accent-transparent: rgba(100, 116, 139, 0.12);
   --color-accent-border: rgba(100, 116, 139, 0.28);
 }
+
 .accent-zinc {
   --color-accent: #71717a;
   --color-accent-transparent: rgba(113, 113, 122, 0.12);
   --color-accent-border: rgba(113, 113, 122, 0.28);
 }
+
 .accent-stone {
   --color-accent: #78716c;
   --color-accent-transparent: rgba(120, 113, 108, 0.12);
   --color-accent-border: rgba(120, 113, 108, 0.28);
 }
+
 .accent-neutral {
   --color-accent: #737373;
   --color-accent-transparent: rgba(115, 115, 115, 0.12);
   --color-accent-border: rgba(115, 115, 115, 0.28);
 }
 
-/* 5) COMPONENTES BASE (FIX IOS BETA: Cero alturas) */
+/* 5) COMPONENTES BASE */
 @layer components {
 
   html {
     width: 100%;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     background-color: var(--header-solid) !important;
     overscroll-behavior: none;
   }
@@ -286,8 +307,8 @@ html.galaxy-theme #root::after {
     right: 0;
     bottom: 0;
     width: 100%;
-    /* 🔴 MAGIA: Eliminamos 100vh y 100dvh. Safari ya no puede recortarlo.
-       top:0 y bottom:0 garantizan la cobertura física completa. */
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     background-color: var(--header-solid) !important;
     box-sizing: border-box;
@@ -303,7 +324,7 @@ html.galaxy-theme #root::after {
     right: 0;
     bottom: 0;
     width: 100%;
-    /* 🔴 SIN HEIGHT */
+    height: 100%;
     overflow: hidden;
   }
 
@@ -311,18 +332,28 @@ html.galaxy-theme #root::after {
     height: 100%;
   }
 
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     @apply text-text-primary;
   }
 
   /* --- GLOBAL INPUT OVERRIDES --- */
-  input:focus, textarea:focus, select:focus, button:focus,
-  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
     @apply outline-none;
   }
 
   /* --- GLASSMORPHISM UNIVERSAL --- */
-  .glass, .bg-glass-bg, .bg-\[--glass-bg\] {
+  .glass,
+  .bg-glass-bg,
+  .bg-\[--glass-bg\] {
     background-color: var(--glass-bg);
     border-radius: var(--glass-radius);
     
@@ -382,8 +413,13 @@ html.galaxy-theme #root::after {
 
   /* QR Scanner */
   @keyframes scan {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(240px); }
+    0% {
+      transform: translateY(0);
+    }
+
+    100% {
+      transform: translateY(240px);
+    }
   }
 
   .scan-line {
@@ -429,28 +465,61 @@ html.galaxy-theme #root::after {
   }
 
   @keyframes fade-in-up {
-    0% { opacity: 0; transform: translateY(6px); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   @keyframes slide-up {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes fade-in {
-    0% { opacity: 0 }
-    100% { opacity: 1 }
+    0% {
+      opacity: 0
+    }
+
+    100% {
+      opacity: 1
+    }
   }
 
   @keyframes toast-in {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 
   @keyframes toast-out {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
   }
 }
 
