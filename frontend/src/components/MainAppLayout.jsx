@@ -96,15 +96,14 @@ export default function MainAppLayout({
   // --- REFS Y ESTADOS PARA LA GOTA LÍQUIDA ---
   const navRef = useRef(null);
   const dropRef = useRef(null);
+  const swipeContainerRef = useRef(null);
   const hasDraggedRef = useRef(false);
   const [dragX, setDragX] = useState(0);
   const [isDraggingDrop, setIsDraggingDrop] = useState(false);
-  const [itemWidth, setItemWidth] = useState(0);
   const [navWidth, setNavWidth] = useState(0);
   const [isInitialRender, setIsInitialRender] = useState(true);
 
   // --- REFS PARA EL MOTOR DE GESTOS (SWIPE) DEL CONTENIDO ---
-  const swipeContainerRef = useRef(null);
   const contentTouchStartRef = useRef(null);
   const contentTouchEndRef = useRef(null);
   const isSwipingContentRef = useRef(false);
@@ -120,7 +119,7 @@ export default function MainAppLayout({
     }
     
     if (view === itemId) {
-      if (mainContentRef.current) {
+      if (mainContentRef && mainContentRef.current) {
         mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
       setViewResetKey(prev => prev + 1);
@@ -131,7 +130,7 @@ export default function MainAppLayout({
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  // EFECTO DE TRANSICIÓN
+  // EFECTO DE TRANSICIÓN ANIMADA
   useEffect(() => {
     if (prevViewRef.current !== view) {
       isTransitioningRef.current = true;
@@ -168,10 +167,9 @@ export default function MainAppLayout({
     }
   }, [view, navItems]);
 
-  // --- MOTOR DE GESTOS EN PANTALLA ---
+  // MOTOR DE GESTOS
   const handleContentTouchStart = (e) => {
     if (isTransitioningRef.current) return;
-
     let node = e.target;
     let blockSwipe = false;
     
@@ -181,10 +179,7 @@ export default function MainAppLayout({
         classNameStr.includes('joyride') ||
         classNameStr.includes('tour') ||
         classNameStr.includes('driver') ||
-        (node.classList && (
-          node.classList.contains('no-swipe') || 
-          node.classList.contains('fixed')
-        )) ||
+        (node.classList && (node.classList.contains('no-swipe') || node.classList.contains('fixed'))) ||
         (typeof node.getAttribute === 'function' && node.getAttribute('role') === 'dialog') ||
         (node.id && typeof node.id === 'string' && node.id.toLowerCase().includes('joyride'))
       ) {
@@ -309,23 +304,18 @@ export default function MainAppLayout({
     isSwipingContentRef.current = false;
   };
 
-  // --- LÓGICA DE LA GOTA LÍQUIDA EN NAVBAR ---
+  // --- LÓGICA DE LA GOTA LÍQUIDA ---
   useEffect(() => {
     if (!navRef.current) return;
 
     const updateSize = () => {
       if (navRef.current) {
-        setItemWidth(navRef.current.offsetWidth / navItems.length);
         setNavWidth(navRef.current.offsetWidth);
       }
     };
 
     updateSize();
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateSize();
-    });
-    
+    const resizeObserver = new ResizeObserver(() => updateSize());
     resizeObserver.observe(navRef.current);
     window.addEventListener('resize', updateSize);
     
@@ -336,20 +326,25 @@ export default function MainAppLayout({
   }, [navItems.length]);
 
   useEffect(() => {
-    if (!isDraggingDrop && itemWidth > 0 && navWidth > 0) {
+    if (!isDraggingDrop && navRef.current) {
       const activeIndex = navItems.findIndex(item => item.id === view);
       if (activeIndex !== -1) {
-        const halfItem = itemWidth / 2;
-        let targetX = (activeIndex + 0.5) * itemWidth;
-        targetX = Math.max(halfItem, Math.min(targetX, navWidth - halfItem));
-        setDragX(targetX);
-        
-        if (isInitialRender) {
-          setTimeout(() => setIsInitialRender(false), 50);
+        const buttons = Array.from(navRef.current.querySelectorAll('button'));
+        const btn = buttons[activeIndex];
+        if (btn) {
+          const navRect = navRef.current.getBoundingClientRect();
+          const btnRect = btn.getBoundingClientRect();
+          
+          const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
+          setDragX(exactCenter);
+          
+          if (isInitialRender) {
+            setTimeout(() => setIsInitialRender(false), 50);
+          }
         }
       }
     }
-  }, [view, isDraggingDrop, itemWidth, navWidth, navItems, isInitialRender]);
+  }, [view, isDraggingDrop, navItems, isInitialRender, navWidth]);
 
   const handleDropDragStart = () => {
     setIsDraggingDrop(true);
@@ -357,15 +352,24 @@ export default function MainAppLayout({
   };
 
   const handleDropDragMove = (e) => {
-    if (!isDraggingDrop || !navRef.current || itemWidth <= 0 || navWidth <= 0) return;
+    if (!isDraggingDrop || !navRef.current) return;
     hasDraggedRef.current = true;
     
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const rect = navRef.current.getBoundingClientRect();
-    let x = clientX - rect.left;
+    const navRect = navRef.current.getBoundingClientRect();
     
-    const halfItem = itemWidth / 2;
-    x = Math.max(halfItem, Math.min(x, navWidth - halfItem));
+    let x = clientX - navRect.left;
+
+    const buttons = Array.from(navRef.current.querySelectorAll('button'));
+    if (buttons.length > 0) {
+      const firstBtnRect = buttons[0].getBoundingClientRect();
+      const lastBtnRect = buttons[buttons.length - 1].getBoundingClientRect();
+      
+      const firstCenter = (firstBtnRect.left - navRect.left) + (firstBtnRect.width / 2);
+      const lastCenter = (lastBtnRect.left - navRect.left) + (lastBtnRect.width / 2);
+      
+      x = Math.max(firstCenter, Math.min(x, lastCenter));
+    }
     
     setDragX(x);
   };
@@ -374,23 +378,48 @@ export default function MainAppLayout({
     setIsDraggingDrop(false);
     setTimeout(() => { hasDraggedRef.current = false; }, 100);
 
-    if (itemWidth > 0 && navWidth > 0) {
-      const nearestIndex = Math.min(
-        navItems.length - 1,
-        Math.max(0, Math.round((dragX / itemWidth) - 0.5))
-      );
+    if (navRef.current) {
+      let nearestIndex = 0;
+      let minDistance = Infinity;
+      const buttons = Array.from(navRef.current.querySelectorAll('button'));
+      const navRect = navRef.current.getBoundingClientRect();
+      
+      buttons.forEach((btn, idx) => {
+        const btnRect = btn.getBoundingClientRect();
+        const btnCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
+        const distance = Math.abs(dragX - btnCenter);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestIndex = idx;
+        }
+      });
+
       const selectedItem = navItems[nearestIndex];
       
-      if (selectedItem.id !== view) {
+      if (selectedItem && selectedItem.id !== view) {
         handleNavClick(selectedItem.id);
+      } else if (buttons[nearestIndex]) {
+        const btnRect = buttons[nearestIndex].getBoundingClientRect();
+        setDragX((btnRect.left - navRect.left) + (btnRect.width / 2));
       }
-      
-      const halfItem = itemWidth / 2;
-      let targetX = (nearestIndex + 0.5) * itemWidth;
-      targetX = Math.max(halfItem, Math.min(targetX, navWidth - halfItem));
-      setDragX(targetX);
     }
   };
+
+  let dragHoverIndex = -1;
+  if (isDraggingDrop && navRef.current) {
+    let minDistance = Infinity;
+    const buttons = Array.from(navRef.current.querySelectorAll('button'));
+    const navRect = navRef.current.getBoundingClientRect();
+    buttons.forEach((btn, idx) => {
+      const btnRect = btn.getBoundingClientRect();
+      const btnCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
+      const distance = Math.abs(dragX - btnCenter);
+      if (distance < minDistance) {
+        minDistance = distance;
+        dragHoverIndex = idx;
+      }
+    });
+  }
 
   // --- RESTO DE EFECTOS ---
   useEffect(() => {
@@ -469,8 +498,6 @@ export default function MainAppLayout({
   }, [cookieConsent, handleAcceptCookies]);
 
   const isAILimitReached = parseInt(aiRemaining, 10) === 0;
-  
-  // VARIABLES AÑADIDAS PARA EVITAR EL CRASH DE REACT
   const activeIndex = navItems.findIndex(item => item.id === view);
   const isDropVisible = activeIndex !== -1 && dragX > 0;
 
@@ -492,7 +519,7 @@ export default function MainAppLayout({
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
         <header 
-          className="md:hidden shrink-0 w-full border-b border-glass-border z-40 relative"
+          className="md:hidden shrink-0 w-full z-40 relative"
           style={{ 
             backgroundColor: 'var(--header-solid)',
             paddingTop: 'env(safe-area-inset-top)' 
@@ -554,9 +581,11 @@ export default function MainAppLayout({
           </div>
         </header>
 
-        {/* --- CONTENEDOR PRINCIPAL CON SWIPE EVENT LISTENERS --- */}
         <main
-          ref={mainContentRef}
+          ref={(el) => {
+            if (mainContentRef) mainContentRef.current = el;
+            swipeContainerRef.current = el;
+          }}
           className="flex-1 overflow-y-auto overflow-x-hidden relative"
           style={{ backgroundColor: 'transparent', touchAction: 'pan-y' }}
           onTouchStart={handleContentTouchStart}
@@ -564,23 +593,25 @@ export default function MainAppLayout({
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
-          <div ref={swipeContainerRef} className="min-h-full w-full relative z-0">
+          <div className="w-full relative z-0">
             <Suspense fallback={<LoadingFallback />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
                 {currentViewComponent}
               </React.Fragment>
             </Suspense>
 
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(100px + env(safe-area-inset-bottom))' }}></div>
+            {/* Reducido el espacio vacío inferior para ajustarlo a la nueva posición del navbar */}
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(90px + env(safe-area-inset-bottom) * 0.7)' }}></div>
           </div>
         </main>
 
       </div>
 
+      {/* Reducida la altura del efecto borroso inferior */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
-          height: 'calc(120px + env(safe-area-inset-bottom))',
+          height: 'calc(110px + env(safe-area-inset-bottom) * 0.7)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
@@ -590,15 +621,15 @@ export default function MainAppLayout({
         }}
       ></div>
 
+      {/* Ajustado el padding bottom multiplicando el safe-area por 0.6 para suavizar el empuje del sistema operativo */}
       <div
         className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom) * 0.6)' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           
           <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
             
-            {/* --- GOTA VISUAL LÍQUIDA --- */}
             <div
               className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
               style={{
@@ -609,22 +640,18 @@ export default function MainAppLayout({
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 100%)',
                 backdropFilter: 'blur(8px) brightness(1.2)',
                 WebkitBackdropFilter: 'blur(8px) brightness(1.2)',
-                WebkitBackfaceVisibility: 'hidden',
-                willChange: 'transform',
-                border: '1px solid rgba(255,255,255,0.3)',
-                boxShadow: 'inset 0px 4px 6px rgba(255,255,255,0.4), inset 0px -2px 6px rgba(0,0,0,0.05), 0px 4px 10px rgba(0,0,0,0.15)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                boxShadow: 'inset 0px 4px 6px rgba(255,255,255,0.2), inset 0px -2px 6px rgba(0,0,0,0.05)',
               }}
             >
             </div>
 
-            {/* Iconos del navbar con iluminación en tiempo real */}
             {navItems.map((item, index) => {
               const isActive = view === item.id;
               let isVisuallyActive = isActive;
               
-              if (isDraggingDrop && itemWidth > 0) {
-                const nearestIndex = Math.max(0, Math.min(Math.round((dragX / itemWidth) - 0.5), navItems.length - 1));
-                isVisuallyActive = index === nearestIndex;
+              if (isDraggingDrop) {
+                isVisuallyActive = index === dragHoverIndex;
               }
 
               const isSocial = item.id === 'social';
@@ -635,22 +662,16 @@ export default function MainAppLayout({
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
                   className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? 'text-accent' : 'text-text-secondary'}`}
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <div 
-                    className={`transition-transform duration-300 transform-gpu ${isVisuallyActive ? 'scale-110' : 'scale-100 group-hover:scale-110'} relative`} 
-                    style={{ WebkitBackfaceVisibility: 'hidden' }}
-                  >
+                  <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {item.icon}
-                    {pendingCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>
-                    )}
+                    {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>}
                   </div>
                 </button>
               );
             })}
 
-            {/* --- CONTROLADOR DE ARRASTRE INVISIBLE DE LA GOTA --- */}
             <div
               ref={dropRef}
               onTouchStart={handleDropDragStart}
@@ -665,9 +686,6 @@ export default function MainAppLayout({
               style={{
                 left: 0,
                 transform: `translate3d(calc(${dragX}px - 50%), -50%, 0)`,
-                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
-                WebkitBackfaceVisibility: 'hidden',
-                willChange: 'transform',
                 display: isDropVisible ? 'block' : 'none',
               }}
               onClick={(e) => {
@@ -675,7 +693,6 @@ export default function MainAppLayout({
                   e.stopPropagation();
                   return;
                 }
-                
                 if (!isDraggingDrop) {
                   const activeIndex = navItems.findIndex(item => item.id === view);
                   if (activeIndex !== -1) handleNavClick(navItems[activeIndex].id);
@@ -689,15 +706,6 @@ export default function MainAppLayout({
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {/* --- EL ORDEN IMPORTA: Cookies primero, Welcome Modal si las cookies están OK --- */}
-      {cookieConsent === null && (
-        <CookieConsentBanner 
-          onAccept={handleAcceptCookies} 
-          onDecline={handleDeclineCookies} 
-          onShowPolicy={handleShowPolicy} 
-        />
-      )}
-
       {showWelcomeModal && cookieConsent !== null && (
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
@@ -706,19 +714,22 @@ export default function MainAppLayout({
         <AIInfoModal onClose={() => setShowAIModal(false)} />
       )}
 
-      {showLogoutConfirm && (
-        <ConfirmationModal 
-          message="¿Estás seguro de que quieres cerrar sesión?" 
-          onConfirm={confirmLogout} 
-          onCancel={() => setShowLogoutConfirm(false)} 
-          confirmText="Cerrar Sesión" 
+      {cookieConsent === null && (
+        <CookieConsentBanner 
+          onAccept={handleAcceptCookies} 
+          onDecline={handleDeclineCookies} 
+          onShowPolicy={handleShowPolicy} 
         />
+      )}
+
+      {showLogoutConfirm && (
+        <ConfirmationModal message="¿Estás seguro de que quieres cerrar sesión?" onConfirm={confirmLogout} onCancel={() => setShowLogoutConfirm(false)} confirmText="Cerrar Sesión" />
       )}
 
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => handleNavClick('workout')}
-          className="fixed right-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom)*0.6)] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>
@@ -730,33 +741,11 @@ export default function MainAppLayout({
       </div>
 
       {showEmailVerificationModal && userProfile && (
-        <EmailVerificationModal 
-          currentEmail={verificationEmail} 
-          onEmailUpdated={(newEmail) => { 
-            setVerificationEmail(newEmail); 
-            setShowEmailVerificationModal(false); 
-            setShowCodeVerificationModal(true); 
-          }} 
-          onCodeSent={() => { 
-            setShowEmailVerificationModal(false); 
-            setShowCodeVerificationModal(true); 
-          }} 
-        />
+        <EmailVerificationModal currentEmail={verificationEmail} onEmailUpdated={(newEmail) => { setVerificationEmail(newEmail); setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} onCodeSent={() => { setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} />
       )}
 
       {showCodeVerificationModal && (
-        <EmailVerification 
-          email={verificationEmail} 
-          onSuccess={() => { 
-            setShowCodeVerificationModal(false); 
-            fetchInitialData(); 
-          }} 
-          onBack={() => { 
-            setShowCodeVerificationModal(false); 
-            setShowEmailVerificationModal(true); 
-          }} 
-          backButtonText="Volver" 
-        />
+        <EmailVerification email={verificationEmail} onSuccess={() => { setShowCodeVerificationModal(false); fetchInitialData(); }} onBack={() => { setShowCodeVerificationModal(false); setShowEmailVerificationModal(true); }} backButtonText="Volver" />
       )}
 
       <AndroidDownloadPrompt />

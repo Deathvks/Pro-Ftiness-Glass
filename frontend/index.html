@@ -26,7 +26,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
-  <meta name="theme-color" content="#1b2335" id="dynamic-theme-color" />
+  <meta name="theme-color" content="#0f172a" id="dynamic-theme-color" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <link rel="icon" type="image/png" href="/favicon-32x32.png?v=2" />
@@ -53,7 +53,7 @@
       --glass-blur: 24px;
       --glass-radius: 28px;
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      --bg-color: #0c111b;
+      --bg-color: #0f172a;
     }
 
     html.light-theme {
@@ -245,8 +245,9 @@
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') effectiveTheme = systemDark ? 'dark' : 'light';
 
+        // 🔴 AQUI ESTÁ LA CLAVE: bgColors y headerColors son idénticos ahora.
         var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
-        var headerColors = { light: '#f1f3f4', dark: '#1b2335', oled: '#0d0d0d', galaxy: '#080814' };
+        var headerColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
 
         var selectedBgColor = bgColors[effectiveTheme] || bgColors.dark;
         var selectedHeaderColor = headerColors[effectiveTheme] || headerColors.dark;
@@ -258,13 +259,11 @@
           root.classList.add(effectiveTheme + '-theme');
         }
 
-        // Modificamos directamente nuestra etiqueta maestra
         var metaColor = document.getElementById('dynamic-theme-color');
         if(metaColor) {
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        // Forzamos el color del HTML y BODY de manera estricta para Safari
         root.style.setProperty('background-color', selectedHeaderColor, 'important');
         var setBodyColor = function() {
             if(document.body) {
@@ -274,7 +273,6 @@
         if(document.body) setBodyColor();
         else document.addEventListener('DOMContentLoaded', setBodyColor);
 
-        // Truco del Splash Screen
         var splash = document.querySelector('.app-splash-screen');
         if(splash) {
            splash.style.background = 'linear-gradient(to bottom, ' + selectedHeaderColor + ' 0%, ' + selectedHeaderColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' 100%)';
