@@ -5,18 +5,19 @@ import { NavigationBar } from '@capgo/capacitor-navigation-bar';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import useAppStore from '../store/useAppStore';
 
+// Paletas sincronizadas milimétricamente con index.html para evitar el parpadeo en el arranque
 const THEME_COLORS = {
   galaxy: '#080814',
   oled: '#000000',
-  dark: '#0c111b',
-  light: '#f7fafc',
+  dark: '#0f172a',
+  light: '#f8fafc',
 };
 
 const HEADER_COLORS = {
   galaxy: '#080814',
-  oled: '#0d0d0d',
-  dark: '#1b2335',
-  light: '#f1f3f4',
+  oled: '#000000',
+  dark: '#0f172a',
+  light: '#f8fafc',
 };
 
 // --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS ---
@@ -61,12 +62,10 @@ export const useAppTheme = () => {
     };
   }, []);
 
-  // 🔴 REANUDAR TEST TRAS REINICIO EN iOS
   useEffect(() => {
     const pendingTest = localStorage.getItem('pending_theme_test');
     if (pendingTest) {
       localStorage.removeItem('pending_theme_test');
-      // Arranca el test temporal en memoria sin forzar recarga de nuevo
       startThemeTest(parseInt(pendingTest, 10), false);
     }
   }, []);
@@ -83,7 +82,6 @@ export const useAppTheme = () => {
     if (cookieConsent) localStorage.setItem('theme', newTheme);
     setThemeState(newTheme);
 
-    // 🔴 REINICIO EN iOS SI SE SOLICITA AL ESTABLECER DEFINITIVAMENTE
     if (forceReload) {
       window.location.reload();
     }
@@ -97,7 +95,6 @@ export const useAppTheme = () => {
   const startThemeTest = (durationSecs = 10, forceReload = false) => {
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
 
-    // 🔴 SI SE SOLICITA RECARGA (iOS), GUARDAR EL ESTADO Y REINICIAR (EL CRONÓMETRO ESPERA)
     if (forceReload) {
       localStorage.setItem('original_theme_before_test', theme);
       localStorage.setItem('theme', 'galaxy');
@@ -116,7 +113,6 @@ export const useAppTheme = () => {
         isTestingGlobal = false;
         clearInterval(testIntervalGlobal);
         
-        // Al acabar, si hay un tema original guardado (iOS), se restaura y recarga
         const original = localStorage.getItem('original_theme_before_test');
         if (original) {
           localStorage.setItem('theme', original);
@@ -134,7 +130,6 @@ export const useAppTheme = () => {
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
     notifyThemeListeners();
     
-    // Si cancela a medias, miramos si guardó estado de iOS para restaurar y recargar
     const original = localStorage.getItem('original_theme_before_test');
     if (original) {
       localStorage.setItem('theme', original);
@@ -149,6 +144,7 @@ export const useAppTheme = () => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
     const body = document.body;
+    const appRootDiv = document.getElementById('root');
 
     const updateAppearance = () => {
       let effectiveTheme = activeTheme;
@@ -180,8 +176,12 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
+      // Inyección obligatoria en los 3 nodos principales para evitar fragmentación visual
       root.style.setProperty('background-color', headerColorStr, 'important');
       body.style.setProperty('background-color', headerColorStr, 'important');
+      if (appRootDiv) {
+        appRootDiv.style.setProperty('background-color', headerColorStr, 'important');
+      }
 
       const metaColor = document.getElementById('dynamic-theme-color');
       if (metaColor) {
