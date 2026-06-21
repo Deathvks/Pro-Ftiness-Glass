@@ -502,10 +502,8 @@ export default function MainAppLayout({
   const isDropVisible = activeIndex !== -1 && dragX > 0;
 
   return (
-    <div 
-      className="relative flex flex-1 w-full h-full overflow-hidden" 
-      style={{ backgroundColor: 'var(--header-solid)' }}
-    >
+    <div className="relative flex flex-1 w-full h-full overflow-hidden bg-bg-primary">
+      
       <Sidebar
         view={view}
         navigate={handleNavClick}
@@ -518,12 +516,10 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
+        {/* CORRECCIÓN 1: Header usa bg-bg-primary sin variables intermedias para un match perfecto */}
         <header 
-          className="md:hidden shrink-0 w-full z-40 relative"
-          style={{ 
-            backgroundColor: 'var(--header-solid)',
-            paddingTop: 'env(safe-area-inset-top)' 
-          }}
+          className="md:hidden shrink-0 w-full z-40 relative bg-bg-primary"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
@@ -600,18 +596,17 @@ export default function MainAppLayout({
               </React.Fragment>
             </Suspense>
 
-            {/* Reducido el espacio vacío inferior para ajustarlo a la nueva posición del navbar */}
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(90px + env(safe-area-inset-bottom) * 0.7)' }}></div>
+            {/* Ajuste del espacio en blanco del final del scroll */}
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + env(safe-area-inset-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      {/* Reducida la altura del efecto borroso inferior */}
       <div 
         className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
         style={{
-          height: 'calc(110px + env(safe-area-inset-bottom) * 0.7)',
+          height: 'calc(80px + env(safe-area-inset-bottom))',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
@@ -621,10 +616,10 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* Ajustado el padding bottom multiplicando el safe-area por 0.6 para suavizar el empuje del sistema operativo */}
+      {/* CORRECCIÓN 2: Navbar anclado fijamente sobre la píldora, sin paddings excesivos que rompan el layout */}
       <div
-        className="md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-50 flex justify-center px-4 pt-2"
-        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom) * 0.6)' }}
+        className="md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           
@@ -729,7 +724,7 @@ export default function MainAppLayout({
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => handleNavClick('workout')}
-          className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom)*0.6)] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>

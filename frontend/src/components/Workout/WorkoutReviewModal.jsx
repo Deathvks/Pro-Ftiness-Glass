@@ -27,9 +27,10 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
     };
 
     return (
-        // z-[100] y pb-24 (en móvil) para elevar el modal por encima de la navbar
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 pb-24 md:pb-4 animate-in fade-in duration-200">
-            <div className="bg-bg-secondary border border-glass-border w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[75vh] md:max-h-[85vh] overflow-hidden">
+        // Eliminado el pb-24 que aplastaba el modal. Se mantiene z-[100] y el centrado natural con p-4.
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            {/* Restaurado el max-h-[85vh] para permitir que el modal crezca y el scroll interno funcione */}
+            <div className="bg-bg-secondary border border-glass-border w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
                 
                 <div className="p-4 border-b border-glass-border flex justify-between items-center bg-bg-secondary/95 sticky top-0 z-10">
                     <div>
@@ -46,6 +47,7 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                     </button>
                 </div>
 
+                {/* Esta es la zona de scroll. Al tener flex-1 y overflow-y-auto, todo el contenido sobrante se desliza aquí */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
                     {exercisesWithData.length === 0 ? (
                         <p className="text-center text-text-tertiary py-10">
@@ -96,7 +98,7 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                     )}
                 </div>
 
-                {/* safe-area-inset-bottom protege de los gestos del sistema en iOS/Android modernos */}
+                {/* safe-area-inset-bottom aquí dentro protege el botón de los gestos de iOS sin mover el modal completo */}
                 <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-glass-border bg-bg-secondary/95 backdrop-blur-md">
                     <button
                         onClick={onConfirm}

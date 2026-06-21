@@ -173,8 +173,8 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
   }
 
   return (
-    // Se elevó z-index a 100 y se añadió padding bottom (pb-24) en móvil
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 pb-24 md:pb-4 animate-[fade-in_0.3s_ease-out]">
+    // Se eliminó el pb-24 que aplastaba el modal y se deja centrado natural
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.3s_ease-out]">
 
       <div style={{ position: 'absolute', top: 0, left: 0, width: '1080px', zIndex: -100, opacity: 0, pointerEvents: 'none' }}>
         <WorkoutShareCard
@@ -185,8 +185,8 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
         />
       </div>
 
-      {/* Ajuste de max-h para evitar desbordamiento al empujar el modal hacia arriba */}
-      <div className="w-full max-w-lg p-6 relative max-h-[75vh] md:max-h-[90vh] overflow-y-auto bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out] flex flex-col">
+      {/* Se restaura max-h-[85vh] para devolver el espacio interno al modal y permitir scroll correcto */}
+      <div className="w-full max-w-lg p-6 relative max-h-[85vh] md:max-h-[90vh] overflow-y-auto bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out] flex flex-col">
         <div className="flex justify-between items-center mb-4 border-b border-glass-border pb-4 shrink-0">
           <h2 className="text-2xl font-bold text-text-primary">
             {previewImage ? 'Vista Previa' : '¡Entrenamiento Guardado!'}
@@ -209,6 +209,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
         </div>
 
         {previewImage ? (
+          // safe-area-inset-bottom aquí protege los botones inferiores sin mover toda la ventana
           <div className="flex flex-col items-center gap-4 animate-fade-in pb-[env(safe-area-inset-bottom)]">
             <div className="relative w-full rounded-xl overflow-hidden shadow-lg border border-glass-border bg-black">
               <img
@@ -293,6 +294,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
               )}
             </div>
 
+            {/* Margen inferior ajustado al safe-area para protección */}
             <button
               onClick={onClose}
               className="mt-6 w-full px-6 py-3 rounded-xl bg-accent text-bg-secondary font-bold transition hover:scale-[1.01] shadow-lg shadow-accent/20 shrink-0 mb-[env(safe-area-inset-bottom)]"
