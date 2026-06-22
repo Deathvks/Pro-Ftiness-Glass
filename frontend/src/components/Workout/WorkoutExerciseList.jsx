@@ -29,9 +29,12 @@ const WorkoutExerciseList = ({
       {exerciseGroups.map((group, groupIndex) => {
         // --- CASO SUPERSERIE ---
         if (group.length > 1) {
+          // Usamos los IDs únicos unidos para forzar la actualización si alguno se reemplaza
+          const groupKey = group.map(ex => ex.id).join('-');
+          
           return (
             <WorkoutSupersetCard
-              key={`group-${groupIndex}`}
+              key={groupKey}
               group={group}
               allExercises={activeWorkoutExercises}
               t={t}
@@ -62,7 +65,8 @@ const WorkoutExerciseList = ({
 
         return (
           <GlassCard 
-            key={actualExIndex} 
+            // CORRECCIÓN: Usar el ID en lugar del índice para forzar un re-render nativo instantáneo
+            key={exercise.id} 
             className="glass p-0 sm:p-2 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-lg transition-all"
           >
             <WorkoutExerciseCard

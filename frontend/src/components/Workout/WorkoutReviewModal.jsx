@@ -1,5 +1,5 @@
 /* frontend/src/components/Workout/WorkoutReviewModal.jsx */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Save, Edit2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../../store/useAppStore';
@@ -12,9 +12,14 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
         updateActiveWorkoutSet: state.updateActiveWorkoutSet
     }));
 
+    // Bloquear el scroll de la app de fondo mientras el modal esté abierto
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
+
     if (!activeWorkout) return null;
 
-    // Filtrar ejercicios y series válidas
     const exercisesWithData = activeWorkout.exercises.map((ex, exIndex) => ({
         ...ex,
         originalIndex: exIndex,
@@ -27,93 +32,102 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
     };
 
     return (
-        // Eliminado el pb-24 que aplastaba el modal. Se mantiene z-[100] y el centrado natural con p-4.
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            {/* Restaurado el max-h-[85vh] para permitir que el modal crezca y el scroll interno funcione */}
-            <div className="bg-bg-secondary border border-glass-border w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md overflow-y-auto overscroll-contain animate-in fade-in duration-200">
+            
+            {/* 2. WRAPPER DE CENTRADO CON py-12: Da un margen vital arriba y abajo para que no choque con el Notch ni el Navbar */}
+            <div className="min-h-full flex items-center justify-center p-4 py-12 sm:py-16">
                 
-                <div className="p-4 border-b border-glass-border flex justify-between items-center bg-bg-secondary/95 sticky top-0 z-10">
-                    <div>
-                        <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-                            <Edit2 size={20} className="text-accent" />
-                            {t('exercise_ui:review_data', 'Revisar Datos')}
-                        </h2>
-                        <p className="text-xs text-text-tertiary">
-                            {t('exercise_ui:review_data_desc', 'Verifica pesos y repeticiones antes de guardar.')}
-                        </p>
+                {/* 3. TARJETA LIBRE: Sin max-h. Fluye de forma natural */}
+                <div className="w-full max-w-2xl bg-bg-secondary border border-glass-border rounded-2xl shadow-2xl flex flex-col relative overflow-hidden">
+                    
+                    {/* Cabecera pegajosa (Sticky Top) */}
+                    <div className="p-4 sm:p-5 border-b border-glass-border flex justify-between items-center bg-bg-secondary/95 backdrop-blur-md sticky top-0 z-20">
+                        <div>
+                            <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
+                                <Edit2 size={20} className="text-accent" />
+                                {t('exercise_ui:review_data', 'Revisar Datos')}
+                            </h2>
+                            <p className="text-xs text-text-tertiary mt-0.5">
+                                {t('exercise_ui:review_data_desc', 'Verifica pesos y repeticiones antes de guardar.')}
+                            </p>
+                        </div>
+                        <button 
+                            onClick={onClose} 
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors shrink-0 ml-2"
+                        >
+                            <X size={22} className="text-text-secondary" />
+                        </button>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X size={24} className="text-text-secondary" />
-                    </button>
-                </div>
 
-                {/* Esta es la zona de scroll. Al tener flex-1 y overflow-y-auto, todo el contenido sobrante se desliza aquí */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
-                    {exercisesWithData.length === 0 ? (
-                        <p className="text-center text-text-tertiary py-10">
-                            {t('exercise_ui:no_data_review', 'No hay datos registrados para revisar.')}
-                        </p>
-                    ) : (
-                        exercisesWithData.map((exercise) => (
-                            <div key={exercise.id || exercise.name} className="bg-bg-primary/30 rounded-xl p-4 border border-glass-border">
-                                <h3 className="font-bold text-accent mb-3 text-sm uppercase tracking-wider">
-                                    {t(exercise.name, { ns: 'exercise_names', defaultValue: exercise.name })}
-                                </h3>
-                                <div className="space-y-2">
-                                    <div className="grid grid-cols-10 gap-2 text-[10px] text-text-tertiary uppercase text-center font-bold mb-1">
-                                        <div className="col-span-1">#</div>
-                                        <div className="col-span-4">Kg</div>
-                                        <div className="col-span-4">Reps</div>
-                                    </div>
-                                    {exercise.validSets.map((set, idx) => (
-                                        <div key={idx} className="grid grid-cols-10 gap-2 items-center">
-                                            <div className="col-span-1 flex justify-center items-center">
-                                                <span className="w-5 h-5 rounded-full bg-glass-highlight text-[10px] flex items-center justify-center text-text-secondary">
-                                                    {set.set_number}
-                                                </span>
-                                            </div>
-                                            <div className="col-span-4">
-                                                <input
-                                                    type="number"
-                                                    value={set.weight_kg}
-                                                    onChange={(e) => handleUpdate(exercise.originalIndex, set.originalSetIndex, 'weight_kg', e.target.value)}
-                                                    className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-text-primary font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                    placeholder="0"
-                                                />
-                                            </div>
-                                            <div className="col-span-4">
-                                                <input
-                                                    type="number"
-                                                    value={set.reps}
-                                                    onChange={(e) => handleUpdate(exercise.originalIndex, set.originalSetIndex, 'reps', e.target.value)}
-                                                    className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-text-primary font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                    placeholder="0"
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {/* safe-area-inset-bottom aquí dentro protege el botón de los gestos de iOS sin mover el modal completo */}
-                <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-glass-border bg-bg-secondary/95 backdrop-blur-md">
-                    <button
-                        onClick={onConfirm}
-                        disabled={isSaving}
-                        className="w-full py-3.5 bg-accent text-white rounded-xl font-bold text-lg hover:bg-accent/90 transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isSaving ? (
-                            <>{t('exercise_ui:saving', 'Guardando...')}</>
+                    {/* Cuerpo del modal (sin scroll interno atrapado, fluye libremente) */}
+                    <div className="p-4 sm:p-6 space-y-6">
+                        {exercisesWithData.length === 0 ? (
+                            <p className="text-center text-text-tertiary py-12">
+                                {t('exercise_ui:no_data_review', 'No hay datos registrados para revisar.')}
+                            </p>
                         ) : (
-                            <>
-                                <Save size={20} />
-                                {t('exercise_ui:confirm_save', 'Confirmar y Guardar')}
-                            </>
+                            exercisesWithData.map((exercise) => (
+                                <div key={exercise.id || exercise.name} className="bg-bg-primary/40 rounded-xl p-4 border border-glass-border">
+                                    <h3 className="font-bold text-accent mb-3 text-sm uppercase tracking-wider">
+                                        {t(exercise.name, { ns: 'exercise_names', defaultValue: exercise.name })}
+                                    </h3>
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-10 gap-2 text-[10px] text-text-tertiary uppercase text-center font-bold mb-1">
+                                            <div className="col-span-1">#</div>
+                                            <div className="col-span-4">Kg</div>
+                                            <div className="col-span-4">Reps</div>
+                                        </div>
+                                        {exercise.validSets.map((set, idx) => (
+                                            <div key={idx} className="grid grid-cols-10 gap-2 items-center">
+                                                <div className="col-span-1 flex justify-center items-center">
+                                                    <span className="w-5 h-5 rounded-full bg-glass-highlight text-[10px] flex items-center justify-center text-text-secondary">
+                                                        {set.set_number}
+                                                    </span>
+                                                </div>
+                                                <div className="col-span-4">
+                                                    <input
+                                                        type="number"
+                                                        value={set.weight_kg}
+                                                        onChange={(e) => handleUpdate(exercise.originalIndex, set.originalSetIndex, 'weight_kg', e.target.value)}
+                                                        className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-text-primary font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                                <div className="col-span-4">
+                                                    <input
+                                                        type="number"
+                                                        value={set.reps}
+                                                        onChange={(e) => handleUpdate(exercise.originalIndex, set.originalSetIndex, 'reps', e.target.value)}
+                                                        className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-text-primary font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
                         )}
-                    </button>
+                    </div>
+
+                    {/* Pie pegajoso (Sticky Bottom). Siempre visible al fondo de la pantalla mientras deslizas */}
+                    <div className="p-4 sm:p-5 border-t border-glass-border bg-bg-secondary/95 backdrop-blur-md sticky bottom-0 z-20">
+                        <button
+                            onClick={onConfirm}
+                            disabled={isSaving}
+                            className="w-full py-3.5 bg-accent text-white rounded-xl font-bold text-lg hover:bg-accent/90 transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSaving ? (
+                                <>{t('exercise_ui:saving', 'Guardando...')}</>
+                            ) : (
+                                <>
+                                    <Save size={20} />
+                                    {t('exercise_ui:confirm_save', 'Confirmar y Guardar')}
+                                </>
+                            )}
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </div>

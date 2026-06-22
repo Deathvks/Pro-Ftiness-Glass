@@ -34,7 +34,7 @@ const Workout = ({ timer, setView }) => {
     const {
         activeWorkout,
         logWorkout,
-        stopWorkout,
+        stopWorkout, // <--- AHORA SÍ APUNTA A LA FUNCIÓN CORRECTA
         updateActiveWorkoutSet,
         addDropset,
         removeDropset,
@@ -45,11 +45,11 @@ const Workout = ({ timer, setView }) => {
         openRestModal,
         userProfile,
         fetchInitialData,
-        setExerciseReminder // <--- AÑADIDO: Extraemos la función del store
+        setExerciseReminder
     } = useAppStore((state) => ({
         activeWorkout: state.activeWorkout,
         logWorkout: state.logWorkout,
-        stopWorkout: state.updateActiveWorkoutSet, 
+        stopWorkout: state.stopWorkout, // <--- CORRECCIÓN DEL BUG
         updateActiveWorkoutSet: state.updateActiveWorkoutSet,
         addDropset: state.addDropset,
         removeDropset: state.removeDropset,
@@ -60,11 +60,9 @@ const Workout = ({ timer, setView }) => {
         openRestModal: state.openRestModal,
         userProfile: state.userProfile,
         fetchInitialData: state.fetchInitialData,
-        setExerciseReminder: state.setExerciseReminder // <--- AÑADIDO: Mapeamos la función
+        setExerciseReminder: state.setExerciseReminder
     }));
     
-    const realStopWorkout = useAppStore(state => state.stopWorkout);
-
     // --- 2. Estado Local (Modales y Notas) ---
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [notes, setNotes] = useState('');
@@ -90,10 +88,10 @@ const Workout = ({ timer, setView }) => {
             if (timeAlive < 500) return;
 
             const state = useAppStore.getState();
-            const { activeWorkout, workoutStartTime, stopWorkout } = state;
+            const { activeWorkout, workoutStartTime, stopWorkout: currentStopWorkout } = state;
 
             if (activeWorkout && !workoutStartTime) {
-                stopWorkout();
+                currentStopWorkout();
             }
         };
     }, []);
@@ -180,14 +178,14 @@ const Workout = ({ timer, setView }) => {
         if (workoutStartTime) {
             setShowCancelModal(true);
         } else {
-            realStopWorkout();
+            stopWorkout(); // <--- LLAMADA LIMPIA
             setView(activeWorkout.routineId ? 'routines' : 'dashboard');
         }
     };
 
     const confirmCancelWorkout = () => {
         const returnView = activeWorkout.routineId ? 'routines' : 'dashboard';
-        realStopWorkout();
+        stopWorkout(); // <--- LLAMADA LIMPIA
         setShowCancelModal(false);
         setView(returnView);
     };
@@ -338,7 +336,7 @@ const Workout = ({ timer, setView }) => {
                     onOpenRestModal={openRestModal}
                     onDisabledInputClick={handleDisabledInputClick}
                     onDisabledButtonClick={handleDisabledButtonClick}
-                    onSaveReminder={setExerciseReminder} // <--- AÑADIDO: Pasamos la función al hijo
+                    onSaveReminder={setExerciseReminder}
                 />
             )}
 
@@ -381,7 +379,7 @@ const Workout = ({ timer, setView }) => {
                     onClose={async () => {
                         setShowWorkoutSummaryModal(false);
                         setCompletedWorkoutData(null);
-                        realStopWorkout();
+                        stopWorkout(); // <--- LLAMADA LIMPIA
                         await fetchInitialData();
                         setView('dashboard');
                     }}

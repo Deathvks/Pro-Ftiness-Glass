@@ -8,7 +8,6 @@ import { useToast } from '../hooks/useToast';
 import WorkoutShareCard from './WorkoutShareCard';
 import Spinner from './Spinner';
 
-// Helper para formatear el tiempo
 const formatTime = (timeInSeconds) => {
   const hours = String(Math.floor(timeInSeconds / 3600)).padStart(2, '0');
   const minutes = String(Math.floor((timeInSeconds % 3600) / 60)).padStart(2, '0');
@@ -28,6 +27,12 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
   const [accentColor, setAccentColor] = useState('#22c55e');
 
   const shareCardRef = useRef(null);
+
+  // Bloquear el scroll de la app de fondo mientras el modal esté abierto
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   useEffect(() => {
     const resolveAccentColor = () => {
@@ -58,7 +63,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isShareMode, shareCardRef.current]);
+  }, [isShareMode, previewImage, isGenerating]);
 
   const handleGeneratePreview = async () => {
     if (!workoutData || isGenerating) return;
@@ -95,7 +100,6 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
   const downloadImage = () => {
     if (!previewImage) return;
-
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     if (isIOS) {
@@ -118,7 +122,6 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
   const handleNativeShare = async () => {
     if (!imageFile) return;
-
     const shareData = {
       files: [imageFile],
       title: 'Mi Entrenamiento',
@@ -173,8 +176,8 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
   }
 
   return (
-    // Se eliminó el pb-24 que aplastaba el modal y se deja centrado natural
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.3s_ease-out]">
+    // 1. FONDO CON SCROLL ABSOLUTO: Elimina los bloqueos táctiles en móviles
+    <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md overflow-y-auto overscroll-contain animate-[fade-in_0.3s_ease-out]">
 
       <div style={{ position: 'absolute', top: 0, left: 0, width: '1080px', zIndex: -100, opacity: 0, pointerEvents: 'none' }}>
         <WorkoutShareCard
@@ -185,125 +188,133 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
         />
       </div>
 
-      {/* Se restaura max-h-[85vh] para devolver el espacio interno al modal y permitir scroll correcto */}
-      <div className="w-full max-w-lg p-6 relative max-h-[85vh] md:max-h-[90vh] overflow-y-auto bg-bg-primary rounded-2xl border border-glass-border shadow-2xl animate-[scale-in_0.3s_ease-out] flex flex-col">
-        <div className="flex justify-between items-center mb-4 border-b border-glass-border pb-4 shrink-0">
-          <h2 className="text-2xl font-bold text-text-primary">
-            {previewImage ? 'Vista Previa' : '¡Entrenamiento Guardado!'}
-          </h2>
-          <div className="flex gap-2">
-            {!previewImage && (
-              <button
-                onClick={handleGeneratePreview}
-                disabled={isGenerating}
-                className="p-2 text-text-muted hover:text-accent transition-colors rounded-full hover:bg-bg-secondary disabled:opacity-50"
-                title="Generar imagen"
-              >
-                {isGenerating ? <Spinner size={20} /> : <Share2 size={20} />}
-              </button>
-            )}
-            <button onClick={onClose} className="p-2 text-text-muted hover:text-red transition-colors rounded-full hover:bg-bg-secondary">
-              <X size={20} />
-            </button>
-          </div>
-        </div>
+      {/* 2. WRAPPER FLEXIBLE: Centra el modal si es pequeño, o permite deslizarlo desde los extremos si es grande */}
+      <div className="min-h-full flex items-center justify-center p-4 py-12 sm:py-16">
 
-        {previewImage ? (
-          // safe-area-inset-bottom aquí protege los botones inferiores sin mover toda la ventana
-          <div className="flex flex-col items-center gap-4 animate-fade-in pb-[env(safe-area-inset-bottom)]">
-            <div className="relative w-full rounded-xl overflow-hidden shadow-lg border border-glass-border bg-black">
-              <img
-                src={previewImage}
-                alt="Preview"
-                className="w-full h-auto max-h-[60vh] object-contain"
-              />
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row gap-3 w-full">
-              <button
-                onClick={isShareMode ? onClose : resetPreview}
-                className="w-full sm:flex-1 py-3 rounded-xl border border-glass-border text-text-secondary font-bold hover:bg-bg-secondary transition flex items-center justify-center gap-2"
-              >
-                <ArrowLeft size={18} /> {isShareMode ? 'Cerrar' : 'Volver'}
-              </button>
-
-              <button
-                onClick={downloadImage}
-                className="w-full sm:w-14 py-3 sm:py-0 flex items-center justify-center rounded-xl bg-bg-secondary border border-glass-border text-text-primary hover:text-accent transition"
-                title="Descargar imagen"
-              >
-                <Download size={20} />
-              </button>
-
-              <button
-                onClick={handleNativeShare}
-                className="w-full sm:flex-[2] py-3 rounded-xl bg-accent text-bg-secondary font-bold hover:brightness-110 transition shadow-lg shadow-accent/20 flex items-center justify-center gap-2"
-              >
-                <Send size={18} /> Compartir
+        {/* 3. TARJETA LIBRE: Sin restricciones de altura (max-h) ni scrolls internos anidados */}
+        <div className="w-full max-w-lg bg-bg-primary rounded-2xl border border-glass-border shadow-2xl flex flex-col overflow-hidden">
+          
+          <div className="p-6 border-b border-glass-border flex justify-between items-center bg-bg-primary sticky top-0 z-10">
+            <h2 className="text-2xl font-bold text-text-primary">
+              {previewImage ? 'Vista Previa' : '¡Entrenamiento Guardado!'}
+            </h2>
+            <div className="flex gap-2">
+              {!previewImage && (
+                <button
+                  onClick={handleGeneratePreview}
+                  disabled={isGenerating}
+                  className="p-2 text-text-muted hover:text-accent transition-colors rounded-full hover:bg-bg-secondary disabled:opacity-50"
+                  title="Generar imagen"
+                >
+                  {isGenerating ? <Spinner size={20} /> : <Share2 size={20} />}
+                </button>
+              )}
+              <button onClick={onClose} className="p-2 text-text-muted hover:text-red transition-colors rounded-full hover:bg-bg-secondary">
+                <X size={20} />
               </button>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="mb-6 shrink-0">
-              <h3 className="text-xl font-semibold text-accent mb-3 flex items-center gap-2">
-                <Target size={20} />
-                {safeRoutineName}
-              </h3>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-sm">
-                  <Clock size={24} className="mx-auto text-text-secondary mb-1" />
-                  <span className="text-sm text-text-secondary">Duración</span>
-                  <p className="text-xl font-bold text-text-primary">{formatTime(duration_seconds || 0)}</p>
+
+          <div className="p-6 space-y-6">
+            {previewImage ? (
+              <div className="flex flex-col items-center gap-4 animate-fade-in">
+                <div className="relative w-full rounded-xl overflow-hidden shadow-lg border border-glass-border bg-black">
+                  <img
+                    src={previewImage}
+                    alt="Preview"
+                    className="w-full h-auto max-h-[60vh] object-contain"
+                  />
                 </div>
-                <div className="bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-sm">
-                  <Flame size={24} className="mx-auto text-text-secondary mb-1" />
-                  <span className="text-sm text-text-secondary">Calorías</span>
-                  <p className="text-xl font-bold text-text-primary">{Math.round(safeCalories)} kcal</p>
+
+                <div className="flex flex-col-reverse sm:flex-row gap-3 w-full">
+                  <button
+                    onClick={isShareMode ? onClose : resetPreview}
+                    className="w-full sm:flex-1 py-3 rounded-xl border border-glass-border text-text-secondary font-bold hover:bg-bg-secondary transition flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft size={18} /> {isShareMode ? 'Cerrar' : 'Volver'}
+                  </button>
+
+                  <button
+                    onClick={downloadImage}
+                    className="w-full sm:w-14 py-3 sm:py-0 flex items-center justify-center rounded-xl bg-bg-secondary border border-glass-border text-text-primary hover:text-accent transition"
+                    title="Descargar imagen"
+                  >
+                    <Download size={20} />
+                  </button>
+
+                  <button
+                    onClick={handleNativeShare}
+                    className="w-full sm:flex-[2] py-3 rounded-xl bg-accent text-bg-secondary font-bold hover:brightness-110 transition shadow-lg shadow-accent/20 flex items-center justify-center gap-2"
+                  >
+                    <Send size={18} /> Compartir
+                  </button>
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
-              <h4 className="text-lg font-semibold text-text-primary">Resumen de Ejercicios</h4>
-              {safeDetails.length > 0 ? (
-                <div className="space-y-3 bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-inner">
-                  {safeDetails.map((ex, index) => (
-                    <div key={index} className="pb-3 border-b border-glass-border last:border-0 last:pb-0">
-                      <p className="font-semibold text-text-primary">
-                        {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
-                      </p>
-                      <ul className="list-disc list-inside pl-2 text-sm text-text-secondary mt-1">
-                        {(Array.isArray(ex.setsDone) ? ex.setsDone : []).map((set, setIndex) => (
-                          <li key={setIndex}>
-                            {set.weight_kg || 0} kg x {set.reps || 0} reps {set.is_dropset ? '(Dropset)' : ''}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-text-secondary italic">No se registraron ejercicios de fuerza.</p>
-              )}
-              {safeNotes && (
+            ) : (
+              <>
                 <div>
-                  <h4 className="text-lg font-semibold text-text-primary mb-2">Notas</h4>
-                  <p className="bg-bg-secondary p-4 rounded-xl border border-glass-border text-text-secondary text-sm whitespace-pre-wrap">{safeNotes}</p>
+                  <h3 className="text-xl font-semibold text-accent mb-3 flex items-center gap-2">
+                    <Target size={20} />
+                    {safeRoutineName}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-sm">
+                      <Clock size={24} className="mx-auto text-text-secondary mb-1" />
+                      <span className="text-sm text-text-secondary">Duración</span>
+                      <p className="text-xl font-bold text-text-primary">{formatTime(duration_seconds || 0)}</p>
+                    </div>
+                    <div className="bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-sm">
+                      <Flame size={24} className="mx-auto text-text-secondary mb-1" />
+                      <span className="text-sm text-text-secondary">Calorías</span>
+                      <p className="text-xl font-bold text-text-primary">{Math.round(safeCalories)} kcal</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Margen inferior ajustado al safe-area para protección */}
-            <button
-              onClick={onClose}
-              className="mt-6 w-full px-6 py-3 rounded-xl bg-accent text-bg-secondary font-bold transition hover:scale-[1.01] shadow-lg shadow-accent/20 shrink-0 mb-[env(safe-area-inset-bottom)]"
-            >
-              Cerrar
-            </button>
-          </>
-        )}
+                <div className="space-y-4 pr-1">
+                  <h4 className="text-lg font-semibold text-text-primary">Resumen de Ejercicios</h4>
+                  {safeDetails.length > 0 ? (
+                    <div className="space-y-3 bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-inner">
+                      {safeDetails.map((ex, index) => (
+                        <div key={index} className="pb-3 border-b border-glass-border last:border-0 last:pb-0">
+                          <p className="font-semibold text-text-primary">
+                            {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
+                          </p>
+                          <ul className="list-disc list-inside pl-2 text-sm text-text-secondary mt-1">
+                            {(Array.isArray(ex.setsDone) ? ex.setsDone : []).map((set, setIndex) => (
+                              <li key={setIndex}>
+                                {set.weight_kg || 0} kg x {set.reps || 0} reps {set.is_dropset ? '(Dropset)' : ''}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-text-secondary italic">No se registraron ejercicios de fuerza.</p>
+                  )}
+                  {safeNotes && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-text-primary mb-2">Notas</h4>
+                      <p className="bg-bg-secondary p-4 rounded-xl border border-glass-border text-text-secondary text-sm whitespace-pre-wrap">{safeNotes}</p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={onClose}
+                  className="mt-6 w-full px-6 py-3.5 rounded-xl bg-accent text-bg-secondary font-bold text-lg transition hover:scale-[1.01] shadow-lg shadow-accent/20 flex items-center justify-center"
+                >
+                  Cerrar
+                </button>
+              </>
+            )}
+          </div>
+
+        </div>
+
       </div>
+
     </div>
   );
 };
