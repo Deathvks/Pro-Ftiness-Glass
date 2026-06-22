@@ -5,8 +5,6 @@ import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import CustomSelect from '../components/CustomSelect';
 
-// CORRECCIÓN: Ahora aceptamos 'exerciseName' directamente (que es lo que envía Progress.jsx)
-// en lugar de esperar un objeto 'exercise'.
 export default function ExerciseHistoryModal({ exerciseName, onClose }) {
   const workoutLog = useAppStore((state) => state.workoutLog);
   const { t } = useTranslation('exercise_names');
@@ -70,7 +68,6 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
 
       for (const d of details) {
         const sets = d.WorkoutLogSets && d.WorkoutLogSets.length > 0 ? d.WorkoutLogSets : [];
-        // Ordenar series por número
         sets.sort((a, b) => (a.set_number || 0) - (b.set_number || 0));
         groups[dateKey].push(...sets);
       }
@@ -110,15 +107,21 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
     }
   }, [selectedYear, availableMonths]);
 
+  // Bloquear el scroll del cuerpo de la app mientras el modal está abierto
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   if (!exerciseName) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4">
-      <div className="relative w-full max-w-lg md:max-w-2xl rounded-2xl bg-bg-primary border border-glass-border shadow-2xl flex flex-col max-h-[80vh] md:max-h-[85vh] mb-20 md:mb-0 animate-scale-in overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4">
+      {/* REDUCIDO a max-h-[70vh] para que quede totalmente aislado de los bordes del sistema */}
+      <div className="relative w-full max-w-lg md:max-w-2xl rounded-2xl bg-bg-primary border border-glass-border shadow-2xl flex flex-col max-h-[70vh] md:max-h-[85vh] animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0">
 
-        {/* Header Fijo */}
-        <div className="p-5 md:p-6 flex flex-col gap-4 bg-bg-primary z-10 shrink-0 border-b border-glass-border">
+        {/* Header Fijo (shrink-0) */}
+        <div className="p-4 md:p-6 flex flex-col gap-4 bg-bg-primary z-10 shrink-0 border-b border-glass-border">
           <div className="flex justify-between items-start gap-4">
             <h2 className="text-xl md:text-2xl font-extrabold text-text-primary leading-tight break-words whitespace-normal">
               {tCommon('Historial de', { defaultValue: 'Historial de' })}{' '}
@@ -158,8 +161,8 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
           </div>
         </div>
 
-        {/* Contenido Scrollable */}
-        <div className="overflow-y-auto p-4 md:p-6 custom-scrollbar bg-bg-primary">
+        {/* Contenido Scrollable Interno (flex-1 overflow-y-auto) */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-bg-primary">
           {historyByDay.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-text-muted opacity-60">
               <CalendarX size={48} strokeWidth={1.5} className="mb-4 text-text-muted" />
@@ -175,7 +178,7 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
               {historyByDay.map(({ dateKey, sets }, idx) => (
                 <div
                   key={dateKey}
-                  className="animate-fade-in"
+                  className="animate-[fade-in_0.3s_ease-out]"
                   style={{ animationDelay: `${idx * 0.05}s` }}
                 >
                   <h3 className="text-accent text-sm font-bold mb-3 uppercase tracking-wider flex items-center gap-2 sticky top-0 bg-bg-primary py-2 z-10 rounded-md pl-1">
@@ -232,7 +235,7 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
           )}
         </div>
 
-        {/* Footer Móvil */}
+        {/* Footer Fijo (shrink-0) */}
         <div className="p-4 md:hidden shrink-0 bg-bg-primary border-t border-glass-border z-10">
           <button
             onClick={onClose}
