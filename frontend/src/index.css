@@ -295,9 +295,11 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE (TU ESTRUCTURA EXACTA) */
 @layer components {
 
+  /* HACK PARA iOS BETAS: -webkit-fill-available obliga al navegador a recalcular el espacio físico real disponible, ignorando la parte tapada por la barra del sistema */
   html {
     width: 100%;
     height: 100%;
+    min-height: -webkit-fill-available;
     background-color: var(--bg-primary) !important;
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
@@ -312,6 +314,7 @@ html.galaxy-theme #root::after {
     bottom: 0;
     width: 100%;
     height: 100%;
+    min-height: -webkit-fill-available;
     overflow: hidden;
     background-color: var(--bg-primary) !important;
     box-sizing: border-box;
@@ -328,6 +331,7 @@ html.galaxy-theme #root::after {
     bottom: 0;
     width: 100%;
     height: 100%;
+    min-height: -webkit-fill-available;
     overflow: hidden;
   }
 
@@ -488,32 +492,43 @@ html.galaxy-theme #root::after {
 
 /* ==========================================================================
    7) BLINDAJE UNIVERSAL DE MODALES (Anti-bugs Viewport iOS Beta / PWA)
-   Secuestra cualquier modal en móvil para encajarlo en un 90% estricto.
+   Obligamos a que CUALQUIER modal se estructure con Flexbox y Porcentajes,
+   ignorando completamente los cálculos falsos de vh/dvh que haga el sistema.
    ========================================================================== */
 @media (max-width: 768px) {
-  /* 1. Atrapa el telón de fondo y le obliga a dejar un 5% de margen intocable */
+  
+  /* 1. Al fondo difuminado del modal lo convertimos en un contenedor Flexbox centrado y le forzamos un margen (padding) del 5% del espacio REAL disponible */
   div[class*="fixed"][class*="inset-0"][class*="z-["] {
-    padding: 5dvh 5vw !important;
+    padding: 5% 5% !important; 
     box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
-  /* 2. Atrapa la tarjeta principal y le prohíbe pasar del 90% reales */
+  /* 2. La tarjeta modal ocupa todo el espacio que le deja el padding anterior (es decir, el 90% del espacio real), sin depender de max-h-[85vh] */
   div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] {
-    max-height: 90dvh !important;
+    max-height: 100% !important;
     height: auto !important;
     width: 100% !important;
-    margin: auto !important;
+    margin: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
   }
 
-  /* 3. Obliga al cuerpo intermedio a absorber el scroll */
+  /* 3. Forzamos al cuerpo intermedio del modal a contraerse mágicamente y activar el scroll suave de iOS */
   div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] > div[class*="overflow-y-auto"],
   div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] > div[class*="flex-1"] {
     overflow-y: auto !important;
     overscroll-behavior: contain !important;
     -webkit-overflow-scrolling: touch !important;
+    flex: 1 1 auto !important;
+  }
+
+  /* 4. Protegemos que las cabeceras (headers) y botones finales (footers) de los modales jamás sean aplastados */
+  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] > div[class*="shrink-0"] {
+    flex-shrink: 0 !important;
   }
 }
 
