@@ -55,7 +55,6 @@ html.dark-theme {
   --header-solid: #0f172a;
 }
 
-/* --- MODO CLARO (EFECTO LIQUID Glass IOS) --- */
 html.light-theme {
   --bg-primary: #f8fafc; 
   --bg-secondary: #ffffff;
@@ -94,7 +93,6 @@ html.oled-theme {
   --header-solid: #000000;
 }
 
-/* --- TEMA GALAXIA --- */
 html.galaxy-theme {
   --bg-primary: #080814; 
   --bg-secondary: #0d0d1f;
@@ -120,15 +118,30 @@ html.galaxy-theme {
 }
 
 @keyframes starry-background {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-400px, 400px, 0); }
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-400px, 400px, 0);
+  }
 }
 
 @keyframes meteor-shower {
-  0% { transform: rotate(35deg) translate3d(-30vw, 0, 0); opacity: 0; }
-  5% { opacity: 1; }
-  15% { transform: rotate(35deg) translate3d(120vw, 0, 0); opacity: 0; }
-  100% { transform: rotate(35deg) translate3d(120vw, 0, 0); opacity: 0; }
+  0% {
+    transform: rotate(35deg) translate3d(-30vw, 0, 0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  15% {
+    transform: rotate(35deg) translate3d(120vw, 0, 0);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(35deg) translate3d(120vw, 0, 0);
+    opacity: 0;
+  }
 }
 
 html.galaxy-theme #root {
@@ -144,8 +157,10 @@ html.galaxy-theme #root {
 html.galaxy-theme #root::before {
   content: '';
   position: absolute;
-  top: -50vh; left: -50vw; 
-  width: 200vw; height: 200vh;
+  top: -50vh;
+  left: -50vw; 
+  width: 200vw;
+  height: 200vh;
   background-image: 
     radial-gradient(circle 1px at 20px 30px, #ffffff, transparent),
     radial-gradient(circle 1.5px at 70px 120px, #ffffff, transparent),
@@ -191,101 +206,121 @@ html.galaxy-theme #root::after {
   --color-accent-transparent: rgba(34, 197, 94, 0.12);
   --color-accent-border: rgba(34, 197, 94, 0.28);
 }
+
 .accent-blue {
   --color-accent: #3b82f6;
   --color-accent-transparent: rgba(59, 130, 246, 0.12);
   --color-accent-border: rgba(59, 130, 246, 0.28);
 }
+
 .accent-violet {
   --color-accent: #8b5cf6;
   --color-accent-transparent: rgba(139, 92, 246, 0.12);
   --color-accent-border: rgba(139, 92, 246, 0.28);
 }
+
 .accent-amber {
   --color-accent: #f59e0b;
   --color-accent-transparent: rgba(245, 158, 11, 0.12);
   --color-accent-border: rgba(245, 158, 11, 0.28);
 }
+
 .accent-rose {
   --color-accent: #f43f5e;
   --color-accent-transparent: rgba(244, 63, 94, 0.12);
   --color-accent-border: rgba(244, 63, 94, 0.28);
 }
+
 .accent-teal {
   --color-accent: #14b8a6;
   --color-accent-transparent: rgba(20, 184, 166, 0.12);
   --color-accent-border: rgba(20, 184, 166, 0.28);
 }
+
 .accent-cyan {
   --color-accent: #06b6d4;
   --color-accent-transparent: rgba(6, 182, 212, 0.12);
   --color-accent-border: rgba(6, 182, 212, 0.28);
 }
+
 .accent-orange {
   --color-accent: #f97316;
   --color-accent-transparent: rgba(249, 115, 22, 0.12);
   --color-accent-border: rgba(249, 115, 22, 0.28);
 }
+
 .accent-lime {
   --color-accent: #84cc16;
   --color-accent-transparent: rgba(132, 204, 22, 0.12);
   --color-accent-border: rgba(132, 204, 22, 0.28);
 }
+
 .accent-fuchsia {
   --color-accent: #d946ef;
   --color-accent-transparent: rgba(217, 70, 239, 0.12);
   --color-accent-border: rgba(217, 70, 239, 0.28);
 }
+
 .accent-emerald {
   --color-accent: #10b981;
   --color-accent-transparent: rgba(16, 185, 129, 0.12);
   --color-accent-border: rgba(16, 185, 129, 0.28);
 }
+
 .accent-indigo {
   --color-accent: #6366f1;
   --color-accent-transparent: rgba(99, 102, 241, 0.12);
   --color-accent-border: rgba(99, 102, 241, 0.28);
 }
+
 .accent-purple {
   --color-accent: #a855f7;
   --color-accent-transparent: rgba(168, 85, 247, 0.12);
   --color-accent-border: rgba(168, 85, 247, 0.28);
 }
+
 .accent-pink {
   --color-accent: #ec4899;
   --color-accent-transparent: rgba(236, 72, 153, 0.12);
   --color-accent-border: rgba(236, 72, 153, 0.28);
 }
+
 .accent-red {
   --color-accent: #ef4444;
   --color-accent-transparent: rgba(239, 68, 68, 0.12);
   --color-accent-border: rgba(239, 68, 68, 0.28);
 }
+
 .accent-yellow {
   --color-accent: #eab308;
   --color-accent-transparent: rgba(234, 179, 8, 0.12);
   --color-accent-border: rgba(234, 179, 8, 0.28);
 }
+
 .accent-sky {
   --color-accent: #0ea5e9;
   --color-accent-transparent: rgba(14, 165, 233, 0.12);
   --color-accent-border: rgba(14, 165, 233, 0.28);
 }
+
 .accent-slate {
   --color-accent: #64748b;
   --color-accent-transparent: rgba(100, 116, 139, 0.12);
   --color-accent-border: rgba(100, 116, 139, 0.28);
 }
+
 .accent-zinc {
   --color-accent: #71717a;
   --color-accent-transparent: rgba(113, 113, 122, 0.12);
   --color-accent-border: rgba(113, 113, 122, 0.28);
 }
+
 .accent-stone {
   --color-accent: #78716c;
   --color-accent-transparent: rgba(120, 113, 108, 0.12);
   --color-accent-border: rgba(120, 113, 108, 0.28);
 }
+
 .accent-neutral {
   --color-accent: #737373;
   --color-accent-transparent: rgba(115, 115, 115, 0.12);
@@ -295,11 +330,7 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE (TU ESTRUCTURA EXACTA) */
 @layer components {
 
-  /* HACK PARA iOS BETAS: -webkit-fill-available obliga al navegador a recalcular el espacio físico real disponible, ignorando la parte tapada por la barra del sistema */
   html {
-    width: 100%;
-    height: 100%;
-    min-height: -webkit-fill-available;
     background-color: var(--bg-primary) !important;
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
@@ -308,13 +339,7 @@ html.galaxy-theme #root::after {
   body {
     @apply text-text-primary antialiased;
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    min-height: -webkit-fill-available;
+    inset: 0;
     overflow: hidden;
     background-color: var(--bg-primary) !important;
     box-sizing: border-box;
@@ -325,13 +350,7 @@ html.galaxy-theme #root::after {
     background-color: var(--bg-primary) !important;
     isolation: isolate;
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    min-height: -webkit-fill-available;
+    inset: 0;
     overflow: hidden;
   }
 
@@ -418,8 +437,13 @@ html.galaxy-theme #root::after {
   }
 
   @keyframes scan {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(240px); }
+    0% {
+      transform: translateY(0);
+    }
+
+    100% {
+      transform: translateY(240px);
+    }
   }
 
   .scan-line {
@@ -465,69 +489,99 @@ html.galaxy-theme #root::after {
   }
 
   @keyframes fade-in-up {
-    0% { opacity: 0; transform: translateY(6px); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   @keyframes slide-up {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes fade-in {
-    0% { opacity: 0 }
-    100% { opacity: 1 }
+    0% {
+      opacity: 0
+    }
+
+    100% {
+      opacity: 1
+    }
   }
 
   @keyframes toast-in {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 
   @keyframes toast-out {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
   }
 }
 
 /* ==========================================================================
-   7) BLINDAJE UNIVERSAL DE MODALES (Anti-bugs Viewport iOS Beta / PWA)
-   Obligamos a que CUALQUIER modal se estructure con Flexbox y Porcentajes,
-   ignorando completamente los cálculos falsos de vh/dvh que haga el sistema.
+   7) BLINDAJE UNIVERSAL DE MODALES (Anti-bugs Viewport iOS)
+   Secuestra la maquetación de los modales para fijarlos a un 90% estricto.
    ========================================================================== */
 @media (max-width: 768px) {
-  
-  /* 1. Al fondo difuminado del modal lo convertimos en un contenedor Flexbox centrado y le forzamos un margen (padding) del 5% del espacio REAL disponible */
   div[class*="fixed"][class*="inset-0"][class*="z-["] {
-    padding: 5% 5% !important; 
-    box-sizing: border-box !important;
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    padding: calc(env(safe-area-inset-top, 20px) + 16px) 16px calc(env(safe-area-inset-bottom, 20px) + 16px) 16px !important;
+    box-sizing: border-box !important;
   }
 
-  /* 2. La tarjeta modal ocupa todo el espacio que le deja el padding anterior (es decir, el 90% del espacio real), sin depender de max-h-[85vh] */
-  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] {
+  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="min-h-"] {
+    display: contents !important; 
+  }
+
+  div[class*="fixed"][class*="inset-0"][class*="z-["] div[class*="max-w-"] {
+    margin: auto !important; 
     max-height: 100% !important;
-    height: auto !important;
     width: 100% !important;
-    margin: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
   }
 
-  /* 3. Forzamos al cuerpo intermedio del modal a contraerse mágicamente y activar el scroll suave de iOS */
-  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] > div[class*="overflow-y-auto"],
-  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] > div[class*="flex-1"] {
+  div[class*="fixed"][class*="inset-0"][class*="z-["] div[class*="max-w-"] > div[class*="overflow-y-auto"],
+  div[class*="fixed"][class*="inset-0"][class*="z-["] div[class*="max-w-"] > div.flex-1 {
     overflow-y: auto !important;
     overscroll-behavior: contain !important;
     -webkit-overflow-scrolling: touch !important;
-    flex: 1 1 auto !important;
   }
 
-  /* 4. Protegemos que las cabeceras (headers) y botones finales (footers) de los modales jamás sean aplastados */
-  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] > div[class*="shrink-0"] {
+  div[class*="fixed"][class*="inset-0"][class*="z-["] div[class*="max-w-"] > div.shrink-0 {
     flex-shrink: 0 !important;
   }
 }
