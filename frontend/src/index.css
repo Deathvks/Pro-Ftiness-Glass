@@ -549,31 +549,44 @@ html.galaxy-theme #root::after {
 
 /* ==========================================================================
    7) BLINDAJE UNIVERSAL DE MODALES (Anti-bugs Viewport iOS)
-   Secuestra la maquetación de los modales para fijarlos a un 90% estricto.
+   Secuestra la maquetación de los modales para fijarlos al viewport dinámico (dvh).
    ========================================================================== */
 @media (max-width: 768px) {
+  /* El contenedor fijo que oscurece el fondo */
   div[class*="fixed"][class*="inset-0"][class*="z-["] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: auto !important;
+    height: 100dvh !important; /* Usar dvh soluciona el problema del notch inferior en Safari */
+    width: 100vw !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    padding: calc(env(safe-area-inset-top, 20px) + 16px) 16px calc(env(safe-area-inset-bottom, 20px) + 16px) 16px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    /* Eliminamos el calc problemático que generaba margen extra en PWA.
+       Usamos max() para respetar el safe-area nativo (notch y píldora) sin pasarnos */
+    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)) 16px !important;
     box-sizing: border-box !important;
   }
 
+  /* Algunos modales envuelven el interior en un min-h-screen, lo saltamos */
   div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="min-h-"] {
     display: contents !important; 
   }
 
+  /* La ventana del modal en sí */
   div[class*="fixed"][class*="inset-0"][class*="z-["] div[class*="max-w-"] {
-    margin: auto !important; 
-    max-height: 100% !important;
+    margin: 0 !important; 
+    max-height: 100% !important; /* Ahora el 100% respeta el 100dvh del padre MENOS los paddings aplicados */
     width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
   }
 
+  /* Aseguramos que la zona de scroll actúe bien en iOS */
   div[class*="fixed"][class*="inset-0"][class*="z-["] div[class*="max-w-"] > div[class*="overflow-y-auto"],
   div[class*="fixed"][class*="inset-0"][class*="z-["] div[class*="max-w-"] > div.flex-1 {
     overflow-y: auto !important;
@@ -581,6 +594,7 @@ html.galaxy-theme #root::after {
     -webkit-overflow-scrolling: touch !important;
   }
 
+  /* Protegemos los headers y pies para que no se encojan */
   div[class*="fixed"][class*="inset-0"][class*="z-["] div[class*="max-w-"] > div.shrink-0 {
     flex-shrink: 0 !important;
   }

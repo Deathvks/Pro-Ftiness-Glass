@@ -8,7 +8,6 @@ import {
 import LevelBadge from './LevelBadge';
 
 const XPGuideModal = ({ onClose }) => {
-    // Referencia y estados para el Drag-to-Scroll en PC
     const carouselRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
@@ -27,7 +26,7 @@ const XPGuideModal = ({ onClose }) => {
         if (!isDragging) return;
         e.preventDefault();
         const x = e.pageX - carouselRef.current.offsetLeft;
-        const walk = (x - startX) * 2; // Velocidad de arrastre
+        const walk = (x - startX) * 2;
         carouselRef.current.scrollLeft = scrollLeftPos - walk;
     };
 
@@ -41,7 +40,8 @@ const XPGuideModal = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
-            <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
+            {/* AQUÍ EL CAMBIO A 85dvh */}
+            <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] w-full max-w-md max-h-[85dvh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
 
                 <div className="shrink-0 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 p-6 flex items-center justify-between rounded-t-[32px] z-10">
                     <h2 className="text-xl font-extrabold flex items-center gap-3 text-text-primary tracking-tight">
@@ -79,13 +79,10 @@ const XPGuideModal = ({ onClose }) => {
                             onMouseLeave={handleMouseLeave}
                             onMouseUp={handleMouseUp}
                             onMouseMove={handleMouseMove}
-                            // items-stretch asegura que todas las tarjetas midan exactamente lo mismo
                             className={`flex gap-3 overflow-x-auto custom-scrollbar pb-4 px-1 items-stretch select-none w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                         >
                             {rankPreviews.map(level => (
-                                // Tarjeta ensanchada y con justify-between para distribuir uniformemente el espacio
                                 <div key={level} className="flex-shrink-0 flex flex-col items-center justify-between gap-3 w-[135px] p-4 bg-bg-primary rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
-                                    {/* Contenedor del nombre con whitespace-nowrap para que no baje de línea */}
                                     <div className="pointer-events-none flex flex-col items-center justify-center flex-1 w-full whitespace-nowrap">
                                         <LevelBadge level={level} size="md" showName={true} />
                                     </div>
