@@ -295,7 +295,6 @@ html.galaxy-theme #root::after {
 /* 5) COMPONENTES BASE (TU ESTRUCTURA EXACTA) */
 @layer components {
 
-  /* CORRECCIÓN: Eliminados height: 100vh y 100dvh. Se fuerza bg-bg-primary para evitar parpadeos y huecos */
   html {
     width: 100%;
     height: 100%;
@@ -342,7 +341,6 @@ html.galaxy-theme #root::after {
     @apply text-text-primary;
   }
 
-  /* --- GLOBAL INPUT OVERRIDES --- */
   input:focus,
   textarea:focus,
   select:focus,
@@ -354,7 +352,6 @@ html.galaxy-theme #root::after {
     @apply outline-none;
   }
 
-  /* --- TRUE LIQUID GLASS UNIVERSAL --- */
   .glass,
   .bg-glass-bg,
   .bg-\[--glass-bg\] {
@@ -416,15 +413,9 @@ html.galaxy-theme #root::after {
     font-weight: bold;
   }
 
-  /* QR Scanner */
   @keyframes scan {
-    0% {
-      transform: translateY(0);
-    }
-
-    100% {
-      transform: translateY(240px);
-    }
+    0% { transform: translateY(0); }
+    100% { transform: translateY(240px); }
   }
 
   .scan-line {
@@ -470,61 +461,59 @@ html.galaxy-theme #root::after {
   }
 
   @keyframes fade-in-up {
-    0% {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    0% { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
   
   @keyframes slide-up {
-    0% {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes fade-in {
-    0% {
-      opacity: 0
-    }
-
-    100% {
-      opacity: 1
-    }
+    0% { opacity: 0 }
+    100% { opacity: 1 }
   }
 
   @keyframes toast-in {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
 
   @keyframes toast-out {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+}
 
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
+/* ==========================================================================
+   7) BLINDAJE UNIVERSAL DE MODALES (Anti-bugs Viewport iOS Beta / PWA)
+   Secuestra cualquier modal en móvil para encajarlo en un 90% estricto.
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* 1. Atrapa el telón de fondo y le obliga a dejar un 5% de margen intocable */
+  div[class*="fixed"][class*="inset-0"][class*="z-["] {
+    padding: 5dvh 5vw !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 2. Atrapa la tarjeta principal y le prohíbe pasar del 90% reales */
+  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] {
+    max-height: 90dvh !important;
+    height: auto !important;
+    width: 100% !important;
+    margin: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  /* 3. Obliga al cuerpo intermedio a absorber el scroll */
+  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] > div[class*="overflow-y-auto"],
+  div[class*="fixed"][class*="inset-0"][class*="z-["] > div[class*="max-w-"] > div[class*="flex-1"] {
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }
 
