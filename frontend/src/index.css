@@ -332,12 +332,27 @@ html.galaxy-theme #root::after {
 
   html {
     /* CLAVE PWA iOS: Transparencia total para que Safari no inyecte el separador del Notch */
-    background-color: transparent !important;
+    background-color: var(--bg-color);
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
     width: 100%;
     height: 100%;
   }
+
+  /* AÑADIR — Escudo contra el separador del notch en iOS 27 */
+@supports (padding: env(safe-area-inset-top)) {
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top);
+    background-color: var(--bg-primary);
+    z-index: 99999;
+    pointer-events: none;
+  }
+}
 
   body {
     @apply text-text-primary antialiased;

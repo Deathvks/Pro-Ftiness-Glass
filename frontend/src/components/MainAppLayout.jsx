@@ -626,7 +626,7 @@ export default function MainAppLayout({
             </Suspense>
 
             {/* Ajuste del espacio en blanco del final del scroll */}
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + env(safe-area-inset-bottom))' }}></div>
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + min(env(safe-area-inset-bottom), 34px))' }}></div>
           </div>
         </main>
 
@@ -636,7 +636,8 @@ export default function MainAppLayout({
       <div 
         className={`md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none transition-opacity duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
-          height: 'calc(80px + env(safe-area-inset-bottom))',
+          height: 'calc(80px + min(env(safe-area-inset-bottom), 34px))',
+          background: 'linear-gradient(to top, rgba(var(--bg-primary-rgb, 15,23,42), 0.6) 0%, transparent 100%)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
@@ -649,7 +650,7 @@ export default function MainAppLayout({
       {/* NAVBAR: Se desliza hacia abajo físicamente y desaparece si hay un modal abierto */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
+        style={{ bottom: 'calc(min(env(safe-area-inset-bottom), 34px) + 12px)' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           

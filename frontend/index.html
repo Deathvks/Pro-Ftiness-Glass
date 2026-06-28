@@ -20,12 +20,15 @@
     " />
 
   <title>Pro Fitness Glass - Tu App de Fitness</title>
-  <meta name="description" content="Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass." />
-  <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
+  <meta name="description"
+    content="Registra tus entrenamientos, sigue tu progreso nutricional y alcanza tus objetivos de fitness con Pro Fitness Glass." />
+  <meta name="keywords"
+    content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
   <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/" />
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  
+
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
   <meta name="theme-color" content="#0f172a" id="dynamic-theme-color" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
@@ -46,7 +49,7 @@
     :root {
       --accent-r: 34;
       --accent-g: 197;
-      --accent-b: 94; 
+      --accent-b: 94;
       --glass-base: 26, 35, 53;
       --glass-opacity: 0.65;
       --glass-border-opacity: 0.2;
@@ -79,7 +82,7 @@
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       --bg-color: #000000;
     }
-    
+
     html.galaxy-theme {
       --glass-base: 8, 8, 20;
       --glass-opacity: 0.15;
@@ -93,7 +96,8 @@
        BLINDAJE PWA iOS: Eliminar borde superior y margen píldora
        ========================================================= */
     html {
-      background-color: transparent !important; /* MATA EL BORDE SUPERIOR DE SAFARI */
+      /* background-color la controla el script inline — sin !important aquí */
+      background-color: var(--bg-color);
       height: 100dvh !important;
       width: 100vw !important;
       overflow: hidden !important;
@@ -106,7 +110,8 @@
       padding: 0;
       height: 100dvh !important;
       width: 100vw !important;
-      position: fixed !important; /* Fija el lienzo al canvas exacto */
+      position: fixed !important;
+      /* Fija el lienzo al canvas exacto */
       top: 0 !important;
       left: 0 !important;
       overflow: hidden !important;
@@ -121,13 +126,14 @@
       left: 0 !important;
       overflow: hidden !important;
     }
+
     /* ========================================================= */
 
     .app-splash-screen {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between; 
+      justify-content: space-between;
       position: fixed;
       top: 0;
       left: 0;
@@ -135,11 +141,11 @@
       height: 100vh;
       z-index: 9999;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background-color: transparent; 
+      background-color: transparent;
       color: #ffffff;
       opacity: 1;
       transition: opacity 0.3s ease;
-      padding-top: 35vh; 
+      padding-top: 35vh;
       padding-bottom: 20px;
       box-sizing: border-box;
     }
@@ -192,7 +198,7 @@
       letter-spacing: 0.1em;
       padding: 0.5rem 1.5rem;
       border-radius: var(--glass-radius);
-      background-image: 
+      background-image:
         linear-gradient(rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.10), rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.10)),
         linear-gradient(rgba(var(--glass-base), var(--glass-opacity)), rgba(var(--glass-base), var(--glass-opacity)));
       border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), var(--glass-border-opacity));
@@ -230,12 +236,21 @@
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 
@@ -293,29 +308,29 @@
         }
 
         var metaColor = document.getElementById('dynamic-theme-color');
-        if(metaColor) {
-            metaColor.setAttribute('content', selectedHeaderColor);
+        if (metaColor) {
+          metaColor.setAttribute('content', selectedHeaderColor);
         }
 
         // Dejamos el HTML transparente para no provocar la línea blanca/gris
-        root.style.setProperty('background-color', 'transparent', 'important');
-        
-        var setBodyColor = function() {
-            if(document.body) {
-              document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
-            }
-            var appRoot = document.getElementById('root');
-            if(appRoot) {
-              appRoot.style.setProperty('background-color', selectedHeaderColor, 'important');
-            }
+        root.style.setProperty('background-color', selectedHeaderColor, 'important');
+
+        var setBodyColor = function () {
+          if (document.body) {
+            document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
+          }
+          var appRoot = document.getElementById('root');
+          if (appRoot) {
+            appRoot.style.setProperty('background-color', selectedHeaderColor, 'important');
+          }
         };
-        
-        if(document.body) setBodyColor();
+
+        if (document.body) setBodyColor();
         else document.addEventListener('DOMContentLoaded', setBodyColor);
 
         var splash = document.querySelector('.app-splash-screen');
-        if(splash) {
-           splash.style.background = 'linear-gradient(to bottom, ' + selectedHeaderColor + ' 0%, ' + selectedHeaderColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' 100%)';
+        if (splash) {
+          splash.style.background = 'linear-gradient(to bottom, ' + selectedHeaderColor + ' 0%, ' + selectedHeaderColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' 100%)';
         }
 
       } catch (e) {
@@ -328,10 +343,10 @@
 <body>
   <div id="root">
     <div class="app-splash-screen">
-      
+
       <div class="splash-content">
         <div class="app-splash-title">
-          PRO FITNESS 
+          PRO FITNESS
           <span class="glass-badge">GLASS</span>
         </div>
         <div class="app-splash-spinner"></div>
@@ -344,7 +359,7 @@
           <a href="https://pro-fitness-glass.zeabur.app/terms">Términos del Servicio</a>
         </nav>
         <div style="margin-top: 8px; opacity: 0.5; font-size: 0.9em;">
-           © 2026 Pro Fitness Glass
+          © 2026 Pro Fitness Glass
         </div>
       </footer>
 
