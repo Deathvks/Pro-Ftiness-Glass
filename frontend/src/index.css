@@ -38,12 +38,16 @@
   --glass-brightness: 1.1;
 }
 
-/* SAFE AREA ADAPTATIVA — iOS 27 standalone ya excluye las safe areas del viewport.
-   En modo standalone las variables valen 0px (el sistema las gestiona).
-   En Safari browser normal siguen usando env() para posicionarse correctamente. */
+/* SAFE AREA ADAPTATIVA — iOS 27 standalone gestiona la home indicator zone
+   de forma nativa, produciendo doble espacio si también lo aplicamos en CSS.
+   - --safe-top: siempre usa env() — el viewport sigue incluyendo el notch
+     con viewport-fit=cover, así que el header NECESITA ese padding.
+   - --safe-bottom: 0px en standalone — iOS 27 ya excluye la home pill del
+     viewport, así que añadirlo en CSS duplica el espacio (phantom margin).
+     En browser, env() sigue siendo necesario porque Safari no lo gestiona. */
 @media (display-mode: standalone) {
   :root {
-    --safe-top: 0px;
+    --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: 0px;
   }
 }
