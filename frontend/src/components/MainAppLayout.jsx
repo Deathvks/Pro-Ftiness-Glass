@@ -548,7 +548,7 @@ export default function MainAppLayout({
         {/* HEADER AHORA SE OCULTA CON UN FADE Y DESLIZAMIENTO SI HAY MODAL ABIERTO */}
         <header 
           className={`md:hidden shrink-0 w-full z-40 relative bg-bg-primary transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'}`}
-          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+          style={{ paddingTop: 'var(--safe-top)' }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
@@ -626,7 +626,7 @@ export default function MainAppLayout({
             </Suspense>
 
             {/* Ajuste del espacio en blanco del final del scroll */}
-            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + min(env(safe-area-inset-bottom), 34px))' }}></div>
+            <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + var(--safe-bottom))' }}></div>
           </div>
         </main>
 
@@ -636,7 +636,7 @@ export default function MainAppLayout({
       <div 
         className={`md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none transition-opacity duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
-          height: 'calc(80px + min(env(safe-area-inset-bottom), 34px))',
+          height: 'calc(80px + var(--safe-bottom))',
           background: 'linear-gradient(to top, rgba(var(--bg-primary-rgb, 15,23,42), 0.6) 0%, transparent 100%)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
@@ -650,7 +650,7 @@ export default function MainAppLayout({
       {/* NAVBAR: Se desliza hacia abajo físicamente y desaparece si hay un modal abierto */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
-        style={{ bottom: 'calc(min(env(safe-area-inset-bottom), 34px) + 12px)' }}
+        style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           
@@ -755,7 +755,8 @@ export default function MainAppLayout({
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => handleNavClick('workout')}
-          className="fixed right-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          className="fixed right-4 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
+          style={{ bottom: 'calc(6rem + var(--safe-bottom))' }}
         >
           <Zap size={20} />
           <span>Volver al Entreno</span>

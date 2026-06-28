@@ -38,6 +38,21 @@
   --glass-brightness: 1.1;
 }
 
+/* BLINDAJE PWA iOS 27: Gestión nativa de Safe Areas */
+@media (display-mode: standalone) {
+  :root {
+    --safe-bottom: 0px;
+    --safe-top: 0px;
+  }
+}
+
+@media not all and (display-mode: standalone) {
+  :root {
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+}
+
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
 
 html.dark-theme {
@@ -342,10 +357,6 @@ html.galaxy-theme #root::after {
 @layer components {
 
   html {
-    /* BLINDAJE iOS 27: background-color controlado por el script inline (sin !important).
-       El script de index.html ya aplica el color correcto antes del primer paint,
-       por lo que aquí no necesitamos !important — evitamos la guerra de especificidad
-       que en iOS 27 provocaba el separador del notch. */
     background-color: var(--bg-color);
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
@@ -353,26 +364,8 @@ html.galaxy-theme #root::after {
     height: 100%;
   }
 
-  /* BLINDAJE iOS 27: Capa sólida que sella el borde inferior del notch/Dynamic Island.
-     iOS 27 (Liquid Glass) renderiza un separador en el borde inferior del área de
-     la barra de estado. Este ::before lo cubre con el color exacto del tema. */
-  @supports (padding: env(safe-area-inset-top)) {
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: env(safe-area-inset-top);
-      background-color: var(--bg-primary);
-      z-index: 99999;
-      pointer-events: none;
-    }
-  }
-
   body {
     @apply text-text-primary antialiased;
-    /* CLAVE PWA iOS: Coordenadas absolutas exactas para evitar el recalculado de la píldora */
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
