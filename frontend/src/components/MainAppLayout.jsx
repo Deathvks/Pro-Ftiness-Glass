@@ -92,6 +92,9 @@ export default function MainAppLayout({
   const [aiRemaining, setAiRemaining] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');
   const [aiLimit, setAiLimit] = useState(() => localStorage.getItem('ai_daily_limit') || '5');
   const [viewResetKey, setViewResetKey] = useState(0);
+  
+  // ESTADO GLOBAL DE MODALES PARA OCULTAR NAVBAR
+  const [isGlobalModalOpen, setIsGlobalModalOpen] = useState(false);
 
   // --- REFS Y ESTADOS PARA LA GOTA LÍQUIDA ---
   const navRef = useRef(null);
@@ -110,6 +113,32 @@ export default function MainAppLayout({
   const isTransitioningRef = useRef(false);
   const prevViewRef = useRef(view);
   const SWIPE_THRESHOLD = 60; 
+
+  // OBSERVADOR DE MODALES (Para ocultar Navbar y Header)
+  useEffect(() => {
+    let rafId;
+    const checkModals = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const overlays = Array.from(document.querySelectorAll('.fixed.inset-0'));
+        const hasModal = overlays.some(el => {
+           const style = window.getComputedStyle(el);
+           const zIndex = parseInt(style.zIndex, 10) || 0;
+           return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        });
+        setIsGlobalModalOpen(hasModal);
+      });
+    };
+
+    checkModals();
+    const observer = new MutationObserver(() => checkModals());
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   const handleNavClick = (itemId) => {
     if (itemId === 'routines') {
@@ -516,8 +545,9 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
+        {/* HEADER AHORA SE OCULTA CON UN FADE Y DESLIZAMIENTO SI HAY MODAL ABIERTO */}
         <header 
-          className="md:hidden shrink-0 w-full z-40 relative bg-bg-primary"
+          className={`md:hidden shrink-0 w-full z-40 relative bg-bg-primary transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'}`}
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
@@ -588,7 +618,6 @@ export default function MainAppLayout({
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
-          {/* CORRECCIÓN: Se eliminó el "z-0" para que los modales hereden el z-index 100 de forma global y superpongan al header/navbar */}
           <div className="w-full relative">
             <Suspense fallback={<LoadingFallback />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
@@ -603,8 +632,9 @@ export default function MainAppLayout({
 
       </div>
 
+      {/* EFECTO BLUR INFERIOR: También se desvanece con los modales */}
       <div 
-        className="md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none"
+        className={`md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none transition-opacity duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
           height: 'calc(80px + env(safe-area-inset-bottom))',
           backdropFilter: 'blur(12px)',
@@ -616,8 +646,9 @@ export default function MainAppLayout({
         }}
       ></div>
 
+      {/* NAVBAR: Se desliza hacia abajo físicamente y desaparece si hay un modal abierto */}
       <div
-        className="md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4"
+        className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
