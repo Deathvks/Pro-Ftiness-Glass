@@ -38,18 +38,20 @@
   --glass-brightness: 1.1;
 }
 
-/* BLINDAJE PWA iOS 27: Gestión nativa de Safe Areas */
+/* SAFE AREA ADAPTATIVA — iOS 27 standalone ya excluye las safe areas del viewport.
+   En modo standalone las variables valen 0px (el sistema las gestiona).
+   En Safari browser normal siguen usando env() para posicionarse correctamente. */
 @media (display-mode: standalone) {
   :root {
-    --safe-bottom: 0px;
     --safe-top: 0px;
+    --safe-bottom: 0px;
   }
 }
 
 @media not all and (display-mode: standalone) {
   :root {
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
@@ -357,6 +359,10 @@ html.galaxy-theme #root::after {
 @layer components {
 
   html {
+    /* BLINDAJE iOS 27: background-color controlado por el script inline (sin !important).
+       El script de index.html ya aplica el color correcto antes del primer paint,
+       por lo que aquí no necesitamos !important — evitamos la guerra de especificidad
+       que en iOS 27 provocaba el separador del notch. */
     background-color: var(--bg-color);
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
@@ -366,6 +372,7 @@ html.galaxy-theme #root::after {
 
   body {
     @apply text-text-primary antialiased;
+    /* CLAVE PWA iOS: Coordenadas absolutas exactas para evitar el recalculado de la píldora */
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;

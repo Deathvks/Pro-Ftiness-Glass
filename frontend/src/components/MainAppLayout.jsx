@@ -545,7 +545,9 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* HEADER AHORA SE OCULTA CON UN FADE Y DESLIZAMIENTO SI HAY MODAL ABIERTO */}
+        {/* HEADER — paddingTop usa --safe-top:
+            en standalone iOS 27 vale 0px (el sistema ya recorta el viewport),
+            en Safari browser vale env(safe-area-inset-top) */}
         <header 
           className={`md:hidden shrink-0 w-full z-40 relative bg-bg-primary transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'}`}
           style={{ paddingTop: 'var(--safe-top)' }}
@@ -625,19 +627,20 @@ export default function MainAppLayout({
               </React.Fragment>
             </Suspense>
 
-            {/* Ajuste del espacio en blanco del final del scroll */}
+            {/* Spacer de scroll — usa --safe-bottom:
+                en standalone iOS 27 vale 0px, en Safari browser vale env(safe-area-inset-bottom) */}
             <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + var(--safe-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      {/* EFECTO BLUR INFERIOR: También se desvanece con los modales */}
+      {/* EFECTO BLUR INFERIOR — misma lógica con --safe-bottom */}
       <div 
         className={`md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none transition-opacity duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
           height: 'calc(80px + var(--safe-bottom))',
-          background: 'linear-gradient(to top, rgba(var(--bg-primary-rgb, 15,23,42), 0.6) 0%, transparent 100%)',
+          background: `linear-gradient(to top, rgba(var(--bg-primary-rgb), 0.6) 0%, transparent 100%)`,
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
@@ -647,7 +650,7 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* NAVBAR: Se desliza hacia abajo físicamente y desaparece si hay un modal abierto */}
+      {/* NAVBAR — bottom usa --safe-bottom */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
@@ -752,6 +755,7 @@ export default function MainAppLayout({
         <ConfirmationModal message="¿Estás seguro de que quieres cerrar sesión?" onConfirm={confirmLogout} onCancel={() => setShowLogoutConfirm(false)} confirmText="Cerrar Sesión" />
       )}
 
+      {/* Botón "Volver al Entreno" — bottom usa --safe-bottom en lugar de env() directo */}
       {activeWorkout && workoutStartTime && view !== 'workout' && (
         <button
           onClick={() => handleNavClick('workout')}
