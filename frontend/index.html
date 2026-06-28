@@ -89,6 +89,40 @@
       --bg-color: #080814;
     }
 
+    /* =========================================================
+       BLINDAJE PWA iOS: Eliminar borde superior y margen píldora
+       ========================================================= */
+    html {
+      background-color: transparent !important; /* MATA EL BORDE SUPERIOR DE SAFARI */
+      height: 100dvh !important;
+      width: 100vw !important;
+      overflow: hidden !important;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100dvh !important;
+      width: 100vw !important;
+      position: fixed !important; /* Fija el lienzo al canvas exacto */
+      top: 0 !important;
+      left: 0 !important;
+      overflow: hidden !important;
+      overscroll-behavior: none;
+    }
+
+    #root {
+      height: 100dvh !important;
+      width: 100vw !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      overflow: hidden !important;
+    }
+    /* ========================================================= */
+
     .app-splash-screen {
       display: flex;
       flex-direction: column;
@@ -245,7 +279,6 @@
         var effectiveTheme = savedTheme;
         if (effectiveTheme === 'system') effectiveTheme = systemDark ? 'dark' : 'light';
 
-        // 🔴 AQUI ESTÁ LA CLAVE: bgColors y headerColors son idénticos ahora.
         var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
         var headerColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
 
@@ -264,12 +297,19 @@
             metaColor.setAttribute('content', selectedHeaderColor);
         }
 
-        root.style.setProperty('background-color', selectedHeaderColor, 'important');
+        // Dejamos el HTML transparente para no provocar la línea blanca/gris
+        root.style.setProperty('background-color', 'transparent', 'important');
+        
         var setBodyColor = function() {
             if(document.body) {
               document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
             }
+            var appRoot = document.getElementById('root');
+            if(appRoot) {
+              appRoot.style.setProperty('background-color', selectedHeaderColor, 'important');
+            }
         };
+        
         if(document.body) setBodyColor();
         else document.addEventListener('DOMContentLoaded', setBodyColor);
 
