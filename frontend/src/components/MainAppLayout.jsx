@@ -516,7 +516,6 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* CORRECCIÓN 1: Header usa bg-bg-primary sin variables intermedias para un match perfecto */}
         <header 
           className="md:hidden shrink-0 w-full z-40 relative bg-bg-primary"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
@@ -589,7 +588,8 @@ export default function MainAppLayout({
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
-          <div className="w-full relative z-0">
+          {/* CORRECCIÓN: Se eliminó el "z-0" para que los modales hereden el z-index 100 de forma global y superpongan al header/navbar */}
+          <div className="w-full relative">
             <Suspense fallback={<LoadingFallback />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
                 {currentViewComponent}
@@ -616,7 +616,6 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* CORRECCIÓN 2: Navbar anclado fijamente sobre la píldora, sin paddings excesivos que rompan el layout */}
       <div
         className="md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
