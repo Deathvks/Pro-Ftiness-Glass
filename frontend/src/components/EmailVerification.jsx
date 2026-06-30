@@ -121,7 +121,7 @@ const EmailVerification = ({ email, onBack, onSuccess, backButtonText = 'Volver 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
             <div className="w-full max-w-sm text-center">
                 <div className="mb-8">
                     <div className="mx-auto w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-4">

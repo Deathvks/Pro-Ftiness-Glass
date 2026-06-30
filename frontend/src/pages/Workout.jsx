@@ -241,6 +241,7 @@ const Workout = ({ timer, setView }) => {
                             weight_kg: safeParseFloat(set.weight_kg),
                             is_dropset: set.is_dropset || false,
                             is_warmup: set.is_warmup || false,
+                            rir: set.rir !== undefined && set.rir !== null && set.rir !== '' ? Number(set.rir) : null,
                         })),
                 })),
         };

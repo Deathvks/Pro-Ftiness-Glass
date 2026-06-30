@@ -69,7 +69,7 @@ const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
 
   return (
     // CORRECCIÓN: Añadido padding-bottom para respetar el safe-area y el navbar inferior
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
       {/* Reemplazamos GlassCard por un div con bg-bg-primary para consistencia en modo claro */}
       <div className="w-full max-w-md relative animate-[scale-in_0.3s_ease-out] bg-bg-primary rounded-2xl border border-glass-border shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
 

@@ -630,7 +630,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
                 <div className="text-center mb-6">
                     <h1 className="text-3xl font-bold text-text-primary mb-1 hidden lg:block">Bienvenido de nuevo</h1>
-                    <h1 className="text-3xl font-extrabold text-text-primary mb-1 lg:hidden">Pro Fitness</h1>
+                    <h1 className="text-3xl font-extrabold text-text-primary mb-1 lg:hidden">Pro Fitness Glass</h1>
                     <p className="text-text-secondary text-sm">Inicia sesión para continuar con tu progreso.</p>
                 </div>
 

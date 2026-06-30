@@ -117,6 +117,43 @@ export const createGamificationSlice = (set, get) => ({
         }
     },
 
+    unlockMilestone: async (level) => {
+        const state = get();
+        const unlockedBadges = state.gamification.unlockedBadges || [];
+        const MILESTONE_LEVELS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+        
+        let newBadges = [...unlockedBadges];
+        let hasChanges = false;
+
+        MILESTONE_LEVELS.forEach(lvl => {
+            if (lvl <= level) {
+                const milestoneId = `milestone_${lvl}`;
+                if (!newBadges.includes(milestoneId)) {
+                    newBadges.push(milestoneId);
+                    hasChanges = true;
+                }
+            }
+        });
+
+        if (!hasChanges) return;
+
+        // Actualizamos estado local
+        set((state) => ({
+            gamification: {
+                ...state.gamification,
+                unlockedBadges: newBadges
+            }
+        }));
+
+        try {
+            await apiClient('/users/me/gamification', {
+                body: { unlocked_badges: newBadges }
+            });
+        } catch (error) {
+            console.error("Error guardando milestone:", error);
+        }
+    },
+
     checkStreak: async (todayDateString) => {
         const state = get();
         if (state.gamification.isCheckingStreak) return;
@@ -185,19 +222,21 @@ export const createGamificationSlice = (set, get) => ({
         }
     },
 
-    setGamificationData: (data) => {
-        if (!data) return;
-        set((state) => ({
+    setGamificationData: (data) => set((state) => {
+        const unlockedBadges = data.unlocked_badges || data.unlockedBadges || state.gamification.unlockedBadges || [];
+        const newLevel = data.level !== undefined ? data.level : state.gamification.level;
+
+        return {
             gamification: {
                 ...state.gamification,
-                xp: data.xp || 0,
-                level: data.level || 1,
-                streak: data.streak || 0,
-                workoutsCount: data.workouts_count || data.workoutsCount || state.gamification.workoutsCount || 0,
-                lastActivityDate: normalizeDate(data.last_activity_date || data.lastActivityDate),
-                unlockedBadges: data.unlocked_badges || data.unlockedBadges || [],
+                xp: data.xp !== undefined ? data.xp : state.gamification.xp,
+                level: newLevel,
+                streak: data.streak !== undefined ? data.streak : state.gamification.streak,
+                workoutsCount: data.workouts_count !== undefined ? data.workouts_count : (data.workoutsCount !== undefined ? data.workoutsCount : state.gamification.workoutsCount),
+                lastActivityDate: data.last_activity_date || data.lastActivityDate ? normalizeDate(data.last_activity_date || data.lastActivityDate) : state.gamification.lastActivityDate,
+                unlockedBadges: unlockedBadges,
                 gamificationEvents: state.gamification.gamificationEvents || []
             }
-        }));
-    }
+        };
+    })
 });

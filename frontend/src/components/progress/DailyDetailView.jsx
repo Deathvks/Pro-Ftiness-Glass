@@ -55,7 +55,8 @@ const DailyDetailView = ({ logs, onClose }) => {
         reps: parseFloat(s.reps || 0),
         is_dropset: !!s.is_dropset,
         is_warmup: !!s.is_warmup,
-        set_number: parseInt(s.set_number || 0)
+        set_number: parseInt(s.set_number || 0),
+        rir: s.rir !== null && s.rir !== undefined ? parseFloat(s.rir) : null
       }));
 
       const exName = ex.exercise_name || "Ejercicio";
@@ -176,6 +177,16 @@ const DailyDetailView = ({ logs, onClose }) => {
           {set.weight_kg}
         </span>
         <span className="text-[10px] uppercase text-text-tertiary">kg</span>
+        
+        {set.rir !== null && set.rir !== undefined && (
+          <>
+            <span className="text-text-tertiary mx-1">@</span>
+            <span className={`font-mono font-bold ${isWarmup ? 'text-orange-600' : 'text-text-primary'}`}>
+              {set.rir}
+            </span>
+            <span className="text-[10px] uppercase text-text-tertiary ml-0.5">rir</span>
+          </>
+        )}
       </span>
 
       <div className="flex gap-1">
@@ -245,7 +256,7 @@ const DailyDetailView = ({ logs, onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
         {/* Contenedor Modal: Flex Column con max-height */}
         <div className={`relative w-full max-w-lg p-0 flex flex-col m-4 bg-bg-primary rounded-2xl shadow-2xl border ${subtleBorderClass} max-h-[80vh] md:max-h-[90vh] overflow-hidden animate-[scale-in_0.3s_ease-out]`}>
 
@@ -416,7 +427,7 @@ const DailyDetailView = ({ logs, onClose }) => {
 
       {/* MODAL DEL MAPA EXPANDIDO */}
       {expandedMapPath && (
-        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]">
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
           <div className={`relative w-full h-full max-w-4xl max-h-[85vh] bg-bg-primary rounded-2xl overflow-hidden shadow-2xl border ${subtleBorderClass} flex flex-col`}>
             <div className="absolute top-4 right-4 z-[1000]">
               <button

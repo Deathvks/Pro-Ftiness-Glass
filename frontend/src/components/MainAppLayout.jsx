@@ -18,6 +18,7 @@ import CookieConsentBanner from './CookieConsentBanner';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
 import AIInfoModal from './AIInfoModal';
+import MilestoneLevelUpModal from './MilestoneLevelUpModal';
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -64,6 +65,8 @@ export default function MainAppLayout({
     workoutStartTime,
     notifications,
     fetchNotifications,
+    gamification,
+    unlockMilestone,
     gamificationEvents,
     clearGamificationEvents,
     socialRequests,
@@ -81,6 +84,8 @@ export default function MainAppLayout({
     workoutStartTime: state.workoutStartTime,
     notifications: state.notifications || [],
     fetchNotifications: state.fetchNotifications,
+    gamification: state.gamification,
+    unlockMilestone: state.unlockMilestone,
     gamificationEvents: state.gamification?.gamificationEvents,
     clearGamificationEvents: state.clearGamificationEvents,
     socialRequests: state.socialRequests,
@@ -115,10 +120,6 @@ export default function MainAppLayout({
   const SWIPE_THRESHOLD = 60; 
 
   // --- DETECCIÓN DE SCROLL PARA MATCHEAR LA TRANSPARENCIA DEL NOTCH iOS 27 ---
-  // iOS 27 vuelve translúcido el área del notch/Dynamic Island al hacer scroll,
-  // dejando ver el contenido detrás. Si el header se mantiene sólido, se genera
-  // un borde de contraste justo en el límite del notch. Igualamos el tratamiento:
-  // header y zona del notch pasan a blur+translúcido en cuanto hay scroll > 0.
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -470,6 +471,29 @@ export default function MainAppLayout({
     });
   }
 
+  // --- LÓGICA DE ANIMACIÓN DE NIVELES DESTACADOS ---
+  const [pendingMilestone, setPendingMilestone] = useState(null);
+  
+  useEffect(() => {
+    if (!gamification || !gamification.level) return;
+    
+    const MILESTONE_LEVELS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    const unlockedBadges = gamification.unlockedBadges || [];
+    const currentLevel = Number(gamification.level);
+    if (MILESTONE_LEVELS.includes(currentLevel)) {
+      if (!unlockedBadges.includes(`milestone_${currentLevel}`)) {
+        setPendingMilestone(currentLevel);
+      }
+    }
+  }, [gamification, gamification?.level, gamification?.unlockedBadges]);
+
+  const handleMilestoneClose = () => {
+    if (pendingMilestone) {
+      unlockMilestone(pendingMilestone);
+      setPendingMilestone(null);
+    }
+  };
+
   // --- RESTO DE EFECTOS ---
   useEffect(() => {
     if (userProfile) {
@@ -565,9 +589,6 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* HEADER UNIFICADO — Ocupa desde el notch hasta el final del header como un solo bloque.
-            Esto evita que iOS 27 renderice un borde de separación nativo a la altura del safe-area, 
-            ya que el contenedor principal abarca toda la zona y el scroll empieza por debajo. */}
         <header 
           className={`md:hidden shrink-0 w-full z-40 relative transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl' : 'bg-bg-primary'}`}
           style={{ paddingTop: 'var(--safe-top)' }}
@@ -647,15 +668,12 @@ export default function MainAppLayout({
               </React.Fragment>
             </Suspense>
 
-            {/* Spacer de scroll — usa --safe-bottom:
-                en standalone iOS 27 vale 0px, en Safari browser vale env(safe-area-inset-bottom) */}
             <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + var(--safe-bottom))' }}></div>
           </div>
         </main>
 
       </div>
 
-      {/* EFECTO BLUR INFERIOR — misma lógica con --safe-bottom */}
       <div 
         className={`md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none transition-opacity duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
@@ -670,7 +688,6 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* NAVBAR — restaurado con el espacio + desenfoque */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
@@ -752,6 +769,13 @@ export default function MainAppLayout({
           </nav>
         </div>
       </div>
+
+      {pendingMilestone && (
+        <MilestoneLevelUpModal 
+          level={pendingMilestone} 
+          onClose={handleMilestoneClose} 
+        />
+      )}
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 

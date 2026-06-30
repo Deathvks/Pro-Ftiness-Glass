@@ -16,6 +16,8 @@ export const getAllUsers = async (req, res, next) => {
         'username',
         'profile_image_url',
         'lastSeen',
+        'level',
+        'xp',
         // NUEVO: Añadimos los IDs sociales para que el frontend sepa el método de inicio de sesión
         'google_id',
         'discord_id',
@@ -88,7 +90,7 @@ export const createUser = async (req, res, next) => {
 // Actualizar un usuario
 export const updateUser = async (req, res, next) => {
   const { userId } = req.params;
-  let { username, name, email, role, is_verified, password } = req.body;
+  let { username, name, email, role, is_verified, password, level } = req.body;
 
   // Compatibilidad: si envían name pero no username, usamos name
   if (!username && name) username = name;
@@ -129,6 +131,13 @@ export const updateUser = async (req, res, next) => {
 
     if (password) updateData.password_hash = password;
 
+    if (level !== undefined && !isNaN(parseInt(level))) {
+      const newLevel = Math.max(1, parseInt(level));
+      updateData.level = newLevel;
+      // Fórmula de XP: 50 * level^2 + 350 * level - 400 (Nivel 1 = 0 XP)
+      updateData.xp = newLevel <= 1 ? 0 : 50 * Math.pow(newLevel, 2) + 350 * newLevel - 400;
+    }
+
     await user.update(updateData);
 
     res.json({
@@ -138,6 +147,8 @@ export const updateUser = async (req, res, next) => {
       email: user.email,
       role: user.role,
       is_verified: user.is_verified,
+      level: user.level,
+      xp: user.xp,
       profile_image_url: user.profile_image_url,
       lastSeen: user.lastSeen,
       createdAt: user.createdAt || user.getDataValue('created_at')

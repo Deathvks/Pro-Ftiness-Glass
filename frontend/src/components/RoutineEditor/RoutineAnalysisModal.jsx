@@ -114,7 +114,7 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
 
   return (
     // Añadido pb-20 para asegurar que no se solape con navbars inferiores en móviles
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
       <div className={`w-full max-w-md max-h-[85vh] flex flex-col rounded-3xl shadow-2xl transition-colors duration-300 border overflow-hidden ${containerBorderClass} ${isOled ? 'bg-black' : 'bg-bg-secondary'}`}>
         
         {/* Header - Fijo */}

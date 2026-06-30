@@ -234,7 +234,7 @@ const WorkoutExerciseCard = ({
 
       {/* --- MODAL RECORDATORIO --- */}
       {showReminderInput && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
           <div className="absolute inset-0" onClick={() => setShowReminderInput(false)} />
           <div 
             onClick={(e) => e.stopPropagation()} 
@@ -286,7 +286,7 @@ const WorkoutExerciseCard = ({
 
       {/* --- MODAL CALENTAMIENTO --- */}
       {showWarmupInput && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
           <div className="absolute inset-0" onClick={() => setShowWarmupInput(false)} />
           <div 
             onClick={(e) => e.stopPropagation()}

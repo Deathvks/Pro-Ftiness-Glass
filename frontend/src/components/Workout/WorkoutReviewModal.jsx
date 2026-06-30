@@ -1,3 +1,4 @@
+/* eslint-disable no-irregular-whitespace */
 /* frontend/src/components/Workout/WorkoutReviewModal.jsx */
 import React, { useEffect } from 'react';
 import { X, Save, Edit2 } from 'lucide-react';
@@ -31,7 +32,7 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4 !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
             
             {/* 2. Modal Isla: max-h-[70vh] garantiza que jamás colisione con los bordes de la pantalla */}
             <div className="relative w-full max-w-lg md:max-w-2xl rounded-2xl bg-bg-secondary border border-glass-border shadow-2xl flex flex-col max-h-[70vh] md:max-h-[85vh] animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0">
@@ -70,8 +71,9 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                                 <div className="space-y-2">
                                     <div className="grid grid-cols-10 gap-2 text-[10px] text-text-tertiary uppercase text-center font-bold mb-1">
                                         <div className="col-span-1">#</div>
-                                        <div className="col-span-4">Kg</div>
-                                        <div className="col-span-4">Reps</div>
+                                        <div className="col-span-3">Kg</div>
+                                        <div className="col-span-3">Reps</div>
+                                        <div className="col-span-3">RIR</div>
                                     </div>
                                     {exercise.validSets.map((set, idx) => (
                                         <div key={idx} className="grid grid-cols-10 gap-2 items-center">
@@ -80,7 +82,7 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                                                     {set.set_number}
                                                 </span>
                                             </div>
-                                            <div className="col-span-4">
+                                            <div className="col-span-3">
                                                 <input
                                                     type="number"
                                                     value={set.weight_kg}
@@ -89,13 +91,22 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                                                     placeholder="0"
                                                 />
                                             </div>
-                                            <div className="col-span-4">
+                                            <div className="col-span-3">
                                                 <input
                                                     type="number"
                                                     value={set.reps}
                                                     onChange={(e) => handleUpdate(exercise.originalIndex, set.originalSetIndex, 'reps', e.target.value)}
                                                     className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-text-primary font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     placeholder="0"
+                                                />
+                                            </div>
+                                            <div className="col-span-3">
+                                                <input
+                                                    type="number"
+                                                    value={set.rir ?? ''}
+                                                    onChange={(e) => handleUpdate(exercise.originalIndex, set.originalSetIndex, 'rir', e.target.value)}
+                                                    className="w-full bg-bg-secondary border border-glass-border rounded px-2 py-1.5 text-center text-sm focus:border-accent outline-none text-text-primary font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    placeholder="-"
                                                 />
                                             </div>
                                         </div>

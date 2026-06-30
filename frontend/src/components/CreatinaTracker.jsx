@@ -216,7 +216,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-[fade-in_0.2s_ease-out]">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
                 <div className="bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-5xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
                     
                     <div className="flex-shrink-0 flex items-center justify-between p-6 sm:p-8 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
@@ -364,7 +364,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
             {/* Modal de Edición */}
             {showEditModal && editingLog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[110] animate-[fade-in_0.2s_ease-out]">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[110] animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
                     <div className="bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-md w-full shadow-2xl animate-[slide-up_0.2s_ease-out]">
                         
                         <div className="flex items-center justify-between p-6 sm:p-8 pb-5 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px]">

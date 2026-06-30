@@ -211,6 +211,15 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
                               {Number(set.reps ?? 0)}{' '}
                               <span className="text-xs font-normal">reps</span>
                             </span>
+                            {set.rir !== null && set.rir !== undefined && (
+                              <>
+                                <span className="text-text-muted/50 text-sm">@</span>
+                                <span className="text-base font-semibold text-text-secondary group-hover:text-text-primary transition-colors">
+                                  {set.rir}{' '}
+                                  <span className="text-xs font-normal">rir</span>
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
 

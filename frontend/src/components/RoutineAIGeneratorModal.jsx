@@ -154,7 +154,7 @@ Formato:
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
       <div className={containerClass}>
         <div className={`p-5 border-b flex justify-between items-center ${isOled ? 'border-white/10' : isDark ? 'border-white/5' : 'border-border'}`}>
           <div className="flex items-center gap-3">

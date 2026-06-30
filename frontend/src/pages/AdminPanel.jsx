@@ -13,6 +13,7 @@ import CustomSelect from '../components/CustomSelect';
 import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
+import useAppStore from '../store/useAppStore';
 
 // Umbral para considerar a un usuario "online" (5 minutos)
 const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
@@ -116,6 +117,13 @@ const StatusIndicator = ({ lastSeen }) => {
 };
 
 const AdminPanel = ({ onCancel }) => {
+  const { showToast: addToast } = useToast();
+  const { userProfile, setUserProfile, setGamificationData } = useAppStore(state => ({
+    userProfile: state.userProfile,
+    setUserProfile: state.setUserProfile,
+    setGamificationData: state.setGamificationData
+  }));
+
   // Recuperar la pestaña activa de localStorage o usar default 'users'
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('admin_active_tab') || 'users');
 
@@ -136,7 +144,6 @@ const AdminPanel = ({ onCancel }) => {
   const [userToEdit, setUserToEdit] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
-  const { addToast } = useToast();
 
   const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
   
@@ -205,12 +212,41 @@ const AdminPanel = ({ onCancel }) => {
   }, [activeTab, fetchUsers]);
 
   const handleSaveUser = async (userId, userData) => {
+    console.log("[DEBUG ADMIN] handleSaveUser CALLED with:", { userId, userData, userToEditId: userToEdit?.id });
     setIsUpdating(true);
     try {
       const targetId = userId || userToEdit.id;
       const updatedUser = await updateUser(targetId, userData);
 
-      setUsers(users.map(u => u.id === targetId ? updatedUser : u));
+      setUsers(users.map(u => u.id === targetId ? { ...u, ...updatedUser } : u));
+      
+      console.log("[DEBUG ADMIN] Saving user...", {
+        targetId,
+        userProfileId: userProfile?.id,
+        updatedUser
+      });
+
+      // Si el usuario editado es el mismo que está logueado, actualizar el store global
+      if (userProfile && String(targetId) === String(userProfile.id)) {
+        console.log("[DEBUG ADMIN] Updating global store for current user!");
+        setUserProfile({
+          ...userProfile,
+          level: updatedUser.level,
+          xp: updatedUser.xp,
+          role: updatedUser.role,
+          name: updatedUser.name,
+          username: updatedUser.username,
+        });
+        
+        // También actualizar la gamificación si es necesario
+        setGamificationData({
+          level: updatedUser.level,
+          xp: updatedUser.xp
+        });
+      } else {
+        console.log("[DEBUG ADMIN] Not updating global store because targetId != userProfile.id");
+      }
+
       addToast('Usuario actualizado con éxito.', 'success');
       setUserToEdit(null);
     } catch (error) {
@@ -445,6 +481,7 @@ const AdminPanel = ({ onCancel }) => {
                         <th className="p-4">Fecha Registro</th>
                         <th className="p-4 text-center">Estado</th>
                         <th className="p-4 text-center">Rol</th>
+                        <th className="p-4 text-center">Nivel</th>
                         <th className="p-4 text-center">Verificado</th>
                         <th className="p-4 text-center pr-2">Acciones</th>
                       </tr>
@@ -482,6 +519,9 @@ const AdminPanel = ({ onCancel }) => {
                             <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
                               {user.role}
                             </span>
+                          </td>
+                          <td className="p-4 align-middle text-center text-sm font-bold text-accent">
+                            {user.level || 1}
                           </td>
                           <td className="p-4 align-middle text-center">
                             <div className="flex justify-center items-center gap-1.5">
@@ -559,7 +599,14 @@ const AdminPanel = ({ onCancel }) => {
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Nivel:</span>
+                          <span className="font-bold text-accent text-xs">
+                            {user.level || 1}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
                           <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Verif:</span>
                           {user.is_verified ? (
                             <div className="flex items-center gap-1">

@@ -86,15 +86,23 @@ const io = new Server(httpServer, {
 
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
-  if (!token) return next(new Error('Authentication error: Token required'));
+  if (!token) {
+    console.error('Socket error: Token required for socket', socket.id);
+    return next(new Error('Authentication error: Token required'));
+  }
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     socket.user = decoded;
     next();
   } catch (err) {
+    console.error('Socket error: Invalid token for socket', socket.id, err.message);
     return next(new Error('Authentication error: Invalid token'));
   }
+});
+
+io.engine.on("connection_error", (err) => {
+  console.error("🔴 Engine.io connection error:", err.code, err.message, err.context);
 });
 
 io.on('connection', (socket) => {

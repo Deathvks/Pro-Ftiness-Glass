@@ -9,6 +9,7 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
     name: user.name || '',
     email: user.email || '',
     role: user.role || 'user',
+    level: user.level || 1,
   });
 
   // --- INICIO DE LA CORRECCIÓN ---
@@ -31,7 +32,9 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
 
   const handleSaveClick = (e) => {
     e.preventDefault();
-    onSave(user.id, formData);
+    console.log("[DEBUG MODAL] handleSaveClick triggered in UserEditModal", { formData, userId: user?.id });
+    const dataToSave = { ...formData, level: parseInt(formData.level) || 1 };
+    onSave(user.id, dataToSave);
   };
   
   const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
@@ -66,6 +69,11 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-2">Email</label>
             <input id="email" name="email" type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} className={baseInputClasses} />
+          </div>
+          <div>
+            <label htmlFor="level" className="block text-sm font-medium text-text-secondary mb-2">Nivel</label>
+            <input id="level" name="level" type="number" min="1" value={formData.level} onChange={(e) => handleChange('level', e.target.value)} className={baseInputClasses} />
+            <p className="text-xs text-text-muted mt-1">Si cambias el nivel, la XP se ajustará automáticamente.</p>
           </div>
           <div>
             <label htmlFor="role" className="block text-sm font-medium text-text-secondary mb-2">Rol</label>

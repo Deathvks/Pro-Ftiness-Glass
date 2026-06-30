@@ -69,7 +69,7 @@ const EmailVerificationModal = ({ currentEmail, onEmailUpdated, onCodeSent }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary p-4 animate-[fade-in_0.5s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
       <div className="w-full max-w-sm text-center">
         
         {/* Encabezado fuera del GlassCard (Estilo Registro) */}

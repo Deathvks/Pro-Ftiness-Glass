@@ -620,7 +620,7 @@ const RegisterScreen = ({ showLogin }) => {
 
                 <div className="text-center mb-4 sm:mb-5 lg:mb-4">
                     <h1 className="text-2xl sm:text-3xl lg:text-2xl font-bold text-text-primary mb-1 hidden lg:block">Crea tu cuenta</h1>
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-1 lg:hidden">Pro Fitness</h1>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-1 lg:hidden">Pro Fitness Glass</h1>
                     <p className="text-text-secondary text-xs sm:text-sm lg:text-xs">Empieza tu transformación hoy mismo.</p>
                 </div>
 
@@ -697,11 +697,6 @@ const RegisterScreen = ({ showLogin }) => {
                             className="w-10 h-10 sm:w-12 sm:h-12 lg:w-10 lg:h-10 bg-[#333] dark:bg-white text-white dark:text-[#333] rounded-full flex items-center justify-center shadow-sm transition-all hover:scale-110 hover:shadow-lg hover:shadow-gray-500/30 active:scale-95 disabled:opacity-70"
                         >
                             <FaGithub size={20} className="sm:w-6 sm:h-6 lg:w-5 lg:h-5" />
-                        </button>
-                        <button onClick={handleSpotifyClick} disabled={isLoading} type="button" title="Registrarse con Spotify"
-                            className="w-10 h-10 sm:w-12 sm:h-12 lg:w-10 lg:h-10 bg-[#1DB954] text-white rounded-full flex items-center justify-center shadow-sm transition-all hover:scale-110 hover:shadow-lg hover:shadow-[#1DB954]/40 active:scale-95 disabled:opacity-70"
-                        >
-                            <FaSpotify size={20} className="sm:w-6 sm:h-6 lg:w-5 lg:h-5" />
                         </button>
                     </div>
 

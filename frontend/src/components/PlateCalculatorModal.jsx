@@ -79,7 +79,7 @@ const PlateCalculatorModal = ({ onClose, initialWeight = '' }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
             <div className="w-full max-w-sm bg-bg-secondary border border-glass-border rounded-xl shadow-2xl overflow-hidden animate-slide-up">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-glass-border bg-bg-primary/50">

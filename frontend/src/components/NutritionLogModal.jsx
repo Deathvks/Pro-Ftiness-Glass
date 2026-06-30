@@ -113,7 +113,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
     if (selectedDetailItem) {
         return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
                 <div className="relative w-full max-w-md overflow-hidden bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
                     <FoodDetailView
                         food={selectedDetailItem}
@@ -227,7 +227,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
     return (
         <>
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-[fade-in_0.3s_ease-out] p-4 sm:p-0 pb-12 md:pb-0">
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-[fade-in_0.3s_ease-out] p-4 sm:p-0 pb-12 md:pb-0 !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
                 <div className="relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col h-full max-h-[85dvh] sm:h-auto sm:max-h-[90vh] bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
                     
                     {/* Header: Cambio aquí para line-clamp-2 y leading-tight en el título */}

@@ -99,7 +99,7 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.js',
       devOptions: {
-        enabled: true,
+        enabled: false, // <-- APAGADO para evitar dolores de cabeza con la caché en móviles durante el desarrollo
         type: 'module',
       }
     }),

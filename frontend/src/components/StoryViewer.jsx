@@ -587,7 +587,7 @@ const StoryViewer = ({ userId, onClose }) => {
   // --- UI: ESTADO "NO HAY HISTORIAS" MEJORADO ---
   if (!storyData || activeStories.length === 0) {
     return (
-      <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in">
+      <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
         <div className="w-full max-w-sm bg-bg-secondary/90 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-accent/20 rounded-full blur-[50px] pointer-events-none" />
 

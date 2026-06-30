@@ -26,7 +26,7 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
       <div className="w-full max-w-md animate-[scale-in_0.3s_ease-out]">
         <div className="relative p-6 md:p-8 flex flex-col gap-6 bg-bg-primary border border-glass-border rounded-2xl shadow-2xl">
           <button 

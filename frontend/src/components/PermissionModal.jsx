@@ -25,7 +25,7 @@ export default function PermissionModal({ isOpen, onClose, permissionName }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
       <div className="w-full max-w-sm rounded-2xl bg-bg-primary p-6 text-text-primary shadow-2xl border border-glass-border relative">
         
         <div className="mb-4 flex items-center justify-between">

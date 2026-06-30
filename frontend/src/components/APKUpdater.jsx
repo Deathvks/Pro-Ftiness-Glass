@@ -53,7 +53,7 @@ const APKUpdater = () => {
     if (!updateAvailable) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s]">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
             <div className="bg-bg-primary border border-glass-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-[slide-in-up_0.3s]">
                 <div className="bg-gradient-to-r from-accent to-accent-secondary p-4 text-white flex justify-between items-start">
                     <div>

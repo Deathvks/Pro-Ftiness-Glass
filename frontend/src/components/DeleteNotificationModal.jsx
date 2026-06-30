@@ -6,7 +6,7 @@ const DeleteNotificationModal = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
       <div className="relative w-full max-w-sm bg-bg-secondary border border-glass-border rounded-2xl p-6 shadow-2xl animate-[scale-in_0.2s_ease-out]">
         
         <div className="flex flex-col items-center text-center mb-6">

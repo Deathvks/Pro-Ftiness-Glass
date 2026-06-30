@@ -80,6 +80,16 @@ const BADGES_MAP = {
     'social_10_friends': { name: 'Popular', icon: '🌟' },
     'weight_goal': { name: 'Meta Cumplida', icon: '🎯' },
     'first_pr': { name: 'Récord Personal', icon: '🏆' },
+    'milestone_10': { name: 'Bronce (Lvl 10)', icon: '🥉' },
+    'milestone_20': { name: 'Plata (Lvl 20)', icon: '🥈' },
+    'milestone_30': { name: 'Oro (Lvl 30)', icon: '🥇' },
+    'milestone_40': { name: 'Platino (Lvl 40)', icon: '🌟' },
+    'milestone_50': { name: 'Diamante (Lvl 50)', icon: '💎' },
+    'milestone_60': { name: 'Maestro (Lvl 60)', icon: '⚡' },
+    'milestone_70': { name: 'Gran Maestro (Lvl 70)', icon: '🔥' },
+    'milestone_80': { name: 'Épico (Lvl 80)', icon: '👑' },
+    'milestone_90': { name: 'Leyenda (Lvl 90)', icon: '✨' },
+    'milestone_100': { name: 'Mítico (Lvl 100)', icon: '🔱' },
     'default': { name: 'Logro', icon: '🏅' }
 };
 
@@ -352,9 +362,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     let badges = [];
     try {
-        badges = typeof profile.unlocked_badges === 'string'
+        badges = (typeof profile.unlocked_badges === 'string'
             ? JSON.parse(profile.unlocked_badges)
-            : (profile.unlocked_badges || []);
+            : (profile.unlocked_badges || []));
     } catch (e) {
         badges = [];
     }

@@ -39,7 +39,7 @@ const XPGuideModal = ({ onClose }) => {
     const rankPreviews = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
             {/* AQUÍ EL CAMBIO A 85dvh */}
             <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] w-full max-w-md max-h-[85dvh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
 

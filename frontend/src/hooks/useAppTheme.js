@@ -188,7 +188,7 @@ export const useAppTheme = () => {
           metaColor.setAttribute('content', headerColorStr);
       }
 
-      // eslint-disable-next-line no-unused-expressions
+       
       body.offsetHeight; 
 
       if (Capacitor.isNativePlatform()) {

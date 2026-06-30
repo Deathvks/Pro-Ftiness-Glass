@@ -25,7 +25,7 @@ const SugarTargetModal = ({ isOpen, onClose, currentSugar, maxSugar }) => {
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
       <div className="absolute inset-0" onClick={onClose} />
 
       <GlassCard 

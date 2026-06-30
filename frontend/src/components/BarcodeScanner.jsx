@@ -127,7 +127,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
         <div className="relative w-full max-w-md p-6 bg-bg-secondary rounded-2xl border border-glass-border">
           <h3 className="text-xl font-bold text-center mb-4">Escanear Código de Barras</h3>
           <div className="h-[280px] w-full flex items-center justify-center rounded-lg overflow-hidden bg-bg-primary">

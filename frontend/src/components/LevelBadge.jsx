@@ -2,7 +2,7 @@
 import React from 'react';
 import { Medal, Star, Trophy, Crown, Flame, Zap, Sparkles, Diamond, Shield } from 'lucide-react';
 
-const getTier = (level) => {
+export const getTier = (level) => {
     if (level < 10) return { name: 'Bronce', colors: 'from-[#CD7F32] to-[#8B4513]', icon: Shield, glow: 'shadow-[#CD7F32]/40' };
     if (level < 20) return { name: 'Plata', colors: 'from-[#E5E4E2] to-[#9CA3AF]', icon: Medal, glow: 'shadow-gray-400/40' };
     if (level < 30) return { name: 'Oro', colors: 'from-[#FFD700] to-[#B8860B]', icon: Trophy, glow: 'shadow-yellow-500/50' };
