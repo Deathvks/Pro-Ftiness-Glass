@@ -114,6 +114,26 @@ export default function MainAppLayout({
   const prevViewRef = useRef(view);
   const SWIPE_THRESHOLD = 60; 
 
+  // --- DETECCIÓN DE SCROLL PARA MATCHEAR LA TRANSPARENCIA DEL NOTCH iOS 27 ---
+  // iOS 27 vuelve translúcido el área del notch/Dynamic Island al hacer scroll,
+  // dejando ver el contenido detrás. Si el header se mantiene sólido, se genera
+  // un borde de contraste justo en el límite del notch. Igualamos el tratamiento:
+  // header y zona del notch pasan a blur+translúcido en cuanto hay scroll > 0.
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const node = mainContentRef?.current;
+    if (!node) return;
+
+    const handleScroll = () => {
+      setIsScrolled(node.scrollTop > 4);
+    };
+
+    handleScroll();
+    node.addEventListener('scroll', handleScroll, { passive: true });
+    return () => node.removeEventListener('scroll', handleScroll);
+  }, [mainContentRef, view]);
+
   // OBSERVADOR DE MODALES (Para ocultar Navbar y Header)
   useEffect(() => {
     let rafId;
@@ -545,11 +565,24 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* HEADER — paddingTop usa --safe-top:
-            en standalone iOS 27 vale 0px (el sistema ya recorta el viewport),
-            en Safari browser vale env(safe-area-inset-top) */}
+        {/* BARRA DEL NOTCH — cubre exactamente var(--safe-top) y replica el
+            tratamiento que iOS 27 aplica al notch: opaca en reposo (top),
+            translúcida con blur en cuanto hay scroll. Esto elimina el borde
+            de contraste que aparecía entre el notch del sistema y el header. */}
+        <div
+          className="md:hidden fixed top-0 left-0 right-0 z-50 pointer-events-none transition-all duration-300 ease-out"
+          style={{
+            height: 'var(--safe-top)',
+            backgroundColor: isScrolled ? 'transparent' : 'var(--bg-primary)',
+            backdropFilter: isScrolled ? 'blur(20px) saturate(180%)' : 'none',
+            WebkitBackdropFilter: isScrolled ? 'blur(20px) saturate(180%)' : 'none',
+          }}
+        ></div>
+
+        {/* HEADER — pasa a translúcido+blur en scroll para continuar visualmente
+            la transparencia que iOS 27 aplica al notch, evitando el borde */}
         <header 
-          className={`md:hidden shrink-0 w-full z-40 relative bg-bg-primary transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'}`}
+          className={`md:hidden shrink-0 w-full z-40 relative transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl' : 'bg-bg-primary'}`}
           style={{ paddingTop: 'var(--safe-top)' }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
