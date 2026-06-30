@@ -670,10 +670,10 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* NAVBAR — bottom usa --safe-bottom para empezar directamente desde la píldora */}
+      {/* NAVBAR — restaurado con el espacio + desenfoque */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
-        style={{ bottom: 'var(--safe-bottom)' }}
+        style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           

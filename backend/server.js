@@ -62,7 +62,8 @@ if (!isProduction) {
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const isLocalNetwork = !isProduction && origin && /^http:\/\/(192\.168\.|10\.|172\.|localhost)/.test(origin);
+    if (!origin || allowedOrigins.includes(origin) || isLocalNetwork) {
       callback(null, true);
     } else {
       callback(new Error(`El origen ${origin} no está permitido por CORS`));

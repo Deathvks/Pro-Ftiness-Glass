@@ -12,6 +12,7 @@ import GoogleTermsModal from '../components/GoogleTermsModal';
 import PrivacyPolicy from './PrivacyPolicy';
 import { useGoogleLogin } from '@react-oauth/google';
 import { resend2FACode, initGoogleAuth, signInWithGoogle } from '../services/authService';
+import EmailVerification from '../components/EmailVerification';
 import SEOHead from '../components/SEOHead';
 import { Capacitor } from '@capacitor/core';
 import { useLocation } from 'react-router-dom';
@@ -129,6 +130,10 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [showGoogleModal, setShowGoogleModal] = useState(false);
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
+    
+    // Añadido para gestionar cuentas no verificadas
+    const [showVerification, setShowVerification] = useState(false);
+    const [unverifiedEmail, setUnverifiedEmail] = useState('');
 
     useEffect(() => {
         initGoogleAuth();
@@ -449,9 +454,16 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             await handleLogin({ email, password });
             setIsLoading(false);
         } catch (err) {
-            const errorMessage = err.message || 'Error al iniciar sesión.';
-            addToast(errorMessage, 'error');
-            setErrors({ api: errorMessage });
+            // Manejar específicamente el error de "Cuenta no verificada"
+            if (err.data && err.data.requiresVerification) {
+                setUnverifiedEmail(err.data.email || email);
+                setShowVerification(true);
+                addToast('Tu cuenta no está verificada. Por favor, verifica tu email.', 'error');
+            } else {
+                const errorMessage = err.message || 'Error al iniciar sesión.';
+                addToast(errorMessage, 'error');
+                setErrors({ api: errorMessage });
+            }
             setPassword('');
             setIsLoading(false);
         }
@@ -529,6 +541,24 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     };
 
     if (showPolicy) return <PrivacyPolicy onBack={() => setShowPolicy(false)} />;
+
+    if (showVerification) {
+        return (
+            <>
+                <SEOHead title="Verificar Email - Pro Fitness Glass" route="login/verify" noIndex={true} />
+                <EmailVerification 
+                    email={unverifiedEmail} 
+                    onBack={() => setShowVerification(false)} 
+                    onSuccess={() => {
+                        // Si la verificación tiene éxito, obligamos a hacer login de nuevo
+                        // o podemos hacer refresh si fetchInitialData ya ha ocurrido.
+                        setShowVerification(false);
+                    }} 
+                    backButtonText="Volver al inicio de sesión"
+                />
+            </>
+        );
+    }
 
     if (twoFactorPending) {
         const isEmailMethod = twoFactorPending.method === 'email';

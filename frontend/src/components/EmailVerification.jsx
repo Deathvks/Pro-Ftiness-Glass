@@ -80,7 +80,7 @@ const EmailVerification = ({ email, onBack, onSuccess, backButtonText = 'Volver 
             const response = await verifyEmail({ email, code: verificationCode });
             
             if (response && response.token) {
-                localStorage.setItem('fittrack_token', response.token);
+                localStorage.setItem('pro_fitness_token', response.token);
                 
                 useAppStore.setState({ 
                     token: response.token, 

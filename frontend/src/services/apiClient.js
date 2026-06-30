@@ -72,6 +72,7 @@ const apiClient = async (endpoint, options = {}) => {
 
             try {
                 const errorData = await response.json();
+                
                 // Priorizamos el mensaje de error específico de nuestra API
                 if (errorData.error) {
                     errorMessage = errorData.error;
@@ -79,7 +80,13 @@ const apiClient = async (endpoint, options = {}) => {
                 } else if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
                     errorMessage = errorData.errors[0].msg;
                 }
+
+                const err = new Error(errorMessage);
+                err.data = errorData; // Adjuntamos los datos completos
+                throw err;
             } catch (parseError) {
+                if (parseError.data) throw parseError; // Ya es nuestro error personalizado
+
                 // Si no podemos parsear la respuesta, usar mensaje por defecto según status
                 if (response.status === 404) {
                     errorMessage = 'Recurso no encontrado';

@@ -15,8 +15,8 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Validador reutilizable para el código de referido
-const referralValidator = body('referralCode').optional().isString().trim();
+// Validador reutilizable para el código de referido (acepta null o vacío)
+const referralValidator = body('referralCode').optional({ nullable: true, checkFalsy: true }).isString().trim();
 
 router.post('/register', authLimiter, [
   body('username', 'El nombre de usuario es requerido')

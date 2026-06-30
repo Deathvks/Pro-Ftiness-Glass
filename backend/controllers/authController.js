@@ -106,6 +106,7 @@ const handleDailyLoginGamification = async (user) => {
 export const loginUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.warn(`[Auth Validation Failed - Login] IP: ${req.ip}`, errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -1092,7 +1093,10 @@ export const logoutUser = async (req, res) => {
 
 export const register = async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  if (!errors.isEmpty()) {
+    console.warn(`[Auth Validation Failed - Register] IP: ${req.ip}`, errors.array());
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   let { username, email, password, referralCode } = req.body;
   email = email.toLowerCase().trim();
