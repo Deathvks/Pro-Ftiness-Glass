@@ -563,27 +563,11 @@ export default function MainAppLayout({
         unreadCount={unreadCount}
       />
 
-      <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
+      <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative" style={{ paddingTop: 'var(--safe-top)' }}>
 
-        {/* BARRA DEL NOTCH — cubre exactamente var(--safe-top) y replica el
-            tratamiento que iOS 27 aplica al notch: opaca en reposo (top),
-            translúcida con blur en cuanto hay scroll. Esto elimina el borde
-            de contraste que aparecía entre el notch del sistema y el header. */}
-        <div
-          className="md:hidden fixed top-0 left-0 right-0 z-50 pointer-events-none transition-all duration-300 ease-out"
-          style={{
-            height: 'var(--safe-top)',
-            backgroundColor: isScrolled ? 'transparent' : 'var(--bg-primary)',
-            backdropFilter: isScrolled ? 'blur(20px) saturate(180%)' : 'none',
-            WebkitBackdropFilter: isScrolled ? 'blur(20px) saturate(180%)' : 'none',
-          }}
-        ></div>
-
-        {/* HEADER — pasa a translúcido+blur en scroll para continuar visualmente
-            la transparencia que iOS 27 aplica al notch, evitando el borde */}
+        {/* HEADER — Al aplicarlo al contenedor principal, el header empieza justo debajo del notch nativo del sistema, evitando que el borde transparente de iOS 27 beta 2 corte visualmente el header a la mitad. */}
         <header 
           className={`md:hidden shrink-0 w-full z-40 relative transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl' : 'bg-bg-primary'}`}
-          style={{ paddingTop: 'var(--safe-top)' }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
@@ -683,10 +667,10 @@ export default function MainAppLayout({
         }}
       ></div>
 
-      {/* NAVBAR — bottom usa --safe-bottom */}
+      {/* NAVBAR — bottom usa --safe-bottom para empezar directamente desde la píldora */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
-        style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
+        style={{ bottom: 'var(--safe-bottom)' }}
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           
