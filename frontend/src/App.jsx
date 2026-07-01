@@ -174,11 +174,18 @@ export default function App() {
     if (Capacitor.isNativePlatform()) {
       const applyNativeTheme = async () => {
         try {
-          await StatusBar.setBackgroundColor({ color: headerColor });
+          await StatusBar.setOverlaysWebView({ overlay: true });
+          
+          // En Android, para que el overlay funcione bien, el fondo debe ser transparente
+          try {
+            await StatusBar.setBackgroundColor({ color: '#00000000' });
+          } catch (e) {
+            // iOS ignora setBackgroundColor cuando overlay es true y puede lanzar warning/error
+          }
+          
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
           await NavigationBar.setColor({ color: themeColor });
-          await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
         }

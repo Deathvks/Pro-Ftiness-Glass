@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, ChevronRight, Save, User, Camera, AlertTriangle,
-  Trophy, Flame, Dumbbell, Crown, Star, Eye, X, Shield, Zap, Diamond, Sparkles
+  Trophy, Flame, Dumbbell, Crown, Star, Eye, X, Shield, Zap, Diamond, Sparkles, Medal
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
@@ -95,16 +95,16 @@ const BADGE_DETAILS = {
     color: 'text-purple-500',
     bg: 'bg-purple-500/10'
   },
-  milestone_10: { name: 'Bronce (Lvl 10)', desc: 'Alcanza el nivel 10', icon: Shield, color: 'text-[#CD7F32]', bg: 'bg-[#CD7F32]/10' },
-  milestone_20: { name: 'Plata (Lvl 20)', desc: 'Alcanza el nivel 20', icon: Trophy, color: 'text-[#9CA3AF]', bg: 'bg-[#9CA3AF]/10' },
-  milestone_30: { name: 'Oro (Lvl 30)', desc: 'Alcanza el nivel 30', icon: Trophy, color: 'text-[#FFD700]', bg: 'bg-[#FFD700]/10' },
-  milestone_40: { name: 'Platino (Lvl 40)', desc: 'Alcanza el nivel 40', icon: Star, color: 'text-[#5F9EA0]', bg: 'bg-[#5F9EA0]/10' },
-  milestone_50: { name: 'Diamante (Lvl 50)', desc: 'Alcanza el nivel 50', icon: Diamond, color: 'text-[#00FFFF]', bg: 'bg-[#00FFFF]/10' },
-  milestone_60: { name: 'Maestro (Lvl 60)', desc: 'Alcanza el nivel 60', icon: Zap, color: 'text-[#9370DB]', bg: 'bg-[#9370DB]/10' },
-  milestone_70: { name: 'Gran Maestro (Lvl 70)', desc: 'Alcanza el nivel 70', icon: Flame, color: 'text-[#FF69B4]', bg: 'bg-[#FF69B4]/10' },
-  milestone_80: { name: 'Épico (Lvl 80)', desc: 'Alcanza el nivel 80', icon: Crown, color: 'text-[#FF4500]', bg: 'bg-[#FF4500]/10' },
-  milestone_90: { name: 'Leyenda (Lvl 90)', desc: 'Alcanza el nivel 90', icon: Sparkles, color: 'text-[#FFD700]', bg: 'bg-orange-500/10' },
-  milestone_100: { name: 'Mítico (Lvl 100)', desc: 'Alcanza el nivel 100', icon: Crown, color: 'text-[#00FFFF]', bg: 'bg-[#9370DB]/10' },
+  milestone_10: { name: 'Plata (Lvl 10)', desc: 'Alcanza el nivel 10', icon: Medal, color: 'text-[#9CA3AF]', bg: 'bg-[#9CA3AF]/10' },
+  milestone_20: { name: 'Oro (Lvl 20)', desc: 'Alcanza el nivel 20', icon: Trophy, color: 'text-[#FFD700]', bg: 'bg-[#FFD700]/10' },
+  milestone_30: { name: 'Platino (Lvl 30)', desc: 'Alcanza el nivel 30', icon: Star, color: 'text-[#5F9EA0]', bg: 'bg-[#5F9EA0]/10' },
+  milestone_40: { name: 'Diamante (Lvl 40)', desc: 'Alcanza el nivel 40', icon: Diamond, color: 'text-[#00FFFF]', bg: 'bg-[#00FFFF]/10' },
+  milestone_50: { name: 'Maestro (Lvl 50)', desc: 'Alcanza el nivel 50', icon: Zap, color: 'text-[#9370DB]', bg: 'bg-[#9370DB]/10' },
+  milestone_60: { name: 'Gran Maestro (Lvl 60)', desc: 'Alcanza el nivel 60', icon: Flame, color: 'text-[#FF69B4]', bg: 'bg-[#FF69B4]/10' },
+  milestone_70: { name: 'Épico (Lvl 70)', desc: 'Alcanza el nivel 70', icon: Crown, color: 'text-[#FF4500]', bg: 'bg-[#FF4500]/10' },
+  milestone_80: { name: 'Leyenda (Lvl 80)', desc: 'Alcanza el nivel 80', icon: Sparkles, color: 'text-[#FFD700]', bg: 'bg-orange-500/10' },
+  milestone_90: { name: 'Mítico (Lvl 90)', desc: 'Alcanza el nivel 90', icon: Crown, color: 'text-[#00FFFF]', bg: 'bg-[#9370DB]/10' },
+  milestone_100: { name: 'Inmortal (Lvl 100)', desc: 'Alcanza el nivel 100', icon: Crown, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
   default: {
     name: 'Insignia',
     desc: 'Logro desbloqueado',

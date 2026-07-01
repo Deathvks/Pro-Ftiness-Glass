@@ -590,14 +590,13 @@ export default function MainAppLayout({
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
         <header 
-          className={`md:hidden shrink-0 w-full z-40 relative transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl' : 'bg-bg-primary'}`}
-          style={{ paddingTop: 'var(--safe-top)' }}
+          className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out pt-[env(safe-area-inset-top)] transform-gpu translate-z-0 ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl' : 'bg-transparent'}`}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
               <span
                 key={currentTitle}
-                className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary animate-fade-in-up truncate"
+                className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary"
               >
                 {currentTitle}
               </span>
@@ -654,7 +653,7 @@ export default function MainAppLayout({
             if (mainContentRef) mainContentRef.current = el;
             swipeContainerRef.current = el;
           }}
-          className="flex-1 overflow-y-auto overflow-x-hidden relative"
+          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[calc(env(safe-area-inset-top)+3.5rem)]"
           style={{ backgroundColor: 'transparent', touchAction: 'pan-y' }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}

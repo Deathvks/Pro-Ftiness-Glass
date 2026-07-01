@@ -315,8 +315,6 @@
 
         var metaColor = document.getElementById('dynamic-theme-color');
         if (metaColor) {
-          // Si estamos en PWA Standalone con black-translucent, el theme-color puede provocar 
-          // que iOS dibuje un borde separador. Lo eliminamos para que sea 100% transparente.
           if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
             metaColor.remove();
           } else {
@@ -328,9 +326,16 @@
         root.style.setProperty('background-color', selectedHeaderColor, 'important');
 
         var setBodyColor = function () {
-          if (document.body) {
+          var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+          
+          if (!isStandalone && document.body) {
             document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
+            document.documentElement.style.setProperty('background-color', selectedHeaderColor, 'important');
+          } else if (document.body) {
+            document.body.style.setProperty('background-color', 'transparent', 'important');
+            document.documentElement.style.setProperty('background-color', 'transparent', 'important');
           }
+          
           var appRoot = document.getElementById('root');
           if (appRoot) {
             appRoot.style.setProperty('background-color', selectedHeaderColor, 'important');
