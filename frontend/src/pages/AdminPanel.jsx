@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search
+  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -354,6 +354,11 @@ const AdminPanel = ({ onCancel }) => {
     return reports.slice(startIndex, startIndex + REPORTS_PER_PAGE);
   }, [reports, reportPage]);
 
+  // Contar cuántos usuarios tienen el tema galaxia (admin o referralCount >= 3)
+  const galaxyUsersCount = useMemo(() => {
+    return users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 3).length;
+  }, [users]);
+
   return (
     <div className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
       <button 
@@ -400,13 +405,17 @@ const AdminPanel = ({ onCancel }) => {
           <>
             <div className="flex flex-col lg:flex-row items-start lg:items-center gap-5 mb-8">
               
-              {/* Título + Contador */}
-              <div className="flex items-center gap-3">
+              {/* Título + Contadores */}
+              <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-2xl font-extrabold whitespace-nowrap mr-auto text-text-primary">
                   Lista de Usuarios
                 </h2>
                 <span className="bg-accent/10 text-accent text-[10px] sm:text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full ring-1 ring-accent/30">
                   {users.length} Totales
+                </span>
+                <span className="bg-[#a855f7]/10 text-[#a855f7] text-[10px] sm:text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full ring-1 ring-[#a855f7]/30 flex items-center gap-1.5">
+                  <Sparkles size={14} className="fill-[#a855f7]/50" />
+                  {galaxyUsersCount} Galaxia
                 </span>
               </div>
 
@@ -483,6 +492,7 @@ const AdminPanel = ({ onCancel }) => {
                         <th className="p-4 text-center">Rol</th>
                         <th className="p-4 text-center">Nivel</th>
                         <th className="p-4 text-center">Verificado</th>
+                        <th className="p-4 text-center">Invitaciones</th>
                         <th className="p-4 text-center pr-2">Acciones</th>
                       </tr>
                     </thead>
@@ -535,6 +545,16 @@ const AdminPanel = ({ onCancel }) => {
                                   <XCircle size={18} className="text-red" strokeWidth={2.5} />
                                   <span className="text-xs font-bold text-red uppercase tracking-wider">No</span>
                                 </>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 align-middle text-center">
+                            <div className="flex justify-center items-center gap-2">
+                              <span className="text-sm font-bold text-text-primary">{user.referralCount || 0}</span>
+                              {(user.referralCount >= 3 || user.role === 'admin') && (
+                                <div className="text-[#a855f7] bg-[#a855f7]/10 p-1.5 rounded-full ring-1 ring-[#a855f7]/30" title="Tema Galaxia Desbloqueado">
+                                  <Sparkles size={14} className="fill-[#a855f7]" />
+                                </div>
                               )}
                             </div>
                           </td>
@@ -606,7 +626,17 @@ const AdminPanel = ({ onCancel }) => {
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Invs:</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-text-primary text-xs">{user.referralCount || 0}</span>
+                            {(user.referralCount >= 3 || user.role === 'admin') && (
+                              <Sparkles size={12} className="text-[#a855f7] fill-[#a855f7]" />
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-1.5">
                           <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Verif:</span>
                           {user.is_verified ? (
                             <div className="flex items-center gap-1">

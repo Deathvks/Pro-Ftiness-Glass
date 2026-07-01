@@ -56,8 +56,13 @@ const apiClient = async (endpoint, options = {}) => {
         }
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos de timeout para redes lentísimas
+    config.signal = controller.signal;
+
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             // Si la respuesta es un error (ej: 4xx, 5xx), intentamos leer el cuerpo del error.
@@ -104,22 +109,30 @@ const apiClient = async (endpoint, options = {}) => {
 
         return response.json();
     } catch (error) {
-        // Interceptamos fallos de red (Offline) para peticiones de escritura (POST, PUT, DELETE, etc.)
-        if (error.message === 'Failed to fetch' && config.method !== 'GET') {
+        clearTimeout(timeoutId);
+
+        const isNetworkFailure = error.message === 'Failed to fetch' || error.name === 'AbortError';
+
+        // Interceptamos fallos de red (Offline o Timeout por red lentísima) para peticiones de escritura (POST, PUT, DELETE, etc.)
+        if (isNetworkFailure && config.method !== 'GET') {
             // No guardamos FormData en la cola por complejidad de serialización (imágenes, etc.)
             const isFormData = body instanceof FormData;
 
             if (!isFormData) {
-                console.log('Detectado modo offline. Añadiendo petición a la cola de sincronización.');
+                console.log('Detectado modo offline o red muy lenta. Añadiendo petición a la cola de sincronización.');
                 useAppStore.getState().addToSyncQueue({ endpoint, options });
                 // Lanzamos un error específico para que la UI sepa que se guardó en local
-                throw new Error('Sin conexión. Cambio guardado localmente para sincronizar después.');
+                throw new Error('Conexión inestable. Cambio guardado localmente para sincronizar después.');
             }
         }
 
-        if (error.message === 'Failed to fetch') {
+        if (isNetworkFailure) {
+            if (error.name === 'AbortError') {
+                throw new Error('La conexión es muy lenta. Revisa tu internet.');
+            }
             throw new Error('No se pudo conectar con el servidor. Revisa tu conexión a internet.');
         }
+        
         // Si ya hemos procesado el mensaje, simplemente lo volvemos a lanzar.
         throw error;
     }

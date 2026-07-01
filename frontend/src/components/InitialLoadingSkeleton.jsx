@@ -4,13 +4,14 @@ import Skeleton from './Skeleton';
 
 const InitialLoadingSkeleton = () => {
     return (
-        <div 
-            className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 animate-[fade-in_0.5s_ease-out]"
-            style={{ 
-                paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
-                paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' 
-            }}
-        >
+        <div className="min-h-screen w-full bg-bg-primary flex flex-col">
+            <div 
+                className="w-full flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 animate-[fade-in_0.5s_ease-out]"
+                style={{ 
+                    paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
+                    paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' 
+                }}
+            >
             {/* Header Title (Desktop) */}
             <div className="hidden md:block mb-8 mt-10 md:mt-0">
                 <Skeleton className="h-10 w-48" />
@@ -82,6 +83,7 @@ const InitialLoadingSkeleton = () => {
                     </div>
                     <Skeleton className="h-12 w-full rounded-md mt-2" />
                 </div>
+            </div>
             </div>
         </div>
     );

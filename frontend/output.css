@@ -4732,6 +4732,14 @@ input[type="checkbox"]:checked::before {
   background-position: center;
 }
 
+.fill-\[\#a855f7\] {
+  fill: #a855f7;
+}
+
+.fill-\[\#a855f7\]\/50 {
+  fill: rgb(168 85 247 / 0.5);
+}
+
 .fill-accent {
   fill: var(--color-accent);
 }
@@ -5170,8 +5178,16 @@ input[type="checkbox"]:checked::before {
   padding-top: 2rem;
 }
 
+.pt-\[calc\(env\(safe-area-inset-top\)\+3\.5rem\)\] {
+  padding-top: calc(env(safe-area-inset-top) + 3.5rem);
+}
+
 .pt-\[calc\(env\(safe-area-inset-top\2c 0px\)\+1\.5rem\)\] {
   padding-top: calc(env(safe-area-inset-top,0px) + 1.5rem);
+}
+
+.pt-\[env\(safe-area-inset-top\)\] {
+  padding-top: env(safe-area-inset-top);
 }
 
 .text-left {
@@ -6161,6 +6177,10 @@ input[type="checkbox"]:checked::before {
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
 
+.ring-\[\#a855f7\]\/30 {
+  --tw-ring-color: rgb(168 85 247 / 0.3);
+}
+
 .ring-accent {
   --tw-ring-color: var(--color-accent);
 }
@@ -6804,7 +6824,6 @@ html.galaxy-theme #root::before {
   opacity: 0.7;
   z-index: 9998;
   pointer-events: none;
-  mix-blend-mode: screen;
   will-change: transform;
   backface-visibility: hidden;
   perspective: 1000px;
@@ -6823,7 +6842,6 @@ html.galaxy-theme #root::after {
   z-index: 9999;
   animation: meteor-shower 6s linear infinite;
   pointer-events: none;
-  mix-blend-mode: screen;
   will-change: transform, opacity;
 }
 

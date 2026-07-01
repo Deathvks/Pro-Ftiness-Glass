@@ -26,7 +26,16 @@ export const getAllUsers = async (req, res, next) => {
         'spotify_id',
         'facebook_id',
         // CORRECCIÓN CRÍTICA: Mapeo explícito de la columna de base de datos al atributo
-        ['created_at', 'createdAt']
+        ['created_at', 'createdAt'],
+        // NUEVO: Subconsulta para contar las invitaciones
+        [
+          db.sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM users AS referral
+            WHERE referral.referred_by = User.id
+          )`),
+          'referralCount'
+        ]
       ],
       // Ordenamos usando el nombre real de la columna en la base de datos
       order: [['created_at', 'DESC']],

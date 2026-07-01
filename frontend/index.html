@@ -30,6 +30,7 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
   <meta name="theme-color" content="#0f172a" id="dynamic-theme-color" />
+  <meta name="color-scheme" content="dark light" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <link rel="icon" type="image/png" href="/favicon-32x32.png?v=2" />
@@ -131,6 +132,9 @@
       html, body, #root {
         height: 100vh !important;
       }
+      html {
+        color-scheme: dark;
+      }
     }
 
     /* ========================================================= */
@@ -181,6 +185,25 @@
     html.light-theme .app-splash-spinner {
       border-color: rgba(0, 0, 0, 0.05);
       border-top-color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
+    }
+
+    html.galaxy-theme .app-splash-spinner {
+      border-color: rgba(168, 85, 247, 0.1);
+      border-top-color: #a855f7;
+      border-right-color: #3b82f6;
+      box-shadow: 0 0 20px -5px #a855f7;
+    }
+
+    html.galaxy-theme .app-splash-title {
+      background: linear-gradient(to right, #a855f7, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    html.galaxy-theme .app-splash-title span.glass-badge {
+      border-color: rgba(168, 85, 247, 0.3);
+      -webkit-text-fill-color: #a855f7;
+      background-image: linear-gradient(rgba(168, 85, 247, 0.1), rgba(168, 85, 247, 0.1)), linear-gradient(rgba(8, 8, 20, 0.5), rgba(8, 8, 20, 0.5));
     }
 
     .app-splash-title {
@@ -322,23 +345,26 @@
           }
         }
 
-        // Dejamos el HTML transparente para no provocar la línea blanca/gris
-        root.style.setProperty('background-color', selectedHeaderColor, 'important');
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        // Si es standalone, todo transparente para engañar a iOS y quitar la raya
+        if (isStandalone) {
+          root.style.setProperty('background-color', 'transparent', 'important');
+        } else {
+          root.style.setProperty('background-color', selectedHeaderColor, 'important');
+        }
 
         var setBodyColor = function () {
-          var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-          
-          if (!isStandalone && document.body) {
-            document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
-            document.documentElement.style.setProperty('background-color', selectedHeaderColor, 'important');
-          } else if (document.body) {
-            document.body.style.setProperty('background-color', 'transparent', 'important');
-            document.documentElement.style.setProperty('background-color', 'transparent', 'important');
-          }
-          
           var appRoot = document.getElementById('root');
-          if (appRoot) {
-            appRoot.style.setProperty('background-color', selectedHeaderColor, 'important');
+          
+          if (!isStandalone) {
+            if (document.body) document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
+            if (document.documentElement) document.documentElement.style.setProperty('background-color', selectedHeaderColor, 'important');
+            if (appRoot) appRoot.style.setProperty('background-color', selectedHeaderColor, 'important');
+          } else {
+            if (document.body) document.body.style.setProperty('background-color', 'transparent', 'important');
+            if (document.documentElement) document.documentElement.style.setProperty('background-color', 'transparent', 'important');
+            if (appRoot) appRoot.style.setProperty('background-color', 'transparent', 'important');
           }
         };
 
@@ -347,7 +373,7 @@
 
         var splash = document.querySelector('.app-splash-screen');
         if (splash) {
-          splash.style.background = 'linear-gradient(to bottom, ' + selectedHeaderColor + ' 0%, ' + selectedHeaderColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' env(safe-area-inset-top, 47px), ' + selectedBgColor + ' 100%)';
+          splash.style.backgroundColor = selectedBgColor;
         }
 
       } catch (e) {
