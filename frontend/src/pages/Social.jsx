@@ -304,8 +304,8 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 
     return (
         <>
-            <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 animate-[fade-in_0.2s_ease-out]">
-                <GlassCard className="glass w-full max-w-md p-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[95vh] sm:max-h-[90vh] bg-bg-primary overflow-hidden">
+            <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-[env(safe-area-inset-top)] animate-[fade-in_0.2s_ease-out]">
+                <GlassCard className="glass w-full max-w-md p-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[calc(100vh-env(safe-area-inset-top))] sm:max-h-[90vh] bg-bg-primary overflow-hidden">
                     
                     <div className="p-5 sm:p-8 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
                         <h3 className="text-xl font-bold text-text-primary">Nueva Historia</h3>
@@ -933,36 +933,37 @@ export default function Social({ setView }) {
     };
 
     const renderLeaderboard = () => (
-        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+        <GlassCard className="glass p-4 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-extrabold text-text-primary flex items-center gap-3">
-                    <div className="p-2.5 bg-yellow-500/10 rounded-[16px] text-yellow-500">
-                        <Trophy size={24} />
+                <h3 className="text-xl sm:text-2xl font-extrabold text-text-primary flex items-center gap-2 sm:gap-3">
+                    <div className="p-2 sm:p-2.5 bg-yellow-500/10 rounded-[12px] sm:rounded-[16px] text-yellow-500">
+                        <Trophy size={20} className="sm:hidden" />
+                        <Trophy size={24} className="hidden sm:block" />
                     </div>
                     Ranking Global
                 </h3>
-                <span className="text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-full uppercase tracking-wider">Top 50</span>
+                <span className="text-[10px] sm:text-xs font-bold text-accent bg-accent/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full uppercase tracking-wider">Top 50</span>
             </div>
             
             <div className="flex flex-col">
-                <div className="flex text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-2">
-                    <span className="w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-16 text-right">Nivel</span><span className="w-24 text-right">XP</span>
+                <div className="flex text-[10px] sm:text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-1 sm:px-2">
+                    <span className="w-6 sm:w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-12 sm:w-16 text-right">Nivel</span><span className="w-16 sm:w-24 text-right">XP</span>
                 </div>
                 {socialLeaderboard.map((user, index) => {
                     const isMe = user.id === userProfile?.id;
                     const fixedUser = { ...user, avatar: getFullImageUrl(user.profile_image_url || user.avatar) };
 
                     return (
-                        <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 rounded-[20px] mb-2 cursor-pointer transition-all duration-300 hover:bg-black/5 dark:hover:bg-white/5 ${isMe ? 'bg-accent/10 ring-1 ring-accent/30 scale-[1.02] shadow-sm my-3' : ''}`}>
-                            <div className="w-10 flex justify-center font-black text-text-secondary text-lg shrink-0">
-                                {index + 1 === 1 ? <Medal size={24} className="text-yellow-400 drop-shadow-md" /> : index + 1 === 2 ? <Medal size={24} className="text-gray-400 drop-shadow-md" /> : index + 1 === 3 ? <Medal size={24} className="text-amber-700 drop-shadow-md" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
+                        <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-2 sm:p-3 rounded-[16px] sm:rounded-[20px] mb-2 cursor-pointer transition-all duration-300 hover:bg-black/5 dark:hover:bg-white/5 ${isMe ? 'bg-accent/10 ring-1 ring-accent/30 scale-[1.02] shadow-sm my-3' : ''}`}>
+                            <div className="w-6 sm:w-10 flex justify-center font-black text-text-secondary text-base sm:text-lg shrink-0">
+                                {index + 1 === 1 ? <Medal size={20} className="text-yellow-400 drop-shadow-md sm:w-6 sm:h-6" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-400 drop-shadow-md sm:w-6 sm:h-6" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700 drop-shadow-md sm:w-6 sm:h-6" /> : <span className="text-xs sm:text-sm opacity-60">#{index + 1}</span>}
                             </div>
-                            <div className="flex-1 flex items-center gap-4 min-w-0 pl-2">
-                                <UserAvatar user={fixedUser} size={10} className="w-10 h-10 shadow-sm" />
-                                <span className={`truncate text-sm sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
+                            <div className="flex-1 flex items-center gap-2 sm:gap-4 min-w-0 pl-1 sm:pl-2">
+                                <UserAvatar user={fixedUser} size={10} className="w-8 h-8 sm:w-10 sm:h-10 shadow-sm shrink-0" />
+                                <span className={`truncate text-xs sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
                             </div>
-                            <div className="w-16 text-right text-sm text-text-secondary font-bold shrink-0">{user.level}</div>
-                            <div className="w-24 text-right text-sm text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString()}</div>
+                            <div className="w-12 sm:w-16 text-right text-xs sm:text-sm text-text-secondary font-bold shrink-0">{user.level}</div>
+                            <div className="w-16 sm:w-24 text-right text-xs sm:text-sm text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString()}</div>
                         </div>
                     );
                 })}
@@ -980,68 +981,68 @@ export default function Social({ setView }) {
             const amIAdmin = myMembership?.SquadMember?.role === 'admin';
 
             return (
-                <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 overflow-hidden animate-[fade-in_0.3s_ease-out]">
+                <GlassCard className="glass p-4 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 overflow-hidden animate-[fade-in_0.3s_ease-out]">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setSelectedSquad(null)} className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary transition-colors shrink-0">
+                        <div className="flex items-center gap-4 min-w-0">
+                            <button onClick={() => setSelectedSquad(null)} className="p-2 sm:p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary transition-colors shrink-0">
                                 <ArrowLeft size={20} />
                             </button>
-                            <div>
-                                <h3 className="text-2xl font-extrabold text-text-primary flex items-center gap-2">
-                                    <Shield className="text-accent" size={24} /> {selectedSquad.name}
+                            <div className="min-w-0">
+                                <h3 className="text-xl sm:text-2xl font-extrabold text-text-primary flex items-center gap-2 truncate">
+                                    <Shield className="text-accent shrink-0" size={20} /> <span className="truncate">{selectedSquad.name}</span>
                                 </h3>
-                                {selectedSquad.description && <p className="text-sm text-text-secondary mt-1 font-medium">{selectedSquad.description}</p>}
+                                {selectedSquad.description && <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium truncate">{selectedSquad.description}</p>}
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                             <button
                                 onClick={() => copyInviteCode(selectedSquad.invite_code)}
-                                className="flex-1 sm:flex-initial text-sm font-bold text-text-primary bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-4 py-2.5 rounded-[16px] flex items-center justify-center gap-2 transition-colors"
+                                className="flex-1 sm:flex-initial text-xs sm:text-sm font-bold text-text-primary bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-3 sm:px-4 py-2 sm:py-2.5 rounded-[12px] sm:rounded-[16px] flex items-center justify-center gap-2 transition-colors"
                             >
-                                <Copy size={18} /> Código
+                                <Copy size={16} className="sm:w-[18px] sm:h-[18px]" /> <span className="hidden sm:inline">Código</span>
                             </button>
                             {!amIAdmin ? (
                                 <button
                                     onClick={() => setLeaveSquadConfirmation({ isOpen: true, squadId: selectedSquad.id })}
-                                    className="flex-1 sm:flex-initial text-sm font-bold text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-[16px] flex items-center justify-center gap-2 transition-colors"
+                                    className="flex-1 sm:flex-initial text-xs sm:text-sm font-bold text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-[12px] sm:rounded-[16px] flex items-center justify-center gap-2 transition-colors"
                                 >
-                                    <LogOut size={18} /> Salir
+                                    <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" /> <span className="hidden sm:inline">Salir</span>
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => setDeleteSquadConfirmation({ isOpen: true, squadId: selectedSquad.id })}
-                                    className="flex-1 sm:flex-initial text-sm font-bold text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white px-4 py-2.5 rounded-[16px] flex items-center justify-center gap-2 transition-colors"
+                                    className="flex-1 sm:flex-initial text-xs sm:text-sm font-bold text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-[12px] sm:rounded-[16px] flex items-center justify-center gap-2 transition-colors"
                                 >
-                                    <Trash2 size={18} /> Eliminar
+                                    <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" /> <span className="hidden sm:inline">Eliminar</span>
                                 </button>
                             )}
                         </div>
                     </div>
                     
                     <div className="flex flex-col">
-                        <div className="flex text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-2">
-                            <span className="w-10 text-center">#</span><span className="flex-1 pl-2">Miembro</span><span className="w-24 text-right">Racha</span><span className="w-24 text-right">XP</span>
+                        <div className="flex text-[10px] sm:text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-1 sm:px-2">
+                            <span className="w-6 sm:w-10 text-center">#</span><span className="flex-1 pl-2">Miembro</span><span className="w-14 sm:w-24 text-right">Racha</span><span className="w-16 sm:w-24 text-right">XP</span>
                         </div>
                         {selectedSquad.Members?.map((user, index) => {
                             const isMe = user.id === userProfile?.id;
                             const fixedUser = { ...user, avatar: getFullImageUrl(user.profile_image_url || user.avatar) };
 
                             return (
-                                <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-3 rounded-[20px] mb-2 cursor-pointer transition-all duration-300 hover:bg-black/5 dark:hover:bg-white/5 ${isMe ? 'bg-accent/10 ring-1 ring-accent/30 scale-[1.02] shadow-sm my-3' : ''}`}>
-                                    <div className="w-10 flex justify-center font-black text-text-secondary text-lg shrink-0">
-                                        {index + 1 === 1 ? <Medal size={24} className="text-yellow-400 drop-shadow-md" /> : index + 1 === 2 ? <Medal size={24} className="text-gray-400 drop-shadow-md" /> : index + 1 === 3 ? <Medal size={24} className="text-amber-700 drop-shadow-md" /> : <span className="text-sm opacity-60">#{index + 1}</span>}
+                                <div key={user.id} onClick={() => goToProfile(user.id)} className={`flex items-center p-2 sm:p-3 rounded-[16px] sm:rounded-[20px] mb-2 cursor-pointer transition-all duration-300 hover:bg-black/5 dark:hover:bg-white/5 ${isMe ? 'bg-accent/10 ring-1 ring-accent/30 scale-[1.02] shadow-sm my-3' : ''}`}>
+                                    <div className="w-6 sm:w-10 flex justify-center font-black text-text-secondary text-base sm:text-lg shrink-0">
+                                        {index + 1 === 1 ? <Medal size={20} className="text-yellow-400 drop-shadow-md sm:w-6 sm:h-6" /> : index + 1 === 2 ? <Medal size={20} className="text-gray-400 drop-shadow-md sm:w-6 sm:h-6" /> : index + 1 === 3 ? <Medal size={20} className="text-amber-700 drop-shadow-md sm:w-6 sm:h-6" /> : <span className="text-xs sm:text-sm opacity-60">#{index + 1}</span>}
                                     </div>
-                                    <div className="flex-1 flex items-center gap-4 min-w-0 pl-2">
-                                        <UserAvatar user={fixedUser} size={10} className="w-10 h-10 shadow-sm" />
+                                    <div className="flex-1 flex items-center gap-2 sm:gap-4 min-w-0 pl-1 sm:pl-2">
+                                        <UserAvatar user={fixedUser} size={10} className="w-8 h-8 sm:w-10 sm:h-10 shadow-sm shrink-0" />
                                         <div className="flex flex-col min-w-0">
-                                            <span className={`truncate text-sm sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
-                                            <span className="text-[10px] sm:text-xs font-bold text-text-tertiary capitalize mt-0.5 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md w-fit">{user.SquadMember?.role}</span>
+                                            <span className={`truncate text-xs sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
+                                            <span className="text-[9px] sm:text-[10px] font-bold text-text-tertiary capitalize mt-0.5 bg-black/5 dark:bg-white/5 px-1.5 sm:px-2 py-0.5 rounded-md w-fit">{user.SquadMember?.role}</span>
                                         </div>
                                     </div>
-                                    <div className="w-24 text-right text-sm sm:text-base text-orange-500 font-extrabold flex items-center justify-end gap-1.5 shrink-0">
+                                    <div className="w-14 sm:w-24 text-right text-xs sm:text-base text-orange-500 font-extrabold flex items-center justify-end gap-1 sm:gap-1.5 shrink-0">
                                         🔥 {user.streak || 0}
                                     </div>
-                                    <div className="w-24 text-right text-sm sm:text-base text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString() || 0}</div>
+                                    <div className="w-16 sm:w-24 text-right text-xs sm:text-base text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString() || 0}</div>
                                 </div>
                             );
                         })}
@@ -1070,10 +1071,10 @@ export default function Social({ setView }) {
                 <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
                     <h3 className="text-2xl font-extrabold text-text-primary mb-6">Mis Grupos</h3>
                     {mySquads.length === 0 ? (
-                        <div className="text-center py-12 bg-black/5 dark:bg-white/5 rounded-[24px]">
+                        <div className="text-center py-12 px-4 sm:px-6 bg-black/5 dark:bg-white/5 rounded-[24px]">
                             <Shield size={48} className="mx-auto mb-4 text-text-muted opacity-50" />
                             <p className="text-lg font-bold text-text-primary">No perteneces a ningún grupo</p>
-                            <p className="text-sm font-medium text-text-secondary mt-1">Crea uno o únete para competir con tus amigos.</p>
+                            <p className="text-sm font-medium text-text-secondary mt-2 max-w-xs mx-auto">Crea uno o únete para competir con tus amigos.</p>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-3">

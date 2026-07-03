@@ -174,7 +174,7 @@ export const getStories = async (req, res) => {
             }
 
             const isLiked = story.likes.some(like => like.user_id === userId);
-            const isViewed = story.views.length > 0 || u.id === userId; 
+            const isViewed = story.views.length > 0; 
 
             if (!isViewed) {
                 groupedStories[u.id].hasUnseen = true;
@@ -304,11 +304,10 @@ export const viewStory = async (req, res) => {
         const userId = req.user.userId;
         const { id } = req.params;
 
-        // Validación rápida: si es mi historia, no cuenta como vista nueva
-        // Pero verificamos si existe para no llenar DB de basura
+        // Verificar si existe para no llenar DB de basura
         const story = await Story.findByPk(id, { attributes: ['user_id'] });
         
-        if (!story || story.user_id === userId) {
+        if (!story) {
             return res.status(200).end();
         }
 

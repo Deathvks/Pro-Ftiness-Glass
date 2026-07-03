@@ -111,7 +111,13 @@ const apiClient = async (endpoint, options = {}) => {
     } catch (error) {
         clearTimeout(timeoutId);
 
-        const isNetworkFailure = error.message === 'Failed to fetch' || error.name === 'AbortError';
+        const errMessage = (error.message || '').toLowerCase();
+        const isNetworkFailure = 
+            error.name === 'AbortError' || 
+            errMessage.includes('failed to fetch') || 
+            errMessage.includes('load failed') || 
+            errMessage.includes('networkerror') ||
+            errMessage.includes('network request failed');
 
         // Interceptamos fallos de red (Offline o Timeout por red lentísima) para peticiones de escritura (POST, PUT, DELETE, etc.)
         if (isNetworkFailure && config.method !== 'GET') {

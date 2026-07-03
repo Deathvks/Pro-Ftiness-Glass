@@ -80,8 +80,8 @@ const ExerciseListView = ({
   // --- CÁLCULO DE ELEMENTOS VISIBLES (VIRTUALIZACIÓN) ---
   const totalItems = filteredExercises.length + 1; // +1 por el botón de "Añadir manual" al final
   
-  // AÑADIDO: Padding dinámico. Mucho espacio en móvil para el navbar, espacio normal en PC.
-  const EXTRA_BOTTOM_PADDING = isMobile ? 140 : 24; 
+  // AÑADIDO: Padding dinámico. Como es modal a pantalla completa, no necesitamos espacio para navbar.
+  const EXTRA_BOTTOM_PADDING = 24; 
   const MANUAL_BTN_GAP = 16; // Separación extra para el botón manual
   const totalHeight = (totalItems * ITEM_HEIGHT) + EXTRA_BOTTOM_PADDING + MANUAL_BTN_GAP;
 
@@ -148,8 +148,7 @@ const ExerciseListView = ({
     <div className="flex flex-col h-full w-full bg-bg-primary overflow-hidden">
       {/* Header (Cerrar y Carrito) - Zonas Seguras para el Notch */}
       <div 
-        className="flex-shrink-0 flex items-center justify-between px-4 pb-4 border-b border-black/5 dark:border-white/10 gap-2 bg-bg-primary z-10"
-        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
+        className="flex-shrink-0 flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/10 gap-2 bg-bg-primary z-10"
       >
         <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-text-primary truncate min-w-0">
           {t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
@@ -263,7 +262,7 @@ const ExerciseListView = ({
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="flex-1 bg-bg-primary overflow-y-auto overflow-x-hidden relative custom-scrollbar"
+        className="flex-1 bg-bg-primary overflow-y-auto overflow-x-hidden relative custom-scrollbar pb-[env(safe-area-inset-bottom,0px)]"
       >
         {isLoading ? (
           <div className="flex justify-center py-12"><Spinner size={32} /></div>

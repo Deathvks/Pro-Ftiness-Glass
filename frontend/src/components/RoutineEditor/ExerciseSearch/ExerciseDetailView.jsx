@@ -207,7 +207,7 @@ const ExerciseDetailView = ({
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] custom-scrollbar">
         <div className={`mb-8 aspect-video ${mediaBgClass} rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex items-center justify-center shadow-inner`}>
           {hasVideo ? (
             <video
@@ -336,8 +336,8 @@ const ExerciseDetailView = ({
         </div>
       </div>
 
-      {/* FOOTER CORREGIDO CON PB-28 PARA MÓVILES */}
-      <div className="flex-shrink-0 p-5 sm:p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/90 backdrop-blur-md pb-28 md:pb-8 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(255,255,255,0.02)]">
+      {/* FOOTER */}
+      <div className="flex-shrink-0 p-5 sm:p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/90 backdrop-blur-md pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(255,255,255,0.02)]">
         {!isReplacing && (
           <div className="flex gap-4 mb-5">
             <div className="flex-1">

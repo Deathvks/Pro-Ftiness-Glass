@@ -141,8 +141,8 @@ export const createSocialSlice = (set, get) => ({
                     console.log('[Historias] Encontrado grupo PROPIO con', myStoryGroup.items?.length, 'historias');
                     myFilteredStories = (myStoryGroup.items || []).map(story => ({
                         ...story,
-                        // Para nuestras historias, forzamos que no estén vistas a menos que la caché diga lo contrario
-                        viewed: isViewedLocally(story.id)
+                        // Respetamos lo que diga el backend (que ahora sí guarda las vistas propias) o la caché local
+                        viewed: story.viewed || isViewedLocally(story.id)
                     }));
                 }
 
@@ -208,19 +208,19 @@ export const createSocialSlice = (set, get) => ({
         }
 
         const currentMyStories = get().myStories;
-        if (currentMyStories.some(s => s.id === storyId)) {
+        if (currentMyStories.some(s => String(s.id) === String(storyId))) {
             const updatedMyStories = currentMyStories.map(s => 
-                s.id === storyId ? { ...s, viewed: true } : s
+                String(s.id) === String(storyId) ? { ...s, viewed: true } : s
             );
             set({ myStories: updatedMyStories });
         } else {
             const currentStories = get().stories;
             const updatedStories = currentStories.map(group => {
-                const hasStory = group.items.some(s => s.id === storyId);
+                const hasStory = group.items.some(s => String(s.id) === String(storyId));
                 if (!hasStory) return group;
 
                 const updatedItems = group.items.map(s => 
-                    s.id === storyId ? { ...s, viewed: true } : s
+                    String(s.id) === String(storyId) ? { ...s, viewed: true } : s
                 );
                 
                 return { 

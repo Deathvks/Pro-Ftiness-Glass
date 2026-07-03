@@ -54,7 +54,7 @@ const LikesListModal = ({ likes, onClose }) => {
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-bg-primary z-10" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] border-b border-white/10 flex items-center gap-3 bg-bg-primary z-10" onClick={(e) => e.stopPropagation()}>
                 <button onClick={triggerClose} className="p-1 hover:bg-white/10 rounded-full">
                     <ChevronLeft size={24} className="text-text-primary" />
                 </button>
@@ -510,9 +510,9 @@ const StoryViewer = ({ userId, onClose }) => {
   useEffect(() => {
     // Solo marcamos como vista si el usuario realmente la está viendo en pantalla (mediaLoaded)
     if (currentStory && !currentStory.viewed && mediaLoaded) {
-      markStoryAsViewed(currentStory.id);
+      markStoryAsViewed(viewingUserId, currentStory.id);
     }
-  }, [currentIndex, currentStory, mediaLoaded, markStoryAsViewed]);
+  }, [currentIndex, currentStory, mediaLoaded, markStoryAsViewed, viewingUserId]);
 
   const handleDownload = async (e) => {
     e.stopPropagation();
@@ -656,7 +656,7 @@ const StoryViewer = ({ userId, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Barras de Progreso */}
-        <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 p-2 pt-4 safe-top bg-gradient-to-b from-black/60 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 p-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] bg-gradient-to-b from-black/60 to-transparent">
           {activeStories.map((item, index) => {
             const isPast = index < currentIndex;
             const isCurrent = index === currentIndex;
@@ -676,7 +676,7 @@ const StoryViewer = ({ userId, onClose }) => {
         </div>
 
         {/* Header Usuario */}
-        <div className="absolute top-6 left-0 right-0 z-50 flex items-center justify-between px-4 pt-2">
+        <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top,0px))] left-0 right-0 z-50 flex items-center justify-between px-4 pt-2">
           <div className="flex items-center gap-3">
               <UserAvatar 
                   user={{

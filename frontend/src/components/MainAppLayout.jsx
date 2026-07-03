@@ -653,7 +653,7 @@ export default function MainAppLayout({
             if (mainContentRef) mainContentRef.current = el;
             swipeContainerRef.current = el;
           }}
-          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[calc(env(safe-area-inset-top)+3.5rem)]"
+          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[calc(env(safe-area-inset-top)+3.5rem)] md:pt-[env(safe-area-inset-top,0px)]"
           style={{ backgroundColor: 'transparent', touchAction: 'pan-y' }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}

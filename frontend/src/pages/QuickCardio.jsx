@@ -214,12 +214,14 @@ const QuickCardio = ({ onBack, setView }) => {
     });
   }, [searchTerm, intensityFilter]);
 
-  // Centrar automáticamente la pestaña activa al cargar
+  // Centrar automáticamente la pestaña activa al cargar de forma segura
   useEffect(() => {
     if (scrollContainerRef.current) {
       const activeTab = scrollContainerRef.current.querySelector('[data-active="true"]');
       if (activeTab) {
-        activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        const container = scrollContainerRef.current;
+        const scrollLeft = activeTab.offsetLeft - container.offsetLeft - (container.clientWidth / 2) + (activeTab.clientWidth / 2);
+        container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
       }
     }
   }, []);

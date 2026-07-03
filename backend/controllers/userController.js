@@ -404,7 +404,7 @@ export const updateMyAccount = async (req, res, next) => {
         const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
         if (!isMatch) {
           if (newImagePath) await deleteFile(newImagePath);
-          return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+          return res.status(403).json({ error: 'La contraseña actual es incorrecta.' });
         }
       }
       fieldsToUpdate.password_hash = newPassword;
@@ -487,7 +487,7 @@ export const clearMyData = async (req, res, next) => {
       const isMatch = await bcrypt.compare(password, user.password_hash);
       if (!isMatch) {
         await t.rollback();
-        return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+        return res.status(403).json({ error: 'La contraseña actual es incorrecta.' });
       }
     }
 
@@ -547,7 +547,7 @@ export const deleteMyAccount = async (req, res, next) => {
     if (user.password_hash) {
       if (!password) return res.status(400).json({ error: 'La contraseña es requerida.' });
       const isMatch = await bcrypt.compare(password, user.password_hash);
-      if (!isMatch) return res.status(401).json({ error: 'La contraseña incorrecta.' });
+      if (!isMatch) return res.status(403).json({ error: 'La contraseña incorrecta.' });
     }
 
     await deleteAllUserFiles(userId, user);

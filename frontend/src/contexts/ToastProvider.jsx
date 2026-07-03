@@ -42,7 +42,19 @@ const ToastProvider = ({ children }) => {
     }
   `;
 
-  const addToast = useCallback((message, type = 'info') => {
+  const addToast = useCallback((rawMessage, type = 'info') => {
+    // Interceptar mensajes raw de fetch para evitar asustar al usuario
+    let message = rawMessage || '';
+    if (typeof message === 'string') {
+      const lowerMsg = message.toLowerCase();
+      if (lowerMsg.includes('failed to fetch') || 
+          lowerMsg.includes('load failed') || 
+          lowerMsg.includes('networkerror') || 
+          lowerMsg.includes('network error')) {
+        message = 'Error de conexión. Revisa tu internet.';
+      }
+    }
+
     const titles = {
       success: 'Completado',
       error: 'Error',

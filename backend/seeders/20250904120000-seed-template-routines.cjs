@@ -22,7 +22,7 @@ module.exports = {
               description: 'Entrenamiento de empuje enfocado en hipertrofia (Sesión A).',
               exercises: [
                 { name: 'Bankdrücken LH', sets: 4, reps: '6-8' },              // Press Banca Barra (Row 1178)
-                { name: 'Incline Dumbbell Press', sets: 4, reps: '8-10' },     // Press Inclinado Mancuerna (Row 1318)
+                { name: 'Schrägbankdrücken KH', sets: 4, reps: '8-10' },     // Press Inclinado Mancuerna (Row 1318)
                 { name: 'Schulterdrücken KH', sets: 4, reps: '8-10' },         // Press Hombro Sentado (Row 1237)
                 { name: 'Seitheben KH', sets: 4, reps: '12-15' },              // Elevaciones Laterales (Row 1211)
                 { name: 'Dips', sets: 3, reps: 'Al fallo' },                   // Fondos (Row 1195)
@@ -36,7 +36,7 @@ module.exports = {
               exercises: [
                 { name: 'Chin-ups', sets: 4, reps: '6-8' },                    // Dominadas (Row 1185)
                 { name: 'Rudern Vorgebeugt LH', sets: 4, reps: '8-10' },       // Remo Barra (Row 1173)
-                { name: 'Dumbbell Bent Over Row', sets: 4, reps: '10-12' },    // Remo Mancuerna (Row 1250)
+                { name: 'Einarmiges Rudern', sets: 4, reps: '10-12' },    // Remo Mancuerna (Row 1250)
                 { name: 'Lat Pull Down (close grip)', sets: 3, reps: '10-12' },// Jalón al Pecho Cerrado (Row 1333)
                 { name: 'Bizeps LH-Curls', sets: 4, reps: '8-10' },            // Curl Barra (Row 1177)
                 { name: 'Hammercurls', sets: 4, reps: '10-12' },               // Curl Martillo (Row 1201)
@@ -50,8 +50,8 @@ module.exports = {
                 { name: 'Front Kniebeuge', sets: 4, reps: '6-8' },             // Sentadilla Frontal (Row 1199)
                 { name: 'Kreuzheben', sets: 4, reps: '6-8' },                  // Peso Muerto (Row 1189)
                 { name: 'Beinpresse', sets: 4, reps: '10-12' },                // Prensa (Row 1222)
-                { name: 'Leg Curl', sets: 4, reps: '10-12' },                  // Curl Femoral (Row 1212)
-                { name: 'Leg Extension', sets: 4, reps: '12-15' },             // Extensión Cuádriceps (Row 1299)
+                { name: 'Beinbeuger', sets: 4, reps: '10-12' },                  // Curl Femoral (Row 1212)
+                { name: 'Beinstrecker (Leg Extension)', sets: 4, reps: '12-15' },             // Extensión Cuádriceps (Row 1299)
                 { name: 'Wadenheben Stehend', sets: 4, reps: '15-20' }         // Gemelos de pie (Row 1243)
               ]
             },
@@ -61,7 +61,7 @@ module.exports = {
               exercises: [
                 { name: 'Schrägbankdrücken LH', sets: 4, reps: '8-10' },       // Press Inclinado Barra (Row 1233)
                 { name: 'Fliegende KH Flachbank', sets: 4, reps: '10-12' },    // Aperturas Planas (Row 1194)
-                { name: 'Dumbbell Bench Press', sets: 4, reps: '8-10' },       // Press Plano Mancuernas (Row 1331)
+                { name: 'Bankdrücken KH', sets: 4, reps: '8-10' },       // Press Plano Mancuernas (Row 1331)
                 { name: 'Seitheben am Kabel, Einarmig', sets: 4, reps: '12-15' }, // Elev. Lat. Cable (Row 1210)
                 { name: 'Dips Zwischen 2 Bänke', sets: 3, reps: '10-12' },     // Fondos entre bancos (Row 1196)
                 { name: 'Triceps Overhead (Dumbbell)', sets: 4, reps: '10-12' }// Ext. Tríceps Copa (Row 1328)
@@ -72,12 +72,12 @@ module.exports = {
               description: 'Segunda sesión de tracción con variaciones de ángulo.',
               exercises: [
                 { name: 'Rack Deadlift', sets: 4, reps: '5-6' },               // Rack Pulls (Row 1223)
-                { name: 'Seated Cable Row', sets: 4, reps: '8-10' },           // Remo Gironda (Row 1312)
+                { name: 'Rudern Sitzend, Eng', sets: 4, reps: '8-10' },           // Remo Gironda (Row 1312)
                 { name: 'Latzug Eng', sets: 4, reps: '10-12' },                // Jalón Estrecho (Row 1182)
                 { name: 'Remo maquina agarre estrecho', sets: 3, reps: '12-15' }, // Remo Máquina (Row 1277)
-                { name: 'Concentration Curl', sets: 4, reps: '10-12 c/u' },    // Curl Concentrado (Row 1264)
+                { name: 'Konzentrationscurl am Kabelzug', sets: 4, reps: '10-12 c/u' },    // Curl Concentrado (Row 1264)
                 { name: 'Bizeps am Kabel', sets: 4, reps: '12-15' },           // Curl Cable (Row 1180)
-                { name: 'Curl de biceps con agarre prono', sets: 3, reps: '12-15' } // Curl Inverso (Row 1291)
+                { name: 'Hammercurls am Seil', sets: 3, reps: '12-15' } // Curl Inverso (Row 1291)
               ]
             }
           ]
@@ -91,11 +91,11 @@ module.exports = {
               name: 'Full Body Metabólico A',
               description: 'Alta intensidad para maximizar quema calórica.',
               exercises: [
-                { name: 'Devil’s Press', sets: 4, reps: '10-12' },             // Row 1348
-                { name: 'Dumbbell Goblet Squat', sets: 4, reps: '15-20' },     // Row 1190
-                { name: 'Plank Shoulter Taps', sets: 4, reps: '30-45s' },      // Row 1255
-                { name: 'Push-Up', sets: 4, reps: '15-20' },                   // Row 1342
-                { name: 'Dumbbell Hang Power Cleans', sets: 4, reps: '12-15' },// Row 1252
+                { name: 'Devil\'s Press', sets: 4, reps: '10-12' },             // Row 1348
+                { name: 'Goblet Squat mit Kurzhantel', sets: 4, reps: '15-20' },     // Row 1190
+                { name: 'Plank Shoulder Taps', sets: 4, reps: '30-45s' },      // Row 1255
+                { name: 'Liegestütz', sets: 4, reps: '15-20' },                   // Row 1342
+                { name: 'Hang Power Cleans mit Kurzhanteln', sets: 4, reps: '12-15' },// Row 1252
                 { name: 'Plank', sets: 3, reps: '45-60s' }                     // Row 1228
               ]
             },
@@ -104,7 +104,7 @@ module.exports = {
               description: 'Circuito de cuerpo completo para resistencia.',
               exercises: [
                 { name: 'Lateral Push Off', sets: 4, reps: '12-15' },          // Row 1325
-                { name: 'Dumbbell Rear Lunge', sets: 3, reps: '15 c/lado' },   // Row 1266
+                { name: 'Rückwärtiger Ausfallschritt mit Kurzhanteln', sets: 3, reps: '15 c/lado' },   // Row 1266
                 { name: 'Single Arm Plank to Row', sets: 4, reps: '10-12' },   // Row 1160
                 { name: 'Shoulder Press (Dumbbell)', sets: 3, reps: '15-20' }, // Row 1329
                 { name: 'Sit-Ups (Ellenbogen zum Knie)', sets: 3, reps: '20 c/lado' } // Row 1340
@@ -121,8 +121,8 @@ module.exports = {
               name: 'Torso Fuerza',
               description: 'Ejercicios compuestos pesados para el tren superior.',
               exercises: [
-                { name: 'Dumbbell Bench Press', sets: 5, reps: '5-8' },        // Row 1331
-                { name: 'Dumbbell Bent Over Row', sets: 5, reps: '6-8' },      // Row 1250
+                { name: 'Bankdrücken KH', sets: 5, reps: '5-8' },        // Row 1331
+                { name: 'Einarmiges Rudern', sets: 5, reps: '6-8' },      // Row 1250
                 { name: 'Shoulder Press (Dumbbell)', sets: 4, reps: '6-8' },   // Row 1329
                 { name: 'Chin-ups', sets: 4, reps: 'Al fallo' }                // Row 1185
               ]
@@ -131,10 +131,10 @@ module.exports = {
               name: 'Pierna Fuerza',
               description: 'Fuerza para piernas usando mancuernas.',
               exercises: [
-                { name: 'Dumbbell Front Squat', sets: 5, reps: '6-8' },        // Row 1257
-                { name: 'Dumbbell Romanian Deadlift', sets: 5, reps: '6-8' },  // Row 1267
-                { name: 'Dumbbell Hip Thrust', sets: 4, reps: '8-10' },        // Row 1259
-                { name: 'Dumbbell Rear Lunge', sets: 3, reps: '8-10' }         // Row 1266
+                { name: 'Frontkniebeuge mit Kurzhanteln', sets: 5, reps: '6-8' },        // Row 1257
+                { name: 'Rumänisches Kreuzheben mit Kurzhanteln', sets: 5, reps: '6-8' },  // Row 1267
+                { name: 'Hip Thrust mit Kurzhantel', sets: 4, reps: '8-10' },        // Row 1259
+                { name: 'Rückwärtiger Ausfallschritt mit Kurzhanteln', sets: 3, reps: '8-10' }         // Row 1266
               ]
             }
           ]
