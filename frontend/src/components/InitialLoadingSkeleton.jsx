@@ -4,12 +4,12 @@ import Skeleton from './Skeleton';
 
 const InitialLoadingSkeleton = () => {
     return (
-        <div className="min-h-screen w-full bg-bg-primary flex flex-col">
+        <div className="min-h-screen w-full bg-transparent flex flex-col">
             <div 
                 className="w-full flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 animate-[fade-in_0.5s_ease-out]"
                 style={{ 
-                    paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
-                    paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' 
+                    paddingTop: 'calc(1.5rem + var(--safe-top))',
+                    paddingBottom: 'calc(6rem + var(--safe-bottom))' 
                 }}
             >
             {/* Header Title (Desktop) */}

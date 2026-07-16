@@ -70,9 +70,11 @@ export const createSocialSlice = (set, get) => ({
         try {
             await socialService.respondFriendRequest(requestId, action);
             
-            get().fetchFriendRequests();
+            await get().fetchFriendRequests();
             if (action === 'accept') {
-                get().fetchFriends();
+                // Pequeño retraso para asegurar que la base de datos haya reflejado el cambio
+                await new Promise(resolve => setTimeout(resolve, 300));
+                await get().fetchFriends();
             }
         } catch (error) {
             set({ socialError: error.message });

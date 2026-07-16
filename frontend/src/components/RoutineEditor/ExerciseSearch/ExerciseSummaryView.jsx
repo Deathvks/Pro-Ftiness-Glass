@@ -53,7 +53,7 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
       </div>
 
       {/* Lista de ejercicios en carrito */}
-      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5 custom-scrollbar pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5 custom-scrollbar pb-[calc(1.5rem+var(--safe-bottom))]">
         {stagedExercises.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 mt-10 max-w-sm mx-auto text-center animate-[fade-in_0.3s_ease-out] bg-black/5 dark:bg-white/5 rounded-[32px] ring-1 ring-black/5 dark:ring-white/10">
             <div className="w-20 h-20 bg-bg-primary rounded-[24px] flex items-center justify-center mb-6 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
@@ -160,7 +160,7 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
       </div>
 
       {/* Footer (Finalizar) */}
-      <div className="flex-shrink-0 p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/80 backdrop-blur-md pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-8">
+      <div className="flex-shrink-0 p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/80 backdrop-blur-md pb-[calc(1.5rem+var(--safe-bottom))] md:pb-8">
         <button
           onClick={onFinalize}
           disabled={stagedExercises.length === 0 || !isCartValid}

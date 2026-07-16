@@ -256,7 +256,7 @@ const DailyDetailView = ({ logs, onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
         {/* Contenedor Modal: Flex Column con max-height */}
         <div className={`relative w-full max-w-lg p-0 flex flex-col m-4 bg-bg-primary rounded-2xl shadow-2xl border ${subtleBorderClass} max-h-[80vh] md:max-h-[90vh] overflow-hidden animate-[scale-in_0.3s_ease-out]`}>
 
@@ -427,7 +427,7 @@ const DailyDetailView = ({ logs, onClose }) => {
 
       {/* MODAL DEL MAPA EXPANDIDO */}
       {expandedMapPath && (
-        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
           <div className={`relative w-full h-full max-w-4xl max-h-[85vh] bg-bg-primary rounded-2xl overflow-hidden shadow-2xl border ${subtleBorderClass} flex flex-col`}>
             <div className="absolute top-4 right-4 z-[1000]">
               <button

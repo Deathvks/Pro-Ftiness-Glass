@@ -1,10 +1,13 @@
 /* frontend/src/components/MainAppLayout.jsx */
 import React, { Suspense, useEffect, useState, useRef } from 'react';
-import { User, Zap, Bell, Settings, Sparkles } from 'lucide-react';
+import { SparklesIcon, BellIcon, Cog8ToothIcon as SettingsIcon, UserIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
+import { BoltIcon as Zap, CheckCircleIcon } from '@heroicons/react/24/solid';
 import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
+import { initSocket } from '../services/socket';
+import * as userService from '../services/userService';
 
 // Componentes UI
 import Sidebar from './Sidebar';
@@ -19,6 +22,7 @@ import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
 import AIInfoModal from './AIInfoModal';
 import MilestoneLevelUpModal from './MilestoneLevelUpModal';
+import ReferralSuccessAnimation from './ReferralSuccessAnimation';
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -49,6 +53,7 @@ export default function MainAppLayout({
   setShowEmailVerificationModal,
   setShowCodeVerificationModal,
   fetchInitialData,
+  profileImgSrc,
 }) {
   const { addToast } = useToast();
   useOfflineSync();
@@ -66,6 +71,7 @@ export default function MainAppLayout({
     notifications,
     fetchNotifications,
     gamification,
+    setGamificationData,
     unlockMilestone,
     gamificationEvents,
     clearGamificationEvents,
@@ -85,6 +91,7 @@ export default function MainAppLayout({
     notifications: state.notifications || [],
     fetchNotifications: state.fetchNotifications,
     gamification: state.gamification,
+    setGamificationData: state.setGamificationData,
     unlockMilestone: state.unlockMilestone,
     gamificationEvents: state.gamification?.gamificationEvents,
     clearGamificationEvents: state.clearGamificationEvents,
@@ -121,17 +128,40 @@ export default function MainAppLayout({
 
   // --- DETECCIÓN DE SCROLL PARA MATCHEAR LA TRANSPARENCIA DEL NOTCH iOS 27 ---
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
 
   useEffect(() => {
     const node = mainContentRef?.current;
     if (!node) return;
 
     const handleScroll = () => {
-      setIsScrolled(node.scrollTop > 4);
+      const currentScrollTop = node.scrollTop;
+      setIsScrolled(currentScrollTop > 4);
+      
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (!isAndroid) {
+        setIsHeaderHidden(currentScrollTop > 20);
+      } else {
+        setIsHeaderHidden(false);
+      }
     };
 
     handleScroll();
     node.addEventListener('scroll', handleScroll, { passive: true });
+
+    // iOS PWA hack: force WebKit to recalculate env(safe-area-inset-top)
+    // Often it evaluates to 0 on initial PWA launch until a resize or scroll occurs.
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      setTimeout(() => {
+        document.body.style.paddingTop = '1px';
+        window.dispatchEvent(new Event('resize'));
+        setTimeout(() => {
+          document.body.style.paddingTop = '0px';
+        }, 50);
+      }, 100);
+    }
+
     return () => node.removeEventListener('scroll', handleScroll);
   }, [mainContentRef, view]);
 
@@ -179,6 +209,18 @@ export default function MainAppLayout({
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const unreadReferrals = notifications.filter(n => !n.is_read && n.type === 'referral_success');
+      if (unreadReferrals.length > 0) {
+        unreadReferrals.forEach(n => {
+          useAppStore.getState().addReferralAnimation({ friendName: n.data?.friendName || 'Tu amigo' });
+          useAppStore.getState().markNotificationAsRead(n.id);
+        });
+      }
+    }
+  }, [notifications]);
 
   // EFECTO DE TRANSICIÓN ANIMADA
   useEffect(() => {
@@ -248,6 +290,12 @@ export default function MainAppLayout({
         }
       }
       node = node.parentNode;
+    }
+
+    // Block swipe if view is not in main nav items (i.e. it's a sub-page)
+    const currentIndex = navItems.findIndex(item => item.id === view);
+    if (currentIndex === -1) {
+      blockSwipe = true;
     }
 
     if (blockSwipe) {
@@ -510,11 +558,55 @@ export default function MainAppLayout({
           addToast(`+${event.amount} XP: ${event.reason}`, 'success');
         } else if (event.type === 'badge') {
           addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+        } else if (event.type === 'challenge_completed') {
+          addToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
+          if (event.leveledUp) {
+            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🏆`, 'success', 6000);
+          }
         }
       });
       clearGamificationEvents();
     }
   }, [gamificationEvents, clearGamificationEvents, addToast]);
+
+  useEffect(() => {
+    if (!userProfile) return;
+    
+    const socket = initSocket();
+    if (!socket) return;
+
+    const handleGamificationEvent = async (data) => {
+      if (data.type === 'referral_success') {
+        useAppStore.getState().addReferralAnimation(data);
+      } else if (data.type === 'challenge_completed') {
+        addToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
+        if (data.leveledUp) {
+          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🏆`, 'success', 6000);
+        }
+      }
+      
+      if (data.type === 'challenge_completed' || data.type === 'referral_success') {
+        
+        try {
+          const profileData = await userService.getMyProfile();
+          if (profileData && setGamificationData) {
+            setGamificationData({
+              xp: profileData.xp,
+              level: profileData.level,
+              streak: profileData.streak,
+              last_activity_date: profileData.last_activity_date,
+              unlocked_badges: profileData.unlocked_badges
+            });
+          }
+        } catch (error) {
+          console.error("Error actualizando perfil tras reto completado:", error);
+        }
+      }
+    };
+
+    socket.on('GAMIFICATION_EVENT', handleGamificationEvent);
+    return () => socket.off('GAMIFICATION_EVENT', handleGamificationEvent);
+  }, [userProfile, addToast, setGamificationData]);
 
   useEffect(() => {
     if (userProfile && userProfile.email && userProfile.email.endsWith('@x-auth.local')) {
@@ -575,7 +667,7 @@ export default function MainAppLayout({
   const isDropVisible = activeIndex !== -1 && dragX > 0;
 
   return (
-    <div className="relative flex flex-1 w-full h-full overflow-hidden bg-bg-primary">
+    <div className="relative flex flex-1 w-full h-full overflow-hidden bg-transparent">
       
       <Sidebar
         view={view}
@@ -589,14 +681,46 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
+
+
         <header 
-          className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out pt-[env(safe-area-inset-top)] transform-gpu translate-z-0 ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : 'opacity-100 translate-y-0'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl' : 'bg-transparent'}`}
+          className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl shadow-sm' : 'bg-transparent'}`}
+          style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+              {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges', 'nutrition', 'routines'].includes(view) ? (
+                <button
+                  onClick={() => navigate('hub')}
+                  className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <ChevronLeftIcon className="w-6 h-6" />
+                </button>
+              ) : ['profile', 'notifications', 'twoFactorSetup', 'privacyPolicy', 'terms'].includes(view) ? (
+                <button
+                  onClick={() => navigate('dashboard')}
+                  className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <ChevronLeftIcon className="w-6 h-6" />
+                </button>
+              ) : (
+                <button 
+                  onClick={() => navigate('profile')}
+                  className="w-8 h-8 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary active:scale-95 transition-transform"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  {profileImgSrc ? (
+                    <img src={profileImgSrc} alt="Perfil" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-5 h-5 text-text-secondary" />
+                  )}
+                </button>
+              )}
               <span
                 key={currentTitle}
-                className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary"
+                className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1"
               >
                 {currentTitle}
               </span>
@@ -615,7 +739,7 @@ export default function MainAppLayout({
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   title="Créditos IA"
                 >
-                  <Sparkles size={14} />
+                  <SparklesIcon className="w-3.5 h-3.5" />
                   <span>{aiRemaining}/{aiLimit}</span>
                 </button>
               </div>
@@ -628,22 +752,12 @@ export default function MainAppLayout({
                   className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <Bell size={24} />
+                  <BellIcon className="w-6 h-6" />
                   {unreadCount > 0 && <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>}
                 </button>
               </div>
 
-              <div
-                className={`flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${view === 'settings' ? 'w-0 opacity-0 ml-0 translate-x-4' : 'w-10 opacity-100 ml-0 sm:ml-2 translate-x-0'}`}
-              >
-                <button
-                  onClick={() => handleNavClick('settings')}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  <Settings size={24} />
-                </button>
-              </div>
+
             </div>
           </div>
         </header>
@@ -653,13 +767,24 @@ export default function MainAppLayout({
             if (mainContentRef) mainContentRef.current = el;
             swipeContainerRef.current = el;
           }}
-          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[calc(env(safe-area-inset-top)+3.5rem)] md:pt-[env(safe-area-inset-top,0px)]"
-          style={{ backgroundColor: 'transparent', touchAction: 'pan-y' }}
+          className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{ paddingTop: 'calc(var(--safe-top) + 3.5rem)', backgroundColor: 'transparent', touchAction: 'pan-y' }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
+          {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges', 'emotional-onboarding'].includes(view) && (
+            <div className="hidden md:flex items-center px-4 sm:px-6 pt-2 pb-4 w-full max-w-4xl mx-auto">
+              <button
+                onClick={() => navigate('hub')}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm"
+              >
+                <ChevronLeftIcon className="w-5 h-5" />
+                <span className="font-bold text-sm">Atrás</span>
+              </button>
+            </div>
+          )}
+
           <div className="w-full relative">
             <Suspense fallback={<LoadingFallback />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
@@ -730,8 +855,9 @@ export default function MainAppLayout({
                   style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
-                    {item.icon}
+                    {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
                     {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>}
+                    {pendingCount === 0 && item.badge && <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>}
                   </div>
                 </button>
               );
@@ -824,6 +950,12 @@ export default function MainAppLayout({
 
       <AndroidDownloadPrompt />
       <APKUpdater />
+      <ReferralSuccessAnimation />
     </div>
   );
 }
+
+
+
+
+

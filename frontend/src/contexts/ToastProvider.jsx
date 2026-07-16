@@ -33,7 +33,7 @@ const ToastProvider = ({ children }) => {
     [data-sonner-toaster][data-y-position="top"],
     [data-sileo-toaster] {
       z-index: 2147483647 !important;
-      top: max(env(safe-area-inset-top), 55px) !important;
+      top: max(var(--safe-top), 55px) !important;
       margin-top: 10px !important;
     }
 

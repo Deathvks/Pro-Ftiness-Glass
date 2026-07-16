@@ -21,32 +21,7 @@ import CustomSelect from '../components/CustomSelect';
 import GlassCard from '../components/GlassCard';
 import { useAppTheme } from '../hooks/useAppTheme';
 
-// --- Constantes ---
-const ACCENT_OPTIONS = [
-  { id: 'green', label: 'Verde', hex: '#22c55e' },
-  { id: 'blue', label: 'Azul', hex: '#3b82f6' },
-  { id: 'violet', label: 'Violeta', hex: '#8b5cf6' },
-  { id: 'amber', label: 'Ámbar', hex: '#f59e0b' },
-  { id: 'rose', label: 'Rosa', hex: '#f43f5e' },
-  { id: 'teal', label: 'Turquesa', hex: '#14b8a6' },
-  { id: 'cyan', label: 'Cian', hex: '#06b6d4' },
-  { id: 'orange', label: 'Naranja', hex: '#f97316' },
-  { id: 'lime', label: 'Lima', hex: '#84cc16' },
-  { id: 'fuchsia', label: 'Fucsia', hex: '#d946ef' },
-  { id: 'emerald', label: 'Esmeralda', hex: '#10b981' },
-  { id: 'indigo', label: 'Índigo', hex: '#6366f1' },
-  { id: 'purple', label: 'Púrpura', hex: '#a855f7' },
-  { id: 'pink', label: 'Rosa Claro', hex: '#ec4899' },
-  { id: 'red', label: 'Rojo', hex: '#ef4444' },
-  { id: 'yellow', label: 'Amarillo', hex: '#eab308' },
-  { id: 'sky', label: 'Cielo', hex: '#0ea5e9' },
-  { id: 'slate', label: 'Pizarra', hex: '#64748b' },
-  { id: 'zinc', label: 'Zinc', hex: '#71717a' },
-  { id: 'stone', label: 'Piedra', hex: '#78716c' },
-  { id: 'neutral', label: 'Neutral', hex: '#737373' }
-];
-
-// --- TIMEZONES COMUNES ---
+// --- Constantes ---// --- TIMEZONES COMUNES ---
 const TIMEZONES = [
   { value: 'Europe/Madrid', label: 'Europa/Madrid (Península)' },
   { value: 'Atlantic/Canary', label: 'Atlantic/Canary (Islas Canarias)' },
@@ -143,23 +118,6 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
   </div>
 );
 
-const TikTokIcon = ({ size = 20, className }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-  </svg>
-);
-
 export default function SettingsScreen({
   setView,
   onLogoutClick,
@@ -169,53 +127,34 @@ export default function SettingsScreen({
   const {
     userProfile,
     resetCookieConsent,
-    setUserProfile,
-    hapticsEnabled,
-    setHapticsEnabled
+    setUserProfile
   } = useAppStore(state => ({
     userProfile: state.userProfile,
     resetCookieConsent: state.resetCookieConsent,
-    setUserProfile: state.setUserProfile,
-    hapticsEnabled: state.hapticsEnabled,
-    setHapticsEnabled: state.setHapticsEnabled
+    setUserProfile: state.setUserProfile
   }));
 
   const { addToast } = useToast();
-  
-  const { 
-    theme, activeTheme, setTheme, accent, setAccent, 
-    startThemeTest, isTestingTheme, testTimeLeft 
-  } = useAppTheme();
 
-  const [currentColorPage, setCurrentColorPage] = useState(0);
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
 
-  const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
-
-  const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
-  const [pendingThemeAction, setPendingThemeAction] = useState(null);
-
+  const [activeTab, setActiveTab] = useState('profile');
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
 
-  // AÑADIDO: Administradores tienen el tema Galaxia desbloqueado
-  const isGalaxyUnlocked = (userProfile?.referralCount || 0) >= 3 || userProfile?.role === 'admin';
+  const SETTINGS_TABS = [
+    { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'notifications', label: 'Notificaciones', icon: BellRing },
+    { id: 'security', label: 'Seguridad', icon: Shield },
+    { id: 'region', label: 'Región y Hora', icon: Globe },
+    { id: 'privacy', label: 'Privacidad Social', icon: Users },
+    { id: 'session', label: 'Sesión', icon: LogOut, danger: true },
+  ];
 
   const [autoTimezone, setAutoTimezone] = useState(() => {
     return localStorage.getItem('settings_auto_timezone') === 'true';
-  });
-
-  const [showBugModal, setShowBugModal] = useState(() => {
-    try {
-      const draftStr = localStorage.getItem('bug_report_draft');
-      if (!draftStr) return false;
-      const draft = JSON.parse(draftStr);
-      return !!(draft.hasContent || draft.category || draft.subject?.trim() || draft.description?.trim());
-    } catch {
-      return false;
-    }
   });
 
   const {
@@ -227,12 +166,15 @@ export default function SettingsScreen({
     permission: pushPermission
   } = usePushNotifications();
 
-  const showGooglePlayLink = isAndroidWebOrPWA();
 
   useEffect(() => {
-    if (highlight === 'social_privacy' && socialPrivacyRef.current) {
+    if (highlight === 'social_privacy') {
+      setActiveTab('privacy'); // Cambiar a la pestaña correcta
+      
       setTimeout(() => {
-        socialPrivacyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (socialPrivacyRef.current) {
+          socialPrivacyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }, 100);
 
       setHighlightedSection('social_privacy');
@@ -245,29 +187,6 @@ export default function SettingsScreen({
     }
   }, [highlight]);
 
-  useEffect(() => {
-    const fetchVersionInfo = async () => {
-      try {
-        const response = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.downloadUrl) {
-            setApkDownloadUrl(data.downloadUrl);
-          }
-        }
-      } catch (error) {
-        console.warn("No se pudo obtener la información de versión dinámica", error);
-      }
-    };
-    fetchVersionInfo();
-  }, []);
-
-  const COLORS_PER_PAGE = 12;
-  const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
-  const currentColors = ACCENT_OPTIONS.slice(
-    currentColorPage * COLORS_PER_PAGE,
-    (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
-  );
 
   const timezoneOptions = useMemo(() => {
     const options = [...TIMEZONES];
@@ -404,125 +323,7 @@ export default function SettingsScreen({
     if (isSubscribed) return 'Recibiendo alertas';
     return 'Pausadas';
   };
-
-  const handleThemeClick = (mode) => {
-    if (isIOS()) {
-      setPendingThemeAction({ type: 'apply', payload: mode });
-      setShowThemeReloadModal(true);
-    } else {
-      setTheme(mode);
-    }
-  };
-
-  const confirmThemeReload = () => {
-    if (pendingThemeAction?.type === 'apply') {
-      setTheme(pendingThemeAction.payload, true);
-    } else if (pendingThemeAction?.type === 'test') {
-      startThemeTest(pendingThemeAction.payload, true);
-    }
-    setShowThemeReloadModal(false);
-    setPendingThemeAction(null);
-  };
-
   const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
-
-  // Verificación de si Galaxia está activo para bloquear la cuadrícula de colores
-  const isGalaxyActive = activeTheme === 'galaxy';
-
-  const soporteCard = (
-    <GlassCard className={glassCardClass}>
-      <SectionTitle icon={Info} title="Soporte y General" />
-      <div className="flex flex-col gap-3">
-
-        {showGooglePlayLink && (
-          <a href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419" target="_blank" rel="noopener noreferrer" className="no-underline">
-            <SettingsItem
-              icon={Play}
-              title="Google Play"
-              subtitle="Consigue la App oficial"
-              action={<ChevronRight size={18} className="text-text-muted" />}
-            />
-          </a>
-        )}
-
-        <a
-          href={apkDownloadUrl || "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v5.1.0/app-release.apk"}
-          className="no-underline"
-        >
-          <SettingsItem
-            icon={Smartphone}
-            title="Descargar App Android"
-            subtitle="Instalar APK nativo"
-            action={<Download size={18} className="text-accent shrink-0" />}
-          />
-        </a>
-
-        <SettingsItem
-          icon={Bug}
-          title="Reportar un problema"
-          subtitle="¿Algo no funciona bien?"
-          onClick={() => setShowBugModal(true)}
-        />
-
-        <a href="mailto:profitnessglass@gmail.com" className="no-underline">
-          <SettingsItem icon={Mail} title="Contactar Soporte" subtitle="profitnessglass@gmail.com" />
-        </a>
-
-        <div className="my-2" />
-        <SectionTitle icon={Share2} title="Síguenos" />
-        
-        <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="no-underline">
-          <SettingsItem
-            icon={Instagram}
-            title="Instagram"
-            subtitle="@pro_fitness_glass"
-            action={<ChevronRight size={18} className="text-text-muted shrink-0" />}
-          />
-        </a>
-        <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="no-underline">
-          <SettingsItem
-            icon={TikTokIcon}
-            title="TikTok"
-            subtitle="@pro_fitness_glass"
-            action={<ChevronRight size={18} className="text-text-muted shrink-0" />}
-          />
-        </a>
-        <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="no-underline">
-          <SettingsItem
-            icon={Youtube}
-            title="YouTube"
-            subtitle="@ProFitnessGlass"
-            action={<ChevronRight size={18} className="text-text-muted shrink-0" />}
-          />
-        </a>
-
-        <div className="my-2" />
-
-        <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
-          <SettingsItem icon={Info} title="Créditos" subtitle="Datos por wger" />
-        </a>
-
-        <div className="flex md:hidden items-center gap-4 w-full p-4 rounded-[20px] bg-black/5 dark:bg-white/5 text-text-primary">
-          <div className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-accent shrink-0">
-            <Binary size={20} />
-          </div>
-          <div className="flex-1 text-left min-w-0">
-            <div className="text-sm font-bold truncate">Versión de App</div>
-            <div className="text-[10px] sm:text-xs text-text-secondary font-medium truncate mt-0.5">v{APP_VERSION}</div>
-          </div>
-        </div>
-
-        <div className="my-2" />
-
-        <SettingsItem
-          icon={LogOut}
-          title="Cerrar Sesión"
-          onClick={onLogoutClick}
-          danger
-        />
-      </div>
-    </GlassCard>
-  );
 
   return (
     <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
@@ -536,166 +337,32 @@ export default function SettingsScreen({
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8 items-start">
+      <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
+        {/* --- TABS LATERALES / HORIZONTALES --- */}
+        <div className="w-full md:w-64 shrink-0 flex md:flex-col gap-3 md:gap-2 overflow-x-auto py-5 md:py-0 px-2 md:px-0 hide-scrollbar sticky top-4 z-20 -mt-2 md:mt-0">
+          {SETTINGS_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2.5 px-5 py-3 md:p-4 rounded-[20px] transition-all duration-300 font-bold whitespace-nowrap outline-none shrink-0
+                ${activeTab === tab.id
+                  ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                  : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'
+                }
+                ${tab.danger && activeTab !== tab.id ? 'hover:text-red-500' : ''}
+                ${tab.danger && activeTab === tab.id ? 'bg-red-500 shadow-red-500/30' : ''}
+              `}
+            >
+              <tab.icon size={20} className={activeTab === tab.id ? 'animate-[pulse_2s_ease-in-out_infinite]' : ''} />
+              <span className="text-sm md:text-base">{tab.label}</span>
+            </button>
+          ))}
+        </div>
 
-        {/* --- COLUMNA 1 --- */}
-        <div className="flex flex-col gap-6 lg:gap-8">
-          <GlassCard className={glassCardClass}>
-            <SectionTitle icon={Palette} title="Apariencia" />
+        {/* --- CONTENIDO --- */}
+        <div className="flex-1 w-full flex flex-col gap-6 lg:gap-8">
 
-            <div className="mb-6">
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Tema</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {['system', 'light', 'dark', 'oled'].map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => handleThemeClick(mode)}
-                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-[20px] transition-all duration-300 ${theme === mode && !isTestingTheme
-                      ? 'bg-accent text-white shadow-lg shadow-accent/30 scale-105'
-                      : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
-                      }`}
-                  >
-                    {mode === 'system' && <MonitorCog size={22} />}
-                    {mode === 'light' && <Sun size={22} />}
-                    {mode === 'dark' && <Moon size={22} />}
-                    {mode === 'oled' && <Smartphone size={22} />}
-                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                      {mode === 'system' ? 'Sistema' :
-                        mode === 'light' ? 'Claro' :
-                          mode === 'dark' ? 'Oscuro' : 'OLED'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* --- SECCIÓN GALAXIA --- */}
-            <div className="mb-8">
-              <div className={`p-4 rounded-[20px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20 scale-[1.02]' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-[14px] ${isGalaxyUnlocked ? 'bg-[#a855f7]/20 text-[#a855f7]' : 'bg-black/10 dark:bg-white/10 text-text-muted'}`}>
-                       <FaMeteor size={22} />
-                    </div>
-                    <div>
-                      <div className={`text-sm font-bold ${isGalaxyUnlocked ? 'bg-clip-text text-transparent bg-gradient-to-r from-[#a855f7] to-[#3b82f6]' : 'text-text-primary'}`}>
-                        Tema Galaxia
-                      </div>
-                      <div className="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1 mt-0.5">
-                        {isGalaxyUnlocked ? (
-                          <><LockOpen size={12} className="text-green-500" /> Desbloqueado</>
-                        ) : (
-                          <><Lock size={12} className="text-text-muted" /> Invita a 3 amigos</>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    {isGalaxyUnlocked ? (
-                       <button 
-                         onClick={() => handleThemeClick('galaxy')} 
-                         className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${theme === 'galaxy' ? 'bg-[#a855f7] text-white shadow-lg shadow-[#a855f7]/30' : 'bg-black/10 dark:bg-white/10 hover:bg-[#a855f7]/20 text-[#a855f7]'}`}
-                       >
-                         {theme === 'galaxy' ? 'Activo' : 'Aplicar'}
-                       </button>
-                    ) : (
-                       <button 
-                         onClick={() => {
-                           if (isIOS()) {
-                             setPendingThemeAction({ type: 'test', payload: 10 });
-                             setShowThemeReloadModal(true);
-                           } else {
-                             startThemeTest(10);
-                           }
-                         }} 
-                         disabled={isTestingTheme} 
-                         className="px-4 py-2 rounded-full text-xs font-bold bg-[#a855f7]/20 text-[#a855f7] hover:bg-[#a855f7]/30 transition-all flex items-center justify-center gap-1.5 disabled:opacity-80 whitespace-nowrap min-w-[110px]"
-                       >
-                         {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar 10s'}
-                       </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* ---------------------- */}
-
-            <div>
-              <div className="flex justify-between items-center mb-4 ml-1">
-                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento</h3>
-                {totalPages > 1 && (
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
-                      disabled={currentColorPage === 0 || isGalaxyActive}
-                      className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button
-                      onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={currentColorPage === totalPages - 1 || isGalaxyActive}
-                      className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              {/* BLOQUEO DE ACENTOS SI GALAXIA ESTÁ ACTIVO */}
-              <div className={`transition-all duration-300 ${isGalaxyActive ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
-                <div className="grid grid-cols-6 gap-3 sm:gap-4">
-                  {currentColors.map(opt => (
-                    <button
-                      key={opt.id}
-                      onClick={() => setAccent(opt.id)}
-                      title={opt.label}
-                      className="group relative flex justify-center items-center w-full aspect-square"
-                    >
-                      <span
-                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                        style={{
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                {isGalaxyActive && (
-                  <p className="text-[10px] sm:text-xs text-[#a855f7] font-bold mt-4 ml-1 flex items-center gap-1.5">
-                    <Info size={14} /> El Tema Galaxia usa su propio acento morado estelar.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <SwitchItem
-                icon={Vibrate}
-                title="Vibración"
-                subtitle="Feedback táctil en acciones"
-                checked={hapticsEnabled}
-                onChange={() => {
-                  const newValue = !hapticsEnabled;
-                  setHapticsEnabled(newValue);
-                  addToast(newValue ? 'Vibración activada' : 'Vibración desactivada', 'success');
-                }}
-              />
-            </div>
-          </GlassCard>
-
-          <div className="block xl:hidden">
-            {soporteCard}
-          </div>
-
+          {activeTab === 'notifications' && (
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={BellRing} title="Notificaciones" />
             <div className="flex flex-col gap-3">
@@ -719,7 +386,9 @@ export default function SettingsScreen({
               />
             </div>
           </GlassCard>
+          )}
 
+          {activeTab === 'security' && (
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={Shield} title="Seguridad" />
             <div className="flex flex-col gap-3">
@@ -775,10 +444,8 @@ export default function SettingsScreen({
               )}
             </div>
           </GlassCard>
-        </div>
-
-        {/* --- COLUMNA 2 --- */}
-        <div className="flex flex-col gap-6 lg:gap-8">
+          )}
+          {activeTab === 'profile' && (
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={User} title="Perfil" />
             <div className="flex flex-col gap-3">
@@ -791,7 +458,8 @@ export default function SettingsScreen({
               />
             </div>
           </GlassCard>
-
+          )}
+          {activeTab === 'region' && (
           <GlassCard className={glassCardClass}>
             <SectionTitle icon={Globe} title="Región y Hora" />
             <div className="flex flex-col gap-5">
@@ -839,7 +507,9 @@ export default function SettingsScreen({
               </div>
             </div>
           </GlassCard>
+          )}
 
+          {activeTab === 'privacy' && (
           <div
             ref={socialPrivacyRef}
             className={`rounded-[32px] transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-xl shadow-accent/20 scale-[1.02]' : ''}`}
@@ -874,31 +544,27 @@ export default function SettingsScreen({
               </div>
             </GlassCard>
           </div>
+          )}
 
+          {activeTab === 'session' && (
           <GlassCard className={glassCardClass}>
             <ActiveSessions />
           </GlassCard>
-        </div>
+          )}
 
-        {/* --- COLUMNA 3 (Solo Desktop 'xl') --- */}
-        <div className="hidden xl:flex flex-col gap-8">
-          {soporteCard}
-        </div>
+          {activeTab === 'session' && (
+          <GlassCard className={glassCardClass}>
+            <SectionTitle icon={LogOut} title="Sesión" />
+            <SettingsItem
+              icon={LogOut}
+              title="Cerrar Sesión"
+              onClick={onLogoutClick}
+              danger
+            />
+          </GlassCard>
+          )}
       </div>
-
-      {showBugModal && (
-        <BugReportModal onClose={() => setShowBugModal(false)} />
-      )}
-
-      {showThemeReloadModal && (
-        <ConfirmationModal
-          message="En iOS es necesario recargar la página para aplicar los cambios de tema en la interfaz del sistema. ¿Deseas continuar?"
-          confirmText="Recargar"
-          cancelText="Cancelar"
-          onConfirm={confirmThemeReload}
-          onCancel={() => setShowThemeReloadModal(false)}
-        />
-      )}
+      </div>
     </div>
   );
 }

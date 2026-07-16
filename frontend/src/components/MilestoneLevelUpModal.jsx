@@ -15,7 +15,7 @@ export default function MilestoneLevelUpModal({ level, onClose }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md animate-[fade-in_0.5s_ease-out] overflow-hidden !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md animate-[fade-in_0.5s_ease-out] overflow-hidden !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
       {/* Rayos de luz giratorios de fondo */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-50">
         <div className="w-[150vw] h-[150vw] sm:w-[100vw] sm:h-[100vw] bg-[conic-gradient(from_0deg_at_50%_50%,_rgba(255,215,0,0)_0%,_rgba(255,215,0,0.1)_10%,_rgba(255,215,0,0)_20%,_rgba(255,215,0,0.1)_30%,_rgba(255,215,0,0)_40%,_rgba(255,215,0,0.1)_50%,_rgba(255,215,0,0)_60%,_rgba(255,215,0,0.1)_70%,_rgba(255,215,0,0)_80%,_rgba(255,215,0,0.1)_90%,_rgba(255,215,0,0)_100%)] animate-[spin_20s_linear_infinite]" />

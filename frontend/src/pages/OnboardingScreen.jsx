@@ -131,7 +131,7 @@ const AnimContainer = ({ children, direction }) => (
 );
 
 const StoryProgress = ({ total, current }) => (
-  <div className="flex gap-2 w-full px-6 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] z-50">
+  <div className="flex gap-2 w-full px-6 pt-[calc(var(--safe-top)+1.5rem)] z-50">
     {Array.from({ length: total }).map((_, idx) => (
       <div key={idx} className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
         <div
@@ -199,7 +199,7 @@ const FloatingFab = ({ onClick, disabled, isLoading, text, loadingText }) => (
   <button
     onClick={onClick}
     disabled={disabled || isLoading}
-    className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+2rem)] right-6 bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none z-50 text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
+    className="fixed bottom-[calc(var(--safe-bottom)+2rem)] right-6 bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none z-50 text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
   >
     {isLoading ? (
       <>
@@ -217,7 +217,7 @@ const FloatingFab = ({ onClick, disabled, isLoading, text, loadingText }) => (
 const BackButton = ({ onClick }) => (
   <button
     onClick={onClick}
-    className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+2rem)] left-6 p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/10 transition-all active:scale-75 z-50 backdrop-blur-md bg-black/20"
+    className="fixed bottom-[calc(var(--safe-bottom)+2rem)] left-6 p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/10 transition-all active:scale-75 z-50 backdrop-blur-md bg-black/20"
   >
     <ChevronLeft size={28} />
   </button>
@@ -709,7 +709,7 @@ const OnboardingScreen = () => {
         <StoryProgress total={totalSteps} current={step} />
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden w-full relative z-10">
-          <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 max-w-2xl mx-auto pt-20 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)]">
+          <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 max-w-2xl mx-auto pt-20 pb-[calc(var(--safe-bottom)+7rem)]">
             <div className="w-full">
               {renderContent()}
             </div>

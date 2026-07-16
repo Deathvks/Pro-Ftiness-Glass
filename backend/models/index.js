@@ -24,6 +24,7 @@ import Notification from './notificationModel.js';
 import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
+import UserChallenge from './userChallengeModel.js';
 
 // Nuevos modelos de Squads
 import Squad from './squadModel.js';
@@ -37,6 +38,7 @@ import WorkoutComment from './workoutCommentModel.js';
 import storyFactory from './storyModel.js';
 import storyLikeFactory from './storyLikeModel.js';
 import storyViewFactory from './storyViewModel.js';
+import XpLog from './xpLogModel.js';
 
 // 3. Inicializa los modelos de Historias
 const Story = storyFactory(sequelize, DataTypes);
@@ -48,6 +50,10 @@ const StoryView = storyViewFactory(sequelize, DataTypes);
 // --- Usuarios y Rutinas ---
 User.hasMany(Routine, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Routines' });
 Routine.belongsTo(User, { foreignKey: 'user_id' });
+
+// --- Retos / Gamificación ---
+User.hasMany(UserChallenge, { foreignKey: 'userId', onDelete: 'CASCADE', as: 'Challenges' });
+UserChallenge.belongsTo(User, { foreignKey: 'userId' });
 
 // --- Logs de Entrenamiento ---
 User.hasMany(WorkoutLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'WorkoutLogs' });
@@ -147,6 +153,9 @@ SquadMember.belongsTo(Squad, { foreignKey: 'squad_id' });
 User.hasMany(SquadMember, { foreignKey: 'user_id', as: 'UserSquadMemberships' });
 SquadMember.belongsTo(User, { foreignKey: 'user_id' });
 
+User.hasMany(XpLog, { foreignKey: 'user_id', as: 'XpLogs' });
+XpLog.belongsTo(User, { foreignKey: 'user_id' });
+
 const models = {
   sequelize,
   User,
@@ -173,10 +182,12 @@ const models = {
   Story,
   StoryLike,
   StoryView,
+  XpLog,
   Squad,
   SquadMember,
   WorkoutLike,
-  WorkoutComment
+  WorkoutComment,
+  UserChallenge
 };
 
 export default models;

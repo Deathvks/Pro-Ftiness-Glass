@@ -58,3 +58,52 @@ export const getTrainerAdvice = async (prompt, userContext = '') => {
     throw new Error('El Entrenador IA no está disponible en este momento.');
   }
 };
+
+export const analyzeFoodImage = async (base64Data, mimeType) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+    const systemPrompt = `Eres un experto en nutrición y reconocimiento de alimentos.
+Tu tarea es analizar la imagen proporcionada y estimar los macronutrientes (proteínas, carbohidratos, grasas) y calorías totales.
+Debes devolver la respuesta estrictamente en formato JSON, sin texto adicional, usando la siguiente estructura:
+{
+  "name": "Nombre descriptivo del plato o alimento principal",
+  "calories": 450,
+  "protein": 30,
+  "carbs": 40,
+  "fat": 15,
+  "description": "Breve descripción de los ingredientes detectados (ej. pechuga de pollo a la plancha con arroz y ensalada)."
+}
+Haz una estimación razonable para una "ración normal" si no hay referencias de tamaño exactas.`;
+
+    // Asumimos ~500 tokens para la imagen
+    checkAndIterateLimits(500);
+
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: systemPrompt },
+            {
+              inlineData: {
+                data: base64Data,
+                mimeType: mimeType
+              }
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const textResponse = result.response.text();
+    return JSON.parse(textResponse);
+  } catch (error) {
+    console.error('Error AI Scanner:', error);
+    if (error.message.includes('Límite de IA alcanzado')) throw error;
+    throw new Error('No se pudo analizar la imagen. La IA no está disponible o hubo un error.');
+  }
+};

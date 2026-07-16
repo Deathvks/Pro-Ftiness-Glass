@@ -88,6 +88,11 @@ export const createStory = async (req, res) => {
         };
 
         // 4. Emitir evento Socket (Solo si hay clientes escuchando)
+        // Gamification
+        try {
+            const { trackChallenge } = await import('../services/challengeService.js');
+            await trackChallenge(userId, 'social_upload_story', 1);
+        } catch (err) {}
         const io = req.app.get('io');
         if (io) {
             io.emit('new_story', {

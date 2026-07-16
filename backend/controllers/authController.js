@@ -1221,6 +1221,19 @@ export const verifyEmail = async (req, res, next) => {
     await createUserSession(user.id, token, req);
     await handleDailyLoginGamification(user);
 
+    // Otorgar XP al referidor si existe
+    if (user.referred_by) {
+      try {
+        const { grantInfiniteChallengeXp } = await import('../services/challengeService.js');
+        await grantInfiniteChallengeXp(user.referred_by, 'Invitar a un amigo', 1000, {
+          notificationType: 'referral_success',
+          friendName: user.name || user.email.split('@')[0]
+        });
+      } catch (err) {
+        console.error("Error otorgando XP por referido:", err);
+      }
+    }
+
     createNotification(user.id, {
       type: 'success',
       title: '¡Email verificado!',

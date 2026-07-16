@@ -134,11 +134,12 @@ const checkTrainingReminder = () => {
       });
 
       const targetUsers = users.filter(user => getLocalTime(user.timezone).hour === 10);
+      const uniqueUserIds = [...new Set(targetUsers.map(u => u.id))];
 
-      if (targetUsers.length > 0) {
-        console.log(`[Cron] Entrenamiento: Notificando a ${targetUsers.length} usuarios.`);
-        await Promise.all(targetUsers.map(user =>
-          notifyUser(user.id, {
+      if (uniqueUserIds.length > 0) {
+        console.log(`[Cron] Entrenamiento: Notificando a ${uniqueUserIds.length} usuarios.`);
+        await Promise.all(uniqueUserIds.map(userId =>
+          notifyUser(userId, {
             title: '¡Es hora de moverse!',
             body: '¿Listo para tu entrenamiento de hoy? ¡Vamos a por ello!',
             url: '/routines',

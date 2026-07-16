@@ -2,7 +2,7 @@
 // Desactivamos logs de desarrollo
 self.__WB_DISABLE_DEV_LOGS = true;
 
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
+import { precacheAndRoute, cleanupOutdatedCaches, matchPrecache } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { StaleWhileRevalidate, NetworkFirst, NetworkOnly } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
@@ -14,6 +14,50 @@ self.skipWaiting(); // <-- Obliga a instalar la nueva versión sin esperar
 clientsClaim();
 
 // 2. Limpieza de cachés antiguas y precarga
+registerRoute(
+  ({ request }) => request.mode === 'navigate',
+  async ({ request }) => {
+    try {
+      const response = await matchPrecache('/index.html') || await fetch(request);
+      if (!response) return fetch(request);
+      
+      const html = await response.text();
+      
+      const cookieStr = request.headers.get('cookie') || '';
+      const match = cookieStr.match(/app_theme=([^;]+)/);
+      const theme = match ? match[1] : 'system';
+      
+      let lightColor = '#f8fafc';
+      let darkColor = '#0f172a';
+      
+      if (theme === 'light') { lightColor = '#f8fafc'; darkColor = '#f8fafc'; }
+      else if (theme === 'dark') { lightColor = '#0f172a'; darkColor = '#0f172a'; }
+      else if (theme === 'oled') { lightColor = '#000000'; darkColor = '#000000'; }
+      else if (theme === 'galaxy') { lightColor = '#000000'; darkColor = '#000000'; }
+      else if (theme === 'desert') { lightColor = '#fff1e6'; darkColor = '#2c1e16'; }
+      
+      const modifiedHtml = html.replace(
+        /<meta[^>]*id="theme-color-light"[^>]*>/i,
+        `<meta name="theme-color" media="(prefers-color-scheme: light)" content="${lightColor}" id="theme-color-light" />`
+      ).replace(
+        /<meta[^>]*id="theme-color-dark"[^>]*>/i,
+        `<meta name="theme-color" media="(prefers-color-scheme: dark)" content="${darkColor}" id="theme-color-dark" />`
+      );
+      
+      const headers = new Headers(response.headers);
+      headers.set('Content-Type', 'text/html');
+      
+      return new Response(modifiedHtml, {
+        headers: headers,
+        status: response.status,
+        statusText: response.statusText
+      });
+    } catch (e) {
+      return fetch(request);
+    }
+  }
+);
+
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
@@ -135,3 +179,12 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+
+
+
+
+
+
+
+

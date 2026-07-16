@@ -473,7 +473,7 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
                     onZoomChange={setZoom}
                 />
             </div>
-            <div className="bg-bg-secondary p-5 pb-8 flex justify-between items-center px-6 sm:px-10 border-t border-glass-border/50" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+            <div className="bg-bg-secondary p-5 pb-8 flex justify-between items-center px-6 sm:px-10 border-t border-glass-border/50" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
                 <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
                     Cancelar
                 </button>

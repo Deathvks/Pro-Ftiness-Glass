@@ -75,7 +75,8 @@ export const createGamificationSlice = (set, get) => ({
             set((state) => ({
                 gamification: {
                     ...state.gamification,
-                    // Solo añadimos el evento para que salte la notificación, no sumamos XP al total
+                    xp: (state.gamification.xp || 0) + amount,
+                    // Añadimos el evento para que salte la notificación
                     gamificationEvents: [
                         ...(state.gamification.gamificationEvents || []),
                         { id: Date.now() + Math.random(), type: 'xp', amount, reason }
@@ -83,7 +84,19 @@ export const createGamificationSlice = (set, get) => ({
                 }
             }));
         }
-        // Eliminada la llamada a la API que sobrescribía la XP.
+    },
+
+    addGamificationEvents: (events) => {
+        if (!events || events.length === 0) return;
+        set((state) => ({
+            gamification: {
+                ...state.gamification,
+                gamificationEvents: [
+                    ...(state.gamification.gamificationEvents || []),
+                    ...events.map(ev => ({ ...ev, id: Date.now() + Math.random() }))
+                ]
+            }
+        }));
     },
 
     unlockBadge: async (badgeId) => {

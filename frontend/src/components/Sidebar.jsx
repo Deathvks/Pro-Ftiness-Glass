@@ -1,11 +1,11 @@
 /* frontend/src/components/Sidebar.jsx */
 import React, { useState, useEffect } from 'react';
-import { User, LogOut, Bell, Settings, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, ArrowRightOnRectangleIcon as LogOut, SparklesIcon, BellIcon, Cog8ToothIcon as SettingsIcon, UserIcon } from '@heroicons/react/24/outline';
 import useAppStore from '../store/useAppStore';
 import StoryViewer from './StoryViewer';
 import AIInfoModal from './AIInfoModal';
 
-const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed }) => (
+const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge }) => (
   <button
     onClick={onClick}
     title={isCollapsed ? label : undefined}
@@ -28,9 +28,12 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
             }
         }}
     >
-      {icon}
+      {typeof icon === 'function' ? icon(isActive) : icon}
       {badgeCount > 0 && (
         <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]" />
+      )}
+      {badgeCount === 0 && badge && (
+        <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
       )}
     </div>
     <span className={`transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[250px] opacity-100'} ${shouldTruncate ? "truncate" : ""}`}>
@@ -84,7 +87,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
     if (imgError) {
         return (
             <div className={`rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary ${hasStories ? 'w-full h-full' : 'w-9 h-9 border border-glass-border'}`}>
-               <User size={hasStories ? 18 : 20} className="text-text-secondary" />
+               <UserIcon className={`text-text-secondary ${hasStories ? 'w-[18px] h-[18px]' : 'w-5 h-5'}`} />
             </div>
         );
     }
@@ -110,7 +113,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
       />
     ) : (
       <div className="w-full h-full bg-bg-secondary flex items-center justify-center">
-        <User size={hasStories ? 18 : 20} className="text-text-secondary" />
+        <UserIcon className={`text-text-secondary ${hasStories ? 'w-[18px] h-[18px]' : 'w-5 h-5'}`} />
       </div>
     );
 
@@ -168,6 +171,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 onClick={() => navigate(item.id)}
                 badgeCount={item.id === 'social' ? (socialRequests?.received?.length || 0) : 0}
                 isCollapsed={isCollapsed}
+                badge={item.badge}
             />
             ))}
         </div>
@@ -175,7 +179,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
         <div className="mt-auto flex flex-col gap-1 shrink-0 pt-6">
             <SidebarItem
                 label={`IA: ${aiRemaining}/${aiLimit}`}
-                icon={<Sparkles size={22} className={isAILimitReached ? 'text-text-muted' : 'text-accent'} />}
+                icon={<SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent'}`} />}
                 isActive={false}
                 onClick={() => setShowAIModal(true)}
                 className={`mb-2 border ${isAILimitReached ? 'border-glass-border opacity-70' : 'border-glass-border bg-accent/5 text-accent hover:bg-accent/10'}`}
@@ -184,7 +188,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
             <SidebarItem
                 label="Ajustes"
-                icon={<Settings size={22} />}
+                icon={<SettingsIcon className="w-5 h-5" />}
                 isActive={view === 'settings'}
                 onClick={() => navigate('settings')}
                 isCollapsed={isCollapsed}
@@ -192,7 +196,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
             <SidebarItem
                 label="Notificaciones"
-                icon={<Bell size={22} />}
+                icon={<BellIcon className="w-5 h-5" />}
                 isActive={view === 'notifications'}
                 onClick={() => navigate('notifications')}
                 badgeCount={unreadCount}
@@ -201,7 +205,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
             <SidebarItem
                 label={isCollapsed ? "Expandir" : "Contraer"}
-                icon={isCollapsed ? <ChevronRight size={22} /> : <ChevronLeft size={22} />}
+                icon={isCollapsed ? <ChevronRightIcon className="w-5 h-5" /> : <ChevronLeftIcon className="w-5 h-5" />}
                 onClick={toggleSidebar}
                 isCollapsed={isCollapsed}
                 className="text-text-muted hover:text-text-primary mt-1"
@@ -221,7 +225,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
             <SidebarItem
                 label="Cerrar Sesión"
-                icon={<LogOut size={22} />}
+                icon={<LogOut className="w-5 h-5" />}
                 onClick={handleLogoutClick}
                 isRed
                 isCollapsed={isCollapsed}

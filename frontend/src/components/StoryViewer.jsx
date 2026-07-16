@@ -54,7 +54,7 @@ const LikesListModal = ({ likes, onClose }) => {
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] border-b border-white/10 flex items-center gap-3 bg-bg-primary z-10" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 pt-[calc(1rem+var(--safe-top))] border-b border-white/10 flex items-center gap-3 bg-bg-primary z-10" onClick={(e) => e.stopPropagation()}>
                 <button onClick={triggerClose} className="p-1 hover:bg-white/10 rounded-full">
                     <ChevronLeft size={24} className="text-text-primary" />
                 </button>
@@ -587,7 +587,7 @@ const StoryViewer = ({ userId, onClose }) => {
   // --- UI: ESTADO "NO HAY HISTORIAS" MEJORADO ---
   if (!storyData || activeStories.length === 0) {
     return (
-      <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
+      <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
         <div className="w-full max-w-sm bg-bg-secondary/90 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-accent/20 rounded-full blur-[50px] pointer-events-none" />
 
@@ -656,7 +656,7 @@ const StoryViewer = ({ userId, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Barras de Progreso */}
-        <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 p-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] bg-gradient-to-b from-black/60 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 p-2 pt-[calc(0.5rem+var(--safe-top))] bg-gradient-to-b from-black/60 to-transparent">
           {activeStories.map((item, index) => {
             const isPast = index < currentIndex;
             const isCurrent = index === currentIndex;
@@ -676,7 +676,7 @@ const StoryViewer = ({ userId, onClose }) => {
         </div>
 
         {/* Header Usuario */}
-        <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top,0px))] left-0 right-0 z-50 flex items-center justify-between px-4 pt-2">
+        <div className="absolute top-[calc(1.5rem+var(--safe-top))] left-0 right-0 z-50 flex items-center justify-between px-4 pt-2">
           <div className="flex items-center gap-3">
               <UserAvatar 
                   user={{

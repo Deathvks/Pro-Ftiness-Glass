@@ -16,6 +16,10 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/socket.io': {
+        target: 'http://localhost:3001',
+        ws: true,
+      },
       '/uploads': {
         target: 'http://localhost:3001',
         changeOrigin: true,
@@ -72,8 +76,8 @@ export default defineConfig({
         short_name: 'Pro Fitness Glass',
         description: 'Tu compañero de fitness definitivo para registrar entrenamientos y progreso.',
         display: 'standalone',
-        theme_color: '#000000',
-        background_color: '#121212',
+        
+        
         scope: '/',
         start_url: '/',
         icons: [
@@ -124,3 +128,11 @@ export default defineConfig({
     }
   },
 });
+
+
+
+
+
+
+
+

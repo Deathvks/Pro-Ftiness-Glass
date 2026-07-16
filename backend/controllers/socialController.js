@@ -198,6 +198,25 @@ export const respondFriendRequest = async (req, res) => {
                 io.to(friendship.requester_id.toString()).emit('friend_request_accepted');
             }
 
+            // Gamification Challenges for friends
+            try {
+                const { trackChallenge } = await import('../services/challengeService.js');
+                const checkFriendsChallenge = async (uId) => {
+                    const count = await Friendship.count({
+                        where: { status: 'accepted', [Op.or]: [{ requester_id: uId }, { addressee_id: uId }] }
+                    });
+                    await trackChallenge(uId, 'social_add_1_friend', 1);
+                    await trackChallenge(uId, 'social_add_3_friends', 1);
+                    await trackChallenge(uId, 'social_add_5_friends', 1);
+                };
+                await checkFriendsChallenge(req.user.userId);
+                await checkFriendsChallenge(friendship.requester_id);
+            } catch (err) {
+                console.error("Error tracking friend challenges:", err);
+            }
+
+
+
             res.json({ success: true, message: 'Amigo añadido' });
         } else {
             await friendship.destroy();
@@ -599,6 +618,12 @@ export const toggleLike = async (req, res) => {
                 if (io) io.to(workout.user_id.toString()).emit('feed_update');
             }
 
+            // Gamification
+            try {
+                const { trackChallenge } = await import('../services/challengeService.js');
+                await trackChallenge(userId, 'social_like_post', 1);
+            } catch (err) {}
+
             return res.json({ success: true, liked: true });
         }
     } catch (error) {
@@ -644,6 +669,12 @@ export const addComment = async (req, res) => {
             });
             if (io) io.to(workout.user_id.toString()).emit('feed_update');
         }
+
+        // Gamification
+        try {
+            const { trackChallenge } = await import('../services/challengeService.js');
+            await trackChallenge(userId, 'social_comment_post', 1);
+        } catch (err) {}
 
         res.json(commentWithUser);
     } catch (error) {

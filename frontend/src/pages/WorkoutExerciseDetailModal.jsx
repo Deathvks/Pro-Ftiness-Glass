@@ -216,7 +216,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Músculo</span>
-                <span className="font-bold text-sm text-text-primary capitalize truncate">{muscleGroupLabel}</span>
+                <span className="font-bold text-sm text-text-primary capitalize line-clamp-2 leading-tight">{muscleGroupLabel}</span>
               </div>
             </div>
 
@@ -226,7 +226,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Series</span>
-                <span className="font-bold text-sm text-text-primary truncate">{t('n_sets', { count: exercise.sets, ns: 'exercise_ui' })}</span>
+                <span className="font-bold text-sm text-text-primary line-clamp-2 leading-tight">{t('n_sets', { count: exercise.sets, ns: 'exercise_ui' })}</span>
               </div>
             </div>
 
@@ -236,7 +236,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Reps</span>
-                <span className="font-bold text-sm text-text-primary truncate">{t('n_reps', { count: exercise.reps, ns: 'exercise_ui' })}</span>
+                <span className="font-bold text-sm text-text-primary line-clamp-2 leading-tight">{t('n_reps', { count: exercise.reps, ns: 'exercise_ui' })}</span>
               </div>
             </div>
 
@@ -246,7 +246,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Descanso</span>
-                <span className="font-bold text-sm text-text-primary truncate">{t('n_rest', { count: exercise.rest_seconds || 90, ns: 'exercise_ui' })}</span>
+                <span className="font-bold text-sm text-text-primary line-clamp-2 leading-tight">{t('n_rest', { count: exercise.rest_seconds || 90, ns: 'exercise_ui' })}</span>
               </div>
             </div>
           </div>

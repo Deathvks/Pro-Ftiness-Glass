@@ -268,23 +268,44 @@ const addFoodLog = async (req, res, next) => {
 
     const gamificationEvents = [];
     try {
-      const gamificationResult = await processFoodGamification(userId, log_date);
-
-      if (gamificationResult.xpAdded > 0) {
-        gamificationEvents.push({ type: 'xp', amount: gamificationResult.xpAdded, reason: 'Comida registrada' });
-      } else if (gamificationResult.reason === 'daily_limit_reached') {
-        gamificationEvents.push({ type: 'info', message: 'Límite diario alcanzado (5/5).' });
+      const { trackChallenge } = await import('../services/challengeService.js');
+      
+      // Reto de registrar 5 comidas
+      const mealRes = await trackChallenge(userId, 'daily_5_meals', 1);
+      if (mealRes.completedNow && mealRes.xpResult) {
+        gamificationEvents.push({ type: 'xp', amount: mealRes.xpResult.xpAdded, reason: 'Reto: 5 comidas diarias' });
       }
 
-      if (gamificationResult.limitReachedNow) {
-        createNotification(userId, { type: 'warning', title: 'Límite XP', message: 'Límite diario comidas (5/5).', data: { type: 'xp_limit' } }).catch(() => { });
+      // Comprobar si hemos guardado en favoritos
+      if (save_as_favorite) {
+        const favRes = await trackChallenge(userId, 'nutri_save_favorite', 1);
+        if (favRes.completedNow && favRes.xpResult) {
+          gamificationEvents.push({ type: 'xp', amount: favRes.xpResult.xpAdded, reason: 'Reto: Comida en Favoritos' });
+        }
       }
 
-      const calorieResult = await checkCalorieTargetReward(userId, log_date);
-      if (calorieResult && calorieResult.success) {
-        gamificationEvents.push({ type: 'xp', amount: CALORIE_TARGET_XP, reason: 'Objetivo de calorías cumplido' });
+      // Check Calories target
+      const user = await User.findByPk(userId);
+      const totalCalories = await NutritionLog.sum('calories', { where: { user_id: userId, log_date: log_date } }) || 0;
+      if (user && user.target_calories > 0 && totalCalories >= user.target_calories) {
+        const calRes = await trackChallenge(userId, 'daily_calories', 1);
+        if (calRes.completedNow && calRes.xpResult) {
+          gamificationEvents.push({ type: 'xp', amount: calRes.xpResult.xpAdded, reason: 'Reto: Calorías diarias' });
+        }
       }
-    } catch (gError) { }
+
+      // Check Protein target
+      const totalProtein = await NutritionLog.sum('protein', { where: { user_id: userId, log_date: log_date } }) || 0;
+      if (user && user.target_protein > 0 && totalProtein >= user.target_protein) {
+        const protRes = await trackChallenge(userId, 'daily_protein', 1);
+        if (protRes.completedNow && protRes.xpResult) {
+          gamificationEvents.push({ type: 'xp', amount: protRes.xpResult.xpAdded, reason: 'Reto: Proteína diaria' });
+        }
+      }
+
+    } catch (gError) { 
+      console.error('Error gamification nutrition:', gError);
+    }
 
     res.status(201).json({ ...newLog.toJSON(), gamification: gamificationEvents });
 
@@ -416,31 +437,17 @@ const upsertWaterLog = async (req, res, next) => {
 
     const gamificationEvents = [];
     try {
-      const xpEarnedToday = await getWaterXpToday(userId, log_date);
-      const currentProgress = Math.min(quantity_ml / waterTarget, 1);
-      const totalXpDeserved = Math.floor(currentProgress * MAX_DAILY_WATER_XP);
-      const xpToAward = Math.max(0, totalXpDeserved - xpEarnedToday);
-
-      if (xpToAward > 0) {
-        const success = await addWaterXpToday(userId, log_date, xpToAward);
-        if (success) {
-          const xpResult = await addXp(userId, xpToAward, `Hidratación: ${Math.round(currentProgress * 100)}% del objetivo`);
-          if (xpResult.success) {
-            gamificationEvents.push({ type: 'xp', amount: xpToAward, reason: `Hidratación: ${Math.round(currentProgress * 100)}%` });
-          }
-          if ((xpEarnedToday + xpToAward) >= MAX_DAILY_WATER_XP) {
-            createNotification(userId, { type: 'warning', title: 'Límite XP', message: 'Límite hidratación alcanzado.', data: { type: 'xp_limit' } }).catch(() => { });
-          }
-        }
-      } else {
-        if (currentProgress > prevProgress && xpEarnedToday >= MAX_DAILY_WATER_XP) {
-          gamificationEvents.push({ type: 'info', message: 'Límite diario hidratación alcanzado.' });
+      const currentProgress = quantity_ml / waterTarget;
+      if (currentProgress >= 1) {
+        const { trackChallenge } = await import('../services/challengeService.js');
+        const waterRes = await trackChallenge(userId, 'daily_water', 1);
+        if (waterRes.completedNow && waterRes.xpResult) {
+          gamificationEvents.push({ type: 'xp', amount: waterRes.xpResult.xpAdded, reason: 'Reto: Objetivo de agua' });
         }
       }
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      checkStreak(userId, todayStr).catch(() => { });
-    } catch (gError) { }
+    } catch (gError) {
+      console.error('Error gamification water:', gError);
+    }
 
     res.json({ ...waterLog.toJSON(), gamification: gamificationEvents });
   } catch (error) { next(error); }
@@ -469,6 +476,13 @@ const searchByBarcode = async (req, res, next) => {
     if (originalImageUrl) {
       localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
     }
+
+    // Gamification
+    try {
+      const { trackChallenge } = await import('../services/challengeService.js');
+      const userId = req.user?.id || req.user?.userId;
+      if (userId) await trackChallenge(userId, 'nutri_scan_3_barcodes', 1);
+    } catch (err) {}
 
     res.json({
       product: {
@@ -593,6 +607,12 @@ const searchFoods = async (req, res, next) => {
         }
       } catch (err) { }
     }
+    // Gamification
+    try {
+      const { trackChallenge } = await import('../services/challengeService.js');
+      const userId = req.user?.userId || req.user?.id;
+      if (userId) await trackChallenge(userId, 'nutri_search_meal', 1);
+    } catch (err) {}
 
     res.json([...localResults, ...externalResults]);
   } catch (error) {

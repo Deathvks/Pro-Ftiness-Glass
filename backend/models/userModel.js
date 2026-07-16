@@ -261,6 +261,16 @@ User.init({
         const salt = await bcrypt.genSalt(10);
         user.password_hash = await bcrypt.hash(user.password_hash, salt);
       }
+    },
+    afterCreate: async (user, options) => {
+      if (user.referred_by) {
+        try {
+          const { grantInfiniteChallengeXp } = await import('../services/challengeService.js');
+          await grantInfiniteChallengeXp(user.referred_by, 'Compartir la app', 200);
+        } catch (err) {
+          console.error("Error en gamification por referido:", err);
+        }
+      }
     }
   }
 });

@@ -529,7 +529,7 @@ const Dashboard = ({ setView }) => {
               {userProfile?.username || t('Atleta', { defaultValue: 'Atleta' })}
             </span>
           </div>
-          <p className="text-xs font-semibold text-text-muted uppercase tracking-widest">
+          <p className="text-xs font-bold text-text-secondary uppercase tracking-widest drop-shadow-md">
             {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
@@ -632,86 +632,6 @@ const Dashboard = ({ setView }) => {
         </GlassCard>
       </div>
 
-      <GlassCard 
-        className="mb-8 glass p-6 sm:p-8 rounded-[32px] relative overflow-hidden isolate border border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/10 group"
-        style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
-      >
-        <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-[#a855f7]/10 via-transparent to-[#3b82f6]/10 pointer-events-none" />
-        <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#a855f7]/20 rounded-full blur-3xl pointer-events-none group-hover:bg-[#a855f7]/30 transition-colors duration-500" />
-        
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex-1 w-full text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-              <div className="p-2 bg-[#a855f7]/20 rounded-xl animate-pulse drop-shadow-[0_0_10px_rgba(168,85,247,0.6)]">
-                <FaMeteor className="text-[#a855f7]" size={20} />
-              </div>
-              <h3 className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#a855f7] to-[#3b82f6] tracking-tight">
-                {t('Desbloquea el Tema Galaxia', { defaultValue: 'Desbloquea el Tema Galaxia' })}
-              </h3>
-            </div>
-            <p className="text-xs sm:text-sm text-text-secondary mb-5 max-w-lg mx-auto md:mx-0 font-medium">
-              {t('Invita a 3 amigos nuevos con tu enlace único. Cuando se registren, desbloquearás automáticamente el tema Galaxia exclusivo.', { defaultValue: 'Invita a 3 amigos nuevos con tu enlace único. Cuando se registren, desbloquearás automáticamente el tema Galaxia exclusivo.' })}
-            </p>
-            
-            <div className="space-y-1.5 w-full max-w-md mx-auto md:mx-0">
-              <div className="flex justify-between items-center text-[10px] sm:text-xs font-bold text-text-muted uppercase tracking-widest">
-                <span>{t('Progreso de la misión', { defaultValue: 'Progreso de la misión' })}</span>
-                <span className="px-2 py-0.5 rounded-full bg-[#a855f7]/10 text-[#a855f7]">
-                  {displayReferralCount} / {maxReferrals}
-                </span>
-              </div>
-              <div className="h-3 w-full bg-black/10 dark:bg-white/5 rounded-full overflow-hidden p-0.5 shadow-inner">
-                <div 
-                  className="h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#a855f7] to-[#3b82f6] shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
-                  style={{ width: `${referralProgress}%` }} 
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full md:w-auto shrink-0 flex flex-col gap-2.5">
-             {isCampaignComplete ? (
-               <div className="flex items-center justify-center gap-2 bg-[#a855f7]/10 text-[#a855f7] px-6 py-3.5 rounded-[20px] border border-[#a855f7]/20 font-bold text-sm shadow-sm">
-                 <CheckCircle size={18} />
-                 {t('¡Tema Desbloqueado!', { defaultValue: '¡Tema Desbloqueado!' })}
-               </div>
-             ) : (
-               <>
-                 <button 
-                   onClick={handleShareReferral}
-                   className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#a855f7] to-[#8b5cf6] text-white px-6 py-3.5 rounded-[20px] font-bold text-sm transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[#a855f7]/25"
-                 >
-                   <Share2 size={18} />
-                   {t('Compartir Invitación', { defaultValue: 'Compartir Invitación' })}
-                 </button>
-                 <div className="flex items-center gap-2">
-                   <button 
-                     onClick={handleCopyReferral}
-                     className="flex-1 flex items-center justify-center gap-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary px-4 py-2.5 rounded-[20px] font-semibold text-xs transition-colors border border-glass-border"
-                   >
-                     <Copy size={14} />
-                     {t('Copiar', { defaultValue: 'Copiar' })}
-                   </button>
-                   <button 
-                     onClick={() => {
-                       if (isIOS()) {
-                         setShowIosReloadModal(true);
-                       } else {
-                         startThemeTest(10);
-                       }
-                     }}
-                     disabled={isTestingTheme}
-                     className="flex-1 flex items-center justify-center gap-2 bg-[#a855f7]/10 hover:bg-[#a855f7]/20 text-[#a855f7] px-4 py-2.5 rounded-[20px] font-bold text-xs transition-colors border border-[#a855f7]/30 disabled:opacity-50 whitespace-nowrap min-w-[110px]"
-                   >
-                     <FaMeteor size={14} />
-                     {isTestingTheme ? `Probando ${testTimeLeft}s` : t('Probar 10s', { defaultValue: 'Probar 10s' })}
-                   </button>
-                 </div>
-               </>
-             )}
-          </div>
-        </div>
-      </GlassCard>
 
       <div className="mb-10">
         <DashboardInsights />
@@ -958,13 +878,13 @@ const Dashboard = ({ setView }) => {
       {showWeeklyRecap && (
         <div
           className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center px-4 animate-[fade-in_0.2s_ease-out]"
-          style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}
           onClick={() => setShowWeeklyRecap(false)}
         >
           <button
             onClick={() => setShowWeeklyRecap(false)}
             className="absolute z-[110] p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all backdrop-blur-md"
-            style={{ top: 'max(1rem, env(safe-area-inset-top))', right: '1rem' }}
+            style={{ top: 'max(1rem, var(--safe-top))', right: '1rem' }}
           >
             <X size={24} />
           </button>
@@ -1013,13 +933,13 @@ const Dashboard = ({ setView }) => {
       {showPRModal && prShareData && (
         <div
           className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center px-4 animate-[fade-in_0.2s_ease-out]"
-          style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}
           onClick={() => setShowPRModal(false)}
         >
           <button
             onClick={() => setShowPRModal(false)}
             className="absolute z-[110] p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all backdrop-blur-md"
-            style={{ top: 'max(1rem, env(safe-area-inset-top))', right: '1rem' }}
+            style={{ top: 'max(1rem, var(--safe-top))', right: '1rem' }}
           >
             <X size={24} />
           </button>

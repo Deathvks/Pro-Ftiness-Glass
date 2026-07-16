@@ -304,8 +304,8 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 
     return (
         <>
-            <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-[env(safe-area-inset-top)] animate-[fade-in_0.2s_ease-out]">
-                <GlassCard className="glass w-full max-w-md p-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[calc(100vh-env(safe-area-inset-top))] sm:max-h-[90vh] bg-bg-primary overflow-hidden">
+            <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-safe-top animate-[fade-in_0.2s_ease-out]">
+                <GlassCard className="glass w-full max-w-md p-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[calc(100vh-var(--safe-top))] sm:max-h-[90vh] bg-bg-primary overflow-hidden">
                     
                     <div className="p-5 sm:p-8 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
                         <h3 className="text-xl font-bold text-text-primary">Nueva Historia</h3>
@@ -887,7 +887,7 @@ export default function Social({ setView }) {
                 <form onSubmit={handleSearch}>
                     <GlassCard className="glass p-3 rounded-full flex items-center gap-3 focus-within:ring-2 focus-within:ring-accent/50 transition-all border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                         <Search size={22} className="text-text-muted ml-3 shrink-0" />
-                        <input type="text" placeholder="Buscar por nombre de usuario..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none outline-none text-text-primary flex-1 font-medium placeholder:text-text-muted py-2" />
+                        <input type="text" placeholder="Buscar por nombre de usuario..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none outline-none text-text-primary flex-1 min-w-0 font-medium placeholder:text-text-muted py-2" />
                         <button type="submit" disabled={isSocialLoading} className="bg-accent text-white font-bold px-6 py-3 rounded-full active:scale-95 transition-all shadow-md shadow-accent/20 shrink-0">
                             {isSocialLoading ? <Spinner size={20} color="#fff" /> : 'Buscar'}
                         </button>

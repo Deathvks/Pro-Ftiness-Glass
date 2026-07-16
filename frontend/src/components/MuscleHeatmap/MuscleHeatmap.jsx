@@ -13,7 +13,7 @@ const normalizeKey = (text) => {
         .trim();
 };
 
-const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
+const MuscleHeatmap = ({ muscleData = {}, darkMode = true, isSwipingRef = null }) => {
     const [modelType, setModelType] = useState('anterior');
     const [selectedMuscleLabel, setSelectedMuscleLabel] = useState(null);
 
@@ -100,6 +100,7 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
     }, [muscleData]);
 
     const handleMuscleClick = ({ muscle, data }) => {
+        if (isSwipingRef && isSwipingRef.current) return;
         isMuscleClick.current = true;
         setTimeout(() => { isMuscleClick.current = false; }, 100);
 
@@ -110,6 +111,7 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
     };
 
     const handleContainerClick = () => {
+        if (isSwipingRef && isSwipingRef.current) return;
         if (!isMuscleClick.current) {
             setModelType(t => t === 'anterior' ? 'posterior' : 'anterior');
         }
@@ -117,41 +119,42 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true }) => {
 
     return (
         <div
-            className={`relative group cursor-pointer transition-all duration-300 select-none bg-black/5 dark:bg-white/5 rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 overflow-hidden shadow-inner ${!darkMode ? 'light-mode' : ''}`}
+            className={`relative group cursor-pointer transition-all duration-300 select-none bg-black/5 dark:bg-white/5 backdrop-blur-md rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 overflow-hidden shadow-inner ${!darkMode ? 'light-mode' : ''}`}
             onClick={handleContainerClick}
-            title="Haz click en un músculo para ver su nombre, o en el fondo para girar"
         >
             {/* Badge Frente / Espalda */}
             <div className="absolute top-4 right-4 z-10 pointer-events-none">
-                <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 group-hover:bg-black/10 dark:group-hover:bg-white/10 group-hover:text-text-primary shadow-sm backdrop-blur-md">
+                <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors bg-black/10 dark:bg-white/10 text-text-primary ring-1 ring-black/5 dark:ring-white/10 shadow-sm backdrop-blur-md">
                     {modelType === 'anterior' ? 'Frente' : 'Espalda'}
                 </span>
             </div>
 
             {/* Tooltip con nombre de músculo */}
             {selectedMuscleLabel && (
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none animate-[scale-in_0.1s_ease-out]">
-                    <div className="bg-bg-primary text-text-primary text-sm font-black px-5 py-2.5 rounded-full ring-1 ring-black/5 dark:ring-white/10 shadow-xl whitespace-nowrap drop-shadow-md">
-                        {selectedMuscleLabel}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
+                    <div className="animate-[scale-in_0.15s_ease-out]">
+                        <div className="bg-bg-primary text-text-primary text-sm font-black px-5 py-2.5 rounded-full ring-1 ring-black/5 dark:ring-white/10 shadow-xl whitespace-nowrap drop-shadow-md">
+                            {selectedMuscleLabel}
+                        </div>
                     </div>
                 </div>
             )}
 
             <div className="w-full flex justify-center items-center py-12 px-6">
-                <div style={{ width: '100%', maxWidth: '240px', height: '400px' }} className="transition-transform duration-500 group-hover:scale-105">
+                <div style={{ width: '100%', maxWidth: '240px', height: '400px' }} className="transition-transform duration-500">
                     <Model
                         data={formattedData}
                         type={modelType}
                         style={{ width: '100%', height: '100%' }}
                         contentStyle={{ padding: '1rem' }}
-                        bodyColor={darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"}
+                        bodyColor={darkMode ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.2)"}
                         highlightedColors={colors}
                         onClick={handleMuscleClick}
                     />
                 </div>
             </div>
 
-            <div className="absolute bottom-4 w-full text-center text-[10px] font-bold uppercase tracking-widest text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute bottom-4 w-full text-center text-[10px] font-bold uppercase tracking-widest text-text-tertiary opacity-60">
                 Click en fondo para girar
             </div>
         </div>

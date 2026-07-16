@@ -51,17 +51,9 @@ const RoutineAIGeneratorModal = ({ isOpen, onClose, onGenerate }) => {
   const isOled = resolvedTheme === 'oled';
   const isDark = resolvedTheme === 'dark';
   
-  const containerClass = `w-full max-w-md rounded-3xl shadow-2xl flex flex-col transition-colors duration-300 border ${
-    isOled ? 'border-white/20 bg-black' : isDark ? 'border-white/10 bg-bg-primary' : 'border-border bg-bg-secondary'
-  }`;
+  const containerClass = "w-full max-w-md rounded-3xl shadow-2xl flex flex-col transition-colors duration-300 border border-glass-border bg-bg-primary";
   
-  const inputClass = `w-full p-4 rounded-2xl border resize-none h-32 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all ${
-    isOled 
-      ? 'border-white/10 bg-white/5 text-white placeholder-gray-500' 
-      : isDark 
-        ? 'border-white/10 bg-bg-secondary text-text-primary placeholder-text-muted' 
-        : 'border-border bg-bg-tertiary text-text-primary placeholder-text-muted'
-  }`;
+  const inputClass = "w-full p-4 rounded-2xl border border-glass-border bg-bg-secondary text-text-primary placeholder-text-muted resize-none h-32 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all";
 
   const isLimitReached = remainingUses === 0 || (error && error.toLowerCase().includes('agotado'));
 
@@ -74,23 +66,33 @@ const RoutineAIGeneratorModal = ({ isOpen, onClose, onGenerate }) => {
       const allExercises = await getOrFetchAllExercises();
       const exerciseOptions = allExercises.map(ex => `ID:"${ex.name}"|Nombre:"${t(ex.name, { ns: 'exercise_names', defaultValue: ex.name })}"`).join('\n');
 
-      const aiPrompt = `Actúa como entrenador experto. Usuario pide: "${userPrompt}".
-Crea UNA rutina de UN DÍA.
-REGLAS:
-1. Inventa nombre motivador.
-2. Usa SOLO ejercicios de esta lista:
+      const aiPrompt = `Actúa como entrenador experto. El usuario te pide crear una rutina con este mensaje: "${userPrompt}".
+
+PASO 1: Evalúa si el mensaje tiene sentido para crear una rutina deportiva (ej. menciona músculos, objetivos, días, etc.).
+- Si el mensaje es un saludo ("hola"), es ambiguo, o NO está relacionado con fitness, DEBES RECHAZARLO.
+- Si el usuario pide MÁS DE UNA rutina o una rutina de varios días que no se pueda unificar en una sola sesión, DEBES RECHAZARLO explicando que solo puedes crear una rutina por consulta.
+
+PASO 2: Si es VÁLIDO, crea UNA rutina de UN DÍA usando SOLO los ejercicios de esta lista:
 ${exerciseOptions}
-3. Devuelve SOLO JSON válido.
-Formato:
+
+PASO 3: Devuelve SOLO un objeto JSON válido (sin texto extra ni markdown).
+FORMATO SI ES RECHAZADO:
 {
-  "name": "Nombre rutina",
-  "description": "Descripción",
+  "isValid": false,
+  "error": "El mensaje no es válido o has pedido más de una rutina. Solo puedo generar una rutina de un día por petición. Por favor, sé más específico sobre tu objetivo para esta rutina."
+}
+
+FORMATO SI ES VÁLIDO:
+{
+  "isValid": true,
+  "name": "Nombre motivador de la rutina",
+  "description": "Descripción corta",
   "ai_explanation": "Explicación detallada de por qué esta rutina es perfecta para el usuario.",
   "folder": "IA",
   "exercises": [{ "name": "ID_EXACTO_EJERCICIO", "sets": 3, "reps": "8-12", "rest_seconds": 90, "ai_reason": "Por qué se eligió este ejercicio" }]
 }`;
 
-      const systemContext = "Eres entrenador personal. Crea rutinas deportivas. Si piden otra cosa, devuelve { \"error\": \"Solo creo rutinas deportivas.\" }. Responde SOLO con JSON.";
+      const systemContext = "Eres un entrenador personal estricto. Tu única salida debe ser un JSON válido siguiendo el formato exacto requerido. Nunca añadas explicaciones fuera del JSON.";
 
       const res = await askTrainerAI(aiPrompt, systemContext);
       
@@ -111,7 +113,10 @@ Formato:
       const jsonString = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
       
       const generatedRoutine = JSON.parse(jsonString);
-      if (generatedRoutine.error) throw new Error(generatedRoutine.error);
+      
+      if (generatedRoutine.isValid === false || generatedRoutine.error) {
+        throw new Error(generatedRoutine.error || "El mensaje no es válido para generar una rutina. Sé más específico.");
+      }
 
       const formattedRoutine = {
         name: generatedRoutine.name || "Rutina IA",
@@ -154,25 +159,25 @@ Formato:
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
       <div className={containerClass}>
-        <div className={`p-5 border-b flex justify-between items-center ${isOled ? 'border-white/10' : isDark ? 'border-white/5' : 'border-border'}`}>
+        <div className="p-5 border-b border-glass-border flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-accent text-white shadow-lg shadow-accent/20">
               <Wand2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className={`text-lg font-bold leading-none ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>Generar con IA</h2>
-              <span className={`text-xs font-medium ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>Crea tu sesión ideal</span>
+              <h2 className="text-lg font-bold leading-none text-text-primary">Generar con IA</h2>
+              <span className="text-xs font-medium text-text-secondary">Crea tu sesión ideal</span>
             </div>
           </div>
-          <button onClick={onClose} disabled={isLoading} className={`p-2 rounded-full transition-colors ${isOled || isDark ? 'hover:bg-white/10 text-gray-400 hover:text-white' : 'hover:bg-bg-tertiary text-text-secondary hover:text-text-primary'}`}>
+          <button onClick={onClose} disabled={isLoading} className="p-2 rounded-full transition-colors hover:bg-bg-tertiary text-text-secondary hover:text-text-primary">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
-          <p className={`text-sm ${isOled || isDark ? 'text-gray-300' : 'text-text-secondary'}`}>
+          <p className="text-sm text-text-secondary">
             Describe tu objetivo, equipo disponible o nivel de experiencia.
           </p>
 

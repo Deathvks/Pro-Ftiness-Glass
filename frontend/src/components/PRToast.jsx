@@ -51,9 +51,10 @@ const PRToast = ({ newPRs, onClose }) => {
   };
 
   return (
-    <div className="fixed bottom-24 md:bottom-10 right-10 z-50 animate-[fade-in-up_0.5s_ease-out]">
-      <GlassCard className="max-w-sm p-4 border-accent-border">
-        <div className="flex items-start gap-4">
+    <div className="fixed bottom-24 md:bottom-10 left-4 right-4 md:left-auto md:right-10 z-[100] animate-[fade-in-up_0.5s_ease-out] flex justify-center md:block pointer-events-none">
+      <div className="pointer-events-auto w-full max-w-sm">
+        <GlassCard className="w-full p-4 border-accent-border shadow-2xl">
+          <div className="flex items-start gap-4">
           <div className="flex-shrink-0 text-accent mt-1">
             <Award size={24} />
           </div>
@@ -88,7 +89,8 @@ const PRToast = ({ newPRs, onClose }) => {
             <X size={18} />
           </button>
         </div>
-      </GlassCard>
+        </GlassCard>
+      </div>
     </div>
   );
 };

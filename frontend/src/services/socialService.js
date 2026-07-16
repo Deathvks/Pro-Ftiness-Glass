@@ -16,7 +16,7 @@ const socialService = {
 
     // Obtener solicitudes pendientes (enviadas y recibidas)
     getFriendRequests: async () => {
-        return await apiClient('/social/requests');
+        return await apiClient(`/social/requests?_t=${Date.now()}`);
     },
 
     // Responder a una solicitud (accept/reject)
@@ -28,7 +28,7 @@ const socialService = {
 
     // Obtener lista de amigos
     getFriends: async () => {
-        return await apiClient('/social/friends');
+        return await apiClient(`/social/friends?_t=${Date.now()}`);
     },
 
     // Obtener leaderboard global

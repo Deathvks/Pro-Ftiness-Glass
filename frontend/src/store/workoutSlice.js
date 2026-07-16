@@ -597,6 +597,67 @@ export const createWorkoutSlice = (set, get) => ({
     });
   },
 
+  finishWorkout: async () => {
+    const state = get();
+    const activeWorkout = state.activeWorkout;
+    if (!activeWorkout || !activeWorkout.startTime) return;
+
+    const elapsed = Date.now() - new Date(activeWorkout.startTime).getTime();
+    const duration_seconds = Math.floor(elapsed / 1000);
+    // Estimación genérica si el usuario no introduce calorías (aprox 400 kcal/h)
+    const calories_burned = Math.round((duration_seconds / 3600) * 400);
+
+    const isSimpleWorkout = activeWorkout.isSimpleWorkout;
+    
+    // Comprobar si hay al menos una serie completada
+    const isAnySetFilled = isSimpleWorkout || (activeWorkout.exercises && activeWorkout.exercises.some(ex => 
+        ex.setsDone && ex.setsDone.some(set => 
+            (set.reps !== undefined && String(set.reps).trim() !== '') || 
+            (set.weight_kg !== undefined && String(set.weight_kg).trim() !== '')
+        )
+    ));
+
+    if (!isAnySetFilled) {
+        // Si no hay datos, limpiamos la sesión sin guardarla
+        state.clearWorkoutState();
+        return;
+    }
+
+    const safeParseFloat = (value) => parseFloat(String(value).replace(',', '.')) || 0;
+
+    const workoutData = {
+        routineId: activeWorkout.routineId,
+        routineName: activeWorkout.routineName || 'Entrenamiento libre',
+        duration_seconds: duration_seconds,
+        notes: "Autoguardado por límite de 4 horas.",
+        calories_burned: calories_burned,
+        details: isSimpleWorkout
+            ? []
+            : activeWorkout.exercises.map((ex) => ({
+                id: ex.id, 
+                exerciseName: ex.name,
+                superset_group_id: ex.superset_group_id,
+                reminder: ex.reminder, 
+                setsDone: ex.setsDone
+                    .filter(
+                        (set) =>
+                            (set.reps !== '' && set.reps !== null) ||
+                            (set.weight_kg !== '' && set.weight_kg !== null)
+                    )
+                    .map((set) => ({
+                        set_number: set.set_number,
+                        reps: safeParseFloat(set.reps),
+                        weight_kg: safeParseFloat(set.weight_kg),
+                        is_dropset: set.is_dropset || false,
+                        is_warmup: set.is_warmup || false,
+                        rir: set.rir !== undefined && set.rir !== null && set.rir !== '' ? Number(set.rir) : null,
+                    })),
+            })),
+    };
+
+    await state.logWorkout(workoutData);
+  },
+
   logWorkout: async (workoutData) => {
     try {
       const state = get();
@@ -631,8 +692,12 @@ export const createWorkoutSlice = (set, get) => ({
         }
       }
 
-      if (get().addXp && responseData.xpAdded > 0) {
-        get().addXp(responseData.xpAdded);
+      if (responseData.gamificationEvents && responseData.gamificationEvents.length > 0) {
+        if (get().addGamificationEvents) {
+          get().addGamificationEvents(responseData.gamificationEvents);
+        }
+      } else if (get().addXp && responseData.xpAdded > 0) {
+        get().addXp(responseData.xpAdded, 'Entrenamiento guardado');
       }
 
       const todayStr = formatDateForQuery(new Date());
@@ -656,14 +721,7 @@ export const createWorkoutSlice = (set, get) => ({
       clearRestTimerInStorage();
       stopNativeTimer();
 
-      if (responseData.xpAdded !== undefined && responseData.xpAdded === 0) {
-        return {
-          success: true,
-          message: 'Límite de XP alcanzado. Has alcanzado el límite diario de XP por entrenamiento (2/2).'
-        };
-      }
-
-      return { success: true, message: 'Entrenamiento guardado.' };
+      return { success: true, message: 'Entrenamiento guardado exitosamente.' };
     } catch (error) {
       return {
         success: false,

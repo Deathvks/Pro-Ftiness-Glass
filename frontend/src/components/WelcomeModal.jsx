@@ -1,7 +1,7 @@
 /* frontend/src/components/WelcomeModal.jsx */
 import React, { useEffect, useRef } from 'react';
 import {
-  ChevronRight, Users, Zap, LineChart
+  ChevronRight, Brain, Timer, Palette, Smartphone
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
 import { APP_VERSION } from '../config/version';
@@ -182,11 +182,13 @@ const WelcomeModal = ({ onClose }) => {
 
       {/* Backdrop */}
       <div
-        className="wm-backdrop"
+        className="wm-backdrop fixed inset-0"
         style={{
-          position: 'fixed', inset: 0, zIndex: 150,
+          zIndex: 150,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '16px',
+          paddingTop: 'calc(16px + var(--safe-top, env(safe-area-inset-top, 0px)))',
+          paddingBottom: 'calc(16px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))',
           background: 'rgba(0,0,0,0.75)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
@@ -199,7 +201,7 @@ const WelcomeModal = ({ onClose }) => {
             position: 'relative',
             width: '100%',
             maxWidth: '440px',
-            maxHeight: '90vh',
+            maxHeight: 'calc(100vh - 32px - var(--safe-top, env(safe-area-inset-top, 0px)) - var(--safe-bottom, env(safe-area-inset-bottom, 0px)))',
             borderRadius: '28px',
             overflow: 'hidden',
             display: 'flex',
@@ -324,13 +326,12 @@ const WelcomeModal = ({ onClose }) => {
             {/* ── Feature Cards ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
 
-              {/* Galaxia */}
+              {/* IA Mejorada */}
               <div className="wm-feature-card wm-feature-1" style={{
                 background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
                 border: '1px solid rgba(168,85,247,0.35)',
                 boxShadow: '0 4px 20px -8px rgba(168,85,247,0.3)',
               }}>
-                {/* Textura de estrellas de fondo para la capa galáctica */}
                 <div style={{
                   position: 'absolute',
                   inset: 0,
@@ -346,57 +347,57 @@ const WelcomeModal = ({ onClose }) => {
                 }}></div>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.25)' }}>
-                  <FaMeteor size={18} style={{ color: '#a855f7' }} />
+                  <Brain size={18} style={{ color: '#a855f7' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Tema Galaxia</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>IA Estricta e Inteligente</p>
                   <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                    Desbloquea el nuevo tema estelar animado. ¡Personaliza tu dashboard como nunca antes con cielos estrellados!
+                    La IA ahora filtra peticiones irrelevantes. Si te equivocas, no pierdes tus intentos diarios ni afecta a tu experiencia (XP).
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
               </div>
 
-              {/* Referidos */}
+              {/* Autoguardado a las 4 horas */}
               <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: 'var(--color-accent)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'var(--color-accent-transparent)', border: '1px solid var(--color-accent-border)' }}>
-                  <Users size={18} style={{ color: 'var(--color-accent)' }} />
+                  <Timer size={18} style={{ color: 'var(--color-accent)' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--color-accent)', margin: '0 0 4px', textTransform: 'uppercase' }}>Sistema de Referidos</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--color-accent)', margin: '0 0 4px', textTransform: 'uppercase' }}>Autoguardado Inteligente</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Invita a 3 amigos nuevos con tu enlace único. Cuando se registren, desbloquearás contenido exclusivo y recompensas especiales.
+                    ¿Olvidaste apagar el cronómetro? Al llegar a 4 horas finaliza tu sesión, estima las calorías y limpia si no hay datos.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: 'var(--color-accent)' }}>02</span>
               </div>
 
-              {/* Dashboard */}
+              {/* Tema Océano y Contraste */}
               <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: '#3b82f6' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                  <LineChart size={18} style={{ color: '#3b82f6' }} />
+                  <Palette size={18} style={{ color: '#3b82f6' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Dashboard Insights</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Perfección de Temas</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Nuevas analíticas personalizadas para entender tu progreso y optimizar tu rendimiento semanal de forma automática.
+                    El Tema Océano (y otros) luce mejor que nunca con textos legibles y botones del tutorial perfectamente adaptados.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#3b82f6' }}>03</span>
               </div>
 
-              {/* Optimización */}
+              {/* Nuevo Hub e Interfaz */}
               <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: '#f59e0b' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                  <Zap size={18} style={{ color: '#f59e0b' }} />
+                  <Smartphone size={18} style={{ color: '#f59e0b' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f59e0b', margin: '0 0 4px', textTransform: 'uppercase' }}>Optimización</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f59e0b', margin: '0 0 4px', textTransform: 'uppercase' }}>Nuevo Hub e Interfaz</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Hemos mejorado la estabilidad general, corregido errores de sincronización y optimizado los tiempos de carga.
+                    Explora el nuevo Hub centralizado con tutoriales interactivos, nueva cabecera dinámica y una interfaz totalmente optimizada para PC y móvil.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#f59e0b' }}>04</span>

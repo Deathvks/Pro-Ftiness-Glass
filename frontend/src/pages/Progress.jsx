@@ -50,6 +50,8 @@ const Progress = ({ darkMode }) => {
         getOrFetchAllExercises: state.getOrFetchAllExercises
     }));
 
+    const tabsRef = React.useRef(null);
+
     const [viewType, setViewType] = useState(() => {
         try {
             return localStorage.getItem('progressViewType') || 'heatmap';
@@ -64,6 +66,14 @@ const Progress = ({ darkMode }) => {
         } catch (e) {
             console.error('Error guardando preferencia de vista', e);
         }
+
+        // Auto-scroll the tabs container so the active tab is visible
+        if (tabsRef.current) {
+            const activeEl = tabsRef.current.querySelector('.active-tab');
+            if (activeEl) {
+                activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }
     }, [viewType]);
 
     const [detailedLog, setDetailedLog] = useState(null);
@@ -71,6 +81,75 @@ const Progress = ({ darkMode }) => {
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [suggestionsPage, setSuggestionsPage] = useState(0);
     const SUGGESTIONS_PER_PAGE = 3;
+
+    // Lógica para deslizar entre pestañas (swipe)
+    const [touchStartX, setTouchStartX] = useState(null);
+    const [touchStartY, setTouchStartY] = useState(null);
+    const [swipeAnim, setSwipeAnim] = useState('');
+    const justSwipedRef = React.useRef(false);
+    const contentRef = React.useRef(null);
+    
+    const handleTouchStartCapture = (e) => {
+        if (e.target.closest('.no-swipe-tabs')) {
+            setTouchStartX(null);
+            setTouchStartY(null);
+            return;
+        }
+        setTouchStartX(e.touches[0].clientX);
+        setTouchStartY(e.touches[0].clientY);
+    };
+
+    const handleTouchMoveCapture = (e) => {
+        if (touchStartX === null || touchStartY === null) return;
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const dx = touchStartX - currentX;
+        const dy = touchStartY - currentY;
+        
+        // Bloquear clicks si hay movimiento (horizontal O vertical)
+        if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
+            justSwipedRef.current = true;
+            
+            // Solo parar propagación de eventos táctiles si es un swipe claramente HORIZONTAL
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 15) {
+                e.stopPropagation();
+                if (contentRef.current) {
+                    contentRef.current.style.pointerEvents = 'none';
+                }
+            }
+        }
+    };
+
+    const handleTouchEndCapture = (e) => {
+        if (touchStartX === null) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const dx = touchStartX - touchEndX;
+        
+        // Si el deslizamiento es suficientemente largo
+        if (Math.abs(dx) > 50) {
+            const currentIndex = TABS.findIndex(t => t.id === viewType);
+            if (dx > 0 && currentIndex < TABS.length - 1) {
+                // Swipe a la izquierda -> Siguiente pestaña
+                setSwipeAnim('swipeSlideLeft');
+                setViewType(TABS[currentIndex + 1].id);
+            } else if (dx < 0 && currentIndex > 0) {
+                // Swipe a la derecha -> Pestaña anterior
+                setSwipeAnim('swipeSlideRight');
+                setViewType(TABS[currentIndex - 1].id);
+            }
+        }
+
+        if (justSwipedRef.current) {
+            setTimeout(() => { 
+                justSwipedRef.current = false; 
+                if (contentRef.current) {
+                    contentRef.current.style.pointerEvents = 'auto';
+                }
+            }, 500);
+        }
+        setTouchStartX(null);
+        setTouchStartY(null);
+    };
 
     useEffect(() => {
         getOrFetchAllExercises();
@@ -257,12 +336,40 @@ const Progress = ({ darkMode }) => {
     const axisColor = darkMode ? "#94a3b8" : "#475569";
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:p-6 md:pb-8 lg:p-10 lg:pb-8 animate-[fade-in_0.5s_ease-out]">
+        <div 
+            className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:p-6 md:pb-8 lg:p-10 lg:pb-8 animate-[fade-in_0.5s_ease-out]"
+            onTouchStartCapture={handleTouchStartCapture}
+            onTouchMoveCapture={handleTouchMoveCapture}
+            onTouchEndCapture={handleTouchEndCapture}
+            onClickCapture={(e) => {
+                if (justSwipedRef.current) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+            }}
+        >
             <Helmet>
                 <html lang="es" />
                 <title>Tu Progreso - Pro Fitness Glass</title>
                 <meta name="description" content="Visualiza tu progreso muscular, fuerza y estadísticas." />
             </Helmet>
+
+            <style>
+                {`
+                    @keyframes swipeSlideLeft {
+                        from { opacity: 0; transform: translateX(30px); }
+                        to { opacity: 1; transform: translateX(0); }
+                    }
+                    @keyframes swipeSlideRight {
+                        from { opacity: 0; transform: translateX(-30px); }
+                        to { opacity: 1; transform: translateX(0); }
+                    }
+                    @keyframes swipeFadeIn {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}
+            </style>
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
                 <h1 className="hidden md:block text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight mt-4 md:mt-0">
@@ -270,15 +377,18 @@ const Progress = ({ darkMode }) => {
                 </h1>
 
                 {/* NUEVO CONTENEDOR DE PESTAÑAS (PILLS) */}
-                <div className="flex overflow-x-auto pb-4 pt-1 px-1 -mx-1 gap-2.5 no-scrollbar mask-linear-fade items-center">
+                <div ref={tabsRef} className="flex overflow-x-auto pb-4 pt-1 px-1 -mx-1 gap-2.5 no-scrollbar mask-linear-fade items-center no-swipe-tabs scroll-smooth">
                     {TABS.map(tab => (
                         <button 
                             key={tab.id}
-                            onClick={() => setViewType(tab.id)} 
-                            className={`px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none ${
+                            onClick={() => {
+                                setSwipeAnim('swipeFadeIn');
+                                setViewType(tab.id);
+                            }}
+                            className={`px-5 py-2.5 text-sm font-bold rounded-[20px] transition-all duration-300 whitespace-nowrap outline-none ${
                                 viewType === tab.id 
-                                    ? 'bg-accent text-white shadow-lg shadow-accent/30 scale-105' 
-                                    : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+                                    ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-[1.02] active-tab' 
+                                    : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'
                             }`}
                         >
                             {tab.label}
@@ -287,10 +397,15 @@ const Progress = ({ darkMode }) => {
                 </div>
             </div>
 
-            {viewType === 'heatmap' && (
+            <div 
+                key={viewType} 
+                ref={contentRef}
+                style={{ animation: `${swipeAnim || 'swipeFadeIn'} 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards` }}
+            >
+                {viewType === 'heatmap' && (
                 <div className="flex flex-col items-center animate-fade-in py-6 w-full">
                     <div className="w-full max-w-[300px] flex justify-center">
-                        <MuscleHeatmap muscleData={muscleHeatmapData} darkMode={darkMode} />
+                        <MuscleHeatmap muscleData={muscleHeatmapData} darkMode={darkMode} isSwipingRef={justSwipedRef} />
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-4 mt-6 mb-2">
@@ -385,6 +500,7 @@ const Progress = ({ darkMode }) => {
             {viewType === 'bodyWeight' && <BodyWeightChart data={bodyWeightChartData} axisColor={axisColor} />}
             {viewType === 'measurements' && <MeasurementsView axisColor={axisColor} />}
             {viewType === 'calendar' && <CalendarView setDetailedLog={setDetailedLog} />}
+            </div>
 
             {detailedLog && <DailyDetailView logs={detailedLog} onClose={() => setDetailedLog(null)} />}
             {showHistoryModal && <ExerciseHistoryModal exerciseName={exerciseForHistory} workoutLog={workoutLog} onClose={() => setShowHistoryModal(false)} />}

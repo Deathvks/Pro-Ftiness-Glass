@@ -82,8 +82,8 @@ const SplitLayout = ({ children, onShowPolicy }) => (
             <div 
                 className="flex flex-col min-h-full w-full px-4 sm:px-6 lg:px-8"
                 style={{ 
-                    paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 24px))', 
-                    paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 24px))' 
+                    paddingTop: 'calc(1.5rem + var(--safe-top))', 
+                    paddingBottom: 'calc(1.5rem + var(--safe-bottom))' 
                 }}
             >
                 <div className="my-auto mx-auto w-full max-w-md text-center relative z-10 animate-[fade-in_0.5s_ease-out] py-4">

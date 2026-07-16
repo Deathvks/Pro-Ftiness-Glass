@@ -11,6 +11,10 @@ const THEME_COLORS = {
   oled: '#000000',
   dark: '#0f172a',
   light: '#f8fafc',
+  desert: '#f0dec5',
+  'desert-dark': '#2c1e16',
+  ocean: '#e0f2fe',
+  'ocean-dark': '#0f172a',
 };
 
 const HEADER_COLORS = {
@@ -18,6 +22,10 @@ const HEADER_COLORS = {
   oled: '#000000',
   dark: '#0f172a',
   light: '#f8fafc',
+  desert: '#f0dec5',
+  'desert-dark': '#2c1e16',
+  ocean: '#e0f2fe',
+  'ocean-dark': '#0f172a',
 };
 
 // --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS ---
@@ -153,6 +161,7 @@ export const useAppTheme = () => {
       }
 
       setResolvedTheme(effectiveTheme);
+      const isDesertDark = effectiveTheme === 'desert-dark';
 
       let color = THEME_COLORS.dark;
       let headerColorStr = HEADER_COLORS.dark;
@@ -160,6 +169,12 @@ export const useAppTheme = () => {
       if (effectiveTheme === 'galaxy') {
         color = THEME_COLORS.galaxy;
         headerColorStr = HEADER_COLORS.galaxy;
+      } else if (effectiveTheme === 'desert' || effectiveTheme === 'desert-dark') {
+        color = isDesertDark ? '#362423' : THEME_COLORS.desert;
+        headerColorStr = isDesertDark ? '#362423' : HEADER_COLORS.desert;
+      } else if (effectiveTheme === 'ocean' || effectiveTheme === 'ocean-dark') {
+        color = THEME_COLORS[effectiveTheme];
+        headerColorStr = HEADER_COLORS[effectiveTheme];
       } else if (effectiveTheme === 'oled') {
         color = THEME_COLORS.oled;
         headerColorStr = HEADER_COLORS.oled;
@@ -168,11 +183,18 @@ export const useAppTheme = () => {
         headerColorStr = HEADER_COLORS.light;
       }
 
-      root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'dark');
-      const classTheme = effectiveTheme === 'galaxy' ? 'galaxy' : (effectiveTheme === 'oled' ? 'oled' : (effectiveTheme === 'light' ? 'light' : 'dark'));
+      root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'desert-theme', 'ocean-theme', 'dark');
+      
+      let classTheme = 'dark';
+      if (effectiveTheme === 'galaxy') classTheme = 'galaxy';
+      else if (effectiveTheme === 'desert' || effectiveTheme === 'desert-dark') classTheme = 'desert';
+      else if (effectiveTheme === 'ocean' || effectiveTheme === 'ocean-dark') classTheme = 'ocean';
+      else if (effectiveTheme === 'oled') classTheme = 'oled';
+      else if (effectiveTheme === 'light') classTheme = 'light';
+
       root.classList.add(`${classTheme}-theme`);
 
-      if (effectiveTheme !== 'light') {
+      if (effectiveTheme !== 'light' && (effectiveTheme !== 'desert' || isDesertDark) && effectiveTheme !== 'ocean') {
         root.classList.add('dark');
       }
 
@@ -227,6 +249,8 @@ export const useAppTheme = () => {
 
   const themeColor = useMemo(() => {
     if (resolvedTheme === 'galaxy') return THEME_COLORS.galaxy;
+    if (resolvedTheme === 'desert' || resolvedTheme === 'desert-dark') return resolvedTheme === 'desert-dark' ? '#362423' : THEME_COLORS.desert;
+    if (resolvedTheme === 'ocean' || resolvedTheme === 'ocean-dark') return THEME_COLORS[resolvedTheme];
     if (resolvedTheme === 'oled') return THEME_COLORS.oled;
     if (resolvedTheme === 'light') return THEME_COLORS.light;
     return THEME_COLORS.dark;
@@ -234,6 +258,8 @@ export const useAppTheme = () => {
 
   const headerColor = useMemo(() => {
     if (resolvedTheme === 'galaxy') return HEADER_COLORS.galaxy;
+    if (resolvedTheme === 'desert' || resolvedTheme === 'desert-dark') return resolvedTheme === 'desert-dark' ? '#362423' : HEADER_COLORS.desert;
+    if (resolvedTheme === 'ocean' || resolvedTheme === 'ocean-dark') return HEADER_COLORS[resolvedTheme];
     if (resolvedTheme === 'oled') return HEADER_COLORS.oled;
     if (resolvedTheme === 'light') return HEADER_COLORS.light;
     return HEADER_COLORS.dark;

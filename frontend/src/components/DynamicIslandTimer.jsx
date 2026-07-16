@@ -144,7 +144,7 @@ const DynamicIslandTimer = () => {
 
             <div
                 ref={containerRef}
-                className="fixed top-[calc(env(safe-area-inset-top,0px)+12px)] left-1/2 -translate-x-1/2 z-[100] animate-[fade-in_0.3s_ease-out] flex flex-col items-center"
+                className="fixed top-[calc(var(--safe-top)+12px)] left-1/2 -translate-x-1/2 z-[100] animate-[fade-in_0.3s_ease-out] flex flex-col items-center"
             >
                 <div className={`
                     relative bg-black text-white shadow-2xl 

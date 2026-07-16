@@ -256,32 +256,51 @@ export const logWorkoutSession = async (req, res, next) => {
     await t.commit();
 
     // Procesamos gamificación fuera de la transacción
-    const gamificationResult = await processWorkoutGamification(userId, finalDate, finalRoutineName);
-
     const gamificationEvents = [];
+    let xpAdded = 0;
 
-    if (gamificationResult.xpAdded > 0) {
-      gamificationEvents.push({
-        type: 'xp',
-        amount: gamificationResult.xpAdded,
-        reason: `${finalRoutineName} completado`
-      });
-    }
+    try {
+      const { trackChallenge } = await import('../services/challengeService.js');
+      
+      const dailyWorkoutRes = await trackChallenge(userId, 'daily_workout', 1);
+      if (dailyWorkoutRes.completedNow && dailyWorkoutRes.xpResult) {
+        xpAdded += dailyWorkoutRes.xpResult.xpAdded;
+        gamificationEvents.push({ 
+          type: 'challenge_completed', 
+          message: '¡A sudar!', 
+          xpAdded: dailyWorkoutRes.xpResult.xpAdded,
+          leveledUp: dailyWorkoutRes.xpResult.leveledUp,
+          newLevel: dailyWorkoutRes.xpResult.level
+        });
+      }
 
-    if (gamificationResult.limitReachedNow) {
-      createNotification(userId, {
-        type: 'warning',
-        title: 'Límite de XP alcanzado',
-        message: 'Has alcanzado el límite diario de XP por entrenamientos (2/2).',
-        data: { type: 'xp_limit', reason: 'daily_workout_limit' }
-      }).catch(err => console.error("Error notificando límite XP:", err));
-    }
+      const weeklyWorkoutRes = await trackChallenge(userId, 'train_3_workouts_week', 1);
+      if (weeklyWorkoutRes.completedNow && weeklyWorkoutRes.xpResult) {
+        xpAdded += weeklyWorkoutRes.xpResult.xpAdded;
+        gamificationEvents.push({ 
+          type: 'challenge_completed', 
+          message: 'Constancia pura', 
+          xpAdded: weeklyWorkoutRes.xpResult.xpAdded,
+          leveledUp: weeklyWorkoutRes.xpResult.leveledUp,
+          newLevel: weeklyWorkoutRes.xpResult.level
+        });
+      }
 
-    if (gamificationResult.reason === 'daily_limit_reached') {
-      gamificationEvents.push({
-        type: 'info',
-        message: 'Límite diario de experiencia alcanzado.'
-      });
+      if (newWorkoutLog.visibility !== 'private') {
+        const shareRes = await trackChallenge(userId, 'social_share_workout', 1);
+        if (shareRes.completedNow && shareRes.xpResult) {
+          xpAdded += shareRes.xpResult.xpAdded;
+          gamificationEvents.push({ 
+            type: 'challenge_completed', 
+            message: 'Presume tu esfuerzo', 
+            xpAdded: shareRes.xpResult.xpAdded,
+            leveledUp: shareRes.xpResult.leveledUp,
+            newLevel: shareRes.xpResult.level
+          });
+        }
+      }
+    } catch (gError) {
+      console.error('Error gamification workout:', gError);
     }
 
     // Emitir actualización de muro por WebSocket solo si NO es privado
@@ -333,7 +352,7 @@ export const logWorkoutSession = async (req, res, next) => {
       message: 'Entrenamiento guardado con éxito',
       workoutId: newWorkoutLog.id,
       newPRs: newPRs,
-      xpAdded: gamificationResult?.xpAdded || 0,
+      xpAdded: xpAdded,
       gamification: gamificationEvents
     });
 

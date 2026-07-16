@@ -216,7 +216,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
                 <div className="bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-5xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
                     
                     <div className="flex-shrink-0 flex items-center justify-between p-6 sm:p-8 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
@@ -316,21 +316,21 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                                         <div className="flex-1 flex flex-col">
                                             <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar flex-1">
                                                 {paginatedLogs.map((log) => (
-                                                    <div key={log.id} className="flex justify-between items-center p-4 bg-black/5 dark:bg-white/5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 transition-all hover:shadow-sm">
-                                                        <div>
-                                                            <p className="font-extrabold text-sm sm:text-base text-text-primary">{formatDateToShort(log.log_date)}</p>
-                                                            <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mt-0.5">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' })}</p>
+                                                    <div key={log.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-black/5 dark:bg-white/5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 transition-all hover:shadow-sm">
+                                                        <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-accent/10 rounded-[16px]">
+                                                            <span className="font-black text-accent text-lg sm:text-xl font-mono">{log.grams}g</span>
                                                         </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <p className="font-black text-accent text-lg sm:text-xl font-mono">{log.grams}g</p>
-                                                            <div className="flex items-center gap-1.5 border-l border-black/10 dark:border-white/20 pl-3">
-                                                                <button onClick={() => handleEditLog(log)} className="p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95" title="Editar">
-                                                                    <Edit size={16} strokeWidth={2.5} />
-                                                                </button>
-                                                                <button onClick={() => handleDeleteClick(log)} className="p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95" title="Eliminar">
-                                                                    <Trash2 size={16} strokeWidth={2.5} />
-                                                                </button>
-                                                            </div>
+                                                        <div className="min-w-0 flex-1 flex flex-col justify-center">
+                                                            <p className="font-extrabold text-sm sm:text-base text-text-primary truncate">{formatDateToShort(log.log_date)}</p>
+                                                            <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mt-0.5 truncate">{new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' })}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                            <button onClick={() => handleEditLog(log)} className="p-2.5 sm:p-3 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95" title="Editar">
+                                                                <Edit size={16} strokeWidth={2.5} />
+                                                            </button>
+                                                            <button onClick={() => handleDeleteClick(log)} className="p-2.5 sm:p-3 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95" title="Eliminar">
+                                                                <Trash2 size={16} strokeWidth={2.5} />
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -364,7 +364,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
 
             {/* Modal de Edición */}
             {showEditModal && editingLog && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[110] animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+env(safe-area-inset-top,24px))] !pb-[calc(1rem+env(safe-area-inset-bottom,24px))]">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[110] animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
                     <div className="bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-md w-full shadow-2xl animate-[slide-up_0.2s_ease-out]">
                         
                         <div className="flex items-center justify-between p-6 sm:p-8 pb-5 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px]">

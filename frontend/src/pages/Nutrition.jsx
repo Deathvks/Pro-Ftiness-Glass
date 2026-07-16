@@ -8,6 +8,7 @@ import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import WaterLogModal from '../components/WaterLogModal';
 import NutritionLogModal from '../components/NutritionLogModal';
+import FoodScannerModal from '../components/FoodScannerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CreatinaTracker from '../components/CreatinaTracker';
 import SugarTargetModal from '../components/SugarTargetModal';
@@ -1079,6 +1080,7 @@ const Nutrition = ({ setView }) => {
                     selectedDate={selectedDate}
                 />
             )}
+
         </div>
     );
 };

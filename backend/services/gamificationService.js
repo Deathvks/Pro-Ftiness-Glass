@@ -2,7 +2,7 @@
 import models from '../models/index.js';
 import { createNotification } from './notificationService.js';
 
-const { User, NutritionLog, sequelize } = models;
+const { User, NutritionLog, XpLog, sequelize } = models;
 
 export const DAILY_LOGIN_XP = 25;
 export const WEIGHT_UPDATE_XP = 10;
@@ -95,6 +95,7 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
         }
 
         const oldLevel = user.level;
+        const oldXp = user.xp;
         user.xp += amount;
 
         // --- CORRECCIÓN CRÍTICA ---
@@ -119,6 +120,16 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
 
         // Ahora sí guardamos, con XP y Level actualizados simultáneamente
         await user.save({ transaction });
+
+        if (amount !== 0) {
+            await XpLog.create({
+                user_id: user.id,
+                amount: amount,
+                reason: reason,
+                previous_xp: oldXp,
+                new_xp: user.xp
+            }, { transaction });
+        }
 
         if (amount > 0) {
             createNotification(userId, {

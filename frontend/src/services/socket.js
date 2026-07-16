@@ -12,8 +12,8 @@ let socket;
 let isListenerRegistered = false;
 
 export const initSocket = () => {
-    // Evitar crear múltiples conexiones si ya existe una activa
-    if (socket && socket.connected) return socket;
+    // Evitar crear múltiples conexiones si ya existe una instancia
+    if (socket) return socket;
 
     // Obtener el token actual del store para autenticación
     const token = useAppStore.getState().token;
@@ -28,14 +28,15 @@ export const initSocket = () => {
         auth: {
             token: token
         },
+        transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
         autoConnect: true
     });
 
-    socket.on('connect', () => {
-        console.log('🟢 Conectado al servidor de Sockets:', socket.id);
+    socket.on('connect', function() {
+        console.log('🟢 Conectado al servidor de Sockets:', this.id);
     });
 
     socket.on('connect_error', (err) => {
@@ -69,24 +70,7 @@ export const initSocket = () => {
     }
     // --- FIN GESTIÓN DE BATERÍA ---
 
-    // Manejo de visibilidad en la Web (PWA/Navegador de PC)
-    if (!Capacitor.isNativePlatform() && !isListenerRegistered) {
-        isListenerRegistered = true;
-        
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                if (socket && socket.disconnected) {
-                    console.log('🔋 Web activa: Reconectando socket...');
-                    socket.connect();
-                }
-            } else {
-                if (socket && socket.connected) {
-                    console.log('🔋 Web oculta: Desconectando socket...');
-                    socket.disconnect();
-                }
-            }
-        });
-    }
+    // --- FIN GESTIÓN DE BATERÍA ---
 
     return socket;
 };

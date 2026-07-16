@@ -262,7 +262,7 @@ const ExerciseListView = ({
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="flex-1 bg-bg-primary overflow-y-auto overflow-x-hidden relative custom-scrollbar pb-[env(safe-area-inset-bottom,0px)]"
+        className="flex-1 bg-bg-primary overflow-y-auto overflow-x-hidden relative custom-scrollbar pb-safe-bottom"
       >
         {isLoading ? (
           <div className="flex justify-center py-12"><Spinner size={32} /></div>

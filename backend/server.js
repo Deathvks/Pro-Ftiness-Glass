@@ -33,6 +33,7 @@ import twoFactorRoutes from './routes/twoFactor.js';
 import sessionRoutes from './routes/sessionRoutes.js';
 import socialRoutes from './routes/social.js';
 import reportRoutes from './routes/reports.js';
+import gamificationRoutes from './routes/gamificationRoutes.js';
 import storyRoutes from './routes/stories.js';
 import squadRoutes from './routes/squads.js';
 import aiRoutes from './routes/ai.js'; // Nueva ruta IA importada
@@ -62,10 +63,18 @@ if (!isProduction) {
 
 const corsOptions = {
   origin: function (origin, callback) {
-    const isLocalNetwork = !isProduction && origin && /^http:\/\/(192\.168\.|10\.|172\.|localhost)/.test(origin);
-    if (!origin || allowedOrigins.includes(origin) || isLocalNetwork) {
+    // Si no hay origen (ej. curl, postman) o si estamos en desarrollo, permitimos más flexibilidad
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Permitir subredes locales típicas en desarrollo (192.168.x.x, 10.x.x.x, 172.x.x.x, localhost, 127.0.0.1)
+    const isLocalNetwork = !isProduction && /^http:\/\/(192\.168\.|10\.|172\.|localhost|127\.0\.0\.1)/.test(origin);
+    
+    if (allowedOrigins.includes(origin) || isLocalNetwork || (!isProduction && origin.includes('localhost'))) {
       callback(null, true);
     } else {
+      console.warn(`[CORS] Origen bloqueado: ${origin}`);
       callback(new Error(`El origen ${origin} no está permitido por CORS`));
     }
   },
@@ -75,10 +84,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// --- INICIALIZACIÓN SOCKET.IO ---
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: corsOptions.origin,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -151,6 +159,7 @@ app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/gamification', gamificationRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/squads', squadRoutes);
 app.use('/api/ai', aiRoutes); // Nueva ruta IA registrada
@@ -169,3 +178,5 @@ db.sequelize.sync()
   .catch(err => {
     console.error('❌ Database connection failed:', err);
   });
+
+export { io };

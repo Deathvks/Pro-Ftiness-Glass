@@ -93,6 +93,20 @@
       --bg-color: #080814;
     }
 
+    html.desert-theme {
+      --bg-color: #fff1e6;
+    }
+    html.dark.desert-theme {
+      --bg-color: #3d2b1f;
+    }
+
+    html.ocean-theme {
+      --bg-color: #e0f2fe;
+    }
+    html.dark.ocean-theme {
+      --bg-color: #0f172a;
+    }
+
     /* =========================================================
        BLINDAJE PWA iOS: Eliminar borde superior y margen píldora
        ========================================================= */
@@ -126,14 +140,11 @@
       overflow: hidden !important;
     }
 
-    /* En standalone mode, 100dvh puede causar un espacio fantasma inferior en iOS 27 beta 
+    /* En standalone mode, 100dvh puede causar un espacio fantasma inferior en iOS 27 beta
        porque excluye el área segura. 100vh garantiza pantalla completa física. */
     @media (display-mode: standalone) {
       html, body, #root {
         height: 100vh !important;
-      }
-      html {
-        color-scheme: dark;
       }
     }
 
@@ -155,8 +166,8 @@
       color: #ffffff;
       opacity: 1;
       transition: opacity 0.3s ease;
-      padding-top: 35vh;
       padding-bottom: 20px;
+      padding-top: calc(env(safe-area-inset-top) + 2rem);
       box-sizing: border-box;
     }
 
@@ -165,6 +176,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      flex-grow: 1;
     }
 
     .app-splash-spinner {
@@ -204,6 +216,43 @@
       border-color: rgba(168, 85, 247, 0.3);
       -webkit-text-fill-color: #a855f7;
       background-image: linear-gradient(rgba(168, 85, 247, 0.1), rgba(168, 85, 247, 0.1)), linear-gradient(rgba(8, 8, 20, 0.5), rgba(8, 8, 20, 0.5));
+    }
+
+    html.desert-theme .app-splash-screen {
+      color: #5c4033;
+      background-color: #fff1e6 !important;
+      background-image: url('/assets/themes/desert.jpg') !important;
+      background-size: cover !important;
+      background-position: center !important;
+    }
+    html.dark.desert-theme .app-splash-screen {
+      color: #f5deb3;
+      background-color: #3d2b1f !important;
+      background-image: linear-gradient(rgba(61, 43, 31, 0.7), rgba(61, 43, 31, 0.7)), url('/assets/themes/desert.jpg') !important;
+      background-size: cover !important;
+      background-position: center !important;
+    }
+
+    html.desert-theme .app-splash-spinner {
+      border-color: rgba(205, 133, 63, 0.1);
+      border-top-color: #cd853f;
+      box-shadow: 0 0 20px -5px #cd853f;
+    }
+    html.dark.desert-theme .app-splash-spinner {
+      border-color: rgba(210, 180, 140, 0.1);
+      border-top-color: #d2b48c;
+      box-shadow: 0 0 20px -5px #d2b48c;
+    }
+
+    html.desert-theme .app-splash-title span.glass-badge {
+      border-color: rgba(205, 133, 63, 0.3);
+      -webkit-text-fill-color: #cd853f;
+      background-image: linear-gradient(rgba(205, 133, 63, 0.1), rgba(205, 133, 63, 0.1)), linear-gradient(rgba(255, 241, 230, 0.5), rgba(255, 241, 230, 0.5));
+    }
+    html.dark.desert-theme .app-splash-title span.glass-badge {
+      border-color: rgba(210, 180, 140, 0.3);
+      -webkit-text-fill-color: #d2b48c;
+      background-image: linear-gradient(rgba(210, 180, 140, 0.1), rgba(210, 180, 140, 0.1)), linear-gradient(rgba(44, 30, 22, 0.5), rgba(44, 30, 22, 0.5));
     }
 
     .app-splash-title {
@@ -296,15 +345,29 @@
         };
 
         var savedTheme = localStorage.getItem('theme') || 'system';
+        if (savedTheme.startsWith('"') && savedTheme.endsWith('"')) savedTheme = savedTheme.slice(1, -1);
         var savedAccentKey = localStorage.getItem('accent') || 'green';
+        var savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode && savedDarkMode.startsWith('"') && savedDarkMode.endsWith('"')) savedDarkMode = savedDarkMode.slice(1, -1);
         var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        var isDark = systemDark;
+        if (savedDarkMode === 'true') isDark = true;
+        if (savedDarkMode === 'false') isDark = false;
 
         if (savedAccentKey.startsWith('"') && savedAccentKey.endsWith('"')) {
           savedAccentKey = savedAccentKey.slice(1, -1);
         }
 
+        var effectiveTheme = savedTheme;
+        if (effectiveTheme === 'system') effectiveTheme = isDark ? 'dark' : 'light';
+
         var hexColor = accentMap[savedAccentKey] || savedAccentKey;
         if (!/^#[0-9A-F]{6}$/i.test(hexColor)) hexColor = '#22c55e';
+
+        if (effectiveTheme === 'ocean' || effectiveTheme === 'ocean-dark') {
+          hexColor = '#0ea5e9';
+        }
 
         function hexToRgb(hex) {
           var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -320,25 +383,31 @@
         root.style.setProperty('--accent-g', rgb.g);
         root.style.setProperty('--accent-b', rgb.b);
 
-        var effectiveTheme = savedTheme;
-        if (effectiveTheme === 'system') effectiveTheme = systemDark ? 'dark' : 'light';
-
-        var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
-        var headerColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814' };
+        var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814', desert: '#f0dec5', 'desert-dark': '#2c1e16', ocean: '#e0f2fe', 'ocean-dark': '#0f172a' };
+        var headerColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814', desert: '#f0dec5', 'desert-dark': '#2c1e16', ocean: '#e0f2fe', 'ocean-dark': '#0f172a' };
 
         var selectedBgColor = bgColors[effectiveTheme] || bgColors.dark;
         var selectedHeaderColor = headerColors[effectiveTheme] || headerColors.dark;
 
-        root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme');
+        root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'desert-theme', 'dark');
         if (savedTheme === 'system') {
-          root.classList.add(systemDark ? 'dark-theme' : 'light-theme');
+          root.classList.add(isDark ? 'dark-theme' : 'light-theme');
         } else {
-          root.classList.add(effectiveTheme + '-theme');
+          var baseTheme = effectiveTheme;
+          if (baseTheme === 'desert-dark') baseTheme = 'desert';
+          if (baseTheme === 'ocean-dark') baseTheme = 'ocean';
+          root.classList.add(baseTheme + '-theme');
+          if (effectiveTheme === 'desert-dark' || effectiveTheme === 'ocean-dark') {
+            root.classList.add('dark');
+          }
         }
 
         var metaColor = document.getElementById('dynamic-theme-color');
         if (metaColor) {
-          if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+          var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          // Safari in iOS automatically applies a translucent blur based on the background image 
+          // if theme-color is NOT present. For Android, we keep the solid color to tint Chrome.
+          if (isIOS || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
             metaColor.remove();
           } else {
             metaColor.setAttribute('content', selectedHeaderColor);
@@ -347,33 +416,24 @@
 
         var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-        // Si es standalone, todo transparente para engañar a iOS y quitar la raya
-        if (isStandalone) {
-          root.style.setProperty('background-color', 'transparent', 'important');
-        } else {
-          root.style.setProperty('background-color', selectedHeaderColor, 'important');
-        }
-
-        var setBodyColor = function () {
-          var appRoot = document.getElementById('root');
-          
-          if (!isStandalone) {
-            if (document.body) document.body.style.setProperty('background-color', selectedHeaderColor, 'important');
-            if (document.documentElement) document.documentElement.style.setProperty('background-color', selectedHeaderColor, 'important');
-            if (appRoot) appRoot.style.setProperty('background-color', selectedHeaderColor, 'important');
-          } else {
-            if (document.body) document.body.style.setProperty('background-color', 'transparent', 'important');
-            if (document.documentElement) document.documentElement.style.setProperty('background-color', 'transparent', 'important');
-            if (appRoot) appRoot.style.setProperty('background-color', 'transparent', 'important');
-          }
-        };
-
-        if (document.body) setBodyColor();
-        else document.addEventListener('DOMContentLoaded', setBodyColor);
+        root.style.setProperty('--bg-color', selectedHeaderColor);
 
         var splash = document.querySelector('.app-splash-screen');
         if (splash) {
           splash.style.backgroundColor = selectedBgColor;
+        }
+
+        // iOS PWA viewport recalculation hack:
+        // iOS doesn't compute env(safe-area-inset-top) correctly on first PWA standalone load.
+        // A tiny height toggle forces WebKit to recalculate the viewport + safe areas.
+        // This replicates the effect of the iOS "back gesture" that the user noticed fixes the issue.
+        if (isStandalone) {
+          requestAnimationFrame(function () {
+            root.style.height = '100.1vh';
+            requestAnimationFrame(function () {
+              root.style.height = '100vh';
+            });
+          });
         }
 
       } catch (e) {

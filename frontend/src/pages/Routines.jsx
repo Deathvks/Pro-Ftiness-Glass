@@ -807,12 +807,12 @@ const Routines = ({ setView }) => {
         <>
           <div className="mb-8 flex flex-col gap-5">
             <div className="max-w-md relative" id="routines-search">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary z-10 pointer-events-none" size={18} />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar rutinas..."
-                className="w-full pl-11 pr-4 py-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 border border-transparent focus:border-accent/30 focus:outline-none transition-all text-sm font-medium placeholder:text-text-muted text-text-primary"
+                className="glass w-full pl-11 pr-4 py-3.5 rounded-[20px] bg-black/10 dark:bg-black/30 border border-transparent focus:border-accent/30 focus:outline-none transition-all text-sm font-medium placeholder:text-text-muted text-text-primary"
               />
             </div>
 

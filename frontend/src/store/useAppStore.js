@@ -19,6 +19,15 @@ const useAppStore = create((set, get) => ({
     ...createSyncSlice(set, get),
     ...createStorySlice(set, get),
 
+    // --- Animations Queue ---
+    referralAnimationQueue: [],
+    addReferralAnimation: (data) => set((state) => ({
+        referralAnimationQueue: [...state.referralAnimationQueue, data]
+    })),
+    shiftReferralAnimation: () => set((state) => ({
+        referralAnimationQueue: state.referralAnimationQueue.slice(1)
+    })),
+
     // --- Configuración Global: Vibración (Haptics) ---
     hapticsEnabled: (() => {
         try {
@@ -136,6 +145,31 @@ const useAppStore = create((set, get) => ({
             localStorage.removeItem('socialTourCompleted');
         } catch (e) { }
         set({ socialTourCompleted: false });
+    },
+
+    // --- Configuración Global: Tour Hub ---
+    hubTourCompleted: (() => {
+        try {
+            return localStorage.getItem('hubTourCompleted') === 'true';
+        } catch (e) {
+            return false;
+        }
+    })(),
+
+    completeHubTour: () => {
+        try {
+            localStorage.setItem('hubTourCompleted', 'true');
+        } catch (e) {
+            console.warn(e);
+        }
+        set({ hubTourCompleted: true });
+    },
+
+    resetHubTour: () => {
+        try {
+            localStorage.removeItem('hubTourCompleted');
+        } catch (e) { }
+        set({ hubTourCompleted: false });
     }
 }));
 

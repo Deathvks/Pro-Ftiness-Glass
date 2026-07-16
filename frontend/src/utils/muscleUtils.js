@@ -252,5 +252,9 @@ export const MUSCLE_NAMES_ES = {
     'rectus abdominis': 'Abdominales',
     'pectoralis major': 'Pecho',
     'quadriceps femoris': 'Cuádriceps',
-    'triceps brachii': 'Tríceps'
+    'triceps brachii': 'Tríceps',
+    'knees': 'Rodillas',
+    'hands': 'Manos',
+    'feet': 'Pies',
+    'calves': 'Gemelos'
 };

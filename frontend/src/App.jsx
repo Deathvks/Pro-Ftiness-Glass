@@ -1,7 +1,9 @@
 /* frontend/src/App.jsx */
 import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Home, Dumbbell, BarChart2, Settings, Utensils, Users, User, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+import { HomeIcon as HomeOutline, UsersIcon as UsersOutline, ChartBarIcon as ChartOutline, FireIcon as FireOutline, UserIcon as UserOutline, BoltIcon as BoltOutline, Squares2X2Icon as SquaresOutline } from '@heroicons/react/24/outline';
+import { HomeIcon as HomeSolid, UsersIcon as UsersSolid, ChartBarIcon as ChartSolid, FireIcon as FireSolid, UserIcon as UserSolid, BoltIcon as BoltSolid, Squares2X2Icon as SquaresSolid } from '@heroicons/react/24/solid';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -50,8 +52,13 @@ const Social = lazy(() => import('./pages/Social'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const QuickCardio = lazy(() => import('./pages/QuickCardio'));
 const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
+const Hub = lazy(() => import('./pages/Hub'));
 const ResetPasswordScreen = lazy(() => import('./pages/ResetPasswordScreen'));
 const SharedRoutinePreview = lazy(() => import('./pages/SharedRoutinePreview'));
+const AppearanceScreen = lazy(() => import('./pages/AppearanceScreen'));
+const SupportScreen = lazy(() => import('./pages/SupportScreen'));
+const SocialLinksScreen = lazy(() => import('./pages/SocialLinksScreen'));
+const ChallengesScreen = lazy(() => import('./pages/ChallengesScreen'));
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
@@ -66,6 +73,7 @@ export default function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
   const [viewingMyStory, setViewingMyStory] = useState(false);
+  const [visitedHub, setVisitedHub] = useState(() => localStorage.getItem('visited_hub') === 'true');
 
   const {
     view,
@@ -247,13 +255,24 @@ export default function App() {
     }
   }, [myStories, navigateInternal]);
 
+  useEffect(() => {
+    if (view === 'hub' && !visitedHub) {
+      localStorage.setItem('visited_hub', 'true');
+      setVisitedHub(true);
+    }
+  }, [view, visitedHub]);
+
   const currentTitle = useMemo(() => {
     const titleMap = {
       dashboard: { key: 'Dashboard', default: 'Dashboard' },
+      challenges: { key: 'Retos', default: 'Retos' },
       nutrition: { key: 'Nutrición', default: 'Nutrición' },
       progress: { key: 'Progreso', default: 'Progreso' },
       routines: { key: 'Rutinas', default: 'Rutinas' },
       settings: { key: 'Ajustes', default: 'Ajustes' },
+      appearance: { key: 'Apariencia', default: 'Apariencia' },
+      support: { key: 'Soporte y Comunidad', default: 'Soporte y Comunidad' },
+      socialLinks: { key: 'Nuestras Redes', default: 'Nuestras Redes' },
       workout: { key: 'Entreno', default: 'Entreno' },
       profile: { key: 'Perfil', default: 'Perfil' },
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
@@ -298,6 +317,7 @@ export default function App() {
       case 'templateDiets': return <TemplateDiets setView={navigateInternal} />;
       case 'social': return <Social setView={navigateInternal} />;
       case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} />;
+      case 'hub': return <Hub setView={navigateInternal} />;
       case 'quickCardio': return <QuickCardio onBack={() => navigateInternal('dashboard')} setView={navigateInternal} />;
       case 'active-cardio': return <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />;
       case 'settings':
@@ -312,6 +332,10 @@ export default function App() {
             highlight={navParams?.highlight}
           />
         );
+      case 'appearance': return <AppearanceScreen />;
+      case 'support': return <SupportScreen />;
+      case 'socialLinks': return <SocialLinksScreen />;
+      case 'challenges': return <ChallengesScreen setView={navigateInternal} />;
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigateInternal('settings')} />;
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigateInternal} />;
       case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('settings')} /> : <Dashboard setView={navigateInternal} />;
@@ -340,32 +364,12 @@ export default function App() {
   const hasUnseen = useMemo(() => hasStories && myStories.some(s => !s.viewed), [hasStories, myStories]);
 
   const navItems = useMemo(() => [
-    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <Home size={24} /> },
-    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: <Users size={24} /> },
-    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: <Utensils size={24} /> },
-    { id: 'progress', label: t('Progreso', { defaultValue: 'Progreso' }), icon: <BarChart2 size={24} /> },
-    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: <Dumbbell size={24} /> },
-    { 
-      id: 'profile', 
-      label: t('Perfil', { defaultValue: 'Perfil' }), 
-      icon: profileImgSrc ? (
-        <div className={`rounded-full flex items-center justify-center transition-all duration-300 
-            ${hasStories 
-                ? `w-8 h-8 p-[2px] ${hasUnseen ? 'bg-accent' : 'bg-gray-400 dark:bg-gray-600'}` 
-                : 'w-8 h-8'
-            }
-        `}>
-            <img 
-              src={profileImgSrc} 
-              alt="Perfil" 
-              className={`w-full h-full rounded-full object-cover ${hasStories ? 'border-[2px] border-bg-primary' : ''}`} 
-            />
-        </div>
-      ) : (
-        <User size={24} /> 
-      )
-    },
-  ], [t, profileImgSrc, hasStories, hasUnseen]);
+    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: (active) => active ? <HomeSolid className="w-6 h-6" /> : <HomeOutline className="w-6 h-6" /> },
+    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: (active) => active ? <UsersSolid className="w-6 h-6" /> : <UsersOutline className="w-6 h-6" /> },
+    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: (active) => active ? <FireSolid className="w-6 h-6" /> : <FireOutline className="w-6 h-6" /> },
+    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: (active) => active ? <BoltSolid className="w-6 h-6" /> : <BoltOutline className="w-6 h-6" /> },
+    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub, icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
+  ], [t, visitedHub]);
 
   const AuthenticatedAppContent = useMemo(() => {
     if (!userProfile || (isLoading && !userProfile.goal)) {
@@ -403,6 +407,7 @@ export default function App() {
           {...verificationProps}
           onHeaderAvatarClick={handleHeaderAvatarClick}
           userProfile={userProfileWithStory}
+          profileImgSrc={profileImgSrc}
         />
         {isResting && (
           restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
