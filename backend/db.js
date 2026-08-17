@@ -2,7 +2,7 @@
 import { Sequelize } from 'sequelize';
 import config from './config/config.cjs';
 
-const env = process.env.NODE_ENV || 'development';
+const env = process.env.NODE_ENV || (process.env.MYSQL_HOST ? 'production' : 'development');
 const dbConfig = config[env];
 
 console.log(`🔌 Conectando a Base de Datos: ${dbConfig.database} en ${dbConfig.host}`);

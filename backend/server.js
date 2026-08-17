@@ -180,7 +180,8 @@ db.sequelize.sync()
     startCronJobs();
   })
   .catch(err => {
-    console.error('❌ Database connection failed:', err);
+    console.error('❌ Database connection failed:', err.message);
+    console.error(err.stack);
   });
 
 export { io };
