@@ -45,8 +45,7 @@ const RoutineTourGuide = () => {
                 forceTouchAction(popover.nextButton, () => {
                     if (!driverRef.current) return;
                     if (state.activeIndex === config.steps.length - 1) {
-                        driverRef.current.destroy();
-                    } else {
+                        driverRef.current.destroy();} else {
                         driverRef.current.moveNext();
                     }
                 });
@@ -56,8 +55,7 @@ const RoutineTourGuide = () => {
                 });
 
                 forceTouchAction(popover.closeButton, () => {
-                    if (driverRef.current) driverRef.current.destroy();
-                });
+                    if (driverRef.current) driverRef.current.destroy();});
             },
             
             // FIX SCROLL
@@ -109,9 +107,15 @@ const RoutineTourGuide = () => {
         });
 
         const checkModalsAndStart = () => {
+            if (window.location.pathname !== '/routines') {
+                timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+                return;
+            }
+    
             const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
-                const className = el.className || '';
-                return typeof className === 'string' && className.includes('z-') && !className.includes('-z-');
+                const style = window.getComputedStyle(el);
+                const zIndex = parseInt(style.zIndex, 10) || 0;
+                return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
             });
 
             if (activeModals.length > 0) {
@@ -119,6 +123,7 @@ const RoutineTourGuide = () => {
             } else {
                 if (!hasStartedRef.current && driverRef.current) {
                     hasStartedRef.current = true;
+                    localStorage.setItem('routineTourCompleted', 'true');
                     driverRef.current.drive();
                 }
             }
@@ -129,8 +134,7 @@ const RoutineTourGuide = () => {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             if (driverRef.current) {
-                driverRef.current.destroy();
-            }
+                driverRef.current.destroy();}
         };
 
     }, [routineTourCompleted, completeRoutineTour]);

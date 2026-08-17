@@ -65,9 +65,9 @@ const RoutineActions = ({
         </button>
         <button
           onClick={onAddManual}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 transition border border-accent/20"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-bg-secondary text-text-primary font-semibold hover:bg-bg-tertiary hover:scale-105 transition-all shadow-md border border-glass-border"
         >
-          <Plus size={20} />
+          <Plus size={20} className="text-accent" />
           <span>Añadir Ejercicio Manual</span>
         </button>
       </div>
@@ -78,7 +78,7 @@ const RoutineActions = ({
           <button
             onClick={onDeleteClick}
             disabled={isDeleting}
-            className="w-full sm:w-auto sm:px-6 px-4 py-3 rounded-xl bg-red/10 text-red hover:bg-red/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full sm:w-auto sm:px-6 px-4 py-3 rounded-xl bg-red-500 text-white hover:bg-red-600 transition flex items-center justify-center gap-2 disabled:opacity-50 font-medium"
           >
             {isDeleting ? <Spinner size={20} /> : <Trash2 size={20} />}
             <span className="whitespace-nowrap sm:text-base text-sm">Eliminar Rutina</span>

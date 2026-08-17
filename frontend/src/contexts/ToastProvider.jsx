@@ -170,13 +170,15 @@ const ToastProvider = ({ children }) => {
       <style dangerouslySetInnerHTML={{ __html: globalCleanStyles }} />
       
       {mounted && createPortal(
-        <Toaster 
-          position="top-center" 
-          offset="60px" 
-          className="!z-[2147483647]"
-          style={{ zIndex: 2147483647 }} 
-          toastOptions={{ className: '!z-[2147483647]', style: { zIndex: 2147483647 } }} 
-        />,
+        <div style={{ position: 'relative', zIndex: 999999 }}>
+          <Toaster 
+            position="top-center" 
+            offset="60px" 
+            className="!z-[999999]"
+            style={{ zIndex: 999999 }} 
+            toastOptions={{ className: '!z-[999999]', style: { zIndex: 999999 } }} 
+          />
+        </div>,
         document.body
       )}
     </ToastContext.Provider>

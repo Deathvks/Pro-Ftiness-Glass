@@ -431,7 +431,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
                                         return (
                                             <GlassCard key={i} className="p-4 flex gap-4 items-center bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/30 transition-all group">
-                                                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-[16px] bg-bg-primary overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center relative shadow-sm">
+                                                <div className="w-28 sm:w-32 aspect-video shrink-0 rounded-[12px] bg-bg-primary overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center relative shadow-sm">
                                                     <ExerciseMedia 
                                                         details={{
                                                             video_url: videoSrc,
@@ -786,7 +786,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
                                                     return (
                                                         <div key={i} className="flex items-center gap-3">
-                                                            <div className="w-12 h-12 rounded-[12px] bg-bg-primary shrink-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center relative shadow-sm">
+                                                            <div className="w-20 aspect-video rounded-[8px] bg-bg-primary shrink-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center relative shadow-sm">
                                                                 <ExerciseMedia 
                                                                     details={{
                                                                         video_url: videoSrc,

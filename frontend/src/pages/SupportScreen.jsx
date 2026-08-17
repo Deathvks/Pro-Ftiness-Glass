@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { 
-  Info, ChevronRight, Play, Smartphone, Download, Bug, Mail, Binary
+  Info, ChevronRight, Play, Smartphone, Download, Bug, Mail, Binary, ChevronLeft
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 import GlassCard from '../components/GlassCard';
@@ -47,7 +47,7 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action }) => {
 
 
 
-export default function SupportScreen() {
+export default function SupportScreen({ setView }) {
   const showGooglePlayLink = isAndroidWebOrPWA();
   const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
   
@@ -87,6 +87,8 @@ export default function SupportScreen() {
         <title>Soporte y Comunidad - Pro Fitness Glass</title>
       </Helmet>
       
+
+
       <div className="w-full">
         <GlassCard className={glassCardClass}>
           <SectionTitle icon={Info} title="Ayuda y Comunidad" />
@@ -143,9 +145,6 @@ export default function SupportScreen() {
               </div>
             </div>
 
-            <a href="https://wger.de" target="_blank" rel="noopener noreferrer" className="no-underline">
-              <SettingsItem icon={Info} title="Créditos API" subtitle="Datos deportivos por wger" />
-            </a>
 
           </div>
         </GlassCard>

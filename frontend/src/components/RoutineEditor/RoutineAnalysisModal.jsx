@@ -1,18 +1,20 @@
+import ModalPortal from '../ModalPortal';
 /* frontend/src/components/RoutineEditor/RoutineAnalysisModal.jsx */
 import React, { useMemo, useState, useEffect } from 'react';
-import { X, Activity, Layers, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
-import { analyzeRoutine } from '../../utils/trainerLogic'; 
+import { X, Activity, Layers, Sparkles, AlertCircle, Loader2, ArrowUpRight, ArrowDownRight, Dumbbell, Target, Flame } from 'lucide-react';
+import { analyzeRoutine } from '../../utils/trainerLogic';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { askTrainerAI } from '../../services/aiService';
+import useModalLock from '../../hooks/useModalLock';
 
 const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
   const { resolvedTheme } = useAppTheme();
   const analysis = useMemo(() => analyzeRoutine(exercises), [exercises]);
-  
+
   const [aiResponse, setAiResponse] = useState(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [aiError, setAiError] = useState(null);
-  
+
   // Guardamos y leemos de localStorage para que el límite se muestre al instante
   const [remainingUses, setRemainingUses] = useState(() => {
     const saved = localStorage.getItem('ai_remaining_uses');
@@ -23,6 +25,29 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
     const saved = localStorage.getItem('ai_daily_limit');
     return saved !== null ? parseInt(saved, 10) : null;
   });
+
+  // --- Animación de barras al montar ---
+  const [animateBars, setAnimateBars] = useState(false);
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setAnimateBars(true), 150);
+      return () => clearTimeout(timer);
+    } else {
+      setAnimateBars(false);
+    }
+  }, [isOpen]);
+
+  // --- Efecto para cerrar modal si se navega a otra vista ---
+  useEffect(() => {
+    const handleNav = () => {
+      onClose();
+    };
+    window.addEventListener('app_navigated', handleNav);
+    return () => window.removeEventListener('app_navigated', handleNav);
+  }, [onClose]);
+
+  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  useModalLock(isOpen);
 
   // --- NUEVA LÓGICA: Comprobación de cambio de día ---
   useEffect(() => {
@@ -38,7 +63,7 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
         setDailyLimit(null);
         setAiError(null);
       }
-      
+
       // Actualizamos la fecha
       localStorage.setItem('ai_last_date', today);
     }
@@ -49,17 +74,26 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
 
   const isOled = resolvedTheme === 'oled';
   const isDark = resolvedTheme === 'dark';
-  
+
   const containerBorderClass = isOled ? 'border-white/20' : isDark ? 'border-white/10' : 'border-border';
   const innerBorderClass = isOled ? 'border-white/10' : isDark ? 'border-white/5' : 'border-border';
-  const progressTrackClass = (isOled || isDark) ? 'bg-white/10' : 'bg-gray-200';
+  const progressTrackClass = isOled ? 'bg-white/10' : isDark ? 'bg-white/5' : 'bg-gray-100';
 
   const getBarColor = (type) => {
     switch (type) {
-      case 'push': return 'bg-blue-500';
-      case 'pull': return 'bg-emerald-500';
-      case 'legs': return 'bg-purple-500';
+      case 'push': return 'bg-gradient-to-r from-blue-500 to-cyan-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]';
+      case 'pull': return 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]';
+      case 'legs': return 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]';
       default: return 'bg-gray-500';
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case 'push': return <ArrowUpRight className="w-4 h-4 text-cyan-400" />;
+      case 'pull': return <ArrowDownRight className="w-4 h-4 text-emerald-400" />;
+      case 'legs': return <Dumbbell className="w-4 h-4 text-purple-400" />;
+      default: return null;
     }
   };
 
@@ -67,13 +101,13 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
     setIsLoadingAi(true);
     setAiError(null);
     try {
-      const context = exercises.map(e => `- ${e.name} (${e.sets || 0} series de ${e.reps || 0} reps)`).join('\n');
-      
+      const context = exercises.map((e) => `- ${e.name} (${e.sets || 0} series de ${e.reps || 0} reps)`).join('\n');
+
       const prompt = "Analiza esta sesión de entrenamiento asumiendo que es parte de una rutina dividida (split). Enfócate solo en evaluar el volumen, la selección de ejercicios y el equilibrio biomecánico de los músculos que ya están incluidos, sin quejarte de los músculos que faltan. Dame 3 sugerencias breves y directas de mejora.";
-      
+
       const res = await askTrainerAI(prompt, context);
       setAiResponse(res.response);
-      
+
       if (res.remaining !== undefined) {
         setRemainingUses(res.remaining);
         localStorage.setItem('ai_remaining_uses', res.remaining);
@@ -91,7 +125,7 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
       const data = error.response?.data || {};
       const errorMsg = data.error || error.message || "Error al conectar con el Entrenador IA.";
       setAiError(errorMsg);
-      
+
       if (errorMsg.includes('agotado') || errorMsg.includes('Límite')) {
         setRemainingUses(0);
         localStorage.setItem('ai_remaining_uses', '0');
@@ -110,12 +144,14 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
     setAiError(null);
   };
 
-  const isLimitReached = remainingUses === 0 || (aiError && aiError.toLowerCase().includes('agotado'));
+  const isLimitReached = remainingUses === 0 || aiError && aiError.toLowerCase().includes('agotado');
 
   return (
     // Añadido pb-20 para asegurar que no se solape con navbars inferiores en móviles
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
-      <div className={`w-full max-w-md max-h-[85vh] flex flex-col rounded-3xl shadow-2xl transition-colors duration-300 border overflow-hidden ${containerBorderClass} ${isOled ? 'bg-black' : 'bg-bg-secondary'}`}>
+    <ModalPortal><div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className={`w-full max-w-md max-h-[85vh] mt-auto sm:mt-0 flex flex-col rounded-t-[32px] rounded-b-none sm:rounded-3xl shadow-2xl transition-colors duration-300 border overflow-hidden pb-[calc(2rem+var(--safe-bottom))] sm:pb-0 animate-[slide-up_0.3s_ease-out] sm:animate-none ${containerBorderClass} ${isOled ? 'bg-black' : 'bg-bg-secondary'}`}>
+        {/* Drag handle for mobile */}
+        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
         
         {/* Header - Fijo */}
         <div className={`p-5 border-b flex justify-between items-center shrink-0 backdrop-blur-md ${isOled ? 'bg-black/80 border-white/10' : `bg-bg-secondary/95 ${isDark ? 'border-white/5' : 'border-border'}`}`}>
@@ -135,45 +171,78 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
 
         {/* Content - Scrolleable */}
         <div className="p-5 space-y-6 overflow-y-auto flex-1 scrollbar-hide">
-          {!analysis || exercises.length === 0 ? (
-             <div className={`text-center py-8 ${isOled || isDark ? 'text-gray-500' : 'text-text-tertiary'}`}>
+          {!analysis || exercises.length === 0 ?
+            <div className={`text-center py-8 ${isOled || isDark ? 'text-gray-500' : 'text-text-tertiary'}`}>
                <Layers className="w-12 h-12 mx-auto mb-3 opacity-20" />
                <p>Añade ejercicios para ver el análisis.</p>
-             </div>
-          ) : (
+             </div> :
+
             <>
-              {/* Stats Grid Locales */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className={`p-4 rounded-2xl border flex flex-col gap-1 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
-                  <span className={`text-xs uppercase tracking-wider font-bold ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>Series Totales</span>
-                  <div className="flex items-end gap-2">
-                    <span className={`text-3xl font-black ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{analysis.stats.totalSets}</span>
+              {/* Stats Grid Flashy */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className={`p-5 rounded-[24px] border relative overflow-hidden flex flex-col gap-1 transition-transform duration-300 hover:scale-[1.02] ${innerBorderClass} ${isOled ? 'bg-gradient-to-br from-white/10 to-transparent' : 'bg-gradient-to-br from-bg-tertiary to-bg-secondary'}`}>
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Layers className="w-16 h-16" />
+                  </div>
+                  <span className={`text-[10px] uppercase tracking-widest font-bold z-10 ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>Total Series</span>
+                  <div className="flex items-end gap-2 z-10 mt-1">
+                    <span className={`text-4xl font-black tracking-tighter ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{analysis.stats.totalSets}</span>
                   </div>
                 </div>
-                <div className={`p-4 rounded-2xl border flex flex-col gap-1 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
-                  <span className={`text-xs uppercase tracking-wider font-bold ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>Enfoque</span>
-                  <div className="flex items-end gap-2">
-                    <span className={`text-lg font-bold truncate ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>
-                      {Math.max(analysis.stats.push, analysis.stats.pull, analysis.stats.legs) === analysis.stats.push ? 'Empuje' : Math.max(analysis.stats.push, analysis.stats.pull, analysis.stats.legs) === analysis.stats.pull ? 'Tracción' : 'Pierna'}
-                    </span>
+
+                <div className={`p-5 rounded-[24px] border relative overflow-hidden flex flex-col gap-1 transition-transform duration-300 hover:scale-[1.02] ${innerBorderClass} ${isOled ? 'bg-gradient-to-bl from-accent/20 to-transparent border-accent/30' : 'bg-gradient-to-bl from-accent/10 to-bg-secondary border-accent/20'}`}>
+                  <div className="absolute top-0 right-0 p-4 opacity-20">
+                    <Target className="w-16 h-16 text-accent" />
+                  </div>
+                  <span className={`text-[10px] uppercase tracking-widest font-bold z-10 ${isOled || isDark ? 'text-accent/80' : 'text-accent'}`}>Enfoque Principal</span>
+                  <div className="flex items-center gap-2 z-10 mt-2">
+                    {(() => {
+                      const max = Math.max(analysis.stats.push, analysis.stats.pull, analysis.stats.legs);
+                      const focus = max === analysis.stats.push ? 'push' : max === analysis.stats.pull ? 'pull' : 'legs';
+                      const label = focus === 'push' ? 'Empuje' : focus === 'pull' ? 'Tracción' : 'Pierna';
+                      return (
+                        <>
+                          <div className={`p-1.5 rounded-full bg-black/20 backdrop-blur-sm`}>
+                            {getTypeIcon(focus)}
+                          </div>
+                          <span className={`text-xl font-extrabold tracking-tight ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{label}</span>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
 
-              {/* Distribución Muscular */}
-              <div className="space-y-3">
-                <h3 className={`text-sm font-semibold ml-1 ${isOled || isDark ? 'text-white/90' : 'text-text-primary'}`}>Distribución de Trabajo</h3>
-                {['push', 'pull', 'legs'].map(type => (
-                  <div key={type} className="space-y-1">
-                    <div className={`flex justify-between text-xs ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>
-                      <span>{type === 'push' ? 'Empuje' : type === 'pull' ? 'Tracción' : 'Pierna'}</span>
-                      <span>{analysis.stats[type]} series</span>
-                    </div>
-                    <div className={`h-2 w-full rounded-full overflow-hidden ${progressTrackClass}`}>
-                      <div className={`h-full ${getBarColor(type)}`} style={{ width: `${(analysis.stats[type] / Math.max(analysis.stats.totalSets, 1)) * 100}%` }} />
-                    </div>
-                  </div>
-                ))}
+              {/* Distribución Muscular Animada */}
+              <div className={`p-5 rounded-[24px] border ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'} space-y-5 shadow-inner`}>
+                <h3 className={`text-xs uppercase tracking-widest font-bold flex items-center gap-2 ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  Distribución Muscular
+                </h3>
+                <div className="space-y-4">
+                  {['push', 'pull', 'legs'].map((type) => {
+                    const percentage = Math.max((analysis.stats[type] / Math.max(analysis.stats.totalSets, 1)) * 100, 0);
+                    return (
+                      <div key={type} className="space-y-2 group cursor-default">
+                        <div className="flex justify-between items-center text-sm">
+                          <div className={`flex items-center gap-2 font-bold ${isOled || isDark ? 'text-white/90' : 'text-text-primary'}`}>
+                            {getTypeIcon(type)}
+                            <span>{type === 'push' ? 'Empuje' : type === 'pull' ? 'Tracción' : 'Pierna'}</span>
+                          </div>
+                          <span className={`font-black tracking-tight ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{analysis.stats[type]} <span className={`text-xs font-medium ${isOled || isDark ? 'text-gray-500' : 'text-text-tertiary'}`}>series</span></span>
+                        </div>
+                        <div className={`h-2.5 w-full rounded-full overflow-hidden ${progressTrackClass} shadow-inner relative`}>
+                          <div 
+                            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${getBarColor(type)}`} 
+                            style={{ width: animateBars ? `${percentage}%` : '0%' }} 
+                          >
+                            <div className="absolute inset-0 bg-white/20 w-1/2 -skew-x-12 -translate-x-full group-hover:translate-x-[250%] transition-transform duration-1000 ease-in-out" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* IA Real */}
@@ -183,76 +252,76 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
                     <Sparkles className="w-4 h-4 text-accent" />
                     Entrenador IA
                   </h3>
-                  {remainingUses !== null && (
-                    <div className="text-right">
+                  {remainingUses !== null &&
+                  <div className="text-right">
                       <span className={`text-xs font-bold block ${remainingUses === 0 ? 'text-red-500' : 'text-text-secondary'}`}>
                         Usos restantes: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
                       </span>
                       <span className="text-[10px] text-text-muted block">Se restablece a medianoche</span>
                     </div>
-                  )}
+                  }
                 </div>
 
-                {!aiResponse && !isLoadingAi && (
-                  <button 
-                    onClick={handleAskAI}
-                    disabled={isLimitReached}
-                    className={`w-full p-4 rounded-2xl border font-bold flex items-center justify-center gap-2 transition-transform ${
-                      isLimitReached
-                        ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed border-transparent'
-                        : 'border-accent/30 bg-accent/10 text-accent active:scale-95'
-                    }`}
-                  >
-                    {isLimitReached ? (
-                      <><AlertCircle className="w-5 h-5" /> Límite Alcanzado</>
-                    ) : (
-                      <><Sparkles className="w-5 h-5" /> Analizar con IA</>
-                    )}
-                  </button>
-                )}
+                {!aiResponse && !isLoadingAi &&
+                <button
+                  onClick={handleAskAI}
+                  disabled={isLimitReached}
+                  className={`w-full p-4 rounded-2xl border font-bold flex items-center justify-center gap-2 transition-transform ${
+                  isLimitReached ?
+                  'bg-gray-500/20 text-gray-400 cursor-not-allowed border-transparent' :
+                  'border-accent/30 bg-accent/10 text-accent active:scale-95'}`
+                  }>
+                  
+                    {isLimitReached ?
+                  <><AlertCircle className="w-5 h-5" /> Límite Alcanzado</> :
 
-                {isLoadingAi && (
-                  <div className={`p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
+                  <><Sparkles className="w-5 h-5" /> Analizar con IA</>
+                  }
+                  </button>
+                }
+
+                {isLoadingAi &&
+                <div className={`p-6 rounded-2xl border flex flex-col items-center justify-center gap-3 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
                     <Loader2 className="w-6 h-6 text-accent animate-spin" />
                     <span className="text-sm text-text-secondary">Analizando biomecánica y volumen...</span>
                   </div>
-                )}
+                }
 
-                {aiError && (
-                  <div className="space-y-2">
+                {aiError &&
+                <div className="space-y-2">
                     <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex gap-3 items-start">
                       <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                       <p className="text-sm text-red-500">{aiError}</p>
                     </div>
-                    <button 
-                      onClick={handleClearAI}
-                      className="w-full py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-                    >
+                    <button
+                    onClick={handleClearAI}
+                    className="w-full py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">
+                    
                       Descartar error
                     </button>
                   </div>
-                )}
+                }
 
-                {aiResponse && (
-                  <div className="space-y-2">
+                {aiResponse &&
+                <div className="space-y-2">
                     <div className={`p-4 rounded-2xl border space-y-2 text-sm leading-relaxed whitespace-pre-wrap ${innerBorderClass} ${isOled ? 'bg-white/5 text-gray-300' : 'bg-bg-tertiary text-text-secondary'}`}>
                       {aiResponse}
                     </div>
-                    <button 
-                      onClick={handleClearAI}
-                      className="w-full py-2 text-sm font-medium text-text-secondary hover:text-red-500 transition-colors"
-                    >
+                    <button
+                    onClick={handleClearAI}
+                    className="w-full py-2 text-sm font-medium text-text-secondary hover:text-red-500 transition-colors">
+                    
                       Borrar análisis
                     </button>
                   </div>
-                )}
+                }
               </div>
             </>
-          )}
+            }
         </div>
       </div>
-    </div>
-  );
+    </div></ModalPortal>);
+
 };
 
 export default RoutineAnalysisModal;

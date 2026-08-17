@@ -29,6 +29,7 @@ export const useAppNavigation = (isInitialLoad) => {
     if (path === '/settings') return 'settings';
     if (path === '/notifications') return 'notifications';
     if (path === '/active-cardio') return 'active-cardio';
+    if (path === '/asesoria') return 'asesoria';
 
     const savedView = localStorage.getItem('lastView');
     return savedView || 'dashboard';
@@ -90,6 +91,9 @@ export const useAppNavigation = (isInitialLoad) => {
     else if (path === '/social' && view !== 'social') {
       setView('social');
     }
+    else if (path === '/asesoria' && view !== 'asesoria') {
+      setView('asesoria');
+    }
   }, [view, navParams.userId]);
 
   // Función de navegación principal
@@ -143,9 +147,7 @@ export const useAppNavigation = (isInitialLoad) => {
     navigate('privacyPolicy');
   }, [navigate]);
 
-  useEffect(() => {
-    if (mainContentRef.current) mainContentRef.current.scrollTop = 0;
-  }, [view]);
+  
 
   useEffect(() => {
     if (!isInitialLoad && view !== 'privacyPolicy' && view !== 'publicProfile' && view !== 'active-cardio') {
@@ -155,6 +157,9 @@ export const useAppNavigation = (isInitialLoad) => {
 
   // Manejo de botones Atrás/Adelante del navegador
   useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
     const handlePopState = (event) => {
       const path = window.location.pathname;
       const profileMatch = path.match(/^\/profile\/(\d+)$/);

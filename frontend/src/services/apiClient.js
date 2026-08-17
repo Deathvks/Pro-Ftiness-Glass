@@ -57,7 +57,7 @@ const apiClient = async (endpoint, options = {}) => {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos de timeout para redes lentísimas
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout para tareas pesadas
     config.signal = controller.signal;
 
     try {
@@ -67,7 +67,7 @@ const apiClient = async (endpoint, options = {}) => {
         if (!response.ok) {
             // Si la respuesta es un error (ej: 4xx, 5xx), intentamos leer el cuerpo del error.
 
-            if (response.status === 401) {
+            if (response.status === 401 && !endpoint.includes('/auth/login')) {
                 useAppStore.getState().handleSessionExpiry();
                 // --- CAMBIO: Interrumpir flujo inmediatamente ---
                 throw new Error('Sesión expirada');
@@ -88,6 +88,7 @@ const apiClient = async (endpoint, options = {}) => {
 
                 const err = new Error(errorMessage);
                 err.data = errorData; // Adjuntamos los datos completos
+                err.status = response.status; // FUNDAMENTAL para useOfflineSync
                 throw err;
             } catch (parseError) {
                 if (parseError.data) throw parseError; // Ya es nuestro error personalizado
@@ -98,9 +99,11 @@ const apiClient = async (endpoint, options = {}) => {
                 } else if (response.status === 403) {
                     errorMessage = 'No tienes permiso para ver este recurso.';
                 }
+                
+                const fallbackErr = new Error(errorMessage);
+                fallbackErr.status = response.status;
+                throw fallbackErr;
             }
-
-            throw new Error(errorMessage);
         }
 
         if (response.status === 204) {

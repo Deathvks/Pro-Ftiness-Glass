@@ -1,3 +1,4 @@
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/StoryViewer.jsx */
 import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import { X, Heart, Download, Loader2, ImageOff, Volume2, VolumeX, Trash2, ChevronLeft, Film } from 'lucide-react';
@@ -8,135 +9,135 @@ import ConfirmationModal from './ConfirmationModal';
 const DEFAULT_STORY_DURATION = 5000;
 
 // Configuración de puerto
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 const SERVER_URL = API_URL.replace('/api', '');
 
 // --- Subcomponente: Lista de Likes (Con Animaciones) ---
 const LikesListModal = ({ likes, onClose }) => {
-    const safeLikes = Array.isArray(likes) ? likes : [];
-    const [isClosing, setIsClosing] = useState(false);
-    
-    const listRef = useRef(null);
-    const touchStartY = useRef(0);
-    const touchStartX = useRef(0);
+  const safeLikes = Array.isArray(likes) ? likes : [];
+  const [isClosing, setIsClosing] = useState(false);
 
-    const handleTouchStart = (e) => {
-        touchStartY.current = e.touches[0].clientY;
-        touchStartX.current = e.touches[0].clientX;
-    };
+  const listRef = useRef(null);
+  const touchStartY = useRef(0);
+  const touchStartX = useRef(0);
 
-    const triggerClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-            onClose();
-        }, 280);
-    };
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
+  };
 
-    const handleTouchEnd = (e) => {
-        const touchEndY = e.changedTouches[0].clientY;
-        const touchEndX = e.changedTouches[0].clientX;
-        
-        const deltaY = touchStartY.current - touchEndY; 
-        const deltaX = Math.abs(touchStartX.current - touchEndX);
+  const triggerClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 280);
+  };
 
-        // Swipe Down para cerrar
-        if (deltaY < -50 && deltaX < 50) {
-            if (listRef.current && listRef.current.scrollTop <= 0) {
-                e.stopPropagation();
-                triggerClose();
-            }
-        }
-    };
+  const handleTouchEnd = (e) => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndX = e.changedTouches[0].clientX;
 
-    return (
-        <div 
-            className={`absolute inset-0 z-[60] bg-bg-primary flex flex-col ${isClosing ? 'animate-slide-out' : 'animate-slide-in'}`}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-        >
+    const deltaY = touchStartY.current - touchEndY;
+    const deltaX = Math.abs(touchStartX.current - touchEndX);
+
+    // Swipe Down para cerrar
+    if (deltaY < -50 && deltaX < 50) {
+      if (listRef.current && listRef.current.scrollTop <= 0) {
+        e.stopPropagation();
+        triggerClose();
+      }
+    }
+  };
+
+  return (
+    <div
+      className={`absolute inset-0 z-[60] bg-bg-primary flex flex-col ${isClosing ? 'animate-slide-out' : 'animate-slide-in'}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}>
+      
             <div className="p-4 pt-[calc(1rem+var(--safe-top))] border-b border-white/10 flex items-center gap-3 bg-bg-primary z-10" onClick={(e) => e.stopPropagation()}>
                 <button onClick={triggerClose} className="p-1 hover:bg-white/10 rounded-full">
                     <ChevronLeft size={24} className="text-text-primary" />
                 </button>
                 <h3 className="font-bold text-lg text-text-primary">Me gusta</h3>
             </div>
-            <div 
-                ref={listRef}
-                className="flex-1 overflow-y-auto p-2"
-                onClick={(e) => e.stopPropagation()} 
-            >
-                {safeLikes.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-text-tertiary opacity-60">
+            <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto p-2"
+        onClick={(e) => e.stopPropagation()}>
+        
+                {safeLikes.length === 0 ?
+        <div className="flex flex-col items-center justify-center h-full text-text-tertiary opacity-60">
                         <Heart size={48} className="mb-2" />
                         <p>Aún no hay me gusta</p>
-                    </div>
-                ) : (
-                    safeLikes.map((user) => (
-                        <div key={user.userId} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl transition-colors">
-                            <UserAvatar 
-                                user={{ 
-                                    username: user.username, 
-                                    profile_image_url: user.avatar 
-                                }} 
-                                size={10} 
-                                className="w-10 h-10"
-                            />
+                    </div> :
+
+        safeLikes.map((user) =>
+        <div key={user.userId} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl transition-colors">
+                            <UserAvatar
+            user={{
+              username: user.username,
+              profile_image_url: user.avatar
+            }}
+            size={10}
+            className="w-10 h-10" />
+          
                             <span className="font-medium text-text-primary">{user.username}</span>
                             <Heart size={16} className="ml-auto text-red-500 fill-current" />
                         </div>
-                    ))
-                )}
+        )
+        }
             </div>
-        </div>
-    );
+        </div>);
+
 };
 
 // --- Subcomponente: Animación de Corazones y Avatares Flotantes ---
 const FloatingHearts = ({ active }) => {
-    const [items, setItems] = useState([]);
+  const [items, setItems] = useState([]);
 
-    const featuredUsers = useMemo(() => {
-        if (!Array.isArray(active) || active.length === 0) return [];
-        const shuffled = [...active].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, 3);
-    }, [active]);
+  const featuredUsers = useMemo(() => {
+    if (!Array.isArray(active) || active.length === 0) return [];
+    const shuffled = [...active].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  }, [active]);
 
-    useEffect(() => {
-        if (!Array.isArray(active) || active.length === 0) return;
+  useEffect(() => {
+    if (!Array.isArray(active) || active.length === 0) return;
 
-        const interval = setInterval(() => {
-            const id = Date.now();
-            const startLeft = Math.random() * 20 + 70;
-            const duration = 2.5 + Math.random() * 1.5;
-            const wobble = Math.random() * 20 - 10;
-            const showAvatar = featuredUsers.length > 0 && Math.random() > 0.5;
-            
-            let newItem = { 
-                id, 
-                left: startLeft, 
-                duration,
-                wobble,
-                type: 'heart' 
-            };
+    const interval = setInterval(() => {
+      const id = Date.now();
+      const startLeft = Math.random() * 20 + 70;
+      const duration = 2.5 + Math.random() * 1.5;
+      const wobble = Math.random() * 20 - 10;
+      const showAvatar = featuredUsers.length > 0 && Math.random() > 0.5;
 
-            if (showAvatar) {
-                const randomUser = featuredUsers[Math.floor(Math.random() * featuredUsers.length)];
-                newItem.type = 'avatar';
-                newItem.avatar = randomUser.avatar || randomUser.profile_image_url;
-            }
+      let newItem = {
+        id,
+        left: startLeft,
+        duration,
+        wobble,
+        type: 'heart'
+      };
 
-            setItems(prev => [...prev, newItem]);
+      if (showAvatar) {
+        const randomUser = featuredUsers[Math.floor(Math.random() * featuredUsers.length)];
+        newItem.type = 'avatar';
+        newItem.avatar = randomUser.avatar || randomUser.profile_image_url;
+      }
 
-            setTimeout(() => {
-                setItems(prev => prev.filter(i => i.id !== id));
-            }, duration * 1000); 
-        }, 500);
+      setItems((prev) => [...prev, newItem]);
 
-        return () => clearInterval(interval);
-    }, [active, featuredUsers]);
+      setTimeout(() => {
+        setItems((prev) => prev.filter((i) => i.id !== id));
+      }, duration * 1000);
+    }, 500);
 
-    return (
-        <div className="absolute inset-0 pointer-events-none z-40 overflow-hidden">
+    return () => clearInterval(interval);
+  }, [active, featuredUsers]);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-40 overflow-hidden">
             <style>
                 {`
                 @keyframes floatUpWithWobble {
@@ -147,66 +148,66 @@ const FloatingHearts = ({ active }) => {
                 }
                 `}
             </style>
-            {items.map(item => (
-                <div
-                    key={item.id}
-                    className="absolute bottom-16 flex flex-col items-center"
-                    style={{ 
-                        left: `${item.left}%`,
-                        animation: `floatUpWithWobble ${item.duration}s ease-out forwards`,
-                        marginLeft: `${item.wobble}px`
-                    }}
-                >
-                    {item.type === 'avatar' && item.avatar ? (
-                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white/50 shadow-md">
-                            <img 
-                                src={item.avatar.startsWith('http') ? item.avatar : `${SERVER_URL}${item.avatar}`} 
-                                className="w-full h-full object-cover" 
-                                alt="" 
-                            />
-                        </div>
-                    ) : (
-                        <Heart size={30} className="text-accent fill-accent opacity-90 drop-shadow-md" />
-                    )}
+            {items.map((item) =>
+      <div
+        key={item.id}
+        className="absolute bottom-16 flex flex-col items-center"
+        style={{
+          left: `${item.left}%`,
+          animation: `floatUpWithWobble ${item.duration}s ease-out forwards`,
+          marginLeft: `${item.wobble}px`
+        }}>
+        
+                    {item.type === 'avatar' && item.avatar ?
+        <div className="w-8 h-8 rounded-full overflow-hidden border border-white/50 shadow-md">
+                            <img
+            src={item.avatar.startsWith('http') ? item.avatar : `${SERVER_URL}${item.avatar}`}
+            className="w-full h-full object-cover"
+            alt="" />
+          
+                        </div> :
+
+        <Heart size={30} className="text-accent fill-accent opacity-90 drop-shadow-md" />
+        }
                 </div>
-            ))}
-        </div>
-    );
+      )}
+        </div>);
+
 };
 
 const StoryViewer = ({ userId, onClose }) => {
-  const { 
-    stories, 
-    myStories, 
-    userProfile, 
-    markStoryAsViewed, 
-    likeStory, 
-    deleteMyStory 
+  const {
+    stories,
+    myStories,
+    userProfile,
+    markStoryAsViewed,
+    likeStory,
+    deleteMyStory
   } = useAppStore();
 
   const [viewingUserId, setViewingUserId] = useState(userId);
   const isMyStory = viewingUserId === userProfile?.id;
-  const [isClosingStory, setIsClosingStory] = useState(false); 
+  const [isClosingStory, setIsClosingStory] = useState(false);
 
   const getFullImageUrl = useCallback((path) => {
     if (!path) return null;
-    if (path.startsWith('http')) return path; 
-    if (path.startsWith('blob:')) return path; 
+    if (path.startsWith('http')) return path;
+    if (path.startsWith('blob:')) return path;
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `${SERVER_URL}${cleanPath}`;
   }, []);
-  
+
   const storyData = useMemo(() => {
     if (isMyStory) {
-      return { 
-        userId: userProfile?.id, 
-        username: userProfile?.username || 'Yo', 
-        avatar: getFullImageUrl(userProfile?.profile_image_url || userProfile?.avatar), 
-        items: myStories 
+      return {
+        userId: userProfile?.id,
+        username: userProfile?.username || 'Yo',
+        avatar: getFullImageUrl(userProfile?.profile_image_url || userProfile?.avatar),
+        items: myStories
       };
     }
-    
-    const group = stories.find(s => s.userId === viewingUserId);
+
+    const group = stories.find((s) => s.userId === viewingUserId);
     if (!group) return null;
 
     const rawUser = group.user || {};
@@ -219,53 +220,53 @@ const StoryViewer = ({ userId, onClose }) => {
   }, [viewingUserId, isMyStory, stories, myStories, userProfile, getFullImageUrl]);
 
   const activeStories = useMemo(() => {
-    const validStories = (storyData?.items || []).filter(item => {
-        const expiry = item.expires_at || item.expiresAt;
-        if (!expiry) return true;
-        return new Date(expiry) > new Date();
+    const validStories = (storyData?.items || []).filter((item) => {
+      const expiry = item.expires_at || item.expiresAt;
+      if (!expiry) return true;
+      return new Date(expiry) > new Date();
     });
 
     const uniqueStories = [];
     const seenIds = new Set();
     for (const story of validStories) {
-        const id = String(story.id);
-        if (!seenIds.has(id)) {
-            seenIds.add(id);
-            uniqueStories.push(story);
-        }
+      const id = String(story.id);
+      if (!seenIds.has(id)) {
+        seenIds.add(id);
+        uniqueStories.push(story);
+      }
     }
     return uniqueStories;
   }, [storyData]);
 
   const getInitialIndex = () => {
-     const idx = activeStories.findIndex(s => !s.viewed && !isMyStory);
-     return idx !== -1 ? idx : 0;
+    const idx = activeStories.findIndex((s) => !s.viewed && !isMyStory);
+    return idx !== -1 ? idx : 0;
   };
 
   const [currentIndex, setCurrentIndex] = useState(() => getInitialIndex());
-  
+
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
   const [mediaLoaded, setMediaLoaded] = useState(false);
-  const [mediaError, setMediaError] = useState(false); 
+  const [mediaError, setMediaError] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false); 
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
-  const [showLikesList, setShowLikesList] = useState(false); 
+  const [showLikesList, setShowLikesList] = useState(false);
 
   const videoRef = useRef(null);
-  const animationFrameRef = useRef(null); 
+  const animationFrameRef = useRef(null);
   const startTimeRef = useRef(null);
   const pausedTimeRef = useRef(0);
   const pressStartTimeRef = useRef(0);
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
-  
+
   useEffect(() => {
     if (currentIndex >= activeStories.length && activeStories.length > 0) {
-        setCurrentIndex(Math.max(0, activeStories.length - 1));
+      setCurrentIndex(Math.max(0, activeStories.length - 1));
     }
   }, [activeStories.length, currentIndex]);
 
@@ -285,8 +286,8 @@ const StoryViewer = ({ userId, onClose }) => {
     if (!item) return '';
     let dateVal = item.created_at || item.createdAt || item.date || item.timestamp;
     if (!dateVal && (item.expiresAt || item.expires_at)) {
-        const expiryDate = new Date(item.expiresAt || item.expires_at);
-        dateVal = new Date(expiryDate.getTime() - 86400000);
+      const expiryDate = new Date(item.expiresAt || item.expires_at);
+      dateVal = new Date(expiryDate.getTime() - 86400000);
     }
     if (!dateVal) return '';
     const date = new Date(dateVal);
@@ -305,39 +306,39 @@ const StoryViewer = ({ userId, onClose }) => {
   };
 
   const animateAndClose = useCallback(() => {
-      setIsClosingStory(true);
-      setTimeout(() => {
-          onClose();
-      }, 280);
+    setIsClosingStory(true);
+    setTimeout(() => {
+      onClose();
+    }, 280);
   }, [onClose]);
 
   const goToNext = useCallback(() => {
     if (currentIndex < activeStories.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex((prev) => prev + 1);
     } else {
       if (isMyStory) {
-        animateAndClose(); 
+        animateAndClose();
       } else {
-        const currentGroupIndex = stories.findIndex(s => s.userId === viewingUserId);
+        const currentGroupIndex = stories.findIndex((s) => s.userId === viewingUserId);
         let foundNext = false;
         for (let i = currentGroupIndex + 1; i < stories.length; i++) {
-            const group = stories[i];
-            const validItems = (group.items || []).filter(item => {
-               const expiry = item.expires_at || item.expiresAt;
-               if (!expiry) return true;
-               return new Date(expiry) > new Date();
-            });
+          const group = stories[i];
+          const validItems = (group.items || []).filter((item) => {
+            const expiry = item.expires_at || item.expiresAt;
+            if (!expiry) return true;
+            return new Date(expiry) > new Date();
+          });
 
-            if (validItems.length > 0) {
-                const firstUnviewed = validItems.findIndex(s => !s.viewed);
-                setViewingUserId(group.userId);
-                setCurrentIndex(firstUnviewed !== -1 ? firstUnviewed : 0);
-                foundNext = true;
-                break;
-            }
+          if (validItems.length > 0) {
+            const firstUnviewed = validItems.findIndex((s) => !s.viewed);
+            setViewingUserId(group.userId);
+            setCurrentIndex(firstUnviewed !== -1 ? firstUnviewed : 0);
+            foundNext = true;
+            break;
+          }
         }
         if (!foundNext) {
-            animateAndClose(); 
+          animateAndClose();
         }
       }
     }
@@ -345,7 +346,7 @@ const StoryViewer = ({ userId, onClose }) => {
 
   const goToPrev = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex((prev) => prev - 1);
     }
   };
 
@@ -354,16 +355,16 @@ const StoryViewer = ({ userId, onClose }) => {
     setIsPaused(false);
     setMediaLoaded(false);
     setMediaError(false);
-    setShowLikesList(false); 
+    setShowLikesList(false);
     startTimeRef.current = null;
     pausedTimeRef.current = 0;
   }, [currentIndex, viewingUserId]);
 
   useEffect(() => {
     const safetyTimeout = setTimeout(() => {
-        if (!mediaLoaded && !mediaError) {
-            setMediaLoaded(true); 
-        }
+      if (!mediaLoaded && !mediaError) {
+        setMediaLoaded(true);
+      }
     }, 8000);
     return () => clearTimeout(safetyTimeout);
   }, [currentIndex, mediaLoaded, mediaError]);
@@ -371,16 +372,16 @@ const StoryViewer = ({ userId, onClose }) => {
   // --- CONTROL DE VIDEO (Play/Pause) ---
   useEffect(() => {
     if (isVideo && videoRef.current) {
-        if (isPaused || showDeleteConfirm || showLikesList) {
-            videoRef.current.pause();
-        } else {
-            const playPromise = videoRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    // Ignoramos errores de autoplay
-                });
-            }
-        }
+      if (isPaused || showDeleteConfirm || showLikesList) {
+        videoRef.current.pause();
+      } else {
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+
+            // Ignoramos errores de autoplay
+          });}
+      }
     }
   }, [isPaused, isVideo, showDeleteConfirm, showLikesList, mediaLoaded]);
 
@@ -388,7 +389,7 @@ const StoryViewer = ({ userId, onClose }) => {
   useEffect(() => {
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
-    if (isPaused || (!mediaLoaded && !mediaError) || showDeleteConfirm || showLikesList) {
+    if (isPaused || !mediaLoaded && !mediaError || showDeleteConfirm || showLikesList) {
       return;
     }
 
@@ -397,113 +398,113 @@ const StoryViewer = ({ userId, onClose }) => {
 
       if (isVideo) {
         if (videoRef.current && !videoRef.current.paused && !videoRef.current.ended && videoRef.current.duration > 0) {
-            const current = videoRef.current.currentTime;
-            const duration = videoRef.current.duration;
-            const percentage = (current / duration) * 100;
-            
-            setProgress(percentage);
+          const current = videoRef.current.currentTime;
+          const duration = videoRef.current.duration;
+          const percentage = current / duration * 100;
 
-            if (percentage > 99 || (duration - current) < 0.2 || videoRef.current.ended) {
-                shouldContinue = false;
-                goToNext();
-            }
+          setProgress(percentage);
+
+          if (percentage > 99 || duration - current < 0.2 || videoRef.current.ended) {
+            shouldContinue = false;
+            goToNext();
+          }
         }
       } else {
         if (!startTimeRef.current) {
-            startTimeRef.current = Date.now();
+          startTimeRef.current = Date.now();
         }
 
         const now = Date.now();
         const timeElapsedInThisSegment = now - startTimeRef.current;
         const totalTimeElapsed = timeElapsedInThisSegment + pausedTimeRef.current;
-        const newProgress = Math.min((totalTimeElapsed / DEFAULT_STORY_DURATION) * 100, 100);
+        const newProgress = Math.min(totalTimeElapsed / DEFAULT_STORY_DURATION * 100, 100);
 
         setProgress(newProgress);
 
         if (newProgress >= 100) {
-            shouldContinue = false;
-            goToNext();
+          shouldContinue = false;
+          goToNext();
         }
       }
 
       if (shouldContinue) {
-          animationFrameRef.current = requestAnimationFrame(animate);
+        animationFrameRef.current = requestAnimationFrame(animate);
       }
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [isPaused, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]); 
+  }, [isPaused, mediaLoaded, mediaError, isVideo, showDeleteConfirm, showLikesList, goToNext]);
 
   const handleVideoLoadedMetadata = () => {
-      setMediaLoaded(true);
+    setMediaLoaded(true);
   };
-  
+
   const handleVideoCanPlay = () => {
-      if (videoRef.current && !isPaused && !showDeleteConfirm && !showLikesList) {
-          videoRef.current.play().catch(() => {});
-      }
+    if (videoRef.current && !isPaused && !showDeleteConfirm && !showLikesList) {
+      videoRef.current.play().catch(() => {});
+    }
   };
 
   const handleTouchStart = (e) => {
-      touchStartY.current = e.touches[0].clientY;
-      touchStartX.current = e.touches[0].clientX;
-      handlePauseStart();
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
+    handlePauseStart();
   };
 
   const handleTouchEnd = (e, action) => {
-      const touchEndY = e.changedTouches[0].clientY;
-      const touchEndX = e.changedTouches[0].clientX;
-      
-      const deltaY = touchStartY.current - touchEndY; 
-      const deltaX = Math.abs(touchStartX.current - touchEndX);
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndX = e.changedTouches[0].clientX;
 
-      if (Math.abs(deltaY) > 50 && deltaX < 50) {
-          if (deltaY > 0) {
-              if (isMyStory) {
-                  handleOpenLikesList(e);
-              }
-              return; 
-          } else {
-              animateAndClose();
-              return;
-          }
+    const deltaY = touchStartY.current - touchEndY;
+    const deltaX = Math.abs(touchStartX.current - touchEndX);
+
+    if (Math.abs(deltaY) > 50 && deltaX < 50) {
+      if (deltaY > 0) {
+        if (isMyStory) {
+          handleOpenLikesList(e);
+        }
+        return;
+      } else {
+        animateAndClose();
+        return;
       }
-      handlePauseEnd(e, action);
+    }
+    handlePauseEnd(e, action);
   };
 
   const handlePauseStart = () => {
-    pressStartTimeRef.current = Date.now(); 
+    pressStartTimeRef.current = Date.now();
     if (!isPaused && (mediaLoaded || mediaError)) {
-        setIsPaused(true);
-        if (!isVideo && startTimeRef.current) {
-            const now = Date.now();
-            pausedTimeRef.current += (now - startTimeRef.current);
-            startTimeRef.current = null; 
-        }
-        if (isVideo && videoRef.current) {
-            videoRef.current.pause();
-        }
+      setIsPaused(true);
+      if (!isVideo && startTimeRef.current) {
+        const now = Date.now();
+        pausedTimeRef.current += now - startTimeRef.current;
+        startTimeRef.current = null;
+      }
+      if (isVideo && videoRef.current) {
+        videoRef.current.pause();
+      }
     }
   };
 
   const handlePauseEnd = (e, action) => {
     if (e && e.cancelable) e.preventDefault();
     if (!showDeleteConfirm && !showLikesList) {
-        setIsPaused(false);
-        const duration = Date.now() - pressStartTimeRef.current;
-        if (duration < 200) {
-            if (action === 'prev') goToPrev();
-            if (action === 'next') goToNext();
-        }
+      setIsPaused(false);
+      const duration = Date.now() - pressStartTimeRef.current;
+      if (duration < 200) {
+        if (action === 'prev') goToPrev();
+        if (action === 'next') goToNext();
+      }
     }
   };
 
   const handleMouseLeave = () => {
-      if (isPaused) setIsPaused(false);
+    if (isPaused) setIsPaused(false);
   };
 
   // --- SOLUCIÓN: MARCAR COMO VISTA ---
@@ -535,28 +536,28 @@ const StoryViewer = ({ userId, onClose }) => {
   };
 
   const handleDeleteClick = (e) => {
-      e.stopPropagation();
-      setIsPaused(true); 
-      setShowDeleteConfirm(true);
+    e.stopPropagation();
+    setIsPaused(true);
+    setShowDeleteConfirm(true);
   };
 
   const confirmDelete = async () => {
-      if (currentStory) {
-          setIsDeleting(true);
-          await deleteMyStory(currentStory.id);
-          setIsDeleting(false);
-          setShowDeleteConfirm(false);
-          setIsPaused(false);
-          if (activeStories.length <= 1) {
-              animateAndClose();
-          }
+    if (currentStory) {
+      setIsDeleting(true);
+      await deleteMyStory(currentStory.id);
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      setIsPaused(false);
+      if (activeStories.length <= 1) {
+        animateAndClose();
       }
+    }
   };
 
   const cancelDelete = () => {
-      setShowDeleteConfirm(false);
-      setIsPaused(false);
-      startTimeRef.current = Date.now();
+    setShowDeleteConfirm(false);
+    setIsPaused(false);
+    startTimeRef.current = Date.now();
   };
 
   const handleLike = (e) => {
@@ -567,27 +568,27 @@ const StoryViewer = ({ userId, onClose }) => {
   };
 
   const toggleMute = (e) => {
-      e.stopPropagation();
-      setIsMuted(!isMuted);
+    e.stopPropagation();
+    setIsMuted(!isMuted);
   };
 
   const handleOpenLikesList = (e) => {
-      if (e) e.stopPropagation();
-      setIsPaused(true);
-      setShowLikesList(true);
+    if (e) e.stopPropagation();
+    setIsPaused(true);
+    setShowLikesList(true);
   };
 
   const handleCloseLikesList = (e) => {
-      if(e) e.stopPropagation();
-      setShowLikesList(false);
-      setIsPaused(false);
-      startTimeRef.current = Date.now();
+    if (e) e.stopPropagation();
+    setShowLikesList(false);
+    setIsPaused(false);
+    startTimeRef.current = Date.now();
   };
 
   // --- UI: ESTADO "NO HAY HISTORIAS" MEJORADO ---
   if (!storyData || activeStories.length === 0) {
-    return (
-      <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+    return <ModalPortal>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
         <div className="w-full max-w-sm bg-bg-secondary/90 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-accent/20 rounded-full blur-[50px] pointer-events-none" />
 
@@ -600,19 +601,19 @@ const StoryViewer = ({ userId, onClose }) => {
             </h3>
             
             <p className="text-text-secondary text-sm mb-8 relative z-10 leading-relaxed">
-                No hay historias disponibles para ver en este momento.<br/>
+                No hay historias disponibles para ver en este momento.<br />
                 ¡Vuelve más tarde o sube la tuya!
             </p>
 
-            <button 
-                onClick={animateAndClose} 
-                className="w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-accent/20 relative z-10"
-            >
+            <button
+            onClick={animateAndClose}
+            className="w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-accent/20 relative z-10">
+            
                 Volver al Feed
             </button>
         </div>
-      </div>
-    );
+      </div></ModalPortal>;
+
   }
 
   const currentMediaUrl = getFullImageUrl(currentStory?.url);
@@ -620,15 +621,15 @@ const StoryViewer = ({ userId, onClose }) => {
   const isNextVideo = nextStory && (nextStory.type?.startsWith('video') || nextStory.url?.match(/\.(mp4|mov|webm)$/i));
 
   const hdrStyles = isHDR ? {
-      dynamicRangeLimit: 'high',
-      filter: 'none', 
+    dynamicRangeLimit: 'high',
+    filter: 'none'
   } : {};
 
   const hasLikes = Array.isArray(currentStory?.likes) && currentStory.likes.length > 0;
-  const likesCount = Array.isArray(currentStory?.likes) ? currentStory.likes.length : (typeof currentStory?.likes === 'number' ? currentStory.likes : 0);
+  const likesCount = Array.isArray(currentStory?.likes) ? currentStory.likes.length : typeof currentStory?.likes === 'number' ? currentStory.likes : 0;
 
-  return (
-    <div className={`fixed inset-0 z-[80] bg-black/95 flex items-center justify-center ${isClosingStory ? 'animate-slide-out' : 'animate-fade-in'}`}>
+  return <ModalPortal>
+    <div className={`fixed inset-0 z-[100] bg-black/95 flex items-center justify-center ${isClosingStory ? 'animate-slide-out' : 'animate-fade-in'}`}>
       <style>
         {`
           @keyframes slideInUp {
@@ -651,41 +652,41 @@ const StoryViewer = ({ userId, onClose }) => {
 
       <div className="absolute inset-0" onClick={animateAndClose} />
 
-      <div 
+      <div
         className="relative w-full h-full md:w-[420px] md:h-[85vh] md:max-h-[900px] bg-black md:rounded-2xl overflow-hidden shadow-2xl flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+        onClick={(e) => e.stopPropagation()}>
+        
         {/* Barras de Progreso */}
         <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 p-2 pt-[calc(0.5rem+var(--safe-top))] bg-gradient-to-b from-black/60 to-transparent">
           {activeStories.map((item, index) => {
             const isPast = index < currentIndex;
             const isCurrent = index === currentIndex;
-            
+
             return (
               <div key={item.id} className="h-0.5 flex-1 bg-white/30 rounded-full overflow-hidden shadow-sm">
-                <div 
-                  className="h-full bg-white ease-linear" 
-                  style={{ 
-                    width: isPast ? '100%' : 
-                             isCurrent ? `${progress}%` : '0%' 
-                  }}
-                />
-              </div>
-            );
+                <div
+                  className="h-full bg-white ease-linear"
+                  style={{
+                    width: isPast ? '100%' :
+                    isCurrent ? `${progress}%` : '0%'
+                  }} />
+                
+              </div>);
+
           })}
         </div>
 
         {/* Header Usuario */}
         <div className="absolute top-[calc(1.5rem+var(--safe-top))] left-0 right-0 z-50 flex items-center justify-between px-4 pt-2">
           <div className="flex items-center gap-3">
-              <UserAvatar 
-                  user={{
-                      username: storyData.username,
-                      profile_image_url: storyData.avatar 
-                  }} 
-                  size={10} 
-                  className="w-10 h-10 border border-white/50 shadow-md"
-              />
+              <UserAvatar
+              user={{
+                username: storyData.username,
+                profile_image_url: storyData.avatar
+              }}
+              size={10}
+              className="w-10 h-10 border border-white/50 shadow-md" />
+            
             <div className="flex flex-col drop-shadow-md">
               <span className="text-white font-bold text-sm cursor-default" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
                   {storyData.username} {isMyStory && '(Tú)'}
@@ -697,14 +698,14 @@ const StoryViewer = ({ userId, onClose }) => {
           </div>
 
           <div className="flex items-center gap-4">
-              {isVideo && (
-                  <button onClick={toggleMute} className="p-2 text-white hover:bg-white/10 rounded-full transition drop-shadow-md outline-none focus:outline-none">
+              {isVideo &&
+            <button onClick={toggleMute} className="p-2 text-white hover:bg-white/10 rounded-full transition drop-shadow-md outline-none focus:outline-none">
                       {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
                   </button>
-              )}
+            }
 
-              {isMyStory && (
-                  <>
+              {isMyStory &&
+            <>
                     <button onClick={handleDeleteClick} className="p-2 text-white hover:bg-red-500/20 hover:text-red-400 rounded-full transition drop-shadow-md outline-none focus:outline-none">
                         <Trash2 size={24} style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }} />
                     </button>
@@ -712,7 +713,7 @@ const StoryViewer = ({ userId, onClose }) => {
                         <Download size={24} style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }} />
                     </button>
                   </>
-              )}
+            }
               <button onClick={animateAndClose} className="p-2 text-white hover:bg-white/10 rounded-full transition drop-shadow-md outline-none focus:outline-none">
                   <X size={28} style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }} />
               </button>
@@ -721,147 +722,147 @@ const StoryViewer = ({ userId, onClose }) => {
 
         {/* Controladores Táctiles (Invisibles) con soporte de Swipe */}
         <div className="absolute inset-0 z-20 flex">
-          <div 
-              className="w-1/3 h-full cursor-pointer" 
-              onTouchStart={handleTouchStart} 
-              onTouchEnd={(e) => handleTouchEnd(e, 'prev')}
-              onMouseDown={handlePauseStart} 
-              onMouseUp={(e) => handlePauseEnd(e, 'prev')}
-              onMouseLeave={handleMouseLeave}
-              style={{ touchAction: 'none' }}
-          />
-          <div 
-              className="w-2/3 h-full cursor-pointer" 
-              onTouchStart={handleTouchStart} 
-              onTouchEnd={(e) => handleTouchEnd(e, 'next')}
-              onMouseDown={handlePauseStart} 
-              onMouseUp={(e) => handlePauseEnd(e, 'next')}
-              onMouseLeave={handleMouseLeave}
-              style={{ touchAction: 'none' }}
-          />
+          <div
+            className="w-1/3 h-full cursor-pointer"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={(e) => handleTouchEnd(e, 'prev')}
+            onMouseDown={handlePauseStart}
+            onMouseUp={(e) => handlePauseEnd(e, 'prev')}
+            onMouseLeave={handleMouseLeave}
+            style={{ touchAction: 'none' }} />
+          
+          <div
+            className="w-2/3 h-full cursor-pointer"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={(e) => handleTouchEnd(e, 'next')}
+            onMouseDown={handlePauseStart}
+            onMouseUp={(e) => handlePauseEnd(e, 'next')}
+            onMouseLeave={handleMouseLeave}
+            style={{ touchAction: 'none' }} />
+          
         </div>
 
         {/* --- Media (Imagen o Video) --- */}
         <div className="flex-1 flex items-center justify-center bg-black relative w-full h-full z-10">
           {/* Spinner SOLO si no hay media cargada */}
-          {!mediaLoaded && !mediaError && (
-              <div className="absolute inset-0 flex items-center justify-center z-0">
+          {!mediaLoaded && !mediaError &&
+          <div className="absolute inset-0 flex items-center justify-center z-0">
                   <Loader2 className="text-white/50 animate-spin" size={48} />
               </div>
-          )}
+          }
           
-          {mediaError ? (
-             <div className="flex flex-col items-center justify-center text-white/50 gap-2">
+          {mediaError ?
+          <div className="flex flex-col items-center justify-center text-white/50 gap-2">
                 <ImageOff size={48} />
                 <p className="text-xs">No se pudo cargar el contenido</p>
-             </div>
-          ) : (
-             currentMediaUrl && (
-                isVideo ? (
-                    <video
-                        ref={videoRef}
-                        key={currentStory.id}
-                        src={currentMediaUrl}
-                        className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        playsInline
-                        webkit-playsinline="true"
-                        autoPlay
-                        preload="auto"
-                        muted={isMuted}
-                        onLoadedMetadata={handleVideoLoadedMetadata}
-                        onCanPlay={handleVideoCanPlay}
-                        onError={(e) => { 
-                            console.error("Video Error:", e.nativeEvent); 
-                            setMediaError(true); 
-                            setMediaLoaded(true); 
-                        }}
-                        style={hdrStyles}
-                    />
-                ) : (
-                    <img 
-                        key={currentStory.id} 
-                        src={currentMediaUrl} 
-                        alt="Story"
-                        className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        onLoad={() => setMediaLoaded(true)}
-                        onError={() => { setMediaError(true); setMediaLoaded(true); }}
-                        style={hdrStyles}
-                    />
-                )
-             )
-          )}
+             </div> :
+
+          currentMediaUrl && (
+          isVideo ?
+          <video
+            ref={videoRef}
+            key={currentStory.id}
+            src={currentMediaUrl}
+            className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
+            playsInline
+            webkit-playsinline="true"
+            autoPlay
+            preload="auto"
+            muted={isMuted}
+            onLoadedMetadata={handleVideoLoadedMetadata}
+            onCanPlay={handleVideoCanPlay}
+            onError={(e) => {
+              console.error("Video Error:", e.nativeEvent);
+              setMediaError(true);
+              setMediaLoaded(true);
+            }}
+            style={hdrStyles} /> :
+
+
+          <img
+            key={currentStory.id}
+            src={currentMediaUrl}
+            alt="Story"
+            className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setMediaLoaded(true)}
+            onError={() => {setMediaError(true);setMediaLoaded(true);}}
+            style={hdrStyles} />)
+
+
+
+          }
 
           {/* Precarga del siguiente elemento */}
           {nextMediaUrl && (
-             isNextVideo ? (
-                 <video src={nextMediaUrl} preload="auto" className="hidden" />
-             ) : (
-                 <img src={nextMediaUrl} alt="preload" className="hidden" />
-             )
-          )}
+          isNextVideo ?
+          <video src={nextMediaUrl} preload="auto" className="hidden" /> :
+
+          <img src={nextMediaUrl} alt="preload" className="hidden" />)
+
+          }
         </div>
 
         {/* --- Animación Corazones y Avatares Flotantes (Si hay likes y soy yo) --- */}
         {isMyStory && hasLikes && <FloatingHearts active={currentStory.likes} />}
 
         {/* --- Modal de Lista de Likes --- */}
-        {showLikesList && (
-            <LikesListModal 
-                likes={currentStory.likes || []} 
-                onClose={handleCloseLikesList} 
-            />
-        )}
+        {showLikesList &&
+        <LikesListModal
+          likes={currentStory.likes || []}
+          onClose={handleCloseLikesList} />
+
+        }
 
         {/* --- Modal de Confirmación --- */}
-        {showDeleteConfirm && (
-            <ConfirmationModal
-                message="¿Eliminar esta historia? Esta acción no se puede deshacer."
-                onConfirm={confirmDelete}
-                onCancel={cancelDelete}
-                confirmText="Eliminar"
-                cancelText="Cancelar"
-                isLoading={isDeleting}
-            />
-        )}
+        {showDeleteConfirm &&
+        <ConfirmationModal
+          message="¿Eliminar esta historia? Esta acción no se puede deshacer."
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          isLoading={isDeleting} />
+
+        }
 
         {/* Footer */}
-        {!isMyStory && (
-          <div className="absolute bottom-0 left-0 right-0 z-30 p-6 bg-gradient-to-t from-black/60 to-transparent pb-10">
+        {!isMyStory &&
+        <div className="absolute bottom-0 left-0 right-0 z-30 p-6 bg-gradient-to-t from-black/60 to-transparent pb-10">
               <div className="flex items-center justify-end">
-                  <button 
-                      onClick={handleLike}
-                      className={`p-3 rounded-full transition-all duration-300 drop-shadow-md z-40 outline-none focus:outline-none 
+                  <button
+              onClick={handleLike}
+              className={`p-3 rounded-full transition-all duration-300 drop-shadow-md z-40 outline-none focus:outline-none 
                           ${currentStory?.isLiked ? 'text-accent' : 'text-white'}
                           ${isLikeAnimating ? 'scale-125' : 'active:scale-90 hover:scale-110'}
-                      `}
-                  >
-                      <Heart 
-                        size={32} 
-                        fill={currentStory?.isLiked ? "currentColor" : "none"} 
-                        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }}
-                      />
+                      `}>
+              
+                      <Heart
+                size={32}
+                fill={currentStory?.isLiked ? "currentColor" : "none"}
+                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }} />
+              
                   </button>
               </div>
           </div>
-        )}
+        }
         
-        {isMyStory && (
-          <div className="absolute bottom-0 left-0 right-0 z-50 p-6 bg-gradient-to-t from-black/60 to-transparent pb-10 pointer-events-none">
+        {isMyStory &&
+        <div className="absolute bottom-0 left-0 right-0 z-50 p-6 bg-gradient-to-t from-black/60 to-transparent pb-10 pointer-events-none">
               <div className="flex items-center justify-center gap-2 text-white/90 drop-shadow-md pointer-events-auto">
-                  <button 
-                    onClick={handleOpenLikesList}
-                    className="text-sm font-medium outline-none focus:outline-none animate-pulse" 
-                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
-                  >
+                  <button
+              onClick={handleOpenLikesList}
+              className="text-sm font-medium outline-none focus:outline-none animate-pulse"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+              
                       {likesCount} {likesCount === 1 ? 'Me gusta' : 'Me gusta'}
                       <span className="block text-[10px] opacity-70 font-normal">Desliza para ver</span>
                   </button>
               </div>
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div></ModalPortal>;
+
 };
 
 export default StoryViewer;

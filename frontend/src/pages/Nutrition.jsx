@@ -531,7 +531,7 @@ const Nutrition = ({ setView }) => {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 pb-28 sm:p-6 sm:pb-8 lg:p-10 lg:pb-10 animate-[fade-in_0.5s_ease-out]">
+        <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-28 sm:p-6 sm:pb-8 lg:p-10 lg:pb-10 animate-[fade-in_0.5s_ease-out]">
 
             <NutritionTourGuide />
 
@@ -540,8 +540,8 @@ const Nutrition = ({ setView }) => {
                 <meta name="description" content="Registra tus comidas (desayuno, almuerzo, cena, snacks), agua y suplementos. Controla tus calorías y macronutrientes diarios." />
             </Helmet>
 
-            <div className="flex flex-col md:flex-row justify-between items-center mb-4 mt-10 md:mt-0 gap-4">
-                <h1 id="nutrition-header" className="hidden md:block text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">Nutrición</h1>
+            <div className="hidden md:flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                <h1 id="nutrition-header" className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">Nutrición</h1>
             </div>
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />

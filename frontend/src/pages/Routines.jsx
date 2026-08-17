@@ -1,4 +1,3 @@
-/* frontend/src/pages/Routines.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -27,6 +26,7 @@ import {
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
+import ModalPortal from '../components/ModalPortal';
 import RoutineEditor from './RoutineEditor';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
@@ -74,88 +74,97 @@ const GlobalPrivacyModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-[fade-in_0.2s_ease-out]">
-      <div className="absolute inset-0" onClick={onClose} />
-      <GlassCard
-        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary z-10"
+    <ModalPortal>
+      <div 
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-[calc(var(--safe-top,env(safe-area-inset-top,0px))+16px)] animate-[fade-in_0.2s_ease-out]"
+        onClick={onClose}
       >
-        <div className="relative p-6 sm:p-8 pb-4 shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
-          <button
-            onClick={onClose}
-            className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors z-10"
-          >
-            <X size={20} className="sm:w-6 sm:h-6" />
-          </button>
+        <GlassCard
+          className="w-full max-w-md p-0 mt-auto sm:mt-0 relative z-10 flex flex-col max-h-[calc(100vh-var(--safe-top,env(safe-area-inset-top,0px))-16px)] sm:max-h-[90vh] overflow-hidden animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Drag Handle */}
+          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
 
-          <div className="flex flex-col items-center text-center gap-3 mt-2">
-            <div className="w-16 h-16 rounded-[20px] flex items-center justify-center mb-1 ring-2 ring-accent/30 bg-accent/10 text-accent">
-              <Globe size={32} strokeWidth={1.5} />
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Privacidad del Muro</h2>
-              <p className="text-xs sm:text-sm text-text-secondary mt-2 px-4 leading-relaxed font-medium">
-                ¿Quién puede ver tus entrenamientos al finalizarlos?
-              </p>
+          {/* Header */}
+          <div className="relative p-6 sm:p-8 pb-4 shrink-0 rounded-t-[32px]">
+            <button
+              onClick={onClose}
+              className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors z-10 hidden sm:block"
+            >
+              <X size={20} className="sm:w-6 sm:h-6" />
+            </button>
+
+            <div className="flex flex-col items-center text-center gap-3 mt-2">
+              <div className="w-16 h-16 rounded-[20px] flex items-center justify-center mb-1 ring-2 ring-accent/30 bg-accent/10 text-accent">
+                <Globe size={32} strokeWidth={1.5} />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Privacidad del Muro</h2>
+                <p className="text-xs sm:text-sm text-text-secondary mt-2 px-4 leading-relaxed font-medium">
+                  ¿Quién puede ver tus entrenamientos al finalizarlos?
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="p-6 pt-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-1 gap-3">
-            <button onClick={() => setVisibility('private')} className={getOptionClasses('private')}>
-              <div className={getIconContainerClasses('private')}><Lock size={20} strokeWidth={2} /></div>
-              <div>
-                <span className={getTextClasses('private')}>No subir</span>
-                <span className="text-xs text-text-secondary block mt-0.5">Tus entrenamientos no aparecerán en el muro.</span>
-              </div>
-              {visibility === 'private' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
-            </button>
+          <div className="p-6 pt-0 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 gap-3">
+              <button onClick={() => setVisibility('private')} className={getOptionClasses('private')}>
+                <div className={getIconContainerClasses('private')}><Lock size={20} strokeWidth={2} /></div>
+                <div className="flex-1 pr-8">
+                  <span className={getTextClasses('private')}>No subir</span>
+                  <span className="text-xs text-text-secondary block mt-0.5">Tus entrenamientos no aparecerán en el muro.</span>
+                </div>
+                {visibility === 'private' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-accent"><CheckCircle size={20} /></div>}
+              </button>
 
-            <button onClick={() => setVisibility('friends')} className={getOptionClasses('friends')}>
-              <div className={getIconContainerClasses('friends')}><Users size={20} strokeWidth={2} /></div>
-              <div>
-                <span className={getTextClasses('friends')}>Solo Amigos</span>
-                <span className="text-xs text-text-secondary block mt-0.5">Tus amigos agregados verán tu actividad.</span>
-              </div>
-              {visibility === 'friends' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
-            </button>
+              <button onClick={() => setVisibility('friends')} className={getOptionClasses('friends')}>
+                <div className={getIconContainerClasses('friends')}><Users size={20} strokeWidth={2} /></div>
+                <div className="flex-1 pr-8">
+                  <span className={getTextClasses('friends')}>Solo Amigos</span>
+                  <span className="text-xs text-text-secondary block mt-0.5">Tus amigos agregados verán tu actividad.</span>
+                </div>
+                {visibility === 'friends' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-accent"><CheckCircle size={20} /></div>}
+              </button>
 
-            <button onClick={() => setVisibility('public')} className={getOptionClasses('public')}>
-              <div className={getIconContainerClasses('public')}><Globe size={20} strokeWidth={2} /></div>
-              <div>
-                <span className={getTextClasses('public')}>Todo el mundo</span>
-                <span className="text-xs text-text-secondary block mt-0.5">Cualquier usuario podrá ver tus entrenamientos.</span>
-              </div>
-              {visibility === 'public' && <div className="absolute right-4 text-accent"><CheckCircle size={20} /></div>}
-            </button>
-          </div>
-
-          <div className={`transition-all duration-300 overflow-hidden ${visibility !== 'private' ? 'max-h-40 opacity-100 mt-6' : 'max-h-0 opacity-0 mt-0'}`}>
-            <div className="p-5 rounded-[24px] bg-black/5 dark:bg-white/5 flex items-center justify-between gap-4">
-              <div className="text-left">
-                <span className="block font-bold text-sm text-text-primary">Notificar a mis amigos</span>
-                <span className="text-[10px] sm:text-xs text-text-secondary block mt-1 leading-tight font-medium">Avisarles cuando publiques un entrenamiento.</span>
-              </div>
-              <button
-                onClick={() => setNotifyFriends(!notifyFriends)}
-                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none shadow-inner ${notifyFriends ? 'bg-accent shadow-accent/20' : 'bg-gray-400 dark:bg-gray-600'}`}
-              >
-                <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${notifyFriends ? 'translate-x-5' : 'translate-x-0'}`} />
+              <button onClick={() => setVisibility('public')} className={getOptionClasses('public')}>
+                <div className={getIconContainerClasses('public')}><Globe size={20} strokeWidth={2} /></div>
+                <div className="flex-1 pr-8">
+                  <span className={getTextClasses('public')}>Todo el mundo</span>
+                  <span className="text-xs text-text-secondary block mt-0.5">Cualquier usuario podrá ver tus entrenamientos.</span>
+                </div>
+                {visibility === 'public' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-accent"><CheckCircle size={20} /></div>}
               </button>
             </div>
-          </div>
-        </div>
 
-        <div className="p-6 shrink-0 border-t border-black/5 dark:border-white/10 rounded-b-[32px] bg-black/5 dark:bg-white/5">
-          <button
-            onClick={handleSave}
-            className="w-full py-4 rounded-[20px] font-bold text-sm sm:text-base bg-accent text-white hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
-          >
-            Guardar Cambios
-          </button>
-        </div>
-      </GlassCard>
-    </div>
+            <div className={`transition-all duration-300 overflow-hidden ${visibility !== 'private' ? 'max-h-40 opacity-100 mt-6' : 'max-h-0 opacity-0 mt-0'}`}>
+              <div className="p-5 rounded-[24px] bg-black/5 dark:bg-white/5 flex items-center justify-between gap-4">
+                <div className="text-left">
+                  <span className="block font-bold text-sm text-text-primary">Notificar a mis amigos</span>
+                  <span className="text-[10px] sm:text-xs text-text-secondary block mt-1 leading-tight font-medium">Avisarles cuando publiques un entrenamiento.</span>
+                </div>
+                <button
+                  onClick={() => setNotifyFriends(!notifyFriends)}
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none shadow-inner ${notifyFriends ? 'bg-accent shadow-accent/20' : 'bg-gray-400 dark:bg-gray-600'}`}
+                >
+                  <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${notifyFriends ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 shrink-0 border-t border-black/5 dark:border-white/10 bg-bg-primary pb-[calc(2rem+var(--safe-bottom))] sm:pb-6 rounded-b-none sm:rounded-b-[32px]">
+            <button
+              onClick={handleSave}
+              className="w-full py-4 rounded-[20px] font-bold text-sm sm:text-base bg-accent text-white hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </GlassCard>
+      </div>
+    </ModalPortal>
   );
 };
 
@@ -225,27 +234,35 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 pb-20 sm:pb-4 animate-[fade-in_0.2s_ease-out]">
-      <div className="absolute inset-0" onClick={onClose} />
-      <GlassCard
-        className="w-full max-w-md p-0 relative flex flex-col max-h-[calc(100vh-100px)] overflow-hidden animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary z-10"
+    <ModalPortal>
+      <div 
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-[calc(var(--safe-top,env(safe-area-inset-top,0px))+16px)] animate-[fade-in_0.2s_ease-out]"
+        onClick={onClose}
       >
-        <div className="relative p-6 sm:p-8 pb-4 shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
-          <button
-            onClick={onClose}
-            className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors z-10"
-          >
-            <X size={20} className="sm:w-6 sm:h-6" />
-          </button>
+        <GlassCard
+          className="w-full max-w-md p-0 mt-auto sm:mt-0 relative z-10 flex flex-col max-h-[calc(100vh-var(--safe-top,env(safe-area-inset-top,0px))-16px)] sm:max-h-[90vh] overflow-hidden animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Drag Handle */}
+          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
 
-          <div className="flex flex-col items-center text-center gap-3 mt-2">
-            <div className="w-16 h-16 rounded-[20px] flex items-center justify-center mb-1 ring-2 ring-accent/30 bg-accent/10 text-accent">
-              <Share2 size={32} strokeWidth={1.5} />
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Compartir Rutina</h2>
-              <p className="text-xs sm:text-sm text-text-secondary mt-2 px-4 leading-relaxed font-medium">
-                Configura la privacidad para <strong className="text-text-primary">{routine.name}</strong>
+          {/* Header */}
+          <div className="relative p-6 sm:p-8 pb-4 shrink-0 rounded-t-[32px]">
+            <button
+              onClick={onClose}
+              className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors z-10 hidden sm:block"
+            >
+              <X size={20} className="sm:w-6 sm:h-6" />
+            </button>
+
+            <div className="flex flex-col items-center text-center gap-3 mt-2">
+              <div className="w-16 h-16 rounded-[20px] flex items-center justify-center mb-1 ring-2 ring-accent/30 bg-accent/10 text-accent">
+                <Share2 size={32} strokeWidth={1.5} />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Compartir Rutina</h2>
+                <p className="text-xs sm:text-sm text-text-secondary mt-2 px-4 leading-relaxed font-medium">
+                  Configura la privacidad para <strong className="text-text-primary">{routine.name}</strong>
               </p>
             </div>
           </div>
@@ -302,7 +319,7 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
           </div>
         </div>
 
-        <div className="p-6 shrink-0 border-t border-black/5 dark:border-white/10 rounded-b-[32px] bg-black/5 dark:bg-white/5">
+        <div className="p-6 shrink-0 border-t border-black/5 dark:border-white/10 bg-bg-primary pb-[calc(2rem+var(--safe-bottom))] sm:pb-6 rounded-b-none sm:rounded-b-[32px]">
           <button
             onClick={onClose}
             className="w-full py-4 rounded-[20px] font-bold text-sm sm:text-base bg-black/5 dark:bg-white/5 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
@@ -311,7 +328,8 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
           </button>
         </div>
       </GlassCard>
-    </div>
+      </div>
+    </ModalPortal>
   );
 };
 

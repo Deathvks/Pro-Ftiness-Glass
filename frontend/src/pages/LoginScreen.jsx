@@ -428,8 +428,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!email.trim()) newErrors.email = 'El email es requerido.';
-        else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Formato inválido.';
+        if (!email.trim()) newErrors.email = 'El email o usuario es requerido.';
         if (!password) newErrors.password = 'La contraseña es requerida.';
         return newErrors;
     };
@@ -640,8 +639,8 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
                         <div>
                             <input
-                                type="email"
-                                placeholder="Email"
+                                type="text"
+                                placeholder="Email o nombre de usuario"
                                 className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[20px] px-5 py-4 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-sm font-medium placeholder:text-text-muted"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}

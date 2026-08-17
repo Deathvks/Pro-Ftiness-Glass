@@ -80,11 +80,11 @@ const handleDailyLoginGamification = async (user) => {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
 
-    const lastSeenDate = user.last_seen
-      ? new Date(user.last_seen).toISOString().split('T')[0]
+    const lastSeenDate = user.lastSeen
+      ? new Date(user.lastSeen).toISOString().split('T')[0]
       : null;
 
-    await user.update({ last_seen: now });
+    await user.update({ lastSeen: now });
 
     if (lastSeenDate === today) return;
 
@@ -111,12 +111,19 @@ export const loginUser = async (req, res, next) => {
   }
 
   let { email, password } = req.body;
-  email = email.toLowerCase().trim();
+  const identifier = email.toLowerCase().trim();
 
   try {
     let user;
     try {
-      user = await User.findOne({ where: { email } });
+      user = await User.findOne({ 
+        where: { 
+          [Op.or]: [
+            { email: identifier },
+            { username: identifier }
+          ]
+        } 
+      });
     } catch (dbError) {
       return next(dbError);
     }
@@ -1391,6 +1398,32 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
+export const forceResetPassword = async (req, res, next) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 12) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 12 caracteres.' });
+    }
+
+    const user = await User.findByPk(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    if (!user.force_password_reset) {
+      return res.status(400).json({ error: 'El usuario no necesita forzar el cambio de contraseña.' });
+    }
+
+    user.password_hash = newPassword; 
+    user.force_password_reset = false;
+    await user.save();
+
+    return res.json({ message: 'Contraseña actualizada correctamente.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const authController = {
   register,
   verifyEmail,
@@ -1406,6 +1439,7 @@ const authController = {
   updateEmailForVerification,
   forgotPassword,
   resetPassword,
+  forceResetPassword
 };
 
 export default authController;

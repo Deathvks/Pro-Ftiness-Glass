@@ -46,6 +46,38 @@ export default {
         'glass': '12px',
       },
       keyframes: {
+        'zoom-in': {
+          '0%': { opacity: '0', transform: 'scale(0.96)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'zoom-out': {
+          '0%': { opacity: '1', transform: 'scale(1)' },
+          '100%': { opacity: '0', transform: 'scale(0.96)' },
+        },
+                'slide-in-right': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'slide-out-right': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        'slide-out-left': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-100%)' },
+        },
+        'slide-in-left': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'slide-out-right': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
         'roam-blob': {
           '0%': { transform: 'translate(-50%, -50%) scale(1)' },
           '33%': { transform: 'translate(-60%, -40%) scale(1.15)' },
@@ -66,6 +98,14 @@ export default {
         }
       },
       animation: {
+        'zoom-in': 'zoom-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'zoom-out': 'zoom-out 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                'slide-in-right': 'slide-in-right 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'slide-out-right': 'slide-out-right 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'slide-out-left': 'slide-out-left 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'slide-in-left': 'slide-in-left 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'slide-out-right': 'slide-out-right 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards',
         'roam-blob': 'roam-blob 10s infinite alternate ease-in-out',
         'fade-in-up': 'fade-in-up 0.5s ease-out',
         'toast-in': 'toast-in 0.5s ease-out forwards',

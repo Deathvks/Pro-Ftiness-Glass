@@ -67,34 +67,26 @@ const WorkoutHeader = ({
       
       {/* --- FONDO DINÁMICO --- */}
       {hasValidImage ? (
-        <div className="absolute inset-0 z-0" style={{ backgroundColor: 'var(--bg-primary)' }}>
-          {/* Capa 1: Fondo borroso */}
-          <img
-            src={finalImageUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-50 scale-125"
-          />
-          {/* Capa 2: Imagen contenida */}
+        <div className="absolute inset-0 z-0 bg-bg-primary">
           <img
             src={finalImageUrl}
             alt={`Portada de ${routineName}`}
-            className="absolute inset-0 w-full h-full object-contain opacity-80"
+            className="absolute inset-0 w-full h-full object-cover opacity-60"
             onError={() => setImageError(true)}
           />
-          
-          {/* Capa 3: Degradado superior e inferior (Scrim) usando variables de tema */}
+          {/* Degradado suave para asegurar lectura sin ocultar los bordes de la imagen */}
           <div 
             className="absolute inset-0 pointer-events-none"
             style={{
               background: `linear-gradient(to bottom, 
-                var(--bg-primary) 0%, 
-                transparent 30%, 
-                transparent 70%, 
-                var(--bg-primary) 100%)`
+                rgba(var(--bg-primary-rgb), 0.5) 0%, 
+                rgba(var(--bg-primary-rgb), 0.2) 30%, 
+                rgba(var(--bg-primary-rgb), 0.2) 60%, 
+                rgba(var(--bg-primary-rgb), 0.9) 100%)`
             }}
           />
-          {/* Capa 4: Veladura base para asegurar legibilidad en el centro */}
-          <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundColor: 'var(--bg-primary)' }} />
+          {/* Capa de oscurecimiento general ligera */}
+          <div className="absolute inset-0 opacity-20 pointer-events-none bg-black" />
         </div>
       ) : isCssGradient ? (
         // Opción B: Es un degradado CSS

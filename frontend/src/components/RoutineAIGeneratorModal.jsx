@@ -1,3 +1,4 @@
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/RoutineAIGeneratorModal.jsx */
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, AlertCircle, Loader2, Wand2 } from 'lucide-react';
@@ -5,16 +6,21 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { askTrainerAI } from '../services/aiService';
 import useAppStore from '../store/useAppStore';
 import { useTranslation } from 'react-i18next';
+import useModalLock from '../hooks/useModalLock';
 
 const RoutineAIGeneratorModal = ({ isOpen, onClose, onGenerate }) => {
+
+  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  useModalLock(isOpen);
+
   const { resolvedTheme } = useAppTheme();
-  const getOrFetchAllExercises = useAppStore(state => state.getOrFetchAllExercises);
+  const getOrFetchAllExercises = useAppStore((state) => state.getOrFetchAllExercises);
   const { t } = useTranslation(['exercise_names']);
-  
+
   const [userPrompt, setUserPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const [remainingUses, setRemainingUses] = useState(() => {
     const saved = localStorage.getItem('ai_remaining_uses');
     return saved !== null ? parseInt(saved, 10) : null;
@@ -39,7 +45,7 @@ const RoutineAIGeneratorModal = ({ isOpen, onClose, onGenerate }) => {
         setDailyLimit(null);
         setError(null); // Limpiamos cualquier error de "Agotado" anterior
       }
-      
+
       // Actualizamos la fecha de la "última apertura"
       localStorage.setItem('ai_last_date', today);
     }
@@ -50,12 +56,12 @@ const RoutineAIGeneratorModal = ({ isOpen, onClose, onGenerate }) => {
 
   const isOled = resolvedTheme === 'oled';
   const isDark = resolvedTheme === 'dark';
-  
-  const containerClass = "w-full max-w-md rounded-3xl shadow-2xl flex flex-col transition-colors duration-300 border border-glass-border bg-bg-primary";
-  
+
+  const containerClass = "w-full max-w-md mt-auto sm:mt-0 pb-[calc(2rem+var(--safe-bottom))] sm:pb-0 rounded-t-[32px] rounded-b-none sm:rounded-[32px] shadow-2xl flex flex-col transition-colors duration-300 border border-glass-border bg-bg-primary animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]";
+
   const inputClass = "w-full p-4 rounded-2xl border border-glass-border bg-bg-secondary text-text-primary placeholder-text-muted resize-none h-32 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all";
 
-  const isLimitReached = remainingUses === 0 || (error && error.toLowerCase().includes('agotado'));
+  const isLimitReached = remainingUses === 0 || error && error.toLowerCase().includes('agotado');
 
   const handleGenerate = async () => {
     if (!userPrompt.trim() || isLimitReached) return;
@@ -64,7 +70,7 @@ const RoutineAIGeneratorModal = ({ isOpen, onClose, onGenerate }) => {
     setError(null);
     try {
       const allExercises = await getOrFetchAllExercises();
-      const exerciseOptions = allExercises.map(ex => `ID:"${ex.name}"|Nombre:"${t(ex.name, { ns: 'exercise_names', defaultValue: ex.name })}"`).join('\n');
+      const exerciseOptions = allExercises.map((ex) => `ID:"${ex.name}"|Nombre:"${t(ex.name, { ns: 'exercise_names', defaultValue: ex.name })}"`).join('\n');
 
       const aiPrompt = `Actúa como entrenador experto. El usuario te pide crear una rutina con este mensaje: "${userPrompt}".
 
@@ -95,7 +101,7 @@ FORMATO SI ES VÁLIDO:
       const systemContext = "Eres un entrenador personal estricto. Tu única salida debe ser un JSON válido siguiendo el formato exacto requerido. Nunca añadas explicaciones fuera del JSON.";
 
       const res = await askTrainerAI(aiPrompt, systemContext);
-      
+
       if (res.remaining !== undefined) {
         setRemainingUses(res.remaining);
         localStorage.setItem('ai_remaining_uses', res.remaining);
@@ -109,11 +115,11 @@ FORMATO SI ES VÁLIDO:
       const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
       localStorage.setItem('ai_last_date', today);
 
-      const responseText = typeof res === 'string' ? res : (res.response || JSON.stringify(res));
+      const responseText = typeof res === 'string' ? res : res.response || JSON.stringify(res);
       const jsonString = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
-      
+
       const generatedRoutine = JSON.parse(jsonString);
-      
+
       if (generatedRoutine.isValid === false || generatedRoutine.error) {
         throw new Error(generatedRoutine.error || "El mensaje no es válido para generar una rutina. Sé más específico.");
       }
@@ -124,8 +130,8 @@ FORMATO SI ES VÁLIDO:
         ai_explanation: generatedRoutine.ai_explanation || "",
         folder: generatedRoutine.folder || "IA",
         exercises: (generatedRoutine.exercises || []).map((ex, idx) => {
-          const dbExercise = allExercises.find(e => e.name === ex.name) || { name: ex.name };
-          
+          const dbExercise = allExercises.find((e) => e.name === ex.name) || { name: ex.name };
+
           return {
             ...dbExercise,
             tempId: `temp_ai_${Date.now()}_${idx}`,
@@ -158,9 +164,11 @@ FORMATO SI ES VÁLIDO:
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+  return <ModalPortal>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
       <div className={containerClass}>
+        {/* Drag handle for mobile */}
+        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
         <div className="p-5 border-b border-glass-border flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-accent text-white shadow-lg shadow-accent/20">
@@ -186,41 +194,41 @@ FORMATO SI ES VÁLIDO:
             onChange={(e) => setUserPrompt(e.target.value)}
             disabled={isLoading || isLimitReached}
             placeholder="Ej: Rutina de hipertrofia para espalda y bíceps con mancuernas."
-            className={`${inputClass} ${isLimitReached ? 'opacity-50 cursor-not-allowed' : ''}`}
-          />
+            className={`${inputClass} ${isLimitReached ? 'opacity-50 cursor-not-allowed' : ''}`} />
+          
 
-          {error && (
-            <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex gap-3 items-start">
+          {error &&
+          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex gap-3 items-start">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
               <p className="text-sm text-red-500">{error}</p>
             </div>
-          )}
+          }
 
-          {remainingUses !== null && !error && (
-            <div className="flex justify-between items-center">
+          {remainingUses !== null && !error &&
+          <div className="flex justify-between items-center">
               <span className="text-[10px] text-text-muted">Se restablece a medianoche</span>
               <span className={`text-xs font-bold ${remainingUses === 0 ? 'text-red-500' : 'text-text-secondary'}`}>
                 Usos restantes: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
               </span>
             </div>
-          )}
+          }
 
-          <button 
+          <button
             onClick={handleGenerate}
             disabled={isLoading || !userPrompt.trim() || isLimitReached}
             className={`w-full p-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all 
-              ${isLoading || !userPrompt.trim() || isLimitReached
-                ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed border border-transparent' 
-                : 'bg-accent text-bg-secondary hover:shadow-lg hover:shadow-accent/30 hover:-translate-y-0.5'}`}
-          >
-            {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Diseñando...</> : 
-             isLimitReached ? <><AlertCircle className="w-5 h-5" /> Límite Alcanzado</> : 
-             <><Sparkles className="w-5 h-5" /> Generar Rutina</>}
+              ${isLoading || !userPrompt.trim() || isLimitReached ?
+            'bg-gray-500/20 text-gray-400 cursor-not-allowed border border-transparent' :
+            'bg-accent text-bg-secondary hover:shadow-lg hover:shadow-accent/30 hover:-translate-y-0.5'}`}>
+            
+            {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Diseñando...</> :
+            isLimitReached ? <><AlertCircle className="w-5 h-5" /> Límite Alcanzado</> :
+            <><Sparkles className="w-5 h-5" /> Generar Rutina</>}
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div></ModalPortal>;
+
 };
 
 export default RoutineAIGeneratorModal;

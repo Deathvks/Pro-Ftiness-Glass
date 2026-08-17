@@ -8,6 +8,8 @@ import './index.css';
 import './i18n';
 import App from './App.jsx';
 import ToastProvider from './contexts/ToastProvider.jsx';
+
+
 // --- INICIO DE LA MODIFICACIÓN ---
 import ErrorBoundary from './components/ErrorBoundary';
 // --- FIN DE LA MODIFICACIÓN ---
@@ -16,6 +18,15 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 if (!googleClientId) {
   console.error("Falta la variable VITE_GOOGLE_CLIENT_ID en el archivo .env del frontend");
+}
+
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+if (isIOS) {
+  document.documentElement.classList.add('is-ios');
 }
 
 createRoot(document.getElementById('root')).render(

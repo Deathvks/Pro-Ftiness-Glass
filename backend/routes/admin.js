@@ -36,4 +36,8 @@ router.delete('/users/:userId', adminController.deleteUser);
 router.get('/reports', reportController.getReports);
 router.delete('/reports/:id', reportController.deleteReport);
 
+// Rutas de configuración global
+router.get('/settings/:key', adminController.getSetting);
+router.post('/settings/:key', adminController.updateSetting);
+
 export default router;

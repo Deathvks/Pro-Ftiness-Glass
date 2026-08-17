@@ -107,8 +107,8 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
         onChange={onChange}
         onClick={onChange}
         disabled={disabled}
-        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ml-3 shadow-inner
-        ${checked ? 'bg-accent shadow-accent/20' : 'bg-gray-400 dark:bg-gray-600'} 
+        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full transition-all duration-300 ease-in-out focus:outline-none ml-3
+        ${checked ? 'bg-[var(--color-accent)] border-2 border-white/30 bg-gradient-to-br from-white/25 to-transparent backdrop-blur-[12px] shadow-[0_4px_15px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.4)]' : 'bg-gray-400 dark:bg-gray-600 border-2 border-transparent shadow-inner'} 
         ${disabled ? 'cursor-not-allowed' : ''}
         `}
       >
@@ -326,12 +326,24 @@ export default function SettingsScreen({
   const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
   return (
-    <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div className="px-4 pt-6 pb-32 sm:pb-36 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out] min-h-screen">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
-      <div className="hidden md:flex items-center justify-between mb-8">
+
+
+      <div className="hidden md:flex mb-6 mt-4">
+        <button 
+          onClick={() => setView && setView('hub')} 
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm shrink-0"
+        >
+          <ChevronLeft size={20} />
+          <span className="font-bold text-sm">Atrás</span>
+        </button>
+      </div>
+
+      <div className="hidden md:flex items-center gap-4 md:gap-6 mb-8">
         <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
           Ajustes
         </h1>
@@ -339,7 +351,7 @@ export default function SettingsScreen({
 
       <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
         {/* --- TABS LATERALES / HORIZONTALES --- */}
-        <div className="w-full md:w-64 shrink-0 flex md:flex-col gap-3 md:gap-2 overflow-x-auto py-5 md:py-0 px-2 md:px-0 hide-scrollbar sticky top-4 z-20 -mt-2 md:mt-0">
+        <div className="w-full md:w-64 shrink-0 flex md:flex-col gap-3 md:gap-2 overflow-x-auto py-3 md:py-0 px-2 md:px-0 hide-scrollbar md:sticky md:top-4 md:z-20 mb-6 md:mb-0">
           {SETTINGS_TABS.map(tab => (
             <button
               key={tab.id}
@@ -433,15 +445,38 @@ export default function SettingsScreen({
                 onClick={resetCookieConsent}
               />
 
-              {userProfile?.role === 'admin' && (
-                <SettingsItem
-                  icon={Shield}
-                  title="Panel Admin"
-                  subtitle="Gestión avanzada"
-                  onClick={() => setView('adminPanel')}
-                  danger={false}
-                />
-              )}
+              <SettingsItem
+                icon={Shield}
+                title="Política de Privacidad"
+                subtitle="Cómo tratamos tus datos"
+                onClick={() => setView('privacyPolicy')}
+                action={<ChevronRight size={18} className="text-text-muted" />}
+              />
+
+              <SettingsItem
+                icon={Info}
+                title="Términos y Condiciones"
+                subtitle="Reglas de uso de la app"
+                onClick={() => setView('terms')}
+                action={<ChevronRight size={18} className="text-text-muted" />}
+              />
+
+              <SettingsItem
+                icon={Play}
+                title="Tutoriales"
+                subtitle="Volver a ver las guías interactivas"
+                onClick={() => {
+                  const state = useAppStore.getState();
+                  if(state.resetTour) state.resetTour();
+                  if(state.resetNutritionTour) state.resetNutritionTour();
+                  if(state.resetRoutineTour) state.resetRoutineTour();
+                  if(state.resetSocialTour) state.resetSocialTour();
+                  if(state.resetHubTour) state.resetHubTour();
+                  window.location.href = '/';
+                }}
+              />
+
+
             </div>
           </GlassCard>
           )}

@@ -63,7 +63,7 @@ const CircularProgress = ({ value, maxValue, label, icon, color, displayText, pu
                         <>
                             {value.toLocaleString('es-ES')}
                             <span className="text-sm opacity-60 ml-0.5" style={{ color: 'var(--text-muted)' }}>
-                                /{maxValue.toLocaleString('es-ES')}
+                                {maxValue > 0 ? `/${maxValue.toLocaleString('es-ES')}` : '/--'}
                             </span>
                         </>
                     )}

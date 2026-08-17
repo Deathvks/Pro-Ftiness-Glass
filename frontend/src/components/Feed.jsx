@@ -41,7 +41,7 @@ const formatDuration = (seconds) => {
     return `${m} min`;
 };
 
-export default function Feed({ setView }) {
+export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const [feed, setFeed] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeCommentInput, setActiveCommentInput] = useState({});
@@ -160,6 +160,14 @@ export default function Feed({ setView }) {
                 const isMe = log.user_id === userProfile?.id;
                 const avatarUrl = getFullImageUrl(log.user?.profile_image_url);
                 const comments = log.Comments || [];
+                
+                // Determinamos si el usuario del post tiene una historia activa
+                const hasStory = isMe 
+                    ? myStories && myStories.length > 0 
+                    : visibleStories.some(s => s.user_id === log.user_id && s.items && s.items.length > 0);
+
+                // Clases del borde: si tiene historia -> borde naranja (accent). Si no -> sin borde adicional.
+                const ringClass = hasStory ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : "";
 
                 return (
                     <GlassCard key={log.id} className="glass p-5 sm:p-6 md:p-8 flex flex-col gap-5 animate-[fade-in_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] hover:shadow-xl transition-all duration-300">
@@ -168,7 +176,7 @@ export default function Feed({ setView }) {
                                 <UserAvatar 
                                     user={{ ...log.user, profile_image_url: avatarUrl }} 
                                     size={12} 
-                                    className="w-12 h-12 sm:w-14 sm:h-14 shadow-md shrink-0 transition-transform group-hover:scale-105 ring-2 ring-black/5 dark:ring-white/10" 
+                                    className={`w-12 h-12 sm:w-14 sm:h-14 shadow-md shrink-0 transition-transform group-hover:scale-105 ${ringClass}`} 
                                 />
                                 <div className="min-w-0">
                                     <p className="font-bold text-text-primary text-base sm:text-lg truncate group-hover:text-accent transition-colors">

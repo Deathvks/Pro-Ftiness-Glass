@@ -344,8 +344,12 @@ const Dashboard = ({ setView }) => {
   };
 
   const targets = useMemo(() => {
-    if (!latestWeight) return { calories: 2000, protein: 0, water: 2500, sugar: 50 };
     const { gender, age, height, activity_level = 1.2, goal } = userProfile || {};
+
+    // Si faltan datos esenciales, devolvemos metas vacías (0)
+    if (!latestWeight || !height || !age || !gender || !goal) {
+      return { calories: 0, protein: 0, water: 0, sugar: 0 };
+    }
 
     let bmr = (10 * latestWeight) + (6.25 * height) - (5 * age) + (gender === 'male' ? 5 : -161);
     let cal = Math.round(bmr * activity_level);

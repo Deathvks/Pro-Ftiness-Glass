@@ -28,7 +28,7 @@ const storage = multer.diskStorage({
     if (req.baseUrl.includes('stories')) folder = 'stories';
     else if (req.baseUrl.includes('users')) folder = 'profiles';
     else if (req.baseUrl.includes('nutrition')) folder = 'nutrition';
-    else if (req.baseUrl.includes('exercises')) folder = 'exercises';
+    else if (req.baseUrl.includes('exercise')) folder = 'exercises';
 
     const finalPath = path.join(UPLOADS_DIR, folder);
     ensureDir(finalPath);
@@ -52,6 +52,12 @@ export const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: 50 * 1024 * 1024 }
+});
+
+export const uploadMemory = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: fileFilter,
+  limits: { fileSize: 150 * 1024 * 1024 } // 150MB limit para vídeos
 });
 
 // --- OPTIMIZACIÓN DE MEMORIA RAM ---
@@ -93,34 +99,38 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
   activeUploads++; // Registramos que un proceso está usando la IA
 
   try {
-    const { data, info } = await sharp(file.path)
-      .resize(224, 224, { fit: 'cover' })
-      .removeAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+    const dir = path.dirname(file.path);
+    const isExercisePic = dir.includes('exercises');
 
-    const tfImage = tf.tensor3d(new Uint8Array(data), [info.height, info.width, 3], 'int32');
-    const loadedModel = await getModel();
+    if (!isExercisePic) {
+      const { data, info } = await sharp(file.path)
+        .resize(224, 224, { fit: 'cover' })
+        .removeAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
 
-    if (loadedModel) {
-      const predictions = await loadedModel.classify(tfImage);
-      tfImage.dispose(); 
+      const tfImage = tf.tensor3d(new Uint8Array(data), [info.height, info.width, 3], 'int32');
+      const loadedModel = await getModel();
 
-      const nsfwFound = predictions.find(p =>
-        (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.60
-      );
+      if (loadedModel) {
+        const predictions = await loadedModel.classify(tfImage);
+        tfImage.dispose(); 
 
-      if (nsfwFound) {
-        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-        const nsfwError = new Error("Contenido inapropiado detectado (NSFW).");
-        nsfwError.code = "NSFW_DETECTED";
-        throw nsfwError;
+        const nsfwFound = predictions.find(p =>
+          (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.60
+        );
+
+        if (nsfwFound) {
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+          const nsfwError = new Error("Contenido inapropiado detectado (NSFW).");
+          nsfwError.code = "NSFW_DETECTED";
+          throw nsfwError;
+        }
+      } else {
+        if (tfImage) tfImage.dispose();
       }
-    } else {
-      if (tfImage) tfImage.dispose();
     }
 
-    const dir = path.dirname(file.path);
     const name = path.parse(file.filename).name;
     const newFilename = `${name}.webp`;
     const newPath = path.join(dir, newFilename);

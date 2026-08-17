@@ -40,7 +40,7 @@ const TABS = [
     { id: 'calendar', label: 'Calendario' }
 ];
 
-const Progress = ({ darkMode }) => {
+const Progress = ({ darkMode, setView }) => {
     const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_muscles']);
 
     const { workoutLog, bodyWeightLog, exercises, getOrFetchAllExercises } = useAppStore(state => ({
@@ -371,8 +371,20 @@ const Progress = ({ darkMode }) => {
                 `}
             </style>
 
+
+
+            <div className="hidden md:flex mb-6 mt-4">
+                <button 
+                    onClick={() => setView && setView('hub')} 
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm shrink-0"
+                >
+                    <ChevronLeft size={20} />
+                    <span className="font-bold text-sm">Atrás</span>
+                </button>
+            </div>
+
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
-                <h1 className="hidden md:block text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight mt-4 md:mt-0">
+                <h1 className="hidden md:block text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
                     Tu Progreso
                 </h1>
 

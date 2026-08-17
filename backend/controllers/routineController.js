@@ -53,6 +53,14 @@ export const getAllRoutines = async (req, res, next) => {
           model: sequelize.models.RoutineExercise,
           as: 'RoutineExercises',
           required: false,
+          include: [
+            {
+              model: sequelize.models.ExerciseList,
+              as: 'ExerciseList',
+              required: false,
+              attributes: ['image_url_start', 'image_url_end', 'images']
+            }
+          ]
         },
       ],
       order: [
@@ -62,7 +70,24 @@ export const getAllRoutines = async (req, res, next) => {
         ['RoutineExercises', 'id', 'ASC'],
       ],
     });
-    res.json(routines);
+
+    const routinesData = routines.map(routine => {
+      const routineJson = routine.toJSON();
+      if (routineJson.RoutineExercises) {
+        routineJson.RoutineExercises = routineJson.RoutineExercises.map(ex => {
+          if (ex.ExerciseList) {
+            if (!ex.image_url_start) ex.image_url_start = ex.ExerciseList.image_url_start;
+            ex.image_url_end = ex.ExerciseList.image_url_end;
+            ex.images = ex.ExerciseList.images;
+            delete ex.ExerciseList; // Limpiamos el payload
+          }
+          return ex;
+        });
+      }
+      return routineJson;
+    });
+
+    res.json(routinesData);
   } catch (error) {
     next(error);
   }
@@ -78,9 +103,17 @@ export const getRoutineById = async (req, res, next) => {
         {
           model: sequelize.models.RoutineExercise,
           as: 'RoutineExercises',
+          include: [
+            {
+              model: sequelize.models.ExerciseList,
+              as: 'ExerciseList',
+              required: false,
+              attributes: ['image_url_start', 'image_url_end', 'images']
+            }
+          ]
         },
         {
-          model: User,
+          model: sequelize.models.User,
           attributes: ['id', 'username', 'profile_image_url']
         }
       ],
@@ -100,7 +133,20 @@ export const getRoutineById = async (req, res, next) => {
       return res.status(403).json({ error: 'Acceso denegado. La rutina es privada o solo para amigos.' });
     }
 
-    res.json(routine);
+    const routineJson = routine.toJSON();
+    if (routineJson.RoutineExercises) {
+      routineJson.RoutineExercises = routineJson.RoutineExercises.map(ex => {
+        if (ex.ExerciseList) {
+          if (!ex.image_url_start) ex.image_url_start = ex.ExerciseList.image_url_start;
+          ex.image_url_end = ex.ExerciseList.image_url_end;
+          ex.images = ex.ExerciseList.images;
+          delete ex.ExerciseList;
+        }
+        return ex;
+      });
+    }
+
+    res.json(routineJson);
   } catch (error) {
     next(error);
   }

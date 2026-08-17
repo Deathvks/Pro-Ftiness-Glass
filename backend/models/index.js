@@ -25,10 +25,12 @@ import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
 import UserChallenge from './userChallengeModel.js';
+import Message from './messageModel.js';
 
 // Nuevos modelos de Squads
 import Squad from './squadModel.js';
 import SquadMember from './squadMemberModel.js';
+import SystemSettings from './systemSettingsModel.js';
 
 // Nuevos modelos de Feed (Likes y Comentarios en Entrenamientos)
 import WorkoutLike from './workoutLikeModel.js';
@@ -156,6 +158,13 @@ SquadMember.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(XpLog, { foreignKey: 'user_id', as: 'XpLogs' });
 XpLog.belongsTo(User, { foreignKey: 'user_id' });
 
+// --- MENSAJES (Asesoría) ---
+User.hasMany(Message, { foreignKey: 'sender_id', as: 'SentMessages' });
+Message.belongsTo(User, { foreignKey: 'sender_id', as: 'Sender' });
+
+User.hasMany(Message, { foreignKey: 'receiver_id', as: 'ReceivedMessages' });
+Message.belongsTo(User, { foreignKey: 'receiver_id', as: 'Receiver' });
+
 const models = {
   sequelize,
   User,
@@ -185,9 +194,11 @@ const models = {
   XpLog,
   Squad,
   SquadMember,
+  SystemSettings,
   WorkoutLike,
   WorkoutComment,
-  UserChallenge
+  UserChallenge,
+  Message
 };
 
 export default models;

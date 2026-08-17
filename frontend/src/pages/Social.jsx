@@ -14,6 +14,7 @@ import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
+import ModalPortal from '../components/ModalPortal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
@@ -21,6 +22,7 @@ import socialService from '../services/socialService';
 import Feed from '../components/Feed';
 import PermissionModal from '../components/PermissionModal';
 import SocialTourGuide from '../components/SocialTourGuide';
+import LevelBadge from '../components/LevelBadge';
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
@@ -90,18 +92,18 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
         <div className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group relative">
             <div
                 className={`
-                    relative p-1 rounded-full transition-all duration-300
+                    relative rounded-full transition-all duration-300
                     ${hasStories
                         ? (hasUnseen
-                            ? 'ring-2 ring-accent shadow-lg shadow-accent/40 animate-pulse-slow bg-bg-primary'
-                            : 'ring-2 ring-black/10 dark:ring-white/20 bg-bg-primary'
+                            ? 'p-1 ring-2 ring-accent shadow-lg shadow-accent/40 animate-pulse-slow bg-bg-primary'
+                            : 'p-1 ring-2 ring-black/10 dark:ring-white/20 bg-bg-primary'
                         )
-                        : 'ring-2 ring-dashed ring-black/20 dark:ring-white/20 hover:ring-accent bg-bg-primary'
+                        : ''
                     }
                 `}
                 onClick={onClick}
             >
-                <div className="p-0.5 bg-bg-primary rounded-full relative z-10">
+                <div className={`${hasStories ? 'p-0.5 bg-bg-primary' : 'p-0'} rounded-full relative z-10`}>
                     <UserAvatar
                         user={{
                             ...user,
@@ -118,9 +120,9 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
                             e.stopPropagation();
                             onAdd();
                         }}
-                        className="absolute bottom-0 right-0 bg-accent text-white rounded-full p-2 border-4 border-bg-primary hover:scale-110 transition-transform shadow-lg shadow-accent/40 z-20"
+                        className="absolute bottom-0 right-0 bg-[var(--color-accent)] text-white rounded-full p-[5px] sm:p-1.5 border-[3px] border-bg-primary hover:scale-110 transition-all duration-300 z-20 bg-gradient-to-br from-white/25 to-transparent backdrop-blur-[12px] shadow-[0_4px_15px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.4)] hover:brightness-110 hover:shadow-[0_8px_20px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.5)]"
                     >
-                        <Plus size={14} strokeWidth={3} />
+                        <Plus size={12} strokeWidth={3} />
                     </button>
                 )}
             </div>
@@ -130,73 +132,77 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
         </div>
     );
 };
-
 // --- Subcomponente: Modal de Aviso Legal ---
 const StoryTermsModal = ({ onAccept, onReject }) => {
     return (
-        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 animate-[fade-in_0.2s_ease-out]">
-            <div className="absolute inset-0" onClick={onReject} />
-            <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <ModalPortal>
+            <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-[calc(var(--safe-top,env(safe-area-inset-top,0px))+16px)] animate-[fade-in_0.2s_ease-out]" onClick={onReject}>
+                <GlassCard className="glass w-full max-w-md p-0 mt-auto sm:mt-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[calc(100vh-var(--safe-top,env(safe-area-inset-top,0px))-16px)] sm:max-h-[90vh] bg-bg-primary overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                    
+                    <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
 
-                <div className="text-center">
-                    <div className="w-20 h-20 bg-accent/10 rounded-[24px] flex items-center justify-center mx-auto mb-6 text-accent ring-2 ring-accent/30">
-                        <ShieldAlert size={36} strokeWidth={1.5} />
-                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col px-6 sm:px-8 pt-6 sm:pt-8 pb-[calc(2rem+var(--safe-bottom))] sm:pb-8">
+                        <div className="text-center my-auto">
+                            <div className="w-20 h-20 bg-accent/10 rounded-[24px] flex items-center justify-center mx-auto mb-6 text-accent ring-2 ring-accent/30">
+                                <ShieldAlert size={36} strokeWidth={1.5} />
+                            </div>
 
-                    <h3 className="text-2xl font-bold text-text-primary mb-3">Historias Efímeras</h3>
-                    <p className="text-sm text-text-secondary mb-8 leading-relaxed font-medium">
-                        Antes de subir tu primera historia, debes conocer cómo funciona este espacio en nuestra comunidad.
-                    </p>
+                            <h3 className="text-2xl font-bold text-text-primary mb-3">Historias Efímeras</h3>
+                            <p className="text-sm text-text-secondary mb-8 leading-relaxed font-medium">
+                                Antes de subir tu primera historia, debes conocer cómo funciona este espacio en nuestra comunidad.
+                            </p>
 
-                    <div className="space-y-4 text-left mb-8">
-                        <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
-                            <Clock className="text-blue-500 mt-0.5 shrink-0" size={20} />
-                            <div>
-                                <h4 className="text-sm font-bold text-text-primary">Duración Limitada</h4>
-                                <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
-                                    Todo el contenido (fotos y vídeos) se elimina automáticamente de nuestros servidores tras <strong>24 horas</strong>.
-                                </p>
+                            <div className="space-y-4 text-left mb-8">
+                                <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
+                                    <Clock className="text-blue-500 mt-0.5 shrink-0" size={20} />
+                                    <div>
+                                        <h4 className="text-sm font-bold text-text-primary">Duración Limitada</h4>
+                                        <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
+                                            Todo el contenido (fotos y vídeos) se elimina automáticamente de nuestros servidores tras <strong>24 horas</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
+                                    <Shield className="text-accent mt-0.5 shrink-0" size={20} />
+                                    <div>
+                                        <h4 className="text-sm font-bold text-text-primary">Privacidad</h4>
+                                        <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
+                                            Puedes elegir si compartir tu historia con <strong>todos los usuarios</strong> o solo con <strong>tus amigos</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
+                                    <Lock className="text-purple-500 mt-0.5 shrink-0" size={20} />
+                                    <div>
+                                        <h4 className="text-sm font-bold text-text-primary">Responsabilidad</h4>
+                                        <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
+                                            No subas contenido ofensivo o ilegal. Nos reservamos el derecho de moderación.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3 mt-auto">
+                                <button
+                                    onClick={onAccept}
+                                    className="w-full py-4 rounded-[20px] font-bold bg-accent text-white shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all text-sm sm:text-base"
+                                >
+                                    Aceptar y Continuar
+                                </button>
+                                <button
+                                    onClick={onReject}
+                                    className="w-full py-4 rounded-[20px] font-bold text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm sm:text-base"
+                                >
+                                    Cancelar
+                                </button>
                             </div>
                         </div>
-
-                        <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
-                            <Users className="text-green-500 mt-0.5 shrink-0" size={20} />
-                            <div>
-                                <h4 className="text-sm font-bold text-text-primary">Tú decides quién lo ve</h4>
-                                <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
-                                    Puedes elegir entre <strong>Público</strong> (toda la comunidad) o <strong>Solo Amigos</strong> antes de publicar.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4 items-start p-4 bg-black/5 dark:bg-white/5 rounded-[20px]">
-                            <Lock className="text-purple-500 mt-0.5 shrink-0" size={20} />
-                            <div>
-                                <h4 className="text-sm font-bold text-text-primary">Responsabilidad</h4>
-                                <p className="text-[11px] sm:text-xs text-text-secondary mt-1 font-medium">
-                                    No subas contenido ofensivo o ilegal. Nos reservamos el derecho de moderación.
-                                </p>
-                            </div>
-                        </div>
                     </div>
-
-                    <div className="flex flex-col gap-3">
-                        <button
-                            onClick={onAccept}
-                            className="w-full py-4 rounded-[20px] font-bold bg-accent text-white shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all text-sm sm:text-base"
-                        >
-                            Aceptar y Continuar
-                        </button>
-                        <button
-                            onClick={onReject}
-                            className="w-full py-4 rounded-[20px] font-bold text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm sm:text-base"
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            </GlassCard>
-        </div>
+                </GlassCard>
+            </div>
+        </ModalPortal>
     );
 };
 
@@ -304,135 +310,130 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
 
     return (
         <>
-            <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-safe-top animate-[fade-in_0.2s_ease-out]">
-                <GlassCard className="glass w-full max-w-md p-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[calc(100vh-var(--safe-top))] sm:max-h-[90vh] bg-bg-primary overflow-hidden">
+            <ModalPortal>
+                <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4 pt-[calc(var(--safe-top,env(safe-area-inset-top,0px))+16px)] animate-[fade-in_0.2s_ease-out]" onClick={onClose}>
+                    <GlassCard className="glass w-full max-w-md p-0 mt-auto sm:mt-0 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none sm:rounded-b-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col max-h-[calc(100vh-var(--safe-top,env(safe-area-inset-top,0px))-16px)] sm:max-h-[90vh] bg-bg-primary overflow-hidden" onClick={(e) => e.stopPropagation()}>
                     
-                    <div className="p-5 sm:p-8 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
-                        <h3 className="text-xl font-bold text-text-primary">Nueva Historia</h3>
-                        <button onClick={onClose} className="p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
-                            <X size={20} className="text-text-secondary" />
-                        </button>
-                    </div>
+                        {/* Drag Handle para móvil */}
+                        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
 
-                    <div className="flex-1 overflow-y-auto p-5 sm:p-8 flex flex-col custom-scrollbar">
-                        {!preview ? (
-                            <div className="grid grid-cols-3 gap-3 sm:gap-4 w-full my-auto">
-                                <div
-                                    onClick={() => cameraPhotoInputRef.current?.click()}
-                                    className="aspect-square ring-2 ring-dashed ring-accent/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-accent/5 hover:ring-accent/50 transition-all group"
-                                >
-                                    <div className="p-3 sm:p-4 bg-accent/10 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-accent">
-                                        <Camera size={28} />
-                                    </div>
-                                    <p className="text-accent font-bold text-xs sm:text-sm">Foto</p>
-                                </div>
-
-                                <div
-                                    onClick={() => cameraVideoInputRef.current?.click()}
-                                    className="aspect-square ring-2 ring-dashed ring-red-500/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-red-500/5 hover:ring-red-500/50 transition-all group"
-                                >
-                                    <div className="p-3 sm:p-4 bg-red-500/10 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-red-500">
-                                        <VideoIcon size={28} />
-                                    </div>
-                                    <p className="text-red-500 font-bold text-xs sm:text-sm">Vídeo</p>
-                                </div>
-
-                                <div
-                                    onClick={() => galleryInputRef.current?.click()}
-                                    className="aspect-square ring-2 ring-dashed ring-black/20 dark:ring-white/20 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
-                                >
-                                    <div className="p-3 sm:p-4 bg-black/5 dark:bg-white/5 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-text-secondary">
-                                        <ImageIcon size={28} />
-                                    </div>
-                                    <p className="text-text-secondary font-bold text-xs sm:text-sm">Galería</p>
-                                </div>
-
-                                <p className="col-span-3 text-center text-[11px] sm:text-xs font-medium text-text-tertiary mt-4">
-                                    Elige el modo de cámara para asegurar compatibilidad
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="relative w-full h-[45vh] sm:h-[55vh] rounded-[24px] overflow-hidden bg-black flex items-center justify-center ring-1 ring-white/10 shadow-inner my-auto">
-                                {file?.type?.startsWith('video') ? (
-                                    <video
-                                        ref={previewVideoRef}
-                                        src={preview}
-                                        className="max-w-full max-h-full w-auto h-auto outline-none"
-                                        controls playsInline webkit-playsinline="true" preload="auto" muted
-                                        onLoadedMetadata={handleVideoLoad}
-                                        style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
-                                    />
-                                ) : (
-                                    <img
-                                        src={preview}
-                                        alt="Preview"
-                                        className="max-w-full max-h-full w-auto h-auto shadow-sm mx-auto"
-                                        style={{ filter: isHDR ? 'brightness(1.05) contrast(1.02)' : 'none' }}
-                                    />
-                                )}
-                                <button
-                                    onClick={() => { setFile(null); setPreview(null); setIsHDR(false); setCanUseHDR(false); }}
-                                    className="absolute top-4 right-4 p-2.5 bg-black/60 backdrop-blur-sm text-white rounded-full hover:bg-red-500 transition-colors z-20"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-                        )}
-
-                        <input type="file" accept="image/*,video/*" ref={galleryInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'gallery')} />
-                        <input type="file" accept="image/*" capture="environment" ref={cameraPhotoInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'camera')} />
-                        <input type="file" accept="video/*" capture="environment" ref={cameraVideoInputRef} className="hidden" onChange={handleFileChange} onClick={(e) => onInputClick(e, 'video')} />
-                    </div>
-
-                    <div className="p-5 sm:p-8 border-t border-black/5 dark:border-white/10 space-y-5 bg-black/5 dark:bg-white/5">
-                        <div className="flex gap-3 justify-center">
-                            <button
-                                onClick={() => setPrivacy('friends')}
-                                className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
-                                    ${privacy === 'friends'
-                                        ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
-                                        : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
-                                    }`}
-                            >
-                                <Users size={18} /><span>Amigos</span>
+                        {/* Header transparente sin background */}
+                        <div className="px-5 sm:px-8 pt-4 sm:pt-8 pb-4 flex justify-between items-center z-10 shrink-0">
+                            <h3 className="text-xl font-bold text-text-primary">Nueva Historia</h3>
+                            <button onClick={onClose} className="p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+                                <X size={20} className="text-text-secondary" />
                             </button>
-
-                            <button
-                                onClick={() => setPrivacy('public')}
-                                className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
-                                    ${privacy === 'public'
-                                        ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
-                                        : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
-                                    }`}
-                            >
-                                <Globe size={18} /><span>Público</span>
-                            </button>
-
-                            {canUseHDR && (
-                                <button
-                                    onClick={toggleHDR}
-                                    className={`flex-initial px-4 py-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1
-                                        ${isHDR
-                                            ? 'bg-accent text-white ring-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow'
-                                            : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 opacity-60 hover:opacity-100'
-                                        }`}
-                                >
-                                    <Zap size={18} className={isHDR ? "fill-current" : ""} />
-                                    HDR {isHDR ? 'ON' : 'OFF'}
-                                </button>
-                            )}
                         </div>
 
-                        <button
-                            onClick={handleSubmit}
-                            disabled={!file || isUploading}
-                            className="w-full py-4 bg-accent text-white font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
-                        >
-                            {isUploading ? <Spinner size={20} color="#ffffff" /> : 'Compartir Historia'}
-                        </button>
-                    </div>
-                </GlassCard>
-            </div>
+                        <div className="flex-1 overflow-y-auto px-5 sm:px-8 pb-[calc(2rem+var(--safe-bottom))] sm:pb-8 flex flex-col custom-scrollbar pt-2">
+                            {!preview ? (
+                                <div className="grid grid-cols-3 gap-3 sm:gap-4 w-full my-auto">
+                                    <div
+                                        onClick={() => cameraPhotoInputRef.current?.click()}
+                                        className="aspect-square ring-2 ring-dashed ring-accent/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-accent/5 hover:ring-accent/50 transition-all group"
+                                    >
+                                        <div className="p-3 sm:p-4 bg-accent/10 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-accent">
+                                            <Camera size={28} />
+                                        </div>
+                                        <p className="text-accent font-bold text-xs sm:text-sm">Foto</p>
+                                    </div>
+
+                                    <div
+                                        onClick={() => cameraVideoInputRef.current?.click()}
+                                        className="aspect-square ring-2 ring-dashed ring-red-500/30 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-red-500/5 hover:ring-red-500/50 transition-all group"
+                                    >
+                                        <div className="p-3 sm:p-4 bg-red-500/10 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-red-500">
+                                            <VideoIcon size={28} />
+                                        </div>
+                                        <p className="text-red-500 font-bold text-xs sm:text-sm">Vídeo</p>
+                                    </div>
+
+                                    <div
+                                        onClick={() => galleryInputRef.current?.click()}
+                                        className="aspect-square ring-2 ring-dashed ring-black/20 dark:ring-white/20 rounded-[24px] bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-2 sm:gap-3 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
+                                    >
+                                        <div className="p-3 sm:p-4 bg-black/5 dark:bg-white/5 rounded-[16px] sm:rounded-[18px] group-hover:scale-110 transition-transform text-text-secondary">
+                                            <ImageIcon size={28} />
+                                        </div>
+                                        <p className="text-text-secondary font-bold text-xs sm:text-sm">Galería</p>
+                                    </div>
+
+                                    <input type="file" ref={galleryInputRef} onChange={handleFileChange} accept="image/*,video/*" className="hidden" onClick={(e) => onInputClick(e, 'gallery')} />
+                                    <input type="file" ref={cameraPhotoInputRef} onChange={handleFileChange} accept="image/*" capture="environment" className="hidden" onClick={(e) => onInputClick(e, 'camera')} />
+                                    <input type="file" ref={cameraVideoInputRef} onChange={handleFileChange} accept="video/*" capture="environment" className="hidden" onClick={(e) => onInputClick(e, 'video')} />
+                                </div>
+                            ) : (
+                                <div className="flex-1 flex flex-col relative w-full h-[60vh] sm:h-auto sm:aspect-[9/16] bg-black rounded-[24px] overflow-hidden shadow-inner group">
+                                    {file?.type?.startsWith('video') ? (
+                                        <video ref={previewVideoRef} src={preview} onLoadedMetadata={handleVideoLoad} className="w-full h-full object-cover" controls playsInline />
+                                    ) : (
+                                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                    )}
+                                    
+                                    <button
+                                        onClick={() => { setFile(null); setPreview(null); setCanUseHDR(false); setIsHDR(false); }}
+                                        className="absolute top-4 right-4 p-3 bg-black/60 backdrop-blur-md text-white rounded-full hover:bg-red-500 transition-colors shadow-lg group-hover:opacity-100 sm:opacity-0"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                    
+                                    {isHDR && (
+                                        <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
+                                            <Zap size={14} className="fill-current text-accent" /> HDR
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2 w-full mt-6 mb-4">
+                                <button
+                                    onClick={() => setPrivacy('friends')}
+                                    className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
+                                        ${privacy === 'friends'
+                                            ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                                            : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
+                                        }`}
+                                >
+                                    <Users size={18} /><span>Amigos</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setPrivacy('public')}
+                                    className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
+                                        ${privacy === 'public'
+                                            ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                                            : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
+                                        }`}
+                                >
+                                    <Globe size={18} /><span>Público</span>
+                                </button>
+
+                                {canUseHDR && (
+                                    <button
+                                        onClick={toggleHDR}
+                                        className={`flex-initial px-4 py-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1
+                                            ${isHDR
+                                                ? 'bg-accent text-white ring-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow'
+                                                : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 opacity-60 hover:opacity-100'
+                                            }`}
+                                    >
+                                        <Zap size={18} className={isHDR ? "fill-current" : ""} />
+                                        HDR {isHDR ? 'ON' : 'OFF'}
+                                    </button>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={handleSubmit}
+                                disabled={!file || isUploading}
+                                className="w-full py-4 mt-auto mb-2 bg-accent text-white font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
+                            >
+                                {isUploading ? <Spinner size={20} color="#ffffff" /> : 'Compartir Historia'}
+                            </button>
+                        </div>
+                    </GlassCard>
+                </div>
+            </ModalPortal>
 
             <PermissionModal
                 isOpen={showPermissionModal}
@@ -962,7 +963,11 @@ export default function Social({ setView }) {
                                 <UserAvatar user={fixedUser} size={10} className="w-8 h-8 sm:w-10 sm:h-10 shadow-sm shrink-0" />
                                 <span className={`truncate text-xs sm:text-base ${isMe ? 'text-accent font-extrabold' : 'text-text-primary font-bold'}`}>{user.username} {isMe && "(Tú)"}</span>
                             </div>
-                            <div className="w-12 sm:w-16 text-right text-xs sm:text-sm text-text-secondary font-bold shrink-0">{user.level}</div>
+                            <div className="w-12 sm:w-16 flex justify-end shrink-0 -my-2">
+                                <div className="scale-[0.55] sm:scale-[0.65] origin-right">
+                                    <LevelBadge level={user.level || 1} size="sm" />
+                                </div>
+                            </div>
                             <div className="w-16 sm:w-24 text-right text-xs sm:text-sm text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString()}</div>
                         </div>
                     );
@@ -1287,7 +1292,7 @@ export default function Social({ setView }) {
 
             {/* --- Contenido Principal --- */}
             <div className="min-h-[400px] max-w-3xl mx-auto w-full">
-                {activeTab === 'feed' && <Feed setView={setView} />}
+                {activeTab === 'feed' && <Feed setView={setView} visibleStories={visibleStories} myStories={myStories} />}
                 {activeTab === 'friends' && renderFriends()}
                 {activeTab === 'squads' && renderSquads()}
                 {activeTab === 'requests' && renderRequests()}

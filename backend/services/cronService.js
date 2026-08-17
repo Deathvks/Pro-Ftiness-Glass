@@ -117,6 +117,63 @@ const checkNutritionGoals = () => {
 };
 
 /**
+ * TAREA CREATINA: Recordatorio de Creatina
+ * Se ejecuta en el minuto 8 para no saturar con las otras tareas.
+ */
+const checkCreatineReminder = () => {
+  cron.schedule('8 * * * *', async () => {
+    try {
+      // 1. Obtener usuarios distintos que tienen registros de creatina (usuarios que toman creatina)
+      const creatineUsers = await db.CreatinaLog.findAll({
+        attributes: ['user_id'],
+        group: ['user_id']
+      });
+      
+      const userIds = creatineUsers.map(u => u.user_id);
+      if (!userIds.length) return;
+
+      const users = await db.User.findAll({
+        where: { id: { [Op.in]: userIds } },
+        attributes: ['id', 'timezone'],
+        include: [{
+          model: db.PushSubscription,
+          as: 'PushSubscriptions',
+          required: true,
+          attributes: []
+        }]
+      });
+
+      // 2. Filtrar a los que son las 10:00 AM localmente (buena hora para recordatorio de creatina)
+      const targetUsers = users.filter(user => getLocalTime(user.timezone).hour === 10);
+      if (!targetUsers.length) return;
+
+      console.log(`[Cron] Creatina: Procesando ${targetUsers.length} usuarios.`);
+
+      await Promise.all(targetUsers.map(async (user) => {
+        const { date: localDate } = getLocalTime(user.timezone);
+
+        // 3. Verificar si ya registró hoy
+        const loggedToday = await db.CreatinaLog.findOne({
+          where: { user_id: user.id, log_date: localDate }
+        });
+
+        // 4. Si no ha registrado hoy, notificar
+        if (!loggedToday) {
+          const payload = {
+            title: "💊 Tu creatina",
+            body: "No olvides registrar tu dosis diaria para no perder el progreso.",
+            url: "/hub/progress?tab=creatina"
+          };
+          await notifyUser(user.id, payload);
+        }
+      }));
+    } catch (error) {
+      console.error('[Cron] Error tarea creatina:', error.message);
+    }
+  });
+};
+
+/**
  * TAREA 2: Recordatorio de Entrenamiento
  * (Minuto 5)
  */
@@ -356,6 +413,7 @@ const resetInactiveStreaks = () => {
 export const startCronJobs = () => {
   console.log('[Cron] Iniciando tareas (Optimizado)...');
   checkNutritionGoals();
+  checkCreatineReminder();
   checkTrainingReminder();
   checkWeightLogReminder();
   scheduleImageCleanup();

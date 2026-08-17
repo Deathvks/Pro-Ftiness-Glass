@@ -8,7 +8,10 @@ import {
   ChevronRightIcon,
   PaintBrushIcon,
   InformationCircleIcon,
-  ShareIcon
+  ShareIcon,
+  UserGroupIcon,
+  ChatBubbleLeftRightIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
@@ -34,7 +37,9 @@ const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, 
             </span>
           )}
           {badge && !isComingSoon && (
-            <span className="inline-block w-2.5 h-2.5 shrink-0 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)] mt-0.5"></span>
+            <span className="inline-block w-2.5 h-2.5 shrink-0 bg-accent rounded-full animate-pulse shadow-[0_0_8px_rgba(0,0,0,0.5)] dark:shadow-[0_0_8px_rgba(255,255,255,0.3)] mt-0.5 relative">
+              <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
+            </span>
           )}
         </h3>
         {description && (
@@ -50,7 +55,15 @@ const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, 
 
 export default function Hub({ setView }) {
   const userProfile = useAppStore(state => state.userProfile);
-  const [visitedChallenges, setVisitedChallenges] = React.useState(() => localStorage.getItem('visited_challenges_v2') === 'true');
+  const [visitedChallenges, setVisitedChallenges] = React.useState(true);
+  const [visitedAsesoria, setVisitedAsesoria] = React.useState(true);
+
+  React.useEffect(() => {
+    if (userProfile?.id) {
+      setVisitedChallenges(localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) === 'true');
+      setVisitedAsesoria(localStorage.getItem(`visited_asesoria_${userProfile.id}`) === 'true');
+    }
+  }, [userProfile?.id]);
 
   return (
     <div className="w-full h-full pb-[calc(var(--safe-bottom)+90px)] animate-fade-in custom-scrollbar">
@@ -61,15 +74,16 @@ export default function Hub({ setView }) {
       <div className="px-4 py-6 max-w-4xl mx-auto space-y-6">
         
         {/* Banner Hero */}
-        <div className="relative w-full h-40 sm:h-48 rounded-3xl overflow-hidden shadow-xl mb-8 group">
+        <div className="relative w-full h-40 sm:h-48 rounded-3xl overflow-hidden shadow-xl mb-8 group select-none">
           <img 
             src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80" 
             alt="Explorar" 
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none z-0"
+            draggable="false"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none z-10"></div>
           
-          <div className="absolute bottom-0 left-0 p-5 w-full">
+          <div className="absolute bottom-0 left-0 p-5 w-full pointer-events-none z-20">
             <h1 className="text-3xl font-extrabold text-white drop-shadow-md">
               Explorar
             </h1>
@@ -90,6 +104,21 @@ export default function Hub({ setView }) {
             onClick={() => setView('progress')}
           />
           
+          {!['trainer', 'admin'].includes(userProfile?.role) && (
+            <HubButton 
+              id="hub-asesoria"
+              icon={ChatBubbleLeftRightIcon}
+              title="Asesoría"
+              description="Habla con tu entrenador"
+              onClick={() => {
+                localStorage.setItem(`visited_asesoria_${userProfile?.id}`, 'true');
+                setVisitedAsesoria(true);
+                setView('asesoria');
+              }}
+              badge={!visitedAsesoria}
+            />
+          )}
+
           <HubButton 
             id="hub-challenges"
             icon={TrophyIcon}
@@ -128,6 +157,26 @@ export default function Hub({ setView }) {
             description="Cuenta, privacidad y notificaciones"
             onClick={() => setView('settings')}
           />
+
+          {(userProfile?.role === 'admin' || userProfile?.role === 'trainer') && (
+            <HubButton 
+              id="hub-trainer-panel"
+              icon={UserGroupIcon}
+              title="Panel de Entrenador"
+              description="Gestión de clientes y cuestionarios"
+              onClick={() => setView('trainerPanel')}
+            />
+          )}
+
+          {userProfile?.role === 'admin' && (
+            <HubButton 
+              id="hub-admin-panel"
+              icon={ShieldCheckIcon}
+              title="Panel Admin"
+              description="Gestión de usuarios y sistema"
+              onClick={() => setView('adminPanel')}
+            />
+          )}
 
         </div>
         

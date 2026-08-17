@@ -1,31 +1,32 @@
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/ErrorBoundary.jsx */
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { hasError: false };
-    }
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-    static getDerivedStateFromError(error) {
-        // Actualiza el estado para que el siguiente renderizado muestre la UI de repuesto
-        return { hasError: true };
-    }
+  static getDerivedStateFromError(error) {
+    // Actualiza el estado para que el siguiente renderizado muestre la UI de repuesto
+    return { hasError: true };
+  }
 
-    componentDidCatch(error, errorInfo) {
-        // También puedes registrar el error en un servicio de reporte de errores
-        console.error("ErrorBoundary caught an error:", error, errorInfo);
-    }
+  componentDidCatch(error, errorInfo) {
+    // También puedes registrar el error en un servicio de reporte de errores
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  }
 
-    handleReload = () => {
-        window.location.reload();
-    };
+  handleReload = () => {
+    window.location.reload();
+  };
 
-    render() {
-        if (this.state.hasError) {
-            return (
-                <div className="fixed inset-0 bg-bg-primary flex items-center justify-center p-4 z-[9999] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+  render() {
+    if (this.state.hasError) {
+      return <ModalPortal>
+        <div className="fixed inset-0 bg-bg-primary flex items-center justify-center p-4 z-[100] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
                     <div className="bg-bg-primary border border-glass-border rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
                         <div className="mx-auto w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
                             <AlertTriangle className="text-red-500" size={32} />
@@ -41,19 +42,19 @@ class ErrorBoundary extends React.Component {
                         </p>
 
                         <button
-                            onClick={this.handleReload}
-                            className="w-full py-3 px-4 bg-accent text-bg-primary font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2"
-                        >
+              onClick={this.handleReload}
+              className="w-full py-3 px-4 bg-accent text-bg-primary font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2">
+              
                             <RefreshCw size={20} />
                             Recargar Aplicación
                         </button>
                     </div>
-                </div>
-            );
-        }
+                </div></ModalPortal>;
 
-        return this.props.children;
     }
+
+    return this.props.children;
+  }
 }
 
 export default ErrorBoundary;

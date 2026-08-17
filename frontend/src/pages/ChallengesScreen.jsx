@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { UserGroupIcon, FireIcon, BoltIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import { Share2, Copy, CheckCircle } from 'lucide-react';
+import { Share2, Copy, CheckCircle, ChevronLeft } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
 import apiClient from '../services/apiClient';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import RewardsModal from '../components/RewardsModal';
 
-const ChallengesScreen = () => {
+const ChallengesScreen = ({ setView }) => {
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('daily');
@@ -17,8 +17,8 @@ const ChallengesScreen = () => {
     const { addToast } = useToast();
 
     useEffect(() => {
-        if (localStorage.getItem('visited_challenges_v2') !== 'true') {
-            localStorage.setItem('visited_challenges_v2', 'true');
+        if (userProfile?.id && localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) !== 'true') {
+            localStorage.setItem(`visited_challenges_v2_${userProfile.id}`, 'true');
         }
         const fetchChallenges = async () => {
             try {
@@ -98,7 +98,17 @@ const ChallengesScreen = () => {
         <>
             <div className="min-h-screen bg-background text-text-primary font-sans pb-24">
                 <div className="max-w-5xl mx-auto w-full">
-                    <header className="px-6 pt-12 pb-4 glassCardClass">
+
+                    <div className="hidden md:flex px-6 pt-8 mb-2">
+                        <button 
+                            onClick={() => setView && setView('hub')} 
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
+                        >
+                            <ChevronLeft size={20} />
+                            Volver
+                        </button>
+                    </div>
+                    <header className="px-6 pt-4 md:pt-6 pb-4 glassCardClass">
                         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight mb-2">
                             Retos y Misiones
                         </h1>

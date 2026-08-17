@@ -1,45 +1,46 @@
+import ModalPortal from './ModalPortal';
 import React, { useEffect, useState } from 'react';
 import { UserPlus, Sparkles, X, Gift } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 
 const ReferralSuccessAnimation = () => {
-    const queue = useAppStore(state => state.referralAnimationQueue);
-    const shiftAnimation = useAppStore(state => state.shiftReferralAnimation);
-    const [isVisible, setIsVisible] = useState(false);
-    const [currentData, setCurrentData] = useState(null);
+  const queue = useAppStore((state) => state.referralAnimationQueue);
+  const shiftAnimation = useAppStore((state) => state.shiftReferralAnimation);
+  const [isVisible, setIsVisible] = useState(false);
+  const [currentData, setCurrentData] = useState(null);
 
-    useEffect(() => {
-        if (queue.length > 0 && !isVisible) {
-            setCurrentData(queue[0]);
-            setIsVisible(true);
-        }
-    }, [queue, isVisible]);
+  useEffect(() => {
+    if (queue.length > 0 && !isVisible) {
+      setCurrentData(queue[0]);
+      setIsVisible(true);
+    }
+  }, [queue, isVisible]);
 
-    const handleClose = () => {
-        setIsVisible(false);
-        setTimeout(() => {
-            shiftAnimation();
-            setCurrentData(null);
-        }, 500); // Wait for fade out
-    };
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(() => {
+      shiftAnimation();
+      setCurrentData(null);
+    }, 500); // Wait for fade out
+  };
 
-    if (!isVisible || !currentData) return null;
+  if (!isVisible || !currentData) return null;
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+  return <ModalPortal>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             {/* Backdrop */}
-            <div 
-                className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-in"
-                onClick={handleClose}
-            />
+            <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-in"
+        onClick={handleClose} />
+      
 
             {/* Content Container */}
             <div className="relative w-full max-w-md animate-scale-up z-10 flex flex-col items-center">
                 {/* Close Button */}
-                <button 
-                    onClick={handleClose}
-                    className="absolute top-0 right-0 p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20"
-                >
+                <button
+          onClick={handleClose}
+          className="absolute top-0 right-0 p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20">
+          
                     <X size={24} />
                 </button>
 
@@ -73,16 +74,16 @@ const ReferralSuccessAnimation = () => {
                         <span className="text-xs font-bold text-accent uppercase tracking-widest">Recompensa Otorgada</span>
                     </div>
 
-                    <button 
-                        onClick={handleClose}
-                        className="w-full py-4 bg-accent text-white font-bold rounded-xl shadow-lg shadow-accent/20 hover:bg-accent-hover transition-all active:scale-95"
-                    >
+                    <button
+            onClick={handleClose}
+            className="w-full py-4 bg-accent text-white font-bold rounded-xl shadow-lg shadow-accent/20 hover:bg-accent-hover transition-all active:scale-95">
+            
                         ¡Genial!
                     </button>
                 </div>
             </div>
-        </div>
-    );
+        </div></ModalPortal>;
+
 };
 
 export default ReferralSuccessAnimation;

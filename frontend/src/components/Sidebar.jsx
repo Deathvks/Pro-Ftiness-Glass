@@ -33,7 +33,10 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
         <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]" />
       )}
       {badgeCount === 0 && badge && (
-        <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+        <span className="absolute -top-1 -right-2 w-2.5 h-2.5">
+          <span className="absolute inset-0 bg-accent rounded-full animate-pulse shadow-sm"></span>
+          <span className="absolute inset-0 bg-accent rounded-full animate-ping opacity-75"></span>
+        </span>
       )}
     </div>
     <span className={`transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[250px] opacity-100'} ${shouldTruncate ? "truncate" : ""}`}>

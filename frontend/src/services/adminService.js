@@ -39,3 +39,14 @@ export const createUser = (userData) => {
         body: userData,
     });
 };
+
+export const getSetting = (key) => {
+    return apiClient(`/admin/settings/${key}`);
+};
+
+export const updateSetting = (key, value) => {
+    return apiClient(`/admin/settings/${key}`, {
+        method: 'POST',
+        body: { value },
+    });
+};

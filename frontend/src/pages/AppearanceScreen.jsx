@@ -68,8 +68,8 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled }
       aria-checked={checked}
       onClick={onChange}
       disabled={disabled}
-      className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ml-3 shadow-inner
-      ${checked ? 'bg-accent shadow-accent/20' : 'bg-gray-400 dark:bg-gray-600'} 
+      className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full transition-all duration-300 ease-in-out focus:outline-none ml-3
+      ${checked ? 'bg-[var(--color-accent)] border-2 border-white/30 bg-gradient-to-br from-white/25 to-transparent backdrop-blur-[12px] shadow-[0_4px_15px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.4)]' : 'bg-gray-400 dark:bg-gray-600 border-2 border-transparent shadow-inner'} 
       ${disabled ? 'cursor-not-allowed' : ''}`}
     >
       <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -77,7 +77,7 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled }
   </div>
 );
 
-export default function AppearanceScreen() {
+export default function AppearanceScreen({ setView }) {
   const { userProfile, hapticsEnabled, setHapticsEnabled } = useAppStore();
   const { addToast } = useToast();
   const { 
@@ -118,7 +118,9 @@ export default function AppearanceScreen() {
     if (pendingThemeAction?.type === 'apply') {
       setTheme(pendingThemeAction.payload, true);
     } else if (pendingThemeAction?.type === 'test') {
-      startThemeTest(pendingThemeAction.payload, true);
+      const themeName = pendingThemeAction.payload.theme || 'galaxy';
+      const duration = pendingThemeAction.payload.duration || 10;
+      startThemeTest(themeName, duration, true);
     }
     setShowThemeReloadModal(false);
     setPendingThemeAction(null);
@@ -132,6 +134,8 @@ export default function AppearanceScreen() {
         <title>Apariencia - Pro Fitness Glass</title>
       </Helmet>
       
+
+
       <div className="w-full">
         
         <GlassCard className={glassCardClass}>
@@ -269,12 +273,12 @@ export default function AppearanceScreen() {
                    <button 
                      onClick={() => {
                        if (isIOS()) {
-                         setPendingThemeAction({ type: 'test', payload: 10 });
+                         setPendingThemeAction({ type: 'test', payload: { theme: 'galaxy', duration: 10 } });
                          setShowThemeReloadModal(true);
                        } else {
-                         startThemeTest(10);
+                         startThemeTest('galaxy', 10);
                        }
-                     }} 
+                     }}  
                      disabled={isTestingTheme} 
                      className="px-4 py-2 rounded-full text-xs font-bold bg-[#a855f7]/20 text-[#a855f7] hover:bg-[#a855f7]/30 transition-all flex items-center justify-center gap-1.5 disabled:opacity-80 whitespace-nowrap min-w-[110px]"
                    >
@@ -327,12 +331,36 @@ export default function AppearanceScreen() {
                      </button>
                    </div>
                 ) : (
-                   <button 
-                     disabled
-                     className="px-4 py-2 rounded-full text-xs font-bold bg-black/10 dark:bg-white/10 text-text-muted transition-all flex items-center justify-center whitespace-nowrap min-w-[110px]"
-                   >
-                     Bloqueado
-                   </button>
+                   <div className="flex flex-col sm:flex-row gap-2">
+                     <button 
+                       onClick={() => {
+                         if (isIOS()) {
+                           setPendingThemeAction({ type: 'test', payload: { theme: 'desert', duration: 10 } });
+                           setShowThemeReloadModal(true);
+                         } else {
+                           startThemeTest('desert', 10);
+                         }
+                       }} 
+                       disabled={isTestingTheme} 
+                       className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all bg-[#f59e0b]/20 text-[#f59e0b] hover:bg-[#f59e0b]/30 disabled:opacity-80"
+                     >
+                       {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar Claro'}
+                     </button>
+                     <button 
+                       onClick={() => {
+                         if (isIOS()) {
+                           setPendingThemeAction({ type: 'test', payload: { theme: 'desert-dark', duration: 10 } });
+                           setShowThemeReloadModal(true);
+                         } else {
+                           startThemeTest('desert-dark', 10);
+                         }
+                       }} 
+                       disabled={isTestingTheme} 
+                       className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all bg-[#f59e0b]/20 text-[#f59e0b] hover:bg-[#f59e0b]/30 disabled:opacity-80"
+                     >
+                       {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar Oscuro'}
+                     </button>
+                   </div>
                 )}
               </div>
             </div>
@@ -380,12 +408,36 @@ export default function AppearanceScreen() {
                      </button>
                    </div>
                 ) : (
-                   <button 
-                     disabled
-                     className="px-4 py-2 rounded-full text-xs font-bold bg-black/10 dark:bg-white/10 text-text-muted transition-all flex items-center justify-center whitespace-nowrap min-w-[110px]"
-                   >
-                     Bloqueado
-                   </button>
+                   <div className="flex flex-col sm:flex-row gap-2">
+                     <button 
+                       onClick={() => {
+                         if (isIOS()) {
+                           setPendingThemeAction({ type: 'test', payload: { theme: 'ocean', duration: 10 } });
+                           setShowThemeReloadModal(true);
+                         } else {
+                           startThemeTest('ocean', 10);
+                         }
+                       }} 
+                       disabled={isTestingTheme} 
+                       className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all bg-[#0ea5e9]/20 text-[#0ea5e9] hover:bg-[#0ea5e9]/30 disabled:opacity-80"
+                     >
+                       {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar Claro'}
+                     </button>
+                     <button 
+                       onClick={() => {
+                         if (isIOS()) {
+                           setPendingThemeAction({ type: 'test', payload: { theme: 'ocean-dark', duration: 10 } });
+                           setShowThemeReloadModal(true);
+                         } else {
+                           startThemeTest('ocean-dark', 10);
+                         }
+                       }} 
+                       disabled={isTestingTheme} 
+                       className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all bg-[#0ea5e9]/20 text-[#0ea5e9] hover:bg-[#0ea5e9]/30 disabled:opacity-80"
+                     >
+                       {isTestingTheme ? `Probando ${testTimeLeft}s` : 'Probar Oscuro'}
+                     </button>
+                   </div>
                 )}
               </div>
             </div>

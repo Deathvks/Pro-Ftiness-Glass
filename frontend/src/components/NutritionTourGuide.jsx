@@ -47,8 +47,7 @@ const NutritionTourGuide = () => {
         forceTouchAction(popover.nextButton, () => {
           if (!driverRef.current) return;
           if (state.activeIndex === config.steps.length - 1) {
-            driverRef.current.destroy();
-          } else {
+            driverRef.current.destroy();} else {
             driverRef.current.moveNext();
           }
         });
@@ -58,8 +57,7 @@ const NutritionTourGuide = () => {
         });
 
         forceTouchAction(popover.closeButton, () => {
-          if (driverRef.current) driverRef.current.destroy();
-        });
+          if (driverRef.current) driverRef.current.destroy();});
       },
       
       // FIX SCROLL
@@ -127,6 +125,11 @@ const NutritionTourGuide = () => {
     });
 
     const checkModalsAndStart = () => {
+            if (window.location.pathname !== '/nutrition') {
+                timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+                return;
+            }
+    
       const state = useAppStore.getState();
 
       // 1. Prioridad: Esperar a que se resuelvan las cookies y el modal de bienvenida
@@ -146,8 +149,9 @@ const NutritionTourGuide = () => {
 
       // 3. Prioridad: Chequeo de otros modales activos
       const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
-        const className = el.className || '';
-        return typeof className === 'string' && className.includes('z-') && !className.includes('-z-');
+        const style = window.getComputedStyle(el);
+        const zIndex = parseInt(style.zIndex, 10) || 0;
+        return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
       });
 
       if (activeModals.length > 0) {
@@ -155,7 +159,8 @@ const NutritionTourGuide = () => {
       } else {
         if (!hasStartedRef.current && driverRef.current) {
           hasStartedRef.current = true;
-          driverRef.current.drive();
+          localStorage.setItem('nutritionTourCompleted', 'true');
+                    driverRef.current.drive();
         }
       }
     };
@@ -165,8 +170,7 @@ const NutritionTourGuide = () => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (driverRef.current) {
-        driverRef.current.destroy();
-      }
+        driverRef.current.destroy();}
     };
 
   }, [nutritionTourCompleted, completeNutritionTour]);

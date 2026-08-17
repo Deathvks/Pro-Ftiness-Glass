@@ -49,10 +49,10 @@ const ExerciseCard = ({
           </div>
         )}
 
-        {/* CAMBIO AQUÍ: object-contain en lugar de object-cover y un pequeño padding (p-2) */}
         <ExerciseMedia
           details={exercise}
-          className="shrink-0 w-full sm:w-32 md:w-40 h-40 sm:h-32 md:h-40 rounded-[20px] object-contain p-2 ring-1 ring-black/5 dark:ring-white/10 bg-black/5 dark:bg-white/5"
+          fitMode="cover"
+          className="shrink-0 w-full sm:w-40 md:w-48 aspect-square sm:aspect-video rounded-[16px] overflow-hidden"
         />
 
         <div className="flex-1 min-w-0 w-full flex flex-col">

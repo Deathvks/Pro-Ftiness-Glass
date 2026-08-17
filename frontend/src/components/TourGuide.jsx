@@ -12,6 +12,7 @@ const TourGuide = () => {
 
   const driverRef = useRef(null);
   const timeoutRef = useRef(null);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     // --- Inyección de Estilos Personalizados (Glassmorphism Theme) ---
@@ -46,8 +47,7 @@ const TourGuide = () => {
         forceTouchAction(popover.nextButton, () => {
           if (!driverRef.current) return;
           if (state.activeIndex === config.steps.length - 1) {
-            driverRef.current.destroy();
-          } else {
+            driverRef.current.destroy();} else {
             driverRef.current.moveNext();
           }
         });
@@ -57,8 +57,7 @@ const TourGuide = () => {
         });
 
         forceTouchAction(popover.closeButton, () => {
-          if (driverRef.current) driverRef.current.destroy();
-        });
+          if (driverRef.current) driverRef.current.destroy();});
       },
       
       // FIX SCROLL: Forzamos el scroll sobre tu nuevo MainAppLayout
@@ -120,6 +119,11 @@ const TourGuide = () => {
     });
 
     const checkModalsAndStart = () => {
+            if (window.location.pathname !== '/') {
+                timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+                return;
+            }
+    
       const state = useAppStore.getState();
 
       // 1. Prioridad: Esperar a que se resuelvan las cookies y el modal de bienvenida
@@ -128,25 +132,31 @@ const TourGuide = () => {
         return;
       }
 
-      // 2. Prioridad: Esperar a la promo del 2FA 
+      // 2. Prioridad: Esperar a la promo del 2FA (solo si no es la primera sesión, ya que en la 1ra sesión no se muestra la promo)
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
       const isAlreadyEnabled = state.userProfile?.twoFactorEnabled || state.userProfile?.isTwoFactorEnabled;
+      const isFirstLoginSession = sessionStorage.getItem('just_logged_in') === 'true';
 
-      if (!hasSeenPromo && !isAlreadyEnabled) {
+      if (!hasSeenPromo && !isAlreadyEnabled && !isFirstLoginSession) {
         timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
         return;
       }
 
       // 3. Prioridad: Chequeo de otros modales activos en la pantalla
       const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
-        const className = el.className || '';
-        return typeof className === 'string' && className.includes('z-') && !className.includes('-z-');
+        const style = window.getComputedStyle(el);
+        const zIndex = parseInt(style.zIndex, 10) || 0;
+        return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
       });
 
       if (activeModals.length > 0) {
         timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
       } else {
-        if (driverRef.current) driverRef.current.drive();
+        if (!hasStartedRef.current && driverRef.current) {
+                    hasStartedRef.current = true;
+                    localStorage.setItem('tourCompleted', 'true');
+                    driverRef.current.drive();
+                }
       }
     };
 
@@ -156,8 +166,7 @@ const TourGuide = () => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (driverRef.current) {
-        driverRef.current.destroy();
-      }
+        driverRef.current.destroy();}
     };
   }, [tourCompleted, completeTour]);
 
@@ -165,3 +174,4 @@ const TourGuide = () => {
 };
 
 export default TourGuide;
+

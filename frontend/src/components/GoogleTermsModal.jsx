@@ -1,9 +1,15 @@
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/GoogleTermsModal.jsx */
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, X, ExternalLink, AlertTriangle, Info } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
+import useModalLock from '../hooks/useModalLock';
 
 const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
+
+  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  useModalLock(isOpen);
+
   const [previouslyDeclined, setPreviouslyDeclined] = useState(false);
 
   useEffect(() => {
@@ -17,22 +23,22 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
 
   const handleContinue = () => {
     if (!previouslyDeclined) {
-        localStorage.setItem('cookie_consent', 'accepted');
-        // Usamos un evento personalizado para que la ventana actual sí se entere al instante
-        window.dispatchEvent(new Event('cookie_consent_updated'));
+      localStorage.setItem('cookie_consent', 'accepted');
+      // Usamos un evento personalizado para que la ventana actual sí se entere al instante
+      window.dispatchEvent(new Event('cookie_consent_updated'));
     }
     // Llamamos al padre para que ejecute su propio Google Login de forma centralizada
-    onAccept(); 
+    onAccept();
   };
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+  return <ModalPortal>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
       <div className="w-full max-w-md animate-[scale-in_0.3s_ease-out]">
         <div className="relative p-6 md:p-8 flex flex-col gap-6 bg-bg-primary border border-glass-border rounded-2xl shadow-2xl">
-          <button 
-            onClick={onClose} 
-            className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition p-1"
-          >
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition p-1">
+            
             <X size={24} />
           </button>
 
@@ -46,8 +52,8 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
             </h2>
 
             <div className="text-text-secondary text-base leading-relaxed space-y-3 text-left">
-              {previouslyDeclined ? (
-                <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 text-sm text-orange-200 mb-2">
+              {previouslyDeclined ?
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 text-sm text-orange-200 mb-2">
                    <p className="font-bold flex items-center gap-2 mb-1">
                      <Info size={16} /> Has rechazado las cookies
                    </p>
@@ -58,39 +64,39 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
                    <p className="mt-2 font-semibold underline cursor-pointer" onClick={onShowPolicy}>
                      Para usar todas las funciones, activa las cookies en Ajustes.
                    </p>
-                </div>
-              ) : (
-                <p className="text-center">
+                </div> :
+
+              <p className="text-center">
                   Para iniciar sesión con Google, es <strong>necesario</strong> activar el almacenamiento local para gestionar tu sesión segura.
                 </p>
-              )}
+              }
 
-              {!previouslyDeclined && (
-                  <p className="text-center text-sm">
+              {!previouslyDeclined &&
+              <p className="text-center text-sm">
                     Al continuar, <strong>aceptas</strong> nuestra{' '}
-                    <button 
-                      onClick={onShowPolicy}
-                      className="text-accent font-semibold hover:underline inline-flex items-center gap-1"
-                    >
+                    <button
+                  onClick={onShowPolicy}
+                  className="text-accent font-semibold hover:underline inline-flex items-center gap-1">
+                  
                       Política de Privacidad <ExternalLink size={12} />
                     </button>
                     {' '}y habilitas el uso de cookies técnicas.
                   </p>
-              )}
+              }
             </div>
 
-            {!previouslyDeclined && (
-                <p className="text-xs text-text-muted bg-bg-secondary/50 p-3 rounded-lg border border-glass-border w-full">
+            {!previouslyDeclined &&
+            <p className="text-xs text-text-muted bg-bg-secondary/50 p-3 rounded-lg border border-glass-border w-full">
                 Podrás cambiar esta configuración siempre desde <strong>Ajustes</strong>.
                 </p>
-            )}
+            }
           </div>
 
           <div className="flex flex-col gap-3 mt-2">
-            <button 
-                onClick={handleContinue}
-                className="w-full h-12 bg-accent text-white rounded-xl flex items-center justify-center gap-3 font-bold shadow-lg transition hover:scale-[1.02] hover:shadow-accent/25"
-            >
+            <button
+              onClick={handleContinue}
+              className="w-full h-12 bg-accent text-white rounded-xl flex items-center justify-center gap-3 font-bold shadow-lg transition hover:scale-[1.02] hover:shadow-accent/25">
+              
                 <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                     <FcGoogle size={20} />
                 </div>
@@ -99,16 +105,16 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
 
             <button
               onClick={onClose}
-              className="w-full py-3 rounded-xl font-semibold text-text-secondary hover:bg-bg-secondary transition"
-            >
+              className="w-full py-3 rounded-xl font-semibold text-text-secondary hover:bg-bg-secondary transition">
+              
               Cancelar
             </button>
           </div>
 
         </div>
       </div>
-    </div>
-  );
+    </div></ModalPortal>;
+
 };
 
 export default GoogleTermsModal;

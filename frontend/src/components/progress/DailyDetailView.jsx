@@ -1,8 +1,9 @@
+import ModalPortal from '../ModalPortal';
 /* frontend/src/components/progress/DailyDetailView.jsx */
 import React, { useState, useMemo } from 'react';
 import {
-  X, Trash2, Link2, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell, Link, MapPin, Maximize2, Share2
-} from 'lucide-react';
+  X, Trash2, Link2, Flame, BarChartHorizontal, TrendingUp, Layers, Dumbbell, Link, MapPin, Maximize2, Share2 } from
+'lucide-react';
 import { MapContainer, TileLayer, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
@@ -13,16 +14,16 @@ import useAppStore from '../../store/useAppStore';
 import { useToast } from '../../hooks/useToast';
 import { useAppTheme } from '../../hooks/useAppTheme';
 
-const DailyDetailView = ({ logs, onClose }) => {
+const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
   const { t } = useTranslation(['exercise_names']);
   const { accent } = useAppTheme();
 
   // AÑADIDO: Traemos 'routines' para buscar el nombre actualizado
-  const { userProfile, bodyWeightLog, deleteWorkoutLog, routines } = useAppStore(state => ({
+  const { userProfile, bodyWeightLog, deleteWorkoutLog, routines } = useAppStore((state) => ({
     userProfile: state.userProfile,
     bodyWeightLog: state.bodyWeightLog,
     deleteWorkoutLog: state.deleteWorkoutLog,
-    routines: state.routines,
+    routines: state.routines
   }));
   const { addToast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -50,7 +51,7 @@ const DailyDetailView = ({ logs, onClose }) => {
     const normalizedDetails = rawDetails.map((ex) => {
       const rawSets = ex.WorkoutLogSets || [];
 
-      const normalizedSets = rawSets.map(s => ({
+      const normalizedSets = rawSets.map((s) => ({
         weight_kg: parseFloat(s.weight_kg || 0),
         reps: parseFloat(s.reps || 0),
         is_dropset: !!s.is_dropset,
@@ -70,7 +71,7 @@ const DailyDetailView = ({ logs, onClose }) => {
     // LÓGICA DE ACTUALIZACIÓN DE NOMBRE:
     // Buscamos si existe la rutina actual en el store con el mismo ID.
     // Si existe, usamos su nombre nuevo. Si no, usamos el histórico del log.
-    const currentRoutine = routines.find(r => r.id === log.routine_id);
+    const currentRoutine = routines.find((r) => r.id === log.routine_id);
     const displayRoutineName = currentRoutine ? currentRoutine.name : log.routine_name;
 
     setShareData({
@@ -93,7 +94,7 @@ const DailyDetailView = ({ logs, onClose }) => {
         const newDeletedIds = [...deletedLogIds, idToDelete];
         setDeletedLogIds(newDeletedIds);
 
-        const remainingLogs = logs.filter(l => !newDeletedIds.includes(l.id));
+        const remainingLogs = logs.filter((l) => !newDeletedIds.includes(l.id));
         if (remainingLogs.length === 0) {
           onClose();
         }
@@ -156,7 +157,7 @@ const DailyDetailView = ({ logs, onClose }) => {
     return parseFloat(sortedLog[0].weight_kg);
   }, [bodyWeightLog]);
 
-  const visibleLogs = logs.filter(log => !deletedLogIds.includes(log.id));
+  const visibleLogs = logs.filter((log) => !deletedLogIds.includes(log.id));
 
   const totalDuration = visibleLogs.reduce((acc, log) => acc + log.duration_seconds, 0);
   const totalCalories = visibleLogs.reduce((acc, log) => {
@@ -165,8 +166,8 @@ const DailyDetailView = ({ logs, onClose }) => {
   }, 0);
 
   // Componente auxiliar para renderizar una fila de serie
-  const SetRow = ({ set, isWarmup }) => (
-    <li className={`flex items-center justify-between p-2 rounded-lg text-xs ${isWarmup ? 'bg-orange-500/10 text-orange-600 border border-orange-500/20' : 'bg-bg-primary shadow-sm'}`}>
+  const SetRow = ({ set, isWarmup }) =>
+  <li className={`flex items-center justify-between p-2 rounded-lg text-xs ${isWarmup ? 'bg-orange-500/10 text-orange-600 border border-orange-500/20' : 'bg-bg-primary shadow-sm'}`}>
       <span className="flex items-center gap-2">
         <span className={`font-mono font-bold ${isWarmup ? 'text-orange-600' : 'text-accent'}`}>
           {set.reps}
@@ -178,32 +179,32 @@ const DailyDetailView = ({ logs, onClose }) => {
         </span>
         <span className="text-[10px] uppercase text-text-tertiary">kg</span>
         
-        {set.rir !== null && set.rir !== undefined && (
-          <>
+        {set.rir !== null && set.rir !== undefined &&
+      <>
             <span className="text-text-tertiary mx-1">@</span>
             <span className={`font-mono font-bold ${isWarmup ? 'text-orange-600' : 'text-text-primary'}`}>
               {set.rir}
             </span>
             <span className="text-[10px] uppercase text-text-tertiary ml-0.5">rir</span>
           </>
-        )}
+      }
       </span>
 
       <div className="flex gap-1">
-        {set.is_dropset && (
-          <span className="bg-red-500/10 text-red-500 font-bold px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-red-500/20">
+        {set.is_dropset &&
+      <span className="bg-red-500/10 text-red-500 font-bold px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider border border-red-500/20">
             Dropset
           </span>
-        )}
+      }
       </div>
-    </li>
-  );
+    </li>;
+
 
   // Componente para renderizar un bloque de ejercicio
   const ExerciseBlock = ({ exercise, isSupersetItem = false }) => {
     const sets = exercise.WorkoutLogSets || [];
-    const warmupSets = sets.filter(s => s.is_warmup);
-    const workSets = sets.filter(s => !s.is_warmup);
+    const warmupSets = sets.filter((s) => s.is_warmup);
+    const workSets = sets.filter((s) => !s.is_warmup);
 
     return (
       <div className="w-full">
@@ -223,8 +224,8 @@ const DailyDetailView = ({ logs, onClose }) => {
 
         <div className={`space-y-2 ${isSupersetItem ? `pl-3 border-l ${subtleBorderClass} ml-0.5` : ''}`}>
           {/* Sección de Calentamiento */}
-          {warmupSets.length > 0 && (
-            <div>
+          {warmupSets.length > 0 &&
+          <div>
               <p className="text-[10px] font-bold text-orange-500/80 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <Flame size={10} /> Calentamiento
               </p>
@@ -232,31 +233,31 @@ const DailyDetailView = ({ logs, onClose }) => {
                 {warmupSets.map((set, i) => <SetRow key={i} set={set} isWarmup={true} />)}
               </ul>
             </div>
-          )}
+          }
 
           {/* Sección de Series Efectivas */}
-          {workSets.length > 0 ? (
-            <div>
-              {warmupSets.length > 0 && (
-                <p className="text-[10px] font-bold text-accent/80 uppercase tracking-wider mb-1 flex items-center gap-1 mt-2">
+          {workSets.length > 0 ?
+          <div>
+              {warmupSets.length > 0 &&
+            <p className="text-[10px] font-bold text-accent/80 uppercase tracking-wider mb-1 flex items-center gap-1 mt-2">
                   <Dumbbell size={10} /> Series Efectivas
                 </p>
-              )}
+            }
               <ul className="space-y-1">
                 {workSets.map((set, i) => <SetRow key={i} set={set} isWarmup={false} />)}
               </ul>
-            </div>
-          ) : (
-            sets.length === 0 && <p className="text-xs text-text-tertiary italic">Sin series registradas</p>
-          )}
+            </div> :
+
+          sets.length === 0 && <p className="text-xs text-text-tertiary italic">Sin series registradas</p>
+          }
         </div>
-      </div>
-    );
+      </div>);
+
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+      <ModalPortal><div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
         {/* Contenedor Modal: Flex Column con max-height */}
         <div className={`relative w-full max-w-lg p-0 flex flex-col m-4 bg-bg-primary rounded-2xl shadow-2xl border ${subtleBorderClass} max-h-[80vh] md:max-h-[90vh] overflow-hidden animate-[scale-in_0.3s_ease-out]`}>
 
@@ -264,9 +265,9 @@ const DailyDetailView = ({ logs, onClose }) => {
           <div className={`p-5 border-b ${subtleBorderClass} bg-bg-secondary flex justify-between items-center z-10 shrink-0`}>
             <div>
               <h3 className="text-xl font-bold text-text-primary">Resumen del Día</h3>
-              {logs.length > 0 && (
+              {logs.length > 0 &&
                 <p className="text-text-muted text-sm">{new Date(logs[0].workout_date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-              )}
+                }
             </div>
             <button onClick={onClose} className="text-text-secondary hover:text-text-primary p-2 hover:bg-bg-primary rounded-full transition"><X size={20} /></button>
           </div>
@@ -286,44 +287,48 @@ const DailyDetailView = ({ logs, onClose }) => {
           {/* Lista Scrollable (Flexible) */}
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4 bg-bg-primary min-h-0">
             {visibleLogs.map((log) => {
-              const exerciseGroups = groupExercises(log.WorkoutLogDetails);
-              const isCardioOnly = !log.WorkoutLogDetails || log.WorkoutLogDetails.length === 0;
-              const gpsData = extractGpsData(log.notes); // Extraer datos GPS si existen
+                const exerciseGroups = groupExercises(log.WorkoutLogDetails);
+                const isCardioOnly = !log.WorkoutLogDetails || log.WorkoutLogDetails.length === 0;
+                const gpsData = extractGpsData(log.notes); // Extraer datos GPS si existen
 
-              return (
-                <div key={log.id} className={`bg-bg-secondary rounded-2xl overflow-hidden border ${subtleBorderClass} shadow-sm shrink-0`}>
+                return (
+                  <div key={log.id} className={`bg-bg-secondary rounded-2xl overflow-hidden border ${subtleBorderClass} shadow-sm shrink-0`}>
                   {/* Header de la Rutina */}
                   <div className={`flex justify-between items-center p-4 bg-gray-500/5 border-b ${subtleBorderClass}`}>
                     {/* AÑADIDO: Visualización también actualizada en la lista, por consistencia */}
                     <h5 className="font-bold text-accent truncate pr-4 text-base">
-                      {routines.find(r => r.id === log.routine_id)?.name || log.routine_name}
+                      {routines.find((r) => r.id === log.routine_id)?.name || log.routine_name}
                     </h5>
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleShareClick(log)}
-                        className="p-2 -m-2 mr-2 rounded-full text-text-muted hover:text-accent hover:bg-white/5 transition"
-                        title="Compartir"
-                      >
-                        <Share2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(log)}
-                        className="p-2 -m-2 rounded-full text-text-muted hover:text-red-500 hover:bg-white/5 transition"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {!isTrainerMode &&
+                        <>
+                          <button
+                            onClick={() => handleShareClick(log)}
+                            className="p-2 -m-2 mr-2 rounded-full text-text-muted hover:text-accent hover:bg-white/5 transition"
+                            title="Compartir">
+                            
+                            <Share2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(log)}
+                            className="p-2 -m-2 rounded-full text-text-muted hover:text-red-500 hover:bg-white/5 transition"
+                            title="Eliminar">
+                            
+                            <Trash2 size={18} />
+                          </button>
+                        </>
+                        }
                     </div>
                   </div>
 
                   <div className="p-4 space-y-5">
 
                     {/* Mapa GPS si existe */}
-                    {gpsData && gpsData.path && gpsData.path.length > 0 && (
+                    {gpsData && gpsData.path && gpsData.path.length > 0 &&
                       <div
                         className={`bg-bg-primary rounded-xl overflow-hidden border ${subtleBorderClass} h-40 relative z-0 cursor-pointer group`}
-                        onClick={() => setExpandedMapPath(gpsData.path)}
-                      >
+                        onClick={() => setExpandedMapPath(gpsData.path)}>
+                        
                         <MapContainer
                           center={gpsData.path[Math.floor(gpsData.path.length / 2)]}
                           zoom={14}
@@ -332,15 +337,15 @@ const DailyDetailView = ({ logs, onClose }) => {
                           attributionControl={false}
                           dragging={false} // Mapa estático
                           scrollWheelZoom={false}
-                          doubleClickZoom={false}
-                        >
+                          doubleClickZoom={false}>
+                          
                           <TileLayer
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                          />
+                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                          
                           <Polyline
                             positions={gpsData.path}
-                            pathOptions={{ color: '#22c55e', weight: 4, opacity: 0.8 }}
-                          />
+                            pathOptions={{ color: '#22c55e', weight: 4, opacity: 0.8 }} />
+                          
                         </MapContainer>
 
                         {/* Overlay y Botón de expansión */}
@@ -353,19 +358,19 @@ const DailyDetailView = ({ logs, onClose }) => {
                           <MapPin size={10} /> Ruta GPS
                         </div>
                       </div>
-                    )}
+                      }
 
                     {/* Notas (Priorizar nota limpia si hay GPS, sino nota completa) */}
-                    {(gpsData ? gpsData.userNote : log.notes) && (
+                    {(gpsData ? gpsData.userNote : log.notes) &&
                       <div className={`bg-bg-primary p-3 rounded-xl border ${subtleBorderClass}`}>
                         <p className="font-semibold text-xs text-accent mb-1 flex items-center gap-1"><Link2 size={10} /> Notas</p>
                         <p className="text-sm text-text-secondary whitespace-pre-wrap italic">
                           "{gpsData ? gpsData.userNote : log.notes}"
                         </p>
                       </div>
-                    )}
+                      }
 
-                    {isCardioOnly ? (
+                    {isCardioOnly ?
                       <div className={`flex justify-around text-center py-3 bg-bg-primary rounded-xl border ${subtleBorderClass}`}>
                         <div>
                           <p className="text-xs text-text-tertiary mb-1">Tiempo</p>
@@ -375,8 +380,8 @@ const DailyDetailView = ({ logs, onClose }) => {
                           <p className="text-xs text-text-tertiary mb-1">Energía</p>
                           <p className="font-mono font-bold text-xl text-text-primary">{log.calories_burned}<span className="text-xs ml-1 font-sans text-text-tertiary">kcal</span></p>
                         </div>
-                      </div>
-                    ) : (
+                      </div> :
+
                       exerciseGroups.map((group, groupIndex) => {
                         const isSuperset = group.length > 1;
 
@@ -393,84 +398,84 @@ const DailyDetailView = ({ logs, onClose }) => {
                               </div>
 
                               <div className="p-3">
-                                {group.map((exercise, exIdx) => (
-                                  <div key={exIdx} className="relative">
-                                    {exIdx > 0 && (
-                                      <div className="flex justify-center my-3 opacity-30">
+                                {group.map((exercise, exIdx) =>
+                                <div key={exIdx} className="relative">
+                                    {exIdx > 0 &&
+                                  <div className="flex justify-center my-3 opacity-30">
                                         <div className="w-0.5 h-4 bg-accent"></div>
                                       </div>
-                                    )}
+                                  }
                                     <ExerciseBlock exercise={exercise} isSupersetItem={true} />
                                   </div>
-                                ))}
+                                )}
                               </div>
-                            </div>
-                          );
+                            </div>);
+
                         } else {
                           // Ejercicio Individual
                           return (
                             <div key={groupIndex} className="last:mb-0">
                               <ExerciseBlock exercise={group[0]} isSupersetItem={false} />
                               {groupIndex < exerciseGroups.length - 1 && <div className={`my-4 border-b ${subtleBorderClass}`}></div>}
-                            </div>
-                          );
+                            </div>);
+
                         }
                       })
-                    )}
+                      }
                   </div>
-                </div>
-              );
-            })}
+                </div>);
+
+              })}
           </div>
         </div>
-      </div>
+      </div></ModalPortal>
 
       {/* MODAL DEL MAPA EXPANDIDO */}
-      {expandedMapPath && (
+      {expandedMapPath && <ModalPortal>
         <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
           <div className={`relative w-full h-full max-w-4xl max-h-[85vh] bg-bg-primary rounded-2xl overflow-hidden shadow-2xl border ${subtleBorderClass} flex flex-col`}>
             <div className="absolute top-4 right-4 z-[1000]">
               <button
                 onClick={() => setExpandedMapPath(null)}
-                className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-md transition border border-white/10"
-              >
+                className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-md transition border border-white/10">
+                
                 <X size={24} />
               </button>
             </div>
             <MapContainer
               center={expandedMapPath[Math.floor(expandedMapPath.length / 2)]}
               zoom={15}
-              style={{ height: '100%', width: '100%' }}
-            >
+              style={{ height: '100%', width: '100%' }}>
+              
               <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
               <Polyline positions={expandedMapPath} pathOptions={{ color: '#22c55e', weight: 5, opacity: 0.9 }} />
             </MapContainer>
           </div>
-        </div>
-      )}
+        </div></ModalPortal>
+      }
 
-      {showDeleteConfirm && (
-        <ConfirmationModal
-          message="¿Borrar este entrenamiento? No podrás recuperarlo."
-          onConfirm={confirmDelete}
-          onCancel={cancelDelete}
-          confirmText="Sí, borrar"
-          cancelText="Cancelar"
-        />
-      )}
+      {showDeleteConfirm &&
+      <ConfirmationModal
+        message="¿Borrar este entrenamiento? No podrás recuperarlo."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        confirmText="Sí, borrar"
+        cancelText="Cancelar" />
+
+      }
 
       {/* MODAL DE COMPARTIR */}
-      {shareData && (
-        <WorkoutSummaryModal
-          workoutData={shareData}
-          onClose={() => setShareData(null)}
-          isShareMode={true}
-          userName={userProfile?.username}
-          accentColor={accent}
-        />
-      )}
-    </>
-  );
+      {shareData &&
+      <WorkoutSummaryModal
+        workoutData={shareData}
+        onClose={() => setShareData(null)}
+        isShareMode={true}
+        userName={userProfile?.username}
+        accentColor={accent} />
+
+      }
+    </>);
+
 };
 
 export default DailyDetailView;

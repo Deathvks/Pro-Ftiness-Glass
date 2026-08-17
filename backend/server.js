@@ -36,7 +36,9 @@ import reportRoutes from './routes/reports.js';
 import gamificationRoutes from './routes/gamificationRoutes.js';
 import storyRoutes from './routes/stories.js';
 import squadRoutes from './routes/squads.js';
-import aiRoutes from './routes/ai.js'; // Nueva ruta IA importada
+import aiRoutes from './routes/ai.js';
+import trainerRoutes from './routes/trainerRoutes.js';
+import chatRoutes from './routes/chat.js';
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
@@ -162,7 +164,9 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/squads', squadRoutes);
-app.use('/api/ai', aiRoutes); // Nueva ruta IA registrada
+app.use('/api/ai', aiRoutes);
+app.use('/api/trainer', trainerRoutes);
+app.use('/api/chat', chatRoutes);
 
 app.use(errorHandler);
 

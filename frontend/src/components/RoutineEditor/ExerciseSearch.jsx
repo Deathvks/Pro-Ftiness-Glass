@@ -1,3 +1,4 @@
+import ModalPortal from '../ModalPortal';
 /* frontend/src/components/RoutineEditor/ExerciseSearch.jsx */
 import React, { useState, useEffect, useMemo } from 'react';
 import Spinner from '../Spinner';
@@ -5,6 +6,8 @@ import { getExerciseList } from '../../services/exerciseService';
 import { useToast } from '../../hooks/useToast';
 import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
+import useAppStore from '../../store/useAppStore';
+import useModalLock from '../../hooks/useModalLock';
 
 // Importar los nuevos componentes modulares
 import ExerciseListView from './ExerciseSearch/ExerciseListView';
@@ -21,14 +24,29 @@ const ExerciseSearch = ({
   initialSelectedExercises = [],
   isReplacing = false, // Por defecto, estamos en modo "Añadir"
   onExerciseSelectForReplace, // Función para reemplazar un ejercicio de la biblioteca
-  onAddCustomExercise, // Función para reemplazar con un ejercicio manual
+  onAddCustomExercise // Función para reemplazar con un ejercicio manual
 }) => {
 
   // Obtenemos 'ready' del hook
   const { t, i18n, ready } = useTranslation(['exercise_descriptions', 'exercise_names', 'exercise_ui', 'exercise_muscles', 'exercise_equipment']);
 
+  // --- Efecto para cerrar modal si se navega a otra vista ---
+  useEffect(() => {
+    const handleNav = (e) => {
+      // Si navegamos desde el sidebar a otro sitio (ej. dashboard), cerramos este modal
+      if (e.detail !== 'routines') {
+        onClose();
+      }
+    };
+    window.addEventListener('app_navigated', handleNav);
+    return () => window.removeEventListener('app_navigated', handleNav);
+  }, [onClose]);
+
+  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  useModalLock();
+
   // --- STATE ---
-  // Modificado: Inicialización lazy para recuperar la vista guardada
+  // Inicialización lazy para recuperar la vista guardada
   const [view, setView] = useState(() => {
     if (isReplacing) return 'list';
     // Recuperamos la vista guardada en la sesión (por si recarga la página)
@@ -94,41 +112,41 @@ const ExerciseSearch = ({
     }
 
     if (
-      allExercises.length > 0 &&
-      initialSelectedExercises &&
-      initialSelectedExercises.length > 0 &&
-      !cartInitialized
-    ) {
+    allExercises.length > 0 &&
+    initialSelectedExercises &&
+    initialSelectedExercises.length > 0 &&
+    !cartInitialized)
+    {
 
-      const initialStaged = initialSelectedExercises
-        .map(routineExercise => {
+      const initialStaged = initialSelectedExercises.
+      map((routineExercise) => {
 
-          const exerciseId = routineExercise.exercise_id || routineExercise.id;
-          let fullExercise = allExercises.find(ex => ex.id === exerciseId);
+        const exerciseId = routineExercise.exercise_id || routineExercise.id;
+        let fullExercise = allExercises.find((ex) => ex.id === exerciseId);
 
-          if (!fullExercise) {
-            const isManual = !routineExercise.exercise_id;
-            fullExercise = {
-              id: exerciseId,
-              name: routineExercise.name,
-              category: routineExercise.category || 'Other',
-              equipment: routineExercise.equipment || 'Other',
-              is_manual: isManual,
-              image_url_start: routineExercise.image_url_start || null,
-              image_url_end: routineExercise.image_url_end || null,
-              description: routineExercise.description || t('exercise_ui:manual_exercise_desc', 'Ejercicio añadido manualmente.'),
-              muscle_group_image_url: routineExercise.muscle_group_image_url || '/muscle_groups/other.webp',
-            };
-          }
-
-          return {
-            exercise: fullExercise,
-            sets: routineExercise.sets || 3,
-            reps: routineExercise.reps || '8-12',
-            rest_seconds: routineExercise.rest_seconds || 60,
+        if (!fullExercise) {
+          const isManual = !routineExercise.exercise_id;
+          fullExercise = {
+            id: exerciseId,
+            name: routineExercise.name,
+            category: routineExercise.category || 'Other',
+            equipment: routineExercise.equipment || 'Other',
+            is_manual: isManual,
+            image_url_start: routineExercise.image_url_start || null,
+            image_url_end: routineExercise.image_url_end || null,
+            description: routineExercise.description || t('exercise_ui:manual_exercise_desc', 'Ejercicio añadido manualmente.'),
+            muscle_group_image_url: routineExercise.muscle_group_image_url || '/muscle_groups/other.webp'
           };
-        })
-        .filter(Boolean);
+        }
+
+        return {
+          exercise: fullExercise,
+          sets: routineExercise.sets || 3,
+          reps: routineExercise.reps || '8-12',
+          rest_seconds: routineExercise.rest_seconds || 60
+        };
+      }).
+      filter(Boolean);
 
       setStagedExercises(initialStaged);
       setCartInitialized(true);
@@ -170,24 +188,24 @@ const ExerciseSearch = ({
     const muscleLabelSet = new Set();
     const equipmentLabelSet = new Set();
 
-    allExercises.forEach(ex => {
+    allExercises.forEach((ex) => {
       // --- Músculos ---
-      const rawMuscles = ex.muscle_group
-        ? ex.muscle_group.split(',')
-        : [ex.category || 'Other'];
+      const rawMuscles = ex.muscle_group ?
+      ex.muscle_group.split(',') :
+      [ex.category || 'Other'];
 
-      rawMuscles.forEach(m => {
+      rawMuscles.forEach((m) => {
         // Obtenemos la traducción (ej: "Chest" -> "Pecho", "Pectoralis major" -> "Pecho")
         const label = t(m.trim(), { ns: 'exercise_muscles', defaultValue: m.trim() });
         muscleLabelSet.add(label);
       });
 
       // --- Equipamiento ---
-      const rawEquipment = ex.equipment
-        ? ex.equipment.split(',')
-        : ['None'];
+      const rawEquipment = ex.equipment ?
+      ex.equipment.split(',') :
+      ['None'];
 
-      rawEquipment.forEach(e => {
+      rawEquipment.forEach((e) => {
         const label = t(e.trim(), { ns: 'exercise_equipment', defaultValue: e.trim() });
         equipmentLabelSet.add(label);
       });
@@ -197,19 +215,19 @@ const ExerciseSearch = ({
     const sortedEquipmentLabels = Array.from(equipmentLabelSet).sort();
 
     // Construimos las opciones usando el Label traducido como valor
-    const muscleOpts = sortedMuscleLabels.map(label => ({
+    const muscleOpts = sortedMuscleLabels.map((label) => ({
       value: label,
-      label: label,
+      label: label
     }));
 
-    const equipmentOpts = sortedEquipmentLabels.map(label => ({
+    const equipmentOpts = sortedEquipmentLabels.map((label) => ({
       value: label,
-      label: label,
+      label: label
     }));
 
     return {
       muscleOptions: muscleOpts,
-      equipmentOptions: equipmentOpts,
+      equipmentOptions: equipmentOpts
     };
   }, [allExercises, t, ready]);
 
@@ -226,15 +244,15 @@ const ExerciseSearch = ({
     const tricepsLabel = t('Triceps', { ns: 'exercise_muscles', defaultValue: 'Triceps' });
     const forearmsLabel = t('Forearms', { ns: 'exercise_muscles', defaultValue: 'Forearms' });
 
-    return allExercises.filter(ex => {
+    return allExercises.filter((ex) => {
       // Preparación de datos (Músculos)
-      const rawMuscles = ex.muscle_group
-        ? ex.muscle_group.split(',').map(m => m.trim())
-        : [ex.category || 'Other'];
+      const rawMuscles = ex.muscle_group ?
+      ex.muscle_group.split(',').map((m) => m.trim()) :
+      [ex.category || 'Other'];
 
       // Traducimos los músculos del ejercicio actual
-      const translatedMuscles = rawMuscles.map(m =>
-        t(m, { ns: 'exercise_muscles', defaultValue: m })
+      const translatedMuscles = rawMuscles.map((m) =>
+      t(m, { ns: 'exercise_muscles', defaultValue: m })
       );
 
       // 1. Filtro Texto: Nombre O Grupo Muscular
@@ -244,13 +262,13 @@ const ExerciseSearch = ({
       const nameMatch = originalName.includes(query) || translatedName.includes(query);
 
       // Búsqueda por texto en grupo muscular
-      const muscleTextMatch = translatedMuscles.some(m => m.toLowerCase().includes(query));
+      const muscleTextMatch = translatedMuscles.some((m) => m.toLowerCase().includes(query));
 
       const textMatch = nameMatch || muscleTextMatch;
 
 
       // 2. Filtro Selector Músculo (Comparando Labels Traducidos)
-      const muscleFilterMatch = filterMuscle.length === 0 || filterMuscle.some(filterLabel => {
+      const muscleFilterMatch = filterMuscle.length === 0 || filterMuscle.some((filterLabel) => {
         // Coincidencia exacta
         if (translatedMuscles.includes(filterLabel)) return true;
 
@@ -268,15 +286,15 @@ const ExerciseSearch = ({
       });
 
       // 3. Filtro Equipamiento (Comparando Labels Traducidos)
-      const rawEquipment = ex.equipment
-        ? ex.equipment.split(',').map(e => e.trim())
-        : ['None'];
+      const rawEquipment = ex.equipment ?
+      ex.equipment.split(',').map((e) => e.trim()) :
+      ['None'];
 
-      const translatedEquipment = rawEquipment.map(e =>
-        t(e, { ns: 'exercise_equipment', defaultValue: e })
+      const translatedEquipment = rawEquipment.map((e) =>
+      t(e, { ns: 'exercise_equipment', defaultValue: e })
       );
 
-      const equipmentMatch = filterEquipment.length === 0 || filterEquipment.some(filterLabel => translatedEquipment.includes(filterLabel));
+      const equipmentMatch = filterEquipment.length === 0 || filterEquipment.some((filterLabel) => translatedEquipment.includes(filterLabel));
 
       return textMatch && muscleFilterMatch && equipmentMatch;
     });
@@ -284,8 +302,8 @@ const ExerciseSearch = ({
 
   // (stagedIds, sin cambios)
   const stagedIds = useMemo(() =>
-    isReplacing ? new Set() : new Set(stagedExercises.map(item => item.exercise.id)),
-    [stagedExercises, isReplacing]
+  isReplacing ? new Set() : new Set(stagedExercises.map((item) => item.exercise.id)),
+  [stagedExercises, isReplacing]
   );
 
   // --- HANDLERS DEL CARRITO ---
@@ -298,34 +316,34 @@ const ExerciseSearch = ({
       exercise: exercise,
       sets: details.sets || 3,
       reps: details.reps || '8-12',
-      rest_seconds: details.rest_seconds || 60,
+      rest_seconds: details.rest_seconds || 60
     };
 
-    setStagedExercises(prev => [...prev, newItem]);
+    setStagedExercises((prev) => [...prev, newItem]);
   };
 
   const handleRemoveStaged = (exerciseId) => {
-    setStagedExercises(prev => prev.filter(item => item.exercise.id !== exerciseId));
+    setStagedExercises((prev) => prev.filter((item) => item.exercise.id !== exerciseId));
   };
 
   const handleUpdateStaged = (exerciseId, field, value) => {
-    setStagedExercises(prev =>
-      prev.map(item =>
-        item.exercise.id === exerciseId ? { ...item, [field]: value } : item
-      )
+    setStagedExercises((prev) =>
+    prev.map((item) =>
+    item.exercise.id === exerciseId ? { ...item, [field]: value } : item
+    )
     );
   };
 
   const handleFinalize = () => {
     if (stagedExercises.length === 0) {
-      addToast(t('exercise_ui:cart_empty_toast', 'El carrito está vacío.'), 'warning');
+      addToast(t('exercise_ui:cart_empty_toast', 'No has seleccionado ningún ejercicio.'), 'warning');
       return;
     }
     onAddExercises(stagedExercises);
     addToast(
       t('exercise_ui:added_to_routine_toast', {
         count: stagedExercises.length,
-        defaultValue: '{{count}} ejercicio(s) añadido(s) a la rutina.',
+        defaultValue: '{{count}} ejercicio(s) añadido(s) a la rutina.'
       }),
       'success'
     );
@@ -375,13 +393,13 @@ const ExerciseSearch = ({
         image_url_start: null,
         image_url_end: null,
         description: t('exercise_ui:manual_exercise_desc', 'Ejercicio añadido manualmente.'),
-        muscle_group_image_url: '/muscle_groups/other.webp',
+        muscle_group_image_url: '/muscle_groups/other.webp'
       };
 
       handleStageExercise(manualExercise, {
         sets: 3,
         reps: '10',
-        rest_seconds: 60,
+        rest_seconds: 60
       });
 
       setView('summary');
@@ -400,9 +418,9 @@ const ExerciseSearch = ({
           onAdd={isReplacing ? onExerciseSelectForReplace : handleStageExercise}
           isStaged={isReplacing ? false : stagedIds.has(selectedExercise.id)}
           isReplacing={isReplacing}
-          t={t}
-        />
-      );
+          t={t} />);
+
+
     }
 
     if (view === 'summary' && !isReplacing) {
@@ -413,9 +431,9 @@ const ExerciseSearch = ({
           onUpdate={handleUpdateStaged}
           onRemove={handleRemoveStaged}
           onFinalize={handleFinalize}
-          t={t}
-        />
-      );
+          t={t} />);
+
+
     }
 
     if (view === 'summary' && isReplacing) {
@@ -444,18 +462,27 @@ const ExerciseSearch = ({
         stagedIds={stagedIds}
         onAddManual={handleAddManualExercise}
         isReplacing={isReplacing}
-        t={t}
-      />
-    );
+        t={t} />);
+
+
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-bg-primary flex justify-center items-center animate-[fade-in_0.2s_ease_out] !pt-[calc(1rem+var(--safe-top))]">
-      <div className="relative w-full h-full md:max-w-2xl md:max-h-[90vh] md:rounded-lg overflow-hidden bg-bg-primary md:border md:border-glass-border md:shadow-2xl">
+  return <ModalPortal>
+    <div
+      className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex justify-center items-end animate-[fade-in_0.2s_ease_out]"
+      style={{ touchAction: 'none' }}
+      onTouchMove={(e) => {
+        // Solo bloquear si el toque es directamente en el overlay (no en el modal)
+        if (e.target === e.currentTarget) {
+          e.preventDefault();
+        }
+      }}>
+      
+      <div className="relative w-full h-[calc(100%-var(--safe-top)-1rem)] md:w-[90vw] md:h-[85vh] md:max-w-6xl md:mb-auto md:mt-auto rounded-t-[32px] md:rounded-2xl overflow-hidden bg-bg-secondary md:border md:border-glass-border md:shadow-2xl flex flex-col">
         {renderContent()}
       </div>
-    </div>
-  );
+    </div></ModalPortal>;
+
 };
 
 export default ExerciseSearch;

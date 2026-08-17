@@ -31,15 +31,18 @@ const authenticateToken = async (req, res, next) => {
 
         // --- OPTIMIZACIÓN CRÍTICA (AHORRO DE DINERO) ---
         // Problema: Actualizar la DB en cada petición consume I/O y CPU excesivo.
-        // Solución: Solo actualizamos 'last_active' si ha pasado más de 1 HORA.
-        const oneHour = 60 * 60 * 1000;
+        // Solución: Solo actualizamos 'last_active' y 'lastSeen' si han pasado más de 5 MINUTOS.
+        const fiveMinutes = 5 * 60 * 1000;
         const now = new Date();
         const lastActive = new Date(session.last_active);
 
-        if (now - lastActive > oneHour) {
+        if (now - lastActive > fiveMinutes) {
             // Ejecutamos update en segundo plano (sin await) para no frenar la respuesta
             session.update({ last_active: now }).catch(err =>
                 console.error("[Auth] Error actualizando heartbeat de sesión:", err.message)
+            );
+            models.User.update({ lastSeen: now }, { where: { id: session.user_id } }).catch(err =>
+                console.error("[Auth] Error actualizando lastSeen de usuario:", err.message)
             );
         }
         // ----------------------------------------------

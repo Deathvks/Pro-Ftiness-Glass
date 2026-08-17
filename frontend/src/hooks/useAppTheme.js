@@ -29,6 +29,7 @@ const HEADER_COLORS = {
 };
 
 // --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS ---
+let testingThemeNameGlobal = null;
 let isTestingGlobal = false;
 let testTimeLeftGlobal = 0;
 let testIntervalGlobal = null;
@@ -57,12 +58,14 @@ export const useAppTheme = () => {
 
   const [isTestingTheme, setIsTestingTheme] = useState(isTestingGlobal);
   const [testTimeLeft, setTestTimeLeft] = useState(testTimeLeftGlobal);
+  const [testingThemeName, setTestingThemeName] = useState(testingThemeNameGlobal);
   const [resolvedTheme, setResolvedTheme] = useState('dark');
 
   useEffect(() => {
     const updateState = () => {
       setIsTestingTheme(isTestingGlobal);
       setTestTimeLeft(testTimeLeftGlobal);
+      setTestingThemeName(testingThemeNameGlobal);
     };
     listeners.push(updateState);
     return () => {
@@ -71,15 +74,25 @@ export const useAppTheme = () => {
   }, []);
 
   useEffect(() => {
-    const pendingTest = localStorage.getItem('pending_theme_test');
-    if (pendingTest) {
+    const pendingTestStr = localStorage.getItem('pending_theme_test');
+    if (pendingTestStr) {
       localStorage.removeItem('pending_theme_test');
-      startThemeTest(parseInt(pendingTest, 10), false);
+      try {
+        const pendingTest = JSON.parse(pendingTestStr);
+        if (pendingTest.theme && pendingTest.duration) {
+          startThemeTest(pendingTest.theme, parseInt(pendingTest.duration, 10), false);
+        } else {
+          startThemeTest('galaxy', parseInt(pendingTestStr, 10), false);
+        }
+      } catch (e) {
+        startThemeTest('galaxy', parseInt(pendingTestStr, 10), false);
+      }
     }
   }, []);
 
   const setTheme = (newTheme, forceReload = false) => {
     isTestingGlobal = false;
+    testingThemeNameGlobal = null;
     testTimeLeftGlobal = 0;
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
     notifyThemeListeners();
@@ -100,17 +113,18 @@ export const useAppTheme = () => {
     setAccentState(newAccent);
   };
 
-  const startThemeTest = (durationSecs = 10, forceReload = false) => {
+  const startThemeTest = (themeName = 'galaxy', durationSecs = 10, forceReload = false) => {
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
 
     if (forceReload) {
       localStorage.setItem('original_theme_before_test', theme);
-      localStorage.setItem('theme', 'galaxy');
-      localStorage.setItem('pending_theme_test', durationSecs.toString());
+      localStorage.setItem('theme', themeName);
+      localStorage.setItem('pending_theme_test', JSON.stringify({ theme: themeName, duration: durationSecs }));
       window.location.reload();
       return;
     }
     
+    testingThemeNameGlobal = themeName;
     isTestingGlobal = true;
     testTimeLeftGlobal = durationSecs;
     notifyThemeListeners();
@@ -119,6 +133,7 @@ export const useAppTheme = () => {
       testTimeLeftGlobal -= 1;
       if (testTimeLeftGlobal <= 0) {
         isTestingGlobal = false;
+        testingThemeNameGlobal = null;
         clearInterval(testIntervalGlobal);
         
         const original = localStorage.getItem('original_theme_before_test');
@@ -134,6 +149,7 @@ export const useAppTheme = () => {
 
   const cancelThemeTest = () => {
     isTestingGlobal = false;
+    testingThemeNameGlobal = null;
     testTimeLeftGlobal = 0;
     if (testIntervalGlobal) clearInterval(testIntervalGlobal);
     notifyThemeListeners();
@@ -146,7 +162,7 @@ export const useAppTheme = () => {
     }
   };
 
-  const activeTheme = isTestingTheme ? 'galaxy' : theme;
+  const activeTheme = isTestingTheme && testingThemeName ? testingThemeName : theme;
 
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');

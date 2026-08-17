@@ -38,10 +38,14 @@
   --glass-brightness: 1.1;
 }
 
-/* SAFE AREA ADAPTATIVA — Actualizado para iOS 27 beta 2 */
+/* SAFE AREA ADAPTATIVA - Actualizado para iOS 27 beta 5 */
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html.is-ios {
+  --safe-top: calc(env(safe-area-inset-top, 0px) + 16px);
 }
 
 /* 3) TEMAS - APLICADOS AL ROOT (HTML) */
@@ -342,6 +346,18 @@ html.galaxy-theme #root::after {
   --color-accent-border: rgba(115, 115, 115, 0.28);
 }
 
+@layer base {
+  /* SOBRESCRIBIR OUTLINE AZUL POR DEFECTO DEL NAVEGADOR Y TAP HIGHLIGHT */
+  *, ::before, ::after {
+    -webkit-tap-highlight-color: transparent;
+    --tw-ring-color: var(--color-accent-border);
+  }
+  
+  :focus, :focus-visible {
+    outline-color: var(--color-accent);
+  }
+}
+
 /* 5) COMPONENTES BASE (TU ESTRUCTURA EXACTA) */
 @layer components {
 
@@ -419,6 +435,83 @@ html.galaxy-theme #root::after {
     
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow), var(--glass-highlight);
+  }
+
+  /* Liquid Glass Buttons Unification */
+  .glass-btn {
+    @apply relative transition-all duration-300;
+    background-color: var(--glass-bg);
+    background-image: var(--glass-gradient);
+    backdrop-filter: blur(12px) saturate(var(--glass-saturation));
+    -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturation));
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), var(--glass-highlight);
+  }
+  
+  .glass-btn:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), var(--glass-highlight);
+  }
+  
+  .glass-btn:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), var(--glass-highlight);
+  }
+
+  /* Unify all secondary standard buttons to use Liquid Glass effect */
+  button.bg-black\/5, button.bg-black\/10, button.bg-surface, button.dark\:bg-white\/5, button.dark\:bg-white\/10 {
+    background-color: var(--glass-bg) !important;
+    background-image: var(--glass-gradient) !important;
+    backdrop-filter: blur(12px) saturate(var(--glass-saturation)) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturation)) !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), var(--glass-highlight) !important;
+    transition: all 0.3s ease !important;
+  }
+  
+  button.bg-black\/5:hover:not(:disabled), button.bg-black\/10:hover:not(:disabled), button.bg-surface:hover:not(:disabled), button.dark\:bg-white\/5:hover:not(:disabled), button.dark\:bg-white\/10:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), var(--glass-highlight) !important;
+  }
+  
+  button.bg-black\/5:active:not(:disabled), button.bg-black\/10:active:not(:disabled), button.bg-surface:active:not(:disabled), button.dark\:bg-white\/5:active:not(:disabled), button.dark\:bg-white\/10:active:not(:disabled) {
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), var(--glass-highlight) !important;
+  }
+
+
+  /* Unify all bg-accent buttons to use true Liquid Glass effect */
+  button.bg-accent, .btn-accent {
+    position: relative;
+    background-color: var(--color-accent) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%) !important;
+    backdrop-filter: blur(12px) saturate(var(--glass-saturation)) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturation)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: var(--btn-accent-text, #ffffff) !important;
+    box-shadow: 0 4px 15px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.4) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  button.bg-accent:hover:not(:disabled), .btn-accent:hover:not(:disabled) {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.5) !important;
+    filter: brightness(1.1) !important;
+  }
+
+  button.bg-accent:active:not(:disabled), .btn-accent:active:not(:disabled) {
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 8px var(--color-accent-transparent), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+    filter: brightness(0.95) !important;
+  }
+
+  button.bg-accent:disabled, .btn-accent:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
   }
 
   .form-error-text {
@@ -826,9 +919,27 @@ html.dark.desert-theme #root::before {
 }
 
 /* CUSTOM SCROLLBAR GLOBALS */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 0px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
 }
 
 /* GLOBAL FIX FOR DRIVER.JS TUTORIAL BUTTONS */
@@ -899,15 +1010,20 @@ body .driver-popover-footer button.driver-popover-prev-btn:hover {
 /* Botones Siguiente / Entendido */
 body .driver-popover-footer button.driver-popover-next-btn, 
 body .driver-popover-footer button.driver-popover-done-btn { 
-  background-color: var(--accent) !important; 
-  border: 1px solid rgba(255,255,255,0.1) !important; 
-  box-shadow: 0 4px 12px -2px rgba(var(--bg-primary-rgb), 0.5) !important; 
+  position: relative !important;
+  background-color: var(--color-accent) !important;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%) !important;
+  backdrop-filter: blur(12px) saturate(var(--glass-saturation)) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturation)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: var(--btn-accent-text, #ffffff) !important;
+  box-shadow: 0 4px 15px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.4) !important;
 }
 body .driver-popover-footer button.driver-popover-next-btn:hover, 
 body .driver-popover-footer button.driver-popover-done-btn:hover { 
-  filter: brightness(1.1) !important; 
-  transform: translateY(-2px) !important; 
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.5) !important;
+  filter: brightness(1.1) !important;
 }
 
 /* Botón Cerrar (X) */

@@ -33,6 +33,7 @@ import PermissionModal from './components/PermissionModal';
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import LandingPage from './pages/LandingPage'; 
+import AsesoriaScreen from './pages/AsesoriaScreen';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Progress = lazy(() => import('./pages/Progress'));
@@ -52,6 +53,7 @@ const Social = lazy(() => import('./pages/Social'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const QuickCardio = lazy(() => import('./pages/QuickCardio'));
 const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
+const TrainerPanel = lazy(() => import('./components/TrainerPanel/TrainerPanel'));
 const Hub = lazy(() => import('./pages/Hub'));
 const ResetPasswordScreen = lazy(() => import('./pages/ResetPasswordScreen'));
 const SharedRoutinePreview = lazy(() => import('./pages/SharedRoutinePreview'));
@@ -73,7 +75,8 @@ export default function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [show2FAPromo, setShow2FAPromo] = useState(false);
   const [viewingMyStory, setViewingMyStory] = useState(false);
-  const [visitedHub, setVisitedHub] = useState(() => localStorage.getItem('visited_hub') === 'true');
+  const [visitedHub, setVisitedHub] = useState(true);
+
 
   const {
     view,
@@ -135,6 +138,12 @@ export default function App() {
     showWelcomeModal: state.showWelcomeModal,
   }));
 
+  useEffect(() => {
+    if (userProfile?.id) {
+      setVisitedHub(localStorage.getItem(`visited_hub_${userProfile.id}`) === 'true');
+    }
+  }, [userProfile?.id]);
+
   const isInstalledApp = useMemo(() => {
     return Capacitor.isNativePlatform() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   }, []);
@@ -194,6 +203,15 @@ export default function App() {
           const isLight = resolvedTheme === 'light';
           await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
           await NavigationBar.setColor({ color: themeColor });
+          
+          // Hack para forzar recálculo del safe-area-inset en Android tras cambiar el tema
+          setTimeout(() => {
+            document.documentElement.style.paddingBottom = '1px';
+            window.dispatchEvent(new Event('resize'));
+            setTimeout(() => {
+              document.documentElement.style.paddingBottom = '';
+            }, 50);
+          }, 100);
         } catch (error) {
           console.warn('Error configurando interfaz nativa:', error);
         }
@@ -256,11 +274,11 @@ export default function App() {
   }, [myStories, navigateInternal]);
 
   useEffect(() => {
-    if (view === 'hub' && !visitedHub) {
-      localStorage.setItem('visited_hub', 'true');
+    if (view === 'hub' && !visitedHub && userProfile?.id) {
+      localStorage.setItem(`visited_hub_${userProfile.id}`, 'true');
       setVisitedHub(true);
     }
-  }, [view, visitedHub]);
+  }, [view, visitedHub, userProfile?.id]);
 
   const currentTitle = useMemo(() => {
     const titleMap = {
@@ -286,6 +304,7 @@ export default function App() {
       publicProfile: { key: 'Perfil Público', default: 'Perfil Público' },
       quickCardio: { key: 'Cardio Rápido', default: 'Cardio Rápido' },
       'active-cardio': { key: 'Sesión Activa', default: 'Sesión Activa' },
+      asesoria: { key: 'Asesoría', default: 'Asesoría' },
     };
     const titleInfo = titleMap[view];
     if (titleInfo) return t(titleInfo.key, { defaultValue: titleInfo.default });
@@ -310,7 +329,7 @@ export default function App() {
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigateInternal} />;
-      case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} />;
+      case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} />;
       case 'routines': return <Routines setView={navigateInternal} />;
       case 'workout': return <Workout timer={timer} setView={navigateInternal} />;
       case 'nutrition': return <Nutrition setView={navigateInternal} />;
@@ -332,17 +351,19 @@ export default function App() {
             highlight={navParams?.highlight}
           />
         );
-      case 'appearance': return <AppearanceScreen />;
-      case 'support': return <SupportScreen />;
-      case 'socialLinks': return <SocialLinksScreen />;
+      case 'appearance': return <AppearanceScreen setView={navigateInternal} />;
+      case 'support': return <SupportScreen setView={navigateInternal} />;
+      case 'socialLinks': return <SocialLinksScreen setView={navigateInternal} />;
       case 'challenges': return <ChallengesScreen setView={navigateInternal} />;
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigateInternal('settings')} />;
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigateInternal} />;
       case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('settings')} /> : <Dashboard setView={navigateInternal} />;
+      case 'trainerPanel': return (userProfile?.role === 'admin' || userProfile?.role === 'trainer') ? <TrainerPanel setView={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       case 'terms': return <TermsPage />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigateInternal} />;
       case 'notifications': return <NotificationsScreen setView={navigateInternal} />;
+      case 'asesoria': return <AsesoriaScreen onBack={() => navigateInternal('hub')} />;
       default: return <Dashboard setView={navigateInternal} />;
     }
   }, [view, navigateInternal, theme, resolvedTheme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
@@ -371,12 +392,20 @@ export default function App() {
     { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub, icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
   ], [t, visitedHub]);
 
+    const mainViews = useMemo(() => ({
+      dashboard: <Dashboard setView={navigateInternal} />,
+      social: <Social navigate={navigateInternal} />,
+      nutrition: <Nutrition setView={navigateInternal} />,
+      routines: <Routines setView={navigateInternal} />,
+      hub: <Hub setView={navigateInternal} />
+    }), [navigateInternal]);
+
   const AuthenticatedAppContent = useMemo(() => {
     if (!userProfile || (isLoading && !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
     }
 
-    if (!userProfile.goal) {
+    if (!userProfile.goal && userProfile.role !== 'trainee') {
       return <OnboardingScreen />;
     }
 
@@ -397,6 +426,7 @@ export default function App() {
           mainContentRef={mainContentRef}
           currentTitle={currentTitle}
           currentViewComponent={currentViewComponent}
+          mainViews={mainViews}
           navItems={navItems}
           handleLogoutClick={handleLogoutClick}
           showLogoutConfirm={showLogoutConfirm}

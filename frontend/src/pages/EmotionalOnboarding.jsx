@@ -152,7 +152,7 @@ const EmotionalOnboarding = ({ onFinish, onBack }) => {
                                     type="number" 
                                     value={formData.currentWeight} 
                                     onChange={(e) => setFormData({...formData, currentWeight: e.target.value})} 
-                                    className="w-full bg-transparent border-b border-white/20 text-6xl font-black text-white py-2 focus:border-blue-500 outline-none text-center placeholder-white/5 transition-all" 
+                                    className="w-full bg-transparent border-b border-white/20 text-6xl font-black text-white py-2 focus:border-accent outline-none text-center placeholder-white/5 transition-all" 
                                     placeholder="0" 
                                     autoFocus 
                                 />

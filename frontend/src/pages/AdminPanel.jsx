@@ -1,19 +1,22 @@
 /* frontend/src/pages/AdminPanel.jsx */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles
+  ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check,
+  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
+import AdminExercises from './AdminExercises';
 import CustomSelect from '../components/CustomSelect';
 import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 // Umbral para considerar a un usuario "online" (5 minutos)
 const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
@@ -109,9 +112,16 @@ const StatusIndicator = ({ lastSeen }) => {
   }
 
   return (
-    <div className="flex items-center justify-center gap-1.5">
-      <div className="w-2 h-2 rounded-full bg-text-muted" />
-      <span className="text-xs font-bold text-text-muted">Offline</span>
+    <div className="flex flex-col items-center justify-center">
+      <div className="flex items-center gap-1.5">
+        <div className="w-2 h-2 rounded-full bg-text-muted" />
+        <span className="text-xs font-bold text-text-muted">Offline</span>
+      </div>
+      {lastSeen && (
+        <span className="text-[10px] text-text-secondary mt-0.5">
+          {formatDistanceToNow(new Date(lastSeen), { addSuffix: true, locale: es })}
+        </span>
+      )}
     </div>
   );
 };
@@ -207,7 +217,7 @@ const AdminPanel = ({ onCancel }) => {
   // Polling solo si estamos en la pestaña de usuarios
   useEffect(() => {
     if (activeTab !== 'users') return;
-    const interval = setInterval(() => fetchUsers(false), 30000);
+    const interval = setInterval(() => fetchUsers(false), 15000);
     return () => clearInterval(interval);
   }, [activeTab, fetchUsers]);
 
@@ -354,48 +364,66 @@ const AdminPanel = ({ onCancel }) => {
     return reports.slice(startIndex, startIndex + REPORTS_PER_PAGE);
   }, [reports, reportPage]);
 
-  // Contar cuántos usuarios tienen el tema galaxia (admin o referralCount >= 3)
+  // Contar cuántos usuarios tienen temas desbloqueados
   const galaxyUsersCount = useMemo(() => {
-    return users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 3).length;
+    return users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 5).length;
+  }, [users]);
+  const desertUsersCount = useMemo(() => {
+    return users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 8).length;
+  }, [users]);
+  const oceanUsersCount = useMemo(() => {
+    return users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 11).length;
   }, [users]);
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
-      <button 
-        onClick={onCancel} 
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
-      >
-        <ChevronLeft size={20} />
-        Volver a Ajustes
-      </button>
+      <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 mb-6 sm:mb-8">
+        <button 
+          onClick={onCancel} 
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
+        >
+          <ChevronLeft size={20} />
+          Volver a Ajustes
+        </button>
 
-      {/* Título oculto en móvil */}
-      <h1 className="hidden md:block text-4xl font-extrabold mb-8 tracking-tight text-text-primary">Panel de Administración</h1>
+        {/* Título oculto en móvil */}
+        <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Panel de Administración</h1>
+      </div>
 
-      {/* Navegación de Pestañas (Modificado a flex-wrap para evitar recortes) */}
-      <div className="flex flex-wrap gap-3 mb-8">
+      {/* Navegación de Pestañas (Scroll horizontal en móvil) */}
+      <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
           onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 px-6 py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 ${activeTab === 'users'
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'users'
             ? 'bg-accent text-white shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
-          <Users size={20} />
+          <Users className="w-4 h-4 sm:w-5 sm:h-5" />
           Usuarios
         </button>
         <button
           onClick={() => setActiveTab('reports')}
-          className={`flex items-center gap-2 px-6 py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 ${activeTab === 'reports'
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'reports'
             ? 'bg-accent text-white shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
-          <Bug size={20} />
+          <Bug className="w-4 h-4 sm:w-5 sm:h-5" />
           Reportes
           {reports.length > 0 && activeTab !== 'reports' && (
-            <span className="bg-red text-white text-[10px] font-black px-2 py-0.5 rounded-full">{reports.length}</span>
+            <span className="bg-red text-white text-[10px] font-black px-1.5 sm:px-2 py-0.5 rounded-full ml-1 sm:ml-0">{reports.length}</span>
           )}
+        </button>
+        <button
+          onClick={() => setActiveTab('exercises')}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'exercises'
+            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
+            }`}
+        >
+          <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
+          Ejercicios
         </button>
       </div>
 
@@ -403,34 +431,54 @@ const AdminPanel = ({ onCancel }) => {
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
-            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-5 mb-8">
-              
-              {/* Título + Contadores */}
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl font-extrabold whitespace-nowrap mr-auto text-text-primary">
-                  Lista de Usuarios
-                </h2>
-                <span className="bg-accent/10 text-accent text-[10px] sm:text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full ring-1 ring-accent/30">
-                  {users.length} Totales
-                </span>
-                <span className="bg-[#a855f7]/10 text-[#a855f7] text-[10px] sm:text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full ring-1 ring-[#a855f7]/30 flex items-center gap-1.5">
-                  <Sparkles size={14} className="fill-[#a855f7]/50" />
-                  {galaxyUsersCount} Galaxia
-                </span>
+            {/* Bento Overview Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-black/5 dark:bg-white/5 rounded-3xl p-5 ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-center relative overflow-hidden">
+                <div className="absolute -top-4 -right-4 p-4 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+                   <Users size={100} />
+                </div>
+                <span className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1 relative z-10">Total Usuarios</span>
+                <span className="text-4xl font-black text-text-primary relative z-10">{users.length}</span>
               </div>
+              <div className="bg-[#a855f7]/5 rounded-3xl p-5 ring-1 ring-[#a855f7]/20 flex flex-col justify-center relative overflow-hidden">
+                <div className="absolute -top-4 -right-4 p-4 opacity-10 pointer-events-none">
+                   <Sparkles size={100} className="text-[#a855f7]" />
+                </div>
+                <span className="text-xs font-bold text-[#a855f7] uppercase tracking-wider mb-1 relative z-10">Galaxia</span>
+                <span className="text-4xl font-black text-[#a855f7] relative z-10">{galaxyUsersCount}</span>
+              </div>
+              <div className="bg-[#f59e0b]/5 rounded-3xl p-5 ring-1 ring-[#f59e0b]/20 flex flex-col justify-center relative overflow-hidden">
+                <div className="absolute -top-4 -right-4 p-4 opacity-10 pointer-events-none">
+                   <Sun size={100} className="text-[#f59e0b]" />
+                </div>
+                <span className="text-xs font-bold text-[#f59e0b] uppercase tracking-wider mb-1 relative z-10">Desierto</span>
+                <span className="text-4xl font-black text-[#f59e0b] relative z-10">{desertUsersCount}</span>
+              </div>
+              <div className="bg-[#0ea5e9]/5 rounded-3xl p-5 ring-1 ring-[#0ea5e9]/20 flex flex-col justify-center relative overflow-hidden">
+                <div className="absolute -top-4 -right-4 p-4 opacity-10 pointer-events-none">
+                   <Droplets size={100} className="text-[#0ea5e9]" />
+                </div>
+                <span className="text-xs font-bold text-[#0ea5e9] uppercase tracking-wider mb-1 relative z-10">Océano</span>
+                <span className="text-4xl font-black text-[#0ea5e9] relative z-10">{oceanUsersCount}</span>
+              </div>
+            </div>
 
-              {/* Filtros y Controles */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto lg:ml-auto">
-                
+            {/* Toolbar (Directorio y Filtros) */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 mb-6 bg-black/5 dark:bg-white/5 p-3 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10">
+              <h2 className="text-xl font-black text-text-primary pl-4 py-2">
+                Directorio
+              </h2>
+              
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
                 {/* Buscador Inteligente */}
                 <div className="relative flex-1 sm:w-64 min-w-[200px]">
                   <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
                   <input
                     type="text"
-                    placeholder="Buscar usuario o email..."
+                    placeholder="Buscar usuario..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-10 py-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all text-sm font-bold text-text-primary placeholder:text-text-muted"
+                    className="w-full pl-11 pr-10 py-3 rounded-[20px] bg-bg-primary border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all text-sm font-bold text-text-primary placeholder:text-text-muted shadow-sm"
                   />
                   {searchQuery && (
                     <button 
@@ -441,6 +489,15 @@ const AdminPanel = ({ onCancel }) => {
                     </button>
                   )}
                 </div>
+
+                {/* Botón Refrescar */}
+                <button
+                  onClick={() => fetchUsers(true)}
+                  className="p-3 bg-bg-primary text-text-secondary hover:text-accent rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center shrink-0"
+                  title="Refrescar Lista"
+                >
+                  <RefreshCw size={18} strokeWidth={2.5} className={isLoading ? 'animate-spin text-accent' : ''} />
+                </button>
 
                 {/* Select: Ordenación */}
                 <div className="flex-1 sm:flex-none sm:w-40 z-20">
@@ -459,11 +516,10 @@ const AdminPanel = ({ onCancel }) => {
                 {/* Botón Crear */}
                 <button
                   onClick={() => setIsCreatingUser(true)}
-                  className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-[20px] bg-accent text-white font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap flex-1 sm:flex-none shadow-lg shadow-accent/20"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-[20px] bg-accent text-white font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shadow-lg shadow-accent/20"
                 >
                   <Plus size={20} strokeWidth={2.5} />
-                  <span className="hidden sm:inline">Crear Usuario</span>
-                  <span className="sm:hidden">Crear</span>
+                  <span className="hidden sm:inline">Nuevo</span>
                 </button>
               </div>
             </div>
@@ -481,87 +537,111 @@ const AdminPanel = ({ onCancel }) => {
             ) : (
               <>
                 {/* Tabla Desktop (md en adelante) */}
-                <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                <div className="hidden md:block overflow-x-auto custom-scrollbar bg-black/5 dark:bg-white/5 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10 p-2">
                   <table className="w-full text-left border-collapse">
-                    <thead className="border-b border-black/5 dark:border-white/10 text-text-secondary text-xs uppercase tracking-wider font-bold">
+                    <thead className="text-text-muted text-[10px] uppercase tracking-[0.2em] font-black border-b border-black/5 dark:border-white/5">
                       <tr>
-                        <th className="p-4 pl-2">Usuario</th>
-                        <th className="p-4">Email</th>
-                        <th className="p-4">Fecha Registro</th>
-                        <th className="p-4 text-center">Estado</th>
-                        <th className="p-4 text-center">Rol</th>
-                        <th className="p-4 text-center">Nivel</th>
-                        <th className="p-4 text-center">Verificado</th>
+                        <th className="p-4 pl-6">Usuario</th>
+                        <th className="p-4">Detalles</th>
+                        <th className="p-4">Actividad</th>
                         <th className="p-4 text-center">Invitaciones</th>
-                        <th className="p-4 text-center pr-2">Acciones</th>
+                        <th className="p-4 text-right pr-6">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {processedUsers.map(user => (
-                        <tr key={user.id} className="border-b border-black/5 dark:border-white/10 last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                          <td className="p-4 pl-2 font-bold text-text-primary align-middle">
+                        <tr key={user.id} className="border-b border-black/5 dark:border-white/5 last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                          
+                          {/* 1. Usuario (Avatar + Nombre + Email) */}
+                          <td className="p-4 pl-6 align-middle">
                             <div className="flex items-center gap-4">
                               <div className="relative shrink-0">
-                                {/* Avatar Foto */}
                                 {getAvatarUrl(user) ? (
-                                  <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-12 h-12 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-bg-primary" />
+                                  <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-12 h-12 rounded-full object-cover ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
                                 ) : (
-                                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent font-extrabold text-lg uppercase ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
+                                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent font-extrabold text-lg uppercase ring-2 ring-black/5 dark:ring-white/10 shadow-sm">
                                     {(user.username || user.name || '?').charAt(0)}
                                   </div>
                                 )}
-                                {/* Badge de método de inicio de sesión superpuesto */}
                                 <div className="absolute -bottom-1 -right-1">
                                   <LoginMethodBadge user={user} />
                                 </div>
                               </div>
-                              <span className="truncate max-w-[150px]">{user.username || user.name}</span>
+                              <div className="flex flex-col">
+                                <span className="font-extrabold text-[15px] text-text-primary truncate max-w-[150px] lg:max-w-[250px]" title={user.username || user.name}>
+                                  {user.username || user.name}
+                                </span>
+                                <span className="font-medium text-xs text-text-muted truncate max-w-[150px] lg:max-w-[250px]" title={user.email}>
+                                  {user.email}
+                                </span>
+                              </div>
                             </div>
                           </td>
-                          <td className="p-4 text-text-secondary align-middle text-sm font-medium">{user.email}</td>
-                          <td className="p-4 text-text-muted align-middle text-sm font-mono font-medium">
-                            {formatDateSafe(getUserDate(user))}
+
+                          {/* 2. Detalles (Rol + Verificado + Nivel) */}
+                          <td className="p-4 align-middle">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
+                                {user.role}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
+                                Lvl {user.level || 1}
+                              </span>
+                              {user.is_verified ? (
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500/10 text-green-500 ring-1 ring-green-500/30" title="Verificado">
+                                  <Check size={12} strokeWidth={3} />
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red/10 text-red ring-1 ring-red/30" title="No Verificado">
+                                  <X size={12} strokeWidth={3} />
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="p-4 align-middle text-center">
-                            <StatusIndicator lastSeen={user.lastSeen} />
+
+                          {/* 3. Actividad (Estado + Registro) */}
+                          <td className="p-4 align-middle">
+                            <div className="flex flex-col items-start gap-1">
+                              <StatusIndicator lastSeen={user.lastSeen} />
+                              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                Reg: {formatDateSafe(getUserDate(user))}
+                              </span>
+                            </div>
                           </td>
-                          <td className="p-4 align-middle text-center">
-                            <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
-                              {user.role}
-                            </span>
-                          </td>
-                          <td className="p-4 align-middle text-center text-sm font-bold text-accent">
-                            {user.level || 1}
-                          </td>
+
+                          {/* 4. Invitaciones */}
                           <td className="p-4 align-middle text-center">
                             <div className="flex justify-center items-center gap-1.5">
-                              {user.is_verified ? (
-                                <>
-                                  <CheckCircle size={18} className="text-green-500" strokeWidth={2.5} />
-                                  <span className="text-xs font-bold text-green-500 uppercase tracking-wider">Sí</span>
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle size={18} className="text-red" strokeWidth={2.5} />
-                                  <span className="text-xs font-bold text-red uppercase tracking-wider">No</span>
-                                </>
-                              )}
+                              <span className="text-sm font-black text-text-primary bg-black/5 dark:bg-white/5 w-8 h-8 rounded-full flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10">{user.referralCount || 0}</span>
+                              <div className="flex -space-x-1 ml-1">
+                                {(user.referralCount >= 5 || user.role === 'admin') && (
+                                  <div className="w-5 h-5 rounded-full bg-[#a855f7] flex items-center justify-center ring-2 ring-bg-primary z-30" title="Galaxia">
+                                    <Sparkles size={10} className="text-white" />
+                                  </div>
+                                )}
+                                {(user.referralCount >= 8 || user.role === 'admin') && (
+                                  <div className="w-5 h-5 rounded-full bg-[#f59e0b] flex items-center justify-center ring-2 ring-bg-primary z-20" title="Desierto">
+                                    <Sun size={10} className="text-white" />
+                                  </div>
+                                )}
+                                {(user.referralCount >= 11 || user.role === 'admin') && (
+                                  <div className="w-5 h-5 rounded-full bg-[#0ea5e9] flex items-center justify-center ring-2 ring-bg-primary z-10" title="Océano">
+                                    <Droplets size={10} className="text-white" />
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
-                          <td className="p-4 align-middle text-center">
-                            <div className="flex justify-center items-center gap-2">
-                              <span className="text-sm font-bold text-text-primary">{user.referralCount || 0}</span>
-                              {(user.referralCount >= 3 || user.role === 'admin') && (
-                                <div className="text-[#a855f7] bg-[#a855f7]/10 p-1.5 rounded-full ring-1 ring-[#a855f7]/30" title="Tema Galaxia Desbloqueado">
-                                  <Sparkles size={14} className="fill-[#a855f7]" />
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-4 pr-2 align-middle text-center">
-                            <div className="flex justify-center gap-2">
-                              <button onClick={() => setUserToEdit(user)} className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95"><Edit size={18} /></button>
-                              <button onClick={() => setUserToDelete(user)} className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={18} /></button>
+
+                          {/* 5. Acciones */}
+                          <td className="p-4 pr-6 align-middle text-right">
+                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => setUserToEdit(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95">
+                                <Edit size={16} />
+                              </button>
+                              <button onClick={() => setUserToDelete(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95">
+                                <Trash2 size={16} />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -573,19 +653,17 @@ const AdminPanel = ({ onCancel }) => {
                 {/* Vista Tarjetas Móvil (Menos de md) */}
                 <div className="md:hidden space-y-4">
                   {processedUsers.map(user => (
-                    <div key={user.id} className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 text-left">
+                    <div key={user.id} className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] p-5 text-left shadow-sm">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0 pr-2 flex items-center gap-4">
                           <div className="relative shrink-0">
-                            {/* Avatar Foto */}
                             {getAvatarUrl(user) ? (
-                              <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-14 h-14 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary shadow-sm" />
+                              <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-14 h-14 rounded-full object-cover ring-2 ring-black/5 dark:ring-white/10 bg-bg-primary shadow-sm" />
                             ) : (
-                              <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center text-accent font-extrabold text-lg uppercase ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
+                              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center text-accent font-extrabold text-lg uppercase ring-2 ring-black/5 dark:ring-white/10 shadow-sm">
                                 {(user.username || user.name || '?').charAt(0)}
                               </div>
                             )}
-                            {/* Badge de método de inicio de sesión superpuesto */}
                             <div className="absolute -bottom-1 -right-1">
                               <LoginMethodBadge user={user} />
                             </div>
@@ -596,60 +674,64 @@ const AdminPanel = ({ onCancel }) => {
                           </div>
                         </div>
                         <div className="flex flex-col gap-2 shrink-0">
-                          <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95"><Edit size={16} /></button>
-                          <button onClick={() => setUserToDelete(user)} className="p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[12px] text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={16} /></button>
+                          <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95"><Edit size={16} /></button>
+                          <button onClick={() => setUserToDelete(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={16} /></button>
                         </div>
                       </div>
 
                       {/* Información en Grid compacto */}
-                      <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs mt-2 border-t border-black/5 dark:border-white/10 pt-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar size={14} className="text-text-muted" />
-                          <span className="text-text-muted font-mono font-medium">{formatDateSafe(getUserDate(user))}</span>
+                      <div className="flex flex-col gap-3 text-xs mt-2 border-t border-black/5 dark:border-white/5 pt-4">
+                        
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                             <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
+                               {user.role}
+                             </span>
+                             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
+                               Lvl {user.level || 1}
+                             </span>
+                           </div>
+                           <div className="flex items-center gap-1.5">
+                             {user.is_verified ? (
+                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500/10 text-green-500 ring-1 ring-green-500/30" title="Verificado">
+                                 <Check size={12} strokeWidth={3} />
+                               </span>
+                             ) : (
+                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red/10 text-red ring-1 ring-red/30" title="No Verificado">
+                                 <X size={12} strokeWidth={3} />
+                               </span>
+                             )}
+                           </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-2">
-                          <StatusIndicator lastSeen={user.lastSeen} />
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Rol:</span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
-                            {user.role}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2">
-                          <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Nivel:</span>
-                          <span className="font-bold text-accent text-xs">
-                            {user.level || 1}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Invs:</span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-text-primary text-xs">{user.referralCount || 0}</span>
-                            {(user.referralCount >= 3 || user.role === 'admin') && (
-                              <Sparkles size={12} className="text-[#a855f7] fill-[#a855f7]" />
-                            )}
+                        <div className="flex items-center justify-between border-t border-black/5 dark:border-white/5 pt-3">
+                          <div className="flex flex-col gap-1">
+                             <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Reg: {formatDateSafe(getUserDate(user))}</span>
+                             <StatusIndicator lastSeen={user.lastSeen} />
+                          </div>
+                          
+                          <div className="flex justify-center items-center gap-1.5 mt-1 sm:mt-0">
+                            <span className="text-sm font-black text-text-primary bg-black/5 dark:bg-white/5 w-8 h-8 rounded-full flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10">{user.referralCount || 0}</span>
+                            <div className="flex -space-x-1 ml-1">
+                              {(user.referralCount >= 5 || user.role === 'admin') && (
+                                <div className="w-5 h-5 rounded-full bg-[#a855f7] flex items-center justify-center ring-2 ring-bg-primary z-30" title="Galaxia">
+                                  <Sparkles size={10} className="text-white" />
+                                </div>
+                              )}
+                              {(user.referralCount >= 8 || user.role === 'admin') && (
+                                <div className="w-5 h-5 rounded-full bg-[#f59e0b] flex items-center justify-center ring-2 ring-bg-primary z-20" title="Desierto">
+                                  <Sun size={10} className="text-white" />
+                                </div>
+                              )}
+                              {(user.referralCount >= 11 || user.role === 'admin') && (
+                                <div className="w-5 h-5 rounded-full bg-[#0ea5e9] flex items-center justify-center ring-2 ring-bg-primary z-10" title="Océano">
+                                  <Droplets size={10} className="text-white" />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-1.5">
-                          <span className="text-text-muted font-bold uppercase tracking-wider text-[10px]">Verif:</span>
-                          {user.is_verified ? (
-                            <div className="flex items-center gap-1">
-                              <CheckCircle size={14} className="text-green-500" strokeWidth={2.5} />
-                              <span className="text-green-500 font-bold uppercase tracking-wider">Sí</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              <XCircle size={14} className="text-red" strokeWidth={2.5} />
-                              <span className="text-red font-bold uppercase tracking-wider">No</span>
-                            </div>
-                          )}
-                        </div>
                       </div>
                     </div>
                   ))}
@@ -657,7 +739,7 @@ const AdminPanel = ({ onCancel }) => {
               </>
             )}
           </>
-        ) : (
+        ) : activeTab === 'reports' ? (
           /* --- CONTENIDO PESTAÑA REPORTES --- */
           <>
             <div className="mb-8 text-left">
@@ -765,7 +847,9 @@ const AdminPanel = ({ onCancel }) => {
               </div>
             )}
           </>
-        )}
+        ) : activeTab === 'exercises' ? (
+          <AdminExercises />
+        ) : null}
       </GlassCard>
 
       {/* Lightbox y Modales */}

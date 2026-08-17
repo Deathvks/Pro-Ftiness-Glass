@@ -43,7 +43,7 @@ const PrivacyPolicy = ({ onBack }) => {
         route="privacy-policy" 
       />
 
-      <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-4 sm:mt-0">
+      <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] sm:mt-0" style={{ paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)' }}>
         
         {/* Botón Volver */}
         <button 
@@ -206,6 +206,33 @@ const PrivacyPolicy = ({ onBack }) => {
               <p className="text-text-secondary font-medium text-sm leading-relaxed">
                 Necesitamos la cámara para escanear alimentos o subir fotos de progreso. Las fotos que subes a tu diario son privadas y se guardan de forma segura solo para ti.
               </p>
+            </PolicyCard>
+
+            {/* --- TARJETA: Entrenador Personal --- */}
+            <PolicyCard>
+              <div className="flex items-center gap-4 mb-5">
+                <div className="p-3 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm">
+                  <Users size={24} strokeWidth={2.5} />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Tu Entrenador</h2>
+              </div>
+              <p className="text-text-secondary font-medium text-sm leading-relaxed mb-4">
+                Si te vinculas a un entrenador personal en la app, este tendrá acceso a tu información de progreso para poder asesorarte, lo que incluye:
+              </p>
+              <ul className="text-sm font-medium text-text-secondary space-y-3 list-none">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span><strong>Fotos de progreso:</strong> Las fotos que compartas con tu entrenador son estrictamente confidenciales y privadas.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span><strong>Historial y Datos:</strong> Rutinas, pesos, y registros nutricionales que faciliten tu seguimiento.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                  <span>Esta información <strong>jamás será compartida</strong> fuera de vuestra relación cliente-entrenador ni usada para otros fines.</span>
+                </li>
+              </ul>
             </PolicyCard>
 
             {/* --- TARJETA: Eliminación (Full Width) --- */}

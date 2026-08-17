@@ -1,21 +1,27 @@
+import ModalPortal from './ModalPortal';
 import React from 'react';
 import { Settings, X, ExternalLink } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings';
+import useModalLock from '../hooks/useModalLock';
 
 export default function PermissionModal({ isOpen, onClose, permissionName }) {
   if (!isOpen) return null;
 
   const handleOpenSettings = async () => {
+
+    // --- Bloquear scroll del fondo y swipe entre páginas ---
+    useModalLock(isOpen);
+
     if (Capacitor.isNativePlatform()) {
       try {
         if (Capacitor.getPlatform() === 'android') {
           await NativeSettings.openAndroid({
-            option: AndroidSettings.ApplicationDetails,
+            option: AndroidSettings.ApplicationDetails
           });
         } else {
           await NativeSettings.openIOS({
-            option: IOSSettings.App,
+            option: IOSSettings.App
           });
         }
       } catch (error) {
@@ -24,8 +30,8 @@ export default function PermissionModal({ isOpen, onClose, permissionName }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+  return <ModalPortal>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 p-4 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
       <div className="w-full max-w-sm rounded-2xl bg-bg-primary p-6 text-text-primary shadow-2xl border border-glass-border relative">
         
         <div className="mb-4 flex items-center justify-between">
@@ -47,21 +53,21 @@ export default function PermissionModal({ isOpen, onClose, permissionName }) {
 
         <div className="flex flex-col gap-3">
             <button
-              onClick={handleOpenSettings}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-3 font-semibold text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20"
-            >
+            onClick={handleOpenSettings}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-3 font-semibold text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20">
+            
               <ExternalLink size={18} />
               Ir a Ajustes
             </button>
             <button
-              onClick={onClose}
-              className="w-full rounded-xl bg-bg-secondary border border-glass-border py-3 font-semibold text-text-primary transition-all hover:bg-white/5 active:scale-95"
-            >
+            onClick={onClose}
+            className="w-full rounded-xl bg-bg-secondary border border-glass-border py-3 font-semibold text-text-primary transition-all hover:bg-white/5 active:scale-95">
+            
               Cancelar
             </button>
         </div>
         
       </div>
-    </div>
-  );
+    </div></ModalPortal>;
+
 }

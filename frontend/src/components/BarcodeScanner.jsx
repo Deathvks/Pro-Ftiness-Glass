@@ -1,3 +1,4 @@
+import ModalPortal from './ModalPortal';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { X, Camera } from 'lucide-react';
@@ -14,7 +15,7 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
 
   const handleScanSuccess = useCallback((decodedText) => {
     if (scannerRef.current && scannerRef.current.isScanning) {
-      scannerRef.current.stop().catch(err => console.error("Error al detener el escáner:", err));
+      scannerRef.current.stop().catch((err) => console.error("Error al detener el escáner:", err));
       scannerRef.current = null;
     }
     onScanSuccess(decodedText);
@@ -43,42 +44,42 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
       setShowPermissionModal(true);
     }
   };
-  
+
   useEffect(() => {
     if (scannerState !== 'scanning' || scannerRef.current) {
       return;
     }
 
     const startScanner = async () => {
-        const scannerElement = document.getElementById(scannerContainerId);
-        if (!scannerElement) return;
+      const scannerElement = document.getElementById(scannerContainerId);
+      if (!scannerElement) return;
 
-        const html5Qrcode = new Html5Qrcode(scannerContainerId, false);
-        scannerRef.current = html5Qrcode;
+      const html5Qrcode = new Html5Qrcode(scannerContainerId, false);
+      scannerRef.current = html5Qrcode;
 
-        try {
-            const cameras = await Html5Qrcode.getCameras();
-            const rearCamera = cameras.find(camera => camera.label.toLowerCase().includes('back') || camera.label.toLowerCase().includes('trasera'));
-            const cameraId = rearCamera ? rearCamera.id : cameras[0].id;
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        const rearCamera = cameras.find((camera) => camera.label.toLowerCase().includes('back') || camera.label.toLowerCase().includes('trasera'));
+        const cameraId = rearCamera ? rearCamera.id : cameras[0].id;
 
-            await html5Qrcode.start(
-                cameraId,
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                handleScanSuccess,
-                handleScanError
-            );
-        } catch (err) {
-            console.error("Error al iniciar el escáner:", err);
-            setScannerState('idle');
-            setShowPermissionModal(true);
-        }
+        await html5Qrcode.start(
+          cameraId,
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          handleScanSuccess,
+          handleScanError
+        );
+      } catch (err) {
+        console.error("Error al iniciar el escáner:", err);
+        setScannerState('idle');
+        setShowPermissionModal(true);
+      }
     };
 
     startScanner();
 
     return () => {
       if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(err => console.error("Error al limpiar el escáner:", err));
+        scannerRef.current.stop().catch((err) => console.error("Error al limpiar el escáner:", err));
         scannerRef.current = null;
       }
     };
@@ -91,8 +92,8 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
           <div className="flex flex-col items-center justify-center gap-4">
             <Spinner size={32} />
             <p className="text-text-secondary">Esperando permiso...</p>
-          </div>
-        );
+          </div>);
+
       case 'scanning':
         return (
           <div className="relative w-full h-full scanner-wrapper">
@@ -106,8 +107,8 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
                 <div className="scan-line absolute top-0 left-4 right-4 h-1 bg-accent shadow-[0_0_10px_theme(colors.accent)] rounded-full" />
               </div>
             </div>
-          </div>
-        );
+          </div>);
+
       case 'idle':
       default:
         return (
@@ -116,42 +117,42 @@ const BarcodeScanner = ({ onScanSuccess, onClose }) => {
             <p className="text-text-secondary text-center">Necesitamos acceso a tu cámara para escanear.</p>
             <button
               onClick={handleActivateScanner}
-              className="px-6 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105"
-            >
+              className="px-6 py-3 rounded-full bg-accent text-bg-secondary font-semibold transition hover:scale-105">
+              
               Activar Cámara
             </button>
-          </div>
-        );
+          </div>);
+
     }
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+      <ModalPortal><div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
         <div className="relative w-full max-w-md p-6 bg-bg-secondary rounded-2xl border border-glass-border">
           <h3 className="text-xl font-bold text-center mb-4">Escanear Código de Barras</h3>
           <div className="h-[280px] w-full flex items-center justify-center rounded-lg overflow-hidden bg-bg-primary">
             {renderContent()}
           </div>
           <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-bg-primary text-text-secondary hover:text-text-primary transition"
-          >
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 rounded-full bg-bg-primary text-text-secondary hover:text-text-primary transition">
+              
             <X size={20} />
           </button>
         </div>
-      </div>
+      </div></ModalPortal>
 
-      <PermissionModal 
-        isOpen={showPermissionModal} 
+      <PermissionModal
+        isOpen={showPermissionModal}
         onClose={() => {
           setShowPermissionModal(false);
           onClose();
-        }} 
-        permissionName="Cámara" 
-      />
-    </>
-  );
+        }}
+        permissionName="Cámara" />
+      
+    </>);
+
 };
 
 export default BarcodeScanner;

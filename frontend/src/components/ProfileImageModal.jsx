@@ -1,19 +1,25 @@
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/ProfileImageModal.jsx */
 import React from 'react';
 import { X } from 'lucide-react';
+import useModalLock from '../hooks/useModalLock';
 
 const ProfileImageModal = ({ imageUrl, username, onClose }) => {
+
+  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  useModalLock();
+
   if (!imageUrl) return null;
 
-  return (
+  return <ModalPortal>
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md animate-[fade-in_0.3s_ease-out]"
       onClick={onClose} // Cerrar al hacer clic fuera de la imagen
       style={{
         // Aseguramos que todo el modal respete el área segura de navegación inferior (gestos/botones)
-        paddingBottom: 'var(--safe-bottom)',
-      }}
-    >
+        paddingBottom: 'var(--safe-bottom)'
+      }}>
+      
       {/* Botón de cerrar respetando el notch y cámara */}
       <button
         onClick={onClose}
@@ -23,8 +29,8 @@ const ProfileImageModal = ({ imageUrl, username, onClose }) => {
           top: 'max(1rem, var(--safe-top))',
           right: 'max(1rem, env(safe-area-inset-right))'
         }}
-        aria-label="Cerrar"
-      >
+        aria-label="Cerrar">
+        
         <X size={32} />
       </button>
 
@@ -41,8 +47,8 @@ const ProfileImageModal = ({ imageUrl, username, onClose }) => {
         />
       </div>
       {/* --- FIN DE LA MODIFICACIÓN --- */}
-    </div>
-  );
+    </div></ModalPortal>;
+
 };
 
 export default ProfileImageModal;

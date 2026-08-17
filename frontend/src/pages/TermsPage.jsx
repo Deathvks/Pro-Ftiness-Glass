@@ -12,7 +12,7 @@ const TermsPage = () => {
     <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto custom-scrollbar">
       <SEOHead title="Términos del Servicio" description="Condiciones de uso de Pro Fitness Glass" route="terms" />
       
-      <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-4 sm:mt-0">
+      <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] sm:mt-0" style={{ paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)' }}>
         
         {/* Botón de regreso adaptativo */}
         <button 
@@ -51,7 +51,14 @@ const TermsPage = () => {
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">3. Modificaciones</h2>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">3. Relación con tu Entrenador</h2>
+              <p className="text-sm sm:text-base font-medium text-text-secondary leading-relaxed">
+                Si decides vincular tu cuenta con un entrenador personal dentro de la plataforma, aceptas compartir con él o ella tu información de progreso (rutinas, pesos, nutrición y fotos de evolución). Pro Fitness Glass garantiza que estos datos son estrictamente confidenciales y no se compartirán fuera de esta relación ni con terceros.
+              </p>
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">4. Modificaciones</h2>
               <p className="text-sm sm:text-base font-medium text-text-secondary leading-relaxed">
                 Podemos actualizar estos términos en cualquier momento. El uso continuado de la aplicación
                 constituye la aceptación de dichos cambios.

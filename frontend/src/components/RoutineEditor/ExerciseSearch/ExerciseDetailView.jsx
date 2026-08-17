@@ -4,6 +4,7 @@ import { ChevronLeft, Plus, Check, Repeat, Dumbbell, Sparkles, Loader2, AlertCir
 import { useAppTheme } from '../../../hooks/useAppTheme';
 import { normalizeText } from '../../../utils/helpers';
 import { askTrainerAI } from '../../../services/aiService';
+import ExerciseMedia from '../../ExerciseMedia';
 
 // Base URL para construir las rutas de imágenes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -22,38 +23,7 @@ const ExerciseDetailView = ({
   const [rest, setRest] = useState(60);
   const { theme } = useAppTheme();
 
-  // --- LÓGICA INTELIGENTE DE IMÁGENES (Cero 404s) ---
-  const [startImageError, setStartImageError] = useState(false);
-  const [endImageError, setEndImageError] = useState(false);
 
-  useEffect(() => {
-    setStartImageError(false);
-    setEndImageError(false);
-  }, [exercise]);
-
-  const rawStartUrl = exercise.image_url_start || exercise.image_url || exercise.image;
-  const rawEndUrl = exercise.image_url_end || rawStartUrl; 
-
-  const getBestImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    
-    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
-    const filename = cleanUrl.split('/').pop();
-    
-    // Expresión regular relajada: Busca el patrón UUID en CUALQUIER parte del nombre del archivo
-    const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
-    
-    if (isWgerUuid || cleanUrl.includes('exercise-images')) {
-      return `https://wger.de/media/exercise-images/${filename}`;
-    }
-
-    return `${BACKEND_BASE_URL}/${cleanUrl}`;
-  };
-
-  const finalStartUrl = getBestImageUrl(rawStartUrl);
-  const finalEndUrl = getBestImageUrl(rawEndUrl);
-  // ----------------------------------------
 
   // --- LOG PARA CAPTURAR LA CLAVE EXACTA DE CUALQUIER EJERCICIO ---
   useEffect(() => {
@@ -142,10 +112,6 @@ const ExerciseDetailView = ({
     keySeparator: false,
   });
 
-  const isOled = theme === 'oled';
-  const hasVideo = !!exercise.video_url;
-  const mediaBgClass = (!hasVideo && !finalStartUrl && isOled) ? 'bg-black/10 dark:bg-white/5' : 'bg-black/5 dark:bg-white/5';
-
   const isLimitReached = remainingUses === 0 || (aiError && aiError.toLowerCase().includes('agotado'));
 
   const handleAskAI = async () => {
@@ -207,53 +173,24 @@ const ExerciseDetailView = ({
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 sm:p-8 pb-[calc(1.5rem+var(--safe-bottom))] custom-scrollbar">
-        <div className={`mb-8 aspect-video ${mediaBgClass} rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex items-center justify-center shadow-inner`}>
-          {hasVideo ? (
-            <video
-              src={exercise.video_url}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-contain p-2"
-            />
-          ) : finalStartUrl ? (
-            <div className="flex gap-4 w-full h-full p-4">
-              {!startImageError && (
-                <img
-                  key={`start-${finalStartUrl}`}
-                  src={finalStartUrl}
-                  alt={`Inicio de ${translatedName}`}
-                  className={`${finalEndUrl && !endImageError ? 'w-1/2' : 'w-full'} h-full object-contain drop-shadow-md`}
-                  loading="lazy"
-                  onError={() => setStartImageError(true)}
-                />
-              )}
-              {finalEndUrl && !endImageError && (
-                <img
-                  key={`end-${finalEndUrl}`}
-                  src={finalEndUrl}
-                  alt={`Fin de ${translatedName}`}
-                  className={`${!startImageError ? 'w-1/2' : 'w-full'} h-full object-contain drop-shadow-md`}
-                  loading="lazy"
-                  onError={() => setEndImageError(true)}
-                />
-              )}
-              {startImageError && (!finalEndUrl || endImageError) && (
-                 <div className="flex w-full items-center justify-center text-text-muted">
-                    <Dumbbell size={48} className="opacity-50" />
-                 </div>
-              )}
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 pb-[calc(1.5rem+var(--safe-bottom))] no-scrollbar">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          
+          {/* Left Column: Media (Sticky on Desktop) */}
+          <div className="w-full lg:w-5/12 xl:w-1/2 flex-shrink-0 lg:sticky lg:top-0">
+            <div className="w-full relative">
+              <ExerciseMedia 
+                details={exercise}
+                fitMode="cover"
+                className="w-full"
+                playYouTube={true}
+              />
             </div>
-          ) : (
-            <div className="flex items-center justify-center text-text-muted">
-              <Dumbbell size={48} className="opacity-50" />
-            </div>
-          )}
-        </div>
+          </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-8">
+          {/* Right Column: Details */}
+          <div className="w-full lg:w-7/12 xl:w-1/2 flex flex-col min-h-0">
+            <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-black/5 dark:bg-white/5 p-5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10">
             <p className="text-[10px] sm:text-xs text-text-secondary uppercase tracking-wider font-bold mb-1">{t('exercise_ui:muscle_group', 'Grupo Muscular')}</p>
             <p className="font-extrabold text-text-primary capitalize text-sm sm:text-base">
@@ -334,6 +271,8 @@ const ExerciseDetailView = ({
             </div>
           )}
         </div>
+          </div>
+        </div>
       </div>
 
       {/* FOOTER */}
@@ -395,7 +334,7 @@ const ExerciseDetailView = ({
             ) : (
               <>
                 <Plus size={24} />
-                {t('exercise_ui:add_to_cart', 'Añadir al carrito')}
+                {t('exercise_ui:add_to_cart', 'Seleccionar')}
               </>
             )}
           </button>

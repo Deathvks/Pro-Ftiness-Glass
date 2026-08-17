@@ -1,6 +1,6 @@
 /* frontend/src/pages/RegisterScreen.jsx */
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ArrowRight, Info, X, CheckCircle2, Dumbbell, Flame, TrendingUp, Target } from 'lucide-react';
+import { Sparkles, ArrowRight, Info, X, CheckCircle2, Dumbbell, Flame, TrendingUp, Target, Eye, EyeOff } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaDiscord, FaFacebook, FaGithub, FaSpotify } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
@@ -123,6 +123,9 @@ const RegisterScreen = ({ showLogin }) => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
     const [showVerification, setShowVerification] = useState(false);
@@ -489,6 +492,15 @@ const RegisterScreen = ({ showLogin }) => {
         }
     };
 
+    const reqs = [
+        { id: 'length', label: 'Al menos 12 caracteres', valid: password.length >= 12 },
+        { id: 'upper', label: 'Una mayúscula', valid: /[A-Z]/.test(password) },
+        { id: 'lower', label: 'Una minúscula', valid: /[a-z]/.test(password) },
+        { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/'`]/.test(password) },
+        { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(password) && password.length > 0 }
+    ];
+    const isValidPassword = reqs.every(r => r.valid);
+
     const validateForm = () => {
         const newErrors = {};
         if (!username.trim()) {
@@ -504,10 +516,15 @@ const RegisterScreen = ({ showLogin }) => {
         } else if (!/\S+@\S+\.\S+/.test(email)) {
             newErrors.email = 'Email inválido.';
         }
+        
         if (!password) {
             newErrors.password = 'Requerida.';
-        } else if (password.length < 6) {
-            newErrors.password = 'Al menos 6 chars.';
+        } else if (!isValidPassword) {
+            newErrors.password = 'La contraseña no cumple los requisitos.';
+        }
+        
+        if (password !== confirmPassword) {
+            newErrors.confirmPassword = 'Las contraseñas no coinciden.';
         }
         return newErrors;
     };
@@ -652,20 +669,79 @@ const RegisterScreen = ({ showLogin }) => {
                         </div>
 
                         <div>
-                            <input
-                                type="password"
-                                placeholder="Contraseña"
-                                className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Contraseña"
+                                    className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 pr-10 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
                             {errors.password && <p className="form-error-text text-left text-[10px] sm:text-xs mt-1 font-medium px-2">{errors.password}</p>}
+                            
+                            {password.length > 0 && (
+                                <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-2 px-1">
+                                    {reqs.map(r => (
+                                        <div key={r.id} className="flex items-center gap-1.5">
+                                            {r.valid ? (
+                                                <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+                                            ) : (
+                                                <div className="w-3 h-3 rounded-full border border-glass-border shrink-0" />
+                                            )}
+                                            <span className={`text-[10px] sm:text-[11px] transition-colors ${r.valid ? 'text-text-primary' : 'text-text-secondary'}`}>
+                                                {r.label}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div>
+                            <div className="relative">
+                                <input
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    placeholder="Confirmar contraseña"
+                                    className="w-full bg-black/5 dark:bg-white/5 border border-glass-border rounded-[16px] lg:rounded-[20px] px-4 py-3 pr-10 sm:py-4 lg:py-3 text-text-primary focus:border-accent focus:outline-none focus:ring-0 transition-all text-xs sm:text-sm font-medium placeholder:text-text-muted"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                                >
+                                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                            {errors.confirmPassword && <p className="form-error-text text-left text-[10px] sm:text-xs mt-1 font-medium px-2">{errors.confirmPassword}</p>}
+                            
+                            {confirmPassword.length > 0 && (
+                                <div className="mt-2 flex items-center gap-1.5 px-1">
+                                    {password === confirmPassword ? (
+                                        <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+                                    ) : (
+                                        <div className="w-3 h-3 rounded-full border border-glass-border shrink-0" />
+                                    )}
+                                    <span className={`text-[10px] sm:text-[11px] transition-colors ${password === confirmPassword ? 'text-text-primary' : 'text-text-secondary'}`}>
+                                        Las contraseñas coinciden
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <button
                             type="submit"
-                            disabled={isLoading}
-                            className="flex items-center justify-center w-full rounded-[16px] lg:rounded-[20px] bg-accent text-bg-primary font-bold py-3 sm:py-4 lg:py-3.5 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-accent/30 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-xs sm:text-sm mt-1 sm:mt-2 lg:mt-1"
+                            disabled={isLoading || !isValidPassword || !confirmPassword || password !== confirmPassword}
+                            className="flex items-center justify-center w-full rounded-[16px] lg:rounded-[20px] bg-accent text-bg-primary font-bold py-3 sm:py-4 lg:py-3.5 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-accent/30 active:scale-[0.98] disabled:opacity-70 disabled:grayscale disabled:cursor-not-allowed text-xs sm:text-sm mt-1 sm:mt-2 lg:mt-1"
                         >
                             {isLoading ? <Spinner /> : 'Registrarse'}
                         </button>

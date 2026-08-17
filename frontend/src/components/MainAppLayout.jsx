@@ -134,6 +134,9 @@ export default function MainAppLayout({
     const node = mainContentRef?.current;
     if (!node) return;
 
+    // Cuando cambiamos de vista, asegúrate de scrollear arriba del todo de forma instantánea
+    node.scrollTo({ top: 0, behavior: 'auto' });
+
     const handleScroll = () => {
       const currentScrollTop = node.scrollTop;
       setIsScrolled(currentScrollTop > 4);
@@ -689,35 +692,17 @@ export default function MainAppLayout({
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-              {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges', 'nutrition', 'routines'].includes(view) ? (
-                <button
-                  onClick={() => navigate('hub')}
-                  className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  <ChevronLeftIcon className="w-6 h-6" />
-                </button>
-              ) : ['profile', 'notifications', 'twoFactorSetup', 'privacyPolicy', 'terms'].includes(view) ? (
-                <button
-                  onClick={() => navigate('dashboard')}
-                  className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  <ChevronLeftIcon className="w-6 h-6" />
-                </button>
-              ) : (
-                <button 
-                  onClick={() => navigate('profile')}
-                  className="w-8 h-8 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary active:scale-95 transition-transform"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  {profileImgSrc ? (
-                    <img src={profileImgSrc} alt="Perfil" className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon className="w-5 h-5 text-text-secondary" />
-                  )}
-                </button>
-              )}
+              <button 
+                onClick={() => navigate('profile')}
+                className="w-8 h-8 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary active:scale-95 transition-transform"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                {profileImgSrc ? (
+                  <img src={profileImgSrc} alt="Perfil" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-5 h-5 text-text-secondary" />
+                )}
+              </button>
               <span
                 key={currentTitle}
                 className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1"
@@ -773,7 +758,7 @@ export default function MainAppLayout({
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
-          {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges', 'emotional-onboarding'].includes(view) && (
+          {['appearance', 'support', 'socialLinks', 'emotional-onboarding'].includes(view) && (
             <div className="hidden md:flex items-center px-4 sm:px-6 pt-2 pb-4 w-full max-w-4xl mx-auto">
               <button
                 onClick={() => navigate('hub')}
@@ -926,14 +911,15 @@ export default function MainAppLayout({
 
       {/* Botón "Volver al Entreno" — bottom usa --safe-bottom en lugar de env() directo */}
       {activeWorkout && workoutStartTime && view !== 'workout' && (
-        <button
-          onClick={() => handleNavClick('workout')}
-          className="fixed right-4 md:bottom-10 md:right-10 z-[60] flex items-center gap-3 px-4 py-3 rounded-full bg-accent text-bg-secondary font-semibold shadow-lg animate-[fade-in-up_0.5s_ease-out] transition-transform hover:scale-105"
-          style={{ bottom: 'calc(6rem + var(--safe-bottom))' }}
-        >
-          <Zap size={20} />
-          <span>Volver al Entreno</span>
-        </button>
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(5.5rem+var(--safe-bottom))] md:left-auto md:transform-none md:bottom-10 md:right-10 z-[60]">
+          <button
+            onClick={() => handleNavClick('workout')}
+            className="animate-[fade-in-up_0.5s_ease-out] flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent text-bg-secondary font-bold text-base shadow-[0_8px_30px_rgba(0,0,0,0.2)] whitespace-nowrap transition-transform hover:scale-105"
+          >
+            <Zap size={20} className="animate-pulse" />
+            <span>Volver al Entreno</span>
+          </button>
+        </div>
       )}
 
       <div className="hidden md:block absolute bottom-4 right-4 z-[60] bg-bg-secondary/50 text-text-muted text-xs px-2.5 py-1 rounded-full backdrop-blur-sm select-none">

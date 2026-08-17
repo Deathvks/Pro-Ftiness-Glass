@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import GlassCard from '../components/GlassCard';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X, UserCog } from 'lucide-react';
 import Spinner from '../components/Spinner';
 import CustomSelect from '../components/CustomSelect';
 
@@ -11,20 +11,6 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
     role: user.role || 'user',
     level: user.level || 1,
   });
-
-  // --- INICIO DE LA CORRECCIÓN ---
-  const [isDarkTheme, setIsDarkTheme] = useState(() =>
-    typeof document !== 'undefined' && !document.body.classList.contains('light-theme')
-  );
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDarkTheme(!document.body.classList.contains('light-theme'));
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-  // --- FIN DE LA CORRECCIÓN ---
 
   const handleChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -37,63 +23,75 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
     onSave(user.id, dataToSave);
   };
   
-  const baseInputClasses = "w-full bg-bg-secondary border border-glass-border rounded-md px-4 py-3 text-text-primary focus:border-accent focus:ring-accent/50 focus:ring-2 outline-none transition";
+  const baseInputClasses = "w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3.5 text-text-primary focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all placeholder:text-text-muted";
   
   const roleOptions = [
     { value: 'user', label: 'Usuario' },
+    { value: 'trainer', label: 'Entrenador' },
     { value: 'admin', label: 'Admin' },
   ];
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] p-4 sm:p-6"
       onClick={onCancel}
     >
-      <GlassCard
-        // --- INICIO DE LA CORRECCIÓN ---
-        className={`relative w-full max-w-md p-8 m-4 ${!isDarkTheme ? '!bg-white/95 !border-black/10' : ''}`}
-        // --- FIN DE LA CORRECCIÓN ---
+      <div
+        className="w-full max-w-md bg-bg-primary rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-[scale-in_0.3s_ease-out] max-h-full border border-black/5 dark:border-white/5"
         onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={onCancel} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition">
-          <X size={20} />
-        </button>
+        <div className="flex items-center justify-between p-6 pb-2 border-b border-black/5 dark:border-white/5">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-accent/20 flex items-center justify-center">
+                    <UserCog className="text-accent" size={20} strokeWidth={2.5} />
+                </div>
+                <h3 className="text-xl font-black text-text-primary">Editar Usuario</h3>
+            </div>
+            <button onClick={onCancel} className="p-2 bg-black/5 dark:bg-white/5 rounded-full text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+                <X size={20} strokeWidth={2.5} />
+            </button>
+        </div>
 
-        <h3 className="text-xl font-bold text-center mb-6">Editar Usuario</h3>
-
-        <form onSubmit={handleSaveClick} className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-text-secondary mb-2">Nombre</label>
-            <input id="name" name="name" type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} className={baseInputClasses} />
-          </div>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-2">Email</label>
-            <input id="email" name="email" type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} className={baseInputClasses} />
-          </div>
-          <div>
-            <label htmlFor="level" className="block text-sm font-medium text-text-secondary mb-2">Nivel</label>
-            <input id="level" name="level" type="number" min="1" value={formData.level} onChange={(e) => handleChange('level', e.target.value)} className={baseInputClasses} />
-            <p className="text-xs text-text-muted mt-1">Si cambias el nivel, la XP se ajustará automáticamente.</p>
-          </div>
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-text-secondary mb-2">Rol</label>
-            <CustomSelect
-              value={formData.role}
-              onChange={(value) => handleChange('role', value)}
-              options={roleOptions}
-              placeholder="Seleccionar rol"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex items-center justify-center gap-2 w-full mt-4 py-3 rounded-md bg-accent text-bg-secondary font-semibold transition hover:scale-105 disabled:opacity-70"
-          >
-            {isLoading ? <Spinner /> : 'Guardar Cambios'}
-          </button>
-        </form>
-      </GlassCard>
-    </div>
+        <div className="p-6 overflow-y-auto custom-scrollbar">
+            <form id="editUserForm" onSubmit={handleSaveClick} className="flex flex-col gap-5">
+                <div>
+                    <label htmlFor="name" className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 ml-1">Nombre Completo</label>
+                    <input id="name" name="name" type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} className={baseInputClasses} />
+                </div>
+                <div>
+                    <label htmlFor="email" className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 ml-1">Correo Electrónico</label>
+                    <input id="email" name="email" type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} className={baseInputClasses} />
+                </div>
+                <div>
+                    <label htmlFor="level" className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 ml-1">Nivel</label>
+                    <input id="level" name="level" type="number" min="1" value={formData.level} onChange={(e) => handleChange('level', e.target.value)} className={baseInputClasses} />
+                    <p className="text-[10px] text-text-muted mt-2 ml-1 font-medium">Si cambias el nivel, la experiencia se ajustará automáticamente.</p>
+                </div>
+                <div>
+                    <label htmlFor="role" className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 ml-1">Rol en el Sistema</label>
+                    <CustomSelect
+                        value={formData.role}
+                        onChange={(value) => handleChange('role', value)}
+                        options={roleOptions}
+                        placeholder="Seleccionar rol"
+                    />
+                </div>
+            </form>
+        </div>
+        
+        <div className="p-6 pt-2 bg-bg-primary border-t border-black/5 dark:border-white/5">
+            <button
+                type="submit"
+                form="editUserForm"
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-[20px] bg-accent text-white font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-70 disabled:hover:scale-100"
+            >
+                {isLoading ? <Spinner className="w-6 h-6" /> : 'Guardar Cambios'}
+            </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 };
 

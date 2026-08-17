@@ -4,8 +4,9 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-reac
 import GlassCard from '../GlassCard';
 import useAppStore from '../../store/useAppStore';
 
-const CalendarView = ({ setDetailedLog }) => {
-    const { workoutLog } = useAppStore(state => ({ workoutLog: state.workoutLog }));
+const CalendarView = ({ setDetailedLog, workouts }) => {
+    const { workoutLog: storeWorkoutLog } = useAppStore(state => ({ workoutLog: state.workoutLog }));
+    const workoutLog = workouts || storeWorkoutLog;
     const [calendarDate, setCalendarDate] = useState(new Date());
 
     const workoutsByDate = useMemo(() => {

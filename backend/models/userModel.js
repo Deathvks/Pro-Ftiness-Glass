@@ -229,6 +229,23 @@ User.init({
     allowNull: true
   },
 
+  // --- SISTEMA DE ENTRENADOR Y ANAMNESIS ---
+  force_password_reset: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  trainer_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'ID del entrenador que gestiona a este usuario (si aplica)'
+  },
+  anamnesis_data: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Datos del cuestionario inicial del cliente'
+  },
+
   // --- SISTEMA DE REFERIDOS ---
   referred_by: {
     type: DataTypes.INTEGER,

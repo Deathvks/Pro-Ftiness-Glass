@@ -105,15 +105,17 @@ const PhysicalProfileEditor = ({ onDone }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
-      <button 
-        onClick={onDone} 
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 sm:mb-8 w-fit"
-      >
-        <ChevronLeft size={18} strokeWidth={2.5} />
-        Volver a Ajustes
-      </button>
+      <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 mb-6 sm:mb-8">
+        <button 
+          onClick={onDone} 
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
+        >
+          <ChevronLeft size={18} strokeWidth={2.5} />
+          Volver a Ajustes
+        </button>
 
-      <h1 className="text-3xl sm:text-4xl font-extrabold mb-8 tracking-tight text-text-primary">Editar Perfil Físico</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">Editar Perfil Físico</h1>
+      </div>
 
       <GlassCard className="glass p-6 sm:p-10 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-xl">
         <form onSubmit={handleComplete} className="flex flex-col gap-8 sm:gap-10">

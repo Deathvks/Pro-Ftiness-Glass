@@ -11,9 +11,10 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
  * Componente para mostrar la imagen o vídeo del ejercicio.
  * Acepta 'details' (el objeto del ejercicio), 'src' directo, y 'className'.
  */
-const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
+const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'auto' }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const { theme } = useAppTheme();
 
   // --- LÓGICA INTELIGENTE DE EXTRACCIÓN ---
@@ -31,12 +32,25 @@ const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
     details?.exercise?.video_url ||
     details?.exercise_details?.video_url;
 
+  let rawImages = details?.images || details?.exercise?.images || details?.exercise_details?.images;
+  // Si no hay un array válido, construimos uno temporal a partir de las imágenes inicio/fin si existen
+  if (!Array.isArray(rawImages) || rawImages.length === 0) {
+    rawImages = [];
+    if (details?.image_url_start || details?.exercise?.image_url_start || details?.exercise_details?.image_url_start) {
+      rawImages.push(details.image_url_start || details?.exercise?.image_url_start || details?.exercise_details?.image_url_start);
+    }
+    if (details?.image_url_end || details?.exercise?.image_url_end || details?.exercise_details?.image_url_end) {
+      rawImages.push(details.image_url_end || details?.exercise?.image_url_end || details?.exercise_details?.image_url_end);
+    }
+  }
+
   // SOLUCIÓN: Reseteamos el estado SOLO si cambia de verdad la URL de la imagen o el vídeo.
   // Evita el parpadeo constante al actualizar series o repeticiones en el objeto details.
   useEffect(() => {
     setImageError(false);
     setVideoError(false);
-  }, [rawImageUrl, rawVideoUrl]);
+    setCurrentIndex(0);
+  }, [rawImageUrl, rawVideoUrl, rawImages?.length]);
 
   // Construcción segura de la URL final
   const getBestImageUrl = (url) => {
@@ -58,6 +72,20 @@ const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
   };
 
   const finalImageUrl = getBestImageUrl(rawImageUrl);
+  const allImagesUrls = Array.isArray(rawImages) ? rawImages.map(getBestImageUrl).filter(Boolean) : [];
+  const finalImagesUrls = [...new Set(allImagesUrls)];
+
+  // Ajustar la velocidad en base a la cantidad de imágenes
+  const delayMs = Math.max(1500, 3000 - (finalImagesUrls.length * 200));
+
+  useEffect(() => {
+    if (finalImagesUrls.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentIndex(prev => (prev + 1) % finalImagesUrls.length);
+      }, delayMs);
+      return () => clearInterval(interval);
+    }
+  }, [finalImagesUrls.length, delayMs]);
 
   const getVideoUrl = (url) => {
     if (!url || url.trim() === '') return null;
@@ -65,8 +93,19 @@ const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
     const safeUrl = url.startsWith('/') ? url : `/${url}`;
     return `${BACKEND_BASE_URL}${safeUrl}`;
   };
-  
+
+  // Extraer ID de YouTube
+  const getYouTubeId = (url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
   const videoUrl = getVideoUrl(rawVideoUrl);
+  const youtubeId = getYouTubeId(rawVideoUrl);
+  // Use mqdefault.jpg for a native 16:9 aspect ratio without black bars
+  const youtubeThumbnail = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 
   // Lógica de contraste para Oscuro, OLED y Galaxia:
   const isDarkTheme = theme === 'oled' || theme === 'dark' || theme === 'galaxy';
@@ -76,7 +115,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
   const placeholderBgClass = 'bg-accent/10 text-accent';
 
   // Fallback directo si no hay ningún recurso asignado (evita renderizar etiquetas vacías)
-  if (!finalImageUrl && !videoUrl) {
+  if (!finalImageUrl && !videoUrl && !youtubeThumbnail) {
     return (
       <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
         <ImageIcon size={48} className="opacity-60" />
@@ -84,12 +123,27 @@ const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
     );
   }
 
-  // Renderizado de vídeo
-  if (videoUrl && !videoError) {
+  // Reproductor interactivo de YouTube
+  if (youtubeId && playYouTube) {
+    return (
+      <div className={`aspect-video w-full h-full rounded-xl overflow-hidden bg-black ${className}`}>
+        <iframe
+          key={youtubeId}
+          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0`}
+          className="w-full h-full border-none pointer-events-none"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  // Renderizado de vídeo (no YouTube directo a <video>)
+  if (videoUrl && !videoError && !youtubeId) {
     return (
       <video
         key={videoUrl}
-        className={`aspect-video object-contain rounded-xl overflow-hidden bg-bg-secondary ${className}`}
+        className={`w-full h-auto max-h-[70vh] rounded-[24px] overflow-hidden bg-transparent ${className}`}
         src={videoUrl}
         autoPlay
         loop
@@ -102,19 +156,70 @@ const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
     );
   }
 
-  // Renderizado de imagen
-  if (finalImageUrl && !imageError) {
-    const imageClasses = `aspect-video object-contain rounded-xl overflow-hidden ${imageBgClass} ${className}`;
+  // Renderizado de imagen (o miniatura de YouTube si no hay imagen propia)
+  const imageToRender = finalImageUrl || youtubeThumbnail;
+  if ((imageToRender || finalImagesUrls.length > 0) && !imageError) {
+    // Si es imagen de youtube, forzamos aspect-video para que encaje bien. 
+    // Si son imágenes normales, usamos aspect-auto para que adopte la forma real de la foto y el border-radius se aplique a los bordes de la foto.
+    const isAuto = fitMode === 'auto';
+    const aspectRatioClass = (imageToRender === youtubeThumbnail) 
+      ? 'aspect-video' 
+      : (isAuto ? 'w-full h-auto max-h-[70vh]' : 'w-full h-full');
+    
+    // El contenedor no necesita fondo si vamos a hacer que la imagen se fusione
+    const finalBgClass = imageToRender === youtubeThumbnail ? 'bg-black' : 'bg-transparent';
+    const containerClasses = `${aspectRatioClass} relative rounded-[24px] overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
 
+    // Lógica mágica para eliminar el fondo blanco de los dibujos de Wger
+    const getImageBlendClass = (url) => {
+      if (!url) return '';
+      if (url === youtubeThumbnail) return 'object-cover';
+      
+      let blendClass = isAuto ? 'object-contain' : `object-${fitMode}`;
+      if (url.includes('wger.de')) {
+        blendClass = 'object-contain'; // Los dibujos de WGER siempre deben hacer 'contain' para no cortarse
+        if (isDarkTheme) {
+          blendClass += ' filter invert hue-rotate-180 mix-blend-screen';
+        } else {
+          blendClass += ' mix-blend-multiply';
+        }
+      }
+      return blendClass;
+    };
+
+    const imgBaseClass = isAuto ? 'w-full h-auto' : 'absolute inset-0 w-full h-full';
+
+    if (finalImagesUrls.length > 0) {
+      return (
+        <div className={containerClasses}>
+          {finalImagesUrls.map((url, idx) => (
+            <img
+              key={idx}
+              src={url}
+              alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
+              className={`rounded-[24px] ${isAuto && idx === 0 ? 'relative' : 'absolute inset-0'} ${isAuto ? 'w-full h-auto' : 'w-full h-full'} transition-all duration-1000 ease-in-out ${getImageBlendClass(url)} ${
+                idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+              onError={() => setImageError(true)}
+              loading="lazy"
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // Fallback a una sola imagen
     return (
-      <img
-        key={finalImageUrl}
-        src={finalImageUrl}
-        alt={`Demostración de ${details?.name || 'ejercicio'}`}
-        className={imageClasses}
-        onError={() => setImageError(true)}
-        loading="lazy"
-      />
+      <div className={containerClasses}>
+        <img
+          key={imageToRender}
+          src={imageToRender}
+          alt={`Demostración de ${details?.name || 'ejercicio'}`}
+          className={`rounded-[24px] ${imgBaseClass} transition-opacity duration-500 ${getImageBlendClass(imageToRender)}`}
+          onError={() => setImageError(true)}
+          loading="lazy"
+        />
+      </div>
     );
   }
 
@@ -129,7 +234,9 @@ const ExerciseMedia = memo(({ details, src, videoSrc, className = '' }) => {
   // Congela el componente si cambian las reps/series pero NO cambia el archivo de imagen.
   const extractMedia = (d) => {
     if (!d) return '';
-    return `${d.image_url_start || ''}|${d.image_url || ''}|${d.video_url || ''}|${d.exercise?.image_url_start || ''}`;
+    let imgs = d.images || d.exercise?.images || [];
+    let imgsStr = Array.isArray(imgs) ? imgs.join('|') : '';
+    return `${d.image_url_start || ''}|${d.image_url_end || ''}|${d.image_url || ''}|${d.video_url || ''}|${d.exercise?.image_url_start || ''}|${imgsStr}`;
   };
 
   return prevProps.src === nextProps.src &&

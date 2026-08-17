@@ -82,6 +82,14 @@ const Workout = ({ timer, setView }) => {
     const [showQuickCardio, setShowQuickCardio] = useState(false);
 
     useEffect(() => {
+        // Al entrar a la pantalla de Workout, asegurar que empezamos desde arriba
+        const mainEl = document.querySelector('main.flex-1.overflow-y-auto');
+        if (mainEl) {
+            mainEl.scrollTo(0, 0);
+        }
+    }, []);
+
+    useEffect(() => {
         const mountTime = Date.now();
         return () => {
             const timeAlive = Date.now() - mountTime;

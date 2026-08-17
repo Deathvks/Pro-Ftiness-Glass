@@ -1,11 +1,17 @@
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/AIInfoModal.jsx */
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Clock, Zap, Info, ShieldCheck } from 'lucide-react';
 import { useAppTheme } from '../hooks/useAppTheme';
+import useModalLock from '../hooks/useModalLock';
 
 const AIInfoModal = ({ onClose }) => {
+
+  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  useModalLock();
+
   const { resolvedTheme } = useAppTheme();
-  
+
   const [remainingUses, setRemainingUses] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');
   const [dailyLimit, setDailyLimit] = useState(() => localStorage.getItem('ai_daily_limit') || '5');
   const [timeLeft, setTimeLeft] = useState('');
@@ -16,14 +22,14 @@ const AIInfoModal = ({ onClose }) => {
       const now = new Date();
       // Obtenemos la hora actual en Madrid
       const madridTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
-      
+
       // Calculamos la próxima medianoche en Madrid
       const nextMidnight = new Date(madridTime);
       nextMidnight.setHours(24, 0, 0, 0);
 
       const diffMs = nextMidnight - madridTime;
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const minutes = Math.floor(diffMs % (1000 * 60 * 60) / (1000 * 60));
 
       setTimeLeft(`${hours}h ${minutes}m`);
     };
@@ -50,11 +56,11 @@ const AIInfoModal = ({ onClose }) => {
 
   // Clases exactas de Rutinas: border-transparent dark:border dark:border-white/10
   const containerClass = `w-full max-w-sm rounded-3xl shadow-2xl flex flex-col transition-colors duration-300 overflow-hidden relative border border-transparent dark:border dark:border-white/10 ${
-    isOled ? 'bg-black' : 'bg-bg-secondary'
-  }`;
+  isOled ? 'bg-black' : 'bg-bg-secondary'}`;
 
-  return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+
+  return <ModalPortal>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
       <div className={containerClass}>
         
         {/* Fondo decorativo */}
@@ -75,10 +81,10 @@ const AIInfoModal = ({ onClose }) => {
               </span>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            className={`p-2 rounded-full transition-colors ${isOled || isDark ? 'hover:bg-white/10 text-gray-400 hover:text-white' : 'hover:bg-bg-tertiary text-text-secondary hover:text-text-primary'}`}
-          >
+          <button
+            onClick={onClose}
+            className={`p-2 rounded-full transition-colors ${isOled || isDark ? 'hover:bg-white/10 text-gray-400 hover:text-white' : 'hover:bg-bg-tertiary text-text-secondary hover:text-text-primary'}`}>
+            
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -89,10 +95,10 @@ const AIInfoModal = ({ onClose }) => {
           {/* Tarjetas de Estadísticas */}
           <div className="grid grid-cols-2 gap-3">
             <div className={`p-4 rounded-2xl border border-transparent dark:border dark:border-white/10 flex flex-col gap-1 items-center text-center transition-colors ${
-              isAILimitReached 
-                ? 'bg-red-500/10' 
-                : 'bg-accent/5' 
-            }`}>
+            isAILimitReached ?
+            'bg-red-500/10' :
+            'bg-accent/5'}`
+            }>
               <Zap className={`w-5 h-5 mb-1 ${isAILimitReached ? 'text-red-500' : 'text-accent'}`} />
               <span className={`text-[10px] uppercase tracking-wider font-bold ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>
                 Usos Restantes
@@ -141,17 +147,17 @@ const AIInfoModal = ({ onClose }) => {
           </div>
 
           {/* Botón Cerrar */}
-          <button 
+          <button
             onClick={onClose}
-            className="w-full py-3.5 rounded-xl font-bold bg-accent text-white hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
-          >
+            className="w-full py-3.5 rounded-xl font-bold bg-accent text-white hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20">
+            
             Entendido
           </button>
         </div>
 
       </div>
-    </div>
-  );
+    </div></ModalPortal>;
+
 };
 
 export default AIInfoModal;

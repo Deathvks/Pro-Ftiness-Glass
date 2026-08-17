@@ -2,8 +2,9 @@
 import { Op } from 'sequelize';
 import db from '../models/index.js';
 const User = db.User;
+const SystemSettings = db.SystemSettings;
 
-// Obtener todos los usuarios
+// Obtener configuración del sistema
 export const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
@@ -174,8 +175,40 @@ export const deleteUser = async (req, res, next) => {
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
+    // Si el usuario tenía clientes asignados, desvincularlos
+    await User.update({ trainer_id: null }, { where: { trainer_id: userId } });
+
     await user.destroy();
     res.status(200).json({ message: 'Usuario eliminado correctamente' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Obtener un ajuste del sistema por su clave
+export const getSetting = async (req, res, next) => {
+  const { key } = req.params;
+  try {
+    const setting = await SystemSettings.findByPk(key);
+    if (!setting) {
+      return res.status(200).json({ value: null });
+    }
+    res.status(200).json({ value: setting.value });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Actualizar un ajuste del sistema
+export const updateSetting = async (req, res, next) => {
+  const { key } = req.params;
+  const { value } = req.body;
+  try {
+    const [setting, created] = await SystemSettings.upsert({
+      key,
+      value
+    });
+    res.status(200).json({ key, value });
   } catch (error) {
     next(error);
   }

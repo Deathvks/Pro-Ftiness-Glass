@@ -43,7 +43,7 @@ router.put('/update-email-verification', authenticateToken, [
 ], authController.updateEmailForVerification);
 
 router.post('/login', authLimiter, [
-  body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim(),
+  body('email', 'Por favor, ingresa tu email o nombre de usuario').not().isEmpty().toLowerCase().trim(),
   body('password', 'La contraseña es requerida').not().isEmpty()
 ], authController.loginUser);
 
@@ -89,5 +89,7 @@ router.post('/reset-password', authLimiter, [
   body('token', 'El token es requerido').not().isEmpty(),
   body('password', 'La nueva contraseña debe tener 6 o más caracteres').isLength({ min: 6 })
 ], authController.resetPassword);
+
+router.post('/force-reset', authenticateToken, authController.forceResetPassword);
 
 export default router;

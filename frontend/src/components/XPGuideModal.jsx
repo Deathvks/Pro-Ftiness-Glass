@@ -1,68 +1,74 @@
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/XPGuideModal.jsx */
 import React, { useRef, useState, useEffect } from 'react';
 import {
-    X, Trophy, Dumbbell, Calendar, Plus, Activity, Star, Crown,
-    Utensils, Droplets, Zap, Rocket, ChefHat, Info, LogIn, Flame,
-    Footprints, Shield, History, ArrowRight
-} from 'lucide-react';
+  X, Trophy, Dumbbell, Calendar, Plus, Activity, Star, Crown,
+  Utensils, Droplets, Zap, Rocket, ChefHat, Info, LogIn, Flame,
+  Footprints, Shield, History, ArrowRight } from
+'lucide-react';
 import LevelBadge from './LevelBadge';
 import { getXPHistory } from '../services/gamificationService';
+import useModalLock from '../hooks/useModalLock';
 
 const XPGuideModal = ({ onClose }) => {
-    const carouselRef = useRef(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
-    const [scrollLeftPos, setScrollLeftPos] = useState(0);
-    
-    const [activeTab, setActiveTab] = useState('guide'); // 'guide' or 'history'
-    const [xpHistory, setXpHistory] = useState([]);
-    const [loadingHistory, setLoadingHistory] = useState(false);
+  const carouselRef = useRef(null);
 
-    useEffect(() => {
-        if (activeTab === 'history') {
-            fetchHistory();
-        }
-    }, [activeTab]);
+  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  useModalLock();
 
-    const fetchHistory = async () => {
-        try {
-            setLoadingHistory(true);
-            const data = await getXPHistory(50);
-            setXpHistory(data);
-        } catch (error) {
-            console.error('Error fetching XP history', error);
-        } finally {
-            setLoadingHistory(false);
-        }
-    };
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftPos, setScrollLeftPos] = useState(0);
 
-    const handleMouseDown = (e) => {
-        setIsDragging(true);
-        setStartX(e.pageX - carouselRef.current.offsetLeft);
-        setScrollLeftPos(carouselRef.current.scrollLeft);
-    };
+  const [activeTab, setActiveTab] = useState('guide'); // 'guide' or 'history'
+  const [xpHistory, setXpHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
-    const handleMouseLeave = () => setIsDragging(false);
-    const handleMouseUp = () => setIsDragging(false);
+  useEffect(() => {
+    if (activeTab === 'history') {
+      fetchHistory();
+    }
+  }, [activeTab]);
 
-    const handleMouseMove = (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-        const x = e.pageX - carouselRef.current.offsetLeft;
-        const walk = (x - startX) * 2;
-        carouselRef.current.scrollLeft = scrollLeftPos - walk;
-    };
+  const fetchHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const data = await getXPHistory(50);
+      setXpHistory(data);
+    } catch (error) {
+      console.error('Error fetching XP history', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
-    const dailyCardClass = "flex items-center justify-between p-4 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 group shadow-sm gap-3";
-    const dailyXpClass = "font-black text-accent text-[11px] sm:text-xs transition-transform group-hover:scale-105 whitespace-nowrap text-right shrink-0 px-3 py-1.5 bg-accent/10 rounded-lg ring-1 ring-accent/30 tracking-wide";
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - carouselRef.current.offsetLeft);
+    setScrollLeftPos(carouselRef.current.scrollLeft);
+  };
 
-    const goldCardClass = "flex items-center justify-between p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/20 rounded-[24px] ring-1 ring-amber-500/30 hover:ring-amber-500/50 transition-all duration-300 group shadow-sm gap-3";
-    const goldXpClass = "font-black text-amber-500 text-[11px] sm:text-xs transition-transform group-hover:scale-105 whitespace-nowrap text-right shrink-0 px-3 py-1.5 bg-amber-500/20 rounded-lg ring-1 ring-amber-500/40 tracking-wide";
+  const handleMouseLeave = () => setIsDragging(false);
+  const handleMouseUp = () => setIsDragging(false);
 
-    const rankPreviews = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - carouselRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    carouselRef.current.scrollLeft = scrollLeftPos - walk;
+  };
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+  const dailyCardClass = "flex items-center justify-between p-4 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 group shadow-sm gap-3";
+  const dailyXpClass = "font-black text-accent text-[11px] sm:text-xs transition-transform group-hover:scale-105 whitespace-nowrap text-right shrink-0 px-3 py-1.5 bg-accent/10 rounded-lg ring-1 ring-accent/30 tracking-wide";
+
+  const goldCardClass = "flex items-center justify-between p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/20 rounded-[24px] ring-1 ring-amber-500/30 hover:ring-amber-500/50 transition-all duration-300 group shadow-sm gap-3";
+  const goldXpClass = "font-black text-amber-500 text-[11px] sm:text-xs transition-transform group-hover:scale-105 whitespace-nowrap text-right shrink-0 px-3 py-1.5 bg-amber-500/20 rounded-lg ring-1 ring-amber-500/40 tracking-wide";
+
+  const rankPreviews = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+  return <ModalPortal>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
             <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] w-full max-w-md max-h-[85dvh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
 
                 <div className="shrink-0 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 p-6 pb-0 flex flex-col gap-4 rounded-t-[32px] z-10">
@@ -79,25 +85,25 @@ const XPGuideModal = ({ onClose }) => {
                     </div>
 
                     <div className="flex gap-4">
-                        <button 
-                            className={`pb-3 font-bold text-sm tracking-wide transition-colors border-b-2 ${activeTab === 'guide' ? 'border-accent text-accent' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
-                            onClick={() => setActiveTab('guide')}
-                        >
+                        <button
+              className={`pb-3 font-bold text-sm tracking-wide transition-colors border-b-2 ${activeTab === 'guide' ? 'border-accent text-accent' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+              onClick={() => setActiveTab('guide')}>
+              
                             Guía
                         </button>
-                        <button 
-                            className={`pb-3 font-bold text-sm tracking-wide transition-colors border-b-2 flex items-center gap-1.5 ${activeTab === 'history' ? 'border-accent text-accent' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
-                            onClick={() => setActiveTab('history')}
-                        >
+                        <button
+              className={`pb-3 font-bold text-sm tracking-wide transition-colors border-b-2 flex items-center gap-1.5 ${activeTab === 'history' ? 'border-accent text-accent' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+              onClick={() => setActiveTab('history')}>
+              
                             <History size={16} strokeWidth={2.5} /> Historial
                         </button>
                     </div>
                 </div>
 
-                <div className="p-6 overflow-y-auto overflow-x-hidden custom-scrollbar pb-8 w-full flex-1 min-h-0">
+                <div className="p-6 overflow-y-auto overflow-x-hidden no-scrollbar pb-8 w-full flex-1 min-h-0">
                     
-                    {activeTab === 'guide' && (
-                        <div className="animate-[fade-in_0.3s_ease-out]">
+                    {activeTab === 'guide' &&
+          <div className="animate-[fade-in_0.3s_ease-out]">
                             <div className="bg-accent/10 rounded-[24px] p-5 flex items-start gap-4 mb-8 ring-1 ring-accent/30 shadow-sm w-full">
                                 <div className="p-2 bg-accent rounded-[12px] text-white shrink-0 mt-0.5 shadow-md">
                                     <Info size={18} strokeWidth={2.5} />
@@ -114,16 +120,16 @@ const XPGuideModal = ({ onClose }) => {
                                     <Shield size={16} className="text-accent" strokeWidth={2.5} />
                                     Jerarquía de Rangos
                                 </h3>
-                                <div 
-                                    ref={carouselRef}
-                                    onMouseDown={handleMouseDown}
-                                    onMouseLeave={handleMouseLeave}
-                                    onMouseUp={handleMouseUp}
-                                    onMouseMove={handleMouseMove}
-                                    className={`flex gap-3 overflow-x-auto custom-scrollbar pb-4 px-1 items-stretch select-none w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                                >
-                                    {rankPreviews.map(level => (
-                                        <div key={level} className="flex-shrink-0 flex flex-col items-center justify-between gap-3 w-[135px] p-4 bg-bg-primary rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
+                                <div
+                ref={carouselRef}
+                onMouseDown={handleMouseDown}
+                onMouseLeave={handleMouseLeave}
+                onMouseUp={handleMouseUp}
+                onMouseMove={handleMouseMove}
+                className={`flex gap-3 overflow-x-auto no-scrollbar pb-4 px-1 items-stretch select-none w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}>
+                
+                                    {rankPreviews.map((level) =>
+                <div key={level} className="flex-shrink-0 flex flex-col items-center justify-between gap-3 w-[135px] p-4 bg-bg-primary rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                                             <div className="pointer-events-none flex flex-col items-center justify-center flex-1 w-full whitespace-nowrap">
                                                 <LevelBadge level={level} size="md" showName={true} />
                                             </div>
@@ -131,7 +137,7 @@ const XPGuideModal = ({ onClose }) => {
                                                 Nv. {level}
                                             </span>
                                         </div>
-                                    ))}
+                )}
                                 </div>
                             </section>
 
@@ -140,6 +146,19 @@ const XPGuideModal = ({ onClose }) => {
                                     Acciones Diarias
                                 </h3>
                                 <div className="space-y-3 w-full">
+                                    <div className={dailyCardClass}>
+                                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                                            <div className="p-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 text-emerald-500 rounded-[14px] shrink-0 shadow-sm">
+                                                <LogIn size={20} strokeWidth={2} />
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="font-extrabold text-sm text-text-primary tracking-tight">Conexión Diaria</span>
+                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Por entrar a la app hoy</span>
+                                            </div>
+                                        </div>
+                                        <span className={dailyXpClass}>+25 XP</span>
+                                    </div>
+
                                     <div className={dailyCardClass}>
                                         <div className="flex items-center gap-4 min-w-0 flex-1">
                                             <div className="p-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 text-blue-500 rounded-[14px] shrink-0 shadow-sm">
@@ -343,25 +362,25 @@ const XPGuideModal = ({ onClose }) => {
                                 </div>
                             </section>
                         </div>
-                    )}
+          }
 
-                    {activeTab === 'history' && (
-                        <div className="animate-[fade-in_0.3s_ease-out]">
-                            {loadingHistory ? (
-                                <div className="flex flex-col items-center justify-center py-10 opacity-70">
+                    {activeTab === 'history' &&
+          <div className="animate-[fade-in_0.3s_ease-out]">
+                            {loadingHistory ?
+            <div className="flex flex-col items-center justify-center py-10 opacity-70">
                                     <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3"></div>
                                     <span className="text-sm font-medium text-text-secondary">Cargando historial...</span>
-                                </div>
-                            ) : xpHistory.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+                                </div> :
+            xpHistory.length === 0 ?
+            <div className="flex flex-col items-center justify-center py-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
                                     <History size={40} className="text-text-muted mb-3" strokeWidth={1.5} />
                                     <span className="text-sm font-bold text-text-secondary">No hay historial de XP aún</span>
                                     <span className="text-[11px] text-text-muted mt-1 text-center px-4">Completa retos diarios o entrenamientos para ganar XP.</span>
-                                </div>
-                            ) : (
-                                <div className="space-y-3 relative before:absolute before:inset-y-4 before:left-5 before:w-0.5 before:bg-glass-border">
-                                    {xpHistory.map((log) => (
-                                        <div key={log.id} className="relative flex gap-4 items-start group">
+                                </div> :
+
+            <div className="space-y-3 relative before:absolute before:inset-y-4 before:left-5 before:w-0.5 before:bg-glass-border">
+                                    {xpHistory.map((log) =>
+              <div key={log.id} className="relative flex gap-4 items-start group">
                                             <div className="w-10 h-10 shrink-0 rounded-full bg-bg-primary ring-4 ring-bg-primary flex items-center justify-center z-10 shadow-sm">
                                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${log.amount > 0 ? 'bg-accent/10 text-accent' : 'bg-red-500/10 text-red-500'}`}>
                                                     <Star size={14} strokeWidth={2.5} />
@@ -386,21 +405,21 @@ const XPGuideModal = ({ onClose }) => {
                                                 
                                                 <div className="mt-3 text-[10px] text-text-muted font-medium flex items-center gap-1.5">
                                                     <Calendar size={10} />
-                                                    {new Date(log.created_at).toLocaleString('es-ES', { 
-                                                        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
-                                                    })}
+                                                    {new Date(log.created_at).toLocaleString('es-ES', {
+                      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                    })}
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+              )}
                                 </div>
-                            )}
+            }
                         </div>
-                    )}
+          }
                 </div>
             </div>
-        </div>
-    );
+        </div></ModalPortal>;
+
 };
 
 export default XPGuideModal;

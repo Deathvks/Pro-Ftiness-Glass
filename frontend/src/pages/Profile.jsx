@@ -1,5 +1,6 @@
 /* frontend/src/pages/Profile.jsx */
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
   ChevronLeft, ChevronRight, Save, User, Camera, AlertTriangle,
@@ -197,8 +198,14 @@ const Profile = ({ onCancel, setView, navigate }) => {
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [modalPassword, setModalPassword] = useState('');
   const [modalError, setModalError] = useState('');
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
   const hasPassword = userProfile?.hasPassword;
+
+  const isDirty = formData.username !== (userProfile.username || '') ||
+                  formData.email !== (userProfile.email || '') ||
+                  formData.newPassword !== '' ||
+                  profileImageFile !== null;
 
   const handleChange = (e) => {
     setErrors({});
@@ -412,7 +419,13 @@ const Profile = ({ onCancel, setView, navigate }) => {
 
       <div className="w-full max-w-4xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-6 sm:mt-0">
         <button
-          onClick={onCancel}
+          onClick={() => {
+            if (isDirty) {
+              setShowUnsavedModal(true);
+            } else {
+              onCancel();
+            }
+          }}
           className="flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit active:scale-95"
         >
           <ChevronLeft size={20} strokeWidth={2.5} />
@@ -461,7 +474,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     e.stopPropagation();
                     fileInputRef.current.click();
                   }}
-                  className="absolute -bottom-2 -right-2 p-3 bg-accent rounded-[16px] text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300"
+                  className="!absolute bottom-0 right-0 p-3 bg-accent rounded-[16px] text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300"
                   aria-label="Cambiar foto de perfil"
                 >
                   <Camera size={20} strokeWidth={2.5} />
@@ -793,6 +806,61 @@ const Profile = ({ onCancel, setView, navigate }) => {
           onClose={() => setIsImageModalOpen(false)}
         />
       )}
+
+      <AnimatePresence>
+        {showUnsavedModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowUnsavedModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md"
+            >
+              <GlassCard className="glass p-6 rounded-[28px] border-none ring-1 ring-white/10 shadow-2xl flex flex-col gap-6">
+                <div className="flex flex-col items-center text-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent ring-4 ring-accent/5">
+                    <AlertTriangle size={32} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-text-primary mb-2">Cambios sin guardar</h3>
+                    <p className="text-sm text-text-secondary font-medium">
+                      Tienes cambios pendientes. ¿Quieres aplicarlos ahora o descartarlos y salir?
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      setShowUnsavedModal(false);
+                      handleSave({ preventDefault: () => {} });
+                    }}
+                    className="w-full py-4 rounded-[16px] font-bold bg-accent text-white hover:bg-accent/90 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Save size={20} />
+                    Aplicar y salir
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowUnsavedModal(false);
+                      onCancel();
+                    }}
+                    className="w-full py-4 rounded-[16px] font-bold bg-black/5 dark:bg-white/5 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95"
+                  >
+                    Descartar cambios
+                  </button>
+                </div>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

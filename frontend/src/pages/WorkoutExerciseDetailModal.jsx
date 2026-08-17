@@ -197,7 +197,9 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           {(localDetails.image_url || localDetails.video_url) ? (
             <ExerciseMedia
               details={localDetails}
-              className="w-full mx-auto mb-8 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm"
+              fitMode="cover"
+              playYouTube={true}
+              className="w-full mx-auto mb-8 rounded-[24px] overflow-hidden"
             />
           ) : localIsLoading ? (
             <div className="aspect-video bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] flex items-center justify-center text-text-muted w-full mx-auto mb-8 shadow-inner">

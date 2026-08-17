@@ -1,3 +1,4 @@
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/APKUpdater.jsx */
 import React, { useEffect, useState } from 'react';
 import { Download, X, Sparkles } from 'lucide-react';
@@ -8,52 +9,52 @@ import { APP_VERSION } from '../config/version';
 const REMOTE_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 
 const APKUpdater = () => {
-    const [updateAvailable, setUpdateAvailable] = useState(null);
+  const [updateAvailable, setUpdateAvailable] = useState(null);
 
-    useEffect(() => {
-        if (Capacitor.getPlatform() !== 'android') return;
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== 'android') return;
 
-        const checkVersion = async () => {
-            try {
-                // CORRECCIÓN: Usamos URL absoluta, si no fetch busca en localhost (el móvil)
-                const response = await fetch(`${REMOTE_BASE_URL}/version.json?t=${new Date().getTime()}`);
+    const checkVersion = async () => {
+      try {
+        // CORRECCIÓN: Usamos URL absoluta, si no fetch busca en localhost (el móvil)
+        const response = await fetch(`${REMOTE_BASE_URL}/version.json?t=${new Date().getTime()}`);
 
-                if (!response.ok) return;
+        if (!response.ok) return;
 
-                const data = await response.json();
+        const data = await response.json();
 
-                if (isNewerVersion(APP_VERSION, data.version)) {
-                    setUpdateAvailable(data);
-                }
-            } catch (error) {
-                console.error("Error comprobando actualizaciones:", error);
-            }
-        };
-
-        checkVersion();
-    }, []);
-
-    const isNewerVersion = (current, remote) => {
-        const cParts = current.split('.').map(Number);
-        const rParts = remote.split('.').map(Number);
-
-        for (let i = 0; i < 3; i++) {
-            if (rParts[i] > cParts[i]) return true;
-            if (rParts[i] < cParts[i]) return false;
+        if (isNewerVersion(APP_VERSION, data.version)) {
+          setUpdateAvailable(data);
         }
-        return false;
+      } catch (error) {
+        console.error("Error comprobando actualizaciones:", error);
+      }
     };
 
-    const handleUpdate = () => {
-        if (updateAvailable?.downloadUrl) {
-            window.open(updateAvailable.downloadUrl, '_system');
-        }
-    };
+    checkVersion();
+  }, []);
 
-    if (!updateAvailable) return null;
+  const isNewerVersion = (current, remote) => {
+    const cParts = current.split('.').map(Number);
+    const rParts = remote.split('.').map(Number);
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+    for (let i = 0; i < 3; i++) {
+      if (rParts[i] > cParts[i]) return true;
+      if (rParts[i] < cParts[i]) return false;
+    }
+    return false;
+  };
+
+  const handleUpdate = () => {
+    if (updateAvailable?.downloadUrl) {
+      window.open(updateAvailable.downloadUrl, '_system');
+    }
+  };
+
+  if (!updateAvailable) return null;
+
+  return <ModalPortal>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
             <div className="bg-bg-primary border border-glass-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-[slide-in-up_0.3s]">
                 <div className="bg-gradient-to-r from-accent to-accent-secondary p-4 text-white flex justify-between items-start">
                     <div>
@@ -73,9 +74,9 @@ const APKUpdater = () => {
                     </p>
 
                     <button
-                        onClick={handleUpdate}
-                        className="w-full py-3 px-4 bg-accent text-white dark:text-bg-secondary font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-accent/20"
-                    >
+            onClick={handleUpdate}
+            className="w-full py-3 px-4 bg-accent text-white dark:text-bg-secondary font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-accent/20">
+            
                         <Download size={20} /> Actualizar Ahora
                     </button>
                     <p className="text-center text-[10px] text-text-muted mt-3">
@@ -83,8 +84,8 @@ const APKUpdater = () => {
                     </p>
                 </div>
             </div>
-        </div>
-    );
+        </div></ModalPortal>;
+
 };
 
 export default APKUpdater;

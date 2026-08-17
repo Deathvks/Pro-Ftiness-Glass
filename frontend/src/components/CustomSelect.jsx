@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
-const CustomSelect = ({ value, onChange, options, placeholder, className = "" }) => {
+const CustomSelect = ({ value, onChange, options, placeholder, className = "", multiple = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef(null);
@@ -55,7 +55,28 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
     };
   }, [isOpen]);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedValues = multiple ? (typeof value === 'string' && value ? value.split(',').map(v => v.trim()) : []) : [];
+  const selectedOption = !multiple ? options.find(opt => opt.value === value) : null;
+
+  const handleOptionClick = (optionValue) => {
+    if (multiple) {
+      let newValues;
+      if (selectedValues.includes(optionValue)) {
+        newValues = selectedValues.filter(v => v !== optionValue);
+      } else {
+        newValues = [...selectedValues, optionValue];
+      }
+      onChange(newValues.join(', '));
+    } else {
+      onChange(optionValue);
+      setIsOpen(false);
+    }
+  };
+
+  const isSelected = (optionValue) => {
+    if (multiple) return selectedValues.includes(optionValue);
+    return value === optionValue;
+  };
 
   const DropdownPortal = () => createPortal(
     <div
@@ -73,12 +94,9 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
         <button
           key={option.value}
           type="button"
-          onClick={() => {
-            onChange(option.value);
-            setIsOpen(false);
-          }}
+          onClick={() => handleOptionClick(option.value)}
           className={`block w-full text-left px-3 py-2 transition-colors duration-200 rounded-md text-sm ${
-            value === option.value
+            isSelected(option.value)
               ? 'bg-accent/10 text-accent font-medium'
               : 'text-text-primary hover:bg-accent/10 hover:text-accent'
           }`}
@@ -105,8 +123,11 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "" })
         `}
         disabled={isOpen && position.top === 0}
       >
-        <span className={`text-sm font-bold truncate ${selectedOption ? 'text-text-primary' : 'text-text-secondary'}`}>
-          {selectedOption ? selectedOption.label : placeholder}
+        <span className={`text-sm font-bold truncate ${(!multiple && selectedOption) || (multiple && selectedValues.length > 0) ? 'text-text-primary' : 'text-text-secondary'}`}>
+          {multiple 
+            ? (selectedValues.length > 0 ? selectedValues.join(', ') : placeholder) 
+            : (selectedOption ? selectedOption.label : placeholder)
+          }
         </span>
         <ChevronDown
           size={16}

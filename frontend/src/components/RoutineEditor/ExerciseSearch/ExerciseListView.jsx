@@ -1,12 +1,9 @@
 /* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseListView.jsx */
 import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
-import { X, Search, ShoppingCart, ListFilter, Plus, SearchX } from 'lucide-react';
+import { X, Search, ListChecks, ListFilter, Plus, SearchX } from 'lucide-react';
 import CustomSelect from '../../CustomSelect';
 import ExerciseListItem from './ExerciseListItem';
 import Spinner from '../../Spinner';
-
-const ITEM_HEIGHT = 116; // Altura reservada por elemento (aumentada para acomodar el nuevo diseño Glass)
-const OVERSCAN = 5; // Cuántos elementos renderizar fuera de pantalla para que el scroll sea fluido
 
 const ExerciseListView = ({
   onClose,
@@ -33,12 +30,9 @@ const ExerciseListView = ({
   const listRef = useRef(null);
   const SCROLL_KEY = 'exerciseListScrollPos';
 
-  // --- VIRTUALIZACIÓN NATIVA 100% LIBRE DE LIBRERÍAS ---
-  const [scrollTop, setScrollTop] = useState(0);
-  const [listHeight, setListHeight] = useState(0);
-  
   // AÑADIDO: Detectar si es móvil para el padding inferior
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [visibleCount, setVisibleCount] = useState(30);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -46,57 +40,31 @@ const ExerciseListView = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Observamos el tamaño del contenedor para calcular cuántos elementos caben
+  // Recuperar posición de scroll guardada
   useLayoutEffect(() => {
-    if (!listRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      setListHeight(entries[0].contentRect.height);
-    });
-    observer.observe(listRef.current);
-    return () => observer.disconnect();
-  }, [isLoading]);
-
-  // Recuperamos el scroll guardado al montar el componente
-  useLayoutEffect(() => {
-    const savedPos = sessionStorage.getItem(SCROLL_KEY);
-    if (listRef.current && savedPos && !isLoading && filteredExercises.length > 0) {
-      listRef.current.scrollTop = Number(savedPos);
-      setScrollTop(Number(savedPos));
+    const savedScroll = sessionStorage.getItem(SCROLL_KEY);
+    if (savedScroll && listRef.current && !isLoading) {
+      listRef.current.scrollTop = parseInt(savedScroll, 10);
     }
   }, [isLoading, filteredExercises.length]);
 
   const handleScroll = (e) => {
-    const top = e.target.scrollTop;
-    setScrollTop(top);
-    sessionStorage.setItem(SCROLL_KEY, top);
+    sessionStorage.setItem(SCROLL_KEY, e.target.scrollTop);
+    
+    // Infinite scroll logic
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop - clientHeight < 200) {
+      if (visibleCount < filteredExercises.length) {
+        setVisibleCount(prev => prev + 30);
+      }
+    }
   };
 
   const resetScroll = () => {
     sessionStorage.setItem(SCROLL_KEY, 0);
-    setScrollTop(0);
+    setVisibleCount(30);
     if (listRef.current) listRef.current.scrollTop = 0;
   };
-
-  // --- CÁLCULO DE ELEMENTOS VISIBLES (VIRTUALIZACIÓN) ---
-  const totalItems = filteredExercises.length + 1; // +1 por el botón de "Añadir manual" al final
-  
-  // AÑADIDO: Padding dinámico. Como es modal a pantalla completa, no necesitamos espacio para navbar.
-  const EXTRA_BOTTOM_PADDING = 24; 
-  const MANUAL_BTN_GAP = 16; // Separación extra para el botón manual
-  const totalHeight = (totalItems * ITEM_HEIGHT) + EXTRA_BOTTOM_PADDING + MANUAL_BTN_GAP;
-
-  const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - OVERSCAN);
-  const endIndex = Math.min(
-    totalItems - 1,
-    Math.floor((scrollTop + listHeight) / ITEM_HEIGHT) + OVERSCAN
-  );
-
-  const visibleIndices = [];
-  if (listHeight > 0) {
-    for (let i = startIndex; i <= endIndex; i++) {
-      visibleIndices.push(i);
-    }
-  }
 
   // --- LÓGICA MULTI-SELECT ---
   const currentMuscleFilters = Array.isArray(filterMuscle) ? filterMuscle : [];
@@ -145,10 +113,10 @@ const ExerciseListView = ({
   const availableEquipmentOptions = equipmentOptions.filter(opt => !currentEquipmentFilters.includes(opt.value));
 
   return (
-    <div className="flex flex-col h-full w-full bg-bg-primary overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-transparent overflow-hidden">
       {/* Header (Cerrar y Carrito) - Zonas Seguras para el Notch */}
       <div 
-        className="flex-shrink-0 flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/10 gap-2 bg-bg-primary z-10"
+        className="flex-shrink-0 flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/10 gap-2 bg-transparent z-10"
       >
         <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-text-primary truncate min-w-0">
           {t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
@@ -158,8 +126,8 @@ const ExerciseListView = ({
             onClick={onViewSummary}
             className="relative flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-full bg-accent text-white font-bold text-sm md:text-base whitespace-nowrap transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20"
           >
-            <ShoppingCart size={18} />
-            <span className="hidden sm:inline">{t('exercise_ui:view_cart', 'Ver Carrito')}</span>
+            <ListChecks size={18} />
+            <span className="hidden sm:inline">{t('exercise_ui:view_cart', 'Ver Selección')}</span>
             {stagedExercisesCount > 0 && (
               <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red text-white text-xs font-black flex items-center justify-center border-2 border-bg-primary shadow-sm">
                 {stagedExercisesCount}
@@ -173,7 +141,7 @@ const ExerciseListView = ({
       </div>
 
       {/* Barra de Búsqueda y Zona de Filtros */}
-      <div className="flex-shrink-0 p-4 space-y-5 border-b border-black/5 dark:border-white/10 bg-bg-primary z-10 shadow-sm">
+      <div className="flex-shrink-0 p-4 space-y-5 border-b border-black/5 dark:border-white/10 bg-transparent z-10 shadow-sm">
         {/* Input Buscador */}
         <div className="relative">
           <input
@@ -262,7 +230,7 @@ const ExerciseListView = ({
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="flex-1 bg-bg-primary overflow-y-auto overflow-x-hidden relative custom-scrollbar pb-safe-bottom"
+        className="flex-1 bg-transparent overflow-y-auto overflow-x-hidden relative no-scrollbar pb-safe-bottom"
       >
         {isLoading ? (
           <div className="flex justify-center py-12"><Spinner size={32} /></div>
@@ -294,58 +262,34 @@ const ExerciseListView = ({
             </button>
           </div>
         ) : (
-          <div style={{ height: `${totalHeight}px`, position: 'relative', width: '100%' }}>
-            {visibleIndices.map(index => {
-              const isLast = index === filteredExercises.length;
-              
-              const topPosition = (index * ITEM_HEIGHT) + (isLast ? MANUAL_BTN_GAP : 0);
-              
-              const itemStyle = {
-                position: 'absolute',
-                top: topPosition + 12,
-                height: ITEM_HEIGHT - 12, // Permite que haya un hueco entre tarjetas (gap de 12px)
-                left: '1rem',
-                right: '1rem',
-              };
-
-              // Si es el último elemento, renderizamos el botón de añadir manual
-              if (isLast) {
-                return (
-                  <div key="manual-btn" style={itemStyle}>
-                    <button
-                      onClick={onAddManual}
-                      className="w-full flex items-center gap-4 p-4 rounded-[24px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 transition-all group h-full"
-                    >
-                      <div className="w-14 h-14 rounded-[16px] bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center text-text-muted group-hover:text-accent transition-colors shrink-0 shadow-sm">
-                        <Plus size={24} strokeWidth={2.5} />
-                      </div>
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="font-bold text-base text-text-primary group-hover:text-accent transition-colors truncate">
-                          {t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
-                        </p>
-                        <p className="text-xs font-medium text-text-secondary truncate mt-1">
-                          {t('exercise_ui:add_manual_desc', 'Añade un ejercicio que no esté en la lista.')}
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                );
-              }
-
-              // Ejercicio normal
-              const exercise = filteredExercises[index];
-              return (
-                <div key={exercise.id} style={itemStyle}>
-                  <ExerciseListItem
-                    exercise={exercise}
-                    onAdd={onAddExercise}
-                    onView={onViewDetail}
-                    isStaged={stagedIds.has(exercise.id)}
-                    t={t}
-                  />
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 pb-12">
+            {filteredExercises.slice(0, visibleCount).map(exercise => (
+              <ExerciseListItem
+                key={exercise.id}
+                exercise={exercise}
+                onAdd={onAddExercise}
+                onView={onViewDetail}
+                isStaged={stagedIds.has(exercise.id)}
+                t={t}
+              />
+            ))}
+            
+            {/* Botón de añadir manual al final del grid */}
+            <button
+              key="manual-btn"
+              onClick={onAddManual}
+              className="col-span-full w-full flex flex-col items-center justify-center p-6 rounded-[24px] bg-bg-secondary border border-glass-border hover:border-accent/50 hover:bg-bg-tertiary transition-all group min-h-[160px] shadow-sm"
+            >
+              <div className="w-16 h-16 rounded-[16px] bg-bg-primary ring-1 ring-glass-border flex items-center justify-center text-text-secondary group-hover:text-accent group-hover:bg-accent/10 transition-colors shadow-sm mb-4">
+                <Plus size={32} strokeWidth={2.5} />
+              </div>
+              <p className="font-bold text-lg text-text-primary group-hover:text-accent transition-colors text-center">
+                {t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
+              </p>
+              <p className="text-sm font-medium text-text-secondary text-center mt-2">
+                {t('exercise_ui:add_manual_desc', 'Añade un ejercicio que no esté en la lista.')}
+              </p>
+            </button>
           </div>
         )}
       </div>

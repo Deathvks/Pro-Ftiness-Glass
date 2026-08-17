@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
     Dumbbell, Activity, Shield, ChevronRight, ChevronLeft, Utensils,
     LineChart, Users, Zap, Smartphone, Trophy, ArrowRight,
-    Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check
+    Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck
 } from 'lucide-react';
 import { FaGooglePlay } from 'react-icons/fa';
 
@@ -333,6 +333,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
     const [isVisible, setIsVisible] = useState(false);
     const [isDocked, setIsDocked] = useState(false);
+    const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+    const lastScrollY = useRef(0);
     const [communityUsers, setCommunityUsers] = useState([]);
     const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
     const containerRef = useRef(null);
@@ -381,11 +383,18 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
     const handleScroll = (e) => {
         const scrollTop = e.target.scrollTop;
-        const shouldBeDocked = scrollTop > 200;
+        const shouldBeDocked = scrollTop > 50;
 
         if (isDocked !== shouldBeDocked) {
             setIsDocked(shouldBeDocked);
         }
+
+        if (scrollTop > lastScrollY.current + 10 && scrollTop > 100) {
+            setIsHeaderHidden(true);
+        } else if (scrollTop < lastScrollY.current - 10 || scrollTop < 50) {
+            setIsHeaderHidden(false);
+        }
+        lastScrollY.current = scrollTop;
     };
 
     return (
@@ -428,7 +437,11 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     </div>
 
                     {/* --- NAVBAR --- */}
-                    <nav className={`sticky top-0 z-50 transition-all duration-500 border-b transform-gpu ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-black/5 dark:border-white/10 shadow-sm' : 'bg-transparent border-transparent'}`} aria-label="Navegación principal">
+                    <nav 
+                        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-out transform-gpu ${isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm' : 'bg-transparent border-transparent'}`} 
+                        aria-label="Navegación principal"
+                        style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
+                    >
                         <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full relative z-10">
                             <div
                                 className="flex items-center gap-4 cursor-pointer group"
@@ -659,6 +672,88 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </BentoCard>
 
                             </div>
+                        </div>
+
+                        {/* --- HIGHLIGHT ENTRENADOR PERSONAL --- */}
+                        <div className="w-full mt-32 relative z-10">
+                            <ScrollRevealCard>
+                                <div className="relative group w-full">
+                                    {/* Resplandor Ambiental (Sustituye al box-shadow para asegurar bordes suaves en Safari) */}
+                                    <div className="absolute -inset-1 rounded-[32px] bg-accent/30 blur-[40px] opacity-40 group-hover:opacity-70 group-hover:bg-accent/40 group-hover:scale-[1.02] transition-all duration-700 pointer-events-none -z-10"></div>
+                                    
+                                    <div className="w-full rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 relative hover:ring-accent/50 transition-all duration-700 text-left isolate">
+                                        
+                                        {/* Capa de cristal y recorte */}
+                                        <div className="absolute inset-0 rounded-[32px] bg-black/5 dark:bg-white/5 backdrop-blur-xl overflow-hidden pointer-events-none -z-10">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-purple-500/10 opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                            <div className="absolute -top-24 -right-24 opacity-[0.04] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 text-accent">
+                                                <ShieldCheck size={400} />
+                                            </div>
+                                        </div>
+
+                                    {/* Contenido */}
+                                    <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center gap-8 md:gap-12">
+                                        <div className="p-6 bg-accent/20 text-accent rounded-[28px] ring-1 ring-accent/40 shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-500 transform-gpu flex items-center justify-center">
+                                            <ShieldCheck size={56} strokeWidth={1.5} />
+                                        </div>
+                                        
+                                        <div className="flex-1">
+                                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 mb-4">
+                                                <span className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_var(--accent)]"></span>
+                                                <span className="text-xs font-black uppercase tracking-wider text-accent drop-shadow-sm">Nueva Función</span>
+                                            </div>
+                                            
+                                            <h3 className="text-3xl md:text-5xl font-black tracking-tight text-text-primary mb-6 drop-shadow-sm">
+                                                Conecta con tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple-400">Entrenador</span>
+                                            </h3>
+                                            
+                                            <p className="text-lg md:text-xl font-medium text-text-secondary leading-relaxed mb-8 max-w-2xl">
+                                                La evolución definitiva de tu entrenamiento ha llegado. Pro Fitness Glass rompe la barrera digital conectándote en tiempo real con tu preparador. Despídete de los PDFs y capturas de pantalla; ahora, cada repetición y cada caloría se sincroniza al instante.
+                                            </p>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="flex items-start gap-3 bg-black/10 dark:bg-white/5 p-4 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+                                                    <div className="p-2 bg-purple-500/20 text-purple-400 rounded-xl mt-0.5">
+                                                        <Shield size={20} strokeWidth={2.5} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-text-primary mb-1">Privacidad Absoluta</h4>
+                                                        <p className="text-sm font-medium text-text-secondary">Tus fotos de progreso y datos sensibles están encriptados. Solo serán visibles para ti y tu entrenador.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3 bg-black/10 dark:bg-white/5 p-4 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+                                                    <div className="p-2 bg-blue-500/20 text-blue-400 rounded-xl mt-0.5">
+                                                        <Zap size={20} strokeWidth={2.5} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-text-primary mb-1">Sincronización en Vivo</h4>
+                                                        <p className="text-sm font-medium text-text-secondary">Olvídate de mandar excels. Tu preparador recibe tus entrenamientos y diarios de dieta automáticamente.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3 bg-black/10 dark:bg-white/5 p-4 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+                                                    <div className="p-2 bg-green-500/20 text-green-400 rounded-xl mt-0.5">
+                                                        <LineChart size={20} strokeWidth={2.5} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-text-primary mb-1">Análisis y Feedback</h4>
+                                                        <p className="text-sm font-medium text-text-secondary">Tu entrenador puede analizar tus gráficas de volumen y fatiga muscular desde su panel profesional.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3 bg-black/10 dark:bg-white/5 p-4 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+                                                    <div className="p-2 bg-accent/20 text-accent rounded-xl mt-0.5">
+                                                        <Dumbbell size={20} strokeWidth={2.5} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-text-primary mb-1">Ajustes Inmediatos</h4>
+                                                        <p className="text-sm font-medium text-text-secondary">Si te estancas, modificará tu rutina y la tendrás lista en la app al segundo para tu próxima sesión.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                            </ScrollRevealCard>
                         </div>
 
                         {/* --- SECCIÓN 2: CARACTERÍSTICAS TÉCNICAS --- */}

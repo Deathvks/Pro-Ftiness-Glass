@@ -1,6 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight, Share2, Instagram } from 'lucide-react';
+import { ChevronRight, Share2, Instagram, ChevronLeft } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 
 const SectionTitle = ({ icon: Icon, title }) => (
@@ -47,7 +47,7 @@ const YoutubeIcon = ({ size = 20, className }) => (
   </svg>
 );
 
-export default function SocialLinksScreen() {
+export default function SocialLinksScreen({ setView }) {
   const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300 mb-6";
 
   return (
@@ -56,6 +56,8 @@ export default function SocialLinksScreen() {
         <title>Nuestras Redes - Pro Fitness Glass</title>
       </Helmet>
       
+
+
       <div className="w-full">
         <GlassCard className={glassCardClass}>
           <SectionTitle icon={Share2} title="Nuestras Redes" />
