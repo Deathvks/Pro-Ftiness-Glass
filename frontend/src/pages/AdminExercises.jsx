@@ -560,7 +560,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
     const matchesGroup = selectedGroupFilter === 'all' || ex.muscle_group === selectedGroupFilter;
     
     return matchesSearch && matchesGroup;
-  }).sort((a, b) => a.name.localeCompare(b.name));
+  }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   return (
     <div className="flex flex-col gap-8 animate-[fade-in_0.3s_ease-out]">

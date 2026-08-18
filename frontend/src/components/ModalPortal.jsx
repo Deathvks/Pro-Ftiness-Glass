@@ -9,10 +9,29 @@ const ModalPortal = ({ children }) => {
   const isValidSwipe = useRef(false);
   const cardElementRef = useRef(null);
 
+  const overlayRef = useRef(null);
+
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    
+    const onNativeTouchMove = (e) => {
+      if (isValidSwipe.current && touchStartY.current !== null) {
+        const currentY = e.touches[0].clientY;
+        if (currentY > touchStartY.current && e.cancelable) {
+          e.preventDefault(); // Stop native scroll / pull-to-refresh
+        }
+      }
+    };
+    
+    el.addEventListener('touchmove', onNativeTouchMove, { passive: false });
+    return () => el.removeEventListener('touchmove', onNativeTouchMove);
+  }, [mounted]);
 
   if (!mounted) return null;
 
@@ -151,25 +170,6 @@ const ModalPortal = ({ children }) => {
       child.props.onTouchEnd(e);
     }
   };
-
-  const overlayRef = useRef(null);
-
-  useEffect(() => {
-    const el = overlayRef.current;
-    if (!el) return;
-    
-    const onNativeTouchMove = (e) => {
-      if (isValidSwipe.current && touchStartY.current !== null) {
-        const currentY = e.touches[0].clientY;
-        if (currentY > touchStartY.current && e.cancelable) {
-          e.preventDefault(); // Stop native scroll / pull-to-refresh
-        }
-      }
-    };
-    
-    el.addEventListener('touchmove', onNativeTouchMove, { passive: false });
-    return () => el.removeEventListener('touchmove', onNativeTouchMove);
-  }, [mounted]);
 
   const clonedChild = React.cloneElement(child, {
     ref: (node) => {

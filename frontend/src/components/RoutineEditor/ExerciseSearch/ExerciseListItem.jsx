@@ -18,9 +18,9 @@ const ExerciseListItem = ({
   };
 
   // 1. Traducir el nombre
-  const translatedName = t(exercise.name, {
+  const translatedName = t(exercise.name || '', {
     ns: 'exercise_names',
-    defaultValue: exercise.name,
+    defaultValue: exercise.name || '',
   });
 
   // 2. Traducir músculos

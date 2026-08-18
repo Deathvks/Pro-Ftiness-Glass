@@ -190,9 +190,12 @@ const ExerciseSearch = ({
 
     allExercises.forEach((ex) => {
       // --- Músculos ---
-      const rawMuscles = ex.muscle_group ?
-      ex.muscle_group.split(',') :
-      [ex.category || 'Other'];
+      let rawMuscles = [ex.category || 'Other'];
+      if (typeof ex.muscle_group === 'string') {
+        rawMuscles = ex.muscle_group.split(',');
+      } else if (Array.isArray(ex.muscle_group)) {
+        rawMuscles = ex.muscle_group.map(String);
+      }
 
       rawMuscles.forEach((m) => {
         // Obtenemos la traducción (ej: "Chest" -> "Pecho", "Pectoralis major" -> "Pecho")
@@ -201,9 +204,12 @@ const ExerciseSearch = ({
       });
 
       // --- Equipamiento ---
-      const rawEquipment = ex.equipment ?
-      ex.equipment.split(',') :
-      ['None'];
+      let rawEquipment = ['None'];
+      if (typeof ex.equipment === 'string') {
+        rawEquipment = ex.equipment.split(',');
+      } else if (Array.isArray(ex.equipment)) {
+        rawEquipment = ex.equipment.map(String);
+      }
 
       rawEquipment.forEach((e) => {
         const label = t(e.trim(), { ns: 'exercise_equipment', defaultValue: e.trim() });
@@ -246,9 +252,12 @@ const ExerciseSearch = ({
 
     return allExercises.filter((ex) => {
       // Preparación de datos (Músculos)
-      const rawMuscles = ex.muscle_group ?
-      ex.muscle_group.split(',').map((m) => m.trim()) :
-      [ex.category || 'Other'];
+      let rawMuscles = [ex.category || 'Other'];
+      if (typeof ex.muscle_group === 'string') {
+        rawMuscles = ex.muscle_group.split(',').map(m => m.trim());
+      } else if (Array.isArray(ex.muscle_group)) {
+        rawMuscles = ex.muscle_group.map(m => String(m).trim());
+      }
 
       // Traducimos los músculos del ejercicio actual
       const translatedMuscles = rawMuscles.map((m) =>
@@ -256,8 +265,8 @@ const ExerciseSearch = ({
       );
 
       // 1. Filtro Texto: Nombre O Grupo Muscular
-      const originalName = ex.name.toLowerCase();
-      const translatedName = t(ex.name, { ns: 'exercise_names', defaultValue: ex.name }).toLowerCase();
+      const originalName = (ex.name || '').toLowerCase();
+      const translatedName = t(ex.name || '', { ns: 'exercise_names', defaultValue: ex.name || '' }).toLowerCase();
 
       const nameMatch = originalName.includes(query) || translatedName.includes(query);
 
@@ -286,9 +295,12 @@ const ExerciseSearch = ({
       });
 
       // 3. Filtro Equipamiento (Comparando Labels Traducidos)
-      const rawEquipment = ex.equipment ?
-      ex.equipment.split(',').map((e) => e.trim()) :
-      ['None'];
+      let rawEquipment = ['None'];
+      if (typeof ex.equipment === 'string') {
+        rawEquipment = ex.equipment.split(',').map(e => e.trim());
+      } else if (Array.isArray(ex.equipment)) {
+        rawEquipment = ex.equipment.map(e => String(e).trim());
+      }
 
       const translatedEquipment = rawEquipment.map((e) =>
       t(e, { ns: 'exercise_equipment', defaultValue: e })
