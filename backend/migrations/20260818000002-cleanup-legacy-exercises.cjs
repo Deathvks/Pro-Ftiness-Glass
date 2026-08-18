@@ -7,7 +7,7 @@ module.exports = {
       // Intentar actualizar las rutinas para apuntar a los ejercicios nuevos si coinciden en nombre
       // Primero obtenemos los viejos y nuevos
       const oldExercises = await queryInterface.sequelize.query(
-        `SELECT id, name FROM exercise_list WHERE wger_id IS NULL`,
+        `SELECT id, name FROM exercise_list WHERE wger_id IS NULL AND (video_url IS NULL OR video_url = '')`,
         { type: Sequelize.QueryTypes.SELECT }
       );
       
@@ -36,9 +36,9 @@ module.exports = {
         }
       }
 
-      // Eliminar definitivamente los ejercicios antiguos (sin wger_id)
+      // Eliminar definitivamente los ejercicios antiguos (sin wger_id ni video_url)
       await queryInterface.sequelize.query(
-        `DELETE FROM exercise_list WHERE wger_id IS NULL`
+        `DELETE FROM exercise_list WHERE wger_id IS NULL AND (video_url IS NULL OR video_url = '')`
       );
 
     } catch (error) {

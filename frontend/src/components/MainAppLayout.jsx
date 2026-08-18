@@ -692,17 +692,35 @@ export default function MainAppLayout({
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-              <button 
-                onClick={() => navigate('profile')}
-                className="w-8 h-8 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary active:scale-95 transition-transform"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                {profileImgSrc ? (
-                  <img src={profileImgSrc} alt="Perfil" className="w-full h-full object-cover" />
-                ) : (
-                  <UserIcon className="w-5 h-5 text-text-secondary" />
-                )}
-              </button>
+              {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges', 'nutrition', 'routines'].includes(view) ? (
+                <button
+                  onClick={() => navigate('hub')}
+                  className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <ChevronLeftIcon className="w-6 h-6" />
+                </button>
+              ) : ['profile', 'notifications', 'twoFactorSetup', 'privacyPolicy', 'terms'].includes(view) ? (
+                <button
+                  onClick={() => navigate('dashboard')}
+                  className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <ChevronLeftIcon className="w-6 h-6" />
+                </button>
+              ) : (
+                <button 
+                  onClick={() => navigate('profile')}
+                  className="w-8 h-8 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary active:scale-95 transition-transform"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  {profileImgSrc ? (
+                    <img src={profileImgSrc} alt="Perfil" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-5 h-5 text-text-secondary" />
+                  )}
+                </button>
+              )}
               <span
                 key={currentTitle}
                 className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1"
@@ -806,26 +824,25 @@ export default function MainAppLayout({
           <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
             
             <div
-              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center bg-accent/10 dark:bg-accent/20 border border-accent/20 dark:border-accent/30 shadow-[inset_0px_4px_6px_rgba(255,255,255,0.1)] dark:shadow-[inset_0px_4px_6px_rgba(0,0,0,0.2)]"
+              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
               style={{
                 left: 0,
-                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) scale(${isDraggingDrop ? '1.15, 0.85' : '1, 1'})`,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0)`,
                 opacity: isDropVisible ? 1 : 0,
                 transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(8px) brightness(1.1)',
+                WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)'
               }}
             >
             </div>
 
             {navItems.map((item, index) => {
               const isActive = view === item.id;
-              let isVisuallyActive = isActive;
+              const isVisuallyActive = isActive;
               
-              if (isDraggingDrop) {
-                isVisuallyActive = index === dragHoverIndex;
-              }
-
               const isSocial = item.id === 'social';
               const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;
 
@@ -844,34 +861,6 @@ export default function MainAppLayout({
                 </button>
               );
             })}
-
-            <div
-              ref={dropRef}
-              onTouchStart={handleDropDragStart}
-              onTouchMove={handleDropDragMove}
-              onTouchEnd={handleDropDragEnd}
-              onTouchCancel={handleDropDragEnd}
-              onMouseDown={handleDropDragStart}
-              onMouseMove={handleDropDragMove}
-              onMouseUp={handleDropDragEnd}
-              onMouseLeave={handleDropDragEnd}
-              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] cursor-grab active:cursor-grabbing z-[10] touch-none"
-              style={{
-                left: 0,
-                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0)`,
-                display: isDropVisible ? 'block' : 'none',
-              }}
-              onClick={(e) => {
-                if (hasDraggedRef.current) {
-                  e.stopPropagation();
-                  return;
-                }
-                if (!isDraggingDrop) {
-                  const activeIndex = navItems.findIndex(item => item.id === view);
-                  if (activeIndex !== -1) handleNavClick(navItems[activeIndex].id);
-                }
-              }}
-            />
 
           </nav>
         </div>

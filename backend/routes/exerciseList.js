@@ -10,7 +10,7 @@ const router = express.Router();
 // ENDPOINT TEMPORAL PARA FORZAR LIMPIEZA
 router.get('/force-cleanup', async (req, res) => {
     try {
-        const [oldExercises] = await sequelize.query(`SELECT id, name FROM exercise_list WHERE wger_id IS NULL`);
+        const [oldExercises] = await sequelize.query(`SELECT id, name FROM exercise_list WHERE wger_id IS NULL AND (video_url IS NULL OR video_url = '')`);
         const [newExercises] = await sequelize.query(`SELECT id, name FROM exercise_list WHERE wger_id IS NOT NULL`);
         
         const newMap = {};
@@ -39,7 +39,7 @@ router.get('/force-cleanup', async (req, res) => {
         // Ahora intentar eliminar
         let deleteResult = null;
         try {
-            await sequelize.query(`DELETE FROM exercise_list WHERE wger_id IS NULL`);
+            await sequelize.query(`DELETE FROM exercise_list WHERE wger_id IS NULL AND (video_url IS NULL OR video_url = '')`);
             deleteResult = "Exito eliminando ejercicios antiguos.";
         } catch (e) {
             deleteResult = `Error al eliminar: ${e.message}`;
