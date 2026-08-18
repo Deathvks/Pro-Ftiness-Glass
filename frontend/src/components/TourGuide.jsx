@@ -47,7 +47,9 @@ const TourGuide = () => {
         forceTouchAction(popover.nextButton, () => {
           if (!driverRef.current) return;
           if (state.activeIndex === config.steps.length - 1) {
-            driverRef.current.destroy();} else {
+            completeTour();
+            driverRef.current.destroy();
+          } else {
             driverRef.current.moveNext();
           }
         });
@@ -57,7 +59,9 @@ const TourGuide = () => {
         });
 
         forceTouchAction(popover.closeButton, () => {
-          if (driverRef.current) driverRef.current.destroy();});
+          completeTour();
+          if (driverRef.current) driverRef.current.destroy();
+        });
       },
       
       // FIX SCROLL: Forzamos el scroll sobre tu nuevo MainAppLayout
@@ -119,10 +123,11 @@ const TourGuide = () => {
     });
 
     const checkModalsAndStart = () => {
-            if (window.location.pathname !== '/') {
-                timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
-                return;
-            }
+      const path = window.location.pathname;
+      if (path !== '/' && path !== '/dashboard') {
+        timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+        return;
+      }
     
       const state = useAppStore.getState();
 

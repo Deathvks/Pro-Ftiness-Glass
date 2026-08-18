@@ -152,7 +152,33 @@ const ModalPortal = ({ children }) => {
     }
   };
 
+  const overlayRef = useRef(null);
+
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    
+    const onNativeTouchMove = (e) => {
+      if (isValidSwipe.current && touchStartY.current !== null) {
+        const currentY = e.touches[0].clientY;
+        if (currentY > touchStartY.current && e.cancelable) {
+          e.preventDefault(); // Stop native scroll / pull-to-refresh
+        }
+      }
+    };
+    
+    el.addEventListener('touchmove', onNativeTouchMove, { passive: false });
+    return () => el.removeEventListener('touchmove', onNativeTouchMove);
+  }, [mounted]);
+
   const clonedChild = React.cloneElement(child, {
+    ref: (node) => {
+      overlayRef.current = node;
+      if (child.ref) {
+        if (typeof child.ref === 'function') child.ref(node);
+        else child.ref.current = node;
+      }
+    },
     onTouchStart: handleTouchStart,
     onTouchMove: handleTouchMove,
     onTouchEnd: handleTouchEnd
