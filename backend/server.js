@@ -1,6 +1,7 @@
 /* backend/server.js */
 import 'dotenv/config';
 import express from 'express';
+import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression'; // OPTIMIZACIÓN: Ahorro de ancho de banda (Gzip)
 import { createServer } from 'http';
@@ -45,6 +46,9 @@ const app = express();
 const httpServer = createServer(app);
 
 app.set('trust proxy', 1);
+
+// OPTIMIZACIÓN: Cabeceras de seguridad
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // OPTIMIZACIÓN: Compresión global antes de cualquier ruta o archivo estático
 app.use(compression());
