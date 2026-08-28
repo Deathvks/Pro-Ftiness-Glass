@@ -90,6 +90,24 @@ const SecurityDashboard = ({ onBack }) => {
     }
   };
 
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white/90 dark:bg-black/90 backdrop-blur-md p-3 rounded-2xl ring-1 ring-black/10 dark:ring-white/10 shadow-xl">
+          <p className="text-xs font-bold text-text-secondary mb-2">{label ? (new Date(label).getDate() + "/" + (new Date(label).getMonth() + 1)) : ""}</p>
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center gap-2 mb-1 last:mb-0">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+              <span className="text-xs font-medium text-text-primary">{entry.name}:</span>
+              <span className="text-xs font-black" style={{ color: entry.color }}>{entry.value}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   const formatDateAxis = (tickItem) => {
     const date = new Date(tickItem);
     return date.getDate() + '/' + (date.getMonth() + 1);
@@ -152,8 +170,8 @@ const SecurityDashboard = ({ onBack }) => {
               <XAxis dataKey="date" tickFormatter={formatDateAxis} tick={{fontSize: 10, fill: 'var(--text-secondary)'}} axisLine={false} tickLine={false} />
               <YAxis tick={{fontSize: 10, fill: 'var(--text-secondary)'}} axisLine={false} tickLine={false} />
               <Tooltip 
-                contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: 'none', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
-                labelStyle={{ color: 'var(--text-secondary)', fontWeight: 'bold', marginBottom: '4px' }}
+                content={<CustomTooltip />}
+                cursor={{ fill: 'var(--text-secondary)', opacity: 0.1 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
               <Bar dataKey="success" name="Éxitos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
@@ -301,6 +319,8 @@ const SecurityDashboard = ({ onBack }) => {
 };
 
 export default SecurityDashboard;
+
+
 
 
 
