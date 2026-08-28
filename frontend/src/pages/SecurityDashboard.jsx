@@ -126,13 +126,15 @@ const SecurityDashboard = ({ onBack }) => {
         
         <div className="flex gap-2 w-full min-w-0 overflow-x-auto hide-scrollbar py-2 px-2">
           {[1, 3, 7, 14, 30].map(days => (
-            <button
+            <div
               key={days}
+              role="button"
+              tabIndex={0}
               onClick={() => setTimeRange(days)}
-              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 " + (timeRange === days ? 'bg-accent text-white ring-accent' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
+              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 flex items-center justify-center cursor-pointer " + (timeRange === days ? 'bg-accent text-white ring-accent' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
             >
               {days === 1 ? '24h' : days + ' Días'}
-            </button>
+            </div>
           ))}
         </div>
       </div>
@@ -319,6 +321,7 @@ const SecurityDashboard = ({ onBack }) => {
 };
 
 export default SecurityDashboard;
+
 
 
 
