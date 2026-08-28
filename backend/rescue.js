@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // 1. Recibir el archivo desde la base de datos
-app.post('/rescue-upload', (req, res) => {
+app.all('/rescue-upload', (req, res) => {
   console.log('Recibiendo archivo desde la BD...');
   const stream = fs.createWriteStream('/tmp/db_backup.tar.gz');
   req.pipe(stream);
