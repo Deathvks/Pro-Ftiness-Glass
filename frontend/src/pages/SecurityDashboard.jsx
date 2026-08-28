@@ -111,7 +111,7 @@ const SecurityDashboard = ({ onBack }) => {
             <button
               key={days}
               onClick={() => setTimeRange(days)}
-              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 " + (timeRange === days ? 'bg-accent text-white ring-accent shadow-md shadow-accent/20' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
+              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 " + (timeRange === days ? 'bg-accent text-white ring-accent' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
             >
               {days === 1 ? '24h' : days + ' Días'}
             </button>
@@ -301,6 +301,7 @@ const SecurityDashboard = ({ onBack }) => {
 };
 
 export default SecurityDashboard;
+
 
 
 
