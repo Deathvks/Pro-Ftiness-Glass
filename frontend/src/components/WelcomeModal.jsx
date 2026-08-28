@@ -239,7 +239,7 @@ const WelcomeModal = ({ onClose }) => {
               position: 'relative',
               zIndex: 1
             }}
-            className="custom-scrollbar"
+            className="hide-scrollbar"
           >
 
             {/*  Header Section  */}

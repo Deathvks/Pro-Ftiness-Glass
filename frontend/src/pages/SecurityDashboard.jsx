@@ -106,12 +106,12 @@ const SecurityDashboard = ({ onBack }) => {
           <p className="text-sm text-text-secondary">Inteligencia de amenazas, auditoría y bloqueos.</p>
         </div>
         
-        <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full ring-1 ring-black/5 dark:ring-white/10 shrink-0 overflow-x-auto custom-scrollbar">
+        <div className="flex gap-2 shrink-0 overflow-x-auto hide-scrollbar pb-1 md:pb-0">
           {[1, 3, 7, 14, 30].map(days => (
             <button
               key={days}
               onClick={() => setTimeRange(days)}
-              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap " + (timeRange === days ? 'bg-accent text-white shadow-md' : 'text-text-secondary hover:text-text-primary')}
+              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 " + (timeRange === days ? 'bg-accent text-white ring-accent shadow-md shadow-accent/20' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
             >
               {days === 1 ? '24h' : days + ' Días'}
             </button>
@@ -163,7 +163,7 @@ const SecurityDashboard = ({ onBack }) => {
         )}
       </div>
 
-      <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full mb-6 ring-1 ring-black/5 dark:ring-white/10">
+      <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full mb-2 ring-1 ring-black/5 dark:ring-white/10">
         <button
           onClick={() => setActiveTab('alerts')}
           className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'alerts' ? 'bg-red text-white shadow-lg shadow-red/20' : 'text-text-secondary hover:text-text-primary')}
@@ -172,7 +172,7 @@ const SecurityDashboard = ({ onBack }) => {
         </button>
         <button
           onClick={() => setActiveTab('success')}
-          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'success' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'text-text-secondary hover:text-text-primary')}
+          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'success' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary')}
         >
           Auditoría
         </button>
@@ -182,6 +182,12 @@ const SecurityDashboard = ({ onBack }) => {
         >
           Lista Negra
         </button>
+      </div>
+
+      <div className="text-xs text-text-secondary mb-6 px-2 text-center md:text-left font-medium">
+        {activeTab === 'alerts' && "Monitorea intentos fallidos de inicio de sesión y bloqueos automáticos (fuerza bruta)."}
+        {activeTab === 'success' && "Historial de accesos autorizados. Verifica quién y desde dónde ha entrado correctamente."}
+        {activeTab === 'blacklist' && "Direcciones IP bloqueadas manual o automáticamente. No pueden acceder a la app."}
       </div>
 
       {loading && <div className="text-center text-text-secondary py-8 font-medium">Actualizando datos...</div>}

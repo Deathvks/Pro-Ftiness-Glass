@@ -1057,3 +1057,6 @@ body .driver-popover .driver-popover-close-btn:hover {
 .nav-touch-area {
   touch-action: none !important; 
 } 
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
