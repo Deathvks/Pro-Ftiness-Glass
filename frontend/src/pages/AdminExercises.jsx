@@ -120,7 +120,7 @@ const SortableImageItem = ({ img, idx, onRemove, onCrop }) => {
       <button
         type="button"
         onClick={onRemove}
-        className="absolute top-1.5 right-1.5 p-1 bg-black/50 text-white rounded-full hover:bg-red-500 transition-colors shadow-sm z-10"
+        className="absolute top-1.5 right-1.5 p-1 bg-black/50 text-white rounded-full hover:bg-red transition-colors shadow-sm z-10"
       >
         <X size={14} strokeWidth={3} />
       </button>
@@ -700,7 +700,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
                     {!isTrainerMode && (
                       <button 
                         onClick={(e) => { e.stopPropagation(); setExerciseToDelete(ex); }}
-                        className="shrink-0 p-2 text-text-muted hover:text-red bg-black/5 dark:bg-white/5 hover:bg-red/10 rounded-full transition-colors active:scale-95 -mt-1 -mr-1"
+                        className="shrink-0 p-2 text-red/70 hover:text-red bg-black/5 dark:bg-white/5 hover:bg-red/10 rounded-full transition-colors active:scale-95 -mt-1 -mr-1"
                         title="Eliminar Ejercicio"
                       >
                         <Trash2 size={16} />
@@ -894,7 +894,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
                     {!isTrainerMode && (
                       <button 
                         onClick={() => { closeDetailModal(); setExerciseToDelete(selectedExercise); }}
-                        className="w-full mt-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold rounded-[16px] transition-all flex items-center justify-center gap-2 active:scale-95"
+                        className="w-full mt-4 py-3 bg-red/10 hover:bg-red/20 text-red font-bold rounded-[16px] transition-all flex items-center justify-center gap-2 active:scale-95"
                       >
                         <Trash2 size={18} />
                         Borrar Ejercicio
@@ -1093,3 +1093,4 @@ const AdminExercises = ({ isTrainerMode = false }) => {
 };
 
 export default AdminExercises;
+
