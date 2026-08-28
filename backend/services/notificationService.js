@@ -7,15 +7,22 @@ import path from 'path';
 
 // 1. Inicializar Firebase Admin (Solo una vez)
 try {
+  let serviceAccount = null;
   const serviceAccountPath = path.resolve('firebase-admin.json');
-  if (fs.existsSync(serviceAccountPath) && !admin.apps.length) {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else if (fs.existsSync(serviceAccountPath)) {
+    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+  }
+
+  if (serviceAccount && !admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
     console.log('✅ Firebase Admin Inicializado correctamente para notificaciones nativas.');
-  } else if (!fs.existsSync(serviceAccountPath)) {
-    console.warn('⚠️ Archivo firebase-admin.json no encontrado. Las notificaciones nativas fallarán.');
+  } else if (!serviceAccount) {
+    console.warn('⚠️ Credenciales de Firebase Admin no encontradas (ni local ni en ENV). Las notificaciones nativas fallarán.');
   }
 } catch (error) {
   console.error('❌ Error inicializando Firebase Admin:', error.message);
