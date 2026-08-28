@@ -7,6 +7,7 @@ import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { normalizeText } from '../utils/helpers';
 import { askTrainerAI } from '../services/aiService';
+import ModalPortal from '../components/ModalPortal';
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions', 'exercise_muscles']);
@@ -170,16 +171,19 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   };
 
   return (
+    <ModalPortal>
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out] p-4 sm:p-6 pt-[calc(env(safe-area-inset-top,24px)+16px)] pb-[calc(env(safe-area-inset-bottom,24px)+16px)]"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-xl max-h-[85vh] overflow-hidden flex flex-col bg-bg-primary rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]"
+        className="relative w-full max-w-xl max-h-[90vh] mt-auto sm:mt-0 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-0 overflow-hidden flex flex-col bg-bg-primary rounded-t-[32px] sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-6 sm:p-8 pb-5 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] shrink-0">
+        <div className="flex flex-col p-6 pt-4 pb-5 sm:p-8 sm:py-6 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] shrink-0">
+          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+          <div className="flex justify-between items-center">
           <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-text-primary truncate pr-4">
             {translatedName}
           </h2>
@@ -347,6 +351,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };
 

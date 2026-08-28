@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import ModalPortal from '../components/ModalPortal';
 import { Youtube, Search, Edit, Trash2, Check, X, Loader2, Maximize, Play, Video, GripHorizontal } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import { getExerciseList, importYouTubePlaylist, updateExercise, deleteExercise } from '../services/exerciseService';
@@ -732,19 +733,20 @@ const AdminExercises = ({ isTrainerMode = false }) => {
         />
       )}
 
-      {selectedExercise && createPortal(
+      {selectedExercise && (
+          <ModalPortal>
         <div 
-          className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 pt-[calc(env(safe-area-inset-top,24px)+16px)] pb-[calc(env(safe-area-inset-bottom,24px)+16px)] animate-[fade-in_0.2s_ease-out]"
-          onClick={closeDetailModal}
-        >
-          <div 
-            className="w-full h-full max-h-[85vh] sm:h-auto sm:max-w-2xl bg-bg-primary rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-[scale-in_0.3s_ease-out]" 
-            onClick={e => e.stopPropagation()}
+          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-[fade-in_0.3s_ease-out]"
+            onClick={closeDetailModal}
           >
-            {/* Encabezado (Adaptativo para iOS notch y Android) */}
             <div 
-              className="w-full flex items-center justify-between p-4 bg-bg-primary shrink-0 border-b border-black/5 dark:border-white/5"
+              className="w-full max-h-[90vh] mt-auto sm:mt-0 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-0 sm:h-auto sm:max-w-2xl bg-bg-primary rounded-t-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]" 
+              onClick={e => e.stopPropagation()}
             >
+              {/* Encabezado (Adaptativo para iOS notch y Android) */}
+              <div className="w-full flex flex-col p-4 pt-4 bg-bg-primary shrink-0 border-b border-black/5 dark:border-white/5">
+                <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+                <div className="w-full flex items-center justify-between">
               <h3 className="font-bold text-text-primary text-lg truncate pr-4">
                 {isEditingModal ? 'Editar Ejercicio' : selectedExercise.name}
               </h3>
@@ -754,6 +756,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
               >
                 <X size={20} strokeWidth={2.5} />
               </button>
+            </div>
             </div>
 
             {/* Contenedor Placeholder para evitar saltos de layout al cambiar a fixed */}
@@ -1093,6 +1096,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
 };
 
 export default AdminExercises;
+
 
 
 
