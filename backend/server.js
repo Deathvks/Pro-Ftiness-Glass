@@ -40,6 +40,8 @@ import squadRoutes from './routes/squads.js';
 import aiRoutes from './routes/ai.js';
 import trainerRoutes from './routes/trainerRoutes.js';
 import chatRoutes from './routes/chat.js';
+import securityRoutes from './routes/securityRoutes.js';
+import { checkBlacklist } from './middleware/securityMonitor.js';
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
@@ -49,6 +51,9 @@ app.set('trust proxy', 1);
 
 // OPTIMIZACIÓN: Cabeceras de seguridad
 app.use(helmet({ crossOriginResourcePolicy: false }));
+
+// Middleware de Seguridad (Bloqueo de IPs)
+app.use(checkBlacklist);
 
 // OPTIMIZACIÓN: Compresión global antes de cualquier ruta o archivo estático
 app.use(compression());
@@ -141,9 +146,14 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// --- ARCHIVOS ESTÁTICOS ---
+// --- ARCHIVOS ESTÁTICOS (con caché para ahorrar tráfico) ---
 const staticPath = path.join(__dirname, 'public');
-app.use(express.static(staticPath));
+app.use(express.static(staticPath, {
+  maxAge: '7d',        // El navegador/app guarda los archivos 7 días sin volver a pedirlos
+  etag: true,          // Si el archivo cambia en el servidor, se descarga la versión nueva
+  lastModified: true,  // Permite al navegador verificar si el archivo fue modificado
+  immutable: false     // Los archivos pueden cambiar (ej: foto de perfil actualizada)
+}));
 
 // --- Rutas API ---
 app.use('/api/auth', authRoutes);
@@ -171,6 +181,7 @@ app.use('/api/squads', squadRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/trainer', trainerRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/admin/security', securityRoutes);
 
 app.use(errorHandler);
 

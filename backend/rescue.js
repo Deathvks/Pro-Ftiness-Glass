@@ -22,13 +22,21 @@ app.get('/rescue-download', (req, res) => {
   if (fs.existsSync(filePath)) {
     res.download(filePath, 'db_backup.tar.gz');
   } else {
-    res.status(404).send('El archivo an no ha sido subido.');
+    res.status(404).send('El archivo aún no ha sido subido.');
   }
 });
 
-// 3. Ruta de prueba para comprobar que el backend est vivo
+// 3. Ruta de prueba para comprobar que el backend está vivo
 app.get('/', (req, res) => {
-  res.send('<h1>Servidor de Rescate Activo</h1><p>Ve a /rescue-download cuando el archivo est listo.</p>');
+  res.send('<h1>🔧 Servidor en Mantenimiento</h1><p>Estamos mejorando la app. Volvemos enseguida.</p>');
+});
+
+// 4. MANTENIMIENTO: Cualquier otra petición de la app recibe aviso de mantenimiento
+app.all('*', (req, res) => {
+  res.status(503).json({
+    error: 'maintenance',
+    message: '🔧 Estamos realizando tareas de mantenimiento. Volvemos enseguida, ¡gracias por tu paciencia!'
+  });
 });
 
 app.listen(PORT, '0.0.0.0', () => {

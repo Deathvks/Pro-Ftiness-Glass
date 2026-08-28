@@ -223,16 +223,34 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const handleFileChange = (e) => {
         const selected = e.target.files[0];
         if (selected) {
-            setFile(selected);
-            setPreview(URL.createObjectURL(selected));
-            setCanUseHDR(false);
-            setIsHDR(false);
+            if (selected.type.startsWith('video/')) {
+                const videoElement = document.createElement('video');
+                videoElement.preload = 'metadata';
+                videoElement.onloadedmetadata = () => {
+                    window.URL.revokeObjectURL(videoElement.src);
+                    if (videoElement.duration > 15) {
+                        alert('El vídeo no puede durar más de 15 segundos.');
+                        e.target.value = ''; 
+                        return;
+                    }
+                    setFile(selected);
+                    setPreview(URL.createObjectURL(selected));
+                    setCanUseHDR(false);
+                    setIsHDR(false);
+                };
+                videoElement.src = URL.createObjectURL(selected);
+            } else {
+                setFile(selected);
+                setPreview(URL.createObjectURL(selected));
+                setCanUseHDR(false);
+                setIsHDR(false);
 
-            if (selected.type.startsWith('image/')) {
-                const isPotentialHDRImage = /\.(heic|heif|avif)$/i.test(selected.name);
-                if (isPotentialHDRImage) {
-                    setCanUseHDR(true);
-                    setIsHDR(true);
+                if (selected.type.startsWith('image/')) {
+                    const isPotentialHDRImage = /\.(heic|heif|avif)$/i.test(selected.name);
+                    if (isPotentialHDRImage) {
+                        setCanUseHDR(true);
+                        setIsHDR(true);
+                    }
                 }
             }
         }

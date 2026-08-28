@@ -130,6 +130,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
     const [showGoogleModal, setShowGoogleModal] = useState(false);
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
+    const [maintenanceMode, setMaintenanceMode] = useState(false);
     
     // Añadido para gestionar cuentas no verificadas
     const [showVerification, setShowVerification] = useState(false);
@@ -137,6 +138,11 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     useEffect(() => {
         initGoogleAuth();
+        // Ping al backend para detectar si está en mantenimiento
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        fetch(`${API_BASE_URL}/api/auth/login`, { method: 'HEAD' })
+            .then(res => { if (res.status === 503) setMaintenanceMode(true); })
+            .catch(() => {});
     }, []);
 
     // 🔴 AHORA ESCUCHA TANTO EL EVENTO DE STORAGE COMO EL EVENTO CUSTOM DEL MODAL
@@ -635,6 +641,12 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
                 <GlassCard className="glass p-6 sm:p-10 relative rounded-[32px] shadow-2xl transition-all duration-300">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+                        {maintenanceMode && (
+                            <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-2xl p-4 text-center">
+                                <p className="text-yellow-400 text-sm font-bold">🔧 Estamos en mantenimiento</p>
+                                <p className="text-yellow-400/80 text-xs mt-1">Volvemos enseguida, ¡gracias por tu paciencia!</p>
+                            </div>
+                        )}
                         {errors.api && <p className="text-center text-red text-sm">{errors.api}</p>}
 
                         <div>

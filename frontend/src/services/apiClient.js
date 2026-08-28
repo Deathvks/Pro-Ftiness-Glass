@@ -67,6 +67,21 @@ const apiClient = async (endpoint, options = {}) => {
         if (!response.ok) {
             // Si la respuesta es un error (ej: 4xx, 5xx), intentamos leer el cuerpo del error.
 
+            // --- MANTENIMIENTO: Detectar si el servidor está en modo mantenimiento ---
+            if (response.status === 503) {
+                try {
+                    const maintenanceData = await response.json();
+                    if (maintenanceData.error === 'maintenance') {
+                        const maintenanceErr = new Error(maintenanceData.message || '🔧 Estamos en mantenimiento. Volvemos enseguida.');
+                        maintenanceErr.status = 503;
+                        maintenanceErr.isMaintenance = true;
+                        throw maintenanceErr;
+                    }
+                } catch (e) {
+                    if (e.isMaintenance) throw e;
+                }
+            }
+
             if (response.status === 401 && !endpoint.includes('/auth/login')) {
                 useAppStore.getState().handleSessionExpiry();
                 // --- CAMBIO: Interrumpir flujo inmediatamente ---
