@@ -176,7 +176,7 @@ const SecurityDashboard = ({ onBack }) => {
                 placeholder="Dirección IP (ej. 192.168.1.1)" 
                 value={newIpToBlock}
                 onChange={e => setNewIpToBlock(e.target.value)}
-                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/10 dark:ring-white/10 rounded-xl px-4 py-3 text-sm text-text-primary focus:ring-2 focus:ring-accent focus:outline-none font-mono"
+                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/10 dark:ring-white/10 rounded-xl px-4 py-3 text-sm text-text-primary  focus:outline-none font-mono"
                 required
               />
               <input 
@@ -184,7 +184,7 @@ const SecurityDashboard = ({ onBack }) => {
                 placeholder="Motivo (opcional)" 
                 value={blockReason}
                 onChange={e => setBlockReason(e.target.value)}
-                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/10 dark:ring-white/10 rounded-xl px-4 py-3 text-sm text-text-primary focus:ring-2 focus:ring-accent focus:outline-none"
+                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/10 dark:ring-white/10 rounded-xl px-4 py-3 text-sm text-text-primary  focus:outline-none"
               />
               <button 
                 type="submit"
