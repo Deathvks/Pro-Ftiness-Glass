@@ -363,7 +363,7 @@ const AdminPanel = ({ onCancel }) => {
             className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
           >
             <ChevronLeft size={20} />
-            Volver a Ajustes
+            Volver al Hub
           </button>
 
           <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Panel de Administración</h1>
@@ -903,3 +903,4 @@ const AdminPanel = ({ onCancel }) => {
 };
 
 export default AdminPanel;
+

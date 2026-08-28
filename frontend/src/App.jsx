@@ -358,7 +358,7 @@ export default function App() {
       case 'challenges': return <ChallengesScreen setView={navigateInternal} />;
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigateInternal('settings')} />;
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigateInternal} />;
-      case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('settings')} navigate={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
+      case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('hub')} navigate={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
       case 'securityDashboard': return userProfile?.role === 'admin' ? <SecurityDashboard onBack={() => navigateInternal('adminPanel')} /> : <Dashboard setView={navigateInternal} />;
       case 'trainerPanel': return (userProfile?.role === 'admin' || userProfile?.role === 'trainer') ? <TrainerPanel setView={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
