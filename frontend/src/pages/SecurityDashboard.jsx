@@ -7,37 +7,53 @@ import {
   Lock,
   Unlock,
   AlertCircle,
-  ChevronLeft,
-  X,
-  Search
+  CheckCircle,
+  Globe,
+  Filter
 } from 'lucide-react';
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
+} from 'recharts';
 import apiClient from '../services/apiClient';
 
 const SecurityDashboard = ({ onBack }) => {
-  const [stats, setStats] = useState({ totalLogs: 0, blockedIps: 0, failedLoginsToday: 0 });
+  const [stats, setStats] = useState({ 
+    totalLogs: 0, 
+    blockedIps: 0, 
+    failedLogins: 0, 
+    successfulLogins: 0, 
+    autoBans: 0, 
+    chartData: [] 
+  });
   const [logs, setLogs] = useState([]);
   const [blacklist, setBlacklist] = useState([]);
-  const [activeTab, setActiveTab] = useState('logs'); // 'logs' o 'blacklist'
+  const [activeTab, setActiveTab] = useState('alerts'); // 'alerts', 'success', 'blacklist'
+  const [timeRange, setTimeRange] = useState(30); // 1, 3, 7, 14, 30
+  
   const [newIpToBlock, setNewIpToBlock] = useState('');
   const [blockReason, setBlockReason] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [timeRange, activeTab]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
+      let logType = 'ALL';
+      if (activeTab === 'alerts') logType = 'ALERTS';
+      else if (activeTab === 'success') logType = 'SUCCESS';
+
       const [statsRes, logsRes, blacklistRes] = await Promise.all([
-        apiClient('/admin/security/stats'),
-        apiClient('/admin/security/logs?limit=50'),
-        apiClient('/admin/security/blacklist')
+        apiClient(/admin/security/stats?range= + timeRange),
+        activeTab !== 'blacklist' ? apiClient(/admin/security/logs?limit=50&range= + timeRange + &type= + logType) : Promise.resolve([]),
+        activeTab === 'blacklist' ? apiClient('/admin/security/blacklist') : Promise.resolve([])
       ]);
       
       setStats(statsRes);
-      setLogs(logsRes);
-      setBlacklist(blacklistRes);
+      if (activeTab !== 'blacklist') setLogs(logsRes);
+      if (activeTab === 'blacklist') setBlacklist(blacklistRes);
     } catch (error) {
       console.error('Error fetching security data', error);
     } finally {
@@ -64,97 +80,147 @@ const SecurityDashboard = ({ onBack }) => {
   };
 
   const handleUnblockIp = async (ip) => {
-    if (!window.confirm(`¿Estás seguro de desbloquear la IP ${ip}?`)) return;
+    if (!window.confirm(¿Estás seguro de desbloquear la IP  + ip + ?)) return;
     
     try {
-      await apiClient(`/admin/security/blacklist/${ip}`, { method: 'DELETE' });
+      await apiClient(/admin/security/blacklist/ + ip, { method: 'DELETE' });
       fetchData();
     } catch (error) {
       console.error('Error unblocking IP', error);
     }
   };
 
-  if (loading) {
-    return <div className="p-4 text-center text-text-secondary font-medium">Cargando datos de seguridad...</div>;
-  }
+  const formatDateAxis = (tickItem) => {
+    const date = new Date(tickItem);
+    return date.getDate() + '/' + (date.getMonth() + 1);
+  };
 
   return (
     <div className="w-full animate-[fade-in_0.3s_ease-out]">
-      {/* HEADER */}
-      <div className="flex flex-col gap-1 mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2 text-text-primary">
-          <ShieldCheck size={28} className="text-accent" />
-          Ciberseguridad
-        </h2>
-        <p className="text-sm text-text-secondary">Monitorización, accesos bloqueados y eventos del servidor.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-text-primary">
+            <ShieldCheck size={28} className="text-accent" />
+            Ciberseguridad Avanzada
+          </h2>
+          <p className="text-sm text-text-secondary">Inteligencia de amenazas, auditoría y bloqueos.</p>
+        </div>
+        
+        <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full ring-1 ring-black/5 dark:ring-white/10 shrink-0 overflow-x-auto custom-scrollbar">
+          {[1, 3, 7, 14, 30].map(days => (
+            <button
+              key={days}
+              onClick={() => setTimeRange(days)}
+              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap " + (timeRange === days ? 'bg-accent text-white shadow-md' : 'text-text-secondary hover:text-text-primary')}
+            >
+              {days === 1 ? '24h' : days + ' Días'}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* METRICS */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
-          <ShieldAlert size={24} className="text-red-500 mb-2" />
-          <span className="text-2xl font-black text-text-primary">{stats.failedLoginsToday}</span>
-          <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">Fallos (24h)</span>
+          <ShieldAlert size={20} className="text-red mb-1" />
+          <span className="text-2xl font-black text-text-primary">{stats.failedLogins}</span>
+          <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">Ataques</span>
         </div>
         <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
-          <Hand size={24} className="text-orange-500 mb-2" />
+          <CheckCircle size={20} className="text-green-500 mb-1" />
+          <span className="text-2xl font-black text-text-primary">{stats.successfulLogins}</span>
+          <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">Éxitos</span>
+        </div>
+        <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
+          <AlertCircle size={20} className="text-orange-500 mb-1" />
+          <span className="text-2xl font-black text-text-primary">{stats.autoBans}</span>
+          <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">Auto-Bans</span>
+        </div>
+        <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
+          <Hand size={20} className="text-red mb-1" />
           <span className="text-2xl font-black text-text-primary">{stats.blockedIps}</span>
           <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">IPs Bloqueadas</span>
         </div>
-        <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
-          <List size={24} className="text-accent mb-2" />
-          <span className="text-2xl font-black text-text-primary">{stats.totalLogs}</span>
-          <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">Logs Totales</span>
-        </div>
       </div>
 
-      {/* TABS */}
+      <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 mb-6 h-[250px] w-full">
+        {loading && stats.chartData.length === 0 ? (
+          <div className="w-full h-full flex items-center justify-center text-text-secondary">Cargando gráfico...</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(150,150,150,0.2)" vertical={false} />
+              <XAxis dataKey="date" tickFormatter={formatDateAxis} tick={{fontSize: 10, fill: 'var(--text-secondary)'}} axisLine={false} tickLine={false} />
+              <YAxis tick={{fontSize: 10, fill: 'var(--text-secondary)'}} axisLine={false} tickLine={false} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: 'none', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                labelStyle={{ color: 'var(--text-secondary)', fontWeight: 'bold', marginBottom: '4px' }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+              <Bar dataKey="success" name="Éxitos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar dataKey="failure" name="Ataques" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
       <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full mb-6 ring-1 ring-black/5 dark:ring-white/10">
         <button
-          onClick={() => setActiveTab('logs')}
-          className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
-            activeTab === 'logs' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary'
-          }`}
+          onClick={() => setActiveTab('alerts')}
+          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'alerts' ? 'bg-red text-white shadow-lg shadow-red/20' : 'text-text-secondary hover:text-text-primary')}
         >
-          Últimos Eventos
+          Alertas
+        </button>
+        <button
+          onClick={() => setActiveTab('success')}
+          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'success' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'text-text-secondary hover:text-text-primary')}
+        >
+          Auditoría
         </button>
         <button
           onClick={() => setActiveTab('blacklist')}
-          className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
-            activeTab === 'blacklist' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary'
-          }`}
+          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'blacklist' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary')}
         >
-          Lista Negra (IPs)
+          Lista Negra
         </button>
       </div>
 
-      {/* CONTENT */}
-      {activeTab === 'logs' && (
+      {loading && <div className="text-center text-text-secondary py-8 font-medium">Actualizando datos...</div>}
+      
+      {!loading && (activeTab === 'alerts' || activeTab === 'success') && (
         <div className="space-y-3">
           {logs.length === 0 ? (
-            <p className="text-center text-text-secondary py-8 font-medium">No hay registros de seguridad recientes.</p>
+            <p className="text-center text-text-secondary py-8 font-medium">No hay registros para este período.</p>
           ) : (
             logs.map(log => (
-              <div key={log.id} className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-                <div className="flex justify-between items-start mb-3">
-                  <span className={`text-xs font-black px-2.5 py-1 rounded-md ${
-                    log.eventType.includes('FAILED') || log.eventType.includes('BLOCKED') 
-                      ? 'bg-red/20 text-red-500' 
-                      : 'bg-accent/20 text-accent'
-                  }`}>
-                    {log.eventType}
-                  </span>
-                  <span className="text-[10px] text-text-secondary font-bold uppercase">
-                    {new Date(log.createdAt).toLocaleString()}
-                  </span>
-                </div>
-                <div className="text-sm text-text-primary font-medium mb-3">{log.details}</div>
-                <div className="flex justify-between items-end">
-                  <div className="text-xs text-text-secondary font-mono bg-black/10 dark:bg-white/10 px-2 py-1.5 rounded-lg font-medium">
-                    IP: {log.ipAddress}
+              <div key={log.id} className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 flex flex-col md:flex-row md:items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={"text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider " + (
+                      log.eventType === 'LOGIN_SUCCESS' ? 'bg-green-500/20 text-green-500' :
+                      log.eventType === 'AUTO_BAN' ? 'bg-orange-500/20 text-orange-500' :
+                      'bg-red/20 text-red'
+                    )}>
+                      {log.eventType.replace('_', ' ')}
+                    </span>
+                    <span className="text-[10px] text-text-secondary font-bold uppercase">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </span>
                   </div>
+                  <div className="text-sm text-text-primary font-medium">{log.details}</div>
+                </div>
+                
+                <div className="flex flex-wrap md:flex-col gap-2 md:gap-1 md:items-end shrink-0 md:min-w-[150px]">
+                  <div className="text-xs text-text-secondary font-mono bg-black/10 dark:bg-white/10 px-2 py-1 rounded-lg">
+                    {log.ipAddress}
+                  </div>
+                  {(log.country || log.city) && (
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-2 py-1 rounded-lg">
+                      <Globe size={10} />
+                      {log.city ? log.city + ', ' : ''}{log.country || 'Desconocido'}
+                    </div>
+                  )}
                   {log.userId && (
-                    <div className="text-xs text-text-secondary font-bold">Usuario ID: {log.userId}</div>
+                    <div className="text-[10px] font-bold text-accent">USER ID: {log.userId}</div>
                   )}
                 </div>
               </div>
@@ -163,12 +229,11 @@ const SecurityDashboard = ({ onBack }) => {
         </div>
       )}
 
-      {activeTab === 'blacklist' && (
+      {!loading && activeTab === 'blacklist' && (
         <div className="space-y-4">
-          {/* Add to blacklist form */}
-          <form onSubmit={handleBlockIp} className="bg-red/5 p-5 rounded-2xl ring-1 ring-red-500/20 mb-6">
-            <h3 className="text-sm font-bold text-red-500 mb-4 flex items-center gap-2">
-              <Lock size={16} /> Bloquear Nueva IP
+          <form onSubmit={handleBlockIp} className="bg-red/5 p-5 rounded-2xl ring-1 ring-red/20 mb-6">
+            <h3 className="text-sm font-bold text-red mb-4 flex items-center gap-2">
+              <Lock size={16} /> Bloquear Nueva IP Manualmente
             </h3>
             <div className="space-y-4">
               <input 
@@ -176,7 +241,7 @@ const SecurityDashboard = ({ onBack }) => {
                 placeholder="Dirección IP (ej. 192.168.1.1)" 
                 value={newIpToBlock}
                 onChange={e => setNewIpToBlock(e.target.value)}
-                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/10 dark:ring-white/10 rounded-xl px-4 py-3 text-sm text-text-primary  focus:outline-none font-mono"
+                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/10 dark:ring-white/10 rounded-xl px-4 py-3 text-sm text-text-primary font-mono outline-none"
                 required
               />
               <input 
@@ -184,20 +249,19 @@ const SecurityDashboard = ({ onBack }) => {
                 placeholder="Motivo (opcional)" 
                 value={blockReason}
                 onChange={e => setBlockReason(e.target.value)}
-                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/10 dark:ring-white/10 rounded-xl px-4 py-3 text-sm text-text-primary  focus:outline-none"
+                className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/10 dark:ring-white/10 rounded-xl px-4 py-3 text-sm text-text-primary outline-none"
               />
               <button 
                 type="submit"
-                className="w-full bg-red hover:bg-red text-white font-bold py-3 rounded-xl transition-colors text-sm"
+                className="w-full bg-red hover:brightness-110 text-white font-bold py-3 rounded-xl transition-all text-sm active:scale-95"
               >
                 Añadir a Lista Negra
               </button>
             </div>
           </form>
 
-          {/* Blacklisted IPs */}
           <h3 className="font-bold mb-3 flex items-center gap-2 text-text-primary">
-            <AlertCircle size={18} className="text-orange-500" /> IPs Bloqueadas
+            <AlertCircle size={18} className="text-orange-500" /> IPs Bloqueadas (Manual y Auto)
           </h3>
           
           <div className="space-y-2">
@@ -210,7 +274,7 @@ const SecurityDashboard = ({ onBack }) => {
                     <div className="font-mono text-sm text-text-primary font-bold">{item.ipAddress}</div>
                     {item.reason && <div className="text-xs text-text-secondary mt-1">{item.reason}</div>}
                     <div className="text-[10px] text-text-secondary mt-1 font-bold uppercase tracking-wider">
-                      Bloqueado: {new Date(item.createdAt).toLocaleDateString()}
+                      Bloqueado: {new Date(item.createdAt).toLocaleString()}
                     </div>
                   </div>
                   <button 

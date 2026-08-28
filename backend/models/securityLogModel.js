@@ -26,6 +26,14 @@ const SecurityLog = sequelize.define('SecurityLog', {
   details: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  country: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  city: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   tableName: 'security_logs',

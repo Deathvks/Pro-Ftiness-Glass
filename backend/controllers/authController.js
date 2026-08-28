@@ -69,6 +69,20 @@ const createUserSession = async (userId, token, req) => {
         last_active: new Date()
       });
     }
+
+    // AUDITORÍA DE SEGURIDAD: Log de éxito
+    try {
+      const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+      await logSecurityEvent({
+        eventType: 'LOGIN_SUCCESS',
+        ipAddress: ip,
+        userId: userId,
+        userAgent: userAgent,
+        details: `Inicio de sesión exitoso desde ${deviceName}`
+      });
+    } catch (err) {
+      console.error("Error logging successful login:", err);
+    }
   } catch (error) {
     console.error('Error al gestionar la sesión del usuario:', error);
   }
