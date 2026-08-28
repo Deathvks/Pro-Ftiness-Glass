@@ -115,9 +115,9 @@ const SecurityDashboard = ({ onBack }) => {
 
   return (
     <div className="w-full animate-[fade-in_0.3s_ease-out]">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 w-full min-w-0">
+      <div className="flex flex-col gap-4 mb-6 w-full min-w-0">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl font-bold flex items-center gap-2 text-text-primary">
+          <h2 className="text-xl md:text-2xl font-bold flex whitespace-nowrap tracking-tight items-center gap-2 text-text-primary">
             <ShieldCheck size={28} className="text-accent" />
             Ciberseguridad Avanzada
           </h2>
@@ -321,6 +321,8 @@ const SecurityDashboard = ({ onBack }) => {
 };
 
 export default SecurityDashboard;
+
+
 
 
 
