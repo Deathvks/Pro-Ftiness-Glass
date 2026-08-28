@@ -140,7 +140,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         initGoogleAuth();
         // Ping al backend para detectar si está en mantenimiento
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-        fetch(`${API_BASE_URL}/api/auth/login`, { method: 'HEAD' })
+        fetch(`${API_BASE_URL}/auth/login`, { method: 'HEAD' })
             .then(res => { if (res.status === 503) setMaintenanceMode(true); })
             .catch(() => {});
     }, []);
