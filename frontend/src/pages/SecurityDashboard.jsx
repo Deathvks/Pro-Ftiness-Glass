@@ -46,8 +46,8 @@ const SecurityDashboard = ({ onBack }) => {
       else if (activeTab === 'success') logType = 'SUCCESS';
 
       const [statsRes, logsRes, blacklistRes] = await Promise.all([
-        apiClient(/admin/security/stats?range= + timeRange),
-        activeTab !== 'blacklist' ? apiClient(/admin/security/logs?limit=50&range= + timeRange + &type= + logType) : Promise.resolve([]),
+        apiClient("/admin/security/stats?range=" + timeRange),
+        activeTab !== 'blacklist' ? apiClient("/admin/security/logs?limit=50&range=" + timeRange + "&type=" + logType) : Promise.resolve([]),
         activeTab === 'blacklist' ? apiClient('/admin/security/blacklist') : Promise.resolve([])
       ]);
       
@@ -80,10 +80,10 @@ const SecurityDashboard = ({ onBack }) => {
   };
 
   const handleUnblockIp = async (ip) => {
-    if (!window.confirm(¿Estás seguro de desbloquear la IP  + ip + ?)) return;
+    if (!window.confirm("¿Estás seguro de desbloquear la IP " + ip + "?")) return;
     
     try {
-      await apiClient(/admin/security/blacklist/ + ip, { method: 'DELETE' });
+      await apiClient("/admin/security/blacklist/" + ip, { method: 'DELETE' });
       fetchData();
     } catch (error) {
       console.error('Error unblocking IP', error);
