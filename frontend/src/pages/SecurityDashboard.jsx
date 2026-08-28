@@ -97,7 +97,7 @@ const SecurityDashboard = ({ onBack }) => {
 
   return (
     <div className="w-full animate-[fade-in_0.3s_ease-out]">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 w-full max-w-full overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 w-full min-w-0">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold flex items-center gap-2 text-text-primary">
             <ShieldCheck size={28} className="text-accent" />
@@ -106,7 +106,7 @@ const SecurityDashboard = ({ onBack }) => {
           <p className="text-sm text-text-secondary">Inteligencia de amenazas, auditoría y bloqueos.</p>
         </div>
         
-        <div className="flex gap-2 w-full overflow-x-auto hide-scrollbar pb-2">
+        <div className="flex gap-2 w-full min-w-0 overflow-x-auto hide-scrollbar py-2 px-2">
           {[1, 3, 7, 14, 30].map(days => (
             <button
               key={days}
@@ -301,4 +301,6 @@ const SecurityDashboard = ({ onBack }) => {
 };
 
 export default SecurityDashboard;
+
+
 
