@@ -407,7 +407,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('security')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'security'
-            ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
+            ? 'bg-red text-white shadow-lg shadow-red/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >

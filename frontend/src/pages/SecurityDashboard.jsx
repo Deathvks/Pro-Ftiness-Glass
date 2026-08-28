@@ -139,7 +139,7 @@ const SecurityDashboard = ({ onBack }) => {
                 <div className="flex justify-between items-start mb-3">
                   <span className={`text-xs font-black px-2.5 py-1 rounded-md ${
                     log.eventType.includes('FAILED') || log.eventType.includes('BLOCKED') 
-                      ? 'bg-red-500/20 text-red-500' 
+                      ? 'bg-red/20 text-red-500' 
                       : 'bg-accent/20 text-accent'
                   }`}>
                     {log.eventType}
@@ -166,7 +166,7 @@ const SecurityDashboard = ({ onBack }) => {
       {activeTab === 'blacklist' && (
         <div className="space-y-4">
           {/* Add to blacklist form */}
-          <form onSubmit={handleBlockIp} className="bg-red-500/5 p-5 rounded-2xl ring-1 ring-red-500/20 mb-6">
+          <form onSubmit={handleBlockIp} className="bg-red/5 p-5 rounded-2xl ring-1 ring-red-500/20 mb-6">
             <h3 className="text-sm font-bold text-red-500 mb-4 flex items-center gap-2">
               <Lock size={16} /> Bloquear Nueva IP
             </h3>
@@ -188,7 +188,7 @@ const SecurityDashboard = ({ onBack }) => {
               />
               <button 
                 type="submit"
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors text-sm"
+                className="w-full bg-red hover:bg-red text-white font-bold py-3 rounded-xl transition-colors text-sm"
               >
                 Añadir a Lista Negra
               </button>
