@@ -8,7 +8,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node rescue.js",
+    "start": "node server.js",
     "start:real": "npx sequelize-cli db:migrate --env production && NODE_ENV=production node server.js",
     "seed": "npx sequelize-cli db:seed:all --env production",
     "dev": "nodemon server.js",
