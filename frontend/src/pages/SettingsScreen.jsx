@@ -87,11 +87,17 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
 };
 
 const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, loading }) => (
-  <div className={`flex items-center justify-between p-4 rounded-[20px] transition-all duration-300 ${disabled ? 'opacity-50' : 'hover:-translate-y-1 hover:shadow-md bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}>
+  <button
+    type="button"
+    onClick={disabled || loading ? undefined : onChange}
+    disabled={disabled || loading}
+    className={`w-full flex items-center justify-between p-4 rounded-[20px] transition-all duration-300 text-left group select-none [-webkit-tap-highlight-color:transparent]
+    ${disabled ? 'opacity-50 cursor-not-allowed bg-black/5 dark:bg-white/5' : 'cursor-pointer hover:-translate-y-1 hover:shadow-md bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:translate-y-0 active:shadow-none'}`}
+  >
     <div className="flex items-center gap-4 flex-1 min-w-0">
       <div className={`
         p-2.5 rounded-[14px] shrink-0 transition-colors
-        ${checked ? 'bg-accent/10 text-accent' : 'bg-black/5 dark:bg-white/5 text-text-muted'}
+        ${checked ? 'bg-accent/10 text-accent group-active:text-accent' : 'bg-black/5 dark:bg-white/5 text-text-muted group-active:text-text-muted'}
       `}>
         <Icon size={20} />
       </div>
@@ -101,21 +107,17 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
       </div>
     </div>
     {loading ? <Spinner size={20} className="mr-3" /> : (
-      <button
+      <div
         role="switch"
         aria-checked={checked}
-        onChange={onChange}
-        onClick={onChange}
-        disabled={disabled}
-        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full transition-all duration-300 ease-in-out focus:outline-none ml-3
+        className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-all duration-300 ease-in-out ml-3 pointer-events-none
         ${checked ? 'bg-[var(--color-accent)] border-2 border-white/30 bg-gradient-to-br from-white/25 to-transparent backdrop-blur-[12px] shadow-[0_4px_15px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.4)]' : 'bg-gray-400 dark:bg-gray-600 border-2 border-transparent shadow-inner'} 
-        ${disabled ? 'cursor-not-allowed' : ''}
         `}
       >
         <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
-      </button>
+      </div>
     )}
-  </div>
+  </button>
 );
 
 export default function SettingsScreen({

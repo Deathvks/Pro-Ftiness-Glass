@@ -36,6 +36,10 @@ import SystemSettings from './systemSettingsModel.js';
 import WorkoutLike from './workoutLikeModel.js';
 import WorkoutComment from './workoutCommentModel.js';
 
+// Nuevos modelos de Seguridad
+import SecurityLog from './securityLogModel.js';
+import IpBlacklist from './ipBlacklistModel.js';
+
 // 2. Importa las factorías de los nuevos modelos de Historias
 import storyFactory from './storyModel.js';
 import storyLikeFactory from './storyLikeModel.js';
@@ -198,7 +202,9 @@ const models = {
   WorkoutLike,
   WorkoutComment,
   UserChallenge,
-  Message
+  Message,
+  SecurityLog,
+  IpBlacklist
 };
 
 export default models;

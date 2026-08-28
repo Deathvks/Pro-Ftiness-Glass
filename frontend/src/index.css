@@ -1053,3 +1053,7 @@ body .driver-popover .driver-popover-close-btn:hover {
   background-color: var(--bg-primary) !important;
   transform: rotate(90deg) !important;
 }
+
+.nav-touch-area {
+  touch-action: none !important; 
+} 

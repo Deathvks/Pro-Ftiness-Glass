@@ -144,6 +144,18 @@ export const loginUser = async (req, res, next) => {
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
+      try {
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'LOGIN_FAILED',
+          ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida',
+          userId: user.id,
+          userAgent: req.headers['user-agent'] || 'Dispositivo desconocido',
+          details: `Intento de inicio de sesión fallido para el usuario ${user.email}`
+        });
+      } catch (err) {
+        console.error("Error logging failed login:", err);
+      }
       return res.status(401).json({ error: 'Credenciales inválidas.' });
     }
 

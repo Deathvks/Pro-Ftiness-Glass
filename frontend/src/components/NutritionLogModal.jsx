@@ -203,6 +203,16 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
             }}
             onSaveEdit={handleSaveEdit}
             onSaveListItem={handleSaveListItem}
+            onCancelEdit={() => {
+              if (editingListItemId) {
+                handleEditListItem(null);
+                setActiveTab('search');
+              }
+              if (editingFavorite) {
+                handleEditFavorite(null);
+                setActiveTab('favorites');
+              }
+            }}
             isLoading={isLoading}
             isEditing={isEditingLog || !!editingFavorite}
             editingListItem={itemsToAdd.find((item) => item.tempId === editingListItemId)}
@@ -234,19 +244,19 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
   return (
     <>
             <ModalPortal><div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.3s_ease-out]">
-                <div className="relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col mt-auto sm:mt-0 h-[85dvh] sm:h-auto sm:max-h-[90vh] bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
+                <div className="relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col mt-auto sm:mt-0 h-[92dvh] sm:h-auto sm:max-h-[90vh] bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
                     
                     {/* Header: Cambio aquí para line-clamp-2 y leading-tight en el título */}
-                    <div className="p-6 sm:p-8 pb-5 flex items-center justify-between border-b border-black/5 dark:border-white/10 flex-shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
+                    <div className="p-4 sm:p-8 pb-3 sm:pb-5 flex items-center justify-between border-b border-black/5 dark:border-white/10 flex-shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
                         <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight line-clamp-2 leading-tight pr-4 text-text-primary">{title}</h3>
-                        <button onClick={onClose} className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex-shrink-0 text-text-secondary hover:text-text-primary active:scale-95"><X size={20} strokeWidth={2.5} /></button>
+                        <button onClick={onClose} className="p-2 sm:p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex-shrink-0 text-text-secondary hover:text-text-primary active:scale-95"><X size={20} strokeWidth={2.5} /></button>
                     </div>
 
                     <div className="flex-grow overflow-hidden flex flex-col min-h-0">
                         {!(isEditingLog || editingFavorite) &&
-              <div className="p-6 sm:p-8 pt-6 pb-4 flex-shrink-0">
+              <div className="p-4 sm:p-8 pt-4 sm:pt-6 pb-2 sm:pb-4 flex-shrink-0">
                                 {(activeTab === 'search' || activeTab === 'favorites' || activeTab === 'recent') &&
-                <div className="relative mb-6 flex items-center">
+                <div className="relative mb-3 sm:mb-6 flex items-center">
                                         <input
                     type="text"
                     placeholder={activeTab === 'search' ? "Buscar alimento..." : "Filtrar lista..."}
@@ -254,7 +264,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={activeTab === 'search' ? handleKeyDown : undefined}
                     autoFocus={activeTab === 'search'}
-                    className="w-full pl-5 pr-14 py-3.5 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] text-text-primary font-bold placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all shadow-inner" />
+                    className="w-full pl-4 sm:pl-5 pr-12 sm:pr-14 py-2.5 sm:py-3.5 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] sm:rounded-[20px] text-text-primary font-bold placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all shadow-inner" />
                   
                                         <button
                     onClick={activeTab === 'search' ? executeSearch : undefined}
@@ -296,20 +306,23 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
               }
 
                         {/* Contenido: Si estamos editando y el título creció, usamos pt-4 para que el form no se pegue al borde */}
-                        <div className={`overflow-y-auto px-6 sm:px-8 pb-6 sm:pb-8 flex-grow custom-scrollbar ${isEditingLog || editingFavorite ? 'pt-4' : ''}`}>
+                        <div className={`overflow-y-auto px-4 sm:px-8 pb-4 sm:pb-8 flex-grow custom-scrollbar ${isEditingLog || editingFavorite ? 'pt-4' : ''}`}>
                             {renderContent()}
                         </div>
                     </div>
 
                     {!(isEditingLog || editingFavorite) && itemsToAdd.length > 0 &&
-            <div className="p-6 sm:p-8 border-t border-black/5 dark:border-white/10 flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-bg-primary z-10 rounded-b-[32px]">
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className="font-extrabold text-text-primary uppercase tracking-wider text-xs">Añadir ({itemsToAdd.length})</h4>
+            <div className="p-3 sm:p-6 border-t border-black/5 dark:border-white/10 flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-bg-primary z-10 rounded-b-[32px]">
+                            <div className="flex justify-between items-center mb-1.5 sm:mb-2">
+                                <h4 className="font-extrabold text-text-primary uppercase tracking-wider text-[10px]">Alimentos Añadidos ({itemsToAdd.length})</h4>
+                                <span className="text-[10px] text-text-secondary font-bold">{Math.round(itemsToAdd.reduce((sum, item) => sum + (item.calories || 0), 0))} kcal totales</span>
                             </div>
-                            <div className="space-y-3 max-h-[140px] overflow-y-auto mb-5 pr-2 custom-scrollbar">
-                                {itemsToAdd.map((item) =>
-                <SelectedItem key={item.tempId} item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />
-                )}
+                            <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-3 sm:mb-4 pb-1 sm:pb-2 snap-x snap-mandatory">
+                                {itemsToAdd.map((item) => (
+                                    <div key={item.tempId} className="w-[280px] sm:w-[300px] shrink-0 snap-start">
+                                        <SelectedItem item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />
+                                    </div>
+                                ))}
                             </div>
                             <button
                 onClick={async () => {
@@ -317,10 +330,10 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                   cancelMealReminder();
                 }}
                 disabled={isLoading}
-                className={`w-full flex items-center justify-center py-4 rounded-[20px] bg-accent text-white font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 ${isLoading ? 'opacity-60 cursor-not-allowed' : 'disabled:opacity-60'}`}>
+                className={`w-full flex items-center justify-center py-3.5 rounded-[16px] bg-accent text-white font-bold text-base hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 ${isLoading ? 'opacity-60 cursor-not-allowed' : 'disabled:opacity-60'}`}>
                 
                                 {isLoading ? <Spinner size={20} color="white" className="mr-2" /> : <Plus size={20} strokeWidth={2.5} className="mr-2" />}
-                                {isLoading ? 'Guardando...' : `Añadir ${itemsToAdd.length} Alimento${itemsToAdd.length > 1 ? 's' : ''}`}
+                                {isLoading ? 'Guardando...' : `Añadir Todo al Registro`}
                             </button>
                         </div>
             }

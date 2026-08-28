@@ -5,7 +5,7 @@ const TabButton = ({ active, onClick, children, disabled = false }) => (
         onClick={onClick}
         type="button"
         disabled={disabled}
-        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-[13px] font-extrabold tracking-wide rounded-[16px] transition-all duration-300 outline-none
+        className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-[13px] font-extrabold tracking-wide rounded-[12px] sm:rounded-[16px] transition-all duration-300 outline-none
             ${active
                 ? 'bg-accent text-white shadow-md shadow-accent/30 ring-1 ring-accent'
                 : disabled

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw
+  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -10,6 +10,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
 import AdminExercises from './AdminExercises';
+import SecurityDashboard from './SecurityDashboard';
 import CustomSelect from '../components/CustomSelect';
 import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
@@ -137,14 +138,14 @@ const AdminPanel = ({ onCancel }) => {
   // Recuperar la pestaña activa de localStorage o usar default 'users'
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('admin_active_tab') || 'users');
 
-  // Por defecto ordenamos por fecha (Recientes arriba)
-  const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'date');
-  
-  // Estado para el buscador
-  const [searchQuery, setSearchQuery] = useState('');
+  const [reportPage, setReportPage] = useState(1);
+  const REPORTS_PER_PAGE = 20;
 
   const [reports, setReports] = useState([]);
-  const [reportPage, setReportPage] = useState(1);
+  const [filter, setFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'default');
+
   const [reportToDelete, setReportToDelete] = useState(null);
   const [selectedImageForLightbox, setSelectedImageForLightbox] = useState(null);
 
@@ -156,21 +157,16 @@ const AdminPanel = ({ onCancel }) => {
   const [isCreatingUser, setIsCreatingUser] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
-  
-  // FIX: Extraemos la URL base del servidor quitando el sufijo /api
   const SERVER_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL.replace('/api', '');
 
-  // Guardar la pestaña activa cada vez que cambie
   useEffect(() => {
     localStorage.setItem('admin_active_tab', activeTab);
   }, [activeTab]);
 
-  // Guardar el filtro cada vez que cambie
   useEffect(() => {
     localStorage.setItem('admin_users_sort', sortBy);
   }, [sortBy]);
 
-  // Cargar Usuarios
   const fetchUsers = useCallback(async (isInitialLoad = false) => {
     if (isInitialLoad) setIsLoading(true);
     try {
@@ -187,12 +183,10 @@ const AdminPanel = ({ onCancel }) => {
     }
   }, [addToast]);
 
-  // Cargar Reportes
   const fetchReports = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getBugReports();
-      // Ordenamos reportes por fecha descendente (Nuevos primero)
       const sortedData = (data || []).sort((a, b) => {
         return new Date(b.created_at) - new Date(a.created_at);
       });
@@ -205,7 +199,6 @@ const AdminPanel = ({ onCancel }) => {
     }
   }, [addToast]);
 
-  // Efecto para cargar datos según la pestaña activa
   useEffect(() => {
     if (activeTab === 'users') {
       fetchUsers(true);
@@ -214,7 +207,6 @@ const AdminPanel = ({ onCancel }) => {
     }
   }, [activeTab, fetchUsers, fetchReports]);
 
-  // Polling solo si estamos en la pestaña de usuarios
   useEffect(() => {
     if (activeTab !== 'users') return;
     const interval = setInterval(() => fetchUsers(false), 15000);
@@ -222,7 +214,6 @@ const AdminPanel = ({ onCancel }) => {
   }, [activeTab, fetchUsers]);
 
   const handleSaveUser = async (userId, userData) => {
-    console.log("[DEBUG ADMIN] handleSaveUser CALLED with:", { userId, userData, userToEditId: userToEdit?.id });
     setIsUpdating(true);
     try {
       const targetId = userId || userToEdit.id;
@@ -230,15 +221,7 @@ const AdminPanel = ({ onCancel }) => {
 
       setUsers(users.map(u => u.id === targetId ? { ...u, ...updatedUser } : u));
       
-      console.log("[DEBUG ADMIN] Saving user...", {
-        targetId,
-        userProfileId: userProfile?.id,
-        updatedUser
-      });
-
-      // Si el usuario editado es el mismo que está logueado, actualizar el store global
       if (userProfile && String(targetId) === String(userProfile.id)) {
-        console.log("[DEBUG ADMIN] Updating global store for current user!");
         setUserProfile({
           ...userProfile,
           level: updatedUser.level,
@@ -248,34 +231,15 @@ const AdminPanel = ({ onCancel }) => {
           username: updatedUser.username,
         });
         
-        // También actualizar la gamificación si es necesario
-        setGamificationData({
-          level: updatedUser.level,
-          xp: updatedUser.xp
-        });
-      } else {
-        console.log("[DEBUG ADMIN] Not updating global store because targetId != userProfile.id");
+        if (updatedUser.profile_image_url) {
+           setProfileImgSrc(updatedUser.profile_image_url);
+        }
       }
 
-      addToast('Usuario actualizado con éxito.', 'success');
+      addToast('Usuario guardado exitosamente', 'success');
       setUserToEdit(null);
     } catch (error) {
-      addToast(error.message || 'Error al actualizar el usuario.', 'error');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleDeleteUser = async () => {
-    if (!userToDelete) return;
-    setIsUpdating(true);
-    try {
-      await deleteUser(userToDelete.id);
-      setUsers(users.filter(u => u.id !== userToDelete.id));
-      addToast('Usuario eliminado con éxito.', 'success');
-      setUserToDelete(null);
-    } catch (error) {
-      addToast(error.message || 'Error al eliminar el usuario.', 'error');
+      addToast(error.message || 'Error al guardar el usuario', 'error');
     } finally {
       setIsUpdating(false);
     }
@@ -285,13 +249,35 @@ const AdminPanel = ({ onCancel }) => {
     setIsUpdating(true);
     try {
       const newUser = await createUser(userData);
-      setUsers([newUser, ...users]); // Añadimos al principio
-      addToast('Usuario creado con éxito.', 'success');
+      setUsers([newUser, ...users]);
+      addToast('Usuario creado exitosamente', 'success');
       setIsCreatingUser(false);
     } catch (error) {
-      addToast(error.message || 'Error al crear el usuario.', 'error');
+      addToast(error.message || 'Error al crear el usuario', 'error');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    if (userProfile && String(userToDelete.id) === String(userProfile.id)) {
+        addToast('No puedes eliminar tu propia cuenta desde este panel.', 'error');
+        setUserToDelete(null);
+        return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await deleteUser(userToDelete.id);
+      setUsers(users.filter(u => u.id !== userToDelete.id));
+      addToast('Usuario eliminado exitosamente', 'success');
+    } catch (error) {
+      addToast(error.message || 'Error al eliminar el usuario', 'error');
+    } finally {
+      setIsUpdating(false);
+      setUserToDelete(null);
     }
   };
 
@@ -310,12 +296,10 @@ const AdminPanel = ({ onCancel }) => {
     }
   };
 
-  // Helper para obtener la fecha de registro soportando varios nombres de campo
   const getUserDate = (user) => {
-    return user.created_at || user.createdAt || user.register_date || user.date || null;
+      return user.createdAt || user.created_at || new Date().toISOString();
   };
 
-  // FIX: Lógica calcada de Social.jsx para arreglar las rutas locales de los avatares
   const getAvatarUrl = (user) => {
     const path = user.profile_image_url;
     if (!path) return null;
@@ -325,72 +309,67 @@ const AdminPanel = ({ onCancel }) => {
     return `${SERVER_URL}${cleanPath}`;
   };
 
-  // --- LÓGICA DE BÚSQUEDA Y ORDENACIÓN ---
-  const processedUsers = useMemo(() => {
-    // 1. Filtrado por búsqueda inteligente
-    const cleanQuery = normalizeForSearch(searchQuery);
-    
+  const getTime = (dateString) => {
+    if (!dateString) return 0;
+    try {
+       const t = new Date(dateString).getTime();
+       return isNaN(t) ? 0 : t;
+    } catch (e) { return 0; }
+  };
+
+  const filteredAndSortedUsers = useMemo(() => {
     let filtered = users;
-    if (cleanQuery) {
-      filtered = users.filter(user => {
-        const cleanName = normalizeForSearch(user.username || user.name);
-        const cleanEmail = normalizeForSearch(user.email);
-        return cleanName.includes(cleanQuery) || cleanEmail.includes(cleanQuery);
-      });
+    
+    if (filter !== 'ALL') {
+      filtered = filtered.filter(u => (u.role || 'trainee').toUpperCase() === filter);
     }
-
-    // 2. Ordenación
-    const getTime = (dateStr) => {
-      if (!dateStr) return 0;
-      return new Date(dateStr).getTime();
-    };
-
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(u => 
+        (u.name || '').toLowerCase().includes(q) || 
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.username || '').toLowerCase().includes(q)
+      );
+    }
+    
     switch (sortBy) {
-      case 'date':
-        // Recientes ARRIBA
+      case 'newest':
         return filtered.sort((a, b) => getTime(getUserDate(b)) - getTime(getUserDate(a)));
-      case 'alpha': // Alfabético (A-Z)
+      case 'alpha':
         return filtered.sort((a, b) => (a.username || a.name || '').localeCompare(b.username || b.name || ''));
       case 'default':
-      default: // Por última actividad
+      default:
         return filtered.sort((a, b) => getTime(b.lastSeen) - getTime(a.lastSeen));
     }
-  }, [users, sortBy, searchQuery]);
+  }, [users, sortBy, searchQuery, filter]);
 
-  // Lógica de Paginación para Reportes
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const currentReports = useMemo(() => {
     const startIndex = (reportPage - 1) * REPORTS_PER_PAGE;
     return reports.slice(startIndex, startIndex + REPORTS_PER_PAGE);
   }, [reports, reportPage]);
 
-  // Contar cuántos usuarios tienen temas desbloqueados
-  const galaxyUsersCount = useMemo(() => {
-    return users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 5).length;
-  }, [users]);
-  const desertUsersCount = useMemo(() => {
-    return users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 8).length;
-  }, [users]);
-  const oceanUsersCount = useMemo(() => {
-    return users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 11).length;
-  }, [users]);
+  const galaxyUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 5).length, [users]);
+  const desertUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 8).length, [users]);
+  const oceanUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 11).length, [users]);
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
-      <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 mb-6 sm:mb-8">
-        <button 
-          onClick={onCancel} 
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
-        >
-          <ChevronLeft size={20} />
-          Volver a Ajustes
-        </button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-6 sm:mb-8">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={onCancel} 
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
+          >
+            <ChevronLeft size={20} />
+            Volver a Ajustes
+          </button>
 
-        {/* Título oculto en móvil */}
-        <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Panel de Administración</h1>
+          <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Panel de Administración</h1>
+        </div>
       </div>
 
-      {/* Navegación de Pestañas (Scroll horizontal en móvil) */}
       <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
           onClick={() => setActiveTab('users')}
@@ -424,6 +403,16 @@ const AdminPanel = ({ onCancel }) => {
         >
           <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
           Ejercicios
+        </button>
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'security'
+            ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
+            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
+            }`}
+        >
+          <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" />
+          Ciberseguridad
         </button>
       </div>
 
@@ -526,7 +515,7 @@ const AdminPanel = ({ onCancel }) => {
 
             {isLoading ? (
               <div className="flex justify-center items-center py-12"><Spinner size={32} /></div>
-            ) : processedUsers.length === 0 ? (
+            ) : filteredAndSortedUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center animate-[fade-in_0.3s_ease-out] bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 mt-4">
                 <div className="w-20 h-20 bg-bg-primary rounded-[24px] flex items-center justify-center mb-5 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                   <Search size={36} className="text-text-muted opacity-50" strokeWidth={1.5} />
@@ -549,7 +538,7 @@ const AdminPanel = ({ onCancel }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {processedUsers.map(user => (
+                      {filteredAndSortedUsers.map(user => (
                         <tr key={user.id} className="border-b border-black/5 dark:border-white/5 last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
                           
                           {/* 1. Usuario (Avatar + Nombre + Email) */}
@@ -652,7 +641,7 @@ const AdminPanel = ({ onCancel }) => {
 
                 {/* Vista Tarjetas Móvil (Menos de md) */}
                 <div className="md:hidden space-y-4">
-                  {processedUsers.map(user => (
+                  {filteredAndSortedUsers.map(user => (
                     <div key={user.id} className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] p-5 text-left shadow-sm">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0 pr-2 flex items-center gap-4">
@@ -849,6 +838,8 @@ const AdminPanel = ({ onCancel }) => {
           </>
         ) : activeTab === 'exercises' ? (
           <AdminExercises />
+        ) : activeTab === 'security' ? (
+          <SecurityDashboard onBack={() => setActiveTab('users')} />
         ) : null}
       </GlassCard>
 
@@ -882,7 +873,7 @@ const AdminPanel = ({ onCancel }) => {
       {userToDelete && (
         <ConfirmationModal
           message={`¿Seguro que quieres eliminar a ${userToDelete.username || userToDelete.name}? Esta acción no se puede deshacer.`}
-          onConfirm={handleDeleteUser}
+          onConfirm={confirmDeleteUser}
           onCancel={() => setUserToDelete(null)}
           isLoading={isUpdating}
           confirmText="Eliminar"

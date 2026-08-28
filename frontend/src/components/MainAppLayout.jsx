@@ -1,5 +1,5 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense, useEffect, useState, useRef } from 'react';
+import React, { Suspense, useEffect, useState, useRef, startTransition } from 'react';
 import { SparklesIcon, BellIcon, Cog8ToothIcon as SettingsIcon, UserIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { BoltIcon as Zap, CheckCircleIcon } from '@heroicons/react/24/solid';
 import useAppStore from '../store/useAppStore';
@@ -113,7 +113,10 @@ export default function MainAppLayout({
   const dropRef = useRef(null);
   const swipeContainerRef = useRef(null);
   const hasDraggedRef = useRef(false);
+  const dragXRef = useRef(0);
+  const touchStartXRef = useRef(0);
   const [dragX, setDragX] = useState(0);
+  const [dragHoverIndex, setDragHoverIndex] = useState(-1);
   const [isDraggingDrop, setIsDraggingDrop] = useState(false);
   const [navWidth, setNavWidth] = useState(0);
   const [isInitialRender, setIsInitialRender] = useState(true);
@@ -447,19 +450,36 @@ export default function MainAppLayout({
     }
   }, [view, isDraggingDrop, navItems, isInitialRender, navWidth]);
 
-  const handleDropDragStart = () => {
-    setIsDraggingDrop(true);
+  const handleDropDragStart = (e) => {
+    // 0 re-renders en el primer toque, el color no se pierde y no hay lag
     hasDraggedRef.current = false;
+    dragXRef.current = dragX;
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    touchStartXRef.current = clientX;
   };
 
   const handleDropDragMove = (e) => {
-    if (!isDraggingDrop || !navRef.current) return;
-    hasDraggedRef.current = true;
+    if (!navRef.current) return;
     
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    
+    // GUARDIA CRÍTICA: Ignorar movimientos pequeños (< 10px) para que los toques (taps) no muevan la gota
+    if (!hasDraggedRef.current && Math.abs(clientX - touchStartXRef.current) < 10) {
+      return;
+    }
+    
+    if (!hasDraggedRef.current) {
+        hasDraggedRef.current = true;
+        if (dropRef.current) {
+            dropRef.current.style.transition = 'none';
+        }
+    }
+    
     const navRect = navRef.current.getBoundingClientRect();
     
     let x = clientX - navRect.left;
+    let nearestIndex = -1; // fallback
 
     const buttons = Array.from(navRef.current.querySelectorAll('button'));
     if (buttons.length > 0) {
@@ -470,57 +490,99 @@ export default function MainAppLayout({
       const lastCenter = (lastBtnRect.left - navRect.left) + (lastBtnRect.width / 2);
       
       x = Math.max(firstCenter, Math.min(x, lastCenter));
-    }
-    
-    setDragX(x);
-  };
 
-  const handleDropDragEnd = () => {
-    setIsDraggingDrop(false);
-    setTimeout(() => { hasDraggedRef.current = false; }, 100);
-
-    if (navRef.current) {
-      let nearestIndex = 0;
+      // Calculate nearest for highlighting
       let minDistance = Infinity;
-      const buttons = Array.from(navRef.current.querySelectorAll('button'));
-      const navRect = navRef.current.getBoundingClientRect();
-      
       buttons.forEach((btn, idx) => {
         const btnRect = btn.getBoundingClientRect();
         const btnCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
-        const distance = Math.abs(dragX - btnCenter);
+        const distance = Math.abs(x - btnCenter);
         if (distance < minDistance) {
           minDistance = distance;
           nearestIndex = idx;
         }
       });
 
-      const selectedItem = navItems[nearestIndex];
-      
-      if (selectedItem && selectedItem.id !== view) {
-        handleNavClick(selectedItem.id);
-      } else if (buttons[nearestIndex]) {
-        const btnRect = buttons[nearestIndex].getBoundingClientRect();
-        setDragX((btnRect.left - navRect.left) + (btnRect.width / 2));
-      }
+      // Pure DOM highlighting (0 React re-renders = 0 lag)
+      buttons.forEach((btn, idx) => {
+        const iconDiv = btn.querySelector('div');
+        if (idx === nearestIndex) {
+          btn.classList.add('text-accent');
+          btn.classList.remove('text-text-secondary');
+          if (iconDiv) {
+            iconDiv.classList.add('scale-125');
+            iconDiv.classList.remove('group-hover:scale-110');
+          }
+        } else {
+          btn.classList.remove('text-accent');
+          btn.classList.add('text-text-secondary');
+          if (iconDiv) {
+            iconDiv.classList.remove('scale-125');
+            iconDiv.classList.add('group-hover:scale-110');
+          }
+        }
+      });
+    }
+    
+    dragXRef.current = x;
+    
+    // Direct DOM manipulation avoids freezing React
+    if (dropRef.current) {
+      // Liquid droplet stretch effect while moving
+      dropRef.current.style.transform = `translate3d(calc(${x}px - 50%), -50%, 0) scaleX(1.3) scaleY(0.75)`;
     }
   };
 
-  let dragHoverIndex = -1;
-  if (isDraggingDrop && navRef.current) {
-    let minDistance = Infinity;
-    const buttons = Array.from(navRef.current.querySelectorAll('button'));
-    const navRect = navRef.current.getBoundingClientRect();
-    buttons.forEach((btn, idx) => {
-      const btnRect = btn.getBoundingClientRect();
-      const btnCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
-      const distance = Math.abs(dragX - btnCenter);
-      if (distance < minDistance) {
-        minDistance = distance;
-        dragHoverIndex = idx;
+  const handleDropDragEnd = (e) => {
+    if (hasDraggedRef.current) {
+      if (navRef.current) {
+        let nearestIndex = 0;
+        let minDistance = Infinity;
+        const buttons = Array.from(navRef.current.querySelectorAll('button'));
+        const navRect = navRef.current.getBoundingClientRect();
+        
+        buttons.forEach((btn, idx) => {
+          const btnRect = btn.getBoundingClientRect();
+          const btnCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
+          const distance = Math.abs(dragXRef.current - btnCenter);
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestIndex = idx;
+          }
+        });
+
+        // Forzar centrado exacto vía DOM directo al instante para que nunca quede a medias
+        if (buttons[nearestIndex]) {
+            const btnRect = buttons[nearestIndex].getBoundingClientRect();
+            const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
+            if (dropRef.current) {
+                // Elastic jelly bounce when settling into place
+                dropRef.current.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease';
+                dropRef.current.style.transform = `translate3d(calc(${exactCenter}px - 50%), -50%, 0) scaleX(1) scaleY(1)`;
+            }
+            startTransition(() => {
+              setDragX(exactCenter); // sync estado react
+            });
+        }
+
+        const selectedItem = navItems[nearestIndex];
+        if (selectedItem && selectedItem.id !== view) {
+          handleNavClick(selectedItem.id);
+        }
       }
-    });
-  }
+      setTimeout(() => { hasDraggedRef.current = false; }, 100);
+    } else {
+      // Fallback a prueba de balas para clics rápidos
+      const btn = e.target.closest('button');
+      if (btn && navRef.current) {
+        const buttons = Array.from(navRef.current.querySelectorAll('button'));
+        const index = buttons.indexOf(btn);
+        if (index !== -1 && navItems[index] && navItems[index].id !== view) {
+          handleNavClick(navItems[index].id);
+        }
+      }
+    }
+  };
 
   // --- LÓGICA DE ANIMACIÓN DE NIVELES DESTACADOS ---
   const [pendingMilestone, setPendingMilestone] = useState(null);
@@ -528,12 +590,15 @@ export default function MainAppLayout({
   useEffect(() => {
     if (!gamification || !gamification.level) return;
     
-    const MILESTONE_LEVELS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    const MILESTONE_LEVELS = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
     const unlockedBadges = gamification.unlockedBadges || [];
     const currentLevel = Number(gamification.level);
-    if (MILESTONE_LEVELS.includes(currentLevel)) {
-      if (!unlockedBadges.includes(`milestone_${currentLevel}`)) {
-        setPendingMilestone(currentLevel);
+    
+    const highestReached = MILESTONE_LEVELS.find(lvl => currentLevel >= lvl);
+    
+    if (highestReached) {
+      if (!unlockedBadges.includes(`milestone_${highestReached}`)) {
+        setPendingMilestone(highestReached);
       }
     }
   }, [gamification, gamification?.level, gamification?.unlockedBadges]);
@@ -821,26 +886,36 @@ export default function MainAppLayout({
       >
         <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
           
-          <nav ref={navRef} className="relative w-full h-full flex justify-evenly items-center">
+          <nav 
+            ref={navRef} 
+            className="relative w-full h-full flex justify-evenly items-center nav-touch-area"
+            onTouchStart={handleDropDragStart}
+            onTouchMove={handleDropDragMove}
+            onTouchEnd={handleDropDragEnd}
+            onTouchCancel={handleDropDragEnd}
+          >
             
             <div
+              ref={dropRef}
               className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
               style={{
                 left: 0,
                 transform: `translate3d(calc(${dragX}px - 50%), -50%, 0)`,
                 opacity: isDropVisible ? 1 : 0,
-                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
                 backdropFilter: 'blur(8px) brightness(1.1)',
                 WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
-                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)'
+                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
+                willChange: 'transform'
               }}
             >
             </div>
 
             {navItems.map((item, index) => {
               const isActive = view === item.id;
-              const isVisuallyActive = isActive;
+              const isHovered = isDraggingDrop && dragHoverIndex === index;
+              const isVisuallyActive = (isActive && !isDraggingDrop) || isHovered;
               
               const isSocial = item.id === 'social';
               const pendingCount = isSocial ? (socialRequests?.received?.length || 0) : 0;

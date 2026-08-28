@@ -38,7 +38,7 @@ const SelectedItem = ({ item, onRemove, onToggleFavorite, onEdit }) => {
     const sugars = item.sugars_g || item.sugars || 0;
 
     return (
-        <div className="relative flex items-center flex-wrap gap-3 p-3 mb-2 rounded-2xl bg-bg-primary border border-glass-border hover:bg-bg-secondary transition-all duration-300 group">
+        <div className="relative flex items-center flex-wrap gap-2 sm:gap-3 p-3 mb-0 rounded-2xl bg-bg-primary border border-glass-border hover:bg-bg-secondary transition-all duration-300 group">
 
             {item.origin !== 'favorite' && item.origin !== 'recent' && (
                 <button

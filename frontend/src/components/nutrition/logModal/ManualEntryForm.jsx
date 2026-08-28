@@ -1,6 +1,6 @@
 /* frontend/src/components/nutrition/logModal/ManualEntryForm.jsx */
 import React, { useCallback, useRef, useMemo } from 'react';
-import { Save, Plus, Star, Check, Camera, X } from 'lucide-react';
+import { Save, Plus, Star, Check, Camera, X, ArrowLeft } from 'lucide-react';
 import Spinner from '../../Spinner';
 import { useToast } from '../../../hooks/useToast';
 import useAppStore from '../../../store/useAppStore';
@@ -160,6 +160,7 @@ const ManualEntryForm = ({
     onSaveSingle,
     onSaveEdit,
     onSaveListItem,
+    onCancelEdit,
     isLoading,
     isEditing,
     editingListItem,
@@ -365,8 +366,22 @@ const ManualEntryForm = ({
 
     return (
         <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-5 animate-[fade-in_0.3s_ease-out] pt-3 pb-6">
+            
+            {onCancelEdit && (
+                <div className="flex -mt-2 mb-1">
+                    <button 
+                        type="button" 
+                        onClick={onCancelEdit}
+                        className="flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary rounded-xl font-bold transition-colors active:scale-95"
+                    >
+                        <ArrowLeft size={18} strokeWidth={2.5} />
+                        Atrás
+                    </button>
+                </div>
+            )}
+
             <InputField
-                label="Descripción"
+                label="Nombre del producto"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
