@@ -171,7 +171,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out] p-4 sm:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out] p-4 sm:p-6 pt-[calc(env(safe-area-inset-top,24px)+16px)] pb-[calc(env(safe-area-inset-bottom,24px)+16px)]"
       onClick={onClose}
     >
       <div

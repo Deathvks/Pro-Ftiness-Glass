@@ -734,16 +734,16 @@ const AdminExercises = ({ isTrainerMode = false }) => {
 
       {selectedExercise && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-md flex items-center justify-center sm:p-6 animate-[fade-in_0.2s_ease-out]"
+          className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 pt-[calc(env(safe-area-inset-top,24px)+16px)] pb-[calc(env(safe-area-inset-bottom,24px)+16px)] animate-[fade-in_0.2s_ease-out]"
           onClick={closeDetailModal}
         >
           <div 
-            className="w-full h-full sm:h-auto sm:max-w-2xl bg-bg-primary sm:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-[scale-in_0.3s_ease-out] sm:max-h-[90vh]" 
+            className="w-full h-full max-h-[85vh] sm:h-auto sm:max-w-2xl bg-bg-primary rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-[scale-in_0.3s_ease-out]" 
             onClick={e => e.stopPropagation()}
           >
             {/* Encabezado (Adaptativo para iOS notch y Android) */}
             <div 
-              className="w-full flex items-center justify-between px-4 pb-4 bg-bg-primary shrink-0 border-b border-black/5 dark:border-white/5 pt-[max(1.25rem,env(safe-area-inset-top))] sm:!p-4 sm:!pt-4"
+              className="w-full flex items-center justify-between p-4 bg-bg-primary shrink-0 border-b border-black/5 dark:border-white/5"
             >
               <h3 className="font-bold text-text-primary text-lg truncate pr-4">
                 {isEditingModal ? 'Editar Ejercicio' : selectedExercise.name}
@@ -1093,4 +1093,6 @@ const AdminExercises = ({ isTrainerMode = false }) => {
 };
 
 export default AdminExercises;
+
+
 
