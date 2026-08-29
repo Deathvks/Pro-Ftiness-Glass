@@ -187,7 +187,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 
-db.sequelize.sync({ alter: true })
+db.sequelize.sync()
   .then(() => {
     httpServer.listen(PORT, () => {
       console.log(`✅ Server (HTTP + Socket.io) running on port ${PORT}`);
@@ -200,3 +200,4 @@ db.sequelize.sync({ alter: true })
   });
 
 export { io };
+
