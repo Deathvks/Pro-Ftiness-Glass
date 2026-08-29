@@ -374,7 +374,7 @@ export const getTrainerRoutines = async (req, res) => {
         {
           model: models.User,
           as: 'AssignedClients',
-          attributes: ['id', 'name', 'username', 'avatar_url', 'avatar_url_google', 'avatar_url_discord', 'avatar_url_github', 'avatar_url_x'],
+          attributes: ['id', 'name', 'username', 'profile_image_url'],
           through: { attributes: ['assigned_at'] }
         }
       ],
