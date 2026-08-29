@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
+import ModalPortal from '../components/ModalPortal';
 import { X, UserPlus } from 'lucide-react';
 import Spinner from '../components/Spinner';
 import CustomSelect from '../components/CustomSelect';
@@ -29,17 +29,20 @@ const UserCreateModal = ({ onSave, onCancel, isLoading }) => {
         { value: 'admin', label: 'Admin' },
     ];
 
-    return createPortal(
+    return (
+        <ModalPortal>
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] p-4 sm:p-6"
+            className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
             onClick={onCancel}
         >
             <div
-                className="w-full max-w-md bg-bg-primary rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative animate-[scale-in_0.3s_ease-out] max-h-full border border-black/5 dark:border-white/5"
+                className="w-full max-w-md bg-bg-primary rounded-t-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl flex flex-col relative mt-auto sm:mt-0 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-0 max-h-[90vh] sm:max-h-full border border-black/5 dark:border-white/5 animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between p-6 pb-2 border-b border-black/5 dark:border-white/5">
-                    <div className="flex items-center gap-3">
+                <div className="flex flex-col p-6 pt-4 pb-2 border-b border-black/5 dark:border-white/5 shrink-0">
+                    <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-accent/20 flex items-center justify-center">
                             <UserPlus className="text-accent" size={20} strokeWidth={2.5} />
                         </div>
@@ -48,6 +51,7 @@ const UserCreateModal = ({ onSave, onCancel, isLoading }) => {
                     <button onClick={onCancel} className="p-2 bg-black/5 dark:bg-white/5 rounded-full text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
                         <X size={20} strokeWidth={2.5} />
                     </button>
+                    </div>
                 </div>
 
                 <div className="p-6 overflow-y-auto custom-scrollbar">
@@ -87,8 +91,8 @@ const UserCreateModal = ({ onSave, onCancel, isLoading }) => {
                     </button>
                 </div>
             </div>
-        </div>,
-        document.body
+        </div>
+        </ModalPortal>
     );
 };
 
