@@ -193,6 +193,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           >
             <X size={20} strokeWidth={2.5} />
           </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -356,3 +357,4 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 };
 
 export default WorkoutExerciseDetailModal;
+
