@@ -36,7 +36,7 @@ export const initSocket = () => {
     });
 
     socket.on('connect', function() {
-        console.log('🟢 Conectado al servidor de Sockets:', this.id);
+        if (import.meta.env.MODE === 'development') console.log('🟢 Conectado al servidor de Sockets:', this.id);
     });
 
     socket.on('connect_error', (err) => {
@@ -56,13 +56,13 @@ export const initSocket = () => {
             if (isActive) {
                 // Volvemos a la app -> Reconectar si estábamos desconectados
                 if (socket && socket.disconnected) {
-                    console.log('🔋 App en primer plano: Reconectando socket...');
+                    if (import.meta.env.MODE === 'development') console.log('🔋 App en primer plano: Reconectando socket...');
                     socket.connect();
                 }
             } else {
                 // App en segundo plano -> Desconectar para ahorrar batería
                 if (socket && socket.connected) {
-                    console.log('🔋 App en segundo plano: Desconectando socket para ahorrar batería...');
+                    if (import.meta.env.MODE === 'development') console.log('🔋 App en segundo plano: Desconectando socket para ahorrar batería...');
                     socket.disconnect();
                 }
             }
