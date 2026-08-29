@@ -21,7 +21,8 @@ export const checkBlacklist = async (req, res, next) => {
 
     if (blocked) {
       // Registramos que intentó entrar estando bloqueado
-      await SecurityLog.create({
+      console.log(`[SECURITY LOG] Registrando evento: ${eventType} para el usuario: ${userId}, IP: ${ipAddress}`);
+    await SecurityLog.create({
         eventType: 'BLOCKED_ACCESS_ATTEMPT',
         ipAddress: ip,
         userAgent: req.headers['user-agent'] || 'Unknown',
@@ -60,6 +61,7 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
       }
     }
 
+    console.log(`[SECURITY LOG] Registrando evento: ${eventType} para el usuario: ${userId}, IP: ${ipAddress}`);
     await SecurityLog.create({
       eventType,
       ipAddress,
@@ -93,7 +95,8 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
           }
         });
 
-        await SecurityLog.create({
+        console.log(`[SECURITY LOG] Registrando evento: ${eventType} para el usuario: ${userId}, IP: ${ipAddress}`);
+    await SecurityLog.create({
           eventType: 'AUTO_BAN',
           ipAddress,
           userId: null,
