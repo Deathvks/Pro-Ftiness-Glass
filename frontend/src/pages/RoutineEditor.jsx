@@ -9,7 +9,7 @@ import RoutineActions from '../components/RoutineEditor/RoutineActions';
 import Spinner from '../components/Spinner';
 import RoutineAnalysisModal from '../components/RoutineEditor/RoutineAnalysisModal';
 
-const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCancel, initialFolder }) => {
+const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCancel, initialFolder, isTrainerTemplate }) => {
 
   // Estado local para el modal de análisis IA
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -56,7 +56,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
     handleSelectExerciseForReplace,
     handleAddCustomExerciseForReplace
 
-  } = useRoutineEditor({ initialRoutine, onSave: handleSaveProp, onCancel, initialFolder });
+  } = useRoutineEditor({ initialRoutine, onSave: handleSaveProp, onCancel, initialFolder, isTrainerTemplate });
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
