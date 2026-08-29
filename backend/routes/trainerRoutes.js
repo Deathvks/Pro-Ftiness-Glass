@@ -1,6 +1,6 @@
 import express from 'express';
 import authenticateToken from '../middleware/authenticateToken.js';
-import { registerClient, getClients, saveAnamnesis, updateClient, deleteClient, searchUsers, linkClient, unlinkClient, getClientWorkouts } from '../controllers/trainerController.js';
+import { registerClient, getClients, saveAnamnesis, updateClient, deleteClient, searchUsers, linkClient, unlinkClient, getClientWorkouts, getTrainerRoutines, assignTrainerRoutine, unassignTrainerRoutine } from '../controllers/trainerController.js';
 
 const router = express.Router();
 
@@ -23,5 +23,10 @@ router.put('/clients/:clientId/link', authenticateToken, requireTrainer, linkCli
 router.put('/clients/:clientId/unlink', authenticateToken, requireTrainer, unlinkClient);
 router.post('/clients/:clientId/anamnesis', authenticateToken, requireTrainer, saveAnamnesis);
 router.get('/clients/:clientId/workouts', authenticateToken, requireTrainer, getClientWorkouts);
+
+
+router.get('/routines', authenticateToken, requireTrainer, getTrainerRoutines);
+router.put('/routines/:routineId/assign', authenticateToken, requireTrainer, assignTrainerRoutine);
+router.delete('/routines/:routineId/assign/:clientId', authenticateToken, requireTrainer, unassignTrainerRoutine);
 
 export default router;

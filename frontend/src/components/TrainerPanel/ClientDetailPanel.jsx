@@ -1,6 +1,6 @@
 import ModalPortal from '../ModalPortal';
 import React, { useState, useEffect } from 'react';
-import { ChevronLeftIcon, CalendarDaysIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, CalendarDaysIcon, CheckCircleIcon, ClipboardDocumentListIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import apiClient from '../../services/apiClient';
 import { useToast } from '../../hooks/useToast';
 import CalendarView from '../progress/CalendarView';

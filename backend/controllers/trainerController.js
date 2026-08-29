@@ -350,3 +350,111 @@ export const getClientWorkouts = async (req, res) => {
         return res.status(500).json({ error: 'Error al obtener los entrenamientos del cliente.' });
     }
 };
+
+// --- RUTINAS DEL ENTRENADOR ---
+
+export const getTrainerRoutines = async (req, res) => {
+  try {
+    const routines = await models.Routine.findAll({
+      where: { user_id: req.user.userId, is_trainer_template: true },
+      include: [
+        {
+          model: models.RoutineExercise,
+          as: 'RoutineExercises',
+          required: false,
+          include: [
+            {
+              model: models.ExerciseList,
+              as: 'ExerciseList',
+              required: false,
+              attributes: ['image_url_start', 'image_url_end', 'images']
+            }
+          ]
+        },
+        {
+          model: models.User,
+          as: 'AssignedClients',
+          attributes: ['id', 'name', 'username', 'avatar_url', 'avatar_url_google', 'avatar_url_discord', 'avatar_url_github', 'avatar_url_x'],
+          through: { attributes: ['assigned_at'] }
+        }
+      ],
+      order: [
+        ['folder', 'ASC'],
+        ['id', 'ASC'],
+        ['RoutineExercises', 'exercise_order', 'ASC']
+      ]
+    });
+    
+    // Normalizar imágenes
+    const routinesData = routines.map(routine => {
+      const routineJson = routine.toJSON();
+      if (routineJson.RoutineExercises) {
+        routineJson.RoutineExercises = routineJson.RoutineExercises.map(ex => {
+          if (ex.ExerciseList) {
+            if (!ex.image_url_start) ex.image_url_start = ex.ExerciseList.image_url_start;
+            ex.image_url_end = ex.ExerciseList.image_url_end;
+            ex.images = ex.ExerciseList.images;
+            delete ex.ExerciseList;
+          }
+          return ex;
+        });
+      }
+      return routineJson;
+    });
+
+    res.json(routinesData);
+  } catch (error) {
+    console.error('Error fetching trainer routines:', error);
+    res.status(500).json({ error: 'Error obteniendo rutinas' });
+  }
+};
+
+export const createTrainerRoutine = async (req, res) => {
+  // Lo implementaremos redirigiendo al RoutineEditor con un flag. 
+  // No necesitamos un POST en trainerController si el RoutineEditor hace POST a /api/routines con is_trainer_template.
+};
+
+export const assignTrainerRoutine = async (req, res) => {
+  try {
+    const { routineId } = req.params;
+    const { clientIds } = req.body; // Array de IDs de clientes
+
+    const routine = await models.Routine.findOne({
+      where: { id: routineId, user_id: req.user.userId, is_trainer_template: true }
+    });
+    if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' });
+
+    // Validar que los clientes pertenecen a este entrenador (tienen trainer_id = req.user.userId)
+    const validClients = await models.User.findAll({
+      where: { id: clientIds, trainer_id: req.user.userId }
+    });
+    
+    const validClientIds = validClients.map(c => c.id);
+
+    // Si queremos reemplazar todas las asignaciones o añadir: usaremos setAssignedClients
+    // pero tal vez sea mejor hacer bulkCreate para mantener el history, o setAssignedClients de Sequelize
+    await routine.setAssignedClients(validClientIds);
+
+    res.json({ success: true, message: 'Rutina asignada correctamente' });
+  } catch (error) {
+    console.error('Error assigning routine:', error);
+    res.status(500).json({ error: 'Error al asignar rutina' });
+  }
+};
+
+export const unassignTrainerRoutine = async (req, res) => {
+  try {
+    const { routineId, clientId } = req.params;
+
+    const routine = await models.Routine.findOne({
+      where: { id: routineId, user_id: req.user.userId, is_trainer_template: true }
+    });
+    if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' });
+
+    await routine.removeAssignedClient(clientId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error unassigning routine:', error);
+    res.status(500).json({ error: 'Error al desasignar rutina' });
+  }
+};

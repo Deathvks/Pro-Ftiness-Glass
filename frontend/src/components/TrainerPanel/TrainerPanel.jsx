@@ -243,7 +243,7 @@ export default function TrainerPanel({ setView }) {
           <span>Añadir Nuevo Cliente</span>
         </button>
 
-        {activeTab !== 'ejercicios' &&
+        {activeTab !== 'ejercicios' && activeTab !== 'rutinas' &&
         <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
@@ -298,12 +298,21 @@ export default function TrainerPanel({ setView }) {
             
             Librería Ejercicios
           </button>
+          <button
+            onClick={() => setActiveTab('rutinas')}
+            className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all ${activeTab === 'rutinas' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
+            Mis Rutinas
+          </button>
         </div>
 
         {activeTab === 'ejercicios' ?
         <div className="mt-4">
             <AdminExercises isTrainerMode={true} />
-          </div> :
+        </div> :
+        activeTab === 'rutinas' ?
+        <div className="mt-4">
+            <TrainerRoutines activeClients={clients.filter(c => c.isActive)} />
+        </div> :
         activeTab === 'chats' ?
         <div className="h-[600px] md:h-[600px] mt-4 w-full">
             <TrainerChats onClose={() => setActiveTab('activos')} />

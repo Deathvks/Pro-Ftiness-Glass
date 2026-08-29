@@ -46,32 +46,32 @@ const checkRoutineAccess = async (routine, user) => {
 // OBTENER TODAS LAS RUTINAS (Personales del usuario)
 export const getAllRoutines = async (req, res, next) => {
   try {
-    const routines = await sequelize.models.Routine.findAll({
-      where: { user_id: req.user.userId },
-      include: [
-        {
-          model: sequelize.models.RoutineExercise,
-          as: 'RoutineExercises',
-          required: false,
-          include: [
-            {
-              model: sequelize.models.ExerciseList,
-              as: 'ExerciseList',
-              required: false,
-              attributes: ['image_url_start', 'image_url_end', 'images']
-            }
-          ]
-        },
-      ],
-      order: [
-        ['folder', 'ASC'],
-        ['id', 'ASC'],
-        ['RoutineExercises', 'exercise_order', 'ASC'],
-        ['RoutineExercises', 'id', 'ASC'],
-      ],
-    });
+    const { Op } = require('sequelize');
 
-    const routinesData = routines.map(routine => {
+    const includeBlock = [
+      {
+        model: sequelize.models.RoutineExercise,
+        as: 'RoutineExercises',
+        required: false,
+        include: [
+          {
+            model: sequelize.models.ExerciseList,
+            as: 'ExerciseList',
+            required: false,
+            attributes: ['image_url_start', 'image_url_end', 'images']
+          }
+        ]
+      },
+    ];
+
+    const orderBlock = [
+      ['folder', 'ASC'],
+      ['id', 'ASC'],
+      ['RoutineExercises', 'exercise_order', 'ASC'],
+      ['RoutineExercises', 'id', 'ASC'],
+    ];
+
+    const formatRoutine = (routine, isFromTrainer = false) => {
       const routineJson = routine.toJSON();
       if (routineJson.RoutineExercises) {
         routineJson.RoutineExercises = routineJson.RoutineExercises.map(ex => {
@@ -79,13 +79,44 @@ export const getAllRoutines = async (req, res, next) => {
             if (!ex.image_url_start) ex.image_url_start = ex.ExerciseList.image_url_start;
             ex.image_url_end = ex.ExerciseList.image_url_end;
             ex.images = ex.ExerciseList.images;
-            delete ex.ExerciseList; // Limpiamos el payload
+            delete ex.ExerciseList;
           }
           return ex;
         });
       }
+      if (isFromTrainer) {
+        routineJson.is_from_trainer = true;
+        routineJson.folder = 'Entrenador Personal';
+      }
       return routineJson;
+    };
+
+    // 1. Mis rutinas personales (no plantillas)
+    const personalRoutines = await sequelize.models.Routine.findAll({
+      where: { user_id: req.user.userId, is_trainer_template: false },
+      include: includeBlock,
+      order: orderBlock,
     });
+
+    // 2. Rutinas asignadas por el entrenador
+    const assignedRoutines = await sequelize.models.Routine.findAll({
+      include: [
+        ...includeBlock,
+        {
+          model: sequelize.models.User,
+          as: 'AssignedClients',
+          where: { id: req.user.userId },
+          attributes: [],
+          through: { attributes: [] }
+        }
+      ],
+      order: orderBlock,
+    });
+
+    const routinesData = [
+      ...personalRoutines.map(r => formatRoutine(r, false)),
+      ...assignedRoutines.map(r => formatRoutine(r, true))
+    ];
 
     res.json(routinesData);
   } catch (error) {
@@ -244,7 +275,7 @@ export const createRoutine = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, description, is_public = false, exercises = [], image_url, folder, visibility } = req.body;
+  const { name, description, is_public = false, exercises = [], image_url, folder, visibility, is_trainer_template = false } = req.body;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
@@ -260,7 +291,8 @@ export const createRoutine = async (req, res, next) => {
     }
 
     const newRoutine = await sequelize.models.Routine.create(
-      {
+        {
+          is_trainer_template,
         name,
         description,
         user_id: userId,
@@ -509,6 +541,10 @@ export const togglePublicStatus = async (req, res, next) => {
     });
 
     if (!routine) return res.status(404).json({ error: 'Rutina no encontrada' });
+
+    if (routine.is_trainer_template) {
+      return res.status(403).json({ error: 'Las rutinas de entrenador no pueden hacerse públicas.' });
+    }
 
     routine.is_public = !routine.is_public;
     if (routine.is_public) {

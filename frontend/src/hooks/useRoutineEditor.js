@@ -28,7 +28,7 @@ const CART_DRAFT_KEY = 'exerciseSearchCartDraft'; // Borrador del carrito
 * @param {string} params.initialFolder - Carpeta inicial (opcional).
 * @returns {Object} Todo el estado y funciones necesarias para el editor.
 */
-export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCancel, initialFolder }) => {
+export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCancel, initialFolder, isTrainerTemplate }) => {
   const id = initialRoutine?.id;
   const { addToast } = useToast();
 
@@ -94,6 +94,7 @@ export const useRoutineEditor = ({ initialRoutine, onSave: handleSaveProp, onCan
     imageUrl,
     folder, // <-- Pasamos la carpeta para guardar
     visibility, // <-- Pasamos la visibilidad para guardar
+    isTrainerTemplate,
     exercises,
     addToast,
     handleSaveProp,

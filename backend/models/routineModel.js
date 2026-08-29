@@ -52,6 +52,11 @@ const Routine = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 0,
       allowNull: false
+    },
+    is_trainer_template: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
     }
   },
   {

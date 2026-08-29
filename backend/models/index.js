@@ -5,6 +5,7 @@ import { DataTypes } from 'sequelize';
 // 1. Importa todos los modelos existentes
 import User from './userModel.js';
 import Routine from './routineModel.js';
+import RoutineAssignment from './routineAssignmentModel.js';
 import RoutineExercise from './exerciseModel.js';
 import WorkoutLog from './workoutModel.js';
 import BodyWeightLog from './bodyweightModel.js';
@@ -169,6 +170,15 @@ Message.belongsTo(User, { foreignKey: 'sender_id', as: 'Sender' });
 User.hasMany(Message, { foreignKey: 'receiver_id', as: 'ReceivedMessages' });
 Message.belongsTo(User, { foreignKey: 'receiver_id', as: 'Receiver' });
 
+
+// --- RUTINAS DEL ENTRENADOR ---
+Routine.belongsToMany(User, { through: RoutineAssignment, as: 'AssignedClients', foreignKey: 'routine_id', otherKey: 'client_id' });
+User.belongsToMany(Routine, { through: RoutineAssignment, as: 'AssignedTrainerRoutines', foreignKey: 'client_id', otherKey: 'routine_id' });
+Routine.hasMany(RoutineAssignment, { foreignKey: 'routine_id', as: 'Assignments' });
+RoutineAssignment.belongsTo(Routine, { foreignKey: 'routine_id' });
+User.hasMany(RoutineAssignment, { foreignKey: 'client_id', as: 'RoutineAssignments' });
+RoutineAssignment.belongsTo(User, { foreignKey: 'client_id', as: 'Client' });
+
 // --- SEGURIDAD ---
 User.hasMany(SecurityLog, { foreignKey: 'userId', as: 'securityLogs' });
 SecurityLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -177,6 +187,7 @@ const models = {
   sequelize,
   User,
   Routine,
+  RoutineAssignment,
   RoutineExercise,
   WorkoutLog,
   WorkoutLogDetail,
