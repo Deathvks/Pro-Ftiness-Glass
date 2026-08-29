@@ -1081,7 +1081,8 @@ const AdminExercises = ({ isTrainerMode = false }) => {
             </div>
           </div>
         </div>
-      , document.body)}
+      </ModalPortal>
+      )}
 
       {/* Modal de Recorte */}
       {cropTarget && (
@@ -1096,6 +1097,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
 };
 
 export default AdminExercises;
+
 
 
 
