@@ -353,7 +353,7 @@ export default function SettingsScreen({
 
       <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
         {/* --- TABS LATERALES / HORIZONTALES --- */}
-        <div className="w-full md:w-64 shrink-0 flex md:flex-col gap-3 md:gap-2 overflow-x-auto py-3 md:py-0 px-2 md:px-0 hide-scrollbar md:sticky md:top-4 md:z-20 mb-6 md:mb-0">
+        <div className="w-full md:w-64 shrink-0 flex md:flex-col gap-3 md:gap-2 overflow-x-auto md:overflow-visible py-3 md:py-1 px-2 md:px-1 hide-scrollbar md:sticky md:top-4 md:z-20 mb-6 md:mb-0">
           {SETTINGS_TABS.map(tab => (
             <button
               key={tab.id}
