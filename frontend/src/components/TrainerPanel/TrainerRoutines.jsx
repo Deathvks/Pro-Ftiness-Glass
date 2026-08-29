@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../services/apiClient';
 import { useToast } from '../../hooks/useToast';
 import { PlusIcon, UserGroupIcon, TrashIcon, EllipsisVerticalIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import RoutineEditor from '../../pages/RoutineEditor'; // Reutilizamos el editor existente
+import RoutineEditor from '../../pages/RoutineEditor';
+import UserAvatar from '../UserAvatar'; // Reutilizamos el editor existente
 
 const getFullImageUrl = (path, API_URL) => {
   if (!path || path === 'null') return null;
@@ -245,19 +246,19 @@ export default function TrainerRoutines({ activeClients }) {
                   }).map(client => {
                   const isSelected = selectedClientIds.includes(client.id);
                   return (
-                    <div 
-                      key={client.id}
-                      onClick={() => toggleClientSelection(client.id)}
-                      className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
-                        isSelected 
-                          ? 'bg-accent/10 ring-1 ring-accent/30' 
-                          : 'bg-black/5 dark:bg-white/5 hover:bg-black/10'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs uppercase">
-                          {client.name.charAt(0)}
-                        </div>
+                      <div 
+                        key={client.id}
+                        onClick={() => toggleClientSelection(client.id)}
+                        className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border-l-4 ${
+                          isSelected 
+                            ? 'bg-accent/10 border-accent ring-1 ring-accent/30' 
+                            : 'bg-black/5 dark:bg-white/5 border-transparent hover:bg-black/10 hover:border-black/20 dark:hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-1 ring-black/10 dark:ring-white/10">
+                            <UserAvatar user={client} size="full" />
+                          </div>
                         <div>
                           <p className={`font-bold text-sm ${isSelected ? 'text-accent' : 'text-text-primary'}`}>{client.name}</p>
                           <p className="text-xs text-text-secondary">@{client.username}</p>
