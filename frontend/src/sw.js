@@ -15,7 +15,7 @@ clientsClaim();
 
 // 2. Limpieza de cachés antiguas y precarga
 registerRoute(
-  ({ request }) => request.mode === 'navigate',
+  ({ request, url }) => request.mode === 'navigate' && !url.pathname.startsWith('/sitemap.xml') && !url.pathname.startsWith('/robots.txt'),
   async ({ request }) => {
     try {
       const response = await matchPrecache('/index.html') || await fetch(request);
@@ -179,6 +179,7 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
 
 
 
