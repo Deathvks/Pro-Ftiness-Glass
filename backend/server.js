@@ -11,6 +11,7 @@ import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -189,6 +190,16 @@ const PORT = process.env.PORT || 3001;
 
 db.sequelize.sync()
   .then(() => {
+    
+    if (process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST) {
+      try {
+        console.log('Ejecutando migraciones pendientes en producción...');
+        execSync('npx --yes sequelize-cli db:migrate --env production', { stdio: 'inherit' });
+        console.log('Migraciones completadas exitosamente.');
+      } catch (err) {
+        console.error('Error al ejecutar migraciones automáticas:', err.message);
+      }
+    }
     httpServer.listen(PORT, () => {
       console.log(`✅ Server (HTTP + Socket.io) running on port ${PORT}`);
     });
