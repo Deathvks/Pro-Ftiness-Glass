@@ -55,7 +55,7 @@ export default function TrainerRoutines({ activeClients }) {
   const handleDelete = async (id) => {
     if (!window.confirm('¿Seguro que quieres borrar esta rutina para siempre? Los clientes asignados la perderán.')) return;
     try {
-      await apiClient(\/routines/\\, { method: 'DELETE' });
+      await apiClient(`/routines/${id}`, { method: 'DELETE' });
       addToast('Rutina eliminada', 'success');
       fetchRoutines();
     } catch (err) {
@@ -72,7 +72,7 @@ export default function TrainerRoutines({ activeClients }) {
 
   const saveAssignments = async () => {
     try {
-      await apiClient(\/trainer/routines/\/assign\, {
+      await apiClient(`/trainer/routines/${selectedRoutineForAssign.id}/assign`, {
         method: 'PUT',
         body: JSON.stringify({ clientIds: selectedClientIds })
       });
@@ -103,9 +103,10 @@ export default function TrainerRoutines({ activeClients }) {
         </button>
         <div className="pt-16">
           <RoutineEditor 
-            routineId={editingRoutineId} 
+            routine={{ id: editingRoutineId }}
             isTrainerTemplate={true} 
-            onClose={() => { setIsEditing(false); fetchRoutines(); }} 
+            onSave={() => { setIsEditing(false); fetchRoutines(); }}
+            onCancel={() => { setIsEditing(false); fetchRoutines(); }}
           />
         </div>
       </div>
@@ -212,7 +213,6 @@ export default function TrainerRoutines({ activeClients }) {
         </div>
       )}
 
-      {/* Modal de Asignación */}
       {assignModalOpen && selectedRoutineForAssign && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-bg-primary max-w-md w-full rounded-3xl ring-1 ring-black/5 dark:ring-white/10 p-6 shadow-2xl relative">
@@ -231,18 +231,24 @@ export default function TrainerRoutines({ activeClients }) {
                     <div 
                       key={client.id}
                       onClick={() => toggleClientSelection(client.id)}
-                      className={lex items-center justify-between p-3 rounded-xl cursor-pointer transition-all }
+                      className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'bg-accent/10 ring-1 ring-accent/30' 
+                          : 'bg-black/5 dark:bg-white/5 hover:bg-black/10'
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs uppercase">
                           {client.name.charAt(0)}
                         </div>
                         <div>
-                          <p className={ont-bold text-sm }>{client.name}</p>
+                          <p className={`font-bold text-sm ${isSelected ? 'text-accent' : 'text-text-primary'}`}>{client.name}</p>
                           <p className="text-xs text-text-secondary">@{client.username}</p>
                         </div>
                       </div>
-                      <div className={w-5 h-5 rounded-full flex items-center justify-center border }>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${
+                        isSelected ? 'bg-accent border-accent' : 'border-glass-border bg-transparent'
+                      }`}>
                         {isSelected && <span className="text-bg-primary text-xs">✓</span>}
                       </div>
                     </div>

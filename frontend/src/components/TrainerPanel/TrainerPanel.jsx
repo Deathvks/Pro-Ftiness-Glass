@@ -19,6 +19,7 @@ import AddClientFlow from './AddClientFlow';
 import AnamnesisForm from './AnamnesisForm';
 import ClientDetailPanel from './ClientDetailPanel';
 import TrainerChats from '../TrainerChats';
+import TrainerRoutines from './TrainerRoutines';
 import AdminExercises from '../../pages/AdminExercises';
 import CustomSelect from '../CustomSelect';
 import UserAvatar from '../UserAvatar';
