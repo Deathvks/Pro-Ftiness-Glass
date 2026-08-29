@@ -35,6 +35,7 @@ import PermissionModal from './components/PermissionModal';
 import OnboardingScreen from './pages/OnboardingScreen';
 import LandingPage from './pages/LandingPage'; 
 import AsesoriaScreen from './pages/AsesoriaScreen';
+import NotFoundPage from './pages/NotFoundPage';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Progress = lazy(() => import('./pages/Progress'));
@@ -366,6 +367,7 @@ export default function App() {
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigateInternal} />;
       case 'notifications': return <NotificationsScreen setView={navigateInternal} />;
       case 'asesoria': return <AsesoriaScreen onBack={() => navigateInternal('hub')} />;
+      case 'not-found': return <NotFoundPage navigate={navigateInternal} />;
       default: return <Dashboard setView={navigateInternal} />;
     }
   }, [view, navigateInternal, theme, resolvedTheme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
@@ -617,3 +619,5 @@ export default function App() {
     </>
   );
 }
+
+

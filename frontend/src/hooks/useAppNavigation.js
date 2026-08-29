@@ -18,7 +18,20 @@ export const useAppNavigation = (isInitialLoad) => {
       }
     }
 
-    const path = window.location.pathname;
+        const path = window.location.pathname;
+
+    const validPaths = [
+      '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms',
+      '/dashboard', '/progress', '/routines', '/workout', '/nutrition', '/templateDiets',
+      '/social', '/hub', '/quickCardio', '/active-cardio', '/settings', '/appearance',
+      '/support', '/socialLinks', '/challenges', '/physicalProfileEditor', '/profile',
+      '/adminPanel', '/securityDashboard', '/trainerPanel', '/twoFactorSetup', '/notifications',
+      '/asesoria'
+    ];
+
+    if (!validPaths.includes(path) && !path.match(/^\/profile\/\d+$/) && !path.startsWith('/share/routine/')) {
+        return 'not-found';
+    }
 
     // Rutas Deep Linking
     if (path.match(/^\/profile\/\d+$/)) return 'publicProfile';
