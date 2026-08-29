@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../services/apiClient';
 import { useToast } from '../../hooks/useToast';
-import { PlusIcon, UserGroupIcon, TrashIcon, EllipsisVerticalIcon, UserIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, UserGroupIcon, TrashIcon, EllipsisVerticalIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import RoutineEditor from '../../pages/RoutineEditor'; // Reutilizamos el editor existente
 
 const getFullImageUrl = (path, API_URL) => {
@@ -25,6 +25,7 @@ export default function TrainerRoutines({ activeClients }) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedRoutineForAssign, setSelectedRoutineForAssign] = useState(null);
   const [selectedClientIds, setSelectedClientIds] = useState([]);
+  const [assignSearchQuery, setAssignSearchQuery] = useState('');
 
   useEffect(() => {
     fetchRoutines();
@@ -67,6 +68,7 @@ export default function TrainerRoutines({ activeClients }) {
     setSelectedRoutineForAssign(routine);
     const assignedIds = (routine.AssignedClients || []).map(c => c.id);
     setSelectedClientIds(assignedIds);
+    setAssignSearchQuery('');
     setAssignModalOpen(true);
   };
 
@@ -221,11 +223,26 @@ export default function TrainerRoutines({ activeClients }) {
               Selecciona los clientes a los que quieres asignar la rutina <strong>{selectedRoutineForAssign.name}</strong>.
             </p>
 
-            <div className="max-h-60 overflow-y-auto space-y-2 mb-6 pr-2">
-              {activeClients.length === 0 ? (
-                <p className="text-sm text-text-secondary text-center py-4">No tienes clientes activos actualmente.</p>
-              ) : (
-                activeClients.map(client => {
+              <div className="relative mb-4">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
+                <input
+                  type="text"
+                  placeholder="Buscar cliente..."
+                  value={assignSearchQuery}
+                  onChange={(e) => setAssignSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all text-sm"
+                />
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-2 mb-6 pr-2">
+                {activeClients.length === 0 ? (
+                  <p className="text-sm text-text-secondary text-center py-4">No tienes clientes activos actualmente.</p>
+                ) : (
+                  activeClients.filter(c => {
+                    const normalize = str => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                    const term = normalize(assignSearchQuery);
+                    return normalize(c.name).includes(term) || normalize(c.username).includes(term);
+                  }).map(client => {
                   const isSelected = selectedClientIds.includes(client.id);
                   return (
                     <div 
