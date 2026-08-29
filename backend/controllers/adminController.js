@@ -93,6 +93,7 @@ export const createUser = async (req, res, next) => {
       createdAt: newUser.createdAt || newUser.getDataValue('created_at')
     });
   } catch (error) {
+    console.error('ERROR MYSQL EXACTO (createUser):', error.parent ? error.parent.sqlMessage : error.message);
     next(error);
   }
 };
