@@ -757,7 +757,7 @@ export default function MainAppLayout({
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-              {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges', 'nutrition', 'routines'].includes(view) ? (
+              {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
                 <button
                   onClick={() => navigate('hub')}
                   className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
@@ -1000,6 +1000,7 @@ export default function MainAppLayout({
     </div>
   );
 }
+
 
 
 

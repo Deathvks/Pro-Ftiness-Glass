@@ -426,7 +426,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
               onCancel();
             }
           }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit active:scale-95"
+          className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit active:scale-95"
         >
           <ChevronLeft size={20} strokeWidth={2.5} />
           Volver
@@ -1007,3 +1007,4 @@ const DeleteConfirmationModal = ({
 };
 
 export default Profile;
+
