@@ -46,7 +46,7 @@ const checkRoutineAccess = async (routine, user) => {
 // OBTENER TODAS LAS RUTINAS (Personales del usuario)
 export const getAllRoutines = async (req, res, next) => {
   try {
-    const { Op } = require('sequelize');
+    
 
     const includeBlock = [
       {
