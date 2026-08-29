@@ -15,7 +15,7 @@ router.use(authenticateToken, authorizeAdmin);
 const userUpdateValidationRules = [
     body('email').optional().isEmail().withMessage('El email no es válido.'),
     body('username').optional().notEmpty().withMessage('El nombre de usuario no puede estar vacío.'),
-    body('role').optional().isIn(['user', 'admin']).withMessage('El rol no es válido.'),
+    body('role').optional().isIn(['user', 'admin', 'trainer']).withMessage('El rol no es válido.'),
 ];
 
 // Reglas de validación para la creación de usuario
@@ -23,7 +23,7 @@ const userCreateValidationRules = [
     body('email').isEmail().withMessage('El email no es válido.'),
     body('username').notEmpty().withMessage('El nombre de usuario no puede estar vacío.'),
     body('password').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres.'),
-    body('role').optional().isIn(['user', 'admin']).withMessage('El rol no es válido.'),
+    body('role').optional().isIn(['user', 'admin', 'trainer']).withMessage('El rol no es válido.'),
 ];
 
 // Rutas del CRUD de usuarios
