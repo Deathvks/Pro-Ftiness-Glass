@@ -376,7 +376,19 @@ export const googleLogin = async (req, res, next) => {
       data: { ip, userAgent, date: new Date() }
     });
 
-    res.json({
+    try {
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'LOGIN_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: 'Inicio de sesi\u00f3n exitoso con google'
+        });
+      } catch (err) {
+        console.error("Error logging successful google:", err);
+      }
+      res.json({
       message: 'Inicio de sesión con Google exitoso.',
       token: appToken,
       user: {
@@ -508,7 +520,19 @@ export const discordLogin = async (req, res, next) => {
       data: { ip, userAgent, date: new Date() }
     });
 
-    res.json({
+    try {
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'LOGIN_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: 'Inicio de sesi\u00f3n exitoso con discord'
+        });
+      } catch (err) {
+        console.error("Error logging successful discord:", err);
+      }
+      res.json({
       message: 'Inicio de sesión con Discord exitoso.',
       token: appToken,
       user: {
@@ -635,7 +659,19 @@ export const facebookLogin = async (req, res, next) => {
       data: { ip, userAgent, date: new Date() }
     });
 
-    res.json({
+    try {
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'LOGIN_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: 'Inicio de sesi\u00f3n exitoso con facebook'
+        });
+      } catch (err) {
+        console.error("Error logging successful facebook:", err);
+      }
+      res.json({
       message: 'Inicio de sesión con Facebook exitoso.',
       token: appToken,
       user: {
@@ -787,7 +823,19 @@ export const xLogin = async (req, res, next) => {
       data: { ip, userAgent, date: new Date() }
     });
 
-    res.json({
+    try {
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'LOGIN_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: 'Inicio de sesi\u00f3n exitoso con x'
+        });
+      } catch (err) {
+        console.error("Error logging successful x:", err);
+      }
+      res.json({
       message: 'Inicio de sesión con X exitoso.',
       token: appToken,
       user: {
@@ -944,7 +992,19 @@ export const githubLogin = async (req, res, next) => {
       data: { ip, userAgent, date: new Date() }
     });
 
-    res.json({
+    try {
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'LOGIN_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: 'Inicio de sesi\u00f3n exitoso con github'
+        });
+      } catch (err) {
+        console.error("Error logging successful github:", err);
+      }
+      res.json({
       message: 'Inicio de sesión con GitHub exitoso.',
       token: appToken,
       user: {
@@ -1095,7 +1155,19 @@ export const spotifyLogin = async (req, res, next) => {
       data: { ip, userAgent, date: new Date() }
     });
 
-    res.json({
+    try {
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'LOGIN_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: 'Inicio de sesi\u00f3n exitoso con spotify'
+        });
+      } catch (err) {
+        console.error("Error logging successful spotify:", err);
+      }
+      res.json({
       message: 'Inicio de sesión con Spotify exitoso.',
       token: appToken,
       user: {
