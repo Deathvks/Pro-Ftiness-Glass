@@ -235,7 +235,7 @@ export default function TrainerRoutines({ activeClients }) {
                 />
               </div>
 
-              <div className="max-h-60 overflow-y-auto space-y-2 mb-6 pr-2">
+              <div className="max-h-60 overflow-y-auto space-y-2 mb-6 p-1 pr-2">
                 {activeClients.length === 0 ? (
                   <p className="text-sm text-text-secondary text-center py-4">No tienes clientes activos actualmente.</p>
                 ) : (
