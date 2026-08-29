@@ -229,7 +229,7 @@ export default function TrainerPanel({ setView }) {
           <button
             onClick={fetchClients}
             disabled={loading}
-            className={`p-2 bg-bg-secondary text-text-primary rounded-xl border border-glass-border hover:bg-glass-border/30 transition-colors ${loading ? 'opacity-50 animate-pulse' : 'active:scale-95'}`}
+            className={`p-2 bg-bg-secondary text-text-primary rounded-xl ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-glass-border/30 transition-colors ${loading ? 'opacity-50 animate-pulse' : 'active:scale-95'}`}
             title="Actualizar datos">
             
             <ArrowPathIcon className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
@@ -253,7 +253,7 @@ export default function TrainerPanel({ setView }) {
               placeholder="Buscar por nombre o usuario..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all" />
+              className="w-full pl-10 pr-4 py-3 bg-bg-secondary ring-1 ring-black/5 dark:ring-white/10 border-none rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all" />
             
             </div>
             <div className="w-full sm:w-48 shrink-0">
@@ -273,7 +273,7 @@ export default function TrainerPanel({ setView }) {
         }
 
         {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar bg-bg-secondary p-2 rounded-2xl border border-glass-border w-fit max-w-full mx-auto md:mx-0">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar bg-bg-secondary p-2 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 border-none w-fit max-w-full mx-auto md:mx-0">
           <button
             onClick={() => setActiveTab('activos')}
             className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all ${activeTab === 'activos' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
@@ -322,7 +322,7 @@ export default function TrainerPanel({ setView }) {
         <div>
           <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
             {activeTab === 'activos' ? 'Mis Clientes' : 'Antiguos Clientes'}
-            <span className="text-sm font-medium bg-bg-secondary px-2 py-0.5 rounded-lg border border-glass-border">
+            <span className="text-sm font-medium bg-bg-secondary px-2 py-0.5 rounded-lg ring-1 ring-black/5 dark:ring-white/10 border-none">
               {filteredClients.length}
             </span>
           </h2>
@@ -331,7 +331,7 @@ export default function TrainerPanel({ setView }) {
               <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
             </div> :
           filteredClients.length === 0 ?
-          <div className="text-center p-8 glass rounded-2xl border border-glass-border">
+          <div className="text-center p-8 glass rounded-2xl ring-1 ring-black/5 dark:ring-white/10 border-none">
               <p className="text-text-secondary">No se han encontrado clientes con esos filtros.</p>
             </div> :
 
@@ -342,7 +342,7 @@ export default function TrainerPanel({ setView }) {
               onClick={() => {
                 if (client.isActive) setClientToDetail(client);
               }}
-              className={`glass rounded-2xl flex flex-col justify-between border border-glass-border transition-colors ${client.isActive ? 'cursor-pointer hover:border-accent/50' : ''} overflow-hidden`}>
+              className={`bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-3xl flex flex-col justify-between transition-colors shadow-sm ${client.isActive ? 'cursor-pointer hover:shadow-md hover:ring-black/10 dark:hover:ring-white/20' : ''} overflow-hidden`}>
               
                   <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
@@ -353,23 +353,23 @@ export default function TrainerPanel({ setView }) {
                         
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           {client.trainedToday ?
-                      <div className="flex items-center justify-center gap-1 text-green-500 text-[10px] sm:text-xs font-bold bg-green-500/10 px-2 py-0.5 rounded-md border border-green-500/20">
+                      <div className="flex items-center justify-center gap-1 text-green-500 text-[10px] sm:text-xs font-bold bg-green-500/10 px-2 py-0.5 rounded-md ring-1 ring-green-500/20 border-none">
                               <CheckCircleIcon className="w-3.5 h-3.5" />
                               <span>Entrenó Hoy</span>
                             </div> :
 
-                      <div className="flex items-center justify-center gap-1 text-text-secondary text-[10px] sm:text-xs font-bold bg-bg-secondary px-2 py-0.5 rounded-md border border-glass-border">
+                      <div className="flex items-center justify-center gap-1 text-text-secondary text-[10px] sm:text-xs font-bold bg-bg-secondary px-2 py-0.5 rounded-md ring-1 ring-black/5 dark:ring-white/10 border-none">
                               <span>Sin entreno hoy</span>
                             </div>
                       }
                           
                           {client.isAnamnesisComplete ?
-                      <div className="flex items-center justify-center gap-1 text-green-500 text-[10px] sm:text-xs font-bold bg-green-500/10 px-2 py-0.5 rounded-md border border-green-500/20">
+                      <div className="flex items-center justify-center gap-1 text-green-500 text-[10px] sm:text-xs font-bold bg-green-500/10 px-2 py-0.5 rounded-md ring-1 ring-green-500/20 border-none">
                               <CheckCircleIcon className="w-3.5 h-3.5" />
                               <span>Anamnesis OK</span>
                             </div> :
 
-                      <div className="flex items-center justify-center gap-1 text-orange-400 text-[10px] sm:text-xs font-bold bg-orange-400/10 px-2 py-0.5 rounded-md border border-orange-400/20">
+                      <div className="flex items-center justify-center gap-1 text-orange-400 text-[10px] sm:text-xs font-bold bg-orange-400/10 px-2 py-0.5 rounded-md ring-1 ring-orange-400/20 border-none">
                               <ExclamationCircleIcon className="w-3.5 h-3.5" />
                               <span>Falta Anamnesis</span>
                             </div>
@@ -423,7 +423,7 @@ export default function TrainerPanel({ setView }) {
                         <button
                     title="Editar Anamnesis"
                     onClick={() => setEditingClient(client)}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-text-secondary hover:text-accent bg-bg-secondary rounded-lg border border-glass-border hover:border-accent/30 transition-all">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-text-secondary hover:text-accent bg-bg-secondary rounded-lg ring-1 ring-black/5 dark:ring-white/10 border-none hover:border-accent/30 transition-all">
                     
                           <PencilIcon className="w-4 h-4" />
                           <span>Anamnesis</span>
@@ -431,7 +431,7 @@ export default function TrainerPanel({ setView }) {
                         <button
                     title="Dar de baja"
                     onClick={() => setClientToUnlink(client)}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-text-secondary hover:text-orange-500 bg-bg-secondary rounded-lg border border-glass-border hover:border-orange-500/30 transition-all">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-text-secondary hover:text-orange-500 bg-bg-secondary rounded-lg ring-1 ring-black/5 dark:ring-white/10 border-none hover:border-orange-500/30 transition-all">
                     
                           <XMarkIcon className="w-4 h-4" />
                           <span>Baja</span>
@@ -440,7 +440,7 @@ export default function TrainerPanel({ setView }) {
                   <button
                     title="Eliminar permanentemente"
                     onClick={() => setClientToDelete(client)}
-                    className="p-1.5 text-text-secondary hover:text-red-500 bg-bg-secondary rounded-lg border border-glass-border hover:border-red-500/30 transition-all">
+                    className="p-1.5 text-text-secondary hover:text-red-500 bg-bg-secondary rounded-lg ring-1 ring-black/5 dark:ring-white/10 border-none hover:border-red-500/30 transition-all">
                     
                             <TrashIcon className="w-4 h-4" />
                           </button>
@@ -468,7 +468,7 @@ export default function TrainerPanel({ setView }) {
 
       {clientToDelete && <ModalPortal>
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-bg-primary max-w-sm w-full rounded-3xl border border-glass-border p-6 shadow-2xl relative">
+          <div className="bg-bg-primary max-w-sm w-full rounded-3xl ring-1 ring-black/5 dark:ring-white/10 border-none p-6 shadow-2xl relative">
             <button
               onClick={() => setClientToDelete(null)}
               className="absolute top-4 right-4 p-2 text-text-secondary hover:text-red-500 bg-bg-secondary rounded-full transition-colors">
@@ -492,7 +492,7 @@ export default function TrainerPanel({ setView }) {
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 py-3 bg-bg-secondary text-text-primary font-bold rounded-xl border border-glass-border hover:bg-glass-border/50 transition-colors">
+                  className="flex-1 py-3 bg-bg-secondary text-text-primary font-bold rounded-xl ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-glass-border/50 transition-colors">
                   
                   Sí, eliminar
                 </button>
@@ -504,7 +504,7 @@ export default function TrainerPanel({ setView }) {
 
       {clientToUnlink && <ModalPortal>
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-bg-primary max-w-sm w-full rounded-3xl border border-glass-border p-6 shadow-2xl relative">
+          <div className="bg-bg-primary max-w-sm w-full rounded-3xl ring-1 ring-black/5 dark:ring-white/10 border-none p-6 shadow-2xl relative">
             <button
               onClick={() => setClientToUnlink(null)}
               className="absolute top-4 right-4 p-2 text-text-secondary hover:text-red-500 bg-bg-secondary rounded-full transition-colors">
@@ -522,7 +522,7 @@ export default function TrainerPanel({ setView }) {
               <div className="flex gap-3 w-full mt-4">
                 <button
                   onClick={() => setClientToUnlink(null)}
-                  className="flex-1 py-3 bg-bg-secondary text-text-primary font-bold rounded-xl border border-glass-border hover:bg-glass-border/50 transition-colors">
+                  className="flex-1 py-3 bg-bg-secondary text-text-primary font-bold rounded-xl ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-glass-border/50 transition-colors">
                   
                   Cancelar
                 </button>
@@ -540,7 +540,7 @@ export default function TrainerPanel({ setView }) {
 
       {clientToRelink && <ModalPortal>
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-bg-primary max-w-sm w-full rounded-3xl border border-glass-border p-6 shadow-2xl relative">
+          <div className="bg-bg-primary max-w-sm w-full rounded-3xl ring-1 ring-black/5 dark:ring-white/10 border-none p-6 shadow-2xl relative">
             <button
               onClick={() => setClientToRelink(null)}
               className="absolute top-4 right-4 p-2 text-text-secondary hover:text-red-500 bg-bg-secondary rounded-full transition-colors">
@@ -558,7 +558,7 @@ export default function TrainerPanel({ setView }) {
               <div className="flex gap-3 w-full mt-4">
                 <button
                   onClick={() => setClientToRelink(null)}
-                  className="flex-1 py-3 bg-bg-secondary text-text-primary font-bold rounded-xl border border-glass-border hover:bg-glass-border/50 transition-colors">
+                  className="flex-1 py-3 bg-bg-secondary text-text-primary font-bold rounded-xl ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-glass-border/50 transition-colors">
                   
                   Cancelar
                 </button>
