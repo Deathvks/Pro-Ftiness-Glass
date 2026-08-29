@@ -169,6 +169,10 @@ Message.belongsTo(User, { foreignKey: 'sender_id', as: 'Sender' });
 User.hasMany(Message, { foreignKey: 'receiver_id', as: 'ReceivedMessages' });
 Message.belongsTo(User, { foreignKey: 'receiver_id', as: 'Receiver' });
 
+// --- SEGURIDAD ---
+User.hasMany(SecurityLog, { foreignKey: 'userId', as: 'securityLogs' });
+SecurityLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 const models = {
   sequelize,
   User,
