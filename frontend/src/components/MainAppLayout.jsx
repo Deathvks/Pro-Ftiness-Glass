@@ -115,9 +115,11 @@ export default function MainAppLayout({
   const hasDraggedRef = useRef(false);
   const dragXRef = useRef(0);
   const touchStartXRef = useRef(0);
+  const jumpTimeoutRef = useRef(null);
   const [dragX, setDragX] = useState(0);
   const [dragHoverIndex, setDragHoverIndex] = useState(-1);
   const [isDraggingDrop, setIsDraggingDrop] = useState(false);
+  const [isJumping, setIsJumping] = useState(false);
   const [navWidth, setNavWidth] = useState(0);
   const [isInitialRender, setIsInitialRender] = useState(true);
 
@@ -440,6 +442,13 @@ export default function MainAppLayout({
           const btnRect = btn.getBoundingClientRect();
           
           const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
+          
+          if (!isInitialRender && Math.abs(dragX - exactCenter) > 20) {
+            setIsJumping(true);
+            if (jumpTimeoutRef.current) clearTimeout(jumpTimeoutRef.current);
+            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 200);
+          }
+          
           setDragX(exactCenter);
           
           if (isInitialRender) {
@@ -557,7 +566,7 @@ export default function MainAppLayout({
             const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
             if (dropRef.current) {
                 // Elastic jelly bounce when settling into place
-                dropRef.current.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease';
+                dropRef.current.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease';
                 dropRef.current.style.transform = `translate3d(calc(${exactCenter}px - 50%), -50%, 0) scaleX(1) scaleY(1)`;
             }
             startTransition(() => {
@@ -900,9 +909,9 @@ export default function MainAppLayout({
               className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
               style={{
                 left: 0,
-                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0)`,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.3) scaleY(0.75)' : 'scaleX(1) scaleY(1)'}`,
                 opacity: isDropVisible ? 1 : 0,
-                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
                 backdropFilter: 'blur(8px) brightness(1.1)',
                 WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
