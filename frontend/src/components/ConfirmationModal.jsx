@@ -66,7 +66,7 @@ const ConfirmationModal = ({
           <button
             onClick={handleConfirm}
             disabled={isLoading || showPasswordInput && !password.trim()}
-            className="flex items-center justify-center gap-2 px-6 py-3 sm:py-2 rounded-xl font-bold bg-red text-white hover:bg-red/80 transition disabled:opacity-70 whitespace-nowrap shadow-md shadow-red/20">
+            className="flex items-center justify-center gap-2 px-6 py-3 sm:py-2 rounded-xl font-bold bg-[#ef4444] text-white hover:bg-[#ef4444]/80 transition disabled:opacity-70 whitespace-nowrap shadow-md shadow-[#ef4444]/20">
             
             {isLoading ? <Spinner size={18} color="white" /> : confirmText}
           </button>

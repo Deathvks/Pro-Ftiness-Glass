@@ -744,10 +744,10 @@ const Routines = ({ setView }) => {
         <span className="hidden sm:inline">Muro</span>
       </button>
       <button
-        onClick={() => setShowAIGenerator(true)}
-        className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-accent/10 text-accent font-bold transition hover:scale-105"
-        title="Generar rutina con IA"
-      >
+          onClick={() => setShowAIGenerator(true)}
+          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full font-bold transition hover:scale-105 bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white animate-gradient-x shadow-lg shadow-accent/20 border-none"
+          title="Generar rutina con IA"
+        >
         <Sparkles size={18} />
         <span className="hidden sm:inline">IA</span>
       </button>
@@ -971,29 +971,33 @@ const Routines = ({ setView }) => {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 mb-5">
-                        <button
-                          onClick={() => setSharingRoutineId(routine.id)}
-                          className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
-                          title="Privacidad"
-                        >
-                          <Globe size={18} />
-                        </button>
-                        {isCompleted && (
+                        {!routine.is_from_trainer && (
                           <button
-                            onClick={() => handleShareClick(routine)}
+                            onClick={() => setSharingRoutineId(routine.id)}
                             className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
-                            title="Compartir"
+                            title="Privacidad"
                           >
-                            <Share2 size={18} />
+                            <Globe size={18} />
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleEditClick(routine)}
-                          className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
+                          )}
+                        {isCompleted && !routine.is_from_trainer && (
+                            <button
+                              onClick={() => handleShareClick(routine)}
+                              className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
+                              title="Compartir"
+                            >
+                              <Share2 size={18} />
+                            </button>
+                          )}
+                        {!routine.is_from_trainer && (
+                          <button
+                            onClick={() => handleEditClick(routine)}
+                            className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
+                            title="Editar"
+                          >
+                            <Edit size={18} />
+                          </button>
+                          )}
                         <button
                           onClick={() => duplicateRoutine(routine)}
                           className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
@@ -1004,13 +1008,15 @@ const Routines = ({ setView }) => {
 
                         <div className="flex-1"></div>
 
-                        <button
-                          onClick={() => handleDeleteClick(routine.id)}
-                          className="p-2.5 rounded-[14px] bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {!routine.is_from_trainer && (
+                          <button
+                            onClick={() => handleDeleteClick(routine.id)}
+                            className="p-2.5 rounded-[14px] bg-red-500 text-white hover:bg-red-600 shadow-sm shadow-red-500/20 transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                          )}
                       </div>
 
                       {exerciseGroups.length > 0 && (

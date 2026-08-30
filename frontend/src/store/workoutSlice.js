@@ -244,8 +244,9 @@ export const createWorkoutSlice = (set, get) => ({
 
     const newState = {
       activeWorkout: {
-        routineId: routine.id || null,
-        routineName: routine.name,
+          routineId: routine.id || null,
+          routineName: routine.name,
+          is_from_trainer: routine.is_from_trainer || false,
         image_url: routine.imageUrl || routine.image_url || null, 
         imageUrl: routine.imageUrl || routine.image_url || null,
         exercises,
@@ -679,7 +680,7 @@ export const createWorkoutSlice = (set, get) => ({
         ...workoutData,
         details: processedDetails || workoutData.details,
         date: workoutDate, 
-        visibility: localStorage.getItem('globalWorkoutVisibility') || 'friends', 
+        visibility: state.activeWorkout?.is_from_trainer ? 'private' : (localStorage.getItem('globalWorkoutVisibility') || 'friends'), 
         notifyFriends: localStorage.getItem('globalNotifyFriends') !== 'false'
       };
 

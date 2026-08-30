@@ -354,6 +354,22 @@ export const googleLogin = async (req, res, next) => {
         title: '¡Bienvenido!',
         message: 'Gracias por registrarte en Pro Fitness Glass con Google.'
       });
+      
+      try {
+        let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+        if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+        const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'REGISTER_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: `Registro exitoso con Google`
+        });
+      } catch (err) {
+        console.error("Error logging successful register:", err);
+      }
     }
 
     const platform = req.headers['x-app-platform'] || 'web';
@@ -498,6 +514,22 @@ export const discordLogin = async (req, res, next) => {
         title: '¡Bienvenido!',
         message: 'Gracias por registrarte en Pro Fitness Glass con Discord.'
       });
+      
+      try {
+        let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+        if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+        const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'REGISTER_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: `Registro exitoso con Discord`
+        });
+      } catch (err) {
+        console.error("Error logging successful register:", err);
+      }
     }
 
     const platform = req.headers['x-app-platform'] || 'web';
@@ -637,6 +669,22 @@ export const facebookLogin = async (req, res, next) => {
         title: '¡Bienvenido!',
         message: 'Gracias por registrarte en Pro Fitness Glass con Facebook.'
       });
+      
+      try {
+        let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+        if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+        const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'REGISTER_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: `Registro exitoso con Facebook`
+        });
+      } catch (err) {
+        console.error("Error logging successful register:", err);
+      }
     }
 
     const platform = req.headers['x-app-platform'] || 'web';
@@ -801,6 +849,22 @@ export const xLogin = async (req, res, next) => {
         title: '¡Bienvenido!',
         message: 'Gracias por registrarte en Pro Fitness Glass con X.'
       });
+      
+      try {
+        let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+        if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+        const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'REGISTER_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: `Registro exitoso con X`
+        });
+      } catch (err) {
+        console.error("Error logging successful register:", err);
+      }
     }
 
     const platform = req.headers['x-app-platform'] || 'web';
@@ -970,6 +1034,22 @@ export const githubLogin = async (req, res, next) => {
         title: '¡Bienvenido!',
         message: 'Gracias por registrarte en Pro Fitness Glass con GitHub.'
       });
+      
+      try {
+        let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+        if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+        const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'REGISTER_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: `Registro exitoso con GitHub`
+        });
+      } catch (err) {
+        console.error("Error logging successful register:", err);
+      }
     }
 
     const platform = req.headers['x-app-platform'] || 'web';
@@ -1133,6 +1213,22 @@ export const spotifyLogin = async (req, res, next) => {
         title: '¡Bienvenido!',
         message: 'Gracias por registrarte en Pro Fitness Glass con Spotify.'
       });
+      
+      try {
+        let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+        if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+        const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'REGISTER_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: `Registro exitoso con Spotify`
+        });
+      } catch (err) {
+        console.error("Error logging successful register:", err);
+      }
     }
 
     const platform = req.headers['x-app-platform'] || 'web';
@@ -1344,6 +1440,22 @@ export const verifyEmail = async (req, res, next) => {
       title: '¡Email verificado!',
       message: 'Tu cuenta ha sido verificada correctamente. ¡Bienvenido!'
     });
+
+    try {
+        let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';
+        if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+        const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+        const { logSecurityEvent } = await import('../middleware/securityMonitor.js');
+        await logSecurityEvent({
+          eventType: 'REGISTER_SUCCESS',
+          ipAddress: ip,
+          userId: user.id,
+          userAgent: userAgent,
+          details: `Registro y verificación de email exitosos para el usuario ${user.email}`
+        });
+    } catch (err) {
+        console.error("Error logging successful register:", err);
+    }
 
     return res.status(200).json({
       message: 'Email verificado exitosamente',

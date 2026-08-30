@@ -77,7 +77,7 @@ export default function TrainerRoutines({ activeClients }) {
     try {
       await apiClient(`/trainer/routines/${selectedRoutineForAssign.id}/assign`, {
         method: 'PUT',
-        body: JSON.stringify({ clientIds: selectedClientIds })
+        body: { clientIds: selectedClientIds }
       });
       addToast('Asignaciones guardadas', 'success');
       setAssignModalOpen(false);
@@ -118,11 +118,11 @@ export default function TrainerRoutines({ activeClients }) {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-black text-text-primary">Mis Rutinas para Clientes</h2>
         <button
           onClick={handleCreateNew}
-          className="flex items-center gap-2 px-4 py-2 bg-accent text-bg-primary rounded-xl font-bold shadow-lg hover:bg-accent/90 transition-all hover:scale-105"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-accent text-bg-primary rounded-xl font-bold shadow-lg hover:bg-accent/90 transition-all hover:scale-105 w-full sm:w-auto"
         >
           <PlusIcon className="w-5 h-5" />
           <span>Crear Rutina</span>
@@ -167,7 +167,7 @@ export default function TrainerRoutines({ activeClients }) {
                     </button>
                     <button 
                       onClick={() => handleDelete(routine.id)}
-                      className="p-1.5 text-text-secondary hover:text-red-500 bg-black/5 dark:bg-white/5 rounded-lg ring-1 ring-black/5 dark:ring-white/10 transition-colors"
+                      className="p-1.5 text-white bg-[#ef4444] hover:bg-[#dc2626] rounded-lg shadow-sm shadow-[#ef4444]/20 transition-colors"
                       title="Eliminar rutina"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -249,10 +249,10 @@ export default function TrainerRoutines({ activeClients }) {
                       <div 
                         key={client.id}
                         onClick={() => toggleClientSelection(client.id)}
-                        className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border-l-4 ${
+                        className={`flex items-center justify-between rounded-xl cursor-pointer transition-all ${
                           isSelected 
-                            ? 'bg-accent/10 border-accent ring-1 ring-accent/30' 
-                            : 'bg-black/5 dark:bg-white/5 border-transparent hover:bg-black/10 hover:border-black/20 dark:hover:border-white/20'
+                            ? 'bg-accent/10 border-l-4 border-accent ring-1 ring-accent/30 p-3' 
+                            : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 p-3 pl-4 border-l-0'
                         }`}
                       >
                         <div className="flex items-center gap-3">

@@ -137,15 +137,8 @@ const TourGuide = () => {
         return;
       }
 
-      // 2. Prioridad: Esperar a la promo del 2FA (solo si no es la primera sesión, ya que en la 1ra sesión no se muestra la promo)
-      const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
-      const isAlreadyEnabled = state.userProfile?.twoFactorEnabled || state.userProfile?.isTwoFactorEnabled;
-      const isFirstLoginSession = sessionStorage.getItem('just_logged_in') === 'true';
-
-      if (!hasSeenPromo && !isAlreadyEnabled && !isFirstLoginSession) {
-        timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
-        return;
-      }
+      // 2. Prioridad: Si la promo del 2FA está visible en pantalla, esperar
+      // (ya lo cubre el chequeo genérico de modales activos más abajo)
 
       // 3. Prioridad: Chequeo de otros modales activos en la pantalla
       const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {

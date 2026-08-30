@@ -30,7 +30,7 @@ export const getSecurityStats = async (req, res) => {
     });
     
     const successfulLogins = await SecurityLog.count({
-      where: { eventType: 'LOGIN_SUCCESS', createdAt: { [Op.gte]: startDate } }
+      where: { eventType: { [Op.in]: ['LOGIN_SUCCESS', 'REGISTER_SUCCESS'] }, createdAt: { [Op.gte]: startDate } }
     });
 
     const autoBans = await SecurityLog.count({
@@ -38,8 +38,6 @@ export const getSecurityStats = async (req, res) => {
     });
 
     // Gráfico de ataques vs accesos exitosos agrupados por fecha
-    // Dado que sqlite/mysql tienen funciones de fecha distintas, la forma más compatible en Sequelize puro 
-    // sin raw query pesadas es agrupar por fecha formateada (DATE(createdAt)).
     const chartDataRaw = await SecurityLog.findAll({
       attributes: [
         [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
@@ -48,7 +46,7 @@ export const getSecurityStats = async (req, res) => {
       ],
       where: {
         createdAt: { [Op.gte]: startDate },
-        eventType: { [Op.in]: ['LOGIN_FAILED', 'LOGIN_SUCCESS'] }
+        eventType: { [Op.in]: ['LOGIN_FAILED', 'LOGIN_SUCCESS', 'REGISTER_SUCCESS'] }
       },
       group: [sequelize.fn('DATE', sequelize.col('createdAt')), 'eventType'],
       raw: true
@@ -68,8 +66,12 @@ export const getSecurityStats = async (req, res) => {
       const dateStr = row.date;
       if (!chartMap[dateStr]) chartMap[dateStr] = { date: dateStr, success: 0, failure: 0 };
       
-      if (row.eventType === 'LOGIN_SUCCESS') chartMap[dateStr].success = parseInt(row.count, 10);
-      else if (row.eventType === 'LOGIN_FAILED') chartMap[dateStr].failure = parseInt(row.count, 10);
+      if (row.eventType === 'LOGIN_SUCCESS' || row.eventType === 'REGISTER_SUCCESS') {
+        chartMap[dateStr].success += parseInt(row.count, 10);
+      }
+      else if (row.eventType === 'LOGIN_FAILED') {
+        chartMap[dateStr].failure += parseInt(row.count, 10);
+      }
     });
 
     // Ordenar cronológicamente
@@ -98,9 +100,9 @@ export const getLogs = async (req, res) => {
     const whereClause = { createdAt: { [Op.gte]: startDate } };
     
     if (type === 'SUCCESS') {
-      whereClause.eventType = 'LOGIN_SUCCESS';
+      whereClause.eventType = { [Op.in]: ['LOGIN_SUCCESS', 'REGISTER_SUCCESS'] };
     } else if (type === 'ALERTS') {
-      whereClause.eventType = { [Op.ne]: 'LOGIN_SUCCESS' };
+      whereClause.eventType = { [Op.notIn]: ['LOGIN_SUCCESS', 'REGISTER_SUCCESS'] };
     }
 
     const logs = await SecurityLog.findAll({

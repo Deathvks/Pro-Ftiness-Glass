@@ -42,11 +42,15 @@ export const useRoutineSaver = ({
     const getT = (key, defaultVal) => i18n.t(key, { defaultValue: defaultVal });
 
     if (!routineName.trim()) {
-      setValidationError(getT('routine_editor:error_routine_name_required', 'El nombre de la rutina es obligatorio.'));
+      const msg = getT('routine_editor:error_routine_name_required', 'El nombre de la rutina es obligatorio.');
+      setValidationError(msg);
+      addToast(msg, 'error');
       return false;
     }
     if (exercises.length === 0) {
-      setValidationError(getT('routine_editor:error_min_one_exercise', 'La rutina debe tener al menos un ejercicio.'));
+      const msg = getT('routine_editor:error_min_one_exercise', 'La rutina debe tener al menos un ejercicio.');
+      setValidationError(msg);
+      addToast(msg, 'error');
       return false;
     }
 
@@ -89,7 +93,9 @@ export const useRoutineSaver = ({
 
     if (exerciseError) {
       // Mensaje de error actualizado para ser más claro
-      setValidationError(getT('routine_editor:error_all_fields_required', 'Todos los ejercicios deben tener nombre. Las series y reps deben ser mayores a 0, y el descanso 0 o más.'));
+      const msg = getT('routine_editor:error_all_fields_required', 'Todos los ejercicios deben tener nombre. Las series y reps deben ser mayores a 0, y el descanso 0 o más.');
+      setValidationError(msg);
+      addToast(msg, 'error');
       return false;
     }
 

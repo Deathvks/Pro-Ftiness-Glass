@@ -196,15 +196,18 @@ export default function TrainerPanel({ setView }) {
 
   if (clientToDetail) {
     return (
-      <ClientDetailPanel
-        client={clientToDetail}
-        onBack={() => {
-          setClientToDetail(null);
-          sessionStorage.removeItem('trainer_clientToDetail');
-          fetchClients();
-        }} />);
-
-
+      <ModalPortal>
+        <div className="fixed inset-0 z-[45] bg-bg-primary animate-fade-in-up">
+          <ClientDetailPanel
+            client={clientToDetail}
+            onBack={() => {
+              setClientToDetail(null);
+              sessionStorage.removeItem('trainer_clientToDetail');
+              fetchClients();
+            }} />
+        </div>
+      </ModalPortal>
+    );
   }
 
   return (
@@ -214,35 +217,24 @@ export default function TrainerPanel({ setView }) {
       </Helmet>
 
       <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-5xl w-full mx-auto flex flex-col flex-1 space-y-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setView('hub')}
-              className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95">
-              
-              <ChevronLeftIcon className="w-6 h-6" />
-            </button>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
-              Entrenador
-            </h1>
-          </div>
+        <div className="flex flex-row items-center justify-between gap-3 md:gap-4">
           <button
-            onClick={fetchClients}
-            disabled={loading}
-            className={`p-2 bg-bg-secondary text-text-primary rounded-xl ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-glass-border/30 transition-colors ${loading ? 'opacity-50 animate-pulse' : 'active:scale-95'}`}
-            title="Actualizar datos">
-            
-            <ArrowPathIcon className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
+            onClick={() => setShowAddFlow(true)}
+            className="flex-1 md:flex-none md:w-auto px-4 md:px-8 py-3.5 flex items-center justify-center gap-2 bg-accent text-bg-primary font-bold rounded-2xl active:scale-95 transition-transform shadow-lg shadow-accent/20">
+            <UserPlusIcon className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
+            <span className="text-sm md:text-base whitespace-nowrap">Añadir Nuevo Cliente</span>
           </button>
-        </div>
-
-        <button
-          onClick={() => setShowAddFlow(true)}
-          className="w-full flex items-center justify-center gap-2 p-4 bg-accent text-bg-primary font-bold rounded-2xl active:scale-95 transition-transform shadow-lg shadow-accent/20">
           
-          <UserPlusIcon className="w-6 h-6" />
-          <span>Añadir Nuevo Cliente</span>
-        </button>
+          <div className="flex justify-end shrink-0">
+            <button
+              onClick={fetchClients}
+              disabled={loading}
+              className={`p-3 bg-bg-secondary text-text-primary rounded-xl ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-glass-border/30 transition-colors ${loading ? 'opacity-50 animate-pulse' : 'active:scale-95'}`}
+              title="Actualizar datos">
+              <ArrowPathIcon className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
 
         {activeTab !== 'ejercicios' && activeTab !== 'rutinas' &&
         <div className="flex flex-col sm:flex-row gap-3">

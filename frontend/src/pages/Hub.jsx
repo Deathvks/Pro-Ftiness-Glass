@@ -1,5 +1,5 @@
 /* frontend/src/pages/Hub.jsx */
-import React from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   ChartBarIcon, 
@@ -16,6 +16,7 @@ import {
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import HubTourGuide from '../components/HubTourGuide';
+const CoachingPromoModal = lazy(() => import('../components/CoachingPromoModal'));
 
 const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, badge }) => (
   <button 
@@ -57,13 +58,29 @@ export default function Hub({ setView }) {
   const userProfile = useAppStore(state => state.userProfile);
   const [visitedChallenges, setVisitedChallenges] = React.useState(true);
   const [visitedAsesoria, setVisitedAsesoria] = React.useState(true);
+  const [showCoachingPromo, setShowCoachingPromo] = useState(false);
 
   React.useEffect(() => {
     if (userProfile?.id) {
       setVisitedChallenges(localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) === 'true');
       setVisitedAsesoria(localStorage.getItem(`visited_asesoria_${userProfile.id}`) === 'true');
+      
+      // Show coaching promo if user hasn't seen it yet and is NOT a trainer/admin
+      if (!['trainer', 'admin'].includes(userProfile?.role)) {
+        const hasSeen = localStorage.getItem(`coaching_promo_seen_${userProfile.id}`);
+        if (!hasSeen) {
+          setShowCoachingPromo(true);
+        }
+      }
     }
-  }, [userProfile?.id]);
+  }, [userProfile?.id, userProfile?.role]);
+
+  const handleCloseCoachingPromo = () => {
+    setShowCoachingPromo(false);
+    if (userProfile?.id) {
+      localStorage.setItem(`coaching_promo_seen_${userProfile.id}`, 'true');
+    }
+  };
 
   return (
     <div className="w-full h-full pb-[calc(var(--safe-bottom)+90px)] animate-fade-in custom-scrollbar">
@@ -180,6 +197,11 @@ export default function Hub({ setView }) {
 
         </div>
         
+        {showCoachingPromo && (
+          <Suspense fallback={null}>
+            <CoachingPromoModal onClose={handleCloseCoachingPromo} />
+          </Suspense>
+        )}
         <HubTourGuide />
       </div>
     </div>

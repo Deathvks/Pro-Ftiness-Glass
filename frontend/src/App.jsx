@@ -297,6 +297,7 @@ export default function App() {
       profile: { key: 'Perfil', default: 'Perfil' },
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
       adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
+      trainerPanel: { key: 'Personal Trainer', default: 'Personal Trainer' },
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
       terms: { key: 'Términos del Servicio', default: 'Términos del Servicio' },
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },

@@ -1,4 +1,4 @@
-import ModalPortal from './ModalPortal';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { UserCircleIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline';
 import apiClient from '../services/apiClient';
@@ -274,7 +274,7 @@ export default function TrainerChats({ onClose }) {
   };
   const totalUnread = clients.reduce((sum, client) => sum + (client.unreadCount || 0), 0);
 
-  return <ModalPortal>
+  return (
     <div className="fixed inset-0 z-[100] md:static md:w-full md:h-full flex flex-col md:flex-row bg-bg-primary overflow-hidden md:relative md:border md:border-glass-border md:rounded-xl md:isolate md:[transform:translateZ(0)]">
       
       {/* LISTA DE CONTACTOS */}
@@ -285,7 +285,7 @@ export default function TrainerChats({ onClose }) {
           {onClose &&
           <button
             onClick={onClose}
-            className="md:hidden w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-text-primary hover:bg-white/10 transition-colors">
+            className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-text-primary hover:bg-white/10 transition-colors bg-bg-secondary md:bg-transparent">
             
               <ChevronLeftIcon className="w-6 h-6" />
             </button>
@@ -509,6 +509,6 @@ export default function TrainerChats({ onClose }) {
         }
       </div>
 
-    </div></ModalPortal>;
+    </div>);
 
 }

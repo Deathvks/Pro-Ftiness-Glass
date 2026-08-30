@@ -26,7 +26,7 @@ export default {
 
         // Semánticos
         'green': 'var(--color-green)',
-        'red': 'var(--color-red)',
+        'red': { DEFAULT: 'var(--color-red)', 400: 'var(--color-red)', 500: 'var(--color-red)', 600: '#dc2626' },
         'neutral': 'var(--color-neutral)',
 
         // Glassmorphism

@@ -84,7 +84,7 @@ const ExerciseCard = ({
                 onChange={(e) => onFieldChange(identifier, 'sets', e.target.value)}
                 className={baseInputClasses}
               />
-              {errors?.sets && <p className="text-red-500 text-[10px] mt-1.5 font-medium text-center">{errors.sets}</p>}
+              {errors?.sets && <p className="text-[#ef4444] text-[10px] mt-1.5 font-medium text-center">{errors.sets}</p>}
             </div>
 
             <div>
@@ -96,7 +96,7 @@ const ExerciseCard = ({
                 onChange={(e) => onFieldChange(identifier, 'reps', e.target.value)}
                 className={baseInputClasses}
               />
-              {errors?.reps && <p className="text-red-500 text-[10px] mt-1.5 font-medium text-center">{errors.reps}</p>}
+              {errors?.reps && <p className="text-[#ef4444] text-[10px] mt-1.5 font-medium text-center">{errors.reps}</p>}
             </div>
 
             <div>
@@ -130,7 +130,7 @@ const ExerciseCard = ({
           </button>
           <button
             onClick={() => removeExercise(identifier)}
-            className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-red-500/10 hover:text-red-500 transition-all active:scale-95"
+            className="p-2.5 rounded-[14px] bg-[#ef4444] text-white hover:bg-[#dc2626] shadow-md shadow-[#ef4444]/20 transition-all active:scale-95"
             title="Eliminar ejercicio"
           >
             <Trash2 size={18} />
