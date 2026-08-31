@@ -216,16 +216,24 @@ const RoutineHeader = ({
 
   return (
     <>
-      <button
-        onClick={onCancel}
-        className="hidden sm:flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit">
-        <ChevronLeft size={20} />
-        Volver a Rutinas
-      </button>
+        <button
+          onClick={onCancel}
+          className="hidden sm:flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit">
+          <ChevronLeft size={20} />
+          Volver a Rutinas
+        </button>
 
-      <h1 className="text-3xl md:text-4xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight md:text-left text-center">
-        {id ? 'Editar Rutina' : 'Crear Nueva Rutina'}
-      </h1>
+        <div className="flex items-center gap-3 mb-8 justify-center sm:justify-start relative">
+          <button
+            onClick={onCancel}
+            className="sm:hidden absolute left-0 flex items-center justify-center w-10 h-10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary transition-colors shrink-0"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight text-center md:text-left mx-auto sm:mx-0">
+            {id ? 'Editar Rutina' : 'Crear Nueva Rutina'}
+          </h1>
+        </div>
 
       {validationError && (
         <div className="bg-red-500/10 ring-1 ring-red-500/20 text-red-500 px-5 py-4 rounded-[20px] mb-8 flex items-center gap-3 font-bold animate-[fade-in_0.3s_ease-out]">
