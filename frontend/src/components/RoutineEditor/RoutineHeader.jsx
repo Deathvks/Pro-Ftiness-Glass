@@ -223,14 +223,14 @@ const RoutineHeader = ({
           Volver a Rutinas
         </button>
 
-        <div className="flex items-center gap-3 mb-8 justify-center sm:justify-start relative">
+        <div className="flex items-center w-full mb-8">
           <button
             onClick={onCancel}
-            className="sm:hidden absolute left-0 flex items-center justify-center w-10 h-10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary transition-colors shrink-0"
+            className="sm:hidden flex items-center justify-center w-10 h-10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary transition-colors shrink-0 mr-4"
           >
             <ChevronLeft size={24} />
           </button>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight text-center md:text-left mx-auto sm:mx-0">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight text-left flex-1">
             {id ? 'Editar Rutina' : 'Crear Nueva Rutina'}
           </h1>
         </div>

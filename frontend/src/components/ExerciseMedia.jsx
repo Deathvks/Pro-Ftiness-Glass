@@ -11,11 +11,16 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
  * Componente para mostrar la imagen o vídeo del ejercicio.
  * Acepta 'details' (el objeto del ejercicio), 'src' directo, y 'className'.
  */
-const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'auto' }) => {
+const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { theme } = useAppTheme();
+
+  // DEBUG LOG
+  useEffect(() => {
+    console.log('[ExerciseMedia] Montado. Nombre:', details?.name, 'ID:', details?.id, 'details:', details);
+  }, [details]);
 
   // --- LÓGICA INTELIGENTE DE EXTRACCIÓN ---
   const rawImageUrl = src || 
@@ -54,6 +59,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
 
   // Construcción segura de la URL final
   const getBestImageUrl = (url) => {
+    console.log('[ExerciseMedia] evaluando getBestImageUrl para:', url, 'tipo:', typeof url);
     if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
     if (typeof url !== 'string') url = String(url); // En caso de que sea un String object
     if (url.startsWith('http')) return url;
