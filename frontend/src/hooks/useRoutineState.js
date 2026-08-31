@@ -14,8 +14,10 @@ const DRAFT_KEY = 'routineEditorDraft';
 const getInitialState = (initialRoutine) => {
   const savedDraft = localStorage.getItem(DRAFT_KEY);
 
-  // 1. Verificamos si la rutina inicial ya trae ejercicios (ej: de la IA o de Duplicar)
-  const hasInitialExercises = initialRoutine?.exercises && initialRoutine.exercises.length > 0;
+  // 1. Verificamos si la rutina inicial ya trae ejercicios INYECTADOS (ej: de la IA o de Duplicar)
+  // IMPORTANTE: Solo consideramos esto si es una rutina NUEVA (sin ID).
+  // Las rutinas de la BD siempre traen .exercises, pero no debemos usarlos directamente porque necesitan hidratarse.
+  const hasInjectedExercises = !initialRoutine?.id && initialRoutine?.exercises && initialRoutine.exercises.length > 0;
 
   if (savedDraft) {
     try {
@@ -23,8 +25,8 @@ const getInitialState = (initialRoutine) => {
       const draftId = draft.id || null;
       const routineId = initialRoutine?.id || null;
 
-      // Si el ID del borrador coincide con el de la rutina, y NO nos están forzando ejercicios nuevos por props
-      if (draftId === routineId && !hasInitialExercises) {
+      // Si el ID del borrador coincide con el de la rutina, y NO es una rutina inyectada
+      if (draftId === routineId && !hasInjectedExercises) {
         // Cargar el borrador guardado
         return {
           ...draft,
@@ -41,15 +43,20 @@ const getInitialState = (initialRoutine) => {
     }
   }
 
-  // Si no hay borrador o no coincide, o tenemos ejercicios forzados (IA)
+  // Si no hay borrador o no coincide, empezar de cero
+  // FIX CRÍTICO: Si estamos editando una rutina existente (tiene ID), NO precargamos initialRoutine.exercises.
+  // Debemos dejar el array vacío para que `useRoutineLoader` hidrate correctamente los `RoutineExercises` con los datos de `allExercisesData` (imágenes, video, etc).
+  // Solo usamos `initialRoutine.exercises` si es una rutina NUEVA (id = null), como las de IA o duplicadas.
+  const isEditing = Boolean(initialRoutine?.id);
+  
   return {
     id: initialRoutine?.id || null, // Guardar el ID de lo que estamos editando
     routineName: initialRoutine?.name || '',
     description: initialRoutine?.description || '',
     // FIX: Manejar ambos formatos de image_url por si acaso
     imageUrl: initialRoutine?.image_url || initialRoutine?.imageUrl || null,
-    // FIX: Cargamos los ejercicios que mandó la IA o el duplicado
-    exercises: initialRoutine?.exercises || [], 
+    // FIX: Solo precargar si NO estamos editando, para no saltarnos la hidratación de useRoutineLoader
+    exercises: isEditing ? [] : (initialRoutine?.exercises || []), 
     isLoading: false,
     isSaving: false,
     isDeleting: false,

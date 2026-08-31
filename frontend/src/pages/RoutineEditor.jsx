@@ -21,6 +21,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
     description, setDescription,
     imageUrl, setImageUrl,
     folder, setFolder,
+    visibility, setVisibility,
     exercises,
     isLoading,
     isSaving,
@@ -45,6 +46,7 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
     unlinkGroup,
     onDragEnd,
     handleAddExercisesFromSearch,
+    addCustomExercise,
 
     groupedExercises,
     handleReplaceClick,
@@ -57,6 +59,12 @@ const RoutineEditor = ({ routine: initialRoutine, onSave: handleSaveProp, onCanc
     handleAddCustomExerciseForReplace
 
   } = useRoutineEditor({ initialRoutine, onSave: handleSaveProp, onCancel, initialFolder, isTrainerTemplate });
+
+  // Ocultar el header global de la aplicación mientras estamos en el editor
+  React.useEffect(() => {
+    document.documentElement.classList.add('hide-global-header');
+    return () => document.documentElement.classList.remove('hide-global-header');
+  }, []);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Spinner /></div>;

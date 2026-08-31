@@ -1060,3 +1060,7 @@ body .driver-popover .driver-popover-close-btn:hover {
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.hide-global-header .global-header-element {
+  display: none !important;
+}

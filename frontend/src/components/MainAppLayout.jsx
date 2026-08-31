@@ -761,7 +761,7 @@ export default function MainAppLayout({
 
 
         <header 
-          className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl shadow-sm' : 'bg-transparent'}`}
+          className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out global-header-element ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl shadow-sm' : 'bg-transparent'}`}
           style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
         >
           <div className="flex justify-between items-center w-full h-14 px-4">
