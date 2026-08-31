@@ -54,7 +54,8 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
 
   // Construcción segura de la URL final
   const getBestImageUrl = (url) => {
-    if (!url || typeof url !== 'string' || url === 'null' || url === 'undefined' || url.trim() === '') return null;
+    if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
+    if (typeof url !== 'string') url = String(url); // En caso de que sea un String object
     if (url.startsWith('http')) return url;
     
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
@@ -88,7 +89,8 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   }, [finalImagesUrls.length, delayMs]);
 
   const getVideoUrl = (url) => {
-    if (!url || typeof url !== 'string' || url === 'null' || url === 'undefined' || url.trim() === '') return null;
+    if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
+    if (typeof url !== 'string') url = String(url);
     if (url.startsWith('http')) return url;
     const safeUrl = url.startsWith('/') ? url : `/${url}`;
     return `${BACKEND_BASE_URL}${safeUrl}`;
@@ -96,7 +98,8 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
 
   // Extraer ID de YouTube
   const getYouTubeId = (url) => {
-    if (!url || typeof url !== 'string' || url === 'null' || url === 'undefined') return null;
+    if (!url || url === 'null' || url === 'undefined') return null;
+    if (typeof url !== 'string') url = String(url);
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
