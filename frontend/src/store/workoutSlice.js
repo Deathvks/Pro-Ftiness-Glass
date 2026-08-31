@@ -203,15 +203,17 @@ export const createWorkoutSlice = (set, get) => ({
         fullDetails?.gifUrl ||
         fullDetails?.gif_url ||
         ex.image_url_start ||
+        ex.exercise?.image_url_start ||
         fullDetails?.image_url_start ||
         null;
 
-      const videoUrl = ex.video_url || fullDetails?.video_url || null;
+      const videoUrl = ex.video_url || ex.exercise?.video_url || fullDetails?.video_url || null;
 
       const exerciseDetails = {
+        ...(ex.exercise || {}),
         ...(fullDetails || {}),
         name: exerciseKeyName,
-        description: fullDetails?.description_es || fullDetails?.description || null,
+        description: fullDetails?.description_es || fullDetails?.description || ex.exercise?.description || null,
         image_url: mediaUrl,
         video_url: videoUrl,
       };
