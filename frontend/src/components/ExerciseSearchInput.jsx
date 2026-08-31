@@ -177,8 +177,10 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
                   <div className="w-12 h-12 rounded-[14px] overflow-hidden shrink-0 ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-black/5 dark:bg-white/5 p-1">
                     {/* AÑADIDO: Usa ExerciseMedia para las previews */}
                     <ExerciseMedia 
-                      details={exercise}
-                      className="w-full h-full object-contain"
+                      details={exercise} 
+                      fitMode="cover"
+                      disableAnimation={true}
+                      className="w-full h-full object-cover" 
                     />
                   </div>
                   <div className="flex-1 min-w-0">

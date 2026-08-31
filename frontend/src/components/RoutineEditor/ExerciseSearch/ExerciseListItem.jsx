@@ -59,6 +59,7 @@ const ExerciseListItem = ({
         <ExerciseMedia 
           details={exercise}
           fitMode="cover"
+          disableAnimation={true}
           className="w-full h-full"
         />
       </div>

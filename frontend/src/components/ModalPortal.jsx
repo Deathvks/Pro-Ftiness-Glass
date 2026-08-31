@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-const ModalPortal = ({ children }) => {
+const ModalPortal = ({ children, disableSwipeToClose = false }) => {
   const [mounted, setMounted] = useState(false);
   const touchStartY = useRef(null);
   const touchCurrentY = useRef(null);
@@ -38,7 +38,7 @@ const ModalPortal = ({ children }) => {
   const child = React.isValidElement(children) ? children : React.Children.only(children);
 
   const handleTouchStart = (e) => {
-    let canSwipe = window.innerWidth < 640;
+    let canSwipe = !disableSwipeToClose && window.innerWidth < 640;
     
     if (canSwipe) {
       let el = e.target;

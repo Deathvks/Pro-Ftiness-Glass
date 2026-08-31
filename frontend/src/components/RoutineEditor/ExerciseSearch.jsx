@@ -479,7 +479,7 @@ const ExerciseSearch = ({
 
   };
 
-  return <ModalPortal>
+  return <ModalPortal disableSwipeToClose={true}>
     <div
       className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex justify-center items-end animate-[fade-in_0.2s_ease_out]"
       style={{ touchAction: 'none' }}

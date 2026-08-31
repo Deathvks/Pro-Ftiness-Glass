@@ -46,14 +46,19 @@ const ExerciseListView = ({
     if (savedScroll && listRef.current && !isLoading) {
       listRef.current.scrollTop = parseInt(savedScroll, 10);
     }
+    
+    // Guardar la posición al desmontar para no penalizar el rendimiento durante el scroll
+    return () => {
+      if (listRef.current) {
+        sessionStorage.setItem(SCROLL_KEY, listRef.current.scrollTop);
+      }
+    };
   }, [isLoading, filteredExercises.length]);
 
   const handleScroll = (e) => {
-    sessionStorage.setItem(SCROLL_KEY, e.target.scrollTop);
-    
     // Infinite scroll logic
     const { scrollTop, scrollHeight, clientHeight } = e.target;
-    if (scrollHeight - scrollTop - clientHeight < 200) {
+    if (scrollHeight - scrollTop - clientHeight < 400) {
       if (visibleCount < filteredExercises.length) {
         setVisibleCount(prev => prev + 30);
       }

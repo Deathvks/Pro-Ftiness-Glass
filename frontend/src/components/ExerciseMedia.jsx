@@ -11,7 +11,7 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
  * Componente para mostrar la imagen o vídeo del ejercicio.
  * Acepta 'details' (el objeto del ejercicio), 'src' directo, y 'className'.
  */
-const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false }) => {
+const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -80,13 +80,13 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const delayMs = Math.max(1500, 3000 - (finalImagesUrls.length * 200));
 
   useEffect(() => {
-    if (finalImagesUrls.length > 1) {
+    if (finalImagesUrls.length > 1 && !disableAnimation) {
       const interval = setInterval(() => {
         setCurrentIndex(prev => (prev + 1) % finalImagesUrls.length);
       }, delayMs);
       return () => clearInterval(interval);
     }
-  }, [finalImagesUrls.length, delayMs]);
+  }, [finalImagesUrls.length, delayMs, disableAnimation]);
 
   const getVideoUrl = (url) => {
     if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
