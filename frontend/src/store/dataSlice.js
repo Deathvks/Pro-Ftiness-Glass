@@ -116,10 +116,8 @@ export const createDataSlice = (set, get) => ({
           nutrition,
           favoriteMeals,
           recentMeals,
-          templateRoutines,
           todaysCreatine,
           creatineStats,
-          exercises,
           prsResponse
         ] = await Promise.all([
           routineService.getRoutines(),
@@ -129,10 +127,8 @@ export const createDataSlice = (set, get) => ({
           nutritionService.getNutritionLogsByDate(today),
           favoriteMealService.getFavoriteMeals(),
           nutritionService.getRecentMeals(),
-          templateRoutineService.getTemplateRoutines(),
           creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
           creatinaService.getCreatinaStats(),
-          exerciseService.getExerciseList(),
           personalRecordService.getPersonalRecords(1, 'all').catch(() => [])
         ]);
         
@@ -140,18 +136,16 @@ export const createDataSlice = (set, get) => ({
         const safePRs = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
 
         set({
-          routines,
-          workoutLog: workouts,
-          bodyWeightLog: bodyweight,
+          routines: routines || [],
+          workoutLog: workouts || [],
+          bodyWeightLog: bodyweight || [],
           bodyMeasurementsLog: measurements || [],
           nutritionLog: nutrition.nutrition || [],
           waterLog: nutrition.water || { quantity_ml: 0 },
           favoriteMeals,
           recentMeals: recentMeals || [],
-          templateRoutines,
           todaysCreatineLog: todaysCreatine.data || [],
           creatineStats: creatineStats.data || null,
-          allExercises: exercises || [],
           personalRecords: safePRs
         });
       }
@@ -213,6 +207,22 @@ export const createDataSlice = (set, get) => ({
     } catch (error) {
       console.error("Error crítico en getOrFetchAllExercises:", error);
       return [];
+    }
+  },
+
+  getOrFetchTemplateRoutines: async () => {
+    const currentTemplates = get().templateRoutines;
+    if (currentTemplates && Object.keys(currentTemplates).length > 0) {
+      return Promise.resolve(currentTemplates);
+    }
+
+    try {
+      const templates = await templateRoutineService.getTemplateRoutines();
+      set({ templateRoutines: templates || {} });
+      return templates || {};
+    } catch (error) {
+      console.error("Error al obtener rutinas plantilla:", error);
+      return {};
     }
   },
 

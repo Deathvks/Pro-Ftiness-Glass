@@ -130,13 +130,27 @@ const ExerciseThumbnail = ({ mediaUrl, displayName, imageBgClass }) => {
 
 const TemplateRoutines = ({ setView }) => {
   const { addToast } = useToast();
-  const { templateRoutines: fetchedRoutines, startWorkout, createRoutine, exercises } = useAppStore(state => ({
+  const { 
+    templateRoutines: fetchedRoutines, 
+    startWorkout, 
+    createRoutine, 
+    exercises,
+    getOrFetchAllExercises,
+    getOrFetchTemplateRoutines
+  } = useAppStore(state => ({
     templateRoutines: state.templateRoutines,
     startWorkout: state.startWorkout,
     createRoutine: state.createRoutine,
     exercises: state.allExercises || [],
+    getOrFetchAllExercises: state.getOrFetchAllExercises,
+    getOrFetchTemplateRoutines: state.getOrFetchTemplateRoutines,
   }));
   const { theme } = useAppTheme();
+
+  useEffect(() => {
+    getOrFetchAllExercises();
+    getOrFetchTemplateRoutines();
+  }, [getOrFetchAllExercises, getOrFetchTemplateRoutines]);
 
   const templateRoutines = useMemo(() => {
     if (!fetchedRoutines || Object.keys(fetchedRoutines).length === 0) return DEFAULT_ROUTINES;
