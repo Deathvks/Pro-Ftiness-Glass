@@ -199,21 +199,17 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         {/* Content */}
         <div className="flex-grow overflow-y-auto p-6 sm:p-8 custom-scrollbar">
           
-          {(localDetails.image_url || localDetails.video_url) ? (
-            <ExerciseMedia
-              details={localDetails}
-              fitMode="cover"
-              playYouTube={true}
-              className="w-full mx-auto mb-8 rounded-[24px] overflow-hidden"
-            />
-          ) : localIsLoading ? (
+          {localIsLoading ? (
             <div className="aspect-video bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] flex items-center justify-center text-text-muted w-full mx-auto mb-8 shadow-inner">
               <Spinner size={32} />
             </div>
           ) : (
-            <div className="aspect-video bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] flex items-center justify-center text-text-muted w-full mx-auto mb-8 shadow-inner">
-              <ImageIcon size={48} strokeWidth={1.5} className="opacity-50" />
-            </div>
+            <ExerciseMedia
+              details={localDetails}
+              fitMode="cover"
+              playYouTube={true}
+              className="w-full aspect-video mx-auto mb-8 rounded-[24px] overflow-hidden relative"
+            />
           )}
 
           <div className="grid grid-cols-2 gap-3 mb-8">

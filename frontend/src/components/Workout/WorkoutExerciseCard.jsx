@@ -104,7 +104,7 @@ const WorkoutExerciseCard = ({
         <ExerciseMedia
           details={exercise}
           fitMode="cover"
-          className="w-full lg:max-w-lg mx-auto mb-2 transition-all rounded-[24px] overflow-hidden relative" />
+          className="w-full aspect-video lg:max-w-lg mx-auto mb-2 transition-all rounded-[24px] overflow-hidden relative" />
         
       </button>
 
