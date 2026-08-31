@@ -142,8 +142,6 @@ export const useRoutineLoader = ({
           };
         });
 
-        console.log('[useRoutineLoader] Ejercicios parseados desde rutina:', formattedExercises);
-
         // 4. Actualizamos el estado de los ejercicios
         setExercises(formattedExercises);
         

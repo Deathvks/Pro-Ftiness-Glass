@@ -17,11 +17,6 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const [currentIndex, setCurrentIndex] = useState(0);
   const { theme } = useAppTheme();
 
-  // DEBUG LOG
-  useEffect(() => {
-    console.log('[ExerciseMedia] Montado. Nombre:', details?.name, 'ID:', details?.id, 'details:', details);
-  }, [details]);
-
   // --- LÓGICA INTELIGENTE DE EXTRACCIÓN ---
   const rawImageUrl = src || 
     details?.image_url_start || 
@@ -59,7 +54,6 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
 
   // Construcción segura de la URL final
   const getBestImageUrl = (url) => {
-    console.log('[ExerciseMedia] evaluando getBestImageUrl para:', url, 'tipo:', typeof url);
     if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
     if (typeof url !== 'string') url = String(url); // En caso de que sea un String object
     if (url.startsWith('http')) return url;
