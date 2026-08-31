@@ -58,7 +58,7 @@ const ExerciseListItem = ({
       <div className="w-full aspect-square bg-transparent flex items-center justify-center transition-transform duration-500 group-hover:scale-105 overflow-hidden rounded-t-[24px]">
         <ExerciseMedia 
           details={exercise}
-          fitMode="cover"
+          fitMode="contain"
           disableAnimation={true}
           className="w-full h-full"
         />

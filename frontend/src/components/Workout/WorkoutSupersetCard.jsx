@@ -183,7 +183,8 @@ const WorkoutSupersetCard = ({
                             <div className="w-20 aspect-video self-center rounded-md overflow-hidden flex-shrink-0 bg-transparent relative">
                                 <ExerciseMedia
                                     details={ex.exercise_details}
-                                    className="w-full h-full object-cover pointer-events-none"
+                                    fitMode="contain"
+                                    className="w-full h-full object-contain pointer-events-none"
                                 />
                             </div>
 

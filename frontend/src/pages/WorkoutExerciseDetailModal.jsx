@@ -206,7 +206,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           ) : (
             <ExerciseMedia
               details={localDetails}
-              fitMode="cover"
+              fitMode="contain"
               playYouTube={true}
               className="w-full aspect-video mx-auto mb-8 rounded-[24px] overflow-hidden relative"
             />

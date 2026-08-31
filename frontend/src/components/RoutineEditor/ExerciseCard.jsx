@@ -51,7 +51,7 @@ const ExerciseCard = ({
 
         <ExerciseMedia
           details={exercise}
-          fitMode="cover"
+          fitMode="contain"
           className="shrink-0 w-full sm:w-40 md:w-48 aspect-square sm:aspect-video rounded-[16px] overflow-hidden"
         />
 
