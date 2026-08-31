@@ -190,23 +190,31 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
       return blendClass;
     };
 
-    const imgBaseClass = isAuto ? 'w-full h-auto' : 'absolute inset-0 w-full h-full';
+    const isContain = fitMode === 'contain' || (imageToRender && imageToRender.includes('wger.de'));
+    const imgBaseClass = isAuto 
+      ? 'w-full h-auto' 
+      : (isContain ? 'absolute inset-0 m-auto max-w-full max-h-full object-contain' : 'absolute inset-0 w-full h-full');
 
     if (finalImagesUrls.length > 0) {
       return (
         <div className={containerClasses}>
-          {finalImagesUrls.map((url, idx) => (
-            <img
-              key={idx}
-              src={url}
-              alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
-              className={`rounded-[24px] ${isAuto && idx === 0 ? 'relative' : 'absolute inset-0'} ${isAuto ? 'w-full h-auto' : 'w-full h-full'} transition-all duration-1000 ease-in-out ${getImageBlendClass(url)} ${
-                idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
-              onError={() => setImageError(true)}
-              loading="lazy"
-            />
-          ))}
+          {finalImagesUrls.map((url, idx) => {
+            const isUrlContain = fitMode === 'contain' || url.includes('wger.de');
+            const posClass = isAuto && idx === 0 ? 'relative' : 'absolute inset-0';
+            const sizeClass = isAuto ? 'w-full h-auto' : (isUrlContain ? 'm-auto max-w-full max-h-full object-contain' : 'w-full h-full');
+            return (
+              <img
+                key={idx}
+                src={url}
+                alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
+                className={`rounded-[24px] ${posClass} ${sizeClass} transition-all duration-1000 ease-in-out ${getImageBlendClass(url)} ${
+                  idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
+                onError={() => setImageError(true)}
+                loading="lazy"
+              />
+            );
+          })}
         </div>
       );
     }
