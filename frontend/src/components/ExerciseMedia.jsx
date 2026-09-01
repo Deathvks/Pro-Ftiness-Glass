@@ -14,7 +14,6 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
 const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const { theme } = useAppTheme();
 
   // --- LÓGICA INTELIGENTE DE EXTRACCIÓN ---
@@ -49,7 +48,6 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   useEffect(() => {
     setImageError(false);
     setVideoError(false);
-    setCurrentIndex(0);
   }, [rawImageUrl, rawVideoUrl, rawImages?.length]);
 
   // Construcción segura de la URL final
@@ -75,18 +73,6 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const finalImageUrl = getBestImageUrl(rawImageUrl);
   const allImagesUrls = Array.isArray(rawImages) ? rawImages.map(getBestImageUrl).filter(Boolean) : [];
   const finalImagesUrls = [...new Set(allImagesUrls)];
-
-  // Ajustar la velocidad en base a la cantidad de imágenes
-  const delayMs = Math.max(1500, 3000 - (finalImagesUrls.length * 200));
-
-  useEffect(() => {
-    if (finalImagesUrls.length > 1 && !disableAnimation) {
-      const interval = setInterval(() => {
-        setCurrentIndex(prev => (prev + 1) % finalImagesUrls.length);
-      }, delayMs);
-      return () => clearInterval(interval);
-    }
-  }, [finalImagesUrls.length, delayMs, disableAnimation]);
 
   const getVideoUrl = (url) => {
     if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
@@ -196,25 +182,45 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
       : (isContain ? 'absolute inset-0 m-auto max-w-full max-h-full object-contain' : 'absolute inset-0 w-full h-full');
 
     if (finalImagesUrls.length > 0) {
+      const hasMultiple = finalImagesUrls.length > 1 && !disableAnimation;
+      const totalDuration = finalImagesUrls.length * 2; // 2 seconds per frame
+      
       return (
         <div className={containerClasses}>
+          {hasMultiple && (
+            <style>{`
+              @keyframes slideCycle_${finalImagesUrls.length} {
+                0% { opacity: 1; z-index: 20; }
+                ${(1.8 / totalDuration) * 100}% { opacity: 1; z-index: 20; }
+                ${(2 / totalDuration) * 100}% { opacity: 0; z-index: 0; }
+                100% { opacity: 0; z-index: 0; }
+              }
+            `}</style>
+          )}
           {finalImagesUrls.map((url, idx) => {
             const isUrlContain = fitMode === 'contain' || url.includes('wger.de');
             const posClass = isAuto && idx === 0 ? 'relative' : 'absolute inset-0';
-            const sizeClass = isAuto ? 'w-full h-auto' : (isUrlContain ? 'm-auto max-w-full max-h-full object-contain' : 'w-full h-full');
-            let visibilityClass = 'opacity-0 z-0';
-            if (idx === currentIndex) {
-              visibilityClass = 'opacity-100 z-20 scale-100 translate-x-0 translate-y-0';
-            } else if (disableAnimation && idx === 1) {
-              // Efecto "una detrás de otra" (stacked) cuando no hay animación
-              visibilityClass = 'opacity-40 z-10 scale-[0.85] translate-x-4 translate-y-2';
+            const sizeClass = isAuto ? 'w-full h-auto' : (isUrlContain ? 'm-auto max-w-[90%] max-h-[90%] object-contain' : 'w-full h-full');
+            
+            let visibilityStyle = {};
+            let visibilityClass = '';
+
+            if (hasMultiple) {
+              visibilityStyle = {
+                animation: `slideCycle_${finalImagesUrls.length} ${totalDuration}s infinite ${idx * 2}s`
+              };
+              visibilityClass = 'opacity-0'; // Will be overridden by animation
+            } else {
+              visibilityClass = idx === 0 ? 'opacity-100 z-20' : 'opacity-0 z-0 hidden';
             }
+
             return (
               <img
                 key={idx}
                 src={url}
                 alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
-                className={`rounded-[24px] ${posClass} ${sizeClass} transition-all duration-1000 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
+                className={`rounded-[24px] ${posClass} ${sizeClass} transition-opacity duration-500 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
+                style={visibilityStyle}
                 onError={() => setImageError(true)}
                 loading="lazy"
               />
