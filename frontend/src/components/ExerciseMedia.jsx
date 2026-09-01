@@ -202,14 +202,19 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
             const isUrlContain = fitMode === 'contain' || url.includes('wger.de');
             const posClass = isAuto && idx === 0 ? 'relative' : 'absolute inset-0';
             const sizeClass = isAuto ? 'w-full h-auto' : (isUrlContain ? 'm-auto max-w-full max-h-full object-contain' : 'w-full h-full');
+            let visibilityClass = 'opacity-0 z-0';
+            if (idx === currentIndex) {
+              visibilityClass = 'opacity-100 z-20 scale-100 translate-x-0 translate-y-0';
+            } else if (disableAnimation && idx === 1) {
+              // Efecto "una detrás de otra" (stacked) cuando no hay animación
+              visibilityClass = 'opacity-40 z-10 scale-[0.85] translate-x-4 translate-y-2';
+            }
             return (
               <img
                 key={idx}
                 src={url}
                 alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
-                className={`rounded-[24px] ${posClass} ${sizeClass} transition-all duration-1000 ease-in-out ${getImageBlendClass(url)} ${
-                  idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                }`}
+                className={`rounded-[24px] ${posClass} ${sizeClass} transition-all duration-1000 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
                 onError={() => setImageError(true)}
                 loading="lazy"
               />
