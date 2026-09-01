@@ -156,7 +156,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
       : (isAuto ? 'w-full h-auto max-h-[70vh]' : 'w-full h-full');
     
     // El contenedor no necesita fondo si vamos a hacer que la imagen se fusione
-    const finalBgClass = imageToRender === youtubeThumbnail ? 'bg-black' : 'bg-transparent';
+    const finalBgClass = 'bg-transparent';
     const containerClasses = `${aspectRatioClass} relative rounded-[24px] overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
 
     // Lógica mágica para eliminar el fondo blanco de los dibujos de Wger
@@ -179,7 +179,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     const isContain = fitMode === 'contain' || (imageToRender && imageToRender.includes('wger.de'));
     const imgBaseClass = isAuto 
       ? 'w-full h-auto' 
-      : (isContain ? 'absolute inset-0 m-auto max-w-full max-h-full object-contain' : 'absolute inset-0 w-full h-full');
+      : (isContain ? 'absolute inset-0 m-auto max-w-[90%] max-h-[90%] object-contain' : 'absolute inset-0 w-full h-full');
 
     if (finalImagesUrls.length > 0) {
       const hasMultiple = finalImagesUrls.length > 1 && !disableAnimation;
