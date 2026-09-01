@@ -785,7 +785,7 @@ export default function MainAppLayout({
               ) : (
                 <button 
                   onClick={() => navigate('profile')}
-                  className="w-8 h-8 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary active:scale-95 transition-transform"
+                  className="w-8 h-8 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary active:scale-95 transition-transform relative z-20"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   {profileImgSrc ? (
@@ -795,14 +795,13 @@ export default function MainAppLayout({
                   )}
                 </button>
               )}
-              <span
-                key={currentTitle}
-                className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1"
-              >
-                {currentTitle}
-              </span>
+            </div>
+
+            {/* Logo Central Absoluto */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none mt-[max(0px,calc(var(--safe-top,0px)/2))]">
+              <img src="/logo.webp" alt="Pro Fitness Glass" className="h-8 w-auto object-contain drop-shadow-md rounded-lg" />
               {view === 'social' && (
-                <span className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-bold tracking-wider uppercase animate-fade-in-up shrink-0">
+                <span className="ml-2 px-1.5 py-0.5 rounded-md bg-accent/10 text-accent text-[10px] font-bold tracking-wider uppercase animate-fade-in-up shrink-0">
                   BETA
                 </span>
               )}
