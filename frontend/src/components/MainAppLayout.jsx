@@ -795,17 +795,22 @@ export default function MainAppLayout({
                   )}
                 </button>
               )}
-            </div>
+                {view !== 'dashboard' && (
+                  <span
+                    key={currentTitle}
+                    className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1"
+                  >
+                    {currentTitle}
+                  </span>
+                )}
+              </div>
 
-            {/* Logo Central Absoluto */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none mt-[max(0px,calc(var(--safe-top,0px)/2))]">
-              <img src="/logo.webp" alt="Pro Fitness Glass" className="h-8 w-auto object-contain drop-shadow-md rounded-lg" />
-              {view === 'social' && (
-                <span className="ml-2 px-1.5 py-0.5 rounded-md bg-accent/10 text-accent text-[10px] font-bold tracking-wider uppercase animate-fade-in-up shrink-0">
-                  BETA
-                </span>
+              {/* Logo Central (Solo en Dashboard) */}
+              {view === 'dashboard' && (
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none mt-[max(0px,calc(var(--safe-top,0px)/2))]">
+                  <img src="/logo.webp" alt="Pro Fitness Glass" className="h-8 w-auto object-contain drop-shadow-md rounded-lg" />
+                </div>
               )}
-            </div>
 
             <div className="flex items-center shrink-0">
               <div className="flex items-center justify-center mr-1 sm:mr-2">
