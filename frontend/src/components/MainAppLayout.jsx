@@ -206,14 +206,16 @@ export default function MainAppLayout({
       localStorage.removeItem('quickCardioOrigin');
     }
     
-    if (view === itemId) {
-      if (mainContentRef && mainContentRef.current) {
-        mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    startTransition(() => {
+      if (view === itemId) {
+        if (mainContentRef && mainContentRef.current) {
+          mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        setViewResetKey(prev => prev + 1);
+      } else {
+        navigate(itemId);
       }
-      setViewResetKey(prev => prev + 1);
-    } else {
-      navigate(itemId);
-    }
+    });
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -879,17 +881,12 @@ export default function MainAppLayout({
 
       </div>
 
-      <div 
-        className={`md:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none transition-opacity duration-300 ease-out ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
+      {/* ESPACIO INFERIOR DIFUMINADO (Optimizado para Android de gama baja) */}
+      <div
+        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
-          height: 'calc(80px + var(--safe-bottom))',
-          background: `linear-gradient(to top, rgba(var(--bg-primary-rgb), 0.6) 0%, transparent 100%)`,
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
-          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 100%)',
+          height: 'calc(var(--safe-bottom) + 100px)',
           transform: 'translateZ(0)',
-          willChange: 'transform'
         }}
       ></div>
 
