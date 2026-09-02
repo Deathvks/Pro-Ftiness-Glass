@@ -28,11 +28,6 @@ const useModalLock = (isActive = true) => {
       document.body.style.width = '';
       document.body.style.overscrollBehavior = '';
       window.scrollTo(0, scrollY);
-
-      if (swipeContainer) {
-        swipeContainer.style.overflow = '';
-        swipeContainer.style.touchAction = '';
-      }
     };
   }, [isActive]);
 };
