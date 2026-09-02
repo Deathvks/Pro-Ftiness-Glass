@@ -440,15 +440,6 @@ const NotificationsScreen = ({ setView }) => {
         onConfirm={confirmDelete}
       />
 
-      {/* Botón Volver */}
-      <button
-        onClick={() => setView('dashboard')}
-        className="flex items-center gap-2 text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-4 py-2 rounded-full w-fit"
-      >
-        <ChevronLeft size={20} />
-        Volver
-      </button>
-
       {/* Header */}
       <div className="flex justify-between items-end md:items-center mb-8">
 

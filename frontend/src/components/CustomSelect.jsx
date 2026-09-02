@@ -3,8 +3,9 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
-const CustomSelect = ({ value, onChange, options, placeholder, className = "", multiple = false }) => {
+const CustomSelect = ({ value, onChange, options, placeholder, className = "", multiple = false, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -12,11 +13,19 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", m
   useLayoutEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const dropdownMaxHeight = 256; // aprox max-h-64
+      
+      const openUpwards = spaceBelow < dropdownMaxHeight && spaceAbove > spaceBelow;
+
       setPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
+        top: openUpwards ? undefined : rect.bottom + 8,
+        bottom: openUpwards ? window.innerHeight - rect.top + 8 : undefined,
+        left: rect.left,
         width: rect.width,
       });
+      setSearchQuery(""); // Reset search on open
     }
   }, [isOpen]);
 
@@ -78,32 +87,61 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", m
     return value === optionValue;
   };
 
+  const filteredOptions = searchable 
+    ? options.filter(opt => {
+        const textToSearch = opt.searchText || (typeof opt.label === 'string' ? opt.label : opt.value);
+        return String(textToSearch).toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : options;
+
   const DropdownPortal = () => createPortal(
     <div
       ref={dropdownRef}
       style={{
-        position: 'absolute',
-        top: `${position.top + 8}px`,
+        position: 'fixed',
+        top: position.top !== undefined ? `${position.top}px` : undefined,
+        bottom: position.bottom !== undefined ? `${position.bottom}px` : undefined,
         left: `${position.left}px`,
         width: `${position.width}px`,
       }}
-      // CORRECCIÓN: Borde y fondo consistentes para el dropdown
-      className="bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[9999] p-2 animate-[fade-in-up_0.2s_ease_out]"
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
+      className={`bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg max-h-64 overflow-y-auto z-[9999] p-2 flex flex-col gap-1 ${
+        position.bottom !== undefined ? 'animate-[fade-in-down_0.2s_ease_out]' : 'animate-[fade-in-up_0.2s_ease_out]'
+      }`}
     >
-      {options.map(option => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => handleOptionClick(option.value)}
-          className={`block w-full text-left px-3 py-2 transition-colors duration-200 rounded-md text-sm ${
-            isSelected(option.value)
-              ? 'bg-accent/10 text-accent font-medium'
-              : 'text-text-primary hover:bg-accent/10 hover:text-accent'
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
+      {searchable && (
+        <div className="sticky top-0 bg-bg-secondary z-10 pb-2 mb-1 border-b border-black/5 dark:border-white/10">
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-black/5 dark:bg-white/5 rounded-lg px-3 py-2 text-sm outline-none text-text-primary focus:ring-1 focus:ring-accent"
+            autoFocus
+          />
+        </div>
+      )}
+      {filteredOptions.length === 0 ? (
+        <div className="px-3 py-4 text-center text-sm text-text-secondary">Sin resultados</div>
+      ) : (
+        filteredOptions.map(option => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => handleOptionClick(option.value)}
+            className={`block w-full text-left px-3 py-2 transition-colors duration-200 rounded-md text-sm shrink-0 ${
+              isSelected(option.value)
+                ? 'bg-accent/10 text-accent font-medium'
+                : 'text-text-primary hover:bg-accent/10 hover:text-accent'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))
+      )}
     </div>,
     document.body
   );

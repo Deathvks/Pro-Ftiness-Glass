@@ -1,8 +1,33 @@
 import React, { useState } from 'react';
-import { ChevronLeftIcon, DocumentCheckIcon } from '@heroicons/react/24/outline';
+import { 
+  ChevronLeftIcon, 
+  DocumentCheckIcon, 
+  UserIcon, 
+  InformationCircleIcon, 
+  HeartIcon, 
+  FireIcon, 
+  ExclamationTriangleIcon, 
+  TrophyIcon, 
+  ClockIcon 
+} from '@heroicons/react/24/outline';
 import apiClient from '../../services/apiClient';
 import { useToast } from '../../hooks/useToast';
 import CustomSelect from '../CustomSelect';
+
+const SectionCard = ({ title, icon: Icon, children, isAlert = false }) => (
+  <div className="bg-bg-primary/50 backdrop-blur-md rounded-3xl p-5 sm:p-8 border border-glass-border shadow-2xl shadow-black/5 dark:shadow-white/5 relative overflow-hidden group hover:border-glass-border/80 transition-colors">
+    <div className={`absolute -top-20 -right-20 w-40 h-40 ${isAlert ? 'bg-red-500/10 group-hover:bg-red-500/20' : 'bg-accent/10 group-hover:bg-accent/20'} rounded-full blur-[50px] pointer-events-none transition-colors`}></div>
+    <div className="flex items-center gap-3 mb-6 relative z-10 border-b border-glass-border pb-4">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${isAlert ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-accent/10 border-accent/20 text-accent'}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isAlert ? 'text-red-500' : 'text-text-primary'}`}>{title}</h2>
+    </div>
+    <div className="space-y-5 relative z-10">
+      {children}
+    </div>
+  </div>
+);
 
 export default function AnamnesisForm({ client, onFinish, onBack, isEditing = false }) {
   const [formData, setFormData] = useState(() => {
@@ -29,7 +54,12 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
       }
       setFormData({ ...formData, [name]: current });
     } else {
-      setFormData({ ...formData, [name]: value });
+      let finalValue = value;
+      // Campos estrictamente numéricos (edad, teléfono, dolores)
+      if (['edad', 'telefono', 'dolor_reposo', 'dolor_diario', 'dolor_ejercicio'].includes(name)) {
+        finalValue = value.replace(/\D/g, ''); // Solo dígitos
+      }
+      setFormData({ ...formData, [name]: finalValue });
     }
   };
 
@@ -52,16 +82,16 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
     return (
       <div 
         onClick={() => handleCheckboxToggle(name, value)}
-        className="flex items-start gap-3 cursor-pointer group"
+        className="flex items-center gap-3 cursor-pointer group/checkbox"
       >
-        <div className={`w-5 h-5 shrink-0 mt-0.5 rounded flex items-center justify-center transition-all ${isChecked ? 'bg-accent border-accent text-bg-primary' : 'border-2 border-text-secondary/50 group-hover:border-accent'}`}>
+        <div className={`w-5 h-5 shrink-0 rounded flex items-center justify-center transition-all ${isChecked ? 'bg-accent border-accent text-bg-primary' : 'border-2 border-text-secondary/50 group-hover/checkbox:border-accent'}`}>
           {isChecked && (
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           )}
         </div>
-        <span className="group-hover:text-accent transition-colors select-none">{label}</span>
+        <span className="group-hover/checkbox:text-accent transition-colors select-none text-sm">{label}</span>
       </div>
     );
   };
@@ -124,117 +154,119 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
   };
 
   return (
-    <div className="w-full h-full pb-[calc(var(--safe-bottom)+90px)] animate-fade-in overflow-y-auto">
-      <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-3xl mx-auto space-y-6 relative">
-        {/* Header Options */}
-        <div className="flex items-center justify-between mb-2">
+    <div className="w-full h-full pb-[calc(var(--safe-bottom)+90px)] md:pb-0 animate-fade-in overflow-y-auto flex flex-col">
+      <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-3xl w-full mx-auto flex flex-col flex-1 space-y-6 md:space-y-8">
+        
+        {/* CABECERA */}
+        <div className="flex items-center justify-between gap-3 sm:gap-4">
           {onBack ? (
-            <button
+            <button 
               onClick={() => {
                 sessionStorage.removeItem(`trainer_anamnesis_form_${client.id}`);
                 onBack();
               }}
-              className="w-10 h-10 shrink-0 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors shrink-0"
             >
-              <ChevronLeftIcon className="w-6 h-6" />
+              <ChevronLeftIcon className="w-5 h-5" />
+              <span className="hidden sm:inline">{isEditing ? 'Cancelar' : 'Volver Atrás'}</span>
+              <span className="sm:hidden">{isEditing ? 'Cancelar' : 'Atrás'}</span>
             </button>
           ) : (
             <div className="w-10 h-10" />
           )}
+          
           <button 
             type="button" 
             onClick={fillRandomData}
-            className="text-xs px-3 py-1.5 bg-accent/20 text-accent rounded-lg font-bold hover:bg-accent/30 transition-colors"
+            className="text-xs md:text-sm px-3 md:px-4 py-2 bg-accent text-bg-primary rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent/20 shrink-0 w-fit"
           >
-            Rellenar Datos
+            Datos de Prueba
           </button>
         </div>
+
         {!isEditing && (
-          <div className="p-4 bg-accent/10 border border-accent/20 rounded-xl">
-            <p className="text-sm font-bold text-accent mb-1">Cliente guardado con éxito.</p>
-            <p className="text-sm">Usuario: <strong>{client.username}</strong></p>
-            <p className="text-sm">Contraseña temporal: <strong>123456</strong></p>
+          <div className="p-4 bg-accent/10 border border-accent/20 rounded-2xl flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0 text-accent">
+              <DocumentCheckIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-accent mb-1">Cliente guardado con éxito.</p>
+              <p className="text-sm text-text-secondary">Usuario: <strong className="text-text-primary">{client.username}</strong></p>
+              <p className="text-sm text-text-secondary">Contraseña temporal: <strong className="text-text-primary">123456</strong></p>
+            </div>
           </div>
         )}
 
-        {/* I. Datos Personales */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-black border-b border-glass-border pb-2">I. Datos Personales</h2>
-          
+        <div className="space-y-8">
+        <SectionCard title="I. Datos Personales" icon={UserIcon}>
           {isEditing && (
             <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1">Nombre Completo</label>
-              <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50" />
+              <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">Nombre Completo</label>
+              <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1">Edad</label>
-              <input type="number" name="edad" value={formData.edad || ''} onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50" />
+              <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">Edad</label>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" name="edad" value={formData.edad || ''} onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1">Teléfono</label>
-              <input type="tel" name="telefono" value={formData.telefono || ''} onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50" />
+              <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">Teléfono</label>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" name="telefono" value={formData.telefono || ''} onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">Profesión u ocupación principal</label>
-            <input type="text" name="profesion" value={formData.profesion || ''} onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50" />
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">Profesión u ocupación principal</label>
+            <input type="text" name="profesion" value={formData.profesion || ''} onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
           </div>
-        </section>
+        </SectionCard>
 
-        {/* II. Sobre Usted */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-black border-b border-glass-border pb-2">II. Contexto Actual</h2>
+        <SectionCard title="II. Contexto Actual" icon={InformationCircleIcon}>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">¿Quién es, ritmo de vida y qué le ha animado?</label>
-            <textarea name="contexto" value={formData.contexto || ''} rows="3" onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent/50"></textarea>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">¿Quién es, ritmo de vida y qué le ha animado?</label>
+            <textarea name="contexto" value={formData.contexto || ''} rows="4" onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all"></textarea>
           </div>
-        </section>
+        </SectionCard>
 
-        {/* III. Historial de la Lesión */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-black border-b border-glass-border pb-2">III. Historial de la Lesión</h2>
+        <SectionCard title="III. Historial de la Lesión" icon={HeartIcon}>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">¿Cuándo y cómo empezó?</label>
-            <textarea name="lesion_inicio" value={formData.lesion_inicio || ''} rows="2" onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none"></textarea>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">¿Cuándo y cómo empezó?</label>
+            <textarea name="lesion_inicio" value={formData.lesion_inicio || ''} rows="3" onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all"></textarea>
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">¿Diagnóstico médico oficial?</label>
-            <input type="text" name="lesion_diagnostico" value={formData.lesion_diagnostico || ''} placeholder="Sí / No / Cuál" onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary" />
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">¿Diagnóstico médico oficial?</label>
+            <input type="text" name="lesion_diagnostico" value={formData.lesion_diagnostico || ''} placeholder="Sí / No / Cuál" onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">Tratamientos previos</label>
-            <textarea name="lesion_tratamientos" value={formData.lesion_tratamientos || ''} rows="2" onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none"></textarea>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">Tratamientos previos</label>
+            <textarea name="lesion_tratamientos" value={formData.lesion_tratamientos || ''} rows="3" onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all"></textarea>
           </div>
-        </section>
+        </SectionCard>
 
-        {/* IV. Características del Dolor */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-black border-b border-glass-border pb-2">IV. Características del Dolor</h2>
+        <SectionCard title="IV. Características del Dolor" icon={FireIcon}>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">¿En qué zona exacta siente la molestia?</label>
-            <input type="text" name="dolor_zona" value={formData.dolor_zona || ''} onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary" />
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">¿En qué zona exacta siente la molestia?</label>
+            <input type="text" name="dolor_zona" value={formData.dolor_zona || ''} onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
           </div>
           
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
             <div className="flex flex-col justify-end h-full">
-              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary mb-1 text-center sm:text-left leading-tight">Dolor Reposo (0-10)</label>
-              <input type="number" name="dolor_reposo" value={formData.dolor_reposo || ''} onChange={handleChange} className="w-full p-2 sm:p-3 text-center sm:text-left bg-bg-secondary border border-glass-border rounded-xl text-text-primary" />
+              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary mb-1.5 text-center sm:text-left leading-tight">Reposo (0-10)</label>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" name="dolor_reposo" value={formData.dolor_reposo || ''} onChange={handleChange} className="w-full p-3 sm:p-3.5 text-center sm:text-left bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
             </div>
             <div className="flex flex-col justify-end h-full">
-              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary mb-1 text-center sm:text-left leading-tight">Dolor Diario (0-10)</label>
-              <input type="number" name="dolor_diario" value={formData.dolor_diario || ''} onChange={handleChange} className="w-full p-2 sm:p-3 text-center sm:text-left bg-bg-secondary border border-glass-border rounded-xl text-text-primary" />
+              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary mb-1.5 text-center sm:text-left leading-tight">Diario (0-10)</label>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" name="dolor_diario" value={formData.dolor_diario || ''} onChange={handleChange} className="w-full p-3 sm:p-3.5 text-center sm:text-left bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
             </div>
             <div className="flex flex-col justify-end h-full">
-              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary mb-1 text-center sm:text-left leading-tight">Dolor Ejercicio (0-10)</label>
-              <input type="number" name="dolor_ejercicio" value={formData.dolor_ejercicio || ''} onChange={handleChange} className="w-full p-2 sm:p-3 text-center sm:text-left bg-bg-secondary border border-glass-border rounded-xl text-text-primary" />
+              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary mb-1.5 text-center sm:text-left leading-tight">Ejercicio (0-10)</label>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" name="dolor_ejercicio" value={formData.dolor_ejercicio || ''} onChange={handleChange} className="w-full p-3 sm:p-3.5 text-center sm:text-left bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-2">Comportamiento del dolor</label>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-2 ml-1">Comportamiento del dolor</label>
             <CustomSelect 
               value={formData.dolor_comportamiento || ''} 
               onChange={(val) => handleSelectChange('dolor_comportamiento', val)}
@@ -249,27 +281,23 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
           </div>
           
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">Movimientos que alivian / provocan dolor</label>
-            <textarea name="dolor_movimientos" value={formData.dolor_movimientos || ''} rows="2" onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none"></textarea>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">Movimientos que alivian / provocan dolor</label>
+            <textarea name="dolor_movimientos" value={formData.dolor_movimientos || ''} rows="3" onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all"></textarea>
           </div>
-        </section>
+        </SectionCard>
 
-        {/* V. Señales de Alerta */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-black text-red-500 border-b border-red-500/30 pb-2">V. Señales de Alerta</h2>
-          <div className="space-y-3 text-sm">
+        <SectionCard title="V. Señales de Alerta" icon={ExclamationTriangleIcon} isAlert={true}>
+          <div className="space-y-4 text-sm bg-bg-secondary p-4 rounded-xl border border-glass-border">
             <CheckboxItem name="alertas" value="fuerza" label="Pérdida de fuerza repentina en un brazo o pierna." />
             <CheckboxItem name="alertas" value="hormigueo" label="Hormigueo constante o pérdida de sensibilidad." />
             <CheckboxItem name="alertas" value="nocturno" label="Dolor nocturno que impide dormir." />
             <CheckboxItem name="alertas" value="inflamacion" label="Inflamación grande, calor o enrojecimiento." />
           </div>
-        </section>
+        </SectionCard>
 
-        {/* VI. Objetivos */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-black border-b border-glass-border pb-2">VI. Objetivos y Entrenamiento</h2>
+        <SectionCard title="VI. Objetivos y Entrenamiento" icon={TrophyIcon}>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-2">Objetivo secundario</label>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-2 ml-1">Objetivo secundario</label>
             <CustomSelect 
               value={formData.objetivo || ''} 
               onChange={(val) => handleSelectChange('objetivo', val)}
@@ -283,7 +311,7 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-2">Experiencia previa en fuerza</label>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-2 ml-1">Experiencia previa en fuerza</label>
             <CustomSelect 
               value={formData.experiencia || ''} 
               onChange={(val) => handleSelectChange('experiencia', val)}
@@ -296,7 +324,7 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-2">Días disponibles</label>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-2 ml-1">Días disponibles</label>
             <CustomSelect 
               value={formData.dias || ''} 
               onChange={(val) => handleSelectChange('dias', val)}
@@ -308,13 +336,11 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
               placeholder="Selecciona..."
             />
           </div>
-        </section>
+        </SectionCard>
 
-        {/* VII. Estilo de vida */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-black border-b border-glass-border pb-2">VII. Estilo de Vida y Descanso</h2>
+        <SectionCard title="VII. Estilo de Vida y Descanso" icon={ClockIcon}>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-2">Jornada laboral</label>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-2 ml-1">Jornada laboral</label>
             <CustomSelect 
               value={formData.jornada || ''} 
               onChange={(val) => handleSelectChange('jornada', val)}
@@ -327,7 +353,7 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-2">Descanso</label>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-2 ml-1">Descanso</label>
             <CustomSelect 
               value={formData.descanso || ''} 
               onChange={(val) => handleSelectChange('descanso', val)}
@@ -340,25 +366,23 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-2">Estrés</label>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-2 ml-1">Estrés</label>
             <CustomSelect 
               value={formData.estres || ''} 
               onChange={(val) => handleSelectChange('estres', val)}
               options={[
-                { value: "bajo", label: "Bajo" },
-                { value: "medio", label: "Medio" },
-                { value: "alto", label: "Alto" }
+                { value: "bajo", label: "Bajo / Tranquilo" },
+                { value: "medio", label: "Medio / Épocas puntuales" },
+                { value: "alto", label: "Alto / Constante" }
               ]}
               placeholder="Selecciona..."
             />
           </div>
-        </section>
+        </SectionCard>
 
-        {/* VIII. Alimentación */}
-        <section className="space-y-4">
-          <h2 className="text-xl font-black border-b border-glass-border pb-2">VIII. Alimentación y Suplementación</h2>
+        <SectionCard title="VIII. Alimentación y Suplementación" icon={DocumentCheckIcon}>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-2">Alimentación</label>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-2 ml-1">Alimentación</label>
             <CustomSelect 
               value={formData.alimentacion || ''} 
               onChange={(val) => handleSelectChange('alimentacion', val)}
@@ -372,13 +396,23 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1">Suplementos / Medicación</label>
-            <textarea name="suplementos" value={formData.suplementos || ''} rows="2" onChange={handleChange} className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none"></textarea>
+            <label className="block text-xs sm:text-sm font-bold text-text-secondary mb-1.5 ml-1">Suplementos / Medicación</label>
+            <textarea name="suplementos" value={formData.suplementos || ''} rows="3" onChange={handleChange} className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-accent/50 shadow-inner transition-all"></textarea>
           </div>
-        </section>
+        </SectionCard>
+        </div>
 
         {/* Botones */}
-        <div className="pt-6 space-y-3 flex flex-col md:flex-row md:space-y-0 gap-4">
+        <div className="pt-8 space-y-4 sm:space-y-0 sm:flex sm:flex-row-reverse sm:gap-4 relative z-10 pb-8">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full sm:flex-[2] flex items-center justify-center gap-2 p-4 sm:p-5 bg-accent text-bg-primary font-extrabold rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-accent/20 disabled:opacity-50"
+          >
+            {saving ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Finalizar Registro')}
+            {!saving && <DocumentCheckIcon className="w-6 h-6 stroke-2" />}
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -387,21 +421,11 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
               else onFinish();
             }}
             disabled={saving}
-            className="w-full md:flex-1 flex items-center justify-center gap-2 p-4 bg-transparent border-2 border-glass-border text-text-primary font-bold rounded-2xl active:scale-95 transition-transform hover:bg-bg-secondary/50 disabled:opacity-50"
+            className="w-full sm:flex-1 flex items-center justify-center gap-2 p-4 sm:p-5 bg-bg-secondary border border-glass-border text-text-secondary hover:text-text-primary font-bold rounded-2xl active:scale-95 transition-all hover:bg-glass-border/30 disabled:opacity-50"
           >
-            <span>Dejar para más tarde</span>
-          </button>
-          
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full md:flex-[2] flex items-center justify-center gap-2 p-4 bg-accent text-bg-primary font-bold rounded-2xl active:scale-95 transition-transform shadow-lg shadow-accent/20 disabled:opacity-50"
-          >
-            <DocumentCheckIcon className="w-6 h-6" />
-            <span>{saving ? 'Guardando...' : 'Guardar Anamnesis'}</span>
+            Cancelar
           </button>
         </div>
-
       </div>
     </div>
   );

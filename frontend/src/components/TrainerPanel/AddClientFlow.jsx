@@ -97,89 +97,105 @@ export default function AddClientFlow({ onBack }) {
   }
 
   return (
-    <div className="w-full h-full pb-[calc(var(--safe-bottom)+90px)] animate-fade-in overflow-y-auto">
-      <div className="px-4 pt-6 pb-8 md:p-8 max-w-lg mx-auto space-y-6">
-        <div className="flex items-center justify-between mb-2 gap-2">
-          <div className="flex items-start sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
-            <button
-              onClick={onBack}
-              className="w-10 h-10 shrink-0 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 mt-0.5 sm:mt-0"
-            >
-              <ChevronLeftIcon className="w-6 h-6" />
-            </button>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight line-clamp-2 break-words">Nuevo Cliente</h1>
-          </div>
+    <div className="w-full h-full pb-[calc(var(--safe-bottom)+90px)] md:pb-0 animate-fade-in overflow-y-auto flex flex-col">
+      <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-lg w-full mx-auto flex flex-col flex-1 space-y-6 md:space-y-8">
+        
+        {/* CABECERA */}
+        <div className="flex items-center w-full mb-4 md:mb-8">
           <button 
-            type="button" 
-            onClick={fillRandomData}
-            className="text-xs px-3 py-1.5 bg-accent/20 text-accent rounded-lg font-bold hover:bg-accent/30 transition-colors"
+            onClick={onBack} 
+            className="w-10 h-10 shrink-0 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
           >
-            Rellenar
+            <ChevronLeftIcon className="w-5 h-5" />
           </button>
-        </div>
-        <div className="flex gap-2 bg-bg-secondary p-2 rounded-2xl border border-glass-border mb-6">
-          <button 
-            onClick={() => setMode('create')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 font-bold rounded-xl transition-all ${mode === 'create' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}
-          >
-            <UserPlusIcon className="w-5 h-5 shrink-0" />
-            <span className="hidden sm:inline whitespace-nowrap">Crear Nuevo</span>
-            <span className="sm:hidden">Crear</span>
-          </button>
-          <button 
-            onClick={() => setMode('link')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 font-bold rounded-xl transition-all ${mode === 'link' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}
-          >
-            <LinkIcon className="w-5 h-5 shrink-0" />
-            <span className="hidden sm:inline whitespace-nowrap">Vincular Existente</span>
-            <span className="sm:hidden">Vincular</span>
-          </button>
+          
+          <h1 className="flex-1 text-2xl md:text-3xl font-extrabold tracking-tight text-text-primary text-center">
+            Nuevo Cliente
+          </h1>
+          
+          <div className="w-10 shrink-0"></div>
         </div>
 
-        {mode === 'create' ? (
-          <>
-            <p className="text-text-secondary text-sm mb-4">
-              Introduce los datos personales. El nombre de usuario se generará automáticamente y la contraseña inicial será <strong>123456</strong>.
-            </p>
+        {/* CONTENEDOR CENTRAL DEL FORMULARIO */}
+        <div className="w-full flex flex-col">
+          <div className="bg-bg-primary/50 backdrop-blur-md rounded-3xl p-5 sm:p-8 border border-glass-border shadow-2xl shadow-black/5 dark:shadow-white/5 relative overflow-hidden">
+            {/* Decoración de fondo */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-accent/20 rounded-full blur-[50px] pointer-events-none"></div>
 
-        <form onSubmit={handleCreate} className="space-y-4" noValidate>
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Nombre</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Primer Apellido</label>
-            <input
-              type="text"
-              value={formData.surname1}
-              onChange={e => setFormData({ ...formData, surname1: e.target.value })}
-              className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Segundo Apellido</label>
-            <input
-              type="text"
-              value={formData.surname2}
-              onChange={e => setFormData({ ...formData, surname2: e.target.value })}
-              className="w-full p-3 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
-            />
-          </div>
+            {/* Pestañas Crear / Vincular */}
+            <div className="flex gap-2 bg-bg-secondary p-1.5 rounded-[20px] border border-glass-border mb-8 relative z-10">
+              <button 
+                onClick={() => setMode('create')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 font-bold rounded-2xl transition-all ${mode === 'create' ? 'bg-accent text-bg-primary shadow-md' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}
+              >
+                <UserPlusIcon className="w-5 h-5 shrink-0" />
+                <span className="hidden sm:inline whitespace-nowrap">Crear Nuevo</span>
+                <span className="sm:hidden">Crear</span>
+              </button>
+              <button 
+                onClick={() => setMode('link')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 font-bold rounded-2xl transition-all ${mode === 'link' ? 'bg-accent text-bg-primary shadow-md' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}
+              >
+                <LinkIcon className="w-5 h-5 shrink-0" />
+                <span className="hidden sm:inline whitespace-nowrap">Vincular Existente</span>
+                <span className="sm:hidden">Vincular</span>
+              </button>
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-4 flex items-center justify-center gap-2 p-4 bg-accent text-bg-primary font-bold rounded-2xl active:scale-95 transition-transform disabled:opacity-50 shadow-lg shadow-accent/20"
-          >
-            {loading ? 'Creando...' : 'Siguiente (Cuestionario)'}
-            {!loading && <CheckIcon className="w-5 h-5" />}
-          </button>
-        </form>
+            <div className="relative z-10">
+              {mode === 'create' ? (
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 gap-4">
+                    <p className="text-text-secondary text-sm flex-1">
+                      El usuario se generará automáticamente y la contraseña será <strong>123456</strong>.
+                    </p>
+                    <button 
+                      type="button" 
+                      onClick={fillRandomData}
+                      className="text-xs px-4 py-2 bg-accent text-bg-primary rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent/20 shrink-0 w-fit self-start"
+                    >
+                      Datos de Prueba
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCreate} className="space-y-4" noValidate>
+                    <div>
+                      <label className="block text-sm font-bold text-text-secondary mb-1.5 ml-1">Nombre</label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all shadow-inner"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-text-secondary mb-1.5 ml-1">Primer Apellido</label>
+                      <input
+                        type="text"
+                        value={formData.surname1}
+                        onChange={e => setFormData({ ...formData, surname1: e.target.value })}
+                        className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all shadow-inner"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-text-secondary mb-1.5 ml-1">Segundo Apellido</label>
+                      <input
+                        type="text"
+                        value={formData.surname2}
+                        onChange={e => setFormData({ ...formData, surname2: e.target.value })}
+                        className="w-full p-3.5 bg-bg-secondary border border-glass-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all shadow-inner"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full mt-6 flex items-center justify-center gap-2 p-4 bg-accent text-bg-primary font-extrabold rounded-2xl active:scale-95 transition-all disabled:opacity-50 shadow-xl shadow-accent/20 hover:shadow-accent/40"
+                    >
+                      {loading ? 'Creando...' : 'Crear y Continuar'}
+                      {!loading && <CheckIcon className="w-5 h-5 stroke-2" />}
+                    </button>
+                  </form>
           </>
         ) : (
           <div className="space-y-4">
@@ -229,6 +245,9 @@ export default function AddClientFlow({ onBack }) {
             </div>
           </div>
         )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

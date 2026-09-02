@@ -40,4 +40,9 @@ router.delete('/reports/:id', reportController.deleteReport);
 router.get('/settings/:key', adminController.getSetting);
 router.post('/settings/:key', adminController.updateSetting);
 
+// Rutas de Notificaciones Push
+router.get('/push-logs', adminController.getPushLogs);
+router.post('/push-send', adminController.sendCustomPush);
+router.get('/cron-jobs', adminController.getCronJobs);
+
 export default router;

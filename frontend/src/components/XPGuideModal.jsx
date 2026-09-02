@@ -71,7 +71,9 @@ const XPGuideModal = ({ onClose }) => {
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
             <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] w-full max-w-md max-h-[85dvh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
 
-                <div className="shrink-0 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 p-6 pb-0 flex flex-col gap-4 rounded-t-[32px] z-10">
+                <div className="shrink-0 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 p-5 sm:p-6 pb-0 flex flex-col gap-4 rounded-t-[32px] z-10">
+                    {/* Drag handle for mobile */}
+                    <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-1 sm:hidden shrink-0" />
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-extrabold flex items-center gap-3 text-text-primary tracking-tight">
                             <div className="p-2.5 bg-accent/10 rounded-[14px] ring-1 ring-accent/30 shrink-0 shadow-sm">

@@ -242,7 +242,7 @@ const BugReportModal = ({ onClose }) => {
   const isValid = category && subject.trim().length > 0 && description.trim().length > 0;
 
   return <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 z-[100] animate-[fade-in_0.2s_ease-out]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 z-[100] animate-[fade-in_0.2s_ease-out] overscroll-none">
 
             {selectedImageForLightbox &&
       <div
@@ -267,26 +267,26 @@ const BugReportModal = ({ onClose }) => {
 
             <div className="bg-bg-primary mt-auto sm:mt-0 rounded-t-[32px] rounded-b-none sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-lg w-full shadow-2xl flex flex-col max-h-[85dvh] sm:max-h-full overflow-hidden animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
                 
-                <div className="flex flex-col p-6 sm:p-8 pt-4 sm:pt-6 pb-5 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] sm:rounded-t-[32px]">
+                <div className="flex flex-col p-5 sm:p-8 pt-3 sm:pt-6 pb-4 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] sm:rounded-t-[32px]">
                     {/* Drag handle for mobile */}
-                    <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+                    <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
                     
-                    <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-text-primary">
-                        <div className="p-3 bg-red/10 rounded-[16px] ring-1 ring-red/30 shadow-sm shrink-0">
-                            <Bug className="text-red" size={24} strokeWidth={2} />
+                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 text-text-primary min-w-0">
+                        <div className="p-2 sm:p-3 bg-red/10 rounded-[12px] sm:rounded-[16px] border border-red/30 shadow-sm shrink-0">
+                            <Bug className="text-red w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2} />
                         </div>
-                        <h2 className="text-2xl font-extrabold tracking-tight">Reportar un problema</h2>
+                        <h2 className="text-lg sm:text-2xl font-extrabold tracking-tight truncate">Reportar problema</h2>
                     </div>
                     <button
             onClick={handleClose}
-            className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-secondary hover:text-text-primary active:scale-95">
+            className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-text-secondary hover:text-text-primary active:scale-95 shrink-0">
                         <X size={20} strokeWidth={2.5} />
                     </button>
                     </div>
                 </div>
 
-                <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar overscroll-contain">
                     <div className="mb-6 p-4 rounded-[20px] bg-accent/10 ring-1 ring-accent/30 flex gap-3 text-left shadow-sm">
                         <AlertCircle className="text-accent shrink-0 mt-0.5" size={20} />
                         <p className="text-sm font-medium text-text-primary leading-relaxed">
@@ -402,13 +402,7 @@ const BugReportModal = ({ onClose }) => {
                 </div>
 
                 <div className="p-6 sm:p-8 pt-5 pb-[calc(2rem+var(--safe-bottom))] sm:pb-8 border-t border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
-                    <button
-            type="button"
-            onClick={handleClose}
-            className="px-6 py-3.5 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 rounded-[16px] transition-colors active:scale-95"
-            disabled={isSubmitting}>
-                        Cancelar
-                    </button>
+
                     <button
             type="submit"
             form="bug-form"

@@ -29,38 +29,16 @@ const getLocalTime = (timezone) => {
 };
 
 /**
- * Envía notificaciones a un usuario (Push + Interna) de forma optimizada.
+ * Envía notificaciones a un usuario (Push + Interna) delegando en notificationService.
  */
 const notifyUser = async (userId, payload) => {
   try {
-    const [subscriptions] = await Promise.all([
-      db.PushSubscription.findAll({ where: { user_id: userId } }),
-      createNotification(userId, {
-        type: 'info',
-        title: payload.title,
-        message: payload.body,
-        data: { url: payload.url }
-      })
-    ]);
-
-    if (!subscriptions.length) return;
-
-    await Promise.all(subscriptions.map(sub => {
-      const subscriptionObject = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh_key || sub.keys.p256dh,
-          auth: sub.auth_key || sub.keys.auth,
-        },
-      };
-
-      return pushService.sendNotification(subscriptionObject, payload)
-        .catch(error => {
-          if (error.statusCode === 410 || error.statusCode === 404) {
-            return sub.destroy();
-          }
-        });
-    }));
+    await createNotification(userId, {
+      type: 'info',
+      title: payload.title,
+      message: payload.body,
+      data: { url: payload.url }
+    });
   } catch (error) {
     console.error(`[Cron] Error notificando a ${userId}:`, error.message);
   }

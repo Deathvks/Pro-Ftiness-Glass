@@ -50,3 +50,20 @@ export const updateSetting = (key, value) => {
         body: { value },
     });
 };
+
+export const getPushLogs = (page = 1, status = 'all', title = '', range = 30) => {
+    let url = `/admin/push-logs?page=${page}&limit=20&status=${status}&range=${range}`;
+    if (title) url += `&title=${encodeURIComponent(title)}`;
+    return apiClient(url);
+};
+
+export const sendCustomPush = (pushData) => {
+    return apiClient('/admin/push-send', {
+        method: 'POST',
+        body: pushData,
+    });
+};
+
+export const getCronJobs = () => {
+    return apiClient('/admin/cron-jobs');
+};

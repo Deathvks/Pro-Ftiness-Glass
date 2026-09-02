@@ -22,6 +22,7 @@ import TemplateRoutine from './templateRoutineModel.js';
 import TemplateRoutineExercise from './templateRoutineExerciseModel.js';
 import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
+import PushDeliveryLog from './pushDeliveryLogModel.js';
 import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
@@ -126,6 +127,9 @@ PushSubscription.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(Notification, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Notifications' });
 Notification.belongsTo(User, { foreignKey: 'user_id' });
 
+User.hasMany(PushDeliveryLog, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'PushDeliveryLogs' });
+PushDeliveryLog.belongsTo(User, { foreignKey: 'user_id' });
+
 User.hasMany(UserSession, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Sessions' });
 UserSession.belongsTo(User, { foreignKey: 'user_id' });
 
@@ -204,6 +208,7 @@ const models = {
   CreatinaLog,
   PushSubscription,
   Notification,
+  PushDeliveryLog,
   UserSession,
   Friendship,
   BugReport,

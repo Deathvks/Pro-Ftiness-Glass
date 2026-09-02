@@ -138,6 +138,15 @@ const RestTimerModal = () => {
     addRestTime(seconds);
   };
 
+  const handleDismiss = () => {
+    triggerHaptic(HapticType.selection);
+    if (restTimerEndTime || isRestTimerPaused) {
+      setRestTimerMode('minimized');
+    } else {
+      stopRestTimer();
+    }
+  };
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -152,7 +161,10 @@ const RestTimerModal = () => {
   const formattedPlanned = formatTime(planned);
 
   return <ModalPortal>
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]">
+    <div 
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
+      onClick={handleDismiss}
+    >
       <div
         className="relative p-8 mt-auto sm:mt-0 pb-[calc(2rem+var(--safe-bottom))] sm:pb-8 sm:m-4 w-full max-w-sm text-center bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-2xl border border-glass-border shadow-2xl animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}>

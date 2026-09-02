@@ -18,12 +18,9 @@ const useModalLock = (isActive = true) => {
     document.body.style.width = '100%';
     document.body.style.overscrollBehavior = 'none';
 
-    // 2. Bloquear el swipe horizontal entre páginas
-    const swipeContainer = document.querySelector('[class*="snap-x"]');
-    if (swipeContainer) {
-      swipeContainer.style.overflow = 'hidden';
-      swipeContainer.style.touchAction = 'none';
-    }
+    // 2. MainAppLayout ya gestiona su propio bloqueo de swipe en componentes anidados.
+    // El código anterior que buscaba [class*="snap-x"] estaba rompiendo el scroll 
+    // horizontal de los propios modales (como la lista de alimentos añadidos).
 
     return () => {
       document.body.style.position = '';

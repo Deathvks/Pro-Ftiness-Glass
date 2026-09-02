@@ -50,7 +50,7 @@ El proyecto sigue una arquitectura monorepo con dos componentes principales: `ba
 ### Backend
 
 * **Framework:** Node.js con Express.
-* **Base de Datos:** PostgreSQL (gestionado con Sequelize ORM).
+* **Base de Datos:** MySQL (gestionado con Sequelize ORM).
 * **Autenticación:** JSON Web Tokens (JWT), Passport.js (para OAuth), Speakeasy (para 2FA).
 * **Servicios API:** Integración con IA (OpenAI/Gemini) para rutinas.
 * **Gestión de Ficheros e Imágenes:** Multer y **Sharp** (para optimización y conversión a WebP).
@@ -84,15 +84,15 @@ Es necesario configurar ambas partes del proyecto (backend y frontend) para un f
     npm install
     ```
 3.  **Configuración de la Base de Datos y Entorno:**
-    * Asegúrate de tener PostgreSQL en ejecución.
+    * Asegúrate de tener MySQL en ejecución.
     * Crea un fichero `.env` en la raíz de `backend/` con las siguientes variables (ajusta según tus credenciales):
     ```env
     # Configuración de BD
-    DB_USER=postgres
-    DB_PASS=tu_contraseña_de_postgres
-    DB_NAME=pro_fitness_db
-    DB_HOST=localhost
-    DB_DIALECT=postgres
+    MYSQL_USER=root
+    MYSQL_PASSWORD=tu_contraseña_de_mysql
+    MYSQL_DATABASE=pro_fitness_db
+    MYSQL_HOST=127.0.0.1
+    MYSQL_PORT=3306
 
     # Seguridad
     JWT_SECRET=tu_secreto_muy_seguro_para_jwt

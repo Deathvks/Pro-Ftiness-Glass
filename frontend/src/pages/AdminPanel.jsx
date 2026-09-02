@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert
+  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert, Bell
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -10,6 +10,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
 import AdminExercises from './AdminExercises';
+import AdminNotifications from './AdminNotifications';
 import SecurityDashboard from './SecurityDashboard';
 import CustomSelect from '../components/CustomSelect';
 import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adminService';
@@ -366,11 +367,11 @@ const AdminPanel = ({ onCancel }) => {
             Volver al Hub
           </button>
 
-          <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Panel de Administración</h1>
+          <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Admin</h1>
         </div>
       </div>
 
-      <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-1">
         <button
           onClick={() => setActiveTab('users')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'users'
@@ -403,6 +404,16 @@ const AdminPanel = ({ onCancel }) => {
         >
           <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
           Ejercicios
+        </button>
+        <button
+          onClick={() => setActiveTab('notifications')}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'notifications'
+            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
+            }`}
+        >
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+          Notificaciones
         </button>
         <button
           onClick={() => setActiveTab('security')}
@@ -838,6 +849,8 @@ const AdminPanel = ({ onCancel }) => {
           </>
         ) : activeTab === 'exercises' ? (
           <AdminExercises />
+        ) : activeTab === 'notifications' ? (
+          <AdminNotifications />
         ) : activeTab === 'security' ? (
           <SecurityDashboard onBack={() => setActiveTab('users')} />
         ) : null}

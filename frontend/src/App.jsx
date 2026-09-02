@@ -46,6 +46,7 @@ const TemplateDiets = lazy(() => import('./pages/TemplateDiets'));
 const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
 const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const AdminNotifications = lazy(() => import('./pages/AdminNotifications'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -291,12 +292,13 @@ export default function App() {
       routines: { key: 'Rutinas', default: 'Rutinas' },
       settings: { key: 'Ajustes', default: 'Ajustes' },
       appearance: { key: 'Apariencia', default: 'Apariencia' },
-      support: { key: 'Soporte y Comunidad', default: 'Soporte y Comunidad' },
+      support: { key: 'Soporte', default: 'Soporte' },
       socialLinks: { key: 'Nuestras Redes', default: 'Nuestras Redes' },
       workout: { key: 'Entreno', default: 'Entreno' },
       profile: { key: 'Perfil', default: 'Perfil' },
       physicalProfileEditor: { key: 'Editar Perfil Físico', default: 'Editar Perfil Físico' },
-      adminPanel: { key: 'Panel de Admin', default: 'Panel de Admin' },
+      adminPanel: { key: 'Admin', default: 'Admin' },
+      adminNotifications: { key: 'Panel Notificaciones', default: 'Panel Notificaciones' },
       trainerPanel: { key: 'Personal Trainer', default: 'Personal Trainer' },
       privacyPolicy: { key: 'Política de Privacidad', default: 'Política de Privacidad' },
       terms: { key: 'Términos del Servicio', default: 'Términos del Servicio' },
@@ -361,6 +363,7 @@ export default function App() {
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigateInternal('settings')} />;
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigateInternal} />;
       case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('hub')} navigate={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
+      case 'adminNotifications': return userProfile?.role === 'admin' ? <AdminNotifications /> : <Dashboard setView={navigateInternal} />;
       case 'securityDashboard': return userProfile?.role === 'admin' ? <SecurityDashboard onBack={() => navigateInternal('adminPanel')} /> : <Dashboard setView={navigateInternal} />;
       case 'trainerPanel': return (userProfile?.role === 'admin' || userProfile?.role === 'trainer') ? <TrainerPanel setView={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;

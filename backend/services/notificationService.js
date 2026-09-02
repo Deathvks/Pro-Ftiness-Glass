@@ -28,7 +28,7 @@ try {
   console.error('❌ Error inicializando Firebase Admin:', error.message);
 }
 
-const { Notification, PushSubscription } = models;
+const { Notification, PushSubscription, PushDeliveryLog } = models;
 
 export const createNotification = async (userId, { type = 'info', title, message, data = null }) => {
   try {
@@ -65,7 +65,8 @@ export const createNotification = async (userId, { type = 'info', title, message
         const pushPromises = subscriptions.map(async (sub) => {
           try {
             // ENRUTADOR: ¿Es un token de Android Nativo o de Web Push?
-            if (sub.endpoint.startsWith('fcm://')) {
+            const isFcm = sub.endpoint.startsWith('fcm://');
+            if (isFcm) {
               
               // --- NOTIFICACIÓN NATIVA ANDROID (FIREBASE) ---
               if (!admin.apps.length) throw new Error('Firebase Admin no configurado');
@@ -103,6 +104,18 @@ export const createNotification = async (userId, { type = 'info', title, message
               await pushService.sendNotification({ endpoint: sub.endpoint, keys }, webPayload);
               
             }
+
+            // Log Success
+            if (PushDeliveryLog) {
+              await PushDeliveryLog.create({
+                user_id: userId,
+                title,
+                body: message,
+                type: isFcm ? 'fcm' : 'webpush',
+                status: 'success'
+              });
+            }
+
           } catch (err) {
             // Eliminar suscripción si ya no es válida (VAPID o FCM)
             if (
@@ -113,6 +126,18 @@ export const createNotification = async (userId, { type = 'info', title, message
               await sub.destroy();
             } else {
               console.error('[Push] Error envío:', err.message);
+            }
+
+            // Log Error
+            if (PushDeliveryLog) {
+              await PushDeliveryLog.create({
+                user_id: userId,
+                title,
+                body: message,
+                type: sub.endpoint.startsWith('fcm://') ? 'fcm' : 'webpush',
+                status: 'error',
+                error_message: err.message
+              });
             }
           }
         });

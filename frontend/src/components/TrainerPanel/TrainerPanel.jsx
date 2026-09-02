@@ -217,6 +217,20 @@ export default function TrainerPanel({ setView }) {
       </Helmet>
 
       <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-5xl w-full mx-auto flex flex-col flex-1 space-y-6">
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-2">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setView('hub')} 
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
+            >
+              <ChevronLeftIcon className="w-5 h-5" />
+              Volver al Hub
+            </button>
+            <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Personal Trainer</h1>
+          </div>
+        </div>
+
         <div className="flex flex-row items-center justify-between gap-3 md:gap-4">
           <button
             onClick={() => setShowAddFlow(true)}
@@ -478,14 +492,12 @@ export default function TrainerPanel({ setView }) {
               <div className="flex gap-3 w-full mt-4">
                 <button
                   onClick={() => setClientToDelete(null)}
-                  className="flex-1 py-3 bg-red-500/10 text-red-500 font-bold rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">
-                  
+                  className="flex-1 py-3 bg-bg-secondary text-text-primary font-bold rounded-xl ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-glass-border/50 transition-colors">
                   Cancelar
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 py-3 bg-bg-secondary text-text-primary font-bold rounded-xl ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-glass-border/50 transition-colors">
-                  
+                  className="flex-1 py-3 bg-red-500/10 text-red-500 font-bold rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">
                   Sí, eliminar
                 </button>
               </div>

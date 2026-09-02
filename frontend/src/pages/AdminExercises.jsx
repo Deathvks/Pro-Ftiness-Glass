@@ -329,17 +329,38 @@ const AdminExercises = ({ isTrainerMode = false }) => {
   }, [selectedExercise]);
 
   const muscleGroupOptions = [
-    { value: 'Bíceps', label: 'Bíceps' },
-    { value: 'Tríceps', label: 'Tríceps' },
     { value: 'Pecho', label: 'Pecho' },
+    // Espalda dividida
     { value: 'Espalda', label: 'Espalda' },
+    { value: 'Dorsales', label: 'Dorsales' },
+    { value: 'Trapecios', label: 'Trapecios' },
+    { value: 'Lumbares', label: 'Lumbares' },
+    // Hombro diferenciado
     { value: 'Hombros', label: 'Hombros' },
+    { value: 'Deltoides Anterior', label: 'Deltoides Anterior' },
+    { value: 'Deltoides Medio', label: 'Deltoides Medio' },
+    { value: 'Deltoides Posterior', label: 'Deltoides Posterior' },
+    // Bíceps diferenciado
+    { value: 'Bíceps', label: 'Bíceps' },
+    { value: 'Bíceps Cabeza Corta', label: 'Bíceps Cabeza Corta' },
+    { value: 'Bíceps Cabeza Larga', label: 'Bíceps Cabeza Larga' },
+    // Tríceps diferenciado
+    { value: 'Tríceps', label: 'Tríceps' },
+    { value: 'Tríceps Cabeza Larga', label: 'Tríceps Cabeza Larga' },
+    { value: 'Tríceps Cabeza Lateral', label: 'Tríceps Cabeza Lateral' },
+    { value: 'Tríceps Cabeza Medial', label: 'Tríceps Cabeza Medial' },
+    // Resto brazos
+    { value: 'Antebrazos', label: 'Antebrazos' },
+    // Piernas y Glúteos
     { value: 'Cuádriceps', label: 'Cuádriceps' },
     { value: 'Isquiotibiales', label: 'Isquiotibiales' },
     { value: 'Glúteos', label: 'Glúteos' },
+    { value: 'Abductores', label: 'Abductores' },
+    { value: 'Aductores', label: 'Aductores' },
     { value: 'Pantorrillas', label: 'Pantorrillas' },
+    // Torso
     { value: 'Abdomen', label: 'Abdomen' },
-    { value: 'Antebrazos', label: 'Antebrazos' },
+    // Otros
     { value: 'Cardio', label: 'Cardio' },
     { value: 'Otro', label: 'Otro' }
   ];

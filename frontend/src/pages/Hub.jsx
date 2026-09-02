@@ -67,7 +67,7 @@ export default function Hub({ setView }) {
       
       // Show coaching promo if user hasn't seen it yet and is NOT a trainer/admin
       if (!['trainer', 'admin'].includes(userProfile?.role)) {
-        const hasSeen = localStorage.getItem(`coaching_promo_seen_${userProfile.id}`);
+        const hasSeen = localStorage.getItem(`coaching_promo_seen_v2_${userProfile.id}`);
         if (!hasSeen) {
           setShowCoachingPromo(true);
         }
@@ -78,7 +78,7 @@ export default function Hub({ setView }) {
   const handleCloseCoachingPromo = () => {
     setShowCoachingPromo(false);
     if (userProfile?.id) {
-      localStorage.setItem(`coaching_promo_seen_${userProfile.id}`, 'true');
+      localStorage.setItem(`coaching_promo_seen_v2_${userProfile.id}`, 'true');
     }
   };
 

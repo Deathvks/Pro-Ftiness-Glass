@@ -198,8 +198,18 @@ const ExerciseSearch = ({
       }
 
       rawMuscles.forEach((m) => {
-        // Obtenemos la traducción (ej: "Chest" -> "Pecho", "Pectoralis major" -> "Pecho")
-        const label = t(m.trim(), { ns: 'exercise_muscles', defaultValue: m.trim() });
+        // Obtenemos la traducción
+        let label = t(m.trim(), { ns: 'exercise_muscles', defaultValue: m.trim() });
+        
+        // --- AGRUPAR CABEZAS EN EL FILTRO ---
+        if (label.includes('Bíceps Cabeza')) label = 'Bíceps';
+        if (label.includes('Tríceps Cabeza')) label = 'Tríceps';
+        if (label.includes('Deltoides ')) label = 'Hombros';
+        
+        // Agrupar espalda si el usuario lo requiere (opcional, el user dijo "Divide la espalda también",
+        // así que los dejamos divididos en el filtro, o agrupados? "no pongas un filtro de cada cabeza, solo general, igual con bíceps. Divide la espalda también".
+        // Interpretación: la espalda sí debe dividirse en el filtro (Dorsales, Trapecios, Lumbares), pero las cabezas de brazos y hombros no (se agrupan).
+        
         muscleLabelSet.add(label);
       });
 
@@ -259,10 +269,14 @@ const ExerciseSearch = ({
         rawMuscles = ex.muscle_group.map(m => String(m).trim());
       }
 
-      // Traducimos los músculos del ejercicio actual
-      const translatedMuscles = rawMuscles.map((m) =>
-      t(m, { ns: 'exercise_muscles', defaultValue: m })
-      );
+      // Traducimos los músculos del ejercicio actual y los agrupamos para el filtro
+      const translatedMuscles = rawMuscles.map((m) => {
+        let label = t(m, { ns: 'exercise_muscles', defaultValue: m });
+        if (label.includes('Bíceps Cabeza')) label = 'Bíceps';
+        if (label.includes('Tríceps Cabeza')) label = 'Tríceps';
+        if (label.includes('Deltoides ')) label = 'Hombros';
+        return label;
+      });
 
       // 1. Filtro Texto: Nombre O Grupo Muscular
       const originalName = (ex.name || '').toLowerCase();

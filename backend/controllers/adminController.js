@@ -1,6 +1,8 @@
 /* backend/controllers/adminController.js */
 import { Op } from 'sequelize';
 import db from '../models/index.js';
+import { createNotification } from '../services/notificationService.js';
+
 const User = db.User;
 const SystemSettings = db.SystemSettings;
 
@@ -210,6 +212,136 @@ export const updateSetting = async (req, res, next) => {
       value
     });
     res.status(200).json({ key, value });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Obtener logs de notificaciones push
+export const getPushLogs = async (req, res, next) => {
+  try {
+    const { status, type, page = 1, limit = 50, range = 30 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const whereClause = {};
+    if (status && status !== 'all') whereClause.status = status;
+    if (type && type !== 'all') whereClause.type = type;
+    if (req.query.title) whereClause.title = req.query.title;
+    
+    if (range) {
+      const date = new Date();
+      date.setDate(date.getDate() - parseInt(range, 10));
+      whereClause.created_at = { [Op.gte]: date };
+    }
+
+    const logs = await db.PushDeliveryLog.findAndCountAll({
+      where: whereClause,
+      include: [{ model: db.User, attributes: ['username', 'name', 'email'] }],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10)
+    });
+
+    res.json({
+      logs: logs.rows,
+      totalPages: Math.ceil(logs.count / limit),
+      currentPage: parseInt(page, 10)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Enviar notificación manual
+export const sendCustomPush = async (req, res, next) => {
+  try {
+    const { title, message, url, target_user_id } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({ error: 'Título y mensaje son requeridos.' });
+    }
+
+    if (target_user_id === 'ALL') {
+      const users = await db.User.findAll({ attributes: ['id'] });
+      // Responder inmediatamente para no bloquear
+      res.json({ message: `Enviando notificación a ${users.length} usuarios.` });
+      
+      for (const user of users) {
+        await createNotification(user.id, { type: 'info', title, message, data: { url: url || '/' } });
+      }
+    } else {
+      await createNotification(target_user_id, { type: 'info', title, message, data: { url: url || '/' } });
+      res.json({ message: 'Notificación enviada al usuario exitosamente.' });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Obtener tareas cron (mock estático para info)
+export const getCronJobs = async (req, res, next) => {
+  try {
+    const cronJobs = [
+      {
+        id: 1,
+        name: 'Nutrición (Recordatorio Macros)',
+        schedule: '20:00 (Hora Local)',
+        frequency: 'Cada Día',
+        pushTitle: '¡No olvides tus metas!',
+        description: 'Verifica si el usuario ha cumplido sus macros. Si no, envía recordatorio.',
+        status: 'active'
+      },
+      {
+        id: 2,
+        name: 'Creatina (Recordatorio Diario)',
+        schedule: '10:00 (Hora Local)',
+        frequency: 'Cada Día',
+        pushTitle: '💊 Tu creatina',
+        description: 'Recuerda a los usuarios tomar creatina si aún no la han registrado hoy.',
+        status: 'active'
+      },
+      {
+        id: 3,
+        name: 'Entrenamiento (Recordatorio)',
+        schedule: '10:00 (Hora Local)',
+        frequency: 'Cada Día',
+        pushTitle: '¡Es hora de moverse!',
+        description: 'Recuerda a los usuarios entrenar si tienen rutina asignada y no lo han hecho.',
+        status: 'active'
+      },
+      {
+        id: 4,
+        name: 'Pesaje Mensual',
+        schedule: 'Día 1 de cada mes a las 09:00',
+        frequency: 'Una vez al mes',
+        pushTitle: 'Registro de Progreso Mensual',
+        description: 'Recuerda a los usuarios registrar su peso si han pasado más de 30 días.',
+        status: 'active'
+      },
+      {
+        id: 5,
+        name: 'Streak Wars (Racha en peligro)',
+        schedule: '20:00 (Hora Local)',
+        frequency: 'Cada Día',
+        pushTitle: '🔥 ¡Racha en peligro!',
+        description: 'Avisa a los amigos si un usuario está a punto de perder su racha de entrenamiento.',
+        status: 'active'
+      }
+    ];
+
+    const enrichedCronJobs = await Promise.all(cronJobs.map(async (job) => {
+      const lastLog = await db.PushDeliveryLog.findOne({
+        where: { title: job.pushTitle },
+        order: [['created_at', 'DESC']]
+      });
+      return {
+        ...job,
+        lastRunAt: lastLog ? lastLog.created_at : null,
+        lastRunStatus: lastLog ? lastLog.status : null
+      };
+    }));
+
+    res.json(enrichedCronJobs);
   } catch (error) {
     next(error);
   }

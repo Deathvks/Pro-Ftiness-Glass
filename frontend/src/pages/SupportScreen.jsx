@@ -84,7 +84,7 @@ export default function SupportScreen({ setView }) {
   return (
     <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
-        <title>Soporte y Comunidad - Pro Fitness Glass</title>
+        <title>Soporte - Pro Fitness Glass</title>
       </Helmet>
       
 

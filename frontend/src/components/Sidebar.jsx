@@ -1,6 +1,6 @@
 /* frontend/src/components/Sidebar.jsx */
 import React, { useState, useEffect } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon, ArrowRightOnRectangleIcon as LogOut, SparklesIcon, BellIcon, Cog8ToothIcon as SettingsIcon, UserIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, ArrowRightOnRectangleIcon as LogOut, SparklesIcon, BellIcon, UserIcon } from '@heroicons/react/24/outline';
 import useAppStore from '../store/useAppStore';
 import StoryViewer from './StoryViewer';
 import AIInfoModal from './AIInfoModal';
@@ -189,13 +189,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 isCollapsed={isCollapsed}
             />
 
-            <SidebarItem
-                label="Ajustes"
-                icon={<SettingsIcon className="w-5 h-5" />}
-                isActive={view === 'settings'}
-                onClick={() => navigate('settings')}
-                isCollapsed={isCollapsed}
-            />
+
 
             <SidebarItem
                 label="Notificaciones"

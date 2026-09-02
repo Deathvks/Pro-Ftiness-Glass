@@ -4,6 +4,8 @@ import { X, Flame, CalendarX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import CustomSelect from '../components/CustomSelect';
+import ModalPortal from '../components/ModalPortal';
+import useModalLock from '../hooks/useModalLock';
 
 export default function ExerciseHistoryModal({ exerciseName, onClose }) {
   const workoutLog = useAppStore((state) => state.workoutLog);
@@ -108,35 +110,41 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
   }, [selectedYear, availableMonths]);
 
   // Bloquear el scroll del cuerpo de la app mientras el modal está abierto
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, []);
+  useModalLock();
 
   if (!exerciseName) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fade-in_0.25s_ease-out] p-4">
-      {/* REDUCIDO a max-h-[70vh] para que quede totalmente aislado de los bordes del sistema */}
-      <div className="relative w-full max-w-lg md:max-w-2xl rounded-2xl bg-bg-primary border border-glass-border shadow-2xl flex flex-col max-h-[70vh] md:max-h-[85vh] animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0">
+    <ModalPortal>
+      <div 
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] p-0 sm:p-4 overscroll-none"
+        onClick={onClose}
+      >
+        <div 
+          className="relative w-full max-w-lg md:max-w-2xl mt-auto sm:mt-0 rounded-t-[32px] sm:rounded-2xl bg-bg-primary border-0 sm:border sm:border-glass-border shadow-2xl flex flex-col max-h-[85vh] animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0"
+          onClick={e => e.stopPropagation()}
+        >
 
-        {/* Header Fijo (shrink-0) */}
-        <div className="p-4 md:p-6 flex flex-col gap-4 bg-bg-primary z-10 shrink-0 border-b border-glass-border">
-          <div className="flex justify-between items-start gap-4">
-            <h2 className="text-xl md:text-2xl font-extrabold text-text-primary leading-tight break-words whitespace-normal">
-              {tCommon('Historial de', { defaultValue: 'Historial de' })}{' '}
-              <span className="text-accent">
-                {t(exerciseName, { defaultValue: exerciseName })}
-              </span>
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-text-secondary hover:text-text-primary hover:bg-bg-secondary rounded-full p-2 transition-colors -mr-2 -mt-2 shrink-0"
-              aria-label={tCommon('Cerrar', { defaultValue: 'Cerrar' })}
-            >
-              <X size={24} />
-            </button>
-          </div>
+          {/* Header Fijo (shrink-0) */}
+          <div className="p-5 sm:p-6 flex flex-col gap-4 bg-bg-primary z-10 shrink-0 border-b border-glass-border">
+            {/* Drag handle for mobile */}
+            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-2 sm:hidden shrink-0" />
+            
+            <div className="flex justify-between items-start gap-4">
+              <h2 className="text-xl md:text-2xl font-extrabold text-text-primary leading-tight break-words whitespace-normal">
+                {tCommon('Historial de', { defaultValue: 'Historial de' })}{' '}
+                <span className="text-accent">
+                  {t(exerciseName, { defaultValue: exerciseName })}
+                </span>
+              </h2>
+              <button
+                onClick={onClose}
+                className="text-text-secondary hover:text-text-primary hover:bg-bg-secondary rounded-full p-2 transition-colors -mr-2 -mt-2 shrink-0"
+                aria-label={tCommon('Cerrar', { defaultValue: 'Cerrar' })}
+              >
+                <X size={24} />
+              </button>
+            </div>
 
           {/* Filtros */}
           <div className="flex flex-row gap-3">
@@ -248,12 +256,13 @@ export default function ExerciseHistoryModal({ exerciseName, onClose }) {
         <div className="p-4 md:hidden shrink-0 bg-bg-primary border-t border-glass-border z-10">
           <button
             onClick={onClose}
-            className="w-full py-3.5 bg-bg-secondary rounded-xl text-text-secondary font-semibold active:scale-[0.98] transition-transform shadow-sm hover:text-text-primary"
+            className="w-full py-3.5 bg-accent text-bg-secondary font-bold rounded-xl active:scale-[0.98] transition-transform shadow-lg shadow-accent/20 hover:scale-[1.02]"
           >
             {tCommon('Cerrar', { defaultValue: 'Cerrar' })}
           </button>
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
