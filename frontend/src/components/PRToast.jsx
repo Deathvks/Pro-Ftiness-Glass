@@ -29,7 +29,8 @@ const PRToast = ({ newPRs, onClose }) => {
     const shareText = `¡He conseguido ${
       newPRs.length > 1 ? 'nuevos récords' : 'un nuevo récord'
     } en Pro-Fitness-Glass!\n\n${prText}\n\n¡Registra tus progresos tú también!`;
-    const shareUrl = window.location.origin || 'https://pro-ftiness-glass.com'; // URL de la app
+    const isCapacitor = window.location.origin === 'http://localhost';
+    const shareUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.vercel.app') : window.location.origin;
 
     if (navigator.share) {
       try {

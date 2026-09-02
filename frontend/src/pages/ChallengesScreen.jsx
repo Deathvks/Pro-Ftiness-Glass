@@ -89,7 +89,9 @@ const ChallengesScreen = ({ setView }) => {
     };
 
     const handleCopyReferral = () => {
-        const referralLink = `${window.location.origin}/register?ref=${userProfile?.referral_code || ''}`;
+        const isCapacitor = window.location.origin === 'http://localhost';
+        const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.vercel.app') : window.location.origin;
+        const referralLink = `${baseUrl}/register?ref=${userProfile?.referral_code || ''}`;
         navigator.clipboard.writeText(referralLink);
         addToast('¡Enlace copiado!', 'success');
     };

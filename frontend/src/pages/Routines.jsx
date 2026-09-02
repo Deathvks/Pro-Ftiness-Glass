@@ -179,7 +179,9 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
     }
   }, [routine.visibility]);
 
-  const shareUrl = `${window.location.origin}/share/routine/${routine.id}`;
+  const isCapacitor = window.location.origin === 'http://localhost';
+  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.vercel.app') : window.location.origin;
+  const shareUrl = `${baseUrl}/share/routine/${routine.id}`;
 
   const handleVisibilityChange = async (newVisibility) => {
     if (newVisibility === visibility) return;
