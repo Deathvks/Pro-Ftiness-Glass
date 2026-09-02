@@ -32,6 +32,23 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     details?.exercise_details?.video_url;
 
   let rawImages = details?.images || details?.exercise?.images || details?.exercise_details?.images;
+  
+  if (typeof rawImages === 'string') {
+    const trimmed = rawImages.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        rawImages = JSON.parse(trimmed);
+      } catch (e) {
+        rawImages = [];
+      }
+    } else if (trimmed.includes(',')) {
+      rawImages = trimmed.split(',').map(s => s.trim());
+    } else if (trimmed !== '') {
+      rawImages = [trimmed];
+    } else {
+      rawImages = [];
+    }
+  }
   // Si no hay un array válido, construimos uno temporal a partir de las imágenes inicio/fin si existen
   if (!Array.isArray(rawImages) || rawImages.length === 0) {
     rawImages = [];
@@ -146,12 +163,13 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   }
 
   // Renderizado de imagen (o miniatura de YouTube si no hay imagen propia)
-  const imageToRender = finalImageUrl || youtubeThumbnail;
+  const imageToRender = finalImageUrl || (finalImagesUrls.length > 0 ? finalImagesUrls[0] : youtubeThumbnail);
+  
   if ((imageToRender || finalImagesUrls.length > 0) && !imageError) {
     // Si es imagen de youtube, forzamos aspect-video para que encaje bien. 
     // Si son imágenes normales, usamos aspect-auto para que adopte la forma real de la foto y el border-radius se aplique a los bordes de la foto.
     const isAuto = fitMode === 'auto';
-    const aspectRatioClass = (imageToRender === youtubeThumbnail) 
+    const aspectRatioClass = (!finalImageUrl && finalImagesUrls.length === 0 && imageToRender === youtubeThumbnail) 
       ? 'aspect-video' 
       : (isAuto ? 'w-full h-auto max-h-[70vh]' : 'w-full h-full');
     
