@@ -242,7 +242,7 @@ const BugReportModal = ({ onClose }) => {
   const isValid = category && subject.trim().length > 0 && description.trim().length > 0;
 
   return <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 z-[100] animate-[fade-in_0.2s_ease-out] overscroll-none">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 z-[100] animate-[fade-in_0.2s_ease-out]">
 
             {selectedImageForLightbox &&
       <div
@@ -265,9 +265,9 @@ const BugReportModal = ({ onClose }) => {
                 </div>
       }
 
-            <div className="bg-bg-primary mt-auto sm:mt-0 rounded-t-[32px] rounded-b-none sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-lg w-full shadow-2xl flex flex-col max-h-[85dvh] sm:max-h-full overflow-hidden animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-bg-primary mt-auto sm:mt-0 rounded-t-[32px] rounded-b-none sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 max-w-lg w-full shadow-2xl flex flex-col max-h-[85dvh] sm:max-h-full overflow-hidden animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out] shrink-0" onClick={(e) => e.stopPropagation()}>
                 
-                <div className="flex flex-col p-5 sm:p-8 pt-3 sm:pt-6 pb-4 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] sm:rounded-t-[32px]">
+                <div className="flex flex-col p-5 sm:p-8 pt-3 sm:pt-6 pb-4 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] sm:rounded-t-[32px] shrink-0 z-10">
                     {/* Drag handle for mobile */}
                     <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
                     
@@ -286,10 +286,7 @@ const BugReportModal = ({ onClose }) => {
                     </div>
                 </div>
 
-                <div 
-                    className="p-6 sm:p-8 overflow-y-auto custom-scrollbar touch-pan-y"
-                    style={{ WebkitOverflowScrolling: 'touch' }}
-                >
+                <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 custom-scrollbar bg-bg-primary">
                     <div className="mb-6 p-4 rounded-[20px] bg-accent/10 ring-1 ring-accent/30 flex gap-3 text-left shadow-sm">
                         <AlertCircle className="text-accent shrink-0 mt-0.5" size={20} />
                         <p className="text-sm font-medium text-text-primary leading-relaxed">
