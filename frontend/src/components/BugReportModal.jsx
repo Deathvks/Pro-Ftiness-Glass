@@ -286,7 +286,10 @@ const BugReportModal = ({ onClose }) => {
                     </div>
                 </div>
 
-                <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar overscroll-contain">
+                <div 
+                    className="p-6 sm:p-8 overflow-y-auto custom-scrollbar touch-pan-y"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
+                >
                     <div className="mb-6 p-4 rounded-[20px] bg-accent/10 ring-1 ring-accent/30 flex gap-3 text-left shadow-sm">
                         <AlertCircle className="text-accent shrink-0 mt-0.5" size={20} />
                         <p className="text-sm font-medium text-text-primary leading-relaxed">
