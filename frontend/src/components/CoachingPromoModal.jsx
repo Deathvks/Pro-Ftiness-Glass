@@ -2,7 +2,6 @@ import React from 'react';
 import { ClipboardList, Activity, MessageCircle, Star } from 'lucide-react';
 import ModalPortal from './ModalPortal';
 import useModalLock from '../hooks/useModalLock';
-import GlassCard from './GlassCard';
 
 const CoachingPromoModal = ({ onClose }) => {
     useModalLock(true);
@@ -12,7 +11,7 @@ const CoachingPromoModal = ({ onClose }) => {
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
           <div className="absolute inset-0" onClick={onClose} />
 
-          <GlassCard className="glass relative w-full max-w-md bg-bg-secondary border-t sm:border border-glass-border rounded-t-[32px] rounded-b-none sm:rounded-[32px] p-6 sm:p-8 mt-auto sm:mt-0 pb-[calc(1.5rem+var(--safe-bottom))] sm:pb-8 shadow-2xl animate-[slide-up_0.2s_ease-out] sm:animate-[scale-in_0.2s_ease-out] max-h-[90vh] overflow-y-auto no-scrollbar">
+          <div className="relative w-full max-w-md bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-t-[32px] rounded-b-none sm:rounded-[32px] p-6 sm:p-8 mt-auto sm:mt-0 pb-[calc(1.5rem+var(--safe-bottom))] sm:pb-8 shadow-2xl animate-[slide-up_0.2s_ease-out] sm:animate-[scale-in_0.2s_ease-out] max-h-[90vh] overflow-y-auto no-scrollbar">
             
             {/* Drag handle for mobile */}
             <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-6 sm:hidden shrink-0" />
@@ -74,7 +73,7 @@ const CoachingPromoModal = ({ onClose }) => {
                 ¡Entendido!
               </button>
             </div>
-          </GlassCard>
+          </div>
         </div>
       </ModalPortal>
     );
