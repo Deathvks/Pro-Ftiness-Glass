@@ -306,7 +306,10 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
               }
 
                         {/* Contenido: Si estamos editando y el título creció, usamos pt-4 para que el form no se pegue al borde */}
-                        <div className={`overflow-y-auto px-4 sm:px-8 pb-4 sm:pb-8 flex-grow custom-scrollbar ${isEditingLog || editingFavorite ? 'pt-4' : ''}`}>
+                        <div 
+                            className={`overflow-y-auto px-4 sm:px-8 pb-4 sm:pb-8 flex-grow custom-scrollbar touch-pan-y ${isEditingLog || editingFavorite ? 'pt-4' : ''}`}
+                            style={{ WebkitOverflowScrolling: 'touch' }}
+                        >
                             {renderContent()}
                         </div>
                     </div>
@@ -317,7 +320,10 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                                 <h4 className="font-extrabold text-text-primary uppercase tracking-wider text-[10px]">Alimentos Añadidos ({itemsToAdd.length})</h4>
                                 <span className="text-[10px] text-text-secondary font-bold">{Math.round(itemsToAdd.reduce((sum, item) => sum + (item.calories || 0), 0))} kcal totales</span>
                             </div>
-                            <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-3 sm:mb-4 pb-1 sm:pb-2 snap-x snap-mandatory">
+                            <div 
+                                className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-3 sm:mb-4 pb-1 sm:pb-2 snap-x snap-mandatory touch-pan-x"
+                                style={{ WebkitOverflowScrolling: 'touch' }}
+                            >
                                 {itemsToAdd.map((item) => (
                                     <div key={item.tempId} className="w-[280px] sm:w-[300px] shrink-0 snap-start">
                                         <SelectedItem item={item} onRemove={handleRemoveItem} onToggleFavorite={handleToggleFavorite} onEdit={handleEditListItem} />

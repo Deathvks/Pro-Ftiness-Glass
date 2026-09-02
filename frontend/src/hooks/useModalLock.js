@@ -16,7 +16,6 @@ const useModalLock = (isActive = true) => {
     document.body.style.position = 'fixed';
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = '100%';
-    document.body.style.overscrollBehavior = 'none';
 
     // 2. MainAppLayout ya gestiona su propio bloqueo de swipe en componentes anidados.
     // El código anterior que buscaba [class*="snap-x"] estaba rompiendo el scroll 

@@ -60,14 +60,14 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
 
     return (
         <div
-            className="flex flex-wrap items-center justify-between p-3 mb-2 rounded-2xl bg-bg-primary border border-glass-border active:bg-bg-secondary cursor-pointer group"
+            className="flex flex-wrap items-center justify-between p-3 mb-2 rounded-2xl bg-bg-primary border border-glass-border md:hover:bg-bg-secondary cursor-pointer group touch-pan-y"
             onClick={(e) => {
                 if (e.target.closest('button')) return;
                 onAdd(item);
             }}
         >
             <div className="flex items-center flex-1 min-w-0 mr-3">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-bg-secondary overflow-hidden mr-4 border border-glass-border flex items-center justify-center relative group-active:scale-95 transition-transform">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-bg-secondary overflow-hidden mr-4 border border-glass-border flex items-center justify-center relative transition-transform">
                     {displayImage && !imgError ? (
                         <img
                             src={displayImage}
