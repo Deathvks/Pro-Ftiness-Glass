@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../services/apiClient';
 import { useToast } from '../../hooks/useToast';
 import { PlusIcon, UserGroupIcon, TrashIcon, EllipsisVerticalIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import ModalPortal from '../ModalPortal';
 import RoutineEditor from '../../pages/RoutineEditor';
 import UserAvatar from '../UserAvatar'; // Reutilizamos el editor existente
 
@@ -217,6 +218,7 @@ export default function TrainerRoutines({ activeClients }) {
       )}
 
       {assignModalOpen && selectedRoutineForAssign && (
+        <ModalPortal>
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-bg-primary max-w-md w-full rounded-3xl ring-1 ring-black/5 dark:ring-white/10 p-6 shadow-2xl relative">
             <h3 className="text-xl font-black text-text-primary mb-2">Asignar a Clientes</h3>
@@ -291,6 +293,7 @@ export default function TrainerRoutines({ activeClients }) {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

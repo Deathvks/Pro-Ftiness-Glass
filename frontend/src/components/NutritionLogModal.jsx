@@ -243,18 +243,17 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
   return (
     <>
-            <ModalPortal><div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.3s_ease-out]">
-                <div className="relative w-full max-w-lg p-0 m-0 sm:m-4 flex flex-col mt-auto sm:mt-0 h-[92dvh] sm:h-auto sm:max-h-[90vh] bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <ModalPortal><div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.25s_ease-out]">
+                <div className="relative w-full max-w-lg rounded-t-[32px] rounded-b-none sm:rounded-2xl bg-bg-primary border border-glass-border shadow-2xl flex flex-col max-h-[85vh] md:max-h-[85vh] animate-[slide-up_0.2s_ease-out] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0" onClick={(e) => e.stopPropagation()}>
                     
-                    {/* Header: Cambio aquí para line-clamp-2 y leading-tight en el título */}
-                    <div className="p-4 sm:p-8 pb-3 sm:pb-5 flex items-center justify-between border-b border-black/5 dark:border-white/10 flex-shrink-0 bg-black/5 dark:bg-white/5 rounded-t-[32px]">
-                        <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight line-clamp-2 leading-tight pr-4 text-text-primary">{title}</h3>
+                    {/* Header */}
+                    <div className="p-4 sm:p-6 border-b border-glass-border flex justify-between items-center bg-bg-primary z-10 shrink-0">
+                        <h3 className="text-xl sm:text-2xl font-bold text-text-primary line-clamp-2 leading-tight pr-4">{title}</h3>
                         <button onClick={onClose} className="p-2 sm:p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex-shrink-0 text-text-secondary hover:text-text-primary active:scale-95"><X size={20} strokeWidth={2.5} /></button>
                     </div>
 
-                    <div className="flex-grow overflow-hidden flex flex-col min-h-0">
                         {!(isEditingLog || editingFavorite) &&
-              <div className="p-4 sm:p-8 pt-4 sm:pt-6 pb-2 sm:pb-4 flex-shrink-0">
+              <div className="p-4 sm:p-8 pt-4 sm:pt-6 pb-2 sm:pb-4 shrink-0 bg-bg-primary z-10">
                                 {(activeTab === 'search' || activeTab === 'favorites' || activeTab === 'recent') &&
                 <div className="relative mb-3 sm:mb-6 flex items-center">
                                         <input
@@ -306,10 +305,9 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
               }
 
                         {/* Contenido: Si estamos editando y el título creció, usamos pt-4 para que el form no se pegue al borde */}
-                        <div className={`flex-1 overflow-y-auto px-4 sm:px-8 pb-4 sm:pb-8 custom-scrollbar ${isEditingLog || editingFavorite ? 'pt-4' : ''}`}>
+                        <div className={`flex-1 overflow-y-auto px-4 sm:px-8 pb-4 sm:pb-8 custom-scrollbar bg-bg-primary ${isEditingLog || editingFavorite ? 'pt-4' : ''}`}>
                             {renderContent()}
                         </div>
-                    </div>
 
                     {!(isEditingLog || editingFavorite) && itemsToAdd.length > 0 &&
             <div className="p-3 sm:p-6 border-t border-black/5 dark:border-white/10 flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-bg-primary z-10 rounded-b-[32px]">

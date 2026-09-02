@@ -102,6 +102,17 @@ export default function AnamnesisForm({ client, onFinish, onBack, isEditing = fa
       return;
     }
 
+    const isAnamnesisEmpty = Object.values(formData).every(value => {
+      if (Array.isArray(value)) return value.length === 0;
+      if (typeof value === 'string') return value.trim() === '';
+      return value === null || value === undefined;
+    });
+
+    if (isAnamnesisEmpty) {
+      addToast('No puedes guardar una anamnesis vacía. Completa algún dato primero.', 'error');
+      return;
+    }
+
     setSaving(true);
     try {
       if (isEditing) {
