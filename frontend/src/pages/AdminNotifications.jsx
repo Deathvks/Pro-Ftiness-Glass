@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Bell, History, Send, Clock, CheckCircle2, XCircle, 
   Search, Users, MessageSquare, Link, ChevronLeft, ChevronRight, Activity, Globe, User, RefreshCw,
-  Home, Dumbbell, TrendingUp, Utensils, Trophy
+  Home, Dumbbell, TrendingUp, Utensils, Trophy, Play
 } from 'lucide-react';
 import { getAllUsers, getPushLogs, sendCustomPush, getCronJobs } from '../services/adminService';
 import { useToast } from '../hooks/useToast';
@@ -110,6 +110,25 @@ const AdminNotifications = () => {
       showToast(err.message || 'Error enviando la notificación', 'error');
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleTestCron = async (jobId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/cron-jobs/test/${jobId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Error en el test del cron');
+      
+      showToast(data.message, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast(err.message, 'error');
     }
   };
 
@@ -420,11 +439,23 @@ const AdminNotifications = () => {
                 }}
                 className="text-left p-5 bg-black/5 dark:bg-white/5 border border-glass-border rounded-2xl flex flex-col gap-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-[0.98] ring-1 ring-transparent hover:ring-accent/50"
               >
-                <div className="flex justify-between items-start w-full">
-                  <h3 className="font-bold text-lg text-text-primary">{job.name}</h3>
-                  <span className="bg-green-500/10 text-green-500 border border-green-500/20 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shrink-0">
-                    <Activity size={12} /> Activo
-                  </span>
+                <div className="flex justify-between items-start w-full gap-2">
+                  <h3 className="font-bold text-lg text-text-primary flex-1">{job.name}</h3>
+                  <div className="flex flex-col gap-2 items-end">
+                    <span className="bg-green-500/10 text-green-500 border border-green-500/20 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shrink-0">
+                      <Activity size={12} /> Activo
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTestCron(job.id);
+                      }}
+                      className="bg-accent/10 text-accent border border-accent/20 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shrink-0 hover:bg-accent/20 active:scale-95 transition-all"
+                    >
+                      <Play size={12} fill="currentColor" /> Test
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="text-sm font-bold text-accent flex flex-col gap-1">

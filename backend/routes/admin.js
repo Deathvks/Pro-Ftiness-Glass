@@ -44,5 +44,6 @@ router.post('/settings/:key', adminController.updateSetting);
 router.get('/push-logs', adminController.getPushLogs);
 router.post('/push-send', adminController.sendCustomPush);
 router.get('/cron-jobs', adminController.getCronJobs);
+router.post('/cron-jobs/test/:id', adminController.testCronJob);
 
 export default router;
