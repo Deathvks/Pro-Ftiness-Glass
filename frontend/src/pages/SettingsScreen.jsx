@@ -150,7 +150,7 @@ export default function SettingsScreen({
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'notifications', label: 'Notificaciones', icon: BellRing },
     { id: 'security', label: 'Seguridad', icon: Shield },
-    { id: 'region', label: 'Región y Hora', icon: Globe },
+    
     { id: 'privacy', label: 'Privacidad Social', icon: Users },
     { id: 'session', label: 'Sesión', icon: LogOut, danger: true },
   ];
@@ -189,80 +189,6 @@ export default function SettingsScreen({
     }
   }, [highlight]);
 
-
-  const timezoneOptions = useMemo(() => {
-    const options = [...TIMEZONES];
-    const currentUserTz = userProfile?.timezone;
-
-    if (currentUserTz && !options.some(opt => opt.value === currentUserTz)) {
-      options.push({ value: currentUserTz, label: currentUserTz });
-    }
-    return options;
-  }, [userProfile?.timezone]);
-
-  const detectAndUpdateTimezone = async (silent = false) => {
-    if (isUpdatingTimezone) return;
-
-    try {
-      const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      if (detected === userProfile?.timezone) {
-        if (!silent) addToast('Ya tienes la zona horaria correcta.', 'info');
-        return;
-      }
-
-      setIsUpdatingTimezone(true);
-      const prevTimezone = userProfile?.timezone;
-
-      setUserProfile({ ...userProfile, timezone: detected });
-
-      try {
-        await userService.updateUserProfile({ timezone: detected });
-        if (!silent) addToast(`Zona horaria actualizada: ${detected}`, 'success');
-      } catch (error) {
-        setUserProfile({ ...userProfile, timezone: prevTimezone });
-        if (!silent) addToast('Error al cambiar zona horaria', 'error');
-      } finally {
-        setIsUpdatingTimezone(false);
-      }
-    } catch (e) {
-      if (!silent) addToast('No se pudo detectar la zona horaria.', 'error');
-    }
-  };
-
-  useEffect(() => {
-    if (autoTimezone) {
-      detectAndUpdateTimezone(true);
-    }
-  }, [autoTimezone]);
-
-  const handleTimezoneChange = async (newTimezone) => {
-    if (isUpdatingTimezone) return;
-    setIsUpdatingTimezone(true);
-    const prevTimezone = userProfile?.timezone;
-
-    setUserProfile({ ...userProfile, timezone: newTimezone });
-
-    try {
-      await userService.updateUserProfile({ timezone: newTimezone });
-      addToast(`Zona horaria actualizada`, 'success');
-    } catch (error) {
-      setUserProfile({ ...userProfile, timezone: prevTimezone });
-      addToast('Error al cambiar zona horaria', 'error');
-    } finally {
-      setIsUpdatingTimezone(false);
-    }
-  };
-
-  const handleToggleAutoTimezone = () => {
-    const newValue = !autoTimezone;
-    setAutoTimezone(newValue);
-    localStorage.setItem('settings_auto_timezone', newValue);
-
-    if (newValue) {
-      detectAndUpdateTimezone(false);
-    }
-  };
 
   const handleExport = async (format) => {
     try {
@@ -496,56 +422,6 @@ export default function SettingsScreen({
             </div>
           </GlassCard>
           )}
-          {activeTab === 'region' && (
-          <GlassCard className={glassCardClass}>
-            <SectionTitle icon={Globe} title="Región y Hora" />
-            <div className="flex flex-col gap-5">
-              <SwitchItem
-                icon={MapPin}
-                title="Ajuste Automático"
-                subtitle="Usar ubicación del dispositivo"
-                checked={autoTimezone}
-                onChange={handleToggleAutoTimezone}
-              />
-
-              <div className={`flex flex-col gap-3 transition-opacity duration-300 ${autoTimezone ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                <label className="text-sm font-bold text-text-secondary ml-1">
-                  Zona Horaria Manual
-                </label>
-                <div className="flex gap-3 items-center">
-                  <div className="flex-1 bg-black/5 dark:bg-white/5 rounded-[20px] p-1">
-                    <CustomSelect
-                      value={userProfile?.timezone || 'Europe/Madrid'}
-                      onChange={handleTimezoneChange}
-                      options={timezoneOptions}
-                      placeholder="Selecciona zona horaria"
-                      disabled={autoTimezone}
-                    />
-                  </div>
-                  <button
-                    onClick={() => detectAndUpdateTimezone(false)}
-                    disabled={isUpdatingTimezone || autoTimezone}
-                    className="w-12 h-12 rounded-[20px] text-accent hover:bg-accent/10 transition-all flex items-center justify-center shrink-0 bg-black/5 dark:bg-white/5 hover:scale-105"
-                    title="Detectar ahora"
-                  >
-                    {isUpdatingTimezone ? <Spinner size={20} /> : <Clock size={20} />}
-                  </button>
-                </div>
-                {autoTimezone && (
-                  <p className="text-xs text-accent ml-1 flex items-center gap-1.5 font-bold">
-                    <Check size={14} /> Gestionado automáticamente
-                  </p>
-                )}
-                {!autoTimezone && (
-                  <p className="text-[10px] sm:text-xs text-text-muted ml-1 leading-relaxed font-medium">
-                    Afecta a la hora de reinicio de tus metas diarias.
-                  </p>
-                )}
-              </div>
-            </div>
-          </GlassCard>
-          )}
-
           {activeTab === 'privacy' && (
           <div
             ref={socialPrivacyRef}

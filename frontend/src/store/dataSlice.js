@@ -81,6 +81,18 @@ export const createDataSlice = (set, get) => ({
     set({ isLoading: true });
     try {
       const profileData = await userService.getMyProfile();
+
+      // Actualizar silenciosamente la zona horaria si ha cambiado
+      try {
+        const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (detectedTz && profileData.timezone !== detectedTz) {
+           userService.updateUserProfile({ timezone: detectedTz }).catch(e => console.warn('Background TZ update failed', e));
+           profileData.timezone = detectedTz; // update locally for immediate use
+        }
+      } catch (e) {
+        console.warn('Could not detect timezone', e);
+      }
+
       set({ userProfile: profileData, isAuthenticated: true });
 
       if (profileData && get().setGamificationData) {
