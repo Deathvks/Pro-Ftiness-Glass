@@ -10,7 +10,14 @@ import CustomSelect from '../components/CustomSelect';
 import UserAvatar from '../components/UserAvatar';
 
 const AdminNotifications = () => {
-  const [activeTab, setActiveTab] = useState('history');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('adminNotificationsTab') || 'history';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('adminNotificationsTab', activeTab);
+  }, [activeTab]);
+
   const { showToast } = useToast();
   
   // History State
