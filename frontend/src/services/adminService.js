@@ -67,3 +67,9 @@ export const sendCustomPush = (pushData) => {
 export const getCronJobs = () => {
     return apiClient('/admin/cron-jobs');
 };
+
+export const testCronJob = (jobId) => {
+    return apiClient(`/admin/cron-jobs/test/${jobId}`, {
+        method: 'POST',
+    });
+};

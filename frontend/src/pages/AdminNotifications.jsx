@@ -4,7 +4,7 @@ import {
   Search, Users, MessageSquare, Link, ChevronLeft, ChevronRight, Activity, Globe, User, RefreshCw,
   Home, Dumbbell, TrendingUp, Utensils, Trophy, Play
 } from 'lucide-react';
-import { getAllUsers, getPushLogs, sendCustomPush, getCronJobs } from '../services/adminService';
+import { getAllUsers, getPushLogs, sendCustomPush, getCronJobs, testCronJob } from '../services/adminService';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 import UserAvatar from '../components/UserAvatar';
@@ -115,20 +115,16 @@ const AdminNotifications = () => {
 
   const handleTestCron = async (jobId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/cron-jobs/test/${jobId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Error en el test del cron');
-      
+      const data = await testCronJob(jobId);
       showToast(data.message, 'success');
     } catch (err) {
       console.error(err);
-      showToast(err.message, 'error');
+      // Extraemos el mensaje de error de forma más limpia, traduciendo errores comunes
+      let errorMessage = err.message || 'Error desconocido al probar la tarea.';
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Unexpected end of JSON input')) {
+        errorMessage = 'No se pudo conectar con el servidor para probar la tarea.';
+      }
+      showToast(errorMessage, 'error');
     }
   };
 
