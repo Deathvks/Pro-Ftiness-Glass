@@ -429,7 +429,7 @@ const AdminNotifications = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {cronJobs.map(job => (
-              <button 
+              <div 
                 key={job.id} 
                 onClick={() => {
                   if (job.pushTitle) {
@@ -437,7 +437,7 @@ const AdminNotifications = () => {
                     setActiveTab('history');
                   }
                 }}
-                className="text-left p-5 bg-black/5 dark:bg-white/5 border border-glass-border rounded-2xl flex flex-col gap-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-[0.98] ring-1 ring-transparent hover:ring-accent/50"
+                className="text-left p-5 bg-black/5 dark:bg-white/5 border border-glass-border rounded-2xl flex flex-col gap-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-[0.98] ring-1 ring-transparent hover:ring-accent/50 cursor-pointer"
               >
                 <div className="flex justify-between items-start w-full gap-2">
                   <h3 className="font-bold text-lg text-text-primary flex-1">{job.name}</h3>
@@ -489,7 +489,7 @@ const AdminNotifications = () => {
                 <div className="text-xs font-bold text-text-muted mt-2 pt-3 border-t border-glass-border flex items-center gap-1.5 w-full">
                   <Search size={14} /> Toca para ver su historial de envíos
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </div>
