@@ -438,8 +438,8 @@ const AdminNotifications = () => {
                 <div className="flex justify-between items-start w-full gap-2">
                   <h3 className="font-bold text-lg text-text-primary flex-1">{job.name}</h3>
                   <div className="flex flex-col gap-2 items-end">
-                    <span className="bg-green-500/10 text-green-500 border border-green-500/20 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shrink-0">
-                      <Activity size={12} /> Activo
+                    <span className="bg-green-500/10 text-green-500 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                      <Activity size={14} /> Activo
                     </span>
                     <button
                       type="button"
@@ -447,9 +447,9 @@ const AdminNotifications = () => {
                         e.stopPropagation();
                         handleTestCron(job.id);
                       }}
-                      className="bg-accent/10 text-accent border border-accent/20 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shrink-0 hover:bg-accent/20 active:scale-95 transition-all"
+                      className="bg-accent/10 text-accent px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-accent/20 active:scale-95 transition-all"
                     >
-                      <Play size={12} fill="currentColor" /> Test
+                      <Play size={14} fill="currentColor" /> Probar Tarea
                     </button>
                   </div>
                 </div>
