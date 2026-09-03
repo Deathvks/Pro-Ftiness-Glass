@@ -347,7 +347,7 @@ export const getCronJobs = async (req, res, next) => {
   }
 };
 
-// Testear cuántos usuarios recibirían una tarea cron en este momento
+// Testear cuántos usuarios recibirían una tarea cron (ignorando la restricción de hora/día)
 export const testCronJob = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -356,81 +356,70 @@ export const testCronJob = async (req, res, next) => {
 
     const allUsers = await db.User.findAll({ attributes: ['id', 'timezone', 'streak', 'last_activity_date'] });
     
-    // Función espejo de getLocalTime del cron
     const getLocalTime = (timezone) => {
       try {
         const tz = timezone || 'Europe/Madrid';
-        const now = new Date();
-        const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: 'numeric' }), 10);
-        const day = parseInt(now.toLocaleDateString('en-US', { timeZone: tz, day: 'numeric' }), 10);
-        const date = now.toLocaleDateString('sv-SE', { timeZone: tz });
-        return { hour, day, date };
+        const date = new Date().toLocaleDateString('sv-SE', { timeZone: tz });
+        return { date };
       } catch (e) {
-        return { hour: 0, day: 1, date: new Date().toISOString().split('T')[0] };
+        return { date: new Date().toISOString().split('T')[0] };
       }
     };
 
     if (id === '1') {
-      // Nutrición
-      const targetUsers = allUsers.filter(u => getLocalTime(u.timezone).hour === 20);
-      for (const user of targetUsers) {
+      // Nutrición: ¿Quiénes no han llegado al 80% de macros hoy?
+      for (const user of allUsers) {
         const { date } = getLocalTime(user.timezone);
         const goal = await db.NutritionGoal.findOne({ where: { user_id: user.id } });
         if (!goal) continue;
         const totalIntake = await db.NutritionLog.sum('calories', { where: { user_id: user.id, log_date: date } }) || 0;
         if (totalIntake < (goal.calories_target * 0.8)) simulateCount++;
       }
-      message = `Si el cron se ejecutara AHORA MISMO:\n${simulateCount} usuario(s) recibirían la alerta de nutrición (son las 20:00 locales y no llegan al 80% de macros).`;
+      message = `Test: IGNORANDO LA HORA.\nHay ${simulateCount} usuario(s) que NO han llegado al 80% de sus macros hoy. Recibirían la alerta cuando sean sus 20:00.`;
     
     } else if (id === '2') {
-      // Creatina
+      // Creatina: ¿Quiénes toman creatina y no la han registrado hoy?
       const creatineUsers = await db.CreatinaLog.findAll({ attributes: ['user_id'], group: ['user_id'] });
       const creatineUserIds = creatineUsers.map(u => u.user_id);
       
-      const targetUsers = allUsers.filter(u => creatineUserIds.includes(u.id) && getLocalTime(u.timezone).hour === 10);
+      const targetUsers = allUsers.filter(u => creatineUserIds.includes(u.id));
       for (const user of targetUsers) {
         const { date } = getLocalTime(user.timezone);
         const logged = await db.CreatinaLog.findOne({ where: { user_id: user.id, log_date: date } });
         if (!logged) simulateCount++;
       }
-      message = `Si el cron se ejecutara AHORA MISMO:\n${simulateCount} usuario(s) recibirían la alerta de creatina (son las 10:00 locales, toman creatina y no la han registrado hoy).`;
+      message = `Test: IGNORANDO LA HORA.\nHay ${simulateCount} usuario(s) que toman creatina y NO la han registrado hoy. Recibirían el push a las 10:00.`;
     
     } else if (id === '3') {
-      // Entrenamiento
-      const targetUsers = allUsers.filter(u => getLocalTime(u.timezone).hour === 10);
-      for (const user of targetUsers) {
+      // Entrenamiento: ¿Quiénes no han entrenado hoy?
+      for (const user of allUsers) {
         const { date } = getLocalTime(user.timezone);
         const workoutLog = await db.WorkoutLog.findOne({ where: { user_id: user.id, date } });
         if (!workoutLog) simulateCount++; 
       }
-      message = `Si el cron se ejecutara AHORA MISMO:\n${simulateCount} usuario(s) recibirían la motivación de entrenamiento (son las 10:00 locales y no han entrenado hoy).`;
+      message = `Test: IGNORANDO LA HORA.\nHay ${simulateCount} usuario(s) en total que NO han entrenado hoy. Recibirían la motivación a las 10:00.`;
     
     } else if (id === '4') {
-      // Pesaje Mensual
-      const targetUsers = allUsers.filter(u => {
-        const { hour, day } = getLocalTime(u.timezone);
-        return day === 1 && hour === 9;
-      });
+      // Pesaje Mensual: ¿A quiénes hace >30 días que no se pesan?
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      for (const user of targetUsers) {
+      for (const user of allUsers) {
         const lastLog = await db.BodyWeightLog.findOne({ where: { user_id: user.id }, order: [['log_date', 'DESC']] });
         if (!lastLog || new Date(lastLog.log_date) < thirtyDaysAgo) simulateCount++;
       }
-      message = `Si el cron se ejecutara AHORA MISMO:\n${targetUsers.length > 0 ? 'Sí' : 'No'} es día 1 a las 09:00. ${simulateCount} usuario(s) recibirían el aviso de peso.`;
+      message = `Test: IGNORANDO EL DÍA 1.\nHay ${simulateCount} usuario(s) que NO han registrado su peso en los últimos 30 días. Serán avisados el día 1 del mes.`;
     
     } else if (id === '5') {
-      // Streak Wars
+      // Streak Wars: ¿Quién está en peligro de perder la racha (hoy no ha entrenado)?
       const targetUsers = allUsers.filter(user => {
         if (!user.streak || !user.last_activity_date) return false;
-        const { hour, date } = getLocalTime(user.timezone);
-        if (hour !== 20) return false;
+        const { date } = getLocalTime(user.timezone);
         const lastActiveDate = new Date(user.last_activity_date).toISOString().split('T')[0];
-        return lastActiveDate < date;
+        return lastActiveDate < date; // Su última actividad fue ayer o antes, y hoy no ha entrenado.
       });
       for (const dangerUser of targetUsers) {
         simulateCount++;
       }
-      message = `Si el cron se ejecutara AHORA MISMO:\nSe enviaría aviso a los amigos de ${simulateCount} usuario(s) que están en las 20:00 locales a punto de perder la racha.`;
+      message = `Test: IGNORANDO LA HORA.\nHay ${simulateCount} usuario(s) con racha activa que aún no han entrenado hoy (racha en peligro).`;
     } else {
       message = "Esta tarea no tiene test implementado o es un mantenimiento automático interno.";
     }
