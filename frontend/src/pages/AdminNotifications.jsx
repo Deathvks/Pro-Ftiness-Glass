@@ -447,7 +447,7 @@ const AdminNotifications = () => {
                         e.stopPropagation();
                         handleTestCron(job.id);
                       }}
-                      className="bg-bg-primary dark:bg-bg-secondary shadow-sm text-accent px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all"
+                      className="bg-accent text-white shadow-md shadow-accent/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all"
                     >
                       <Play size={14} fill="currentColor" /> Probar Tarea
                     </button>
