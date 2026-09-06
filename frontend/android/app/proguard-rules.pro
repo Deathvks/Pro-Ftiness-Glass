@@ -1,21 +1,32 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Capacitor Core
+-keep class com.getcapacitor.** { *; }
+-keep interface com.getcapacitor.** { *; }
+-keep public class * extends com.getcapacitor.Plugin
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Cordova
+-keep class org.apache.cordova.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Google Auth Plugin
+-keep class com.codetrixstudio.capacitor.GoogleAuth.** { *; }
+-keep class com.google.android.gms.auth.api.signin.** { *; }
+-keep class com.google.android.gms.common.api.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Firebase / Push Notifications
+-keep class com.google.firebase.** { *; }
+-keep class com.google.firebase.messaging.** { *; }
+
+# Capgo / Status Bar plugins
+-keep class ee.forgr.capacitor_navigation_bar.** { *; }
+-keep class com.capacitorjs.plugins.statusbar.** { *; }
+
+# Preserve JS Interfaces
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Preserve stack traces for debugging (Google Play requires this to map crashes)
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# Material Design
+-keep class com.google.android.material.** { *; }
