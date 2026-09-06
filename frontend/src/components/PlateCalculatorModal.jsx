@@ -85,8 +85,8 @@ const PlateCalculatorModal = ({ onClose, initialWeight = '' }) => {
   };
 
   return <ModalPortal>
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="w-full max-w-sm bg-bg-secondary border border-glass-border mt-auto sm:mt-0 rounded-t-[32px] rounded-b-none sm:rounded-[32px] shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out] sm:animate-slide-up pb-[calc(2rem+var(--safe-bottom))] sm:pb-0">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+            <div className="w-full max-w-sm bg-bg-secondary border border-glass-border mt-auto sm:mt-0 rounded-t-[32px] rounded-b-none sm:rounded-[32px] shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out] sm:animate-slide-up pb-[calc(2rem+var(--safe-bottom))] sm:pb-0" onClick={(e) => e.stopPropagation()}>
                 {/* Drag handle for mobile */}
                 <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 mb-2 sm:hidden shrink-0" />
                 {/* Header */}

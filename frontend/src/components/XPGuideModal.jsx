@@ -68,8 +68,8 @@ const XPGuideModal = ({ onClose }) => {
   const rankPreviews = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
   return <ModalPortal>
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
-            <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] w-full max-w-md max-h-[85dvh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out]">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]" onClick={onClose}>
+            <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-t-[32px] sm:rounded-[32px] w-full max-w-md max-h-[85dvh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out] mt-auto sm:mt-0" onClick={(e) => e.stopPropagation()}>
 
                 <div className="shrink-0 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 p-5 sm:p-6 pb-0 flex flex-col gap-4 rounded-t-[32px] z-10">
                     {/* Drag handle for mobile */}

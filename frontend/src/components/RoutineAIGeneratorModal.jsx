@@ -165,8 +165,8 @@ FORMATO SI ES VÁLIDO:
   };
 
   return <ModalPortal>
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
-      <div className={containerClass}>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]" onClick={!isLoading ? onClose : undefined}>
+      <div className={`${containerClass} mt-auto sm:mt-0`} onClick={(e) => e.stopPropagation()}>
         {/* Drag handle for mobile */}
         <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
         <div className="p-5 border-b border-glass-border flex justify-between items-center">
