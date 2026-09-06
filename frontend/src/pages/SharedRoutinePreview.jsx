@@ -52,7 +52,10 @@ const SharedRoutinePreview = () => {
         setRoutine(data);
       } catch (err) {
         console.error(err);
-        setError('No se pudo cargar la rutina. Es posible que sea privada o no exista.');
+        setError(err.message || 'No se pudo cargar la rutina. Es posible que sea privada o no exista.');
+        if (err.status === 403) {
+            addToast('No tienes permiso para ver o copiar esta rutina (Solo Amigos/Privada).', 'error');
+        }
       } finally {
         setLoading(false);
       }

@@ -1,5 +1,6 @@
 /* backend/routes/routines.js */
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import routineController from '../controllers/routineController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
@@ -67,6 +68,20 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
+const optionalAuth = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+        try {
+            req.user = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (e) {}
+    }
+    next();
+};
+
+router.get('/public', optionalAuth, routineController.getPublicRoutines);
+router.get('/public/:id', optionalAuth, routineController.getPublicRoutineById);
+
 router.use(authenticateToken);
 
 const routineValidationRules = [
@@ -92,8 +107,6 @@ router.post(
     }
 );
 
-router.get('/public', routineController.getPublicRoutines);
-router.get('/public/:id', routineController.getPublicRoutineById);
 router.post('/:id/download', routineController.downloadRoutine);
 router.post('/:id/fork', routineController.downloadRoutine);
 router.put('/:id/toggle-public', routineController.togglePublicStatus);
