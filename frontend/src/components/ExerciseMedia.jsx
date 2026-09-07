@@ -153,7 +153,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     return (
       <video
         key={videoUrl}
-        className={`w-full h-auto min-h-[200px] max-h-[70vh] rounded-[24px] overflow-hidden bg-transparent ${className}`}
+        className={`w-full h-auto min-h-[200px] max-h-[70vh] overflow-hidden bg-transparent ${className}`}
         src={videoUrl}
         autoPlay
         loop
@@ -241,7 +241,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
                 key={idx}
                 src={url}
                 alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
-                className={`rounded-[24px] ${posClass} ${sizeClass} transition-opacity duration-500 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
+                className={`${posClass} ${sizeClass} transition-opacity duration-500 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
                 style={visibilityStyle}
                 onError={() => setImageError(true)}
                 loading="lazy"
@@ -259,7 +259,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
           key={imageToRender}
           src={imageToRender}
           alt={`Demostración de ${details?.name || 'ejercicio'}`}
-          className={`rounded-[24px] ${imgBaseClass} transition-opacity duration-500 ${getImageBlendClass(imageToRender)}`}
+          className={`${imgBaseClass} transition-opacity duration-500 ${getImageBlendClass(imageToRender)}`}
           onError={() => setImageError(true)}
           loading="lazy"
         />
