@@ -440,6 +440,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                                           details={{
                                                               video_url: videoSrc,
                                                               image_url: mediaSrc,
+                                                              image_url_start: ex.image_url || ex.image_url_start,
+                                                              image_url_end: ex.image_url_end,
+                                                              images: ex.images,
                                                               name: translatedName
                                                           }}
                                                           forceAuto={true}
@@ -802,6 +805,9 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                                                         details={{
                                                                             video_url: videoSrc,
                                                                             image_url: mediaSrc,
+                                                                            image_url_start: ex.image_url || ex.image_url_start,
+                                                                            image_url_end: ex.image_url_end,
+                                                                            images: ex.images,
                                                                             name: translatedName
                                                                         }}
                                                                         fitMode="cover"
