@@ -16,7 +16,22 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
     return () => setMounted(false);
   }, []);
 
-  const activeTouchMoveListener = useRef(null);
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el) return;
+    
+    const onNativeTouchMove = (e) => {
+      if (isValidSwipe.current && touchStartY.current !== null) {
+        const currentY = e.touches[0].clientY;
+        if (currentY > touchStartY.current && e.cancelable) {
+          e.preventDefault(); // Stop native scroll / pull-to-refresh
+        }
+      }
+    };
+    
+    el.addEventListener('touchmove', onNativeTouchMove, { passive: false });
+    return () => el.removeEventListener('touchmove', onNativeTouchMove);
+  }, [mounted]);
 
   if (!mounted) return null;
 
@@ -28,16 +43,16 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
     if (canSwipe) {
       let el = e.target;
       while (el && el !== document.body && el !== e.currentTarget) {
-        // Usamos solo comprobación de clases de Tailwind para evitar lecturas al DOM (Layout Thrashing)
         const isScrollableClass = el.classList && (
                                   el.classList.contains('overflow-y-auto') || 
                                   el.classList.contains('overflow-auto') ||
                                   el.classList.contains('scrollable') ||
                                   el.classList.contains('no-scrollbar')
-                                  );
+                                );
         
-        if (isScrollableClass) {
-          // Solo leemos scrollTop si sabemos que es el contenedor correcto
+        const hasScroll = isScrollableClass;
+        
+        if (hasScroll) {
           if (el.scrollTop > 2) {
             canSwipe = false;
             break;
@@ -54,20 +69,6 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
       touchStartY.current = touch.clientY;
       touchCurrentY.current = touch.clientY;
       touchStartTime.current = Date.now();
-
-      // Añadimos el listener dinámicamente solo si el swipe es válido para no bloquear el hilo de compositor
-      const el = overlayRef.current;
-      if (el) {
-        activeTouchMoveListener.current = (ev) => {
-          if (isValidSwipe.current && touchStartY.current !== null) {
-            const currentY = ev.touches[0].clientY;
-            if (currentY > touchStartY.current && ev.cancelable) {
-              ev.preventDefault();
-            }
-          }
-        };
-        el.addEventListener('touchmove', activeTouchMoveListener.current, { passive: false });
-      }
       
       // Encontrar el contenedor del modal (la tarjeta) para animarla
       const overlay = e.currentTarget;
@@ -97,10 +98,10 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
           cardElementRef.current.style.transform = `translateY(0px)`;
         }
       } else if (rawDeltaY > 10) {
-        // Solo empezamos a mover visualmente el modal si hay un drag claro hacia abajo (evita tirones por temblor del dedo)
-        const deltaY = rawDeltaY - 10;
+        const deltaY = rawDeltaY - 10; // Suavizar el inicio
+        
         if (cardElementRef.current) {
-           cardElementRef.current.style.transform = `translateY(${deltaY}px)`;
+          cardElementRef.current.style.transform = `translateY(${deltaY}px)`;
         }
       }
     }
@@ -111,11 +112,6 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
   };
 
   const handleTouchEnd = (e) => {
-    if (activeTouchMoveListener.current && overlayRef.current) {
-      overlayRef.current.removeEventListener('touchmove', activeTouchMoveListener.current);
-      activeTouchMoveListener.current = null;
-    }
-
     if (isValidSwipe.current && touchStartY.current !== null && touchCurrentY.current !== null) {
       const deltaY = touchCurrentY.current - touchStartY.current;
       const deltaTime = Date.now() - touchStartTime.current;
