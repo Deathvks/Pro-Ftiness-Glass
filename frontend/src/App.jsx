@@ -243,7 +243,9 @@ export default function App() {
 
       // EL ORDEN IMPORTA: El 2FA espera a que las cookies y el WelcomeModal hayan terminado
       if (!hasSeenPromo && !isAlreadyEnabled && cookieConsent !== null && !showWelcomeModal) {
-        const timer = setTimeout(() => setShow2FAPromo(true), 2000);
+        // Reducido a 500ms para que se monte ANTES de que los tutoriales (TourGuide, HubTourGuide) 
+        // empiecen a comprobar si hay modales abiertos a los 1500ms.
+        const timer = setTimeout(() => setShow2FAPromo(true), 500);
         return () => clearTimeout(timer);
       }
     }
