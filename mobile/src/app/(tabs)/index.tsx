@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Flame, Play, Target, ChevronRight, Clock, Droplet, Beef, Trophy, Plus, Check, Zap, Footprints, Activity as ActivityIcon, Info, Dumbbell, LayoutGrid } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useRouter } from 'expo-router';
@@ -43,6 +44,7 @@ export default function Dashboard() {
   const nutritionLog = useAppStore(state => state.nutritionLog) || [];
   
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const levelData = useMemo(() => {
       const level = gamification?.level || 1;
@@ -153,7 +155,7 @@ export default function Dashboard() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         
         <View style={styles.header}>
@@ -340,7 +342,7 @@ export default function Dashboard() {
         </TouchableOpacity>
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
