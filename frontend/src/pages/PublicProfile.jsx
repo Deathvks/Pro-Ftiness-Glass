@@ -36,6 +36,7 @@ import UserAvatar from '../components/UserAvatar';
 import StoryViewer from '../components/StoryViewer';
 import SEOHead from '../components/SEOHead';
 import ExerciseMedia from '../components/ExerciseMedia';
+import ModalPortal from '../components/ModalPortal';
 
 // --- CONFIGURACIÓN DE PUERTO ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -384,7 +385,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
             {/* --- MODAL DETALLES RUTINA --- */}
             {viewingRoutine && (
-                <div 
+                <ModalPortal><div 
                     className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]"
                     onClick={() => setViewingRoutine(null)}
                 >
@@ -485,6 +486,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         </div>
                     </div>
                 </div>
+                </ModalPortal>
             )}
 
             {/* --- SEO & STRUCTURED DATA --- */}
