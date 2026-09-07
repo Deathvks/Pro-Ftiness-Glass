@@ -20,15 +20,12 @@ const XPGuideModal = ({ onClose }) => {
   const [startX, setStartX] = useState(0);
   const [scrollLeftPos, setScrollLeftPos] = useState(0);
 
-  const [activeTab, setActiveTab] = useState('guide'); // 'guide' or 'history'
   const [xpHistory, setXpHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
-    if (activeTab === 'history') {
-      fetchHistory();
-    }
-  }, [activeTab]);
+    fetchHistory();
+  }, []);
 
   const fetchHistory = async () => {
     try {
@@ -85,27 +82,10 @@ const XPGuideModal = ({ onClose }) => {
                             <X size={20} strokeWidth={2.5} />
                         </button>
                     </div>
-
-                    <div className="flex gap-4">
-                        <button
-              className={`pb-3 font-bold text-sm tracking-wide transition-colors border-b-2 ${activeTab === 'guide' ? 'border-accent text-accent' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
-              onClick={() => setActiveTab('guide')}>
-              
-                            Guía
-                        </button>
-                        <button
-              className={`pb-3 font-bold text-sm tracking-wide transition-colors border-b-2 flex items-center gap-1.5 ${activeTab === 'history' ? 'border-accent text-accent' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
-              onClick={() => setActiveTab('history')}>
-              
-                            <History size={16} strokeWidth={2.5} /> Historial
-                        </button>
-                    </div>
                 </div>
 
                 <div className="p-6 overflow-y-auto overflow-x-hidden no-scrollbar pb-8 w-full flex-1 min-h-0">
-                    
-                    {activeTab === 'guide' &&
-          <div className="animate-[fade-in_0.3s_ease-out]">
+                    <div className="animate-[fade-in_0.3s_ease-out]">
                             <div className="bg-accent/10 rounded-[24px] p-5 flex items-start gap-4 mb-8 ring-1 ring-accent/30 shadow-sm w-full">
                                 <div className="p-2 bg-accent rounded-[12px] text-white shrink-0 mt-0.5 shadow-md">
                                     <Info size={18} strokeWidth={2.5} />
@@ -363,13 +343,18 @@ const XPGuideModal = ({ onClose }) => {
                                     </div>
                                 </div>
                             </section>
-                        </div>
-          }
-
-                    {activeTab === 'history' &&
-          <div className="animate-[fade-in_0.3s_ease-out]">
-                            {loadingHistory ?
-            <div className="flex flex-col items-center justify-center py-10 opacity-70">
+                            
+                            {/* --- SECCIÓN HISTORIAL --- */}
+                            <section className="mt-8 pt-8 border-t border-black/5 dark:border-white/10">
+                                <h3 className="text-xl font-extrabold flex items-center gap-3 text-text-primary tracking-tight mb-6">
+                                    <div className="p-2.5 bg-accent/10 rounded-[14px] ring-1 ring-accent/30 shrink-0 shadow-sm">
+                                        <History className="text-accent" size={20} strokeWidth={2.5} />
+                                    </div>
+                                    Historial
+                                </h3>
+                                
+                                {loadingHistory ?
+                <div className="flex flex-col items-center justify-center py-10 opacity-70">
                                     <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3"></div>
                                     <span className="text-sm font-medium text-text-secondary">Cargando historial...</span>
                                 </div> :
@@ -416,8 +401,8 @@ const XPGuideModal = ({ onClose }) => {
               )}
                                 </div>
             }
-                        </div>
-          }
+                            </section>
+                    </div>
                 </div>
             </div>
         </div></ModalPortal>;
