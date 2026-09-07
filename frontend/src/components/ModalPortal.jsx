@@ -16,22 +16,7 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
     return () => setMounted(false);
   }, []);
 
-  useEffect(() => {
-    const el = overlayRef.current;
-    if (!el) return;
-    
-    const onNativeTouchMove = (e) => {
-      if (isValidSwipe.current && touchStartY.current !== null) {
-        const currentY = e.touches[0].clientY;
-        if (currentY > touchStartY.current && e.cancelable) {
-          e.preventDefault(); // Stop native scroll / pull-to-refresh
-        }
-      }
-    };
-    
-    el.addEventListener('touchmove', onNativeTouchMove, { passive: false });
-    return () => el.removeEventListener('touchmove', onNativeTouchMove);
-  }, [mounted]);
+  const activeTouchMoveListener = useRef(null);
 
   if (!mounted) return null;
 
@@ -69,6 +54,20 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
       touchStartY.current = touch.clientY;
       touchCurrentY.current = touch.clientY;
       touchStartTime.current = Date.now();
+
+      // Añadimos el listener dinámicamente solo si el swipe es válido para no bloquear el hilo de compositor
+      const el = overlayRef.current;
+      if (el) {
+        activeTouchMoveListener.current = (ev) => {
+          if (isValidSwipe.current && touchStartY.current !== null) {
+            const currentY = ev.touches[0].clientY;
+            if (currentY > touchStartY.current && ev.cancelable) {
+              ev.preventDefault();
+            }
+          }
+        };
+        el.addEventListener('touchmove', activeTouchMoveListener.current, { passive: false });
+      }
       
       // Encontrar el contenedor del modal (la tarjeta) para animarla
       const overlay = e.currentTarget;
@@ -112,6 +111,11 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
   };
 
   const handleTouchEnd = (e) => {
+    if (activeTouchMoveListener.current && overlayRef.current) {
+      overlayRef.current.removeEventListener('touchmove', activeTouchMoveListener.current);
+      activeTouchMoveListener.current = null;
+    }
+
     if (isValidSwipe.current && touchStartY.current !== null && touchCurrentY.current !== null) {
       const deltaY = touchCurrentY.current - touchStartY.current;
       const deltaTime = Date.now() - touchStartTime.current;
