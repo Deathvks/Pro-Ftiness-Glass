@@ -66,8 +66,8 @@ const LoginMethodBadge = ({ user }) => {
     if (user.spotify_id) return { type: 'Spotify', bg: 'bg-[#1DB954]', icon: 'https://upload.wikimedia.org/wikipedia/commons/2/26/Spotify_logo_with_text.svg' };
     if (user.x_id) return { type: 'X', bg: 'bg-white', icon: 'https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg' };
     if (user.facebook_id) return { type: 'Facebook', bg: 'bg-white', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/facebook/facebook-original.svg' };
-    // Por defecto: App Nativa
-    return { type: 'App', bg: 'bg-accent', isApp: true };
+    // Por defecto: Email
+    return { type: 'Email', bg: 'bg-accent', isApp: true };
   };
 
   const method = getMethod();
@@ -75,10 +75,39 @@ const LoginMethodBadge = ({ user }) => {
   return (
     <div title={`Registrado vía ${method.type}`} className={`w-5 h-5 flex items-center justify-center rounded-full overflow-hidden shrink-0 ${method.bg} ring-2 ring-bg-primary relative group`}>
       {method.isApp ? (
-        <Smartphone size={10} className="text-white" />
+        <span className="text-white text-[10px] font-bold">@</span>
       ) : (
         <img src={method.icon} alt={method.type} className="w-3 h-3 object-contain" />
       )}
+    </div>
+  );
+};
+
+// Componente para indicar desde qué plataforma están conectados (App vs Web)
+const PlatformBadge = ({ user }) => {
+  const deviceType = user.latest_device || 'web'; // 'app', 'pwa', 'web', 'mobile', 'desktop'
+
+  let icon = <Globe size={10} className="text-white" />;
+  let bg = 'bg-blue-500';
+  let title = 'Web (Desktop)';
+
+  if (deviceType === 'app') {
+    icon = <Smartphone size={10} className="text-white" />;
+    bg = 'bg-green-500';
+    title = 'App Android Nativa';
+  } else if (deviceType === 'pwa') {
+    icon = <Smartphone size={10} className="text-white" />;
+    bg = 'bg-purple-500';
+    title = 'Web App (PWA)';
+  } else if (deviceType === 'mobile' || deviceType === 'tablet') {
+    icon = <Globe size={10} className="text-white" />;
+    bg = 'bg-orange-500';
+    title = 'Web (Móvil)';
+  }
+
+  return (
+    <div title={`Última conexión: ${title}`} className={`w-5 h-5 flex items-center justify-center rounded-full overflow-hidden shrink-0 ${bg} ring-2 ring-bg-primary relative group`}>
+      {icon}
     </div>
   );
 };
@@ -564,8 +593,9 @@ const AdminPanel = ({ onCancel }) => {
                                     {(user.username || user.name || '?').charAt(0)}
                                   </div>
                                 )}
-                                <div className="absolute -bottom-1 -right-1">
+                                <div className="absolute -bottom-1 -right-2 flex items-center gap-0.5">
                                   <LoginMethodBadge user={user} />
+                                  <PlatformBadge user={user} />
                                 </div>
                               </div>
                               <div className="flex flex-col">
@@ -665,8 +695,9 @@ const AdminPanel = ({ onCancel }) => {
                                 {(user.username || user.name || '?').charAt(0)}
                               </div>
                             )}
-                            <div className="absolute -bottom-1 -right-1">
+                            <div className="absolute -bottom-1 -right-2 flex items-center gap-0.5">
                               <LoginMethodBadge user={user} />
+                              <PlatformBadge user={user} />
                             </div>
                           </div>
                           <div className="flex flex-col overflow-hidden">

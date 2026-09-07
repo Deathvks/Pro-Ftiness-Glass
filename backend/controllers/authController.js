@@ -40,7 +40,11 @@ const createUserSession = async (userId, token, req) => {
     const parser = new UAParser(userAgent);
     const result = parser.getResult();
 
-    const deviceType = result.device.type || 'desktop';
+    const reqPlatform = req.headers['x-app-platform'];
+    let deviceType = result.device.type || 'desktop';
+    if (reqPlatform === 'native') deviceType = 'app';
+    else if (reqPlatform === 'pwa') deviceType = 'pwa';
+    
     const browserName = result.browser.name || 'Navegador desconocido';
     const osName = result.os.name || 'SO desconocido';
     const deviceName = `${browserName} en ${osName}`;

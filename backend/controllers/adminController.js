@@ -38,6 +38,17 @@ export const getAllUsers = async (req, res, next) => {
             WHERE referral.referred_by = User.id
           )`),
           'referralCount'
+        ],
+        // NUEVO: Subconsulta para obtener el último dispositivo / plataforma usada
+        [
+          db.sequelize.literal(`(
+            SELECT device_type
+            FROM user_sessions
+            WHERE user_sessions.user_id = User.id
+            ORDER BY last_active DESC
+            LIMIT 1
+          )`),
+          'latest_device'
         ]
       ],
       // Ordenamos usando el nombre real de la columna en la base de datos
