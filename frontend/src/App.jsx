@@ -589,25 +589,25 @@ export default function App() {
 
         <Route path="/login" element={
             !isAuthenticated ? (
-                <AuthScreens authView="login" setAuthView={(v) => navigate(`/${v}`)} onBack={() => navigate('/')} />
+                <AuthScreens authView="login" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
             ) : (
-                <Navigate to="/dashboard" replace />
+                <Navigate to={location.state?.from || "/dashboard"} replace />
             )
         } />
 
         <Route path="/register" element={
             !isAuthenticated ? (
-                <AuthScreens authView="register" setAuthView={(v) => navigate(`/${v}`)} onBack={() => navigate('/')} />
+                <AuthScreens authView="register" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
             ) : (
-                <Navigate to="/dashboard" replace />
+                <Navigate to={location.state?.from || "/dashboard"} replace />
             )
         } />
 
         <Route path="/forgotPassword" element={
             !isAuthenticated ? (
-                <AuthScreens authView="forgotPassword" setAuthView={(v) => navigate(`/${v}`)} onBack={() => navigate('/')} />
+                <AuthScreens authView="forgotPassword" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
             ) : (
-                <Navigate to="/dashboard" replace />
+                <Navigate to={location.state?.from || "/dashboard"} replace />
             )
         } />
          <Route path="/forgot-password" element={<Navigate to="/forgotPassword" replace />} />
