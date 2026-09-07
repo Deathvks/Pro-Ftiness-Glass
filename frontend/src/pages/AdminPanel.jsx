@@ -148,6 +148,7 @@ const AdminPanel = ({ onCancel }) => {
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'default');
 
   const [reportToDelete, setReportToDelete] = useState(null);
+  const [showResetMilestonesConfirm, setShowResetMilestonesConfirm] = useState(false);
   const [selectedImageForLightbox, setSelectedImageForLightbox] = useState(null);
 
   const [users, setUsers] = useState([]);
@@ -751,16 +752,7 @@ const AdminPanel = ({ onCancel }) => {
                       </p>
                     </div>
                     <button
-                      onClick={async () => {
-                        if (window.confirm('¿Estás seguro de resetear las animaciones para TODOS los usuarios?')) {
-                          try {
-                            await apiClient('/admin/reset-milestones', { method: 'POST' });
-                            addToast('Animaciones reseteadas correctamente', 'success');
-                          } catch (err) {
-                            addToast('Error al resetear', 'error');
-                          }
-                        }
-                      }}
+                      onClick={() => setShowResetMilestonesConfirm(true)}
                       className="px-6 py-3 bg-red-500 text-white rounded-2xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-red-500/20 shrink-0 w-full md:w-auto"
                     >
                       Resetear Animaciones
@@ -932,6 +924,28 @@ const AdminPanel = ({ onCancel }) => {
           isLoading={isUpdating}
           confirmText="Resolver"
           confirmColor="bg-green-600 hover:bg-green-700"
+        />
+      )}
+
+      {showResetMilestonesConfirm && (
+        <ConfirmationModal
+          message="¿Estás seguro de resetear las animaciones para TODOS los usuarios? Esta acción borrará el registro y hará que la animación vuelva a salir la próxima vez que entren."
+          onConfirm={async () => {
+            setIsUpdating(true);
+            try {
+              await apiClient('/admin/reset-milestones', { method: 'POST' });
+              addToast('Animaciones reseteadas correctamente', 'success');
+              setShowResetMilestonesConfirm(false);
+            } catch (err) {
+              addToast('Error al resetear', 'error');
+            } finally {
+              setIsUpdating(false);
+            }
+          }}
+          onCancel={() => setShowResetMilestonesConfirm(false)}
+          isLoading={isUpdating}
+          confirmText="Resetear Todas"
+          confirmColor="bg-red-600 hover:bg-red-700"
         />
       )}
 
