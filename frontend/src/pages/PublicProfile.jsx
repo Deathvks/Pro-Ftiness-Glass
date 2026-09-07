@@ -392,6 +392,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         className="relative w-full max-w-lg rounded-t-[32px] rounded-b-none sm:rounded-[32px] bg-bg-primary shadow-2xl flex flex-col max-h-[85vh] md:max-h-[85vh] animate-[slide-up_0.2s_ease-out] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0 border border-black/5 dark:border-white/10"
                         onClick={e => e.stopPropagation()}
                     >
+                        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 mb-0 sm:hidden shrink-0" />
                         <div className="p-4 sm:p-6 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-bg-primary sticky top-0 z-10">
                             <div className="flex flex-col">
                                 <h3 className="font-extrabold text-xl text-text-primary line-clamp-1 flex items-center gap-2">
