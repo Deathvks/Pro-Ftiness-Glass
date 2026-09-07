@@ -43,9 +43,17 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
     if (canSwipe) {
       let el = e.target;
       while (el && el !== document.body && el !== e.currentTarget) {
-        const style = window.getComputedStyle(el);
-        const overflowY = style.overflowY;
-        if (overflowY === 'auto' || overflowY === 'scroll') {
+        // Optimización: evitar getComputedStyle (causa lag masivo en contenedores con animaciones)
+        // Usamos comprobación de clases de Tailwind o propiedades rápidas
+        const isScrollableClass = el.classList.contains('overflow-y-auto') || 
+                                  el.classList.contains('overflow-auto') ||
+                                  el.classList.contains('scrollable') ||
+                                  el.classList.contains('no-scrollbar');
+        
+        // También podemos revisar si explícitamente tiene más scrollHeight (menos costoso que getComputedStyle pero aún lee DOM)
+        const hasScroll = isScrollableClass || (el.scrollHeight > el.clientHeight && (el.style.overflowY === 'auto' || el.style.overflowY === 'scroll'));
+        
+        if (hasScroll) {
           if (el.scrollTop > 2) {
             canSwipe = false;
             break;
@@ -82,10 +90,20 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
   const handleTouchMove = (e) => {
     if (isValidSwipe.current && touchStartY.current !== null) {
       touchCurrentY.current = e.touches[0].clientY;
-      const deltaY = Math.max(0, touchCurrentY.current - touchStartY.current); // Solo permitir drag hacia abajo
+      const rawDeltaY = touchCurrentY.current - touchStartY.current;
       
-      if (cardElementRef.current) {
-        cardElementRef.current.style.transform = `translateY(${deltaY}px)`;
+      // Si el usuario desliza hacia arriba (hace scroll del contenido), invalidamos el swipe-to-close por el resto de este toque
+      if (rawDeltaY < -10) {
+        isValidSwipe.current = false;
+        if (cardElementRef.current) {
+          cardElementRef.current.style.transform = `translateY(0px)`;
+        }
+      } else {
+        const deltaY = Math.max(0, rawDeltaY); // Solo permitir drag hacia abajo
+        
+        if (cardElementRef.current) {
+          cardElementRef.current.style.transform = `translateY(${deltaY}px)`;
+        }
       }
     }
     
