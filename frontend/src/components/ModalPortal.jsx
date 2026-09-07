@@ -43,17 +43,16 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
     if (canSwipe) {
       let el = e.target;
       while (el && el !== document.body && el !== e.currentTarget) {
-        // Optimización: evitar getComputedStyle (causa lag masivo en contenedores con animaciones)
-        // Usamos comprobación de clases de Tailwind o propiedades rápidas
-        const isScrollableClass = el.classList.contains('overflow-y-auto') || 
+        // Usamos solo comprobación de clases de Tailwind para evitar lecturas al DOM (Layout Thrashing)
+        const isScrollableClass = el.classList && (
+                                  el.classList.contains('overflow-y-auto') || 
                                   el.classList.contains('overflow-auto') ||
                                   el.classList.contains('scrollable') ||
-                                  el.classList.contains('no-scrollbar');
+                                  el.classList.contains('no-scrollbar')
+                                  );
         
-        // También podemos revisar si explícitamente tiene más scrollHeight (menos costoso que getComputedStyle pero aún lee DOM)
-        const hasScroll = isScrollableClass || (el.scrollHeight > el.clientHeight && (el.style.overflowY === 'auto' || el.style.overflowY === 'scroll'));
-        
-        if (hasScroll) {
+        if (isScrollableClass) {
+          // Solo leemos scrollTop si sabemos que es el contenedor correcto
           if (el.scrollTop > 2) {
             canSwipe = false;
             break;
