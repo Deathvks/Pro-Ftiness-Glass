@@ -6,13 +6,16 @@ import { useRouter } from 'expo-router';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const login = useAppStore(state => state.login);
+  const handleLogin = useAppStore(state => state.handleLogin);
   const router = useRouter();
 
-  const handleLogin = async () => {
-    const success = await login({ email, password });
-    if (success) {
-      router.replace('/');
+  const handleLoginSubmit = async () => {
+    try {
+      await handleLogin({ email, password });
+      // Redireccion automatica de _layout.tsx lo pillara
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión o datos incorrectos');
     }
   };
 
@@ -37,7 +40,7 @@ export default function Login() {
       />
       <TouchableOpacity 
         style={{ backgroundColor: '#3b82f6', padding: 15, borderRadius: 10, alignItems: 'center' }}
-        onPress={handleLogin}
+        onPress={handleLoginSubmit}
       >
         <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Entrar</Text>
       </TouchableOpacity>
