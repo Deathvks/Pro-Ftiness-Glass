@@ -183,16 +183,16 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
             <button
                 onClick={() => setShowAIModal(true)}
                 title={isCollapsed ? `Créditos IA: ${aiRemaining}/${aiLimit}` : undefined}
-                className={`flex items-center w-full rounded-2xl font-bold transition-all duration-300 overflow-hidden mb-3 shadow-sm ${
+                className={`flex items-center w-full rounded-2xl font-bold transition-all duration-300 overflow-hidden mb-3 ${
                     isCollapsed ? 'justify-center p-3.5' : 'px-4 py-3.5 gap-4'
                 } ${
                     isAILimitReached
-                        ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70'
-                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-accent/25 hover:shadow-accent/40 hover:scale-[1.02]'
+                        ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70 shadow-sm'
+                        : 'bg-accent/10 text-accent border border-accent/40 shadow-[0_0_15px_var(--color-accent-transparent)] hover:bg-accent/20 hover:scale-[1.02] hover:border-accent/60'
                 }`}
             >
                 <div className="relative flex items-center justify-center shrink-0">
-                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-white drop-shadow-md animate-pulse'}`} />
+                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent drop-shadow-md animate-pulse'}`} />
                 </div>
                 {!isCollapsed && (
                     <div className="flex flex-col items-start min-w-0">
