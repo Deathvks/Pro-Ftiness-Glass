@@ -46,4 +46,7 @@ router.post('/push-send', adminController.sendCustomPush);
 router.get('/cron-jobs', adminController.getCronJobs);
 router.post('/cron-jobs/test/:id', adminController.testCronJob);
 
+// Reset global
+router.post('/reset-milestones', adminController.resetMilestoneBadges);
+
 export default router;

@@ -736,6 +736,37 @@ const AdminPanel = ({ onCancel }) => {
                     </div>
                   ))}
                 </div>
+
+                {/* Acciones Globales */}
+                <div className="mt-12 pt-8 border-t border-glass-border">
+                  <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
+                    <Sparkles size={20} className="text-accent" />
+                    Acciones Globales
+                  </h3>
+                  <div className="bg-red-500/5 ring-1 ring-red-500/20 rounded-3xl p-5 md:p-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-red-500 mb-1">Resetear Animaciones de Nivel</h4>
+                      <p className="text-sm text-text-secondary">
+                        Borra el historial de animaciones vistas de todos los usuarios. La próxima vez que abran la app, verán la animación correspondiente a su nivel actual.
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm('¿Estás seguro de resetear las animaciones para TODOS los usuarios?')) {
+                          try {
+                            await apiClient('/admin/reset-milestones', { method: 'POST' });
+                            addToast('Animaciones reseteadas correctamente', 'success');
+                          } catch (err) {
+                            addToast('Error al resetear', 'error');
+                          }
+                        }
+                      }}
+                      className="px-6 py-3 bg-red-500 text-white rounded-2xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-red-500/20 shrink-0 w-full md:w-auto"
+                    >
+                      Resetear Animaciones
+                    </button>
+                  </div>
+                </div>
               </>
             )}
           </>

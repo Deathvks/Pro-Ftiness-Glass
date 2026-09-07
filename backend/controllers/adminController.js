@@ -429,3 +429,12 @@ export const testCronJob = async (req, res, next) => {
     next(error);
   }
 };
+
+export const resetMilestoneBadges = async (req, res, next) => {
+    try {
+        await db.sequelize.query("UPDATE Users SET unlocked_badges = '[]' WHERE unlocked_badges IS NOT NULL");
+        res.json({ success: true, message: 'Animaciones de nivel reseteadas para todos los usuarios.' });
+    } catch (error) {
+        next(error);
+    }
+};
