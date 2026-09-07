@@ -188,18 +188,18 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 } ${
                     isAILimitReached
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70 shadow-sm'
-                        : 'bg-accent/10 text-accent border border-accent/40 shadow-[0_0_15px_var(--color-accent-transparent)] hover:bg-accent/20 hover:scale-[1.02] hover:border-accent/60'
+                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-[1.02] ring-1 ring-white/20'
                 }`}
             >
                 <div className="relative flex items-center justify-center shrink-0">
-                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent drop-shadow-md animate-pulse'}`} />
+                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-white drop-shadow-md animate-pulse'}`} />
                 </div>
                 {!isCollapsed && (
                     <div className="flex flex-col items-start min-w-0">
-                        <span className="text-sm font-black tracking-wide truncate">
+                        <span className={`text-sm font-black tracking-wide truncate ${isAILimitReached ? '' : 'drop-shadow-md'}`}>
                             ENTRENADOR IA
                         </span>
-                        <span className="text-[10px] font-semibold opacity-90 truncate">
+                        <span className={`text-[10px] font-semibold opacity-90 truncate ${isAILimitReached ? '' : 'drop-shadow-md'}`}>
                             {aiRemaining} de {aiLimit} usos libres
                         </span>
                     </div>
