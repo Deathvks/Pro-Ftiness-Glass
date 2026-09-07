@@ -48,16 +48,20 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     } else {
       rawImages = [];
     }
-  }
-  // Si no hay un array válido, construimos uno temporal a partir de las imágenes inicio/fin si existen
-  if (!Array.isArray(rawImages) || rawImages.length === 0) {
+  } else if (Array.isArray(rawImages)) {
+    // CLONE the array so we don't mutate the global Redux store when pushing start/end images
+    rawImages = [...rawImages];
+  } else {
     rawImages = [];
-    if (details?.image_url_start || details?.exercise?.image_url_start || details?.exercise_details?.image_url_start) {
-      rawImages.push(details.image_url_start || details?.exercise?.image_url_start || details?.exercise_details?.image_url_start);
-    }
-    if (details?.image_url_end || details?.exercise?.image_url_end || details?.exercise_details?.image_url_end) {
-      rawImages.push(details.image_url_end || details?.exercise?.image_url_end || details?.exercise_details?.image_url_end);
-    }
+  }
+
+  // Si no hay imágenes, o si las hay, SIEMPRE aseguramos que start y end estén si existen.
+  // Pero para evitar duplicados, lo validamos después con el Set.
+  if (details?.image_url_start || details?.exercise?.image_url_start || details?.exercise_details?.image_url_start) {
+    rawImages.unshift(details.image_url_start || details?.exercise?.image_url_start || details?.exercise_details?.image_url_start);
+  }
+  if (details?.image_url_end || details?.exercise?.image_url_end || details?.exercise_details?.image_url_end) {
+    rawImages.push(details.image_url_end || details?.exercise?.image_url_end || details?.exercise_details?.image_url_end);
   }
 
   // SOLUCIÓN: Reseteamos el estado SOLO si cambia de verdad la URL de la imagen o el vídeo.

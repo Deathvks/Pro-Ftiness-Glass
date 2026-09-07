@@ -614,7 +614,7 @@ export const getPublicRoutineById = async (req, res, next) => {
           include: [
             {
               model: sequelize.models.ExerciseList,
-              attributes: ['image_url_start', 'video_url']
+              attributes: ['image_url_start', 'image_url_end', 'images', 'video_url']
             }
           ]
         },
@@ -647,13 +647,15 @@ export const getPublicRoutineById = async (req, res, next) => {
     
     // Si el ejercicio no tiene imagen propia, le asignamos la del ExerciseList global
     routineData.exercises = routineData.RoutineExercises.map(ex => {
-        if (!ex.image_url_start && ex.ExerciseList) {
-            ex.image_url_start = ex.ExerciseList.image_url_start;
-            ex.video_url = ex.ExerciseList.video_url;
-        }
-        // <-- AÑADIDO: Ocultar recordatorios privados de la vista social
-        delete ex.reminder; 
-        return ex;
+      if (ex.ExerciseList) {
+          if (!ex.image_url_start) ex.image_url_start = ex.ExerciseList.image_url_start;
+          if (!ex.video_url) ex.video_url = ex.ExerciseList.video_url; 
+          ex.image_url_end = ex.ExerciseList.image_url_end; 
+          ex.images = ex.ExerciseList.images;
+      }
+      // <-- AÑADIDO: Ocultar recordatorios privados de la vista social
+      delete ex.reminder; 
+      return ex;
     });
 
     res.json(routineData);
