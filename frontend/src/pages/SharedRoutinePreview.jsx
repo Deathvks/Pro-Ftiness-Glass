@@ -269,16 +269,16 @@ const SharedRoutinePreview = () => {
                     <Dumbbell size={20} className="text-accent" /> Ejercicios
                 </h2>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {exerciseGroups.map((group, idx) => (
-                        <div key={idx} className="relative pl-3 sm:pl-4">
+                        <div key={idx} className="relative pl-3 sm:pl-4 h-full">
                             {group.length > 1 && (
                                 <div className="absolute left-0 top-4 bottom-4 w-1 bg-accent/40 rounded-full" />
                             )}
                             
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-3 h-full">
                                 {group.map((ex, exIdx) => (
-                                    <GlassCard key={ex.id || exIdx} className="overflow-hidden flex flex-col border-transparent dark:border dark:border-white/5 hover:bg-bg-secondary transition-colors p-0">
+                                    <GlassCard key={ex.id || exIdx} className="overflow-hidden flex flex-col h-full border-transparent dark:border dark:border-white/5 hover:bg-bg-secondary transition-colors p-0">
                                         <div className="w-full bg-bg-primary relative flex items-center justify-center border-b border-glass-border">
                                             {group.length > 1 && (
                                                 <div className="absolute top-3 left-3 z-10 bg-black/60 p-2 rounded-full text-accent shadow-sm backdrop-blur-md border border-white/10" title="Parte de superserie">
@@ -293,7 +293,7 @@ const SharedRoutinePreview = () => {
                                             />
                                         </div>
 
-                                        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 grow flex-1">
                                             <div className="min-w-0 w-full flex-1">
                                                 <h3 className="font-bold text-text-primary text-base sm:text-lg break-words whitespace-normal line-clamp-2">
                                                     {t(ex.name)}
