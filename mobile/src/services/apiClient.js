@@ -1,8 +1,12 @@
 /* mobile/src/services/apiClient.js */
 import useAppStore from '../store/useAppStore';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3001/api';
+const debuggerHost = Constants.expoConfig?.hostUri;
+const localhost = debuggerHost?.split(':')[0] || '192.168.1.100';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${localhost}:3001/api`;
 
 const apiClient = async (endpoint, options = {}) => {
     const token = useAppStore.getState().token;

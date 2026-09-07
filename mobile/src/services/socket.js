@@ -3,9 +3,13 @@ import { io } from 'socket.io-client';
 
 
 import useAppStore from '../store/useAppStore';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-// Obtenemos la URL base.
-const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3001/api');
+const debuggerHost = Constants.expoConfig?.hostUri;
+const localhost = debuggerHost?.split(':')[0] || '192.168.1.100';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${localhost}:3001/api`;
 const SOCKET_URL = API_URL ? API_URL.replace('/api', '') : 'http://localhost:3001';
 
 let socket;
