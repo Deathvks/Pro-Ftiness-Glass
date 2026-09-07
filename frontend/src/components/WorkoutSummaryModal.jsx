@@ -322,6 +322,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                 <p className="text-text-secondary italic">No se registraron ejercicios de fuerza.</p>
                 }
                 {safeNotes &&
+                  <div>
                     <h4 className="text-lg font-semibold text-text-primary mb-2">Notas</h4>
                     <p className="bg-bg-secondary p-4 rounded-xl border border-glass-border text-text-secondary text-sm whitespace-pre-wrap">{safeNotes}</p>
                   </div>
