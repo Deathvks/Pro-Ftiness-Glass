@@ -71,8 +71,7 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
                 </p>
               }
 
-              {!previouslyDeclined &&
-              <p className="text-center text-sm">
+              {!previouslyDeclined && <p className="text-sm text-text-secondary leading-relaxed mt-2 p-3 bg-accent/5 rounded-xl border border-accent/10">
                     Al continuar, <strong>aceptas</strong> nuestra{' '}
                     <button
                   onClick={onShowPolicy}
@@ -86,7 +85,7 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
             </div>
 
             {!previouslyDeclined &&
-            <p className="text-xs text-text-muted bg-bg-secondary/50 p-3 rounded-lg border border-glass-border w-full">
+            <p className="text-xs text-text-secondary bg-bg-secondary/50 p-3 rounded-lg border border-glass-border w-full">
                 Podrás cambiar esta configuración siempre desde <strong>Ajustes</strong>.
                 </p>
             }

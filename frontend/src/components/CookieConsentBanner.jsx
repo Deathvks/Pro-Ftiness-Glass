@@ -20,7 +20,7 @@ const CookieConsentBanner = ({ onAccept, onDecline, onShowPolicy }) => {
               Utilizamos almacenamiento local para tus preferencias y garantizamos la seguridad de tus datos. 
               Si aceptas, también habilitas el inicio de sesión rápido con Google.
             </p>
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-secondary mt-2">
               Podrás cambiar esta configuración siempre desde <strong>Ajustes</strong>. Consulta nuestra{' '}
               <button 
                 onClick={onShowPolicy} 
