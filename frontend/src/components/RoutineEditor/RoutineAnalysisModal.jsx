@@ -247,20 +247,42 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
 
               {/* IA Real */}
               <div className="space-y-3 pt-2">
-                <div className="flex justify-between items-center ml-1">
-                  <h3 className={`text-sm font-semibold flex items-center gap-2 ${isOled || isDark ? 'text-white/90' : 'text-text-primary'}`}>
-                    <Sparkles className="w-4 h-4 text-accent" />
-                    Entrenador IA
-                  </h3>
-                  {remainingUses !== null &&
-                  <div className="text-right">
-                      <span className={`text-xs font-bold block ${remainingUses === 0 ? 'text-red-500' : 'text-text-secondary'}`}>
-                        Usos restantes: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
-                      </span>
-                      <span className="text-[10px] text-text-muted block">Se restablece a medianoche</span>
-                    </div>
-                  }
-                </div>
+                  <div className="flex flex-col gap-3 mb-2">
+                    {remainingUses !== null && (
+                      <div className={`p-3 sm:p-4 rounded-2xl border ${remainingUses === 0 ? 'bg-red-500/5 border-red-500/20' : 'bg-accent/5 border-accent/20'} flex items-center justify-between shadow-sm`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2.5 rounded-xl ${remainingUses === 0 ? 'bg-red-500/10 text-red-500' : 'bg-accent/10 text-accent shadow-inner'}`}>
+                            <Sparkles className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className={`text-sm font-black tracking-wide uppercase ${remainingUses === 0 ? 'text-red-500' : 'text-text-primary'}`}>
+                              Entrenador IA
+                            </h4>
+                            <span className="text-[10px] text-text-secondary font-semibold block mt-0.5">
+                              Recarga a medianoche
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right flex items-baseline gap-0.5 bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg ring-1 ring-black/5 dark:ring-white/10">
+                          <span className={`text-2xl font-black ${remainingUses === 0 ? 'text-red-500' : 'text-accent'}`}>
+                            {remainingUses}
+                          </span>
+                          {dailyLimit && (
+                            <span className={`text-sm font-bold opacity-60 ${remainingUses === 0 ? 'text-red-500' : 'text-text-secondary'}`}>
+                              /{dailyLimit}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {remainingUses === null && (
+                      <h3 className={`text-sm font-semibold flex items-center gap-2 ml-1 ${isOled || isDark ? 'text-white/90' : 'text-text-primary'}`}>
+                        <Sparkles className="w-4 h-4 text-accent" />
+                        Entrenador IA
+                      </h3>
+                    )}
+                  </div>
 
                 {!aiResponse && !isLoadingAi &&
                 <button

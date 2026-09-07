@@ -204,14 +204,33 @@ FORMATO SI ES VÁLIDO:
             </div>
           }
 
-          {remainingUses !== null && !error &&
-          <div className="flex justify-between items-center">
-              <span className="text-[10px] text-text-muted">Se restablece a medianoche</span>
-              <span className={`text-xs font-bold ${remainingUses === 0 ? 'text-red-500' : 'text-text-secondary'}`}>
-                Usos restantes: {remainingUses}{dailyLimit ? `/${dailyLimit}` : ''}
-              </span>
+          {remainingUses !== null && !error && (
+            <div className={`p-4 rounded-2xl border ${remainingUses === 0 ? 'bg-red-500/5 border-red-500/20' : 'bg-accent/5 border-accent/20'} flex items-center justify-between shadow-sm`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${remainingUses === 0 ? 'bg-red-500/10 text-red-500' : 'bg-accent/10 text-accent shadow-inner'}`}>
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className={`text-sm font-black tracking-wide uppercase ${remainingUses === 0 ? 'text-red-500' : 'text-text-primary'}`}>
+                    Créditos IA
+                  </h4>
+                  <span className="text-[10px] text-text-secondary font-semibold block mt-0.5">
+                    Recarga a medianoche
+                  </span>
+                </div>
+              </div>
+              <div className="text-right flex items-baseline gap-0.5 bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg ring-1 ring-black/5 dark:ring-white/10">
+                <span className={`text-2xl font-black ${remainingUses === 0 ? 'text-red-500' : 'text-accent'}`}>
+                  {remainingUses}
+                </span>
+                {dailyLimit && (
+                  <span className={`text-sm font-bold opacity-60 ${remainingUses === 0 ? 'text-red-500' : 'text-text-secondary'}`}>
+                    /{dailyLimit}
+                  </span>
+                )}
+              </div>
             </div>
-          }
+          )}
 
           <button
             onClick={handleGenerate}
