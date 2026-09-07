@@ -73,15 +73,10 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
       touchCurrentY.current = touch.clientY;
       touchStartTime.current = Date.now();
       
-      // Encontrar el contenedor del modal (la tarjeta) para animarla
       const overlay = e.currentTarget;
-      // Buscamos el elemento que tiene mt-auto (típico de bottom sheets) o usamos el último hijo
       cardElementRef.current = Array.from(overlay.children).find(el => el.classList.contains('mt-auto')) || overlay.lastElementChild;
-      
-      if (cardElementRef.current) {
-        // Desactivamos la transición para que siga al dedo instantáneamente
-        cardElementRef.current.style.transition = 'none';
-      }
+      // IMPORTANTE: NO mutar cardElementRef.current.style aquí. Mutar el DOM en touchstart 
+      // invalida la capa de composición en Chrome Android y destruye el gesto de scroll nativo.
     }
     
     if (child.props.onTouchStart) {
@@ -94,16 +89,16 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
       touchCurrentY.current = e.touches[0].clientY;
       const rawDeltaY = touchCurrentY.current - touchStartY.current;
       
-      // Si el usuario desliza hacia arriba (hace scroll del contenido), invalidamos el swipe-to-close por el resto de este toque
       if (rawDeltaY < -10) {
+        // Si el usuario hace scroll hacia arriba de forma clara, cancelamos el gesto de cierre
         isValidSwipe.current = false;
-        if (cardElementRef.current) {
-          cardElementRef.current.style.transform = `translateY(0px)`;
-        }
+        // IMPORTANTE: No tocar style.transform aquí para no ensuciar el DOM y romper el scroll
       } else if (rawDeltaY > 10) {
-        const deltaY = rawDeltaY - 10; // Suavizar el inicio
+        // Solo empezamos a mutar el DOM si hay un drag claro hacia abajo
+        const deltaY = rawDeltaY - 10;
         
         if (cardElementRef.current) {
+          cardElementRef.current.style.transition = 'none'; // Ahora sí desactivamos la animación
           cardElementRef.current.style.transform = `translateY(${deltaY}px)`;
         }
       }
