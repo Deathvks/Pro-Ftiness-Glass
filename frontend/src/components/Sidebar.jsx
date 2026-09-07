@@ -180,14 +180,31 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
         </div>
 
         <div className="mt-auto flex flex-col gap-1 shrink-0 pt-6">
-            <SidebarItem
-                label={`IA: ${aiRemaining}/${aiLimit}`}
-                icon={<SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent'}`} />}
-                isActive={false}
+            <button
                 onClick={() => setShowAIModal(true)}
-                className={`mb-2 border ${isAILimitReached ? 'border-glass-border opacity-70' : 'border-glass-border bg-accent/5 text-accent hover:bg-accent/10'}`}
-                isCollapsed={isCollapsed}
-            />
+                title={isCollapsed ? `Créditos IA: ${aiRemaining}/${aiLimit}` : undefined}
+                className={`flex items-center w-full rounded-2xl font-bold transition-all duration-300 overflow-hidden mb-3 shadow-sm ${
+                    isCollapsed ? 'justify-center p-3.5' : 'px-4 py-3.5 gap-4'
+                } ${
+                    isAILimitReached
+                        ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70'
+                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-accent/25 hover:shadow-accent/40 hover:scale-[1.02]'
+                }`}
+            >
+                <div className="relative flex items-center justify-center shrink-0">
+                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-white drop-shadow-md animate-pulse'}`} />
+                </div>
+                {!isCollapsed && (
+                    <div className="flex flex-col items-start min-w-0">
+                        <span className="text-sm font-black tracking-wide truncate">
+                            ENTRENADOR IA
+                        </span>
+                        <span className="text-[10px] font-semibold opacity-90 truncate">
+                            {aiRemaining} de {aiLimit} usos libres
+                        </span>
+                    </div>
+                )}
+            </button>
 
 
 

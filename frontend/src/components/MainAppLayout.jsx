@@ -818,11 +818,15 @@ export default function MainAppLayout({
               <div className="flex items-center justify-center mr-1 sm:mr-2">
                 <button
                   onClick={() => setShowAIModal(true)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors outline-none focus:outline-none ${isAILimitReached ? 'bg-bg-secondary text-text-muted border-glass-border opacity-70' : 'bg-accent/10 text-accent border-black/5 dark:border-white/10'}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all outline-none focus:outline-none shadow-sm ${
+                    isAILimitReached 
+                      ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70' 
+                      : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-accent/25 hover:shadow-accent/40 hover:scale-105 border border-transparent'
+                  }`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   title="Créditos IA"
                 >
-                  <SparklesIcon className="w-3.5 h-3.5" />
+                  <SparklesIcon className={`w-3.5 h-3.5 ${isAILimitReached ? '' : 'animate-pulse'}`} />
                   <span>{aiRemaining}/{aiLimit}</span>
                 </button>
               </div>
