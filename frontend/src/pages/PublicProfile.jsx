@@ -781,38 +781,43 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
                                         {/* PREVIEW DE EJERCICIOS (MINI) */}
                                         {routine.exercises && routine.exercises.length > 0 && (
-                                            <div className="mb-4 space-y-2.5 bg-black/5 dark:bg-white/5 p-4 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10">
-                                                <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mb-2 px-1">
+                                            <div className="mb-4 bg-black/5 dark:bg-white/5 p-4 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10">
+                                                <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest mb-3 px-1">
                                                     Ejercicios ({routine.exercises.length})
                                                 </p>
-                                                {routine.exercises.slice(0, 3).map((ex, i) => {
-                                                    const mediaSrc = ex.gif_url || ex.image || ex.image_url;
-                                                    const videoSrc = ex.video || ex.video_url;
-                                                    const translatedName = getTranslatedExerciseName(ex.name);
+                                                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                                                    {routine.exercises.slice(0, 3).map((ex, i) => {
+                                                        const mediaSrc = ex.gif_url || ex.image || ex.image_url || ex.image_url_start;
+                                                        const videoSrc = ex.video || ex.video_url;
+                                                        const translatedName = getTranslatedExerciseName(ex.name);
 
-                                                    return (
-                                                        <div key={i} className="flex items-center gap-3">
-                                                            <div className="w-20 aspect-video rounded-[8px] bg-bg-primary shrink-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center relative shadow-sm">
-                                                                <ExerciseMedia 
-                                                                    details={{
-                                                                        video_url: videoSrc,
-                                                                        image_url: mediaSrc,
-                                                                        name: translatedName
-                                                                    }}
-                                                                    className="w-full h-full object-cover" 
-                                                                />
-                                                                <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[10px] font-bold text-white z-10 pointer-events-none">
+                                                        return (
+                                                            <div key={i} className="flex flex-col bg-bg-primary rounded-[12px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 relative group-hover:ring-accent/30 transition-all">
+                                                                <div className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[8px] font-bold text-white z-10 pointer-events-none shadow-sm">
                                                                     #{i + 1}
                                                                 </div>
+                                                                <div className="w-full aspect-square border-b border-black/5 dark:border-white/5">
+                                                                    <ExerciseMedia 
+                                                                        details={{
+                                                                            video_url: videoSrc,
+                                                                            image_url: mediaSrc,
+                                                                            name: translatedName
+                                                                        }}
+                                                                        fitMode="cover"
+                                                                        className="w-full h-full object-cover !rounded-none" 
+                                                                    />
+                                                                </div>
+                                                                <div className="p-2 sm:p-2.5 flex-1 flex flex-col justify-center text-center">
+                                                                    <span className="text-[9px] sm:text-[10px] font-bold text-text-primary line-clamp-2 leading-tight">
+                                                                        {translatedName}
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                            <span className="text-sm text-text-secondary font-bold truncate flex-1">
-                                                                {translatedName}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })}
+                                                        );
+                                                    })}
+                                                </div>
                                                 {routine.exercises.length > 3 && (
-                                                    <p className="text-[10px] font-bold text-text-muted pl-2 mt-2 uppercase tracking-wider">
+                                                    <p className="text-[10px] font-bold text-text-muted text-center mt-3 uppercase tracking-wider">
                                                         ... y {routine.exercises.length - 3} más
                                                     </p>
                                                 )}
