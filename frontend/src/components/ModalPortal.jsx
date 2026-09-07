@@ -23,7 +23,10 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
     const onNativeTouchMove = (e) => {
       if (isValidSwipe.current && touchStartY.current !== null) {
         const currentY = e.touches[0].clientY;
-        if (currentY > touchStartY.current && e.cancelable) {
+        // Añadir una pequeña zona muerta de 5px antes de matar el scroll nativo.
+        // Si el dedo tiembla 2px hacia abajo al intentar hacer scroll hacia arriba, 
+        // no queremos llamar a preventDefault() porque cancela todo el gesto de scroll en Android.
+        if (currentY - touchStartY.current > 5 && e.cancelable) {
           e.preventDefault(); // Stop native scroll / pull-to-refresh
         }
       }
