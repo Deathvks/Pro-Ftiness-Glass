@@ -1,5 +1,10 @@
-/* frontend/src/services/authService.js */
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+/* mobile/src/services/authService.js */
+// import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+const GoogleAuth = {
+  initialize: () => {},
+  signIn: async () => { throw new Error('Google SignIn not configured for React Native yet'); },
+  signOut: async () => {}
+};
 import apiClient from './apiClient';
 
 // ID de Cliente Web (Debe coincidir con el de la consola de Google Cloud - Tipo Aplicación Web)

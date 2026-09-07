@@ -2,10 +2,10 @@
 import * as workoutService from '../services/workoutService';
 import { formatDateForQuery } from '../utils/dateUtils';
 import { v4 as uuidv4 } from 'uuid';
-import { Capacitor, registerPlugin } from '@capacitor/core';
 
-// Registramos el plugin nativo aquí
-const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
+const stopNativeTimer = () => {
+  // TODO: Implementar temporizador nativo para React Native en el futuro si es necesario.
+};
 
 const getAccentColor = () => {
   try {
@@ -23,11 +23,7 @@ const getAccentColor = () => {
   }
 };
 
-const stopNativeTimer = () => {
-  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && NativeTimer) {
-    NativeTimer.stopTimer().catch(console.warn);
-  }
-};
+// stopNativeTimer original eliminado
 
 // --- HELPER CORREGIDO: Buscar último rendimiento (AHORA LEE BIEN EL BACKEND) ---
 const findLastPerformance = (workoutLog, exerciseName) => {
