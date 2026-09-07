@@ -68,7 +68,7 @@ const XPGuideModal = ({ onClose }) => {
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]" onClick={onClose}>
             <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-t-[32px] sm:rounded-[32px] w-full max-w-md max-h-[85dvh] flex flex-col shadow-2xl animate-[slide-up_0.3s_ease-out] mt-auto sm:mt-0" onClick={(e) => e.stopPropagation()}>
 
-                <div className="shrink-0 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 p-5 sm:p-6 pb-0 flex flex-col gap-4 rounded-t-[32px] z-10">
+                <div className="shrink-0 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 p-5 sm:p-6 flex flex-col rounded-t-[32px] z-10">
                     {/* Drag handle for mobile */}
                     <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-1 sm:hidden shrink-0" />
                     <div className="flex items-center justify-between">
@@ -86,6 +86,67 @@ const XPGuideModal = ({ onClose }) => {
 
                 <div className="p-6 overflow-y-auto overflow-x-hidden no-scrollbar pb-8 w-full flex-1 min-h-0">
                     <div className="animate-[fade-in_0.3s_ease-out]">
+{/* --- SECCIÓN HISTORIAL --- */}
+                            <section className="mb-8">
+                                <h3 className="text-xl font-extrabold flex items-center gap-3 text-text-primary tracking-tight mb-6">
+                                    <div className="p-2.5 bg-accent/10 rounded-[14px] ring-1 ring-accent/30 shrink-0 shadow-sm">
+                                        <History className="text-accent" size={20} strokeWidth={2.5} />
+                                    </div>
+                                    Historial
+                                </h3>
+                                
+                                {loadingHistory ?
+                <div className="flex flex-col items-center justify-center py-10 opacity-70">
+                                    <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3"></div>
+                                    <span className="text-sm font-medium text-text-secondary">Cargando historial...</span>
+                                </div> :
+            xpHistory.length === 0 ?
+            <div className="flex flex-col items-center justify-center py-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+                                    <History size={40} className="text-text-muted mb-3" strokeWidth={1.5} />
+                                    <span className="text-sm font-bold text-text-secondary">No hay historial de XP aún</span>
+                                    <span className="text-[11px] text-text-muted mt-1 text-center px-4">Completa retos diarios o entrenamientos para ganar XP.</span>
+                                </div> :
+
+            <div className="space-y-3 relative before:absolute before:inset-y-4 before:left-5 before:w-0.5 before:bg-glass-border">
+                                    {xpHistory.map((log) =>
+              <div key={log.id} className="relative flex gap-4 items-start group">
+                                            <div className="w-10 h-10 shrink-0 rounded-full bg-bg-primary ring-4 ring-bg-primary flex items-center justify-center z-10 shadow-sm">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${log.amount > 0 ? 'bg-accent/10 text-accent' : 'bg-red-500/10 text-red-500'}`}>
+                                                    <Star size={14} strokeWidth={2.5} />
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex-1 bg-black/5 dark:bg-white/5 rounded-[20px] p-4 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm">
+                                                <div className="flex justify-between items-start gap-2 mb-2">
+                                                    <span className="font-extrabold text-sm text-text-primary tracking-tight">
+                                                        {log.reason || 'XP Obtenida'}
+                                                    </span>
+                                                    <span className={`font-black text-xs shrink-0 px-2 py-1 rounded-md ${log.amount > 0 ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : 'bg-red-500/10 text-red-500 ring-1 ring-red-500/30'}`}>
+                                                        {log.amount > 0 ? '+' : ''}{log.amount} XP
+                                                    </span>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-3 text-[11px] font-bold text-text-secondary bg-black/5 dark:bg-white/5 w-max px-3 py-1.5 rounded-lg ring-1 ring-black/5 dark:ring-white/10">
+                                                    <span className="opacity-70">{log.previous_xp} XP</span>
+                                                    <ArrowRight size={10} className="text-text-muted" strokeWidth={3} />
+                                                    <span className="text-text-primary">{log.new_xp} XP</span>
+                                                </div>
+                                                
+                                                <div className="mt-3 text-[10px] text-text-muted font-medium flex items-center gap-1.5">
+                                                    <Calendar size={10} />
+                                                    {new Date(log.created_at).toLocaleString('es-ES', {
+                      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+              )}
+                                </div>
+            }
+                            </section>
+                            {/* --- SECCIÓN GUÍA --- */}
+                            <section className="mt-8 pt-8 border-t border-black/5 dark:border-white/10">
+
                             <div className="bg-accent/10 rounded-[24px] p-5 flex items-start gap-4 mb-8 ring-1 ring-accent/30 shadow-sm w-full">
                                 <div className="p-2 bg-accent rounded-[12px] text-white shrink-0 mt-0.5 shadow-md">
                                     <Info size={18} strokeWidth={2.5} />
@@ -344,64 +405,9 @@ const XPGuideModal = ({ onClose }) => {
                                 </div>
                             </section>
                             
-                            {/* --- SECCIÓN HISTORIAL --- */}
-                            <section className="mt-8 pt-8 border-t border-black/5 dark:border-white/10">
-                                <h3 className="text-xl font-extrabold flex items-center gap-3 text-text-primary tracking-tight mb-6">
-                                    <div className="p-2.5 bg-accent/10 rounded-[14px] ring-1 ring-accent/30 shrink-0 shadow-sm">
-                                        <History className="text-accent" size={20} strokeWidth={2.5} />
-                                    </div>
-                                    Historial
-                                </h3>
-                                
-                                {loadingHistory ?
-                <div className="flex flex-col items-center justify-center py-10 opacity-70">
-                                    <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin mb-3"></div>
-                                    <span className="text-sm font-medium text-text-secondary">Cargando historial...</span>
-                                </div> :
-            xpHistory.length === 0 ?
-            <div className="flex flex-col items-center justify-center py-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
-                                    <History size={40} className="text-text-muted mb-3" strokeWidth={1.5} />
-                                    <span className="text-sm font-bold text-text-secondary">No hay historial de XP aún</span>
-                                    <span className="text-[11px] text-text-muted mt-1 text-center px-4">Completa retos diarios o entrenamientos para ganar XP.</span>
-                                </div> :
-
-            <div className="space-y-3 relative before:absolute before:inset-y-4 before:left-5 before:w-0.5 before:bg-glass-border">
-                                    {xpHistory.map((log) =>
-              <div key={log.id} className="relative flex gap-4 items-start group">
-                                            <div className="w-10 h-10 shrink-0 rounded-full bg-bg-primary ring-4 ring-bg-primary flex items-center justify-center z-10 shadow-sm">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${log.amount > 0 ? 'bg-accent/10 text-accent' : 'bg-red-500/10 text-red-500'}`}>
-                                                    <Star size={14} strokeWidth={2.5} />
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex-1 bg-black/5 dark:bg-white/5 rounded-[20px] p-4 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm">
-                                                <div className="flex justify-between items-start gap-2 mb-2">
-                                                    <span className="font-extrabold text-sm text-text-primary tracking-tight">
-                                                        {log.reason || 'XP Obtenida'}
-                                                    </span>
-                                                    <span className={`font-black text-xs shrink-0 px-2 py-1 rounded-md ${log.amount > 0 ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : 'bg-red-500/10 text-red-500 ring-1 ring-red-500/30'}`}>
-                                                        {log.amount > 0 ? '+' : ''}{log.amount} XP
-                                                    </span>
-                                                </div>
-                                                
-                                                <div className="flex items-center gap-3 text-[11px] font-bold text-text-secondary bg-black/5 dark:bg-white/5 w-max px-3 py-1.5 rounded-lg ring-1 ring-black/5 dark:ring-white/10">
-                                                    <span className="opacity-70">{log.previous_xp} XP</span>
-                                                    <ArrowRight size={10} className="text-text-muted" strokeWidth={3} />
-                                                    <span className="text-text-primary">{log.new_xp} XP</span>
-                                                </div>
-                                                
-                                                <div className="mt-3 text-[10px] text-text-muted font-medium flex items-center gap-1.5">
-                                                    <Calendar size={10} />
-                                                    {new Date(log.created_at).toLocaleString('es-ES', {
-                      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                    })}
-                                                </div>
-                                            </div>
-                                        </div>
-              )}
-                                </div>
-            }
+                            
                             </section>
+
                     </div>
                 </div>
             </div>
