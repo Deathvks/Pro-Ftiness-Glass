@@ -423,38 +423,44 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                 <h4 className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-4 flex items-center gap-2">
                                     Lista de Ejercicios <span className="bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-md text-text-primary">{viewingRoutine.exercises.length}</span>
                                 </h4>
-                                <div className="space-y-3">
-                                    {viewingRoutine.exercises.map((ex, i) => {
-                                        const mediaSrc = ex.gif_url || ex.image || ex.image_url;
-                                        const videoSrc = ex.video || ex.video_url;
-                                        const translatedName = getTranslatedExerciseName(ex.name);
-
-                                        return (
-                                            <GlassCard key={i} className="p-4 flex gap-4 items-center bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/30 transition-all group">
-                                                <div className="w-28 sm:w-32 aspect-video shrink-0 rounded-[12px] bg-bg-primary overflow-hidden ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center relative shadow-sm">
-                                                    <ExerciseMedia 
-                                                        details={{
-                                                            video_url: videoSrc,
-                                                            image_url: mediaSrc,
-                                                            name: translatedName
-                                                        }}
-                                                        className="w-full h-full object-cover" 
-                                                    />
-                                                    <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-[10px] font-bold text-white z-10 pointer-events-none">
-                                                        #{i + 1}
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-text-primary text-sm sm:text-base line-clamp-2 mb-1.5">{translatedName}</p>
-                                                    <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-black/5 dark:bg-white/5 rounded-md text-text-secondary">
-                                                        Ver detalle al importar
-                                                    </span>
-                                                </div>
-                                            </GlassCard>
-                                        );
-                                    })}
-                                </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                      {viewingRoutine.exercises.map((ex, i) => {
+                                          const mediaSrc = ex.gif_url || ex.image || ex.image_url || ex.image_url_start;
+                                          const videoSrc = ex.video || ex.video_url;
+                                          const translatedName = getTranslatedExerciseName(ex.name);
+  
+                                          return (
+                                              <GlassCard key={i} className="overflow-hidden flex flex-col h-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/30 transition-all p-0 group">
+                                                  <div className="w-full bg-bg-primary relative flex items-center justify-center border-b border-black/5 dark:border-white/5">
+                                                      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-[8px] text-[10px] font-bold text-white z-10 pointer-events-none shadow-sm">
+                                                          #{i + 1}
+                                                      </div>
+                                                      <ExerciseMedia 
+                                                          details={{
+                                                              video_url: videoSrc,
+                                                              image_url: mediaSrc,
+                                                              name: translatedName
+                                                          }}
+                                                          forceAuto={true}
+                                                          fitMode="contain"
+                                                          className="w-full max-h-[250px] sm:max-h-[300px] !rounded-none" 
+                                                      />
+                                                  </div>
+  
+                                                  <div className="p-4 flex flex-col gap-4 grow flex-1 justify-between">
+                                                      <h3 className="font-bold text-text-primary text-sm sm:text-base break-words whitespace-normal line-clamp-2">
+                                                          {translatedName}
+                                                      </h3>
+                                                      <div className="flex items-center justify-center bg-bg-primary/50 p-2.5 rounded-xl border border-black/5 dark:border-white/5 mt-auto">
+                                                          <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+                                                              Ver detalle al importar
+                                                          </span>
+                                                      </div>
+                                                  </div>
+                                              </GlassCard>
+                                          );
+                                      })}
+                                  </div>
                             </div>
                         </div>
 
