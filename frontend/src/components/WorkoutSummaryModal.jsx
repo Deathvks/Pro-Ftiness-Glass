@@ -55,6 +55,8 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
           return {
             ...ex,
             image_url_start: match?.image_url_start,
+            image_url_end: match?.image_url_end,
+            images: match?.images,
             video_url: match?.video_url
           };
         });
@@ -295,11 +297,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                   <div key={index} className="bg-bg-secondary overflow-hidden rounded-xl border border-glass-border shadow-inner">
                         <div className="w-full bg-bg-primary relative flex items-center justify-center border-b border-glass-border">
                             <ExerciseMedia 
-                                details={{
-                                    video_url: ex.video_url,
-                                    image_url_start: ex.image_url_start,
-                                    name: ex.exerciseName
-                                }}
+                                details={ex}
                                 forceAuto={true}
                                 fitMode="contain"
                                 className="w-full max-h-[250px] !rounded-none" 
