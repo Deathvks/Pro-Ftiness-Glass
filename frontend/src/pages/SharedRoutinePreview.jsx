@@ -287,13 +287,14 @@ const SharedRoutinePreview = () => {
                                                 </div>
                                             )}
                                             
-                                            <div className="w-20 aspect-video shrink-0 rounded-[8px] overflow-hidden bg-bg-primary border border-white/5 flex items-center justify-center relative">
+                                            <div className="w-16 h-20 sm:w-20 sm:h-24 shrink-0 rounded-[12px] overflow-hidden bg-bg-primary border border-white/5 flex items-center justify-center relative">
                                                 <ExerciseMedia 
                                                     details={{
                                                         video_url: ex.video_url,
                                                         image_url: ex.image_url_start || ex.image_url,
                                                         name: ex.name
                                                     }}
+                                                    fitMode="cover"
                                                     className="w-full h-full !rounded-none object-cover" 
                                                 />
                                             </div>

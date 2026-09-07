@@ -180,11 +180,11 @@ const WorkoutSupersetCard = ({
                             className="flex items-stretch gap-3 p-2 bg-bg-primary rounded-lg border border-glass-border min-w-[240px] max-w-[280px] flex-shrink-0 snap-start cursor-pointer hover:border-accent transition-colors relative group shadow-sm overflow-hidden"
                         >
                             {/* 1. Miniatura */}
-                            <div className="w-20 aspect-video self-center rounded-md overflow-hidden flex-shrink-0 bg-transparent relative">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 self-center rounded-lg overflow-hidden flex-shrink-0 bg-transparent relative">
                                 <ExerciseMedia
                                     details={ex.exercise_details}
-                                    fitMode="contain"
-                                    className="w-full h-full object-contain pointer-events-none"
+                                    fitMode="cover"
+                                    className="w-full h-full object-cover pointer-events-none"
                                 />
                             </div>
 
