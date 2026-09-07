@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
-import { Home, Dumbbell, User } from 'lucide-react-native';
-
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
@@ -12,30 +11,54 @@ export default function AppTabs() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: '#888',
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.background,
+          backgroundColor: '#111',
+          borderTopWidth: 1,
+          borderTopColor: '#333',
+          paddingBottom: 5,
+          paddingTop: 5,
+          height: 60
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600'
         }
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Inicio',
-          tabBarIcon: ({ color }) => <Home color={color} size={24} />,
+          title: 'Dashboard',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "home" : "home-outline"} color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
+        name="social"
+        options={{
+          title: 'Comunidad',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "people" : "people-outline"} color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
+        name="nutrition"
+        options={{
+          title: 'Nutrición',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "flame" : "flame-outline"} color={color} size={24} />,
         }}
       />
       <Tabs.Screen
         name="routines"
         options={{
           title: 'Rutinas',
-          tabBarIcon: ({ color }) => <Dumbbell color={color} size={24} />,
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "flash" : "flash-outline"} color={color} size={24} />,
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="hub"
         options={{
-          title: 'Perfil',
-          tabBarIcon: ({ color }) => <User color={color} size={24} />,
+          title: 'Menú',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "grid" : "grid-outline"} color={color} size={24} />,
         }}
       />
     </Tabs>

@@ -1,0 +1,2 @@
+import { View, Text } from 'react-native';
+export default function Hub() { return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000'}}><Text style={{color: '#fff'}}>Menú</Text></View>; }
