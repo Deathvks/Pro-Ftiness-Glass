@@ -20,8 +20,14 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       await initLocalStorage();
-      // Inicializar el estado de la app llamando checkAuth si fuera necesario
-      // useAppStore.getState().checkAuth();
+      
+      // REHIDRATACIÓN PARA REACT NATIVE:
+      // Como Zustand se evaluó antes de que AsyncStorage terminara, re-leemos la memoria ahora:
+      const token = localStorage.getItem('pro_fitness_token');
+      if (token) {
+        useAppStore.setState({ isAuthenticated: true, token });
+      }
+
       setIsReady(true);
       SplashScreen.hideAsync();
     }
