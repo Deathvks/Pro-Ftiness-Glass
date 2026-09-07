@@ -821,7 +821,7 @@ export default function MainAppLayout({
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all outline-none focus:outline-none ${
                       isAILimitReached 
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70' 
-                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 ring-1 ring-white/20'
+                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-accent'
                     }`}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     title="Créditos IA"

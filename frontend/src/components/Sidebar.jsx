@@ -188,7 +188,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 } ${
                     isAILimitReached
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70 shadow-sm'
-                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-[1.02] ring-1 ring-white/20'
+                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-[1.02] border border-accent'
                 }`}
             >
                 <div className="relative flex items-center justify-center shrink-0">
