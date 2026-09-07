@@ -9,6 +9,7 @@ import { useToast } from '../hooks/useToast';
 import WorkoutShareCard from './WorkoutShareCard';
 import Spinner from './Spinner';
 import useModalLock from '../hooks/useModalLock';
+import ExerciseMedia from './ExerciseMedia';
 
 // Helper para formatear el tiempo
 const formatTime = (timeInSeconds) => {
@@ -25,15 +26,46 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
   useModalLock();
 
   const { t } = useTranslation(['exercise_names']);
-  const { userProfile } = useAppStore((state) => ({ userProfile: state.userProfile }));
+  const { userProfile, getOrFetchAllExercises } = useAppStore((state) => ({ 
+    userProfile: state.userProfile,
+    getOrFetchAllExercises: state.getOrFetchAllExercises 
+  }));
   const { showToast } = useToast();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [accentColor, setAccentColor] = useState('#22c55e');
+  const [enrichedDetails, setEnrichedDetails] = useState([]);
 
   const shareCardRef = useRef(null);
+
+  // Enriquecer ejercicios con imágenes
+  useEffect(() => {
+    const enrichExercises = async () => {
+      const details = workoutData?.details || [];
+      if (details.length === 0) {
+        setEnrichedDetails([]);
+        return;
+      }
+      try {
+        const allExercises = await getOrFetchAllExercises();
+        const enriched = details.map(ex => {
+          const match = allExercises.find(a => a.name === ex.exerciseName);
+          return {
+            ...ex,
+            image_url_start: match?.image_url_start,
+            video_url: match?.video_url
+          };
+        });
+        setEnrichedDetails(enriched);
+      } catch (error) {
+        console.error("Error fetching exercises for summary:", error);
+        setEnrichedDetails(details);
+      }
+    };
+    enrichExercises();
+  }, [workoutData, getOrFetchAllExercises]);
 
   // Bloquear el scroll de la app de fondo mientras el modal esté abierto
   useEffect(() => {
@@ -231,6 +263,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                   alt="Preview"
                   className="w-full h-auto max-h-[40vh] object-contain" />
                 
+                
               </div>
             </div> :
 
@@ -256,20 +289,32 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
               <div className="space-y-4 pr-1">
                 <h4 className="text-lg font-semibold text-text-primary">Resumen de Ejercicios</h4>
-                {safeDetails.length > 0 ?
+                {enrichedDetails.length > 0 ?
                 <div className="space-y-3 bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-inner">
-                    {safeDetails.map((ex, index) =>
-                  <div key={index} className="pb-3 border-b border-glass-border last:border-0 last:pb-0">
-                        <p className="font-semibold text-text-primary">
-                          {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
-                        </p>
-                        <ul className="list-disc list-inside pl-2 text-sm text-text-secondary mt-1">
-                          {(Array.isArray(ex.setsDone) ? ex.setsDone : []).map((set, setIndex) =>
-                      <li key={setIndex}>
-                              {set.weight_kg || 0} kg x {set.reps || 0} reps {set.rir !== null && set.rir !== undefined ? `@ ${set.rir} RIR ` : ''}{set.is_dropset ? '(Dropset)' : ''}
-                            </li>
-                      )}
-                        </ul>
+                    {enrichedDetails.map((ex, index) =>
+                  <div key={index} className="flex gap-3 pb-3 border-b border-glass-border last:border-0 last:pb-0 items-start">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-[8px] overflow-hidden bg-bg-primary border border-white/5 relative flex items-center justify-center">
+                            <ExerciseMedia 
+                                details={{
+                                    video_url: ex.video_url,
+                                    image_url_start: ex.image_url_start,
+                                    name: ex.exerciseName
+                                }}
+                                className="w-full h-full object-cover !rounded-none" 
+                            />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-text-primary text-sm sm:text-base break-words line-clamp-2">
+                            {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
+                          </p>
+                          <ul className="list-disc list-inside pl-1 text-xs sm:text-sm text-text-secondary mt-1">
+                            {(Array.isArray(ex.setsDone) ? ex.setsDone : []).map((set, setIndex) =>
+                        <li key={setIndex}>
+                                {set.weight_kg || 0} kg x {set.reps || 0} reps {set.rir !== null && set.rir !== undefined ? `@ ${set.rir} RIR ` : ''}{set.is_dropset ? '(Dropset)' : ''}
+                              </li>
+                        )}
+                          </ul>
+                        </div>
                       </div>
                   )}
                   </div> :
@@ -277,7 +322,6 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                 <p className="text-text-secondary italic">No se registraron ejercicios de fuerza.</p>
                 }
                 {safeNotes &&
-                <div>
                     <h4 className="text-lg font-semibold text-text-primary mb-2">Notas</h4>
                     <p className="bg-bg-secondary p-4 rounded-xl border border-glass-border text-text-secondary text-sm whitespace-pre-wrap">{safeNotes}</p>
                   </div>
