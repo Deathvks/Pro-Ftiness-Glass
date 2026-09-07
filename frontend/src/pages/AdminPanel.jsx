@@ -493,6 +493,42 @@ const AdminPanel = ({ onCancel }) => {
               </div>
             </div>
 
+            {/* Leyenda de Plataformas */}
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-8 p-4 sm:p-5 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+                <span className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2 w-full sm:w-auto">
+                  <Globe size={16} className="text-text-muted" />
+                  Origen de conexión:
+                </span>
+                
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-green-500 ring-2 ring-bg-primary text-white">
+                    <Smartphone size={10} />
+                  </div>
+                  <span className="text-sm font-medium text-text-primary">App Android</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-purple-500 ring-2 ring-bg-primary text-white">
+                    <Smartphone size={10} />
+                  </div>
+                  <span className="text-sm font-medium text-text-primary">App Web (PWA)</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-orange-500 ring-2 ring-bg-primary text-white">
+                    <Globe size={10} />
+                  </div>
+                  <span className="text-sm font-medium text-text-primary">Web (Móvil)</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-blue-500 ring-2 ring-bg-primary text-white">
+                    <Globe size={10} />
+                  </div>
+                  <span className="text-sm font-medium text-text-primary">Web (Escritorio)</span>
+                </div>
+              </div>
+
             {/* Toolbar (Directorio y Filtros) */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 mb-6 bg-black/5 dark:bg-white/5 p-3 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10">
               <h2 className="text-xl font-black text-text-primary pl-4 py-2">
