@@ -76,7 +76,7 @@ export default function Dashboard() {
             </View>
           </View>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: \\%\ }]} />
+            <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
           </View>
         </View>
 
