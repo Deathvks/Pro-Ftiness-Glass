@@ -290,30 +290,34 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
               <div className="space-y-4 pr-1">
                 <h4 className="text-lg font-semibold text-text-primary">Resumen de Ejercicios</h4>
                 {enrichedDetails.length > 0 ?
-                <div className="space-y-3 bg-bg-secondary p-4 rounded-xl border border-glass-border shadow-inner">
+                <div className="space-y-4">
                     {enrichedDetails.map((ex, index) =>
-                  <div key={index} className="flex gap-3 pb-3 border-b border-glass-border last:border-0 last:pb-0 items-start">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-[8px] overflow-hidden bg-bg-primary border border-white/5 relative flex items-center justify-center">
+                  <div key={index} className="bg-bg-secondary overflow-hidden rounded-xl border border-glass-border shadow-inner">
+                        <div className="w-full bg-bg-primary relative flex items-center justify-center border-b border-glass-border">
                             <ExerciseMedia 
                                 details={{
                                     video_url: ex.video_url,
                                     image_url_start: ex.image_url_start,
                                     name: ex.exerciseName
                                 }}
-                                className="w-full h-full object-cover !rounded-none" 
+                                forceAuto={true}
+                                fitMode="contain"
+                                className="w-full max-h-[250px] !rounded-none" 
                             />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-text-primary text-sm sm:text-base break-words line-clamp-2">
+                        <div className="p-4">
+                          <p className="font-semibold text-text-primary text-base break-words">
                             {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
                           </p>
-                          <ul className="list-disc list-inside pl-1 text-xs sm:text-sm text-text-secondary mt-1">
+                          <div className="flex flex-wrap gap-2 mt-3">
                             {(Array.isArray(ex.setsDone) ? ex.setsDone : []).map((set, setIndex) =>
-                        <li key={setIndex}>
-                                {set.weight_kg || 0} kg x {set.reps || 0} reps {set.rir !== null && set.rir !== undefined ? `@ ${set.rir} RIR ` : ''}{set.is_dropset ? '(Dropset)' : ''}
-                              </li>
+                        <div key={setIndex} className="bg-bg-primary/50 border border-white/5 px-2 py-1.5 rounded-lg text-xs font-medium text-text-secondary">
+                                {set.weight_kg || 0}kg × {set.reps || 0}
+                                {set.rir !== null && set.rir !== undefined ? ` @${set.rir}RIR` : ''}
+                                {set.is_dropset ? ' (Drop)' : ''}
+                              </div>
                         )}
-                          </ul>
+                          </div>
                         </div>
                       </div>
                   )}
