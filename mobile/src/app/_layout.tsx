@@ -28,7 +28,7 @@ export default function RootLayout() {
     prepare();
   }, []);
 
-  // Proteccin de Rutas
+  // Proteccion de Rutas
   useEffect(() => {
     if (!isReady) return;
 
@@ -36,13 +36,19 @@ export default function RootLayout() {
     const inLogin = segments[0] === 'login';
 
     if (!isAuthenticated && !inLogin) {
-      // Si no est logueado y no est en login, manda a login
       router.replace('/login');
     } else if (isAuthenticated && inLogin) {
-      // Si est logueado y en login, mndalo a tabs
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isReady, segments]);
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    if (isReady && isAuthenticated) {
+      useAppStore.getState().fetchInitialData();
+      useAppStore.getState().fetchDataForDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [isReady, isAuthenticated]);
 
   if (!isReady) {
     return null;
