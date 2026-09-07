@@ -54,49 +54,66 @@ export default function Dashboard() {
   const waterGlasses = waterLog?.quantity_ml ? Math.floor(waterLog.quantity_ml / 250) : 0;
   const hasCreatine = todaysCreatineLog?.length > 0;
 
-  const nutritionTotals = useMemo(() => (Array.isArray(nutritionLog) ? nutritionLog : []).reduce((acc, log) => ({
-    calories: acc.calories + (log.calories || 0),
-    protein: acc.protein + (parseFloat(log.protein_g) || 0)
-  }), { calories: 0, protein: 0 }), [nutritionLog]);
+  const nutritionTotals = useMemo(() => {
+    try {
+      return (Array.isArray(nutritionLog) ? nutritionLog : []).reduce((acc, log) => ({
+        calories: acc.calories + (log.calories || 0),
+        protein: acc.protein + (parseFloat(log.protein_g) || 0)
+      }), { calories: 0, protein: 0 });
+    } catch (e) {
+      console.error("Nutrition crash:", e);
+      return { calories: 0, protein: 0 };
+    }
+  }, [nutritionLog]);
 
   const targets = useMemo(() => {
-    const { gender, age, height, activity_level = 1.2, goal } = userProfile || {};
-    if (!latestWeight || !height || !age || !gender || !goal) return { calories: 0, protein: 0, water: 0, sugar: 0 };
-    let bmr = (10 * latestWeight) + (6.25 * height) - (5 * age) + (gender === 'male' ? 5 : -161);
-    let cal = Math.round(bmr * activity_level);
-    if (goal === 'lose') cal -= 500;
-    else if (goal === 'gain') cal += 300;
-    return { calories: cal, protein: Math.round(latestWeight * (goal === 'lose' ? 2.2 : goal === 'gain' ? 2.0 : 1.8)) };
+    try {
+      const { gender, age, height, activity_level = 1.2, goal } = userProfile || {};
+      if (!latestWeight || !height || !age || !gender || !goal) return { calories: 0, protein: 0, water: 0, sugar: 0 };
+      let bmr = (10 * latestWeight) + (6.25 * height) - (5 * age) + (gender === 'male' ? 5 : -161);
+      let cal = Math.round(bmr * activity_level);
+      if (goal === 'lose') cal -= 500;
+      else if (goal === 'gain') cal += 300;
+      return { calories: cal, protein: Math.round(latestWeight * (goal === 'lose' ? 2.2 : goal === 'gain' ? 2.0 : 1.8)) };
+    } catch (e) {
+      console.error("Targets crash:", e);
+      return { calories: 0, protein: 0, water: 0, sugar: 0 };
+    }
   }, [userProfile, latestWeight]);
 
   // Cálculos semanales para las estadísticas (igual que web)
   const weeklyStats = useMemo(() => {
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    const day = startOfWeek.getDay() || 7; 
-    startOfWeek.setDate(startOfWeek.getDate() - day + 1);
-    startOfWeek.setHours(0,0,0,0);
-    
-    let wSessions = 0;
-    let wCalories = 0;
-    let wTime = 0;
+    try {
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      const day = startOfWeek.getDay() || 7; 
+      startOfWeek.setDate(startOfWeek.getDate() - day + 1);
+      startOfWeek.setHours(0,0,0,0);
+      
+      let wSessions = 0;
+      let wCalories = 0;
+      let wTime = 0;
 
-    if (Array.isArray(workoutLog)) {
-      workoutLog.forEach(log => {
-          const logDate = new Date(log.workout_date || log.created_at);
-          if (logDate >= startOfWeek) {
-              wSessions++;
-              wCalories += (log.calories_burned || 0);
-              wTime += (log.duration_seconds || 0);
-          }
-      });
+      if (Array.isArray(workoutLog)) {
+        workoutLog.forEach(log => {
+            const logDate = new Date(log.workout_date || log.created_at);
+            if (logDate >= startOfWeek) {
+                wSessions++;
+                wCalories += (log.calories_burned || 0);
+                wTime += (log.duration_seconds || 0);
+            }
+        });
+      }
+
+      const hours = Math.floor(wTime / 3600);
+      const minutes = Math.floor((wTime % 3600) / 60);
+      const timeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+      return { sessions: wSessions, calories: wCalories, timeDisplay };
+    } catch (e) {
+      console.error("WeeklyStats crash:", e);
+      return { sessions: 0, calories: 0, timeDisplay: '0m' };
     }
-
-    const hours = Math.floor(wTime / 3600);
-    const minutes = Math.floor((wTime % 3600) / 60);
-    const timeDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-
-    return { sessions: wSessions, calories: wCalories, timeDisplay };
   }, [workoutLog]);
 
   const weekDays = useMemo(() => {
