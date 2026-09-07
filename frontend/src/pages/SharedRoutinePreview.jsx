@@ -278,40 +278,39 @@ const SharedRoutinePreview = () => {
                             
                             <div className="flex flex-col gap-3">
                                 {group.map((ex, exIdx) => (
-                                    <GlassCard key={ex.id || exIdx} className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-transparent dark:border dark:border-white/5 hover:bg-bg-secondary transition-colors">
-                                        
-                                        <div className="flex items-start gap-3 w-full sm:w-auto min-w-0 flex-1">
+                                    <GlassCard key={ex.id || exIdx} className="overflow-hidden flex flex-col border-transparent dark:border dark:border-white/5 hover:bg-bg-secondary transition-colors p-0">
+                                        <div className="w-full bg-bg-primary relative flex items-center justify-center border-b border-glass-border">
                                             {group.length > 1 && (
-                                                <div className="text-accent shrink-0 mt-0.5" title="Parte de superserie">
+                                                <div className="absolute top-3 left-3 z-10 bg-black/60 p-2 rounded-full text-accent shadow-sm backdrop-blur-md border border-white/10" title="Parte de superserie">
                                                     <Link2 size={16} />
                                                 </div>
                                             )}
-                                            
-                                            <div className="w-16 h-20 sm:w-20 sm:h-24 shrink-0 rounded-[12px] overflow-hidden bg-bg-primary border border-white/5 flex items-center justify-center relative">
-                                                <ExerciseMedia 
-                                                    details={ex}
-                                                    fitMode="cover"
-                                                    className="w-full h-full !rounded-none object-cover" 
-                                                />
-                                            </div>
+                                            <ExerciseMedia 
+                                                details={ex}
+                                                forceAuto={true}
+                                                fitMode="contain"
+                                                className="w-full max-h-[300px] sm:max-h-[400px] !rounded-none" 
+                                            />
+                                        </div>
 
-                                            <div className="min-w-0 w-full pt-1">
-                                                <h3 className="font-bold text-text-primary text-sm sm:text-base break-words whitespace-normal line-clamp-2">
+                                        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <div className="min-w-0 w-full flex-1">
+                                                <h3 className="font-bold text-text-primary text-base sm:text-lg break-words whitespace-normal line-clamp-2">
                                                     {t(ex.name)}
                                                 </h3>
                                                 {ex.notes && (
-                                                    <p className="text-xs text-text-muted mt-0.5 truncate">{ex.notes}</p>
+                                                    <p className="text-sm text-text-muted mt-1 truncate">{ex.notes}</p>
                                                 )}
                                             </div>
-                                        </div>
 
-                                        <div className="flex items-center self-start sm:self-auto gap-3 shrink-0 bg-bg-primary/50 sm:bg-transparent p-2 sm:p-0 rounded-lg w-full sm:w-auto justify-between sm:justify-end">
-                                            <div className="text-left sm:text-right">
-                                                <div className="text-sm font-bold text-text-primary">
-                                                    {ex.sets} <span className="text-xs text-text-secondary font-normal">series</span>
-                                                </div>
-                                                <div className="text-xs text-text-secondary">
-                                                    x {ex.reps} reps
+                                            <div className="flex items-center shrink-0 bg-bg-primary/50 sm:bg-transparent p-3 sm:p-0 rounded-xl border sm:border-none border-white/5 w-full sm:w-auto justify-center sm:justify-end">
+                                                <div className="text-center sm:text-right">
+                                                    <div className="text-base font-bold text-text-primary">
+                                                        {ex.sets} <span className="text-sm text-text-secondary font-normal">series</span>
+                                                    </div>
+                                                    <div className="text-sm text-text-secondary font-medium mt-0.5">
+                                                        x {ex.reps} reps
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
