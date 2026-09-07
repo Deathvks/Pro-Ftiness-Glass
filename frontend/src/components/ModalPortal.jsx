@@ -96,11 +96,11 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
         if (cardElementRef.current) {
           cardElementRef.current.style.transform = `translateY(0px)`;
         }
-      } else {
-        const deltaY = Math.max(0, rawDeltaY); // Solo permitir drag hacia abajo
-        
+      } else if (rawDeltaY > 10) {
+        // Solo empezamos a mover visualmente el modal si hay un drag claro hacia abajo (evita tirones por temblor del dedo)
+        const deltaY = rawDeltaY - 10;
         if (cardElementRef.current) {
-          cardElementRef.current.style.transform = `translateY(${deltaY}px)`;
+           cardElementRef.current.style.transform = `translateY(${deltaY}px)`;
         }
       }
     }
