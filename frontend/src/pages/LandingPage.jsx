@@ -199,7 +199,7 @@ const GymBot = ({ isDocked }) => (
                     </div>
                 </div>
 
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-4 bg-accent/20 blur-xl rounded-[100%] animate-[pulse_2s_infinite_ease-in-out] transform-gpu"></div>
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-4 bg-accent/20 blur-xl rounded-[100%] transform-gpu"></div>
 
                 <div className={`absolute -top-24 -left-28 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-2xl rounded-br-none text-xs font-bold text-accent shadow-xl transition-all duration-500 transform-gpu origin-bottom-right z-30
                     ${isDocked ? 'opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100 -translate-y-2 group-hover:translate-y-0' : 'opacity-0'}
@@ -217,7 +217,7 @@ const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
     return (
         <div
             ref={ref}
-            className={`transform-gpu will-change-transform will-change-opacity transition-all duration-700 ease-out ${className}
+            className={`transform-gpu transition-all duration-700 ease-out ${className}
                 ${isVisible
                     ? 'opacity-100 translate-y-0 scale-100'
                     : 'opacity-0 translate-y-12 scale-95'
@@ -400,8 +400,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
     return (
         <div className="absolute inset-0 z-[100] bg-bg-primary overflow-hidden">
 
-            {/* --- FONDO FIJO: Textura de cristal muy suave --- */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.015] z-0" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`, backgroundRepeat: 'repeat' }}></div>
+            {/* Fondo de cristal eliminado por optimización de rendimiento */}
 
             <div
                 id="landing-scroll-container"
@@ -426,14 +425,14 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                 <div className="relative z-10 flex flex-col min-h-full">
 
-                    {/* --- Círculos de colores --- */}
+                    {/* --- Círculos de colores (Optimizados sin animación pesada) --- */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-                        <div className="absolute top-[0%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_10s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }} />
-                        <div className="absolute top-[20%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 animate-[pulse_12s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, #3b82f6, transparent)', animationDelay: '2s' }} />
-                        <div className="absolute top-[40%] left-[-5%] w-[700px] h-[700px] rounded-full blur-[150px] opacity-10 dark:opacity-15 animate-[pulse_14s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, #a855f7, transparent)', animationDelay: '4s' }} />
-                        <div className="absolute top-[65%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 animate-[pulse_11s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, #10b981, transparent)', animationDelay: '1s' }} />
-                        <div className="absolute top-[85%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 animate-[pulse_13s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)', animationDelay: '3s' }} />
-                        <div className="absolute bottom-[0%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 animate-[pulse_10s_ease-in-out_infinite] transform-gpu" style={{ background: 'radial-gradient(circle, #f59e0b, transparent)', animationDelay: '5s' }} />
+                        <div className="absolute top-[0%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }} />
+                        <div className="absolute top-[20%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #3b82f6, transparent)' }} />
+                        <div className="absolute top-[40%] left-[-5%] w-[700px] h-[700px] rounded-full blur-[150px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }} />
+                        <div className="absolute top-[65%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #10b981, transparent)' }} />
+                        <div className="absolute top-[85%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }} />
+                        <div className="absolute bottom-[0%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #f59e0b, transparent)' }} />
                     </div>
 
                     {/* --- NAVBAR --- */}
