@@ -38,11 +38,11 @@ export default function Dashboard() {
     }
   }, [gamification]);
 
-  const latestWeight = bodyWeightLog.length > 0 ? parseFloat(bodyWeightLog[0].weight_kg).toFixed(1) : null;
+  const latestWeight = bodyWeightLog?.length > 0 ? parseFloat(bodyWeightLog[0].weight_kg).toFixed(1) : null;
   const waterGlasses = waterLog?.quantity_ml ? Math.floor(waterLog.quantity_ml / 250) : 0;
-  const hasCreatine = todaysCreatineLog.length > 0;
+  const hasCreatine = todaysCreatineLog?.length > 0;
 
-  const nutritionTotals = useMemo(() => nutritionLog.reduce((acc, log) => ({
+  const nutritionTotals = useMemo(() => (Array.isArray(nutritionLog) ? nutritionLog : []).reduce((acc, log) => ({
     calories: acc.calories + (log.calories || 0),
     protein: acc.protein + (parseFloat(log.protein_g) || 0)
   }), { calories: 0, protein: 0 }), [nutritionLog]);
@@ -172,7 +172,7 @@ export default function Dashboard() {
               <Text style={styles.seeAll}>Ver todas</Text>
             </TouchableOpacity>
           </View>
-          {routines.length > 0 ? (
+          {routines?.length > 0 ? (
             routines.slice(0, 3).map(renderRoutine)
           ) : (
             <View style={styles.emptyCard}>
