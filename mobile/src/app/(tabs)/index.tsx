@@ -21,14 +21,22 @@ export default function Dashboard() {
   const router = useRouter();
 
   const { currentXp, nextLevelXp, progressPercent } = useMemo(() => {
-    const level = gamification.level || 1;
-    const xp = gamification.xp || 0;
-    const currentLevelBaseXp = getXpRequiredForLevel(level);
-    const nextLevelBaseXp = getXpRequiredForLevel(level + 1);
-    const xpIntoLevel = xp - currentLevelBaseXp;
-    const xpNeededForNextLevel = nextLevelBaseXp - currentLevelBaseXp;
-    const progress = Math.min(100, Math.max(0, (xpIntoLevel / xpNeededForNextLevel) * 100));
-    return { currentXp: Math.floor(xpIntoLevel), nextLevelXp: Math.floor(xpNeededForNextLevel), progressPercent: progress };
+    try {
+      const level = gamification?.level || 1;
+      const xp = gamification?.xp || 0;
+      const currentLevelBaseXp = getXpRequiredForLevel(level);
+      const nextLevelBaseXp = getXpRequiredForLevel(level + 1);
+      const xpIntoLevel = xp - currentLevelBaseXp;
+      const xpNeededForNextLevel = nextLevelBaseXp - currentLevelBaseXp;
+      const progress = Math.min(100, Math.max(0, (xpIntoLevel / (xpNeededForNextLevel || 1)) * 100));
+      return { 
+        currentXp: Math.floor(xpIntoLevel), 
+        nextLevelXp: Math.floor(xpNeededForNextLevel), 
+        progressPercent: progress || 0 
+      };
+    } catch (e) {
+      return { currentXp: 0, nextLevelXp: 500, progressPercent: 0 };
+    }
   }, [gamification]);
 
   const latestWeight = bodyWeightLog.length > 0 ? parseFloat(bodyWeightLog[0].weight_kg).toFixed(1) : '--';
