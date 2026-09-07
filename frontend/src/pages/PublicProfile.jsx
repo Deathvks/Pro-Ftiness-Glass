@@ -385,14 +385,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             {/* --- MODAL DETALLES RUTINA --- */}
             {viewingRoutine && (
                 <div 
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]"
+                    className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]"
                     onClick={() => setViewingRoutine(null)}
                 >
-                    <GlassCard 
-                        className="glass w-full max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-2xl animate-[slide-up_0.3s_ease-out] rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary"
+                    <div 
+                        className="relative w-full max-w-lg rounded-t-[32px] rounded-b-none sm:rounded-[32px] bg-bg-primary shadow-2xl flex flex-col max-h-[85vh] md:max-h-[85vh] animate-[slide-up_0.2s_ease-out] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0 border border-black/5 dark:border-white/10"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="p-6 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5 sticky top-0 z-10 rounded-t-[32px]">
+                        <div className="p-4 sm:p-6 border-b border-black/5 dark:border-white/10 flex justify-between items-center bg-bg-primary sticky top-0 z-10">
                             <div className="flex flex-col">
                                 <h3 className="font-extrabold text-xl text-text-primary line-clamp-1 flex items-center gap-2">
                                     <Dumbbell size={20} className="text-accent" />
@@ -406,13 +406,13 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                             </div>
                             <button 
                                 onClick={() => setViewingRoutine(null)} 
-                                className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors"
+                                className="p-2.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors shrink-0"
                             >
                                 <X size={20} />
                             </button>
                         </div>
-
-                        <div className="overflow-y-auto p-6 space-y-6 custom-scrollbar">
+  
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar bg-bg-primary">
                             {viewingRoutine.description && (
                                 <div className="bg-black/5 dark:bg-white/5 p-4 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10">
                                     <p className="text-sm font-medium text-text-secondary italic">"{viewingRoutine.description}"</p>
@@ -463,23 +463,23 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                   </div>
                             </div>
                         </div>
-
-                        <div className="p-6 border-t border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-b-[32px]">
+  
+                        <div className="p-4 sm:p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary z-10 shrink-0">
                              <button 
-                                onClick={() => { handleDownloadRoutine(viewingRoutine.id); setViewingRoutine(null); }}
-                                disabled={downloadingRoutineId === viewingRoutine.id}
-                                className="w-full py-4 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
+                                 onClick={() => { handleDownloadRoutine(viewingRoutine.id); setViewingRoutine(null); }}
+                                 disabled={downloadingRoutineId === viewingRoutine.id}
+                                 className="w-full py-4 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
                              >
-                                {downloadingRoutineId === viewingRoutine.id ? (
-                                    <Spinner size="small" color="white" />
-                                ) : (
-                                    <>
-                                        <Download size={20} /> Importar esta Rutina
-                                    </>
-                                )}
+                                 {downloadingRoutineId === viewingRoutine.id ? (
+                                     <Spinner size="small" color="white" />
+                                 ) : (
+                                     <>
+                                         <Download size={20} /> Importar esta Rutina
+                                     </>
+                                 )}
                              </button>
                         </div>
-                    </GlassCard>
+                    </div>
                 </div>
             )}
 

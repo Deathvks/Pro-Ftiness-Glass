@@ -287,7 +287,7 @@ export const getPublicProfile = async (req, res) => {
                             include: [
                                 {
                                     model: ExerciseList,
-                                    attributes: ['image_url_start', 'video_url']
+                                    attributes: ['image_url_start', 'video_url', 'image_url_end', 'images']
                                 }
                             ]
                         }
@@ -343,6 +343,8 @@ export const getPublicProfile = async (req, res) => {
                 .map(ex => ({
                     name: ex.name,
                     image_url: ex.image_url_start || (ex.ExerciseList ? ex.ExerciseList.image_url_start : null),
+                    image_url_end: ex.ExerciseList ? ex.ExerciseList.image_url_end : null,
+                    images: ex.ExerciseList ? ex.ExerciseList.images : null,
                     video_url: ex.video_url || (ex.ExerciseList ? ex.ExerciseList.video_url : null)
                 }))
         }));
