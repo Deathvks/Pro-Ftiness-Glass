@@ -61,12 +61,12 @@ export default function RootLayout() {
     }
   }, [isReady, isAuthenticated]);
 
+  const theme = useAppStore(state => state.theme);
+  const isDark = theme === 'dark' || theme === 'oled';
+
   if (!isReady) {
     return null;
   }
-
-  const theme = useAppStore(state => state.theme);
-  const isDark = theme === 'dark' || theme === 'oled';
 
   return (
     <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
