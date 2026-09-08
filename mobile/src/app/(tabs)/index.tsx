@@ -156,7 +156,7 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={{ paddingTop: 10 }}>
+      <View style={{ flex: 1, paddingTop: 10 }}>
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         
         <View style={styles.header}>
