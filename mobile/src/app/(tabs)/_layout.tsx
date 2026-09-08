@@ -1,32 +1,18 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import useAppStore from '@/store/useAppStore';
+import CustomTabBar from '@/components/CustomTabBar';
 
 export default function AppTabs() {
   const theme = useAppStore(state => state.theme);
   const colors = Colors[theme] || Colors.oled;
-  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
+      tabBar={props => <CustomTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: colors.tabBarInactive,
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          paddingBottom: insets.bottom > 0 ? insets.bottom + 5 : 10,
-          paddingTop: 8,
-          height: 60 + (insets.bottom > 0 ? insets.bottom : 0)
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600'
-        }
       }}>
       <Tabs.Screen
         name="index"

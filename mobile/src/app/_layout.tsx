@@ -21,7 +21,6 @@ export default function RootLayout() {
     async function prepare() {
       await initLocalStorage();
       
-      // Como Zustand se evaluó antes de que AsyncStorage terminara, re-leemos la memoria ahora:
       const token = localStorage.getItem('pro_fitness_token');
       const savedTheme = localStorage.getItem('theme');
       
@@ -43,12 +42,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (!isReady) return;
 
-    const inAuthGroup = segments[0] === '(tabs)';
     const inLogin = segments[0] === 'login';
+    const inRegister = segments[0] === 'register';
 
-    if (!isAuthenticated && !inLogin) {
+    if (!isAuthenticated && !inLogin && !inRegister) {
       router.replace('/login');
-    } else if (isAuthenticated && inLogin) {
+    } else if (isAuthenticated && (inLogin || inRegister)) {
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isReady, segments]);
@@ -73,6 +72,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
+        <Stack.Screen name="register" options={{ headerShown: false, animation: 'fade' }} />
       </Stack>
     </ThemeProvider>
   );

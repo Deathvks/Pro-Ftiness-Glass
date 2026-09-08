@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image, useColorScheme as useDeviceColorScheme, ScrollView } from 'react-native';
-import useAppStore from '@/store/useAppStore';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import { LogIn, Sparkles, Eye, EyeOff, CheckCircle2, Mail } from 'lucide-react-native';
+import { Sparkles, UserPlus, Info, ArrowRight, CheckCircle2, Eye, EyeOff, Mail } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/use-theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,7 +10,9 @@ import Svg, { Path } from 'react-native-svg';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { LinearGradient } from 'expo-linear-gradient';
-import { verifyEmail, resendVerificationEmail } from '@/services/authService';
+import useAppStore from '@/store/useAppStore';
+import { registerUser, verifyEmail, resendVerificationEmail } from '@/services/authService';
+import { useColorScheme as useDeviceColorScheme } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -30,10 +31,13 @@ const DiscordIcon = ({ size, color }: { size: number, color: string }) => (
   </Svg>
 );
 
-export default function Login() {
+export default function Register() {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -93,8 +97,6 @@ export default function Login() {
     localStorage.removeItem('needs_verification');
     localStorage.removeItem('verification_email');
   };
-
-  const handleLogin = useAppStore(state => state.handleLogin);
   
   const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
   const handleDiscordLogin = useAppStore(state => state.handleDiscordLogin);
@@ -103,11 +105,18 @@ export default function Login() {
 
   const router = useRouter();
   const theme = useTheme();
-  
-  // Expo BlurView tint
   const colorScheme = useDeviceColorScheme();
   const blurTint = colorScheme === 'light' ? 'light' : 'dark';
   const insets = useSafeAreaInsets();
+
+  const reqs = [
+    { id: 'length', label: 'Al menos 12 caracteres', valid: password.length >= 12 },
+    { id: 'upper', label: 'Una mayúscula', valid: /[A-Z]/.test(password) },
+    { id: 'lower', label: 'Una minúscula', valid: /[a-z]/.test(password) },
+    { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/'`]/.test(password) },
+    { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(password) && password.length > 0 }
+  ];
+  const isValidPassword = reqs.every(r => r.valid);
 
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'mobile' });
 
@@ -175,21 +184,25 @@ export default function Login() {
     }
   };
 
-  const handleLoginSubmit = async () => {
-    if (!email || !password) {
+  const handleRegisterSubmit = async () => {
+    if (!username || !email || !password || !confirmPassword) {
       alert('Por favor, rellena todos los campos');
+      return;
+    }
+    if (password !== confirmPassword) {
+      alert('Las contraseñas no coinciden');
+      return;
+    }
+    if (!isValidPassword) {
+      alert('La contraseña no cumple los requisitos');
       return;
     }
     setIsLoading(true);
     try {
-      await handleLogin({ email, password });
+      await registerUser({ username, email, password });
+      startVerification(email);
     } catch (error: any) {
-      if (error?.data?.requiresVerification) {
-        startVerification(email);
-        alert('Tu cuenta no está verificada. Por favor, verifica tu email.');
-      } else {
-        alert('Error al iniciar sesión: ' + (error.message || 'Credenciales incorrectas'));
-      }
+      alert('Error al registrarse: ' + (error.message || 'Inténtalo de nuevo.'));
     } finally {
       setIsLoading(false);
     }
@@ -204,10 +217,9 @@ export default function Login() {
     setIsLoading(true);
     try {
       await verifyEmail({ email, code: verificationCode });
-      alert('¡Cuenta verificada exitosamente! Iniciando sesión...');
+      alert('¡Cuenta verificada exitosamente! Ya puedes iniciar sesión.');
       clearVerification();
-      // After successful verify, log them in automatically
-      await handleLogin({ email, password });
+      router.replace('/login');
     } catch (error: any) {
       alert('Código incorrecto o expirado.');
     } finally {
@@ -235,7 +247,7 @@ export default function Login() {
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       <LinearGradient
-        colors={[theme.tint + '15', 'transparent']} // Equivalente a accent/5 aprox
+        colors={[theme.tint + '15', 'transparent']}
         style={StyleSheet.absoluteFillObject}
       />
       <ScrollView 
@@ -253,17 +265,16 @@ export default function Login() {
       >
         <View style={{ flex: 1, minHeight: 20 }} />
         
-        {/* LOGO */}
         <Image 
-          source={require('../../assets/images/logo.webp')} 
-          style={styles.logo} 
-          resizeMode="contain"
+          source={require('@/../assets/images/logo.webp')} 
+          style={{ width: 80, height: 80, alignSelf: 'center', marginBottom: 12 }} 
+          resizeMode="contain" 
         />
-
+        
         {/* BADGE "Gratis y Sin Anuncios" */}
         <View style={styles.badgeContainer}>
           <BlurView intensity={40} tint={blurTint} style={[styles.badge, { 
-            backgroundColor: theme.card + '60', // 40% opacity del color de la tarjeta
+            backgroundColor: theme.card + '60',
             borderColor: theme.border + '80' 
           }]}>
             <Sparkles color={theme.tint} size={16} style={{ marginRight: 6 }} />
@@ -332,7 +343,7 @@ export default function Login() {
                     )}
                   </TouchableOpacity>
 
-                  <View style={[styles.footer, { marginTop: 24, borderTopWidth: 0, paddingTop: 0 }]}>
+                  <View style={[styles.footer, { marginTop: 24 }]}>
                     <Text style={[styles.footerText, { color: theme.textSecondary }]}>¿No has recibido el código? </Text>
                     <TouchableOpacity 
                       onPress={handleResendCode}
@@ -350,7 +361,7 @@ export default function Login() {
                     style={{ alignSelf: 'center', marginTop: 24 }}
                     onPress={clearVerification}
                   >
-                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Volver al inicio de sesión</Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Volver al registro</Text>
                   </TouchableOpacity>
                 </View>
               </BlurView>
@@ -361,29 +372,50 @@ export default function Login() {
             {/* HEADER TEXTS */}
             <View style={styles.headerTextContainer}>
               <Text style={[styles.title, { color: theme.text }]}>Pro Fitness Glass</Text>
-              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Inicia sesión para continuar con tu progreso.</Text>
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Crea tu cuenta gratis para empezar.</Text>
             </View>
 
             {/* GLASSCARD WRAPPER PARA SOMBRA */}
             <View style={styles.glassCardWrapper}>
               <BlurView intensity={50} tint={blurTint} style={[styles.glassCard, { 
-                backgroundColor: theme.card + '40', // 25% opacity para que se note el blur de fondo
+                backgroundColor: theme.card + '40',
                 borderColor: theme.border + '80'
               }]}>
                 <View style={styles.form}>
                   
+                  {/* USERNAME INPUT */}
+                  <View style={styles.inputWrapper}>
+                    <TextInput 
+                      style={[
+                        styles.input, 
+                        { 
+                          backgroundColor: theme.background + '80',
+                          borderColor: focusedInput === 'username' ? theme.tint : theme.border,
+                          color: theme.text 
+                        }
+                      ]}
+                      placeholder='Nombre de usuario'
+                      placeholderTextColor={theme.textSecondary}
+                      value={username}
+                      onChangeText={setUsername}
+                      onFocus={() => setFocusedInput('username')}
+                      onBlur={() => setFocusedInput(null)}
+                      autoCapitalize='none'
+                    />
+                  </View>
+
                   {/* EMAIL INPUT */}
                   <View style={styles.inputWrapper}>
                     <TextInput 
                       style={[
                         styles.input, 
                         { 
-                          backgroundColor: theme.background + '80', // 50% opacity
+                          backgroundColor: theme.background + '80',
                           borderColor: focusedInput === 'email' ? theme.tint : theme.border,
                           color: theme.text 
                         }
                       ]}
-                      placeholder='Email o nombre de usuario'
+                      placeholder='Correo electrónico'
                       placeholderTextColor={theme.textSecondary}
                       value={email}
                       onChangeText={setEmail}
@@ -423,10 +455,50 @@ export default function Login() {
                         {showPassword ? <EyeOff size={20} color={theme.textSecondary} /> : <Eye size={20} color={theme.textSecondary} />}
                       </TouchableOpacity>
                     </View>
-                    
-                    <View style={styles.passwordFooter}>
-                      <TouchableOpacity style={styles.forgotPassword}>
-                        <Text style={[styles.forgotText, { color: theme.textSecondary }]}>¿Olvidaste tu contraseña?</Text>
+                  </View>
+
+                  {password.length > 0 && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 8, columnGap: 4, marginTop: -10, paddingHorizontal: 4 }}>
+                      {reqs.map(r => (
+                        <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', width: '48%', gap: 6 }}>
+                          {r.valid ? (
+                            <CheckCircle2 size={12} color="#10B981" />
+                          ) : (
+                            <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: theme.border }} />
+                          )}
+                          <Text style={{ fontSize: 10, color: r.valid ? theme.text : theme.textSecondary }}>{r.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* CONFIRM PASSWORD INPUT */}
+                  <View style={styles.inputWrapper}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <TextInput 
+                        style={[
+                          styles.input, 
+                          { 
+                            backgroundColor: theme.background + '80', 
+                            borderColor: focusedInput === 'confirm' ? theme.tint : theme.border,
+                            color: theme.text,
+                            flex: 1,
+                            paddingRight: 40
+                          }
+                        ]}
+                        placeholder='Confirmar contraseña'
+                        placeholderTextColor={theme.textSecondary}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        onFocus={() => setFocusedInput('confirm')}
+                        onBlur={() => setFocusedInput(null)}
+                        secureTextEntry={!showConfirmPassword}
+                      />
+                      <TouchableOpacity 
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        style={{ position: 'absolute', right: 12 }}
+                      >
+                        {showConfirmPassword ? <EyeOff size={20} color={theme.textSecondary} /> : <Eye size={20} color={theme.textSecondary} />}
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -434,25 +506,18 @@ export default function Login() {
                   {/* SUBMIT BUTTON */}
                   <TouchableOpacity 
                     style={[styles.loginButton, { backgroundColor: theme.tint, shadowColor: theme.tint }]}
-                    onPress={handleLoginSubmit}
+                    onPress={handleRegisterSubmit}
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <ActivityIndicator color="#0f172a" />
                     ) : (
                       <>
-                        <LogIn color="#0f172a" size={18} style={{ marginRight: 8 }} />
-                        <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+                        <UserPlus color="#0f172a" size={18} style={{ marginRight: 8 }} />
+                        <Text style={styles.loginButtonText}>Registrarse</Text>
                       </>
                     )}
                   </TouchableOpacity>
-
-                  {/* DIVIDER */}
-                  <View style={styles.divider}>
-                    <View style={[styles.line, { backgroundColor: theme.border }]} />
-                    <Text style={[styles.dividerText, { color: theme.textSecondary }]}>O continúa con</Text>
-                    <View style={[styles.line, { backgroundColor: theme.border }]} />
-                  </View>
 
                   {/* SOCIAL BUTTONS */}
                   <View style={styles.socialContainer}>
@@ -490,18 +555,38 @@ export default function Login() {
                     </TouchableOpacity>
                   </View>
 
+                  {/* TEST INTERACTIVO */}
+                  <TouchableOpacity style={{ marginTop: 8, borderRadius: 24, overflow: 'hidden', borderWidth: 2, borderColor: theme.border }}>
+                    <LinearGradient colors={[theme.tint + '90', theme.card]} start={{x: 0, y: 0}} end={{x: 1, y: 1}} style={{ padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 12 }}>
+                          <Sparkles size={16} color="#FDE047" />
+                        </View>
+                        <View>
+                          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 }}>TEST INTERACTIVO</Text>
+                          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, marginTop: 2 }}>Tu plan ideal en &lt; 2 min.</Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Info size={20} color="rgba(255,255,255,0.7)" />
+                        <View style={{ backgroundColor: '#fff', padding: 8, borderRadius: 12 }}>
+                          <ArrowRight size={16} color={theme.tint} />
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
                   {/* FOOTER */}
                   <View style={styles.footer}>
-                    <Text style={[styles.footerText, { color: theme.textSecondary }]}>¿Aún no tienes cuenta? </Text>
+                    <Text style={[styles.footerText, { color: theme.textSecondary }]}>¿Ya tienes cuenta? </Text>
                     <TouchableOpacity 
-                      onPress={() => router.push('/register')}
+                      onPress={() => router.push('/login')}
                       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                       style={{ padding: 4 }}
                     >
-                      <Text style={[styles.registerText, { color: theme.tint }]}>Regístrate ahora</Text>
+                      <Text style={[styles.registerText, { color: theme.tint }]}>Inicia sesión</Text>
                     </TouchableOpacity>
                   </View>
-                  
                 </View>
               </BlurView>
             </View>
@@ -517,23 +602,14 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   contentWrapper: {
     width: '100%',
     alignItems: 'center',
     paddingHorizontal: 16,
   },
-  logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 12,
-  },
   badgeContainer: {
     marginBottom: 24,
-    alignItems: 'center',
-    width: '100%',
   },
   badge: {
     flexDirection: 'row',
@@ -547,18 +623,17 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '800',
     letterSpacing: 1,
   },
   headerTextContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   title: {
     fontSize: 32,
     fontWeight: '800',
-    marginBottom: 4,
-    textAlign: 'center',
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
@@ -573,7 +648,7 @@ const styles = StyleSheet.create({
     shadowRadius: 50,
     elevation: 10,
     borderRadius: 32,
-    backgroundColor: 'transparent', // The BlurView provides the glass
+    backgroundColor: 'transparent',
   },
   glassCard: {
     width: '100%',
@@ -586,61 +661,44 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   inputWrapper: {
-    position: 'relative',
+    width: '100%',
   },
   input: {
-    borderRadius: 20,
+    height: 52,
     borderWidth: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  passwordFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-    paddingHorizontal: 8,
-  },
-  forgotPassword: {
-    paddingVertical: 4,
-  },
-  forgotText: {
-    fontSize: 12,
-    fontWeight: '600',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 15,
   },
   loginButton: {
     flexDirection: 'row',
-    height: 56,
-    borderRadius: 20,
-    justifyContent: 'center',
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 4,
+    justifyContent: 'center',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowRadius: 8,
+    elevation: 4,
+    marginTop: 8,
   },
   loginButtonText: {
     color: '#0f172a',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '700',
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: 4,
   },
   line: {
     flex: 1,
     height: 1,
   },
   dividerText: {
-    marginHorizontal: 16,
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    paddingHorizontal: 12,
+    fontSize: 12,
   },
   socialContainer: {
     flexDirection: 'row',
@@ -661,10 +719,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(128,128,128,0.2)',
-    flexWrap: 'wrap',
   },
   footerText: {
     fontSize: 14,

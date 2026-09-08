@@ -30,17 +30,21 @@ export default function LevelBadge({ level = 1, size = 'md', showName = false, b
 
     return (
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <LinearGradient colors={tier.colors} style={{ width: wrapperSize, height: wrapperSize, borderRadius: wrapperSize/2, alignItems: 'center', justifyContent: 'center', elevation: 10 }}>
-                <View style={{ width: innerSize, height: innerSize, borderRadius: innerSize/2, backgroundColor: bgTheme, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: textSize, fontWeight: '900', color: tier.colors[0] }}>{level}</Text>
-                </View>
-                <View style={{ position: 'absolute', bottom: -8, width: iconBoxSize, height: iconBoxSize, borderRadius: iconBoxSize/2, backgroundColor: bgTheme, padding: 2 }}>
+            <View style={{ width: wrapperSize, height: wrapperSize + 8, alignItems: 'center' }}>
+                <LinearGradient colors={tier.colors} style={{ width: wrapperSize, height: wrapperSize, borderRadius: wrapperSize/2, alignItems: 'center', justifyContent: 'center', elevation: 10 }}>
+                    <View style={{ width: innerSize, height: innerSize, borderRadius: innerSize/2, backgroundColor: bgTheme, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontSize: textSize, fontWeight: '900', color: tier.colors[0] }}>{level}</Text>
+                    </View>
+                </LinearGradient>
+                
+                <View style={{ position: 'absolute', bottom: 0, width: iconBoxSize, height: iconBoxSize, borderRadius: iconBoxSize/2, backgroundColor: bgTheme, padding: 2, elevation: 11, zIndex: 10 }}>
                     <LinearGradient colors={tier.colors} style={{ flex: 1, borderRadius: iconBoxSize/2, alignItems: 'center', justifyContent: 'center' }}>
                         <Icon size={iconSize} color="#fff" />
                     </LinearGradient>
                 </View>
-            </LinearGradient>
-            {showName && <Text style={{ marginTop: 14, fontSize: 11, fontWeight: '900', textTransform: 'uppercase', color: tier.colors[0], letterSpacing: 1 }}>{tier.name}</Text>}
+            </View>
+            
+            {showName && <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '900', textTransform: 'uppercase', color: tier.colors[0], letterSpacing: 1 }}>{tier.name}</Text>}
         </View>
     );
 }
