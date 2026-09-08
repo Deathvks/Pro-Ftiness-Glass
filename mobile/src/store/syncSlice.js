@@ -5,7 +5,7 @@ const STORAGE_KEY = 'offline_sync_queue';
 
 const getInitialQueue = () => {
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null);
         return stored ? JSON.parse(stored) : [];
     } catch (e) {
         console.error('Failed to parse offline sync queue from localStorage', e);
@@ -15,7 +15,7 @@ const getInitialQueue = () => {
 
 const saveQueue = (queue) => {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+        if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
     } catch (e) {
         console.error('Failed to save offline sync queue to localStorage', e);
     }

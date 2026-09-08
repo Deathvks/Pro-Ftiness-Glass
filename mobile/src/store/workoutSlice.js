@@ -9,7 +9,7 @@ const stopNativeTimer = () => {
 
 const getAccentColor = () => {
   try {
-    const accent = localStorage.getItem('accent') || 'green';
+    const accent = (typeof localStorage !== 'undefined' ? localStorage.getItem('accent') : null) || 'green';
     const colors = {
       green: '#22c55e', blue: '#3b82f6', violet: '#8b5cf6', amber: '#f59e0b',
       rose: '#f43f5e', teal: '#14b8a6', cyan: '#06b6d4', orange: '#f97316',
@@ -57,14 +57,14 @@ const findLastPerformance = (workoutLog, exerciseName) => {
 // --- FUNCIONES DE ALMACENAMIENTO LOCAL ---
 const getWorkoutStateFromStorage = () => {
   try {
-    const activeWorkout = JSON.parse(localStorage.getItem('activeWorkout'));
+    const activeWorkout = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('activeWorkout') : null));
     if (!activeWorkout) return {};
     return {
       activeWorkout,
-      workoutStartTime: JSON.parse(localStorage.getItem('workoutStartTime')),
-      isWorkoutPaused: JSON.parse(localStorage.getItem('isWorkoutPaused')),
+      workoutStartTime: JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('workoutStartTime') : null)),
+      isWorkoutPaused: JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('isWorkoutPaused') : null)),
       workoutAccumulatedTime: JSON.parse(
-        localStorage.getItem('workoutAccumulatedTime')
+        (typeof localStorage !== 'undefined' ? localStorage.getItem('workoutAccumulatedTime') : null)
       ),
     };
   } catch {
@@ -75,16 +75,16 @@ const getWorkoutStateFromStorage = () => {
 
 const getRestTimerStateFromStorage = () => {
   try {
-    const isResting = JSON.parse(localStorage.getItem('isResting'));
-    const isRestTimerPaused = JSON.parse(localStorage.getItem('isRestTimerPaused')) || false;
-    const restTimerRemaining = JSON.parse(localStorage.getItem('restTimerRemaining'));
+    const isResting = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('isResting') : null));
+    const isRestTimerPaused = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('isRestTimerPaused') : null)) || false;
+    const restTimerRemaining = JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerRemaining') : null));
 
     if (isResting) {
       return {
         isResting,
-        restTimerEndTime: JSON.parse(localStorage.getItem('restTimerEndTime')),
-        restTimerInitialDuration: JSON.parse(localStorage.getItem('restTimerInitialDuration')),
-        restTimerMode: localStorage.getItem('restTimerMode') || 'modal',
+        restTimerEndTime: JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerEndTime') : null)),
+        restTimerInitialDuration: JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerInitialDuration') : null)),
+        restTimerMode: (typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerMode') : null) || 'modal',
         isRestTimerPaused,
         restTimerRemaining,
       };
@@ -678,8 +678,8 @@ export const createWorkoutSlice = (set, get) => ({
         ...workoutData,
         details: processedDetails || workoutData.details,
         date: workoutDate, 
-        visibility: state.activeWorkout?.is_from_trainer ? 'private' : (localStorage.getItem('globalWorkoutVisibility') || 'friends'), 
-        notifyFriends: localStorage.getItem('globalNotifyFriends') !== 'false'
+        visibility: state.activeWorkout?.is_from_trainer ? 'private' : ((typeof localStorage !== 'undefined' ? localStorage.getItem('globalWorkoutVisibility') : null) || 'friends'), 
+        notifyFriends: (typeof localStorage !== 'undefined' ? localStorage.getItem('globalNotifyFriends') : null) !== 'false'
       };
 
       const responseData = await workoutService.logWorkout(finalWorkoutData);
