@@ -33,7 +33,7 @@ const isSameDay = (d1, d2) => {
 };
 
 export default function Dashboard() {
-  const userProfile = useAppStore(state => state.userProfile) || useAppStore(state => state.user);
+  const userProfile = useAppStore(state => state.userProfile || state.user);
   const gamification = useAppStore(state => state.gamification) || { streak: 0, level: 1, xp: 0 };
   const routines = useAppStore(state => state.routines) || [];
   const activeWorkout = useAppStore(state => state.activeWorkout);
