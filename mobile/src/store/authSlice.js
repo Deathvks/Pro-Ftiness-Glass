@@ -1,4 +1,4 @@
-/* frontend/src/store/authSlice.js */
+import '@/utils/localStoragePolyfill';
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
 import { APP_VERSION } from '../config/version';
@@ -16,8 +16,8 @@ const clearAuthStorage = () => {
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
 export const createAuthSlice = (set, get) => ({
     // --- ESTADO INICIAL ---
-    isAuthenticated: !!localStorage.getItem('pro_fitness_token'),
-    token: localStorage.getItem('pro_fitness_token'),
+    isAuthenticated: typeof localStorage !== 'undefined' && !!localStorage.getItem('pro_fitness_token'),
+    token: typeof localStorage !== 'undefined' ? localStorage.getItem('pro_fitness_token') : null,
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
