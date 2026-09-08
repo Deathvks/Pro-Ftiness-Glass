@@ -10,6 +10,11 @@ import { createSyncSlice } from './syncSlice';
 import { createStorySlice } from './storySlice';
 
 const useAppStore = create((set, get) => ({
+    theme: (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) || 'oled',
+    setTheme: (theme) => {
+        set({ theme });
+        if (typeof localStorage !== 'undefined') localStorage.setItem('theme', theme);
+    },
     ...createAuthSlice(set, get),
     ...createDataSlice(set, get),
     ...createWorkoutSlice(set, get),

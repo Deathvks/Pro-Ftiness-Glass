@@ -21,11 +21,16 @@ export default function RootLayout() {
     async function prepare() {
       await initLocalStorage();
       
-      // REHIDRATACIÓN PARA REACT NATIVE:
       // Como Zustand se evaluó antes de que AsyncStorage terminara, re-leemos la memoria ahora:
       const token = localStorage.getItem('pro_fitness_token');
-      if (token) {
-        useAppStore.setState({ isAuthenticated: true, token });
+      const savedTheme = localStorage.getItem('theme');
+      
+      if (token || savedTheme) {
+        useAppStore.setState({ 
+          isAuthenticated: !!token, 
+          token: token || null,
+          ...(savedTheme ? { theme: savedTheme } : {})
+        });
       }
 
       setIsReady(true);
@@ -60,8 +65,11 @@ export default function RootLayout() {
     return null;
   }
 
+  const theme = useAppStore(state => state.theme);
+  const isDark = theme === 'dark' || theme === 'oled';
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />

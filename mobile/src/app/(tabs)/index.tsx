@@ -4,6 +4,7 @@ import { Flame, Play, Target, ChevronRight, Clock, Droplet, Beef, Trophy, Plus, 
 import useAppStore from '@/store/useAppStore';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { Colors } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -44,6 +45,9 @@ export default function Dashboard() {
   const nutritionLog = useAppStore(state => state.nutritionLog) || [];
   
   const router = useRouter();
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const colors = Colors[theme] || Colors.oled;
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
   const levelData = useMemo(() => {
@@ -179,7 +183,7 @@ export default function Dashboard() {
             <View style={{ marginLeft: 12, flex: 1 }}>
               <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
                   <Text style={styles.levelTitle}>Nivel {gamification?.level || 1}</Text>
-                  <TouchableOpacity><Info size={18} color="#888" /></TouchableOpacity>
+                  <TouchableOpacity><Info size={18} color={colors.textSecondary} /></TouchableOpacity>
               </View>
               <Text style={styles.levelSub}>{levelData.currentXp} / {levelData.nextLevelXp} XP</Text>
             </View>
@@ -192,7 +196,7 @@ export default function Dashboard() {
         {/* 2. STATS (Sesiones Semanales) */}
         <View style={styles.statsCard}>
            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20}}>
-             <View style={styles.statIconWrapper}><Dumbbell size={24} color="#3b82f6" /></View>
+             <View style={styles.statIconWrapper}><Dumbbell size={24} color={colors.tint} /></View>
              <Text style={styles.statBigValue}>{weeklyStats.sessions}</Text>
            </View>
            <View style={styles.weekRow}>
@@ -201,9 +205,9 @@ export default function Dashboard() {
                   const hasWorkout = Array.isArray(workoutLog) && workoutLog.some(log => isSameDay(new Date(log.workout_date || log.created_at), date));
                   return (
                       <View key={i} style={styles.dayCol}>
-                          <Text style={[styles.dayLetter, isToday && {color: '#3b82f6'}]}>{dayLetters[i]}</Text>
+                          <Text style={[styles.dayLetter, isToday && {color: colors.tint}]}>{dayLetters[i]}</Text>
                           <View style={[styles.dayCircle, hasWorkout && styles.dayCircleActive]}>
-                              {hasWorkout && <Check size={12} color="#fff" strokeWidth={3} />}
+                              {hasWorkout && <Check size={12} color={colors.text} strokeWidth={3} />}
                           </View>
                       </View>
                   )
@@ -214,14 +218,14 @@ export default function Dashboard() {
         {/* 3. MACROS SECUNDARIOS (Tiempo, Calorías Meta y Quemadas) */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20, paddingHorizontal: 20, marginBottom: 30 }}>
             <View style={styles.bentoCard}>
-                <Target color="#fbbf24" size={24} />
+                <Target color={colors.warning} size={24} />
                 <View style={{marginTop: 10}}>
                     <Text style={styles.bentoValue}>{targets.calories}</Text>
                     <Text style={styles.bentoLabel}>Meta Calórica</Text>
                 </View>
             </View>
             <View style={styles.bentoCard}>
-                <Clock color="#3b82f6" size={24} />
+                <Clock color={colors.tint} size={24} />
                 <View style={{marginTop: 10}}>
                     <Text style={styles.bentoValue}>{weeklyStats.timeDisplay}</Text>
                     <Text style={styles.bentoLabel}>Tiempo Activo</Text>
@@ -248,7 +252,7 @@ export default function Dashboard() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20, paddingHorizontal: 20 }}>
             <View style={styles.macroCard}>
-                <Flame color="#fbbf24" size={24} />
+                <Flame color={colors.warning} size={24} />
                 <View style={{marginLeft: 12}}>
                     <Text style={styles.macroValue}>{Math.round(nutritionTotals.calories)}</Text>
                     <Text style={styles.macroLabel}>/ {targets.calories} kcal</Text>
@@ -270,7 +274,7 @@ export default function Dashboard() {
             </TouchableOpacity>
             <TouchableOpacity style={styles.macroCard} onPress={() => alert('Abrir creatina')}>
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    {hasCreatine ? <Check size={24} color="#a78bfa" /> : <Plus size={24} color="#888" />}
+                    {hasCreatine ? <Check size={24} color="#a78bfa" /> : <Plus size={24} color={colors.textSecondary} />}
                 </View>
                 <View style={{marginLeft: 12}}>
                     <Text style={styles.macroValue}>{hasCreatine ? 'Sí' : 'No'}</Text>
@@ -348,54 +352,54 @@ export default function Dashboard() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#000' },
+const createStyles = (colors) => StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, paddingHorizontal: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 30 },
-  greeting: { color: '#888', fontSize: 16, marginBottom: 4 },
-  name: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  streakBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#222', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
+  greeting: { color: colors.textSecondary, fontSize: 16, marginBottom: 4 },
+  name: { color: colors.text, fontSize: 24, fontWeight: 'bold' },
+  streakBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.border, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
   streakText: { color: '#f97316', fontWeight: 'bold', fontSize: 16, marginLeft: 6 },
-  levelCard: { backgroundColor: '#111', padding: 24, borderRadius: 24, marginBottom: 20 },
+  levelCard: { backgroundColor: colors.card, padding: 24, borderRadius: 24, marginBottom: 20 },
   levelHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  levelIconBadge: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#22c55e22', alignItems: 'center', justifyContent: 'center' },
-  levelTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  levelSub: { color: '#888', fontSize: 14, marginTop: 2 },
-  progressBarBg: { height: 8, backgroundColor: '#222', borderRadius: 4, overflow: 'hidden' },
-  progressBarFill: { height: '100%', backgroundColor: '#22c55e', borderRadius: 4 },
-  statsCard: { backgroundColor: '#111', padding: 24, borderRadius: 24, marginBottom: 20 },
-  statIconWrapper: { padding: 12, borderRadius: 20, backgroundColor: '#3b82f622' },
-  statBigValue: { color: '#fff', fontSize: 32, fontWeight: '900' },
+  levelIconBadge: { width: 48, height: 48, borderRadius: 16, backgroundColor: colors.success + '22', alignItems: 'center', justifyContent: 'center' },
+  levelTitle: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
+  levelSub: { color: colors.textSecondary, fontSize: 14, marginTop: 2 },
+  progressBarBg: { height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden' },
+  progressBarFill: { height: '100%', backgroundColor: colors.success, borderRadius: 4 },
+  statsCard: { backgroundColor: colors.card, padding: 24, borderRadius: 24, marginBottom: 20 },
+  statIconWrapper: { padding: 12, borderRadius: 20, backgroundColor: colors.tint + '22' },
+  statBigValue: { color: colors.text, fontSize: 32, fontWeight: '900' },
   weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
   dayCol: { alignItems: 'center' },
-  dayLetter: { color: '#888', fontSize: 10, fontWeight: 'bold', marginBottom: 6 },
-  dayCircle: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: '#333', alignItems: 'center', justifyContent: 'center' },
-  dayCircleActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
-  bentoCard: { backgroundColor: '#111', padding: 20, borderRadius: 24, marginRight: 15, width: 140 },
-  bentoValue: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
-  bentoLabel: { color: '#888', fontSize: 12, marginTop: 4 },
-  macroCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', padding: 16, borderRadius: 20, marginRight: 15, minWidth: 150 },
-  macroValue: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  macroLabel: { color: '#888', fontSize: 12 },
-  weightCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#111', padding: 20, borderRadius: 24, marginBottom: 30 },
+  dayLetter: { color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', marginBottom: 6 },
+  dayCircle: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  dayCircleActive: { backgroundColor: colors.tint, borderColor: colors.tint },
+  bentoCard: { backgroundColor: colors.card, padding: 20, borderRadius: 24, marginRight: 15, width: 140 },
+  bentoValue: { color: colors.text, fontSize: 22, fontWeight: 'bold' },
+  bentoLabel: { color: colors.textSecondary, fontSize: 12, marginTop: 4 },
+  macroCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, padding: 16, borderRadius: 20, marginRight: 15, minWidth: 150 },
+  macroValue: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
+  macroLabel: { color: colors.textSecondary, fontSize: 12 },
+  weightCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.card, padding: 20, borderRadius: 24, marginBottom: 30 },
   weightInfo: { flexDirection: 'row', alignItems: 'center' },
-  weightLabel: { color: '#888', fontSize: 12, fontWeight: 'bold', letterSpacing: 1, marginBottom: 4 },
-  weightValue: { color: '#fff', fontSize: 28, fontWeight: '900' },
-  addWeightBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#222', alignItems: 'center', justifyContent: 'center' },
+  weightLabel: { color: colors.textSecondary, fontSize: 12, fontWeight: 'bold', letterSpacing: 1, marginBottom: 4 },
+  weightValue: { color: colors.text, fontSize: 28, fontWeight: '900' },
+  addWeightBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   section: { marginBottom: 30 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  seeAll: { color: '#3b82f6', fontSize: 14, fontWeight: 'bold' },
-  routineCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', padding: 16, borderRadius: 20, marginBottom: 10 },
-  routineCardActive: { borderColor: '#3b82f6', borderWidth: 1, backgroundColor: '#1e3a8a11' },
-  routineIconWrapper: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#222', alignItems: 'center', justifyContent: 'center', marginRight: 15 },
-  routineName: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  routineNameActive: { color: '#3b82f6' },
-  routineSub: { color: '#888', fontSize: 13, fontWeight: '500' },
-  emptyCard: { backgroundColor: '#111', padding: 30, borderRadius: 20, alignItems: 'center' },
-  emptyText: { color: '#888', fontSize: 14 },
+  sectionTitle: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
+  seeAll: { color: colors.tint, fontSize: 14, fontWeight: 'bold' },
+  routineCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, padding: 16, borderRadius: 20, marginBottom: 10 },
+  routineCardActive: { borderColor: colors.tint, borderWidth: 1, backgroundColor: colors.tint + '11' },
+  routineIconWrapper: { width: 48, height: 48, borderRadius: 16, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center', marginRight: 15 },
+  routineName: { color: colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
+  routineNameActive: { color: colors.tint },
+  routineSub: { color: colors.textSecondary, fontSize: 13, fontWeight: '500' },
+  emptyCard: { backgroundColor: colors.card, padding: 30, borderRadius: 20, alignItems: 'center' },
+  emptyText: { color: colors.textSecondary, fontSize: 14 },
   cardioGrid: { flexDirection: 'row', gap: 15 },
-  cardioBtn: { flex: 1, backgroundColor: '#111', borderRadius: 24, padding: 20, alignItems: 'center' },
-  cardioIconWrapper: { width: 56, height: 56, borderRadius: 20, backgroundColor: '#222', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  cardioText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  cardioBtn: { flex: 1, backgroundColor: colors.card, borderRadius: 24, padding: 20, alignItems: 'center' },
+  cardioIconWrapper: { width: 56, height: 56, borderRadius: 20, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  cardioText: { color: colors.text, fontSize: 16, fontWeight: 'bold' }
 });
