@@ -5,7 +5,6 @@ import { Dumbbell, ArrowRight, Check, X, AlertTriangle } from "lucide-react";
 import ExerciseSearchInput from "./ExerciseSearchInput";
 import { useToast } from "../hooks/useToast";
 import { useTranslation } from "react-i18next";
-import { useExerciseStore } from "../store/useExerciseStore";
 
 const TransferModal = ({ sourceName, onClose, onTransferSuccess }) => {
   const { t } = useTranslation();
@@ -161,8 +160,7 @@ const ManualExercisesManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedExercise, setSelectedExercise] = useState(null);
   
-  const { fetchExercises } = useExerciseStore();
-
+  
   const loadManualExercises = async () => {
     setIsLoading(true);
     try {
@@ -177,8 +175,7 @@ const ManualExercisesManager = () => {
 
   useEffect(() => {
     loadManualExercises();
-    fetchExercises();
-  }, []);
+      }, []);
 
   return (
     <div className="animate-fade-in pb-20">
@@ -228,5 +225,6 @@ const ManualExercisesManager = () => {
 };
 
 export default ManualExercisesManager;
+
 
 
