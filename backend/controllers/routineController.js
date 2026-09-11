@@ -528,6 +528,59 @@ export const deleteRoutine = async (req, res, next) => {
   }
 };
 
+export const deleteAllRoutines = async (req, res, next) => {
+  const { userId } = req.user;
+  const t = await sequelize.transaction();
+
+  try {
+    const routines = await sequelize.models.Routine.findAll({
+      where: { user_id: userId },
+      transaction: t,
+    });
+
+    if (!routines || routines.length === 0) {
+      await t.rollback();
+      return res.status(200).json({ message: 'No hay rutinas para eliminar.' });
+    }
+
+    for (const routine of routines) {
+      const logsToDelete = await sequelize.models.WorkoutLog.findAll({
+        where: { routine_id: routine.id, user_id: userId },
+        transaction: t
+      });
+      
+      for (const log of logsToDelete) {
+        await sequelize.models.WorkoutLogSet.destroy({
+          where: {
+            log_detail_id: (
+              await sequelize.models.WorkoutLogDetail.findAll({
+                where: { workout_log_id: log.id },
+                transaction: t,
+              })
+            ).map(detail => detail.id),
+          },
+          transaction: t,
+        });
+        await sequelize.models.WorkoutLogDetail.destroy({ where: { workout_log_id: log.id }, transaction: t });
+        await log.destroy({ transaction: t });
+      }
+
+      await sequelize.models.RoutineExercise.destroy({
+        where: { routine_id: routine.id },
+        transaction: t,
+      });
+
+      await routine.destroy({ transaction: t });
+    }
+    
+    await t.commit();
+    res.json({ message: 'Todas las rutinas han sido eliminadas' });
+  } catch (error) {
+    await t.rollback();
+    next(error);
+  }
+};
+
 // --- NUEVOS MÉTODOS SOCIALES PARA RUTINAS ---
 
 // CAMBIAR ESTADO PÚBLICO/PRIVADO
@@ -757,6 +810,7 @@ const routineController = {
   createRoutine,
   updateRoutine,
   deleteRoutine,
+  deleteAllRoutines,
   togglePublicStatus,
   getPublicRoutines,
   getPublicRoutineById,

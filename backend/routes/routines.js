@@ -115,6 +115,7 @@ router.get('/', routineController.getAllRoutines);
 router.post('/', routineValidationRules, handleValidationErrors, routineController.createRoutine);
 router.get('/:id', routineController.getRoutineById);
 router.put('/:id', routineValidationRules, handleValidationErrors, routineController.updateRoutine);
+router.delete('/all', routineController.deleteAllRoutines);
 router.delete('/:id', routineController.deleteRoutine);
 
 export default router;
