@@ -367,18 +367,18 @@ const ExerciseDetailView = ({
               <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">
                 {t("exercise_ui:reps", "Reps")}
               </label>
-              <div className="h-[48px]">
+              <div>
                 <CustomSelect
                   value={currentReps}
                   onChange={(val) => setReps(val)}
                   options={repOptionsToUse}
-                  className="w-full h-full bg-black/5 dark:bg-white/5 rounded-[16px] ring-1 ring-black/5 dark:ring-white/10"
+                  className="w-full bg-black/5 dark:bg-white/5 rounded-[16px] ring-1 ring-black/5 dark:ring-white/10"
                   triggerClassName={
                     inputClasses
                       .replace("bg-black/5", "bg-transparent")
                       .replace("dark:bg-white/5", "")
                       .replace("ring-1 ring-black/5 dark:ring-white/10", "") +
-                    " !px-2 flex items-center justify-between h-full appearance-none rounded-[16px]"
+                    " !px-2 flex items-center justify-between appearance-none rounded-[16px]"
                   }
                   textClassName="text-text-primary font-bold text-center truncate flex-1"
                   searchable={false}
