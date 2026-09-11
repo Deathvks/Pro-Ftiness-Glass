@@ -89,13 +89,47 @@ const ExerciseCard = ({
 
             <div>
               <label className={baseLabelClasses}>{tCommon('Reps', { defaultValue: 'Reps' })}</label>
-              <input
-                type="text"
-                placeholder="8-12"
-                value={exercise.reps || ''}
+              <select
+                value={exercise.reps || '10'}
                 onChange={(e) => onFieldChange(identifier, 'reps', e.target.value)}
-                className={baseInputClasses}
-              />
+                className={baseInputClasses + " appearance-none !pr-2"}
+              >
+                {/* Asegurar que el valor actual esté en la lista si no es de los predefinidos */}
+                {exercise.reps && !["1","2","3","4","5","6","7","8","9","10","11","12","15","20","30","1-3","3-5","5-8","8-10","8-12","10-12","10-15","12-15","15-20","Al fallo"].includes(String(exercise.reps)) && (
+                    <option value={exercise.reps}>{exercise.reps}</option>
+                )}
+                <optgroup label="Repeticiones">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="15">15</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                </optgroup>
+                <optgroup label="Rangos">
+                  <option value="1-3">1-3</option>
+                  <option value="3-5">3-5</option>
+                  <option value="5-8">5-8</option>
+                  <option value="8-10">8-10</option>
+                  <option value="8-12">8-12</option>
+                  <option value="10-12">10-12</option>
+                  <option value="10-15">10-15</option>
+                  <option value="12-15">12-15</option>
+                  <option value="15-20">15-20</option>
+                </optgroup>
+                <optgroup label="Especial">
+                  <option value="Al fallo">Al fallo</option>
+                </optgroup>
+              </select>
               {errors?.reps && <p className="text-[#ef4444] text-[10px] mt-1.5 font-medium text-center">{errors.reps}</p>}
             </div>
 
