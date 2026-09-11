@@ -239,7 +239,7 @@ export const deleteExercise = async (req, res, next) => {
 
 export const getManualExercises = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.userId;
         const query = `
             SELECT DISTINCT name FROM (
                 SELECT wld.exercise_name as name
@@ -282,7 +282,7 @@ export const transferManualExercise = async (req, res) => {
     
     const transaction = await models.sequelize.transaction();
     try {
-        const userId = req.user.id;
+        const userId = req.user.userId;
         const { sourceName, targetName, targetExerciseListId, deleteSource, replaceInRoutines } = req.body;
 
         if (!sourceName || !targetName) {
@@ -377,6 +377,7 @@ const exerciseListController = {
 };
 
 export default exerciseListController;
+
 
 
 
