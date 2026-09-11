@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import api from "../services/api";
+import api from "../services/apiClient";
 import GlassCard from "./GlassCard";
 import { Dumbbell, ArrowRight, Check, X, AlertTriangle } from "lucide-react";
 import ExerciseSearchInput from "./ExerciseSearchInput";
@@ -228,3 +228,4 @@ const ManualExercisesManager = () => {
 };
 
 export default ManualExercisesManager;
+
