@@ -320,6 +320,47 @@ export const getManualExerciseInfo = async (req, res) => {
     }
 };
 
+export const deleteManualExercise = async (req, res) => {
+    const transaction = await models.sequelize.transaction();
+    try {
+        const userId = req.user.userId;
+        const name = req.query.name;
+
+        if (!name) return res.status(400).json({ error: "Falta el nombre." });
+
+        await models.sequelize.query(`
+            DELETE re FROM routine_exercises re
+            JOIN routines r ON r.id = re.routine_id
+            WHERE r.user_id = :userId AND re.name = :name AND re.exercise_list_id IS NULL
+        `, { replacements: { userId, name }, transaction });
+
+        await models.sequelize.query(`
+            DELETE wls FROM workout_log_sets wls
+            JOIN workout_log_details wld ON wld.id = wls.log_detail_id
+            JOIN workout_logs wl ON wl.id = wld.workout_log_id
+            WHERE wl.user_id = :userId AND wld.exercise_name = :name
+        `, { replacements: { userId, name }, transaction });
+
+        await models.sequelize.query(`
+            DELETE wld FROM workout_log_details wld
+            JOIN workout_logs wl ON wl.id = wld.workout_log_id
+            WHERE wl.user_id = :userId AND wld.exercise_name = :name
+        `, { replacements: { userId, name }, transaction });
+
+        await models.sequelize.query(`
+            DELETE FROM personal_records 
+            WHERE user_id = :userId AND exercise_name = :name
+        `, { replacements: { userId, name }, transaction });
+
+        await transaction.commit();
+        res.json({ message: "Ejercicio manual eliminado correctamente." });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error al borrar ejercicio manual:', error);
+        res.status(500).json({ error: 'Error interno.' });
+    }
+};
+
 export const transferManualExercise = async (req, res) => {
     
     const transaction = await models.sequelize.transaction();
@@ -410,6 +451,7 @@ const exerciseListController = {
     deleteExercise,
     getManualExercises,
     getManualExerciseInfo,
+    deleteManualExercise,
     transferManualExercise
 };
 
