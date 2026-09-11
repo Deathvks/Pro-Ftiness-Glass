@@ -144,7 +144,7 @@ const TransferModal = ({ sourceName, onClose, onTransferSuccess }) => {
             {!deleteSource && (
               <div className="p-3 bg-yellow-500/10 rounded-[16px] flex gap-3 items-start">
                 <AlertTriangle size={18} className="text-yellow-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-yellow-600 dark:text-yellow-400">Si no eliminas el origen, se creará un duplicado exacto del historial bajo el nuevo nombre, manteniendo ambos.</p>
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">Si no eliminas el origen, se copiará todo el historial al ejercicio de destino, manteniendo tus datos también en el original.</p>
               </div>
             )}
 
