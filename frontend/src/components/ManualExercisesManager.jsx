@@ -38,19 +38,19 @@ const TransferModal = ({ sourceName, onClose, onTransferSuccess }) => {
 
     setIsSubmitting(true);
     try {
-      await api.post("/manual-exercises/transfer", {
+      await api("/manual-exercises/transfer", { body: {
         sourceName,
         targetName: finalTargetName,
         targetExerciseListId: finalTargetId,
         deleteSource,
         replaceInRoutines
-      });
+      } });
       addToast("Datos transferidos correctamente.", "success");
       onTransferSuccess();
       onClose();
     } catch (err) {
       console.error(err);
-      addToast(err.response?.data?.error || "Error al transferir datos.", "error");
+      addToast(err.message || "Error al transferir datos.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -164,8 +164,8 @@ const ManualExercisesManager = () => {
   const loadManualExercises = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get("/manual-exercises");
-      setExercises(res.data);
+      const data = await api('/manual-exercises');
+      setExercises(data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -225,6 +225,8 @@ const ManualExercisesManager = () => {
 };
 
 export default ManualExercisesManager;
+
+
 
 
 
