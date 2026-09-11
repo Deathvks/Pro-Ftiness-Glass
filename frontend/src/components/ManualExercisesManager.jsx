@@ -292,6 +292,7 @@ const ManualExercisesManager = () => {
   const [infoExercise, setInfoExercise] = useState(null);
   const [deletingExercise, setDeletingExercise] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const { addToast } = useToast();
   
   const loadManualExercises = async () => {
@@ -322,6 +323,21 @@ const ManualExercisesManager = () => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    setIsDeleting(true);
+    try {
+      await api(`/exercise-list/manual-exercises/all`, { method: 'DELETE' });
+      addToast('Todos los ejercicios manuales han sido eliminados.', 'success');
+      setShowDeleteAllConfirm(false);
+      loadManualExercises();
+    } catch (error) {
+      console.error(error);
+      addToast('Error al eliminar todos los ejercicios manuales.', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   useEffect(() => {
     loadManualExercises();
       }, []);
@@ -329,12 +345,23 @@ const ManualExercisesManager = () => {
   return (
     <div className="animate-fade-in pb-20">
       <div className="mb-6">
-        <h2 className="text-2xl font-extrabold text-text-primary flex items-center gap-3">
-          <Dumbbell className="text-accent" size={28} />
-          Ejercicios Manuales
-        </h2>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <h2 className="text-2xl font-extrabold text-text-primary flex items-center gap-3">
+            <Dumbbell className="text-accent" size={28} />
+            Ejercicios Manuales
+          </h2>
+          {exercises.length > 0 && (
+            <button 
+              onClick={() => setShowDeleteAllConfirm(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-[14px] text-sm font-bold transition-colors shrink-0"
+            >
+              <Trash size={16} />
+              Borrar Todos
+            </button>
+          )}
+        </div>
         <p className="text-sm text-text-secondary mt-2">
-          Aquí puedes ver los ejercicios que has creado manualmente (fuera del catálogo oficial). Puedes seleccionarlos para fusionar su historial con ejercicios oficiales de la app si lo deseas.
+          Aquí puedes ver los ejercicios que has creado manualmente (fuera del catálogo oficial). Puedes seleccionarlos para fusionar su historial con ejercicios oficiales de la app o eliminarlos si ya no los necesitas.
         </p>
       </div>
 
@@ -343,12 +370,12 @@ const ManualExercisesManager = () => {
           <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
         </div>
       ) : exercises.length === 0 ? (
-        <div className="text-center p-10 bg-black/5 dark:bg-white/5 rounded-[24px]">
+        <div className="text-center p-8 bg-black/5 dark:bg-white/5 rounded-[24px]">
           <p className="text-text-secondary font-medium">No tienes ejercicios manuales.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {exercises.map((ex) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {exercises.map(ex => (
             <GlassCard key={ex.name} className="glass p-5 rounded-[24px] flex flex-col gap-4 group">
               <div className="flex items-center justify-between gap-3">
                 <span className="font-bold text-text-primary text-lg truncate">{ex.name}</span>
@@ -423,6 +450,17 @@ const ManualExercisesManager = () => {
           onConfirm={handleDelete}
           onCancel={() => setDeletingExercise(null)}
           confirmText="Eliminar"
+          cancelText="Cancelar"
+          isLoading={isDeleting}
+        />
+      )}
+
+      {showDeleteAllConfirm && (
+        <ConfirmationModal
+          message={`¿Estás COMPLETAMENTE SEGURO de que quieres borrar TODOS tus ejercicios manuales? Esta acción eliminará el historial, récords y rutinas de TODOS ellos. Es absolutamente irreversible.`}
+          onConfirm={handleDeleteAll}
+          onCancel={() => setShowDeleteAllConfirm(false)}
+          confirmText="Borrar Todos"
           cancelText="Cancelar"
           isLoading={isDeleting}
         />

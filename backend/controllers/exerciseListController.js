@@ -361,6 +361,62 @@ export const deleteManualExercise = async (req, res) => {
     }
 };
 
+export const deleteAllManualExercises = async (req, res) => {
+    const transaction = await models.sequelize.transaction();
+    try {
+        const userId = req.user.userId;
+
+        // Primero obtenemos todos los nombres de ejercicios manuales del usuario para borrarlos de las demás tablas
+        const [manualExercises] = await models.sequelize.query(`
+            SELECT DISTINCT name 
+            FROM routine_exercises re
+            JOIN routines r ON r.id = re.routine_id
+            WHERE r.user_id = :userId AND re.exercise_list_id IS NULL
+            UNION
+            SELECT DISTINCT wld.exercise_name as name
+            FROM workout_log_details wld
+            JOIN workout_logs wl ON wl.id = wld.workout_log_id
+            WHERE wl.user_id = :userId 
+              AND wld.exercise_name NOT IN (SELECT name FROM exercise_list)
+        `, { replacements: { userId }, transaction });
+
+        const names = manualExercises.map(ex => ex.name);
+
+        if (names.length > 0) {
+            await models.sequelize.query(`
+                DELETE re FROM routine_exercises re
+                JOIN routines r ON r.id = re.routine_id
+                WHERE r.user_id = :userId AND re.name IN (:names) AND re.exercise_list_id IS NULL
+            `, { replacements: { userId, names }, transaction });
+
+            await models.sequelize.query(`
+                DELETE wls FROM workout_log_sets wls
+                JOIN workout_log_details wld ON wld.id = wls.log_detail_id
+                JOIN workout_logs wl ON wl.id = wld.workout_log_id
+                WHERE wl.user_id = :userId AND wld.exercise_name IN (:names)
+            `, { replacements: { userId, names }, transaction });
+
+            await models.sequelize.query(`
+                DELETE wld FROM workout_log_details wld
+                JOIN workout_logs wl ON wl.id = wld.workout_log_id
+                WHERE wl.user_id = :userId AND wld.exercise_name IN (:names)
+            `, { replacements: { userId, names }, transaction });
+
+            await models.sequelize.query(`
+                DELETE FROM personal_records 
+                WHERE user_id = :userId AND exercise_name IN (:names)
+            `, { replacements: { userId, names }, transaction });
+        }
+
+        await transaction.commit();
+        res.json({ message: "Todos los ejercicios manuales han sido eliminados correctamente." });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error al borrar todos los ejercicios manuales:', error);
+        res.status(500).json({ error: 'Error interno.' });
+    }
+};
+
 export const transferManualExercise = async (req, res) => {
     
     const transaction = await models.sequelize.transaction();
@@ -452,6 +508,7 @@ const exerciseListController = {
     getManualExercises,
     getManualExerciseInfo,
     deleteManualExercise,
+    deleteAllManualExercises,
     transferManualExercise
 };
 
