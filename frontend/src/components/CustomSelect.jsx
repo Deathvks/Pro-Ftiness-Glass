@@ -117,7 +117,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
         top: position.top !== undefined ? `${position.top}px` : 'auto',
         bottom: position.bottom !== undefined ? `${position.bottom}px` : 'auto',
         left: `${position.left}px`,
-        width: `${position.width}px`,
+        minWidth: `${position.width}px`,
       }}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
