@@ -38,6 +38,7 @@ import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
 import RoutineTourGuide from '../components/RoutineTourGuide';
 import { calculateRoutineEstimatedTime } from '../utils/helpers';
+import api from '../services/apiClient';
 
 const GlobalPrivacyModal = ({ onClose }) => {
   const { addToast } = useToast();
@@ -383,6 +384,7 @@ const Routines = ({ setView }) => {
   });
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
@@ -610,6 +612,20 @@ const Routines = ({ setView }) => {
     }
   };
 
+  const confirmDeleteAll = async () => {
+    setIsLoading(true);
+    try {
+      await api('/routines/all', { method: 'DELETE' });
+      addToast('Todas las rutinas han sido eliminadas.', 'success');
+      setShowDeleteAllModal(false);
+      await fetchInitialData(); 
+    } catch (error) {
+      addToast(error.message || 'Error al eliminar las rutinas.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const duplicateRoutine = async (routine) => {
     setIsLoading(true);
     try {
@@ -738,6 +754,15 @@ const Routines = ({ setView }) => {
 
   const RoutineActionButtons = ({ className = '', id }) => (
     <div className={`flex gap-2.5 ${className}`} id={id}>
+      {routines && routines.length > 0 && (
+        <button
+          onClick={() => setShowDeleteAllModal(true)}
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-red-500/10 text-red-500 font-bold transition hover:scale-105 hover:bg-red-500/20"
+          title="Borrar todas las rutinas"
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
       <button
         onClick={() => setShowPrivacyModal(true)}
         className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
@@ -803,13 +828,17 @@ const Routines = ({ setView }) => {
         >
           <BookCopy size={18} /> Mis Rutinas
         </button>
-        <button
-          onClick={() => setActiveTab('explore')}
-          className={getTabClass('explore')}
-        >
-          <Compass size={18} /> Explorar
-        </button>
+        
+        {userProfile?.role === 'admin' && (
           <button
+            onClick={() => setActiveTab('explore')}
+            className={getTabClass('explore')}
+          >
+            <Compass size={18} /> Explorar
+          </button>
+        )}
+
+        <button
             onClick={() => setActiveTab('manualExercises')}
             className={getTabClass('manualExercises')}
           >
@@ -1141,6 +1170,18 @@ const Routines = ({ setView }) => {
           onConfirm={confirmDelete}
           isLoading={isLoading}
           confirmText="Eliminar"
+          isDestructive={true}
+        />
+      )}
+
+      {showDeleteAllModal && (
+        <ConfirmationModal
+          isOpen={showDeleteAllModal}
+          onCancel={() => setShowDeleteAllModal(false)}
+          message="¿Estás COMPLETAMENTE SEGURO de que quieres borrar TODAS tus rutinas? Esta acción eliminará todo tu progreso asociado a ellas y es irreversible."
+          onConfirm={confirmDeleteAll}
+          isLoading={isLoading}
+          confirmText="Borrar Todas"
           isDestructive={true}
         />
       )}
