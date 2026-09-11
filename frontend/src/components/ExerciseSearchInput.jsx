@@ -25,6 +25,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
   const { addToast } = useToast();
   
   const { t: tName } = useTranslation('exercise_names');
@@ -32,12 +33,35 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   const { t: tCommon } = useTranslation('translation');
   const { t: tUi } = useTranslation('exercise_ui');
 
-  // Sincroniza el estado interno si la query inicial (prop) cambia
+  // Sincroniza el estado interno si la query inicial (prop) cambia.
+  // Al no depender de isSearching, cerramos el teclado (y perdemos foco)
+  // sin borrar el texto que el usuario había escrito.
   useEffect(() => {
-    if (!isSearching) {
-      setInputValue(String(initialQuery || ''));
-    }
-  }, [initialQuery, isSearching]);
+    setInputValue(String(initialQuery || ''));
+  }, [initialQuery]);
+
+  // Maneja el clic fuera para cerrar el dropdown en lugar de usar onBlur
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isSearching && 
+        containerRef.current && 
+        !containerRef.current.contains(event.target) &&
+        (!dropdownRef.current || !dropdownRef.current.contains(event.target))
+      ) {
+        setIsSearching(false);
+        setInputValue(String(initialQuery || ''));
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isSearching, initialQuery]);
 
   // Carga todos los ejercicios al montar el componente
   useEffect(() => {
@@ -53,7 +77,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
       }
     };
     fetchExercises();
-  }, [addToast]);
+  }, []);
 
   // Calcula la posición del dropdown basándose en el input
   const updateDropdownPos = useCallback(() => {
@@ -147,8 +171,9 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
     return (
       <div className="border-t border-black/5 dark:border-white/10 mt-1">
         <button
-          onMouseDown={(e) => {
+          onClick={(e) => {
             e.preventDefault(); 
+            e.stopPropagation();
             handleAddManualClick();
           }}
           className="flex items-center w-full gap-3 p-4 text-left text-accent font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
@@ -173,6 +198,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   // Contenido del dropdown renderizado via Portal
   const dropdownContent = showDropdown && dropdownPos ? createPortal(
     <div
+      ref={dropdownRef}
       style={{
         position: 'fixed',
         top: dropdownPos.top,
@@ -195,7 +221,11 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
             {filteredExercises.map(exercise => (
               <li key={exercise.id}>
                 <button
-                  onMouseDown={() => handleSelect(exercise)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSelect(exercise);
+                  }}
                   className="flex items-center w-full gap-4 px-4 py-3 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-[14px] overflow-hidden shrink-0 ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-black/5 dark:bg-white/5 p-1">
@@ -246,14 +276,6 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
           value={inputValue} 
           onChange={(e) => setInputValue(e.target.value)} 
           onFocus={() => setIsSearching(true)} 
-          onBlur={() => {
-            setTimeout(() => {
-              if (isSearching) {
-                setIsSearching(false);
-                setInputValue(String(initialQuery || '')); 
-              }
-            }, 150); 
-          }}
           placeholder={tCommon('Buscar ejercicio...', { defaultValue: 'Buscar ejercicio...' })}
           className={`w-full pl-12 pr-5 py-4 rounded-[20px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold text-text-primary placeholder:text-text-muted shadow-inner ${inputClassName}`}
         />
