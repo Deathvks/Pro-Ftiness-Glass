@@ -195,32 +195,38 @@ const GiantInput = ({ value, onChange, placeholder, unit, autoFocus }) => (
   </div>
 );
 
-const FloatingFab = ({ onClick, disabled, isLoading, text, loadingText }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled || isLoading}
-    className="fixed bottom-[calc(var(--safe-bottom)+2rem)] right-6 bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none z-50 text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
-  >
-    {isLoading ? (
-      <>
-        <Loader2 size={24} className="animate-spin" />
-        {loadingText && <span className="text-base font-medium ml-1">{loadingText}</span>}
-      </>
-    ) : (
-      <>
-        {text} <ChevronRight size={24} strokeWidth={3} />
-      </>
-    )}
-  </button>
-);
+const BottomActionBar = ({ step, totalSteps, handleBack, handleNext, handleComplete, disabled, isLoading, loadingText }) => (
+  <div className="fixed bottom-0 left-0 w-full p-6 pb-[calc(var(--safe-bottom)+2rem)] z-50 pointer-events-none flex justify-center">
+    <div className="w-full max-w-2xl flex items-center justify-between pointer-events-auto">
+      {step > 1 ? (
+        <button
+          onClick={handleBack}
+          className="p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/10 transition-all active:scale-75 backdrop-blur-md bg-black/20"
+        >
+          <ChevronLeft size={28} />
+        </button>
+      ) : (
+        <div />
+      )}
 
-const BackButton = ({ onClick }) => (
-  <button
-    onClick={onClick}
-    className="fixed bottom-[calc(var(--safe-bottom)+2rem)] left-6 p-4 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/10 transition-all active:scale-75 z-50 backdrop-blur-md bg-black/20"
-  >
-    <ChevronLeft size={28} />
-  </button>
+      <button
+        onClick={step === totalSteps ? handleComplete : handleNext}
+        disabled={disabled || isLoading}
+        className="bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 size={24} className="animate-spin" />
+            {loadingText && <span className="text-base font-medium ml-1">{loadingText}</span>}
+          </>
+        ) : (
+          <>
+            {step === totalSteps ? 'Empezar' : 'Siguiente'} <ChevronRight size={24} strokeWidth={3} />
+          </>
+        )}
+      </button>
+    </div>
+  </div>
 );
 
 // --- COMPONENTE PRINCIPAL ---
@@ -716,14 +722,15 @@ const OnboardingScreen = () => {
           </div>
         </div>
 
-        {step > 1 && <BackButton onClick={handleBack} />}
-
-        <FloatingFab
-          onClick={step === totalSteps ? handleComplete : handleNext}
+        <BottomActionBar
+          step={step}
+          totalSteps={totalSteps}
+          handleBack={handleBack}
+          handleNext={handleNext}
+          handleComplete={handleComplete}
           disabled={step === 1 && !formData.age}
           isLoading={isLoading}
           loadingText={loadingText}
-          text={step === totalSteps ? 'Empezar' : 'Siguiente'}
         />
       </div>
     </>
