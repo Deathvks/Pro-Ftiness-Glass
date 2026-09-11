@@ -90,7 +90,7 @@ const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSu
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Destino (Biblioteca u otro Ejercicio Manual)</label>
+              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Destino (Biblioteca)</label>
               <div className="relative z-[60]">
                 <ExerciseSearchInput 
                   disableManualAdd={true}
