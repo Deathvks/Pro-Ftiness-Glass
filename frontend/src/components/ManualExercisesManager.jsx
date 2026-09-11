@@ -38,7 +38,7 @@ const TransferModal = ({ sourceName, onClose, onTransferSuccess }) => {
 
     setIsSubmitting(true);
     try {
-      await api("/manual-exercises/transfer", { body: {
+      await api("/exercise-list/manual-exercises/transfer", { body: {
         sourceName,
         targetName: finalTargetName,
         targetExerciseListId: finalTargetId,
@@ -164,7 +164,7 @@ const ManualExercisesManager = () => {
   const loadManualExercises = async () => {
     setIsLoading(true);
     try {
-      const data = await api('/manual-exercises');
+      const data = await api('/exercise-list/manual-exercises');
       setExercises(data);
     } catch (error) {
       console.error(error);
@@ -225,6 +225,8 @@ const ManualExercisesManager = () => {
 };
 
 export default ManualExercisesManager;
+
+
 
 
 
