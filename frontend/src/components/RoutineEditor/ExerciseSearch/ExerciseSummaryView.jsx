@@ -120,14 +120,12 @@ const ExerciseSummaryView = ({
                 item.exercise.target ||
                 item.exercise.category ||
                 "Other";
-              const translatedMusclesList = rawMuscleGroup
-                .split(",")
-                .map((m) =>
-                  t(m.trim(), {
-                    ns: "exercise_muscles",
-                    defaultValue: m.trim(),
-                  }),
-                );
+              const translatedMusclesList = rawMuscleGroup.split(",").map((m) =>
+                t(m.trim(), {
+                  ns: "exercise_muscles",
+                  defaultValue: m.trim(),
+                }),
+              );
 
               const currentReps = String(item.reps || "10");
               const hasCurrentRep = REP_OPTIONS.some(
@@ -206,16 +204,14 @@ const ExerciseSummaryView = ({
                         <label className={labelClasses}>
                           {t("exercise_ui:reps", "Reps")}
                         </label>
-                        <div className="h-[48px]">
-                          {" "}
-                          {/* Fixed height container matching inputs py-3.5 is roughly 48px */}
+                        <div>
                           <CustomSelect
                             value={currentReps}
                             onChange={(val) =>
                               onUpdate(item.exercise.id, "reps", val)
                             }
                             options={repOptionsToUse}
-                            className="w-full h-full bg-bg-primary rounded-[16px] ring-1 ring-black/5 dark:ring-white/10"
+                            className="w-full bg-bg-primary rounded-[16px] ring-1 ring-black/5 dark:ring-white/10"
                             triggerClassName={
                               inputClasses
                                 .replace("bg-bg-primary", "bg-transparent")
@@ -223,7 +219,7 @@ const ExerciseSummaryView = ({
                                   "ring-1 ring-black/5 dark:ring-white/10",
                                   "",
                                 ) +
-                              " !px-2 flex items-center justify-between h-full appearance-none rounded-[16px]"
+                              " !px-2 flex items-center justify-between appearance-none rounded-[16px]"
                             }
                             textClassName="text-text-primary font-bold text-center truncate flex-1"
                             searchable={false}
