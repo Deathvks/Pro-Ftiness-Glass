@@ -6,6 +6,7 @@ import ExerciseSearchInput from "./ExerciseSearchInput";
 import { useToast } from "../hooks/useToast";
 import { useTranslation } from "react-i18next";
 import ModalPortal from "./ModalPortal";
+import CustomSelect from "./CustomSelect";
 
 const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSuccess }) => {
   const { t } = useTranslation();
@@ -111,19 +112,21 @@ const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSu
                   <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-2">
                     O selecciona otro manual existente:
                   </label>
-                  <select
+                  <CustomSelect
                     value={targetManualName}
-                    onChange={(e) => {
-                      setTargetManualName(e.target.value);
+                    onChange={(val) => {
+                      setTargetManualName(val);
                       setTargetExercise(null);
                     }}
-                    className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-4 py-3 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent appearance-none"
-                  >
-                    <option value="">-- Seleccionar --</option>
-                    {existingManuals.map((name) => (
-                      <option key={name} value={name}>{name}</option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: "-- Seleccionar --" },
+                      ...existingManuals.map(name => ({ value: name, label: name }))
+                    ]}
+                    className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px]"
+                    triggerClassName="w-full py-3 bg-transparent px-4 flex items-center justify-between gap-1 focus:ring-2 focus:ring-accent/50 outline-none transition-all appearance-none rounded-[16px]"
+                    textClassName="text-sm text-text-primary text-left truncate flex-1"
+                    searchable={true}
+                  />
                 </div>
               )}
               {targetExercise && (
@@ -254,3 +257,4 @@ const ManualExercisesManager = () => {
 
 
 export default ManualExercisesManager;
+
