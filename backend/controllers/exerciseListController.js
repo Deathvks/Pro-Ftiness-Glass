@@ -277,6 +277,46 @@ export const getManualExercises = async (req, res) => {
     }
 };
 
+export const getManualExerciseInfo = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const name = req.query.name;
+
+        if (!name) return res.status(400).json({ error: "Falta el parámetro name." });
+
+        const [routines] = await models.sequelize.query(`
+            SELECT DISTINCT r.name
+            FROM routine_exercises re
+            JOIN routines r ON r.id = re.routine_id
+            WHERE r.user_id = :userId AND re.name = :name AND re.exercise_list_id IS NULL
+        `, { replacements: { userId, name } });
+
+        const [history] = await models.sequelize.query(`
+            SELECT wl.date, wld.weight, wld.reps, wld.sets
+            FROM workout_log_details wld
+            JOIN workout_logs wl ON wl.id = wld.workout_log_id
+            WHERE wl.user_id = :userId AND wld.exercise_name = :name
+            ORDER BY wl.date DESC
+            LIMIT 10
+        `, { replacements: { userId, name } });
+
+        const [pr] = await models.sequelize.query(`
+            SELECT weight_kg as weight, date
+            FROM personal_records
+            WHERE user_id = :userId AND exercise_name = :name
+        `, { replacements: { userId, name } });
+
+        res.json({
+            routines: routines.map(r => r.name),
+            history,
+            pr: pr.length > 0 ? pr[0] : null
+        });
+    } catch (error) {
+        console.error('Error fetching manual exercise info:', error);
+        res.status(500).json({ error: 'Error interno al obtener info del ejercicio manual.' });
+    }
+};
+
 export const transferManualExercise = async (req, res) => {
     
     const transaction = await models.sequelize.transaction();
