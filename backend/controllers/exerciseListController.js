@@ -241,31 +241,36 @@ export const getManualExercises = async (req, res) => {
     try {
         const userId = req.user.userId;
         const query = `
-            SELECT DISTINCT name FROM (
-                SELECT wld.exercise_name as name
-                FROM workout_log_details wld
-                JOIN workout_logs wl ON wl.id = wld.workout_log_id
-                LEFT JOIN exercise_list el ON el.name = wld.exercise_name
-                WHERE wl.user_id = :userId AND el.id IS NULL
+            SELECT 
+                m.name,
+                (SELECT COUNT(*) FROM workout_log_details wld JOIN workout_logs wl ON wl.id = wld.workout_log_id WHERE wl.user_id = :userId AND wld.exercise_name = m.name) as totalSets,
+                (SELECT COUNT(*) FROM routine_exercises re JOIN routines r ON r.id = re.routine_id WHERE r.user_id = :userId AND re.name = m.name AND re.exercise_list_id IS NULL) as inRoutines,
+                (SELECT MAX(weight) FROM personal_records pr WHERE pr.user_id = :userId AND pr.exercise_name = m.name) as maxWeight
+            FROM (
+                SELECT DISTINCT name FROM (
+                    SELECT wld.exercise_name as name
+                    FROM workout_log_details wld
+                    JOIN workout_logs wl ON wl.id = wld.workout_log_id
+                    LEFT JOIN exercise_list el ON el.name = wld.exercise_name
+                    WHERE wl.user_id = :userId AND el.id IS NULL
 
-                UNION
+                    UNION
 
-                SELECT re.name
-                FROM routine_exercises re
-                JOIN routines r ON r.id = re.routine_id
-                WHERE r.user_id = :userId AND re.exercise_list_id IS NULL
-
-            ) AS manual_exercises
-            WHERE name IS NOT NULL AND name != ''
-            ORDER BY name ASC;
+                    SELECT re.name
+                    FROM routine_exercises re
+                    JOIN routines r ON r.id = re.routine_id
+                    WHERE r.user_id = :userId AND re.exercise_list_id IS NULL
+                ) AS un
+                WHERE name IS NOT NULL AND name != ''
+            ) m
+            ORDER BY m.name ASC;
         `;
-        
         
         const [results] = await models.sequelize.query(query, {
             replacements: { userId }
         });
 
-        res.json(results.map(row => row.name));
+        res.json(results);
     } catch (error) {
         console.error('Error fetching manual exercises:', error);
         res.status(500).json({ error: 'Error interno del servidor al buscar ejercicios manuales.' });
