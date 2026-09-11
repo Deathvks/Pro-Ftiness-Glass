@@ -368,7 +368,7 @@ export const deleteAllManualExercises = async (req, res) => {
 
         // Primero obtenemos todos los nombres de ejercicios manuales del usuario para borrarlos de las demás tablas
         const [manualExercises] = await models.sequelize.query(`
-            SELECT DISTINCT name 
+            SELECT DISTINCT re.name 
             FROM routine_exercises re
             JOIN routines r ON r.id = re.routine_id
             WHERE r.user_id = :userId AND re.exercise_list_id IS NULL
