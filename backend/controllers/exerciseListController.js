@@ -266,8 +266,8 @@ export const getManualExercises = async (req, res) => {
             ORDER BY name ASC;
         `;
         
-        const sequelize = (await import('../db.js')).default;
-        const [results] = await sequelize.query(query, {
+        
+        const [results] = await models.sequelize.query(query, {
             replacements: { userId }
         });
 
@@ -279,8 +279,8 @@ export const getManualExercises = async (req, res) => {
 };
 
 export const transferManualExercise = async (req, res) => {
-    const sequelize = (await import('../db.js')).default;
-    const transaction = await sequelize.transaction();
+    
+    const transaction = await models.sequelize.transaction();
     try {
         const userId = req.user.id;
         const { sourceName, targetName, targetExerciseListId, deleteSource, replaceInRoutines } = req.body;
@@ -290,14 +290,14 @@ export const transferManualExercise = async (req, res) => {
         }
 
         if (deleteSource) {
-            await sequelize.query(`
+            await models.sequelize.query(`
                 UPDATE workout_log_details 
                 SET exercise_name = :targetName 
                 WHERE exercise_name = :sourceName 
                   AND workout_log_id IN (SELECT id FROM workout_logs WHERE user_id = :userId)
             `, { replacements: { targetName, sourceName, userId }, transaction });
         } else {
-            const [logsToCopy] = await sequelize.query(`
+            const [logsToCopy] = await models.sequelize.query(`
                 SELECT wld.* 
                 FROM workout_log_details wld
                 JOIN workout_logs wl ON wl.id = wld.workout_log_id
@@ -305,7 +305,7 @@ export const transferManualExercise = async (req, res) => {
             `, { replacements: { userId, sourceName }, transaction });
 
             for (const oldLog of logsToCopy) {
-                const [newLogResult] = await sequelize.query(`
+                const [newLogResult] = await models.sequelize.query(`
                     INSERT INTO workout_log_details (workout_log_id, exercise_name, total_volume, best_set_weight, superset_group_id, estimated_1rm)
                     VALUES (:workout_log_id, :targetName, :total_volume, :best_set_weight, :superset_group_id, :estimated_1rm)
                 `, { 
@@ -322,7 +322,7 @@ export const transferManualExercise = async (req, res) => {
 
                 const newLogId = newLogResult; 
 
-                await sequelize.query(`
+                await models.sequelize.query(`
                     INSERT INTO workout_log_sets (log_detail_id, set_number, reps, weight_kg, is_dropset, is_warmup, rir)
                     SELECT :newLogId, set_number, reps, weight_kg, is_dropset, is_warmup, rir
                     FROM workout_log_sets
@@ -335,14 +335,14 @@ export const transferManualExercise = async (req, res) => {
         }
 
         if (replaceInRoutines) {
-            await sequelize.query(`
+            await models.sequelize.query(`
                 UPDATE routine_exercises 
                 SET name = :targetName, exercise_list_id = :targetExerciseListId
                 WHERE name = :sourceName 
                   AND routine_id IN (SELECT id FROM routines WHERE user_id = :userId)
             `, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
 
-            await sequelize.query(`
+            await models.sequelize.query(`
                 UPDATE template_routine_exercises 
                 SET name = :targetName, exercise_list_id = :targetExerciseListId
                 WHERE name = :sourceName 
@@ -351,7 +351,7 @@ export const transferManualExercise = async (req, res) => {
         }
 
         if (deleteSource) {
-            await sequelize.query(`
+            await models.sequelize.query(`
                 UPDATE personal_records 
                 SET exercise_name = :targetName
                 WHERE user_id = :userId AND exercise_name = :sourceName
@@ -377,4 +377,6 @@ const exerciseListController = {
 };
 
 export default exerciseListController;
+
+
 
