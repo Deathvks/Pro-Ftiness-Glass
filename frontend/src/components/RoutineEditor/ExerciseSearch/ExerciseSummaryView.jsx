@@ -1,7 +1,16 @@
-/* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseSummaryView.jsx */
 import React, { useMemo } from 'react';
 import { ChevronLeft, Trash2, Check, Dumbbell, ListChecks } from 'lucide-react';
 import ExerciseMedia from '../../ExerciseMedia';
+import CustomSelect from '../../CustomSelect';
+
+const REP_OPTIONS = [
+  { value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4" }, { value: "5", label: "5" },
+  { value: "6", label: "6" }, { value: "7", label: "7" }, { value: "8", label: "8" }, { value: "9", label: "9" }, { value: "10", label: "10" },
+  { value: "11", label: "11" }, { value: "12", label: "12" }, { value: "15", label: "15" }, { value: "20", label: "20" }, { value: "30", label: "30" },
+  { value: "1-3", label: "1-3" }, { value: "3-5", label: "3-5" }, { value: "5-8", label: "5-8" }, { value: "8-10", label: "8-10" },
+  { value: "8-12", label: "8-12" }, { value: "10-12", label: "10-12" }, { value: "10-15", label: "10-15" }, { value: "12-15", label: "12-15" },
+  { value: "15-20", label: "15-20" }, { value: "Al fallo", label: "Al fallo" }
+];
 
 // Componente para la vista de Resumen/Carrito
 const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFinalize, t }) => {
@@ -80,6 +89,10 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
                 .split(',')
                 .map((m) => t(m.trim(), { ns: 'exercise_muscles', defaultValue: m.trim() }));
 
+              const currentReps = String(item.reps || '10');
+              const hasCurrentRep = REP_OPTIONS.some(opt => opt.value === currentReps);
+              const repOptionsToUse = hasCurrentRep ? REP_OPTIONS : [{ value: currentReps, label: currentReps }, ...REP_OPTIONS];
+
               return (
                 <div key={item.exercise.id} className="flex flex-col bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 group overflow-hidden shadow-sm relative">
                   
@@ -101,19 +114,26 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
                     />
                   </div>
 
-                  {/* Content (Bottom) */}
-                  <div className="flex flex-col p-4 bg-bg-primary/50 flex-1">
-                    <p className="font-bold text-lg text-text-primary line-clamp-2 leading-tight mb-2">{translatedName}</p>
-                    
-                    <div className="flex flex-wrap gap-1.5 mb-4">
-                      {translatedMusclesList.map((muscle, idx) => (
-                        <span key={idx} className="bg-black/10 dark:bg-white/10 text-text-secondary text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[6px]">
-                          {muscle}
-                        </span>
-                      ))}
+                  {/* Contenido (Bottom) */}
+                  <div className="flex flex-col flex-1 p-5 pt-4">
+                    {/* Cabecera */}
+                    <div className="flex justify-between items-start gap-4 mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-extrabold text-[20px] text-text-primary leading-tight line-clamp-2 pr-8">{translatedName}</h3>
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                          <span className="text-[10px] font-bold px-2 py-1 bg-black/5 dark:bg-white/10 text-text-secondary rounded-[8px] uppercase tracking-wide truncate max-w-[120px]">
+                            {translatedMusclesList[0]} {translatedMusclesList.length > 1 && `+${translatedMusclesList.length - 1}`}
+                          </span>
+                          {item.exercise.equipment && (
+                            <span className="text-[10px] font-bold px-2 py-1 bg-black/5 dark:bg-white/10 text-text-secondary rounded-[8px] uppercase tracking-wide truncate max-w-[100px]">
+                              {item.exercise.equipment}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Inputs */}
+                    {/* Inputs compactos */}
                     <div className="flex gap-2 sm:gap-3 mt-auto pt-4 border-t border-black/5 dark:border-white/10">
                       <div className="flex-1">
                         <label className={labelClasses}>{t('exercise_ui:sets', 'Series')}</label>
@@ -125,48 +145,17 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
                           className={inputClasses + " !px-2"}
                         />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 relative z-50">
                         <label className={labelClasses}>{t('exercise_ui:reps', 'Reps')}</label>
-                        <select
-                          value={item.reps || '10'}
-                          onChange={(e) => onUpdate(item.exercise.id, 'reps', e.target.value)}
-                          className={inputClasses + " appearance-none !px-2"}
-                        >
-                          {item.reps && !["1","2","3","4","5","6","7","8","9","10","11","12","15","20","30","1-3","3-5","5-8","8-10","8-12","10-12","10-15","12-15","15-20","Al fallo"].includes(String(item.reps)) && (
-                              <option value={item.reps}>{item.reps}</option>
-                          )}
-                          <optgroup label="Repeticiones">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                            <option value="11">11</option>
-                            <option value="12">12</option>
-                            <option value="15">15</option>
-                            <option value="20">20</option>
-                            <option value="30">30</option>
-                          </optgroup>
-                          <optgroup label="Rangos">
-                            <option value="1-3">1-3</option>
-                            <option value="3-5">3-5</option>
-                            <option value="5-8">5-8</option>
-                            <option value="8-10">8-10</option>
-                            <option value="8-12">8-12</option>
-                            <option value="10-12">10-12</option>
-                            <option value="10-15">10-15</option>
-                            <option value="12-15">12-15</option>
-                            <option value="15-20">15-20</option>
-                          </optgroup>
-                          <optgroup label="Especial">
-                            <option value="Al fallo">Al fallo</option>
-                          </optgroup>
-                        </select>
+                        <div className="h-[48px]">
+                          <CustomSelect
+                            value={currentReps}
+                            onChange={(val) => onUpdate(item.exercise.id, 'reps', val)}
+                            options={repOptionsToUse}
+                            className={inputClasses + " !px-2"}
+                            searchable={false}
+                          />
+                        </div>
                       </div>
                       <div className="flex-1">
                         <label className={labelClasses}>{t('exercise_ui:rest_s', 'Desc. (s)')}</label>
