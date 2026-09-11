@@ -223,9 +223,7 @@ export const updateExercise = async (req, res, next) => {
     }
 };
 
-export const deleteExercise,
-    getManualExercises,
-    transferManualExercise = async (req, res, next) => {
+export const deleteExercise = async (req, res, next) => {
     try {
         const { id } = req.params;
         const exercise = await ExerciseList.findByPk(id);
@@ -238,13 +236,11 @@ export const deleteExercise,
     }
 };
 
-const getManualExercises = async (req, res) => {
+
+export const getManualExercises = async (req, res) => {
     try {
         const userId = req.user.id;
-
-        // Ejercicios manuales son los que tienen un exercise_name en workout_log_details 
-        // que no est en exercise_list, O los que estn en routine_exercises con exercise_list_id = NULL
-        const query = \
+        const query = `
             SELECT DISTINCT name FROM (
                 SELECT wld.exercise_name as name
                 FROM workout_log_details wld
@@ -268,8 +264,9 @@ const getManualExercises = async (req, res) => {
             ) AS manual_exercises
             WHERE name IS NOT NULL AND name != ''
             ORDER BY name ASC;
-        \;
-
+        `;
+        
+        const sequelize = (await import('../db.js')).default;
         const [results] = await sequelize.query(query, {
             replacements: { userId }
         });
@@ -281,7 +278,8 @@ const getManualExercises = async (req, res) => {
     }
 };
 
-const transferManualExercise = async (req, res) => {
+export const transferManualExercise = async (req, res) => {
+    const sequelize = (await import('../db.js')).default;
     const transaction = await sequelize.transaction();
     try {
         const userId = req.user.id;
@@ -292,28 +290,25 @@ const transferManualExercise = async (req, res) => {
         }
 
         if (deleteSource) {
-            // TRANSFERIR HISTORIAL (ACTUALIZAR)
-            await sequelize.query(\
+            await sequelize.query(`
                 UPDATE workout_log_details 
                 SET exercise_name = :targetName 
                 WHERE exercise_name = :sourceName 
                   AND workout_log_id IN (SELECT id FROM workout_logs WHERE user_id = :userId)
-            \, { replacements: { targetName, sourceName, userId }, transaction });
+            `, { replacements: { targetName, sourceName, userId }, transaction });
         } else {
-            // COPIAR HISTORIAL (DUPLICAR)
-            const [logsToCopy] = await sequelize.query(\
+            const [logsToCopy] = await sequelize.query(`
                 SELECT wld.* 
                 FROM workout_log_details wld
                 JOIN workout_logs wl ON wl.id = wld.workout_log_id
                 WHERE wl.user_id = :userId AND wld.exercise_name = :sourceName
-            \, { replacements: { userId, sourceName }, transaction });
+            `, { replacements: { userId, sourceName }, transaction });
 
             for (const oldLog of logsToCopy) {
-                // Insertar nuevo detalle
-                const [newLogResult] = await sequelize.query(\
+                const [newLogResult] = await sequelize.query(`
                     INSERT INTO workout_log_details (workout_log_id, exercise_name, total_volume, best_set_weight, superset_group_id, estimated_1rm)
                     VALUES (:workout_log_id, :targetName, :total_volume, :best_set_weight, :superset_group_id, :estimated_1rm)
-                \, { 
+                `, { 
                     replacements: { 
                         workout_log_id: oldLog.workout_log_id,
                         targetName: targetName,
@@ -327,13 +322,12 @@ const transferManualExercise = async (req, res) => {
 
                 const newLogId = newLogResult; 
 
-                // Copiar sets
-                await sequelize.query(\
+                await sequelize.query(`
                     INSERT INTO workout_log_sets (log_detail_id, set_number, reps, weight_kg, is_dropset, is_warmup, rir)
                     SELECT :newLogId, set_number, reps, weight_kg, is_dropset, is_warmup, rir
                     FROM workout_log_sets
                     WHERE log_detail_id = :oldLogId
-                \, {
+                `, {
                     replacements: { newLogId, oldLogId: oldLog.id },
                     transaction
                 });
@@ -341,31 +335,27 @@ const transferManualExercise = async (req, res) => {
         }
 
         if (replaceInRoutines) {
-            // Reemplazar en rutinas activas
-            await sequelize.query(\
+            await sequelize.query(`
                 UPDATE routine_exercises 
                 SET name = :targetName, exercise_list_id = :targetExerciseListId
                 WHERE name = :sourceName 
                   AND routine_id IN (SELECT id FROM routines WHERE user_id = :userId)
-            \, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
+            `, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
 
-            // Reemplazar en plantillas
-            await sequelize.query(\
+            await sequelize.query(`
                 UPDATE template_routine_exercises 
                 SET name = :targetName, exercise_list_id = :targetExerciseListId
                 WHERE name = :sourceName 
                   AND template_routine_id IN (SELECT id FROM template_routines WHERE user_id = :userId)
-            \, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
+            `, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
         }
 
-        // --- Recalcular PRs de la app ---
-        // TODO: En un sistema completo deberamos recalcular el PR (personal_records) para targetName, o renombrar el viejo PR.
         if (deleteSource) {
-            await sequelize.query(\
+            await sequelize.query(`
                 UPDATE personal_records 
                 SET exercise_name = :targetName
                 WHERE user_id = :userId AND exercise_name = :sourceName
-            \, { replacements: { targetName, sourceName, userId }, transaction });
+            `, { replacements: { targetName, sourceName, userId }, transaction });
         }
 
         await transaction.commit();
@@ -387,3 +377,4 @@ const exerciseListController = {
 };
 
 export default exerciseListController;
+
