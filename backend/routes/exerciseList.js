@@ -63,6 +63,7 @@ router.use(authenticateToken);
 // GET /api/exercises -> Devuelve una lista de ejercicios (permite búsqueda)
 router.get('/exercises', exerciseListController.getExercises);
 router.get('/manual-exercises', exerciseListController.getManualExercises);
+router.get('/manual-exercises/info', exerciseListController.getManualExerciseInfo);
 router.post('/manual-exercises/transfer', exerciseListController.transferManualExercise);
 
 // Funciones de administrador
@@ -71,3 +72,4 @@ router.put('/exercises/:id', upload.array('images', 10), exerciseListController.
 router.delete('/exercises/:id', exerciseListController.deleteExercise);
 
 export default router;
+

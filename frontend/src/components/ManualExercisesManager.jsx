@@ -1,13 +1,106 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/apiClient";
 import GlassCard from "./GlassCard";
-import { Dumbbell, ArrowRight, Check, X, AlertTriangle } from "lucide-react";
+import { Dumbbell, ArrowRight, Check, X, AlertTriangle, Info } from "lucide-react";
 import ExerciseSearchInput from "./ExerciseSearchInput";
 import ExerciseMedia from "./ExerciseMedia";
 import { useToast } from "../hooks/useToast";
 import { useTranslation } from "react-i18next";
 import ModalPortal from "./ModalPortal";
 import CustomSelect from "./CustomSelect";
+
+const ManualExerciseInfoModal = ({ exerciseName, onClose }) => {
+  const [info, setInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadInfo = async () => {
+      try {
+        const data = await api(`/exercise-list/manual-exercises/info?name=${encodeURIComponent(exerciseName)}`);
+        setInfo(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadInfo();
+  }, [exerciseName]);
+
+  return (
+    <ModalPortal>
+      <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]" onClick={onClose}>
+        <div 
+          className="relative w-full max-w-md p-6 sm:p-8 mt-auto sm:mt-0 pb-[calc(1.5rem+var(--safe-bottom))] sm:pb-8 sm:m-4 bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-2xl border border-glass-border shadow-2xl flex flex-col animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out] max-h-[90vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+          
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-extrabold text-text-primary pr-4 truncate">{exerciseName}</h3>
+            <button onClick={onClose} className="p-2 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary transition-colors shrink-0">
+              <X size={20} />
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-6 h-6 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : info ? (
+            <div className="space-y-6">
+              {info.pr && (
+                <div className="p-4 bg-yellow-500/10 rounded-[16px] flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                    <span className="font-bold text-sm">Récord Personal (RM)</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xl font-extrabold text-text-primary block">{info.pr.weight} kg</span>
+                    <span className="text-[10px] text-text-secondary font-bold uppercase">{new Date(info.pr.date).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              )}
+
+              {info.routines.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">Rutinas en las que aparece</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {info.routines.map(r => (
+                      <span key={r} className="px-3 py-1.5 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-lg text-xs font-bold text-text-primary">{r}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">Últimos registros</h4>
+                {info.history.length > 0 ? (
+                  <div className="space-y-2">
+                    {info.history.map((h, i) => (
+                      <div key={i} className="p-3 bg-black/5 dark:bg-white/5 rounded-[12px] flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 rounded-full bg-accent" />
+                          <span className="text-sm font-bold text-text-primary">{new Date(h.date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="text-sm font-extrabold text-text-primary">
+                          {h.sets}x{h.reps} {h.weight > 0 ? `@ ${h.weight}kg` : ''}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-text-muted italic">No hay historial de series y repeticiones.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted">Error al cargar información.</p>
+          )}
+        </div>
+      </div>
+    </ModalPortal>
+  );
+};
 
 const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSuccess }) => {
   const { t } = useTranslation();
@@ -195,6 +288,7 @@ const ManualExercisesManager = () => {
   const [exercises, setExercises] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedExercise, setSelectedExercise] = useState(null);
+  const [infoExercise, setInfoExercise] = useState(null);
   
   
   const loadManualExercises = async () => {
@@ -239,12 +333,20 @@ const ManualExercisesManager = () => {
             <GlassCard key={ex.name} className="glass p-5 rounded-[24px] flex flex-col gap-4 group">
               <div className="flex items-center justify-between gap-3">
                 <span className="font-bold text-text-primary text-lg truncate">{ex.name}</span>
-                <button 
-                  onClick={() => setSelectedExercise(ex.name)}
-                  className="shrink-0 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-white rounded-[12px] text-xs font-bold text-text-secondary transition-colors"
-                >
-                  Transferir
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setInfoExercise(ex.name)}
+                    className="shrink-0 p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary transition-colors"
+                  >
+                    <Info size={16} />
+                  </button>
+                  <button 
+                    onClick={() => setSelectedExercise(ex.name)}
+                    className="shrink-0 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-white rounded-[12px] text-xs font-bold text-text-secondary transition-colors"
+                  >
+                    Transferir
+                  </button>
+                </div>
               </div>
               
               <div className="flex flex-wrap items-center gap-2">
@@ -280,6 +382,13 @@ const ManualExercisesManager = () => {
           existingManuals={exercises.map(e => e.name).filter(name => name !== selectedExercise)}
           onClose={() => setSelectedExercise(null)} 
           onTransferSuccess={loadManualExercises}
+        />
+      )}
+
+      {infoExercise && (
+        <ManualExerciseInfoModal 
+          exerciseName={infoExercise} 
+          onClose={() => setInfoExercise(null)} 
         />
       )}
     </div>
