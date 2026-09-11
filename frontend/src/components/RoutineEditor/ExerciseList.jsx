@@ -50,7 +50,7 @@ const ExerciseList = ({
                       <div
                         ref={providedDrag.innerRef}
                         {...providedDrag.draggableProps}
-                        className={`transition-all duration-300 ${snapshot.isDragging ? 'z-50 scale-[1.02] shadow-2xl opacity-90' : ''}`}
+                        className={`transition-all duration-300 focus-within:relative focus-within:z-[60] ${snapshot.isDragging ? 'z-[70] scale-[1.02] shadow-2xl opacity-90' : 'relative z-10'}`}
                       >
                         <ExerciseGroup
                           group={group}
