@@ -46,6 +46,20 @@ const REP_OPTIONS = [
   { value: "Al fallo", label: "Al fallo" },
 ];
 
+const REST_OPTIONS = [
+  { value: "0", label: "0s" },
+  { value: "15", label: "15s" },
+  { value: "30", label: "30s" },
+  { value: "45", label: "45s" },
+  { value: "60", label: "1 min" },
+  { value: "90", label: "1m 30s" },
+  { value: "120", label: "2 min" },
+  { value: "150", label: "2m 30s" },
+  { value: "180", label: "3 min" },
+  { value: "240", label: "4 min" },
+  { value: "300", label: "5 min" },
+];
+
 // Base URL para construir las rutas de imágenes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 const BACKEND_BASE_URL = API_BASE_URL.endsWith("/api")
@@ -385,16 +399,27 @@ const ExerciseDetailView = ({
                 />
               </div>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 relative z-50">
               <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">
                 {t("exercise_ui:rest_s", "Desc. (s)")}
               </label>
-              <input
-                type="number"
-                value={rest}
-                onChange={(e) => setRest(Number(e.target.value))}
-                className={inputClasses}
-              />
+              <div>
+                <CustomSelect
+                  value={currentRest}
+                  onChange={(val) => setRest(Number(val))}
+                  options={restOptionsToUse}
+                  className="w-full bg-black/5 dark:bg-white/5 rounded-[16px] ring-1 ring-black/5 dark:ring-white/10"
+                  triggerClassName={
+                    inputClasses
+                      .replace("bg-black/5", "bg-transparent")
+                      .replace("dark:bg-white/5", "")
+                      .replace("ring-1 ring-black/5 dark:ring-white/10", "") +
+                    " !px-2 flex items-center justify-between appearance-none rounded-[16px]"
+                  }
+                  textClassName="text-text-primary font-bold text-center truncate flex-1"
+                  searchable={false}
+                />
+              </div>
             </div>
           </div>
         )}

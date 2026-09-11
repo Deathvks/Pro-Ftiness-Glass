@@ -150,10 +150,7 @@ const ExerciseSummaryView = ({
                   </button>
 
                   {/* Media (Top) */}
-                  <div
-                    className="w-full aspect-square bg-transparent flex items-center justify-center overflow-hidden cursor-pointer"
-                    onClick={() => onSelect(item.exercise)}
-                  >
+                  <div className="w-full aspect-square bg-transparent flex items-center justify-center overflow-hidden cursor-pointer">
                     <ExerciseMedia
                       details={item.exercise}
                       fitMode="cover"
