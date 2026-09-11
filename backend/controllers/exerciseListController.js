@@ -406,6 +406,7 @@ const exerciseListController = {
     updateExercise,
     deleteExercise,
     getManualExercises,
+    getManualExerciseInfo,
     transferManualExercise
 };
 
