@@ -11,6 +11,15 @@ const clearAuthStorage = () => {
     localStorage.removeItem('templateRoutinesSelectedCategory');
     localStorage.removeItem('templateRoutinesSelectedDifficulty');
     localStorage.removeItem('templateRoutinesShowFilters');
+    
+    // Resetear flags de tutoriales y alertas para la próxima sesión/cuenta
+    localStorage.removeItem('tourCompleted');
+    localStorage.removeItem('nutritionTourCompleted');
+    localStorage.removeItem('routineTourCompleted');
+    localStorage.removeItem('socialTourCompleted');
+    localStorage.removeItem('hubTourCompleted');
+    localStorage.removeItem('has_seen_2fa_promo');
+    localStorage.removeItem('lastSeenVersion');
 };
 
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
