@@ -7,12 +7,16 @@ import ExerciseMedia from '../../ExerciseMedia';
 import CustomSelect from '../../CustomSelect';
 
 const REP_OPTIONS = [
+  { isHeader: true, label: "Repeticiones" },
   { value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4" }, { value: "5", label: "5" },
   { value: "6", label: "6" }, { value: "7", label: "7" }, { value: "8", label: "8" }, { value: "9", label: "9" }, { value: "10", label: "10" },
   { value: "11", label: "11" }, { value: "12", label: "12" }, { value: "15", label: "15" }, { value: "20", label: "20" }, { value: "30", label: "30" },
+  { isHeader: true, label: "Rangos" },
   { value: "1-3", label: "1-3" }, { value: "3-5", label: "3-5" }, { value: "5-8", label: "5-8" }, { value: "8-10", label: "8-10" },
   { value: "8-12", label: "8-12" }, { value: "10-12", label: "10-12" }, { value: "10-15", label: "10-15" }, { value: "12-15", label: "12-15" },
-  { value: "15-20", label: "15-20" }, { value: "Al fallo", label: "Al fallo" }
+  { value: "15-20", label: "15-20" },
+  { isHeader: true, label: "Especial" },
+  { value: "Al fallo", label: "Al fallo" }
 ];
 
 // Base URL para construir las rutas de imágenes
@@ -301,18 +305,19 @@ const ExerciseDetailView = ({
                 className={inputClasses}
               />
             </div>
-            <div className="flex-1 relative z-50">
-              <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">{t('exercise_ui:reps', 'Reps')}</label>
-              <div className="h-[48px]">
-                <CustomSelect
-                  value={currentReps}
-                  onChange={(val) => setReps(val)}
-                  options={repOptionsToUse}
-                  className={inputClasses + " !px-2"}
-                  searchable={false}
-                />
+              <div className="flex-1 relative z-50">
+                <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">{t('exercise_ui:reps', 'Reps')}</label>
+                <div className="h-[48px]">
+                  <CustomSelect
+                    value={currentReps}
+                    onChange={(val) => setReps(val)}
+                    options={repOptionsToUse}
+                    className="w-full h-full"
+                    triggerClassName={inputClasses + " !px-2 flex items-center justify-between h-full"}
+                    searchable={false}
+                  />
+                </div>
               </div>
-            </div>
             <div className="flex-1">
               <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">{t('exercise_ui:rest_s', 'Desc. (s)')}</label>
               <input
