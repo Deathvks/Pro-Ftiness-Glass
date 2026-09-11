@@ -255,12 +255,6 @@ export const getManualExercises = async (req, res) => {
                 JOIN routines r ON r.id = re.routine_id
                 WHERE r.user_id = :userId AND re.exercise_list_id IS NULL
 
-                UNION
-
-                SELECT tre.name
-                FROM template_routine_exercises tre
-                JOIN template_routines tr ON tr.id = tre.template_routine_id
-                WHERE tr.user_id = :userId AND tre.exercise_list_id IS NULL
             ) AS manual_exercises
             WHERE name IS NOT NULL AND name != ''
             ORDER BY name ASC;
@@ -342,12 +336,6 @@ export const transferManualExercise = async (req, res) => {
                   AND routine_id IN (SELECT id FROM routines WHERE user_id = :userId)
             `, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
 
-            await models.sequelize.query(`
-                UPDATE template_routine_exercises 
-                SET name = :targetName, exercise_list_id = :targetExerciseListId
-                WHERE name = :sourceName 
-                  AND template_routine_id IN (SELECT id FROM template_routines WHERE user_id = :userId)
-            `, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
         }
 
         if (deleteSource) {
@@ -377,6 +365,7 @@ const exerciseListController = {
 };
 
 export default exerciseListController;
+
 
 
 
