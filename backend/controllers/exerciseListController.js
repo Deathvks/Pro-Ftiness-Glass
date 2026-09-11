@@ -292,11 +292,11 @@ export const getManualExerciseInfo = async (req, res) => {
         `, { replacements: { userId, name } });
 
         const [history] = await models.sequelize.query(`
-            SELECT wl.date, wld.weight, wld.reps, wld.sets
+            SELECT wl.workout_date as date, wld.weight, wld.reps, wld.sets
             FROM workout_log_details wld
             JOIN workout_logs wl ON wl.id = wld.workout_log_id
             WHERE wl.user_id = :userId AND wld.exercise_name = :name
-            ORDER BY wl.date DESC
+            ORDER BY wl.workout_date DESC
             LIMIT 10
         `, { replacements: { userId, name } });
 
