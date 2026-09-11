@@ -11,7 +11,7 @@ import ExerciseMedia from './ExerciseMedia'; // <-- Importamos ExerciseMedia
  * Un componente de búsqueda que muestra resultados visuales y
  * devuelve el objeto de ejercicio completo al seleccionar.
  */
-const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
+const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = '', inputClassName = '' }) => {
   
   const [inputValue, setInputValue] = useState(String(initialQuery || ''));
   const [isSearching, setIsSearching] = useState(false);
@@ -134,7 +134,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
   };
 
   return (
-    <div className="w-full relative z-50">
+    <div className={`w-full relative z-50 ${className}`}>
 
       {/* Barra de Búsqueda */}
       <div className="relative">
@@ -152,21 +152,21 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
             }, 150); 
           }}
           placeholder={tCommon('Buscar ejercicio...', { defaultValue: 'Buscar ejercicio...' })}
-          className="w-full pl-12 pr-5 py-4 rounded-[20px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold text-text-primary placeholder:text-text-muted shadow-inner"
+          className={`w-full pl-12 pr-5 py-4 rounded-[20px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold text-text-primary placeholder:text-text-muted shadow-inner ${inputClassName}`}
         />
         <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
       </div>
 
       {/* Estado de Carga */}
       {isLoading && isSearching && String(inputValue || '').length > 1 && (
-        <div className="absolute top-full left-0 right-0 p-6 flex justify-center bg-bg-primary border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] mt-2 shadow-2xl z-50">
+        <div className="absolute top-full left-0 right-0 p-6 flex justify-center bg-bg-primary/95 backdrop-blur-xl border border-glass-border ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] mt-2 shadow-2xl z-50">
           <Spinner size={28} />
         </div>
       )}
 
       {/* Lista de Resultados */}
       {!isLoading && filteredExercises.length > 0 && isSearching && (
-        <div className="absolute top-full left-0 right-0 max-h-72 overflow-y-auto custom-scrollbar bg-bg-primary border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] mt-2 shadow-2xl z-50">
+        <div className="absolute top-full left-0 right-0 max-h-72 overflow-y-auto custom-scrollbar bg-bg-primary/95 backdrop-blur-xl border border-glass-border ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] mt-2 shadow-2xl z-50">
           <ul className="flex flex-col py-2">
             {filteredExercises.map(exercise => (
               <li key={exercise.id}>
@@ -201,7 +201,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
 
       {/* Sin Resultados */}
       {!isLoading && isSearching && String(inputValue || '').length > 1 && filteredExercises.length === 0 && (
-        <div className="absolute top-full left-0 right-0 bg-bg-primary border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] mt-2 shadow-2xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 bg-bg-primary/95 backdrop-blur-xl border border-glass-border ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] mt-2 shadow-2xl z-50 overflow-hidden">
           <div className="p-6 text-center">
             <p className="text-text-secondary font-medium">{tCommon('No se encontraron ejercicios.', { defaultValue: 'No se encontraron ejercicios.' })}</p>
           </div>
@@ -213,3 +213,4 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '' }) => {
 };
 
 export default ExerciseSearchInput;
+

@@ -96,7 +96,7 @@ const ExerciseCard = ({
     : [{ value: currentRest, label: currentRest + "s" }, ...REST_OPTIONS];
 
   return (
-    <GlassCard className="glass relative p-5 sm:p-6 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 hover:shadow-lg">
+    <GlassCard className="glass relative focus-within:z-50 p-5 sm:p-6 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 hover:shadow-lg">
       <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
         {dragHandleProps && (
           <div
@@ -228,3 +228,4 @@ const ExerciseCard = ({
 };
 
 export default ExerciseCard;
+
