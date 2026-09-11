@@ -7,7 +7,7 @@ import { useToast } from "../hooks/useToast";
 import { useTranslation } from "react-i18next";
 import ModalPortal from "./ModalPortal";
 
-const TransferModal = ({ sourceName, onClose, onTransferSuccess }) => {
+const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSuccess }) => {
   const { t } = useTranslation();
   const { addToast } = useToast();
   
@@ -88,32 +88,42 @@ const TransferModal = ({ sourceName, onClose, onTransferSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Destino (Biblioteca o Nuevo Manual)</label>
+              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Destino (Biblioteca u otro Ejercicio Manual)</label>
               <div className="relative z-[60]">
                 <ExerciseSearchInput 
-                  initialQuery={targetExercise ? targetExercise.name : targetManualName}
+                  initialQuery={targetExercise ? targetExercise.name : (existingManuals.includes(targetManualName) ? "" : targetManualName)}
                   onExerciseSelect={(ex) => {
                     if (ex) {
+                      if (ex.is_manual || !ex.id) {
+                        addToast("No puedes transferir a un ejercicio nuevo. Selecciona uno oficial de la lista o un manual existente abajo.", "warning");
+                        return;
+                      }
                       setTargetExercise(ex);
                       setTargetManualName(ex.name);
                     }
                   }}
                 />
-                <p className="text-xs text-text-muted mt-2">Usa el buscador para seleccionar un ejercicio oficial. Si solo escribes un nombre y no seleccionas ninguno de la lista, se creará un nuevo manual.</p>
+                <p className="text-xs text-text-muted mt-2">Usa el buscador para seleccionar un ejercicio oficial.</p>
               </div>
               
-              {!targetExercise && (
-                <div className="mt-3">
-                  <input 
-                    type="text" 
-                    placeholder="O escribe un nombre manual aquí..." 
+              {!targetExercise && existingManuals.length > 0 && (
+                <div className="mt-4">
+                  <label className="block text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-2">
+                    O selecciona otro manual existente:
+                  </label>
+                  <select
                     value={targetManualName}
                     onChange={(e) => {
                       setTargetManualName(e.target.value);
                       setTargetExercise(null);
                     }}
-                    className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-4 py-3 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent"
-                  />
+                    className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-4 py-3 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent appearance-none"
+                  >
+                    <option value="">-- Seleccionar --</option>
+                    {existingManuals.map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
                 </div>
               )}
               {targetExercise && (
@@ -224,23 +234,23 @@ const ManualExercisesManager = () => {
         </div>
       )}
 
-      {selectedExercise && (
-        <TransferModal 
-          sourceName={selectedExercise} 
-          onClose={() => setSelectedExercise(null)} 
-          onTransferSuccess={loadManualExercises}
-        />
-      )}
+        {selectedExercise && (
+          <TransferModal 
+            sourceName={selectedExercise} 
+            existingManuals={exercises.filter(ex => ex !== selectedExercise)}
+            onClose={() => setSelectedExercise(null)} 
+            onTransferSuccess={loadManualExercises}
+          />
+        )}
     </div>
   );
 };
 
+
+
+
+
+
+
+
 export default ManualExercisesManager;
-
-
-
-
-
-
-
-
