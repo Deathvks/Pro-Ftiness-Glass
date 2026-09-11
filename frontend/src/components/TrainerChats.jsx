@@ -39,6 +39,8 @@ export default function TrainerChats({ onClose }) {
   const messagesEndRef = useRef(null);
   const { addToast } = useToast();
   const userId = useAppStore((state) => state.userProfile?.id);
+  const userRole = useAppStore((state) => state.userProfile?.role);
+  const isAdmin = userRole === 'admin';
   const token = useAppStore((state) => state.token);
 
   useEffect(() => {
@@ -358,6 +360,11 @@ export default function TrainerChats({ onClose }) {
                     <div className="w-3 h-3 rounded-full bg-accent shrink-0 shadow-sm animate-pulse shadow-accent/50 ml-1"></div>
                     }
                   </div>
+                  {isAdmin && (
+                    <p className="text-[11px] text-text-muted mt-1 font-medium">
+                      Entrenador: {client.trainer_name ? client.trainer_name : 'No asignado'}
+                    </p>
+                  )}
                 </div>
               </div>);
           })
