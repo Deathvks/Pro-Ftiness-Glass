@@ -310,7 +310,7 @@ const ManualExercisesManager = () => {
     if (!deletingExercise) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/exercise-list/manual-exercises?name=${encodeURIComponent(deletingExercise)}`);
+      await api(`/exercise-list/manual-exercises?name=${encodeURIComponent(deletingExercise)}`, { method: 'DELETE' });
       addToast('Ejercicio manual eliminado correctamente.', 'success');
       setDeletingExercise(null);
       loadManualExercises();
