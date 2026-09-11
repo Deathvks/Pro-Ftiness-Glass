@@ -1,10 +1,19 @@
-/* frontend/src/components/RoutineEditor/ExerciseSearch/ExerciseDetailView.jsx */
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Check, Repeat, Dumbbell, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { useAppTheme } from '../../../hooks/useAppTheme';
 import { normalizeText } from '../../../utils/helpers';
 import { askTrainerAI } from '../../../services/aiService';
 import ExerciseMedia from '../../ExerciseMedia';
+import CustomSelect from '../../CustomSelect';
+
+const REP_OPTIONS = [
+  { value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4" }, { value: "5", label: "5" },
+  { value: "6", label: "6" }, { value: "7", label: "7" }, { value: "8", label: "8" }, { value: "9", label: "9" }, { value: "10", label: "10" },
+  { value: "11", label: "11" }, { value: "12", label: "12" }, { value: "15", label: "15" }, { value: "20", label: "20" }, { value: "30", label: "30" },
+  { value: "1-3", label: "1-3" }, { value: "3-5", label: "3-5" }, { value: "5-8", label: "5-8" }, { value: "8-10", label: "8-10" },
+  { value: "8-12", label: "8-12" }, { value: "10-12", label: "10-12" }, { value: "10-15", label: "10-15" }, { value: "12-15", label: "12-15" },
+  { value: "15-20", label: "15-20" }, { value: "Al fallo", label: "Al fallo" }
+];
 
 // Base URL para construir las rutas de imágenes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -156,7 +165,11 @@ const ExerciseDetailView = ({
     }
   };
 
-  const inputClasses = "w-full text-center px-4 py-3.5 rounded-[16px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:ring-2 focus:ring-accent/50 outline-none transition-all font-bold text-text-primary";
+  const inputClasses = "w-full text-center px-4 py-3.5 rounded-[16px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:ring-2 focus:ring-accent/50 outline-none transition-all font-bold text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+
+  const currentReps = String(reps || '10');
+  const hasCurrentRep = REP_OPTIONS.some(opt => opt.value === currentReps);
+  const repOptionsToUse = hasCurrentRep ? REP_OPTIONS : [{ value: currentReps, label: currentReps }, ...REP_OPTIONS];
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -288,48 +301,17 @@ const ExerciseDetailView = ({
                 className={inputClasses}
               />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 relative z-50">
               <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">{t('exercise_ui:reps', 'Reps')}</label>
-              <select
-                value={reps || '10'}
-                onChange={(e) => setReps(e.target.value)}
-                className={inputClasses + " appearance-none !px-2"}
-              >
-                {reps && !["1","2","3","4","5","6","7","8","9","10","11","12","15","20","30","1-3","3-5","5-8","8-10","8-12","10-12","10-15","12-15","15-20","Al fallo"].includes(String(reps)) && (
-                    <option value={reps}>{reps}</option>
-                )}
-                <optgroup label="Repeticiones">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
-                  <option value="11">11</option>
-                  <option value="12">12</option>
-                  <option value="15">15</option>
-                  <option value="20">20</option>
-                  <option value="30">30</option>
-                </optgroup>
-                <optgroup label="Rangos">
-                  <option value="1-3">1-3</option>
-                  <option value="3-5">3-5</option>
-                  <option value="5-8">5-8</option>
-                  <option value="8-10">8-10</option>
-                  <option value="8-12">8-12</option>
-                  <option value="10-12">10-12</option>
-                  <option value="10-15">10-15</option>
-                  <option value="12-15">12-15</option>
-                  <option value="15-20">15-20</option>
-                </optgroup>
-                <optgroup label="Especial">
-                  <option value="Al fallo">Al fallo</option>
-                </optgroup>
-              </select>
+              <div className="h-[48px]">
+                <CustomSelect
+                  value={currentReps}
+                  onChange={(val) => setReps(val)}
+                  options={repOptionsToUse}
+                  className={inputClasses + " !px-2"}
+                  searchable={false}
+                />
+              </div>
             </div>
             <div className="flex-1">
               <label className="block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center">{t('exercise_ui:rest_s', 'Desc. (s)')}</label>

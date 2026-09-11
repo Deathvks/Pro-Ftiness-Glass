@@ -5,8 +5,18 @@ import ExerciseSearchInput from '../ExerciseSearchInput';
 import { useTranslation } from 'react-i18next';
 import EditableMuscleGroup from './EditableMuscleGroup';
 import ExerciseMedia from '../ExerciseMedia';
+import CustomSelect from '../CustomSelect';
 
-const baseInputClasses = "w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-3 py-3 text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all font-medium text-center placeholder:text-text-muted";
+const REP_OPTIONS = [
+  { value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4" }, { value: "5", label: "5" },
+  { value: "6", label: "6" }, { value: "7", label: "7" }, { value: "8", label: "8" }, { value: "9", label: "9" }, { value: "10", label: "10" },
+  { value: "11", label: "11" }, { value: "12", label: "12" }, { value: "15", label: "15" }, { value: "20", label: "20" }, { value: "30", label: "30" },
+  { value: "1-3", label: "1-3" }, { value: "3-5", label: "3-5" }, { value: "5-8", label: "5-8" }, { value: "8-10", label: "8-10" },
+  { value: "8-12", label: "8-12" }, { value: "10-12", label: "10-12" }, { value: "10-15", label: "10-15" }, { value: "12-15", label: "12-15" },
+  { value: "15-20", label: "15-20" }, { value: "Al fallo", label: "Al fallo" }
+];
+
+const baseInputClasses = "w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-3 py-3 text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all font-medium text-center placeholder:text-text-muted [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 const baseLabelClasses = "block text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 text-center";
 
 const ExerciseCard = ({
@@ -34,6 +44,10 @@ const ExerciseCard = ({
       .map(m => tMuscles(m.trim(), { defaultValue: m.trim() }))
       .join(', ');
   }, [exercise.muscle_group, exercise.is_manual, tMuscles]);
+
+  const currentReps = String(exercise.reps || '10');
+  const hasCurrentRep = REP_OPTIONS.some(opt => opt.value === currentReps);
+  const repOptionsToUse = hasCurrentRep ? REP_OPTIONS : [{ value: currentReps, label: currentReps }, ...REP_OPTIONS];
 
   return (
     <GlassCard className="glass relative p-5 sm:p-6 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 hover:shadow-lg">
@@ -73,7 +87,7 @@ const ExerciseCard = ({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mt-5">
+          <div className="grid grid-cols-3 gap-3 mt-5 relative z-50">
             <div>
               <label className={baseLabelClasses}>{tCommon('Series', { defaultValue: 'Series' })}</label>
               <input
@@ -87,49 +101,17 @@ const ExerciseCard = ({
               {errors?.sets && <p className="text-[#ef4444] text-[10px] mt-1.5 font-medium text-center">{errors.sets}</p>}
             </div>
 
-            <div>
+            <div className="relative z-50">
               <label className={baseLabelClasses}>{tCommon('Reps', { defaultValue: 'Reps' })}</label>
-              <select
-                value={exercise.reps || '10'}
-                onChange={(e) => onFieldChange(identifier, 'reps', e.target.value)}
-                className={baseInputClasses + " appearance-none !pr-2"}
-              >
-                {/* Asegurar que el valor actual esté en la lista si no es de los predefinidos */}
-                {exercise.reps && !["1","2","3","4","5","6","7","8","9","10","11","12","15","20","30","1-3","3-5","5-8","8-10","8-12","10-12","10-15","12-15","15-20","Al fallo"].includes(String(exercise.reps)) && (
-                    <option value={exercise.reps}>{exercise.reps}</option>
-                )}
-                <optgroup label="Repeticiones">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
-                  <option value="11">11</option>
-                  <option value="12">12</option>
-                  <option value="15">15</option>
-                  <option value="20">20</option>
-                  <option value="30">30</option>
-                </optgroup>
-                <optgroup label="Rangos">
-                  <option value="1-3">1-3</option>
-                  <option value="3-5">3-5</option>
-                  <option value="5-8">5-8</option>
-                  <option value="8-10">8-10</option>
-                  <option value="8-12">8-12</option>
-                  <option value="10-12">10-12</option>
-                  <option value="10-15">10-15</option>
-                  <option value="12-15">12-15</option>
-                  <option value="15-20">15-20</option>
-                </optgroup>
-                <optgroup label="Especial">
-                  <option value="Al fallo">Al fallo</option>
-                </optgroup>
-              </select>
+              <div className="h-[44px]">
+                <CustomSelect
+                  value={currentReps}
+                  onChange={(val) => onFieldChange(identifier, 'reps', val)}
+                  options={repOptionsToUse}
+                  className="w-full text-center text-sm font-bold bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] text-text-primary"
+                  searchable={false}
+                />
+              </div>
               {errors?.reps && <p className="text-[#ef4444] text-[10px] mt-1.5 font-medium text-center">{errors.reps}</p>}
             </div>
 
