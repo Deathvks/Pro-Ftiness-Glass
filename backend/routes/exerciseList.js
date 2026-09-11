@@ -62,6 +62,8 @@ router.use(authenticateToken);
 
 // GET /api/exercises -> Devuelve una lista de ejercicios (permite búsqueda)
 router.get('/exercises', exerciseListController.getExercises);
+router.get('/manual-exercises', exerciseListController.getManualExercises);
+router.post('/manual-exercises/transfer', exerciseListController.transferManualExercise);
 
 // Funciones de administrador
 router.post('/exercises/import-youtube', exerciseListController.importYouTubePlaylist);
