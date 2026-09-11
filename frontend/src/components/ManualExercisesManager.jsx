@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/apiClient";
 import GlassCard from "./GlassCard";
-import { Dumbbell, ArrowRight, Check, X, AlertTriangle, Info } from "lucide-react";
+import { Dumbbell, ArrowRight, Check, X, AlertTriangle, Info, Trash } from "lucide-react";
 import ExerciseSearchInput from "./ExerciseSearchInput";
 import ExerciseMedia from "./ExerciseMedia";
 import { useToast } from "../hooks/useToast";
 import { useTranslation } from "react-i18next";
 import ModalPortal from "./ModalPortal";
 import CustomSelect from "./CustomSelect";
+import ConfirmationModal from "./ConfirmationModal";
 
 const ManualExerciseInfoModal = ({ exerciseName, onClose }) => {
   const [info, setInfo] = useState(null);
@@ -289,7 +290,9 @@ const ManualExercisesManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [infoExercise, setInfoExercise] = useState(null);
-  
+  const [deletingExercise, setDeletingExercise] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { addToast } = useToast();
   
   const loadManualExercises = async () => {
     setIsLoading(true);
@@ -300,6 +303,22 @@ const ManualExercisesManager = () => {
       console.error(error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingExercise) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/exercise-list/manual-exercises?name=${encodeURIComponent(deletingExercise)}`);
+      addToast('Ejercicio manual eliminado correctamente.', 'success');
+      setDeletingExercise(null);
+      loadManualExercises();
+    } catch (error) {
+      console.error(error);
+      addToast('Error al eliminar el ejercicio manual.', 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -334,6 +353,12 @@ const ManualExercisesManager = () => {
               <div className="flex items-center justify-between gap-3">
                 <span className="font-bold text-text-primary text-lg truncate">{ex.name}</span>
                 <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setDeletingExercise(ex.name)}
+                    className="shrink-0 p-2 bg-red-500/10 hover:bg-red-500/20 rounded-full text-red-500 transition-colors"
+                  >
+                    <Trash size={16} />
+                  </button>
                   <button 
                     onClick={() => setInfoExercise(ex.name)}
                     className="shrink-0 p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full text-text-secondary transition-colors"
@@ -389,6 +414,17 @@ const ManualExercisesManager = () => {
         <ManualExerciseInfoModal 
           exerciseName={infoExercise} 
           onClose={() => setInfoExercise(null)} 
+        />
+      )}
+
+      {deletingExercise && (
+        <ConfirmationModal
+          message={`¿Estás seguro de que quieres eliminar el ejercicio manual "${deletingExercise}"? Esta acción borrará todo su historial, récords personales y lo quitará de las rutinas donde esté guardado. Es irreversible.`}
+          onConfirm={handleDelete}
+          onCancel={() => setDeletingExercise(null)}
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          isLoading={isDeleting}
         />
       )}
     </div>
