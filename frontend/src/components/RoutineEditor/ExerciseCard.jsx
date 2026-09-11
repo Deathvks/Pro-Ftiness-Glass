@@ -113,7 +113,8 @@ const ExerciseCard = ({
                   onChange={(val) => onFieldChange(identifier, 'reps', val)}
                   options={repOptionsToUse}
                   className="w-full h-full"
-                  triggerClassName="w-full h-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-3 flex items-center justify-between gap-1 text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all font-medium text-center"
+                  triggerClassName="w-full h-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-3 flex items-center justify-between gap-1 focus:ring-2 focus:ring-accent/50 outline-none transition-all appearance-none"
+                  textClassName="text-text-primary font-medium text-center truncate flex-1"
                   searchable={false}
                 />
               </div>

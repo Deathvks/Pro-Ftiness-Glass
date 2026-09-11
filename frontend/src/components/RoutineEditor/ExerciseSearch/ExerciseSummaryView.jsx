@@ -157,7 +157,8 @@ const ExerciseSummaryView = ({ stagedExercises, onBack, onUpdate, onRemove, onFi
                             onChange={(val) => onUpdate(item.exercise.id, 'reps', val)}
                             options={repOptionsToUse}
                             className="w-full h-full"
-                            triggerClassName={inputClasses + " !px-2 flex items-center justify-between h-full"}
+                            triggerClassName={inputClasses + " !px-2 flex items-center justify-between h-full appearance-none"}
+                            textClassName="text-text-primary font-bold text-center truncate flex-1"
                             searchable={false}
                           />
                         </div>
