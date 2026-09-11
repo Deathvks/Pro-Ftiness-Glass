@@ -3,6 +3,7 @@ import api from "../services/apiClient";
 import GlassCard from "./GlassCard";
 import { Dumbbell, ArrowRight, Check, X, AlertTriangle } from "lucide-react";
 import ExerciseSearchInput from "./ExerciseSearchInput";
+import ExerciseMedia from "./ExerciseMedia";
 import { useToast } from "../hooks/useToast";
 import { useTranslation } from "react-i18next";
 import ModalPortal from "./ModalPortal";
@@ -92,6 +93,7 @@ const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSu
               <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Destino (Biblioteca u otro Ejercicio Manual)</label>
               <div className="relative z-[60]">
                 <ExerciseSearchInput 
+                  disableManualAdd={true}
                   initialQuery={targetExercise ? targetExercise.name : (existingManuals.includes(targetManualName) ? "" : targetManualName)}
                   onExerciseSelect={(ex) => {
                     if (ex) {
@@ -130,9 +132,19 @@ const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSu
                 </div>
               )}
               {targetExercise && (
-                <div className="mt-3 flex items-center justify-between p-3 bg-black/5 dark:bg-white/5 rounded-[16px]">
-                  <span className="text-sm font-bold text-text-primary">{targetExercise.name}</span>
-                  <button onClick={() => { setTargetExercise(null); setTargetManualName(""); }} className="text-xs text-red-500 font-bold uppercase hover:underline">Quitar</button>
+                <div className="mt-4 p-3 bg-black/5 dark:bg-white/5 rounded-[16px] flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-[12px] overflow-hidden shrink-0 ring-1 ring-black/5 dark:ring-white/10 bg-black/5 dark:bg-white/5 p-1">
+                    <ExerciseMedia 
+                      details={targetExercise} 
+                      fitMode="cover"
+                      disableAnimation={true}
+                      className="w-full h-full object-cover rounded-[8px]" 
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-bold text-text-primary block truncate">{targetExercise.name}</span>
+                  </div>
+                  <button onClick={() => { setTargetExercise(null); setTargetManualName(""); }} className="text-xs text-[#ef4444] font-bold uppercase hover:bg-[#ef4444]/10 px-3 py-2 rounded-lg transition-colors">Quitar</button>
                 </div>
               )}
             </div>
@@ -257,4 +269,5 @@ const ManualExercisesManager = () => {
 
 
 export default ManualExercisesManager;
+
 

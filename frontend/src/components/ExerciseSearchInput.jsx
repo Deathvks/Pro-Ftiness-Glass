@@ -15,7 +15,7 @@ import ExerciseMedia from './ExerciseMedia';
  * El dropdown se renderiza mediante un Portal para escapar del
  * stacking context creado por backdrop-filter en GlassCard.
  */
-const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = '', inputClassName = '' }) => {
+const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = '', inputClassName = '', disableManualAdd = false }) => {
   
   const [inputValue, setInputValue] = useState(String(initialQuery || ''));
   const [isSearching, setIsSearching] = useState(false);
@@ -140,6 +140,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
 
   // Componente reutilizable para el botón "Añadir Manual"
   const ManualAddButton = () => {
+    if (disableManualAdd) return null;
     const query = inputValue.trim();
     if (query.length === 0) return null; 
 
