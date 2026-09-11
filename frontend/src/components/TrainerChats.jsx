@@ -350,16 +350,16 @@ export default function TrainerChats({ onClose }) {
                       </span>
                     }
                   </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className={`text-[13px] line-clamp-2 flex-1 ${client.unreadCount > 0 ? 'font-bold text-text-primary' : 'text-text-secondary'}`}>
-                      {client.lastMessage ?
-                      client.lastMessage.sender_id === userId ? `Tú: ${client.lastMessage.content}` : client.lastMessage.content :
-                      'Sin mensajes aún'}
-                    </p>
-                    {client.unreadCount > 0 &&
-                    <div className="w-3 h-3 rounded-full bg-accent shrink-0 shadow-sm animate-pulse shadow-accent/50 ml-1"></div>
-                    }
-                  </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`text-[13px] line-clamp-2 flex-1 ${client.unreadCount > 0 ? 'font-bold text-text-primary' : 'text-text-secondary'}`}>
+                        {client.lastMessage ?
+                        String(client.lastMessage.sender_id) !== String(client.id) ? `Entrenador: ${client.lastMessage.content}` : client.lastMessage.content :
+                        'Sin mensajes aún'}
+                      </p>
+                      {client.unreadCount > 0 &&
+                      <div className="w-3 h-3 rounded-full bg-accent shrink-0 shadow-sm animate-pulse shadow-accent/50 ml-1"></div>
+                      }
+                    </div>
                   {isAdmin && (
                     <p className="text-[11px] text-text-muted mt-1 font-medium">
                       Entrenador: {client.trainer_name ? client.trainer_name : 'No asignado'}
@@ -422,10 +422,10 @@ export default function TrainerChats({ onClose }) {
                   <p className="text-sm text-text-secondary">No hay mensajes anteriores.</p>
                 </div> :
 
-            messages.map((msg, index) => {
-              const isMe = String(msg.sender_id) === String(userId);
-              return (
-                <div key={msg.id || index} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
+              messages.map((msg, index) => {
+                const isMe = String(msg.sender_id) !== String(selectedClient.id);
+                return (
+                  <div key={msg.id || index} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'}`}>
                         {msg.attachment_url && msg.attachment_type?.startsWith('video/') ?
                     <div className="mb-2 rounded-xl overflow-hidden bg-black/10">

@@ -171,8 +171,37 @@ export const getTrainerClientsChats = async (req, res, next) => {
     let clients = [];
 
     if (isAdmin) {
+      const trainersAndAdmins = await User.findAll({
+        where: { role: { [Op.in]: ['admin', 'trainer'] } },
+        attributes: ['id']
+      });
+      const trainerAdminIds = trainersAndAdmins.map(u => u.id);
+
+      const messages = await Message.findAll({
+        where: {
+          [Op.or]: [
+            { sender_id: { [Op.in]: trainerAdminIds } },
+            { receiver_id: { [Op.in]: trainerAdminIds } }
+          ]
+        },
+        attributes: ['sender_id', 'receiver_id']
+      });
+
+      const prospectIds = new Set();
+      messages.forEach(m => {
+        if (!trainerAdminIds.includes(m.sender_id)) prospectIds.add(m.sender_id);
+        if (!trainerAdminIds.includes(m.receiver_id)) prospectIds.add(m.receiver_id);
+      });
+
       clients = await User.findAll({
-        where: { id: { [Op.ne]: userId } },
+        where: {
+          [Op.or]: [
+            { trainer_id: { [Op.not]: null } },
+            { id: Array.from(prospectIds) }
+          ],
+          id: { [Op.ne]: userId },
+          role: { [Op.not]: 'admin' } // Opcional, para no ver otros admins
+        },
         attributes: ['id', 'username', 'name', 'profile_image_url', 'role', 'trainer_id']
       });
     } else {
