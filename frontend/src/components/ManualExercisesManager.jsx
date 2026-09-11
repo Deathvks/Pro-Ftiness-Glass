@@ -3,7 +3,7 @@ import api from "../services/apiClient";
 import GlassCard from "./GlassCard";
 import { Dumbbell, ArrowRight, Check, X, AlertTriangle } from "lucide-react";
 import ExerciseSearchInput from "./ExerciseSearchInput";
-import { useToast } from "../context/ToastContext";
+import { useToast } from "../hooks/useToast";
 import { useTranslation } from "react-i18next";
 import { useExerciseStore } from "../store/useExerciseStore";
 
@@ -228,4 +228,5 @@ const ManualExercisesManager = () => {
 };
 
 export default ManualExercisesManager;
+
 
