@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
-const CustomSelect = ({ value, onChange, options, placeholder, className = "", multiple = false, searchable = false }) => {
+const CustomSelect = ({ value, onChange, options, placeholder, className = "", triggerClassName = "", multiple = false, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -71,7 +71,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", m
   }, [isOpen]);
 
   const selectedValues = multiple ? (typeof value === 'string' && value ? value.split(',').map(v => v.trim()) : []) : [];
-  const selectedOption = !multiple ? options.find(opt => opt.value === value) : null;
+  const selectedOption = !multiple ? options.find(opt => opt.value === value && !opt.isHeader) : null;
 
   const handleOptionClick = (optionValue) => {
     if (multiple) {
@@ -88,25 +88,34 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", m
     }
   };
 
-  const isSelected = (optionValue) => {
-    if (multiple) return selectedValues.includes(optionValue);
-    return value === optionValue;
-  };
+  const isSelected = (val) => multiple ? selectedValues.includes(val) : value === val;
 
-  const filteredOptions = searchable 
-    ? options.filter(opt => {
-        const textToSearch = opt.searchText || (typeof opt.label === 'string' ? opt.label : opt.value);
-        return String(textToSearch).toLowerCase().includes(searchQuery.toLowerCase());
-      })
-    : options;
+  const filteredOptions = options.filter(opt => 
+    !opt.label || typeof opt.label !== 'string' ? false : opt.label.toLowerCase().includes(searchQuery.toLowerCase()) || opt.isHeader
+  );
+
+  // Filtrar cabeceras que se han quedado sin hijos por la búsqueda
+  const finalOptions = [];
+  let currentHeader = null;
+  filteredOptions.forEach((opt, idx) => {
+    if (opt.isHeader) {
+      currentHeader = opt;
+    } else {
+      if (currentHeader) {
+        finalOptions.push(currentHeader);
+        currentHeader = null;
+      }
+      finalOptions.push(opt);
+    }
+  });
 
   const DropdownPortal = () => createPortal(
     <div
       ref={dropdownRef}
       style={{
         position: 'fixed',
-        top: position.top !== undefined ? `${position.top}px` : undefined,
-        bottom: position.bottom !== undefined ? `${position.bottom}px` : undefined,
+        top: position.top !== undefined ? `${position.top}px` : 'auto',
+        bottom: position.bottom !== undefined ? `${position.bottom}px` : 'auto',
         left: `${position.left}px`,
         width: `${position.width}px`,
       }}
@@ -130,10 +139,14 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", m
           />
         </div>
       )}
-      {filteredOptions.length === 0 ? (
+      {finalOptions.length === 0 ? (
         <div className="px-3 py-4 text-center text-sm text-text-secondary">Sin resultados</div>
       ) : (
-        filteredOptions.map(option => (
+        finalOptions.map((option, idx) => option.isHeader ? (
+          <div key={`header-${idx}`} className="px-3 py-1.5 mt-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
+            {option.label}
+          </div>
+        ) : (
           <button
             key={option.value}
             type="button"
@@ -157,17 +170,14 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", m
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        // CORRECCIÓN VISUAL:
-        // - Usamos bg-bg-secondary siempre para tener fondo en Light y Dark/OLED.
-        // - Borde fino blanco en Dark/OLED.
-        className={`
+        className={triggerClassName || `
           w-full rounded-xl px-4 py-3 text-text-primary text-left outline-none transition flex items-center justify-between gap-2 
           border border-transparent dark:border dark:border-white/10
           bg-bg-secondary hover:bg-bg-secondary/80
         `}
         disabled={isOpen && position.top === 0}
       >
-        <span className={`text-sm font-bold truncate ${(!multiple && selectedOption) || (multiple && selectedValues.length > 0) ? 'text-text-primary' : 'text-text-secondary'}`}>
+        <span className={`text-sm font-bold truncate flex-1 ${(!multiple && selectedOption) || (multiple && selectedValues.length > 0) ? 'text-text-primary' : 'text-text-secondary'}`}>
           {multiple 
             ? (selectedValues.length > 0 ? selectedValues.join(', ') : placeholder) 
             : (selectedOption ? selectedOption.label : placeholder)
@@ -175,7 +185,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", m
         </span>
         <ChevronDown
           size={16}
-          className={`transition-transform duration-200 text-text-secondary ${
+          className={`shrink-0 transition-transform duration-200 text-text-secondary ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
