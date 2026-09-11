@@ -83,7 +83,7 @@ const ManualExerciseInfoModal = ({ exerciseName, onClose }) => {
                           <span className="text-sm font-bold text-text-primary">{new Date(h.date).toLocaleDateString()}</span>
                         </div>
                         <div className="text-sm font-extrabold text-text-primary">
-                          {h.sets}x{h.reps} {h.weight > 0 ? `@ ${h.weight}kg` : ''}
+                          {h.sets} series {h.weight > 0 ? `(Mejor: ${h.weight}kg)` : ''}
                         </div>
                       </div>
                     ))}
