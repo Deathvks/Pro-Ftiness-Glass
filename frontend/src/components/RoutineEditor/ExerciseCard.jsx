@@ -38,6 +38,20 @@ const REP_OPTIONS = [
   { value: "Al fallo", label: "Al fallo" },
 ];
 
+const REST_OPTIONS = [
+  { value: "0", label: "0s" },
+  { value: "15", label: "15s" },
+  { value: "30", label: "30s" },
+  { value: "45", label: "45s" },
+  { value: "60", label: "1 min" },
+  { value: "90", label: "1m 30s" },
+  { value: "120", label: "2 min" },
+  { value: "150", label: "2m 30s" },
+  { value: "180", label: "3 min" },
+  { value: "240", label: "4 min" },
+  { value: "300", label: "5 min" },
+];
+
 const baseInputClasses =
   "w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] px-3 py-3 text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all font-medium text-center placeholder:text-text-muted [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 const baseLabelClasses =
@@ -74,6 +88,12 @@ const ExerciseCard = ({
   const repOptionsToUse = hasCurrentRep
     ? REP_OPTIONS
     : [{ value: currentReps, label: currentReps }, ...REP_OPTIONS];
+
+  const currentRest = String(exercise.rest_seconds || "60");
+  const hasCurrentRest = REST_OPTIONS.some((opt) => opt.value === currentRest);
+  const restOptionsToUse = hasCurrentRest
+    ? REST_OPTIONS
+    : [{ value: currentRest, label: currentRest + "s" }, ...REST_OPTIONS];
 
   return (
     <GlassCard className="glass relative p-5 sm:p-6 rounded-[24px] border-none ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 hover:shadow-lg">
@@ -158,20 +178,21 @@ const ExerciseCard = ({
               )}
             </div>
 
-            <div>
+            <div className="relative z-50">
               <label className={baseLabelClasses}>
                 {tCommon("Descanso (s)", { defaultValue: "Descanso" })}
               </label>
-              <input
-                type="number"
-                min="0"
-                placeholder="60"
-                value={exercise.rest_seconds || ""}
-                onChange={(e) =>
-                  onFieldChange(identifier, "rest_seconds", e.target.value)
-                }
-                className={baseInputClasses}
-              />
+              <div>
+                <CustomSelect
+                  value={currentRest}
+                  onChange={(val) => onFieldChange(identifier, "rest_seconds", val)}
+                  options={restOptionsToUse}
+                  className="w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[16px]"
+                  triggerClassName="w-full py-3 bg-transparent px-3 flex items-center justify-between gap-1 focus:ring-2 focus:ring-accent/50 outline-none transition-all appearance-none rounded-[16px]"
+                  textClassName="text-text-primary font-medium text-center truncate flex-1"
+                  searchable={false}
+                />
+              </div>
             </div>
           </div>
 
