@@ -245,7 +245,7 @@ export const getManualExercises = async (req, res) => {
                 m.name,
                 (SELECT COUNT(*) FROM workout_log_details wld JOIN workout_logs wl ON wl.id = wld.workout_log_id WHERE wl.user_id = :userId AND wld.exercise_name = m.name) as totalSets,
                 (SELECT COUNT(*) FROM routine_exercises re JOIN routines r ON r.id = re.routine_id WHERE r.user_id = :userId AND re.name = m.name AND re.exercise_list_id IS NULL) as inRoutines,
-                (SELECT MAX(weight) FROM personal_records pr WHERE pr.user_id = :userId AND pr.exercise_name = m.name) as maxWeight
+                (SELECT MAX(weight_kg) FROM personal_records pr WHERE pr.user_id = :userId AND pr.exercise_name = m.name) as maxWeight
             FROM (
                 SELECT DISTINCT name FROM (
                     SELECT wld.exercise_name as name
