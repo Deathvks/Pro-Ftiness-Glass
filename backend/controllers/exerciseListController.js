@@ -223,7 +223,9 @@ export const updateExercise = async (req, res, next) => {
     }
 };
 
-export const deleteExercise = async (req, res, next) => {
+export const deleteExercise,
+    getManualExercises,
+    transferManualExercise = async (req, res, next) => {
     try {
         const { id } = req.params;
         const exercise = await ExerciseList.findByPk(id);
@@ -236,11 +238,152 @@ export const deleteExercise = async (req, res, next) => {
     }
 };
 
+const getManualExercises = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Ejercicios manuales son los que tienen un exercise_name en workout_log_details 
+        // que no est en exercise_list, O los que estn en routine_exercises con exercise_list_id = NULL
+        const query = \
+            SELECT DISTINCT name FROM (
+                SELECT wld.exercise_name as name
+                FROM workout_log_details wld
+                JOIN workout_logs wl ON wl.id = wld.workout_log_id
+                LEFT JOIN exercise_list el ON el.name = wld.exercise_name
+                WHERE wl.user_id = :userId AND el.id IS NULL
+
+                UNION
+
+                SELECT re.name
+                FROM routine_exercises re
+                JOIN routines r ON r.id = re.routine_id
+                WHERE r.user_id = :userId AND re.exercise_list_id IS NULL
+
+                UNION
+
+                SELECT tre.name
+                FROM template_routine_exercises tre
+                JOIN template_routines tr ON tr.id = tre.template_routine_id
+                WHERE tr.user_id = :userId AND tre.exercise_list_id IS NULL
+            ) AS manual_exercises
+            WHERE name IS NOT NULL AND name != ''
+            ORDER BY name ASC;
+        \;
+
+        const [results] = await sequelize.query(query, {
+            replacements: { userId }
+        });
+
+        res.json(results.map(row => row.name));
+    } catch (error) {
+        console.error('Error fetching manual exercises:', error);
+        res.status(500).json({ error: 'Error interno del servidor al buscar ejercicios manuales.' });
+    }
+};
+
+const transferManualExercise = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        const userId = req.user.id;
+        const { sourceName, targetName, targetExerciseListId, deleteSource, replaceInRoutines } = req.body;
+
+        if (!sourceName || !targetName) {
+            return res.status(400).json({ error: "Se requiere nombre de origen y destino." });
+        }
+
+        if (deleteSource) {
+            // TRANSFERIR HISTORIAL (ACTUALIZAR)
+            await sequelize.query(\
+                UPDATE workout_log_details 
+                SET exercise_name = :targetName 
+                WHERE exercise_name = :sourceName 
+                  AND workout_log_id IN (SELECT id FROM workout_logs WHERE user_id = :userId)
+            \, { replacements: { targetName, sourceName, userId }, transaction });
+        } else {
+            // COPIAR HISTORIAL (DUPLICAR)
+            const [logsToCopy] = await sequelize.query(\
+                SELECT wld.* 
+                FROM workout_log_details wld
+                JOIN workout_logs wl ON wl.id = wld.workout_log_id
+                WHERE wl.user_id = :userId AND wld.exercise_name = :sourceName
+            \, { replacements: { userId, sourceName }, transaction });
+
+            for (const oldLog of logsToCopy) {
+                // Insertar nuevo detalle
+                const [newLogResult] = await sequelize.query(\
+                    INSERT INTO workout_log_details (workout_log_id, exercise_name, total_volume, best_set_weight, superset_group_id, estimated_1rm)
+                    VALUES (:workout_log_id, :targetName, :total_volume, :best_set_weight, :superset_group_id, :estimated_1rm)
+                \, { 
+                    replacements: { 
+                        workout_log_id: oldLog.workout_log_id,
+                        targetName: targetName,
+                        total_volume: oldLog.total_volume,
+                        best_set_weight: oldLog.best_set_weight,
+                        superset_group_id: oldLog.superset_group_id,
+                        estimated_1rm: oldLog.estimated_1rm
+                    },
+                    transaction
+                });
+
+                const newLogId = newLogResult; 
+
+                // Copiar sets
+                await sequelize.query(\
+                    INSERT INTO workout_log_sets (log_detail_id, set_number, reps, weight_kg, is_dropset, is_warmup, rir)
+                    SELECT :newLogId, set_number, reps, weight_kg, is_dropset, is_warmup, rir
+                    FROM workout_log_sets
+                    WHERE log_detail_id = :oldLogId
+                \, {
+                    replacements: { newLogId, oldLogId: oldLog.id },
+                    transaction
+                });
+            }
+        }
+
+        if (replaceInRoutines) {
+            // Reemplazar en rutinas activas
+            await sequelize.query(\
+                UPDATE routine_exercises 
+                SET name = :targetName, exercise_list_id = :targetExerciseListId
+                WHERE name = :sourceName 
+                  AND routine_id IN (SELECT id FROM routines WHERE user_id = :userId)
+            \, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
+
+            // Reemplazar en plantillas
+            await sequelize.query(\
+                UPDATE template_routine_exercises 
+                SET name = :targetName, exercise_list_id = :targetExerciseListId
+                WHERE name = :sourceName 
+                  AND template_routine_id IN (SELECT id FROM template_routines WHERE user_id = :userId)
+            \, { replacements: { targetName, targetExerciseListId: targetExerciseListId || null, sourceName, userId }, transaction });
+        }
+
+        // --- Recalcular PRs de la app ---
+        // TODO: En un sistema completo deberamos recalcular el PR (personal_records) para targetName, o renombrar el viejo PR.
+        if (deleteSource) {
+            await sequelize.query(\
+                UPDATE personal_records 
+                SET exercise_name = :targetName
+                WHERE user_id = :userId AND exercise_name = :sourceName
+            \, { replacements: { targetName, sourceName, userId }, transaction });
+        }
+
+        await transaction.commit();
+        res.json({ success: true, message: "Transferencia completada correctamente." });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error transfering manual exercises:', error);
+        res.status(500).json({ error: 'Error interno al transferir datos.' });
+    }
+};
+
 const exerciseListController = {
     getExercises,
     importYouTubePlaylist,
     updateExercise,
-    deleteExercise
+    deleteExercise,
+    getManualExercises,
+    transferManualExercise
 };
 
 export default exerciseListController;

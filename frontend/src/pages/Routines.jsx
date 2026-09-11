@@ -33,6 +33,7 @@ import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
+import ManualExercisesManager from '../components/ManualExercisesManager';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
 import RoutineTourGuide from '../components/RoutineTourGuide';
@@ -808,6 +809,12 @@ const Routines = ({ setView }) => {
         >
           <Compass size={18} /> Explorar
         </button>
+          <button
+            onClick={() => setActiveTab('manualExercises')}
+            className={getTabClass('manualExercises')}
+          >
+            <Dumbbell size={18} /> Ejercicios Manuales
+          </button>
         <button
           onClick={() => {
             localStorage.setItem('quickCardioOrigin', 'routines');
@@ -1113,7 +1120,8 @@ const Routines = ({ setView }) => {
 
       {activeTab === 'explore' && <TemplateRoutines setView={setView} />}
 
-      {showPrivacyModal && (
+      {activeTab === 'manualExercises' && <ManualExercisesManager />}
+{showPrivacyModal && (
         <GlobalPrivacyModal onClose={() => setShowPrivacyModal(false)} />
       )}
 
@@ -1161,3 +1169,9 @@ const Routines = ({ setView }) => {
 };
 
 export default Routines;
+
+
+
+
+
+
