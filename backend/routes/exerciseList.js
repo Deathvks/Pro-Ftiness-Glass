@@ -65,6 +65,7 @@ router.get('/exercises', exerciseListController.getExercises);
 router.get('/manual-exercises', exerciseListController.getManualExercises);
 router.get('/manual-exercises/info', exerciseListController.getManualExerciseInfo);
 router.delete('/manual-exercises', exerciseListController.deleteManualExercise);
+router.delete('/manual-exercises/all', exerciseListController.deleteAllManualExercises);
 router.post('/manual-exercises/transfer', exerciseListController.transferManualExercise);
 
 // Funciones de administrador
