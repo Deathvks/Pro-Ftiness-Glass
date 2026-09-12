@@ -50,7 +50,24 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
         (!dropdownRef.current || !dropdownRef.current.contains(event.target))
       ) {
         setIsSearching(false);
-        setInputValue(String(initialQuery || ''));
+        const currentVal = inputValue.trim();
+        const initialVal = String(initialQuery || '').trim();
+
+        if (currentVal && currentVal !== initialVal && !disableManualAdd) {
+          const fakeExercise = {
+            id: null, 
+            name: currentVal,
+            muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), 
+            image_url: null, 
+            video_url: null,
+            image_url_start: null,
+            image_url_end: null,
+            is_manual: true 
+          };
+          onExerciseSelect(fakeExercise);
+        } else {
+          setInputValue(String(initialQuery || ''));
+        }
       }
     };
 
@@ -61,7 +78,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isSearching, initialQuery]);
+  }, [isSearching, initialQuery, inputValue, disableManualAdd, onExerciseSelect, tMuscle]);
 
   // Carga todos los ejercicios al montar el componente
   useEffect(() => {
@@ -276,6 +293,28 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
           value={inputValue} 
           onChange={(e) => setInputValue(e.target.value)} 
           onFocus={() => setIsSearching(true)} 
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              const currentVal = inputValue.trim();
+              const initialVal = String(initialQuery || '').trim();
+              if (currentVal && currentVal !== initialVal && !disableManualAdd) {
+                const fakeExercise = {
+                  id: null, 
+                  name: currentVal,
+                  muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), 
+                  image_url: null, 
+                  video_url: null,
+                  image_url_start: null,
+                  image_url_end: null,
+                  is_manual: true 
+                };
+                onExerciseSelect(fakeExercise);
+                setIsSearching(false);
+                inputRef.current?.blur();
+              }
+            }
+          }}
           placeholder={tCommon('Buscar ejercicio...', { defaultValue: 'Buscar ejercicio...' })}
           className={`w-full pl-12 pr-5 py-4 rounded-[20px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold text-text-primary placeholder:text-text-muted shadow-inner ${inputClassName}`}
         />
