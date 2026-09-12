@@ -47,6 +47,7 @@ router.get('/cron-jobs', adminController.getCronJobs);
 router.post('/cron-jobs/test/:id', adminController.testCronJob);
 
 // Mantenimiento y Memoria
+router.get('/system-stats', adminController.getSystemStats);
 router.post('/free-memory', adminController.freeMemory);
 
 // Reset global

@@ -79,3 +79,7 @@ export const freeServerMemory = () => {
     });
 };
 
+export const getSystemStats = () => {
+    return apiClient('/admin/system-stats');
+};
+
