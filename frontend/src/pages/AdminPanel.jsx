@@ -414,11 +414,11 @@ const AdminPanel = ({ onCancel }) => {
           <button 
             onClick={handleFreeMemory} 
             disabled={isUpdating}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base"
             title="Forzar al servidor a liberar memoria RAM no utilizada"
           >
-            <RefreshCw size={18} className={isUpdating ? "animate-spin" : ""} />
-            <span className="hidden sm:inline">Liberar RAM</span>
+            <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} />
+            <span>Liberar RAM</span>
           </button>
         </div>
 
