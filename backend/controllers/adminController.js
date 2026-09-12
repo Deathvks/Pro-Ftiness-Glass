@@ -460,7 +460,7 @@ export const freeMemory = async (req, res, next) => {
       const freed = (memoryBefore.heapUsed - memoryAfter.heapUsed) / 1024 / 1024;
       return res.json({ 
         success: true, 
-        message: \Memoria liberada exitosamente. Se liberaron \ MB.\,
+        message: `Memoria liberada exitosamente. Se liberaron ${freed.toFixed(2)} MB.`,
         beforeMB: (memoryBefore.heapUsed / 1024 / 1024).toFixed(2),
         afterMB: (memoryAfter.heapUsed / 1024 / 1024).toFixed(2)
       });
