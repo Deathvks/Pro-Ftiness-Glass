@@ -399,24 +399,25 @@ const AdminPanel = ({ onCancel }) => {
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-6 sm:mb-8">
+      <div className="flex items-center justify-between gap-2 md:gap-6 mb-6 sm:mb-8">
         <div className="flex items-center gap-4">
           <button 
             onClick={onCancel} 
             className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
           >
             <ChevronLeft size={20} />
-            Volver al Hub
+            <span className="hidden sm:inline">Volver al Hub</span>
+            <span className="sm:hidden">Volver</span>
           </button>
 
           <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Admin</h1>
         </div>
-          <button 
-            onClick={handleFreeMemory} 
-            disabled={isUpdating}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base"
-            title="Forzar al servidor a liberar memoria RAM no utilizada"
-          >
+        <button 
+          onClick={handleFreeMemory} 
+          disabled={isUpdating}
+          className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base w-fit shrink-0"
+          title="Forzar al servidor a liberar memoria RAM no utilizada"
+        >
             <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} />
             <span>Liberar RAM</span>
           </button>
