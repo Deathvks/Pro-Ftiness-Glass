@@ -73,3 +73,9 @@ export const testCronJob = (jobId) => {
         method: 'POST',
     });
 };
+export const freeServerMemory = () => {
+    return apiClient('/admin/free-memory', {
+        method: 'POST',
+    });
+};
+
