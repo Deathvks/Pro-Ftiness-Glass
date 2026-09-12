@@ -13,7 +13,7 @@ import AdminExercises from './AdminExercises';
 import AdminNotifications from './AdminNotifications';
 import SecurityDashboard from './SecurityDashboard';
 import CustomSelect from '../components/CustomSelect';
-import { getAllUsers, updateUser, deleteUser, createUser } from '../services/adminService';
+import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
@@ -290,6 +290,18 @@ const AdminPanel = ({ onCancel }) => {
     }
   };
 
+  const handleFreeMemory = async () => {
+    setIsUpdating(true);
+    try {
+      const res = await freeServerMemory();
+      addToast(res.message, res.success ? 'success' : 'error');
+    } catch (error) {
+      addToast('Error al intentar liberar memoria', 'error');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const confirmDeleteUser = async () => {
     if (!userToDelete) return;
     
@@ -399,7 +411,16 @@ const AdminPanel = ({ onCancel }) => {
 
           <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Admin</h1>
         </div>
-      </div>
+          <button 
+            onClick={handleFreeMemory} 
+            disabled={isUpdating}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50"
+            title="Forzar al servidor a liberar memoria RAM no utilizada"
+          >
+            <RefreshCw size={18} className={isUpdating ? "animate-spin" : ""} />
+            <span className="hidden sm:inline">Liberar RAM</span>
+          </button>
+        </div>
 
       <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-1">
         <button

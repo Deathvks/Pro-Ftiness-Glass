@@ -46,6 +46,9 @@ router.post('/push-send', adminController.sendCustomPush);
 router.get('/cron-jobs', adminController.getCronJobs);
 router.post('/cron-jobs/test/:id', adminController.testCronJob);
 
+// Mantenimiento y Memoria
+router.post('/free-memory', adminController.freeMemory);
+
 // Reset global
 router.post('/reset-milestones', adminController.resetMilestoneBadges);
 

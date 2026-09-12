@@ -449,3 +449,26 @@ export const resetMilestoneBadges = async (req, res, next) => {
         next(error);
     }
 };
+
+// Liberador manual de memoria RAM
+export const freeMemory = async (req, res, next) => {
+  try {
+    const memoryBefore = process.memoryUsage();
+    if (global.gc) {
+      global.gc();
+      const memoryAfter = process.memoryUsage();
+      const freed = (memoryBefore.heapUsed - memoryAfter.heapUsed) / 1024 / 1024;
+      return res.json({ 
+        success: true, 
+        message: \Memoria liberada exitosamente. Se liberaron \ MB.\,
+        beforeMB: (memoryBefore.heapUsed / 1024 / 1024).toFixed(2),
+        afterMB: (memoryAfter.heapUsed / 1024 / 1024).toFixed(2)
+      });
+    } else {
+      return res.status(400).json({ success: false, message: 'El recolector de basura (GC) no está expuesto en Zeabur.' });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
