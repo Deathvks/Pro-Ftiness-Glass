@@ -13,7 +13,7 @@ import AdminExercises from './AdminExercises';
 import AdminNotifications from './AdminNotifications';
 import SecurityDashboard from './SecurityDashboard';
 import CustomSelect from '../components/CustomSelect';
-import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory } from '../services/adminService';
+import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
@@ -188,6 +188,7 @@ const AdminPanel = ({ onCancel }) => {
   const [userToEdit, setUserToEdit] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [systemStats, setSystemStats] = useState(null);
 
   const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
   const SERVER_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL.replace('/api', '');
@@ -199,6 +200,23 @@ const AdminPanel = ({ onCancel }) => {
   useEffect(() => {
     localStorage.setItem('admin_users_sort', sortBy);
   }, [sortBy]);
+
+  const fetchSystemStats = useCallback(async () => {
+    try {
+      const response = await getSystemStats();
+      if (response && response.stats) {
+        setSystemStats(response.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching system stats:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSystemStats();
+    const interval = setInterval(fetchSystemStats, 15000);
+    return () => clearInterval(interval);
+  }, [fetchSystemStats]);
 
   const fetchUsers = useCallback(async (isInitialLoad = false) => {
     if (isInitialLoad) setIsLoading(true);
@@ -297,6 +315,9 @@ const AdminPanel = ({ onCancel }) => {
     try {
       const res = await freeServerMemory();
       addToast(res.message, res.success ? 'success' : 'error');
+      if (res.stats) {
+        setSystemStats(res.stats);
+      }
     } catch (error) {
       addToast('Error al intentar liberar memoria', 'error');
     } finally {
@@ -437,16 +458,26 @@ const AdminPanel = ({ onCancel }) => {
 
           <h1 className="hidden md:block text-4xl font-extrabold tracking-tight text-text-primary">Admin</h1>
         </div>
-        <button 
-          onClick={handleFreeMemory} 
-          disabled={isUpdating}
-          className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base w-fit shrink-0"
-          title="Forzar al servidor a liberar memoria RAM no utilizada"
-        >
-            <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} />
-            <span>Liberar RAM</span>
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          {systemStats && (
+            <div className="flex flex-col items-end justify-center bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+              <span className="text-[9px] sm:text-[10px] font-black text-text-muted uppercase tracking-wider leading-none mb-1">Node Heap</span>
+              <span className="text-xs sm:text-sm font-extrabold text-text-primary leading-none">
+                {systemStats.ram.heapUsed} <span className="text-[10px] text-text-secondary font-bold">MB</span>
+              </span>
+            </div>
+          )}
+          <button 
+            onClick={handleFreeMemory} 
+            disabled={isUpdating}
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base w-fit"
+            title="Forzar al servidor a liberar memoria RAM no utilizada"
+          >
+              <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} />
+              <span>Liberar RAM</span>
           </button>
         </div>
+      </div>
 
       <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-1">
         <button

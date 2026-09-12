@@ -2,6 +2,7 @@
 import { Op } from 'sequelize';
 import db from '../models/index.js';
 import { createNotification } from '../services/notificationService.js';
+import os from 'os';
 
 const User = db.User;
 const SystemSettings = db.SystemSettings;
@@ -458,15 +459,55 @@ export const freeMemory = async (req, res, next) => {
       global.gc();
       const memoryAfter = process.memoryUsage();
       const freed = (memoryBefore.heapUsed - memoryAfter.heapUsed) / 1024 / 1024;
+      
+      const totalSysMem = os.totalmem();
+      const freeSysMem = os.freemem();
+
       return res.json({ 
         success: true, 
         message: `Memoria liberada exitosamente. Se liberaron ${freed.toFixed(2)} MB.`,
         beforeMB: (memoryBefore.heapUsed / 1024 / 1024).toFixed(2),
-        afterMB: (memoryAfter.heapUsed / 1024 / 1024).toFixed(2)
+        afterMB: (memoryAfter.heapUsed / 1024 / 1024).toFixed(2),
+        stats: {
+          ram: {
+            rss: Math.round(memoryAfter.rss / 1024 / 1024),
+            heapTotal: Math.round(memoryAfter.heapTotal / 1024 / 1024),
+            heapUsed: Math.round(memoryAfter.heapUsed / 1024 / 1024),
+          },
+          system: {
+            total: Math.round(totalSysMem / 1024 / 1024),
+            free: Math.round(freeSysMem / 1024 / 1024),
+          }
+        }
       });
     } else {
       return res.status(400).json({ success: false, message: 'El recolector de basura (GC) no está expuesto en Zeabur.' });
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSystemStats = async (req, res, next) => {
+  try {
+    const memUsage = process.memoryUsage();
+    const totalSysMem = os.totalmem();
+    const freeSysMem = os.freemem();
+
+    return res.json({
+      success: true,
+      stats: {
+        ram: {
+          rss: Math.round(memUsage.rss / 1024 / 1024),
+          heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+          heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+        },
+        system: {
+          total: Math.round(totalSysMem / 1024 / 1024),
+          free: Math.round(freeSysMem / 1024 / 1024),
+        }
+      }
+    });
   } catch (error) {
     next(error);
   }
