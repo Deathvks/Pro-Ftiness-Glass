@@ -62,3 +62,6 @@ ios/App/Pods/
 out
 .remotion
 remotion
+# Build artifacts
+stats.html
+android/app/release/output-metadata.json
