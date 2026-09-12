@@ -461,7 +461,7 @@ const AdminPanel = ({ onCancel }) => {
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           {systemStats && (
             <div className="flex flex-col items-end justify-center bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
-              <span className="text-[9px] sm:text-[10px] font-black text-text-muted uppercase tracking-wider leading-none mb-1">Node Heap</span>
+              <span className="text-[9px] sm:text-[10px] font-black text-text-muted uppercase tracking-wider leading-none mb-1">RAM Usada</span>
               <span className="text-xs sm:text-sm font-extrabold text-text-primary leading-none">
                 {systemStats.ram.heapUsed} <span className="text-[10px] text-text-secondary font-bold">MB</span>
               </span>
