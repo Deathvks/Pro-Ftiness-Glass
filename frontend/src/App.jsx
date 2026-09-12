@@ -411,7 +411,9 @@ export default function App() {
     }), [navigateInternal]);
 
   const AuthenticatedAppContent = useMemo(() => {
-    if (!userProfile || (isLoading && !userProfile.goal)) {
+    // Si el perfil no tiene la propiedad 'role', significa que es el objeto parcial del login
+    // y todava no se ha ejecutado fetchInitialData. Mostramos el skeleton para evitar parpadeos.
+    if (!userProfile || !('role' in userProfile) || (isLoading && !userProfile.goal)) {
       return <InitialLoadingSkeleton />;
     }
 
