@@ -118,7 +118,7 @@ const ExerciseCard = ({
           <ExerciseSearchInput
             initialQuery={translatedName}
             onExerciseSelect={(ex) => onExerciseSelect(identifier, ex)}
-            className="w-full pr-24 sm:pr-0"
+            className="w-full"
           />
 
           <div className="mt-4">
