@@ -11,7 +11,7 @@
     "start": "npx sequelize-cli db:migrate --env production && node --expose-gc --max-old-space-size=512 server.js",
     "start:real": "npx sequelize-cli db:migrate --env production && NODE_ENV=production node --expose-gc --max-old-space-size=512 server.js",
     "seed": "npx sequelize-cli db:seed:all --env production",
-    "dev": "nodemon server.js",
+    "dev": "nodemon --expose-gc server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
