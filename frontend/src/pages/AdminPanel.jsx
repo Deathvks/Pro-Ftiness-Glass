@@ -172,7 +172,9 @@ const AdminPanel = ({ onCancel }) => {
   const REPORTS_PER_PAGE = 20;
 
   const [reports, setReports] = useState([]);
-  const [filter, setFilter] = useState('ALL');
+  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [platformFilter, setPlatformFilter] = useState('ALL');
+  const [levelFilter, setLevelFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'default');
 
@@ -361,10 +363,32 @@ const AdminPanel = ({ onCancel }) => {
   };
 
   const filteredAndSortedUsers = useMemo(() => {
-    let filtered = users;
+    let filtered = [...users];
     
-    if (filter !== 'ALL') {
-      filtered = filtered.filter(u => (u.role || 'trainee').toUpperCase() === filter);
+    if (roleFilter !== 'ALL') {
+      filtered = filtered.filter(u => (u.role || 'trainee').toUpperCase() === roleFilter);
+    }
+
+    if (platformFilter !== 'ALL') {
+       filtered = filtered.filter(u => {
+          const device = (u.latest_device || 'web').toLowerCase();
+          if (platformFilter === 'APP') return device === 'app' || device === 'pwa';
+          if (platformFilter === 'MOBILE_WEB') return device === 'mobile';
+          if (platformFilter === 'DESKTOP') return device === 'desktop' || device === 'web';
+          return true;
+       });
+    }
+
+    if (levelFilter !== 'ALL') {
+       filtered = filtered.filter(u => {
+          const lvl = u.level || 1;
+          if (levelFilter === 'BEGINNER') return lvl >= 1 && lvl <= 10;
+          if (levelFilter === 'INTERMEDIATE') return lvl >= 11 && lvl <= 20;
+          if (levelFilter === 'ADVANCED') return lvl >= 21 && lvl <= 30;
+          if (levelFilter === 'ELITE') return lvl >= 31 && lvl <= 40;
+          if (levelFilter === 'LEGEND') return lvl >= 41;
+          return true;
+       });
     }
     
     if (searchQuery.trim()) {
@@ -377,6 +401,7 @@ const AdminPanel = ({ onCancel }) => {
     }
     
     switch (sortBy) {
+      case 'date':
       case 'newest':
         return filtered.sort((a, b) => getTime(getUserDate(b)) - getTime(getUserDate(a)));
       case 'alpha':
@@ -385,7 +410,7 @@ const AdminPanel = ({ onCancel }) => {
       default:
         return filtered.sort((a, b) => getTime(b.lastSeen) - getTime(a.lastSeen));
     }
-  }, [users, sortBy, searchQuery, filter]);
+  }, [users, sortBy, searchQuery, roleFilter, platformFilter, levelFilter]);
 
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const currentReports = useMemo(() => {
@@ -552,18 +577,18 @@ const AdminPanel = ({ onCancel }) => {
               </div>
 
             {/* Toolbar (Directorio y Filtros) */}
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 mb-6 bg-black/5 dark:bg-white/5 p-3 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10">
-              <h2 className="text-xl font-black text-text-primary pl-4 py-2">
-                Directorio
-              </h2>
+            <div className="flex flex-col gap-4 mb-6 bg-black/5 dark:bg-white/5 p-4 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10 w-full">
               
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-                {/* Buscador Inteligente */}
-                <div className="relative flex-1 sm:w-64 min-w-[200px]">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+                <h2 className="text-xl font-black text-text-primary pl-2 hidden md:block">
+                  Directorio
+                </h2>
+
+                <div className="relative flex-1 min-w-[200px] w-full">
                   <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
                   <input
                     type="text"
-                    placeholder="Buscar usuario..."
+                    placeholder="Buscar usuario (nombre, email...)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-11 pr-10 py-3 rounded-[20px] bg-bg-primary border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all text-sm font-bold text-text-primary placeholder:text-text-muted shadow-sm"
@@ -578,17 +603,77 @@ const AdminPanel = ({ onCancel }) => {
                   )}
                 </div>
 
-                {/* Botón Refrescar */}
-                <button
-                  onClick={() => fetchUsers(true)}
-                  className="p-3 bg-bg-primary text-text-secondary hover:text-accent rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-sm transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center shrink-0"
-                  title="Refrescar Lista"
-                >
-                  <RefreshCw size={18} strokeWidth={2.5} className={isLoading ? 'animate-spin text-accent' : ''} />
-                </button>
+                <div className="flex items-center justify-between md:justify-end gap-2 w-full md:w-auto">
+                  <button
+                    onClick={() => fetchUsers(true)}
+                    className="p-3 bg-bg-primary text-text-secondary hover:text-accent rounded-full ring-1 ring-black/5 dark:ring-white/10 shadow-sm transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center shrink-0"
+                    title="Refrescar Lista"
+                  >
+                    <RefreshCw size={18} strokeWidth={2.5} className={isLoading ? 'animate-spin text-accent' : ''} />
+                  </button>
+                  <button
+                    onClick={() => setIsCreatingUser(true)}
+                    className="flex items-center justify-center gap-1.5 px-5 py-3 rounded-full bg-accent text-white font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shadow-lg shadow-accent/20"
+                  >
+                    <Plus size={18} strokeWidth={2.5} />
+                    <span className="hidden sm:inline">Nuevo Usuario</span>
+                    <span className="sm:hidden">Nuevo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Controles de Filtrado en Grid para mejor ajuste */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+                
+                {/* Filtro: Rol */}
+                <div className="w-full z-40">
+                   <CustomSelect
+                    value={roleFilter}
+                    onChange={setRoleFilter}
+                    options={[
+                      { value: 'ALL', label: 'Cualquier Rol' },
+                      { value: 'TRAINEE', label: 'Usuarios' },
+                      { value: 'TRAINER', label: 'Entrenadores' },
+                      { value: 'ADMIN', label: 'Admins' }
+                    ]}
+                    className="w-full text-sm font-bold"
+                  />
+                </div>
+
+                {/* Filtro: Nivel */}
+                <div className="w-full z-30">
+                   <CustomSelect
+                    value={levelFilter}
+                    onChange={setLevelFilter}
+                    options={[
+                      { value: 'ALL', label: 'Cualquier Nivel' },
+                      { value: 'BEGINNER', label: 'Principiante (1-10)' },
+                      { value: 'INTERMEDIATE', label: 'Intermedio (11-20)' },
+                      { value: 'ADVANCED', label: 'Avanzado (21-30)' },
+                      { value: 'ELITE', label: 'Élite (31-40)' },
+                      { value: 'LEGEND', label: 'Leyenda (41+)' }
+                    ]}
+                    className="w-full text-sm font-bold"
+                  />
+                </div>
+
+                {/* Filtro: Plataforma */}
+                <div className="w-full z-20">
+                   <CustomSelect
+                    value={platformFilter}
+                    onChange={setPlatformFilter}
+                    options={[
+                      { value: 'ALL', label: 'Cualquier Origen' },
+                      { value: 'APP', label: 'App Nativa (iOS/Android)' },
+                      { value: 'MOBILE_WEB', label: 'Web Móvil' },
+                      { value: 'DESKTOP', label: 'Web PC' }
+                    ]}
+                    className="w-full text-sm font-bold"
+                  />
+                </div>
 
                 {/* Select: Ordenación */}
-                <div className="flex-1 sm:flex-none sm:w-40 z-20">
+                <div className="w-full z-10">
                   <CustomSelect
                     value={sortBy}
                     onChange={setSortBy}
@@ -600,15 +685,6 @@ const AdminPanel = ({ onCancel }) => {
                     className="w-full text-sm font-bold"
                   />
                 </div>
-
-                {/* Botón Crear */}
-                <button
-                  onClick={() => setIsCreatingUser(true)}
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-[20px] bg-accent text-white font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shadow-lg shadow-accent/20"
-                >
-                  <Plus size={20} strokeWidth={2.5} />
-                  <span className="hidden sm:inline">Nuevo</span>
-                </button>
               </div>
             </div>
 
