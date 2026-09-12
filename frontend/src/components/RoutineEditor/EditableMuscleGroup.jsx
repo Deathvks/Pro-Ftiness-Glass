@@ -5,12 +5,15 @@ import { useToast } from '../../hooks/useToast';
 import i18n from '../../i18n';
 import CustomSelect from '../CustomSelect';
 
-// Lista de claves disponibles
+// Lista de grupos musculares idéntica al panel de administración
 const MUSCLE_GROUP_KEYS = [
-  'Abs', 'Abductors', 'Adductors', 'Forearms', 'Biceps', 'Cardio',
-  'Quads', 'Neck', 'Full Body', 'Lats', 'Back', 'Upper Back',
-  'Hamstrings', 'Calves', 'Glutes', 'Shoulders', 'Lower Back',
-  'Obliques', 'Other', 'Chest', 'Traps', 'Triceps',
+  'Pecho', 'Espalda', 'Dorsales', 'Trapecios', 'Lumbares',
+  'Hombros', 'Deltoides Anterior', 'Deltoides Medio', 'Deltoides Posterior',
+  'Bíceps', 'Bíceps Cabeza Corta', 'Bíceps Cabeza Larga',
+  'Tríceps', 'Tríceps Cabeza Larga', 'Tríceps Cabeza Lateral', 'Tríceps Cabeza Medial',
+  'Antebrazos', 'Cuádriceps', 'Isquiotibiales', 'Glúteos', 
+  'Abductores', 'Aductores', 'Pantorrillas', 'Abdominales', 
+  'Oblicuos', 'Cardio', 'Cuerpo completo', 'Otro'
 ];
 
 const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
@@ -22,17 +25,21 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
 
   if (initialValue) {
     const valLower = initialValue.toLowerCase();
-    // Mapeos de compatibilidad
-    if (valLower === 'pectoralis major' || valLower === 'pectoral mayor') currentValue = 'Chest';
-    else if (valLower === 'biceps brachii' || valLower === 'bíceps braquial') currentValue = 'Biceps';
-    else if (valLower === 'triceps brachii' || valLower === 'tríceps braquial') currentValue = 'Triceps';
-    else if (valLower === 'latissimus dorsi' || valLower === 'dorsal ancho') currentValue = 'Lats';
-    else if (valLower === 'trapezius' || valLower === 'trapecio') currentValue = 'Traps';
-    else if (valLower === 'quadriceps femoris' || valLower === 'cuádriceps') currentValue = 'Quads';
-    else if (valLower === 'rectus abdominis' || valLower === 'recto abdominal') currentValue = 'Abs';
-    else if (valLower === 'gluteus maximus' || valLower === 'glúteo mayor') currentValue = 'Glutes';
-    else if (valLower === 'biceps femoris' || valLower === 'femoral') currentValue = 'Hamstrings';
-    else if (valLower === 'otro' || valLower === 'other' || valLower === 'n/a') currentValue = 'Other';
+    // Mapeos de compatibilidad heredados a las nuevas claves en español
+    if (valLower === 'pectoralis major' || valLower === 'pectoral mayor' || valLower === 'chest') currentValue = 'Pecho';
+    else if (valLower === 'biceps brachii' || valLower === 'bíceps braquial' || valLower === 'biceps') currentValue = 'Bíceps';
+    else if (valLower === 'triceps brachii' || valLower === 'tríceps braquial' || valLower === 'triceps') currentValue = 'Tríceps';
+    else if (valLower === 'latissimus dorsi' || valLower === 'dorsal ancho' || valLower === 'lats') currentValue = 'Dorsales';
+    else if (valLower === 'trapezius' || valLower === 'trapecio' || valLower === 'traps') currentValue = 'Trapecios';
+    else if (valLower === 'quadriceps femoris' || valLower === 'cuádriceps' || valLower === 'quads') currentValue = 'Cuádriceps';
+    else if (valLower === 'rectus abdominis' || valLower === 'recto abdominal' || valLower === 'abs') currentValue = 'Abdominales';
+    else if (valLower === 'gluteus maximus' || valLower === 'glúteo mayor' || valLower === 'glutes') currentValue = 'Glúteos';
+    else if (valLower === 'biceps femoris' || valLower === 'femoral' || valLower === 'hamstrings') currentValue = 'Isquiotibiales';
+    else if (valLower === 'back') currentValue = 'Espalda';
+    else if (valLower === 'shoulders') currentValue = 'Hombros';
+    else if (valLower === 'calves') currentValue = 'Pantorrillas';
+    else if (valLower === 'forearms') currentValue = 'Antebrazos';
+    else if (valLower === 'otro' || valLower === 'other' || valLower === 'n/a' || valLower === 'unknown') currentValue = 'Otro';
   }
 
   const handleSelectChange = (newValue) => {
