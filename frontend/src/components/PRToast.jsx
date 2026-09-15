@@ -29,8 +29,8 @@ const PRToast = ({ newPRs, onClose }) => {
     const shareText = `¡He conseguido ${
       newPRs.length > 1 ? 'nuevos récords' : 'un nuevo récord'
     } en Pro-Fitness-Glass!\n\n${prText}\n\n¡Registra tus progresos tú también!`;
-    const isCapacitor = window.location.origin === 'http://localhost';
-    const shareUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.app') : window.location.origin;
+    const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
+    const shareUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.zeabur.app') : window.location.origin;
 
     if (navigator.share) {
       try {
