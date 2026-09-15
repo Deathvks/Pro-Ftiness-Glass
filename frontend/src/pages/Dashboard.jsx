@@ -481,8 +481,8 @@ const Dashboard = ({ setView }) => {
   const displayReferralCount = isAdmin ? maxReferrals : referralCount;
   const referralProgress = isAdmin ? 100 : Math.min((referralCount / maxReferrals) * 100, 100);
   const isCampaignComplete = referralCount >= maxReferrals || isAdmin;
-  const isCapacitor = window.location.origin === 'http://localhost';
-  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.app') : window.location.origin;
+  const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
+  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.zeabur.app') : window.location.origin;
   const referralLink = `${baseUrl}/register?ref=${userProfile?.referral_code || ''}`;
 
   const handleCopyReferral = () => {

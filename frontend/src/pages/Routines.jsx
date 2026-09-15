@@ -181,8 +181,8 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
     }
   }, [routine.visibility]);
 
-  const isCapacitor = window.location.origin === 'http://localhost';
-  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.app') : window.location.origin;
+  const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
+  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.zeabur.app') : window.location.origin;
   const shareUrl = `${baseUrl}/share/routine/${routine.id}`;
 
   const handleVisibilityChange = async (newVisibility) => {
