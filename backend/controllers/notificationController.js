@@ -26,7 +26,7 @@ const getVapidKey = (req, res) => {
 
 // 2. Controlador para suscribir a un usuario
 const subscribe = [
-  body('endpoint').isURL().withMessage('Endpoint no válido.'),
+  body('endpoint').isString().notEmpty().withMessage('Endpoint requerido.'),
   body('keys.p256dh').isString().notEmpty().withMessage('Clave p256dh requerida.'),
   body('keys.auth').isString().notEmpty().withMessage('Clave auth requerida.'),
 
@@ -77,7 +77,7 @@ const subscribe = [
 
 // 3. Controlador para desuscribir a un usuario
 const unsubscribe = [
-  body('endpoint').isURL().withMessage('Endpoint no válido.'),
+  body('endpoint').isString().notEmpty().withMessage('Endpoint requerido.'),
 
   async (req, res) => {
     const errors = validationResult(req);
