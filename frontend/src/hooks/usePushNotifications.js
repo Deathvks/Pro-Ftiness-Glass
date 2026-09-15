@@ -67,8 +67,15 @@ export const usePushNotifications = () => {
         if (isNative) {
           // --- LÓGICA NATIVA ---
           const perm = await PushNotifications.checkPermissions();
-          if (perm.receive === 'granted') {
+          const isLocallySubscribed = localStorage.getItem('native_push_subscribed') === 'true';
+          const localToken = localStorage.getItem('native_push_token');
+          
+          if (perm.receive === 'granted' && isLocallySubscribed) {
             setIsSubscribed(true);
+            if (localToken) setSubscription(localToken);
+          } else {
+            setIsSubscribed(false);
+            setSubscription(null);
           }
         } else {
           // --- LÓGICA WEB ---
@@ -104,6 +111,8 @@ export const usePushNotifications = () => {
           });
           setSubscription(token.value);
           setIsSubscribed(true);
+          localStorage.setItem('native_push_subscribed', 'true');
+          localStorage.setItem('native_push_token', token.value);
           addToast('¡Notificaciones nativas activadas!', 'success');
         } catch (err) {
           console.error('Error enviando token al backend:', err);
@@ -228,6 +237,8 @@ export const usePushNotifications = () => {
       if (isNative) {
         // En nativo (Capacitor) eliminamos nuestra referencia en el servidor
         endpointToUnsubscribe = `fcm://${subscription}`;
+        localStorage.removeItem('native_push_subscribed');
+        localStorage.removeItem('native_push_token');
       } else {
         // 1. Desuscribir el PushManager (local web)
         if (subscription && typeof subscription.unsubscribe === 'function') {
