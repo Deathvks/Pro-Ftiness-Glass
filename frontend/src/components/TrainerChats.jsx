@@ -274,6 +274,22 @@ export default function TrainerChats({ onClose }) {
     if (!dateString) return '';
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  const formatDateHeader = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Hoy';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Ayer';
+    } else {
+      return date.toLocaleDateString([], { day: 'numeric', month: 'long', year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
+    }
+  };
   const totalUnread = clients.reduce((sum, client) => sum + (client.unreadCount || 0), 0);
 
   return (
@@ -373,7 +389,7 @@ export default function TrainerChats({ onClose }) {
       </div>
 
       {/* ÁREA DE CHAT */}
-      <div className={`flex flex-col flex-1 min-w-0 h-full ${!selectedClient ? 'hidden md:flex' : 'fixed inset-0 z-[100] bg-bg-primary animate-fade-in md:static md:flex md:bg-transparent'}`}>
+      <div className={`flex flex-col flex-1 min-w-0 h-full relative ${!selectedClient ? 'hidden md:flex' : 'fixed inset-0 z-[100] bg-bg-primary animate-fade-in md:static md:flex md:bg-transparent'}`}>
         {!selectedClient ?
         <div className="hidden md:flex h-full flex-col items-center justify-center text-center opacity-50 space-y-4">
             <ChatBubbleLeftRightIcon className="w-20 h-20 text-text-muted" />
@@ -382,7 +398,10 @@ export default function TrainerChats({ onClose }) {
 
         <>
             {/* Header Chat */}
-            <div className="flex items-center gap-4 px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+12px)] md:pt-4 border-b border-glass-border glass rounded-none z-10 shrink-0 shadow-sm">
+            <div 
+              className="absolute top-0 left-0 right-0 flex items-center gap-4 px-4 pb-3 border-b border-glass-border bg-bg-primary/80 backdrop-blur-xl z-20 shadow-sm"
+              style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 20px) + 12px)' }}
+            >
               <button
               onClick={() => setSelectedClient(null)}
               className="md:hidden w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-text-primary hover:bg-white/10 transition-colors">
@@ -412,7 +431,10 @@ export default function TrainerChats({ onClose }) {
             </div>
 
             {/* Mensajes */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <div 
+              className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"
+              style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 20px) + 85px)' }}
+            >
               {chatLoading ?
             <div className="flex justify-center p-8">
                   <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
@@ -424,8 +446,17 @@ export default function TrainerChats({ onClose }) {
 
               messages.map((msg, index) => {
                 const isMe = String(msg.sender_id) !== String(selectedClient.id);
+                const showDate = index === 0 || new Date(msg.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
                 return (
-                  <div key={msg.id || index} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <React.Fragment key={msg.id || index}>
+                    {showDate && (
+                      <div className="flex justify-center my-4">
+                        <span className="px-3 py-1 bg-black/20 dark:bg-white/10 rounded-[12px] text-[10px] font-bold text-text-secondary uppercase tracking-wider backdrop-blur-sm shadow-sm border border-glass-border">
+                          {formatDateHeader(msg.created_at)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'}`}>
                         {msg.attachment_url && msg.attachment_type?.startsWith('video/') ?
                     <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
@@ -461,9 +492,10 @@ export default function TrainerChats({ onClose }) {
                       }
                         </div>
                       </div>
-                    </div>);
-
-            })
+                    </div>
+                  </React.Fragment>
+                );
+              })
             }
               <div ref={messagesEndRef} />
             </div>
