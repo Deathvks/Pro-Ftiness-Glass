@@ -7,7 +7,7 @@ import { isToday, isYesterday, parseISO } from 'date-fns';
 import {
   Bell, CheckCheck, Trash2, X, Info, AlertTriangle, CheckCircle, AlertCircle,
   Filter, ChevronDown, ChevronRight, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
-  UserPlus, Users, Zap, Award, Settings
+  UserPlus, Users, Zap, Award, Settings, MessageCircle
 } from 'lucide-react';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
@@ -385,6 +385,7 @@ const NotificationsScreen = ({ setView }) => {
     if (subType === 'badge') return <div className="p-2.5 rounded-[14px] bg-amber-500/10 text-amber-500"><Award size={20} /></div>;
 
     switch (n.type) {
+      case 'chat_message': return <div className="p-2.5 rounded-[14px] bg-blue-500/10 text-blue-500"><MessageCircle size={20} /></div>;
       case 'success': return <div className="p-2.5 rounded-[14px] bg-green-500/10 text-green-500"><CheckCircle size={20} /></div>;
       case 'warning': return <div className="p-2.5 rounded-[14px] bg-yellow-500/10 text-yellow-500"><AlertTriangle size={20} /></div>;
       case 'alert': return <div className="p-2.5 rounded-[14px] bg-red-500/10 text-red-500"><AlertCircle size={20} /></div>;

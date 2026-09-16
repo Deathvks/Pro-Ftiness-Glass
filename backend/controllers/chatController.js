@@ -22,7 +22,7 @@ const notifyUserIfNeeded = async (senderId, receiverId, content) => {
         type: 'chat_message',
         title: `Nuevo mensaje de ${sender.name || sender.username}`,
         message: content,
-        data: { route: '/asesoria' }
+        data: { url: '/asesoria' }
       }).catch(e => console.error('Error enviando push:', e));
     }
   } catch (error) {
