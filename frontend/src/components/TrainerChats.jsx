@@ -368,8 +368,10 @@ export default function TrainerChats({ onClose }) {
       {/* LISTA DE CONTACTOS */}
       <div className={`w-full md:w-[320px] lg:w-[360px] h-full md:border-r border-glass-border flex flex-col shrink-0 ${selectedClient ? 'hidden md:flex' : 'flex'}`}>
         
-        {/* Header para la lista de contactos (Visible en PC y móvil) */}
-        <div className="flex items-center gap-3 px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+12px)] md:pt-4 border-b border-glass-border glass rounded-none z-10 shrink-0 shadow-sm">
+        <div 
+          className="flex items-center gap-3 px-4 py-3 md:pt-4 border-b border-glass-border glass rounded-none z-10 shrink-0 shadow-sm"
+          style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 24px) + 12px)' }}
+        >
           {onClose &&
           <button
             onClick={onClose}
@@ -470,7 +472,7 @@ export default function TrainerChats({ onClose }) {
             {/* Header Chat */}
             <div 
               className="absolute top-0 left-0 right-0 flex items-center gap-4 px-4 pb-3 border-b border-glass-border bg-bg-primary/80 backdrop-blur-xl z-20 shadow-sm"
-              style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 20px) + 12px)' }}
+              style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 24px) + 12px)' }}
             >
               <button
               onClick={() => setSelectedClient(null)}
