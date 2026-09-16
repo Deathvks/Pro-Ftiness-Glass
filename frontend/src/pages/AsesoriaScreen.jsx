@@ -357,7 +357,10 @@ export default function AsesoriaScreen({ onBack }) {
       className="fixed inset-0 z-50 md:inset-auto md:top-[100px] md:bottom-[60px] md:left-1/2 md:-translate-x-1/2 w-full md:w-[90%] md:max-w-xl flex flex-col md:border md:border-glass-border md:rounded-[32px] shadow-2xl overflow-hidden bg-bg-primary animate-fade-in isolate"
     >
       {/* Header */}
-      <div className="flex items-center gap-4 px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+12px)] md:pt-4 border-b border-glass-border glass rounded-none z-10 shrink-0 shadow-sm">
+      <div 
+        className="flex items-center gap-4 px-4 py-3 md:pt-4 border-b border-glass-border glass rounded-none z-10 shrink-0 shadow-sm"
+        style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 24px) + 12px)' }}
+      >
         <button 
           onClick={onBack}
           className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-text-primary hover:bg-white/10 transition-colors"
