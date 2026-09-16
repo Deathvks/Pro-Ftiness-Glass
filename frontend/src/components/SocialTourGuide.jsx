@@ -114,7 +114,7 @@ const SocialTourGuide = () => {
             const state = useAppStore.getState();
 
             // Respetar modales globales por si cargan directo en la pestaña Social
-            if (state.cookieConsent === null || state.showWelcomeModal) {
+            if (state.cookieConsent === null || state.show2FAPromo) {
                 timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
                 return;
             }
@@ -139,7 +139,7 @@ const SocialTourGuide = () => {
                 if (!hasStartedRef.current && driverRef.current) {
                     hasStartedRef.current = true;
                     localStorage.setItem('socialTourCompleted', 'true');
-                    driverRef.current.drive();
+                    useAppStore.getState().setTourActive(true); driverRef.current.drive();
                 }
             }
         };

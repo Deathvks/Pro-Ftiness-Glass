@@ -78,6 +78,8 @@ export default function MainAppLayout({
     socialRequests,
     fetchFriendRequests,
     subscribeToSocialEvents,
+    show2FAPromo,
+    tourActive,
   } = useAppStore(state => ({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
@@ -95,9 +97,11 @@ export default function MainAppLayout({
     unlockMilestone: state.unlockMilestone,
     gamificationEvents: state.gamification?.gamificationEvents,
     clearGamificationEvents: state.clearGamificationEvents,
-    socialRequests: state.socialRequests,
+    socialRequests: state.socialRequests || [],
     fetchFriendRequests: state.fetchFriendRequests,
     subscribeToSocialEvents: state.subscribeToSocialEvents,
+    show2FAPromo: state.show2FAPromo,
+    tourActive: state.tourActive,
   }));
 
   const [showAIModal, setShowAIModal] = useState(false);
@@ -963,7 +967,7 @@ export default function MainAppLayout({
 
       <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {showWelcomeModal && cookieConsent !== null && (
+      {showWelcomeModal && cookieConsent !== null && !show2FAPromo && !tourActive && (
         <WelcomeModal onClose={closeWelcomeModal} />
       )}
       

@@ -119,7 +119,7 @@ const HubTourGuide = () => {
     
             const state = useAppStore.getState();
 
-            if (state.cookieConsent === null || state.showWelcomeModal) {
+            if (state.cookieConsent === null || state.show2FAPromo) {
                 timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
                 return;
             }
@@ -136,7 +136,7 @@ const HubTourGuide = () => {
                 if (!hasStartedRef.current && driverRef.current) {
                     hasStartedRef.current = true;
                     localStorage.setItem('hubTourCompleted', 'true');
-                    driverRef.current.drive();
+                    useAppStore.getState().setTourActive(true); driverRef.current.drive();
                 }
             }
         };

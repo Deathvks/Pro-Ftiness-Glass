@@ -84,14 +84,16 @@ export const createDataSlice = (set, get) => ({
 
       // Actualizar silenciosamente la zona horaria si ha cambiado
       try {
-        const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (detectedTz && profileData.timezone !== detectedTz) {
-           userService.updateUserProfile({ timezone: detectedTz }).catch(e => console.warn('Background TZ update failed', e));
-           profileData.timezone = detectedTz; // update locally for immediate use
+        const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (profileData.timezone !== currentTimezone) {
+            await userService.updateUserProfile({ timezone: currentTimezone }).catch(console.error);
+            profileData.timezone = currentTimezone;
         }
       } catch (e) {
         console.warn('Could not detect timezone', e);
       }
+
+      get().checkWelcomeModal();
 
       set({ userProfile: profileData, isAuthenticated: true });
 

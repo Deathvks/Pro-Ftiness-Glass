@@ -21,6 +21,8 @@ export const createAuthSlice = (set, get) => ({
     userProfile: null,
     isLoading: true,
     showWelcomeModal: false,
+    show2FAPromo: false,
+    tourActive: false,
     sessionExpired: false, // <-- NUEVO: Estado para el modal instantáneo de caducidad
 
     // --- INICIO MODIFICACIÓN 2FA ---
@@ -338,6 +340,9 @@ export const createAuthSlice = (set, get) => ({
         localStorage.setItem('lastSeenVersion', APP_VERSION);
         set({ showWelcomeModal: false });
     },
+
+    setShow2FAPromo: (val) => set({ show2FAPromo: val }),
+    setTourActive: (val) => set({ tourActive: val }),
 
     // --- GESTIÓN DE COOKIES ---
     checkCookieConsent: () => {
