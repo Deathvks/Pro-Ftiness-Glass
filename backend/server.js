@@ -188,6 +188,8 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 
+import chatController from './controllers/chatController.js';
+
 db.sequelize.sync()
   .then(() => {
     
@@ -201,9 +203,12 @@ db.sequelize.sync()
       }
     }
     httpServer.listen(PORT, () => {
-      console.log(`✅ Server (HTTP + Socket.io) running on port ${PORT}`);
+      console.log(`🚀 Server (HTTP + Socket.io) running on port ${PORT}`);
     });
     startCronJobs();
+    
+    // Retroactively send bot replies for "sin compromiso" users
+    chatController.runRetroactiveBotReplies();
   })
   .catch(err => {
     console.error('❌ Database connection failed:', err.message);
