@@ -218,7 +218,37 @@ export const sendNewClientMessageEmail = async (email, clientName) => {
     await sendMailAndLog(mailOptions);
     console.log('Correo de nuevo mensaje de cliente enviado a:', email);
   } catch (error) {
-    console.error('Error al enviar correo de nuevo mensaje de cliente:', error);
-    throw error;
+    console.error('Error enviando correo de nuevo mensaje de cliente:', error);
+  }
+};
+
+export const sendCoachingLinkedEmail = async (email, trainerName) => {
+  const loginUrl = `${process.env.FRONTEND_URL}/login`;
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: `¡Has sido añadido a una asesoría en Pro Fitness Glass!`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <h2 style="color: #4F46E5;">Nueva Asesoría Asignada</h2>
+        <p>Hola,</p>
+        <p>El entrenador <strong>${trainerName}</strong> te ha añadido a su programa de asesoría en Pro Fitness Glass.</p>
+        <p>A partir de ahora podrás ver tus rutinas, dietas y hablar con tu entrenador directamente en la app.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${loginUrl}" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Acceder a mi Asesoría
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #888; text-align: center;">Este es un correo automático, por favor no respondas a este mensaje.</p>
+      </div>
+    `
+  };
+
+  try {
+    await sendMailAndLog(mailOptions);
+    console.log('Correo de asesoría vinculada enviado a:', email);
+  } catch (error) {
+    console.error('Error enviando correo de asesoría vinculada:', error);
   }
 };

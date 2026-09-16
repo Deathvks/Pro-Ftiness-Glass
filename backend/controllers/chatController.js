@@ -70,14 +70,14 @@ export const getTrainerInfo = async (req, res, next) => {
 
     if (client.trainer_id) {
       trainer = await User.findByPk(client.trainer_id, {
-        attributes: ['id', 'username', 'name', 'profile_image_url']
+        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen']
       });
     }
 
     if (!trainer) {
       trainer = await User.findOne({
         where: { role: 'trainer' },
-        attributes: ['id', 'username', 'name', 'profile_image_url']
+        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen']
       });
     }
 
@@ -85,7 +85,7 @@ export const getTrainerInfo = async (req, res, next) => {
     if (!trainer) {
       trainer = await User.findOne({
         where: { role: 'admin' },
-        attributes: ['id', 'username', 'name', 'profile_image_url']
+        attributes: ['id', 'username', 'name', 'profile_image_url', 'lastSeen']
       });
     }
 
