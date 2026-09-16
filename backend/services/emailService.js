@@ -134,3 +134,33 @@ export const sendLoginAlertEmail = async (email, { ip, userAgent, token }) => {
     return { success: false, message: 'Error al enviar alerta.' };
   }
 };
+export const sendChatReplyEmail = async (email, senderName) => {
+  const loginUrl = \\/login\;
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: \Nuevo mensaje de \ en Pro Fitness Glass\,
+    html: \
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <h2 style="color: #4F46E5;">¡Tienes una nueva respuesta!</h2>
+        <p>Hola,</p>
+        <p>Tu entrenador (<strong>\</strong>) te ha enviado un nuevo mensaje en el chat de asesoría.</p>
+        <p>Por motivos de privacidad, entra en la aplicación para leerlo y responder.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="\" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Abrir Pro Fitness Glass
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #888; text-align: center;">Este es un correo automático, por favor no respondas a este mensaje.</p>
+      </div>
+    \
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Correo de respuesta de chat enviado a:', email);
+  } catch (error) {
+    console.error('Error al enviar correo de respuesta de chat:', error);
+    throw error;
+  }
+};
