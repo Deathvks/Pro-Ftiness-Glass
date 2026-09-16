@@ -43,6 +43,11 @@ router.post('/settings/:key', adminController.updateSetting);
 // Rutas de Notificaciones Push
 router.get('/push-logs', adminController.getPushLogs);
 router.post('/push-send', adminController.sendCustomPush);
+
+// Rutas de Notificaciones Email
+router.get('/email-logs', adminController.getEmailLogs);
+router.get('/email-stats', adminController.getEmailStats);
+
 router.get('/cron-jobs', adminController.getCronJobs);
 router.post('/cron-jobs/test/:id', adminController.testCronJob);
 

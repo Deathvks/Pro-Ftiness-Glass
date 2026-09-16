@@ -23,6 +23,7 @@ import TemplateRoutineExercise from './templateRoutineExerciseModel.js';
 import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
 import PushDeliveryLog from './pushDeliveryLogModel.js';
+import EmailDeliveryLog from './emailDeliveryLogModel.js';
 import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
@@ -209,6 +210,7 @@ const models = {
   PushSubscription,
   Notification,
   PushDeliveryLog,
+  EmailDeliveryLog,
   UserSession,
   Friendship,
   BugReport,

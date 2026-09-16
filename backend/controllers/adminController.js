@@ -230,6 +230,60 @@ export const updateSetting = async (req, res, next) => {
 };
 
 // Obtener logs de notificaciones push
+export const getEmailLogs = async (req, res, next) => {
+  try {
+    const { status, page = 1, limit = 50, range = 30 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const whereClause = {};
+    if (status && status !== 'all') whereClause.status = status;
+    
+    if (range) {
+      const date = new Date();
+      date.setDate(date.getDate() - parseInt(range, 10));
+      whereClause.sent_at = { [Op.gte]: date };
+    }
+
+    const { count, rows } = await db.EmailDeliveryLog.findAndCountAll({
+      where: whereClause,
+      order: [['sent_at', 'DESC']],
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10)
+    });
+
+    res.json({
+      total: count,
+      page: parseInt(page, 10),
+      totalPages: Math.ceil(count / limit),
+      logs: rows
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getEmailStats = async (req, res, next) => {
+  try {
+    const { range = 30 } = req.query;
+    const date = new Date();
+    date.setDate(date.getDate() - parseInt(range, 10));
+    const whereClause = { sent_at: { [Op.gte]: date } };
+
+    const total = await db.EmailDeliveryLog.count({ where: whereClause });
+    const success = await db.EmailDeliveryLog.count({ where: { ...whereClause, status: 'sent' } });
+    const failed = await db.EmailDeliveryLog.count({ where: { ...whereClause, status: 'failed' } });
+
+    res.json({
+      total,
+      success,
+      failed,
+      successRate: total > 0 ? Math.round((success / total) * 100) : 0
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getPushLogs = async (req, res, next) => {
   try {
     const { status, type, page = 1, limit = 50, range = 30 } = req.query;

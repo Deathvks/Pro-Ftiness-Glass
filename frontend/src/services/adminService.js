@@ -83,3 +83,13 @@ export const getSystemStats = () => {
     return apiClient('/admin/system-stats');
 };
 
+
+export const getEmailLogs = (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiClient('/admin/email-logs?' + qs);
+};
+
+export const getEmailStats = (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiClient('/admin/email-stats?' + qs);
+};
