@@ -143,6 +143,23 @@ export default function TrainerChats({ onClose }) {
 
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editContent, setEditContent] = useState('');
+  const [activeMessageOptions, setActiveMessageOptions] = useState(null);
+  const longPressRef = useRef(null);
+
+  const handlePressStart = (msg) => {
+    if (msg.attachment_type === 'bot_reply') {
+      longPressRef.current = setTimeout(() => {
+        setActiveMessageOptions(msg.id);
+      }, 500);
+    }
+  };
+
+  const handlePressEnd = () => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  };
 
   const handleEditSubmit = async (msgId) => {
     try {
@@ -529,7 +546,15 @@ export default function TrainerChats({ onClose }) {
                       </div>
                     )}
                     <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'}`}>
+                      <div 
+                        className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'} ${activeMessageOptions === msg.id ? 'ring-2 ring-accent scale-[0.98] transition-transform' : 'transition-transform'}`}
+                        onTouchStart={() => handlePressStart(msg)}
+                        onTouchEnd={handlePressEnd}
+                        onTouchCancel={handlePressEnd}
+                        onMouseDown={() => handlePressStart(msg)}
+                        onMouseUp={handlePressEnd}
+                        onMouseLeave={handlePressEnd}
+                      >
                         {msg.attachment_type === 'bot_reply' && (
                           <div className={`text-[11px] font-bold opacity-80 mb-1 flex items-center gap-1 ${!isMe ? 'text-accent' : ''}`}>
                             🤖 Bot Coordinador
@@ -551,33 +576,9 @@ export default function TrainerChats({ onClose }) {
                           </div>
                         ) : null}
                         
-                        {editingMessageId === msg.id ? (
-                          <div className="flex flex-col gap-2 mt-1">
-                            <textarea
-                              value={editContent}
-                              onChange={(e) => setEditContent(e.target.value)}
-                              className="w-full bg-bg-secondary text-text-primary rounded-md p-2 text-sm border border-glass-border focus:ring-1 focus:ring-accent outline-none"
-                              rows={4}
-                            />
-                            <div className="flex items-center justify-end gap-2">
-                              <button onClick={() => setEditingMessageId(null)} className="text-[10px] uppercase font-bold text-text-muted hover:text-text-primary">Cancelar</button>
-                              <button onClick={() => handleEditSubmit(msg.id)} className="text-[10px] uppercase font-bold text-accent hover:text-accent-hover bg-bg-primary/10 px-2 py-1 rounded">Guardar</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="relative group">
-                            {renderMessageContent(msg)}
-                            {msg.attachment_type === 'bot_reply' && (
-                              <button
-                                onClick={() => startEditing(msg)}
-                                className={`absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity border border-glass-border rounded p-1 shadow z-10 ${isMe ? 'bg-bg-primary text-text-secondary hover:text-accent' : 'bg-bg-secondary text-text-secondary hover:text-accent'}`}
-                                title="Editar mensaje de bot"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
-                              </button>
-                            )}
-                          </div>
-                        )}
+                        <div className="relative">
+                          {renderMessageContent(msg)}
+                        </div>
 
                         <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-bg-primary/70' : 'text-text-muted'}`}>
                           <span>{formatTime(msg.created_at || new Date())}</span>
@@ -651,6 +652,66 @@ export default function TrainerChats({ onClose }) {
         }
       </div>
 
-    </div>);
+      {/* Modal Opciones de Mensaje (Action Sheet) */}
+      {activeMessageOptions && (
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setActiveMessageOptions(null)} />
+          <div className="relative bg-bg-secondary rounded-t-3xl p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] animate-[slide-up_0.3s_ease-out] shadow-2xl border-t border-glass-border">
+            <div className="w-12 h-1.5 bg-glass-border rounded-full mx-auto mb-6" />
+            <button
+              onClick={() => {
+                const msgToEdit = messages.find(m => m.id === activeMessageOptions);
+                if (msgToEdit) startEditing(msgToEdit);
+                setActiveMessageOptions(null);
+              }}
+              className="w-full flex items-center gap-3 p-4 bg-bg-primary hover:bg-black/20 dark:hover:bg-white/5 rounded-2xl transition-colors font-bold text-text-primary mb-3 border border-glass-border shadow-sm active:scale-[0.98]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 text-accent"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+              Editar Mensaje del Bot
+            </button>
+            <button
+              onClick={() => setActiveMessageOptions(null)}
+              className="w-full p-4 rounded-2xl font-bold text-text-secondary hover:text-text-primary bg-black/5 dark:bg-white/5 transition-colors active:scale-[0.98]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
+      {/* Modal de Edición a Pantalla Completa/Centrado */}
+      {editingMessageId && (
+        <div className="fixed inset-0 z-[250] flex flex-col justify-end md:justify-center items-center px-4 md:px-0">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setEditingMessageId(null)} />
+          <div className="relative w-full max-w-lg bg-bg-secondary md:rounded-3xl rounded-t-3xl p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 animate-[slide-up_0.3s_ease-out] shadow-2xl border border-glass-border">
+            <h3 className="text-lg font-black text-text-primary mb-4 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 text-accent"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+              Editar Mensaje del Bot
+            </h3>
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="w-full bg-bg-primary text-text-primary rounded-[20px] p-4 text-base md:text-sm border-2 border-glass-border focus:border-accent outline-none mb-6 min-h-[150px] leading-relaxed shadow-inner resize-none"
+              placeholder="Escribe el mensaje..."
+            />
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setEditingMessageId(null)} 
+                className="flex-1 py-4 rounded-[20px] font-bold text-text-secondary bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => handleEditSubmit(editingMessageId)} 
+                className="flex-1 py-4 rounded-[20px] font-bold text-white bg-accent hover:bg-accent-hover active:scale-95 transition-all shadow-lg shadow-accent/20"
+              >
+                Aplicar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
 }
