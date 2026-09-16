@@ -17,6 +17,28 @@ const getFullImageUrl = (path) => {
     return `${SERVER_URL}${cleanPath}`;
 };
 
+const formatLastSeen = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const diffMs = today - date;
+  if (diffMs < 2 * 60 * 1000) {
+    return 'En línea';
+  }
+
+  let timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (date.toDateString() === today.toDateString()) {
+    return `hoy a las ${timeStr}`;
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return `ayer a las ${timeStr}`;
+  } else {
+    return `${date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' })} a las ${timeStr}`;
+  }
+};
+
 export default function AsesoriaScreen({ onBack }) {
   const [trainer, setTrainer] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -386,7 +408,9 @@ export default function AsesoriaScreen({ onBack }) {
             )}
             <div>
               <h2 className="font-bold text-text-primary text-sm leading-tight">{trainer.name}</h2>
-              <p className="text-xs text-text-secondary">@{trainer.username}</p>
+              <p className={`text-[11px] ${trainer.lastSeen && (new Date() - new Date(trainer.lastSeen) < 2 * 60 * 1000) ? 'text-accent font-medium' : 'text-text-secondary'}`}>
+                {trainer.lastSeen ? formatLastSeen(trainer.lastSeen) : `@${trainer.username}`}
+              </p>
             </div>
           </div>
         ) : null}

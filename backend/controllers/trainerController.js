@@ -1,6 +1,8 @@
 /* backend/controllers/trainerController.js */
 import models from '../models/index.js';
 import { Op } from 'sequelize';
+import { createNotification } from '../services/notificationService.js';
+import { sendCoachingLinkedEmail } from '../services/emailService.js';
 
 const { User } = models;
 
@@ -265,6 +267,23 @@ export const linkClient = async (req, res) => {
         user.trainer_id = req.user.userId;
         user.role = 'trainee';
         await user.save();
+
+        // Obtener el nombre del entrenador
+        const trainer = await User.findByPk(req.user.userId);
+        const trainerName = trainer ? trainer.name : 'Un entrenador';
+
+        // 1. In-App Notification (which auto-triggers Push)
+        await createNotification(user.id, {
+            type: 'coaching_added',
+            title: '¡Nueva Asesoría!',
+            message: `${trainerName} te ha añadido a su asesoría.`,
+            data: { url: '/asesoria' }
+        });
+
+        // 2. Enviar email (si tiene correo real)
+        if (user.email && !user.email.endsWith('@profitnessglass.internal')) {
+            await sendCoachingLinkedEmail(user.email, trainerName);
+        }
 
         return res.json({ message: 'Usuario vinculado exitosamente.' });
     } catch (error) {

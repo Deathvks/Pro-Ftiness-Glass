@@ -347,6 +347,28 @@ export default function TrainerChats({ onClose }) {
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatLastSeen = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const diffMs = today - date;
+    if (diffMs < 2 * 60 * 1000) {
+      return 'En línea';
+    }
+
+    let timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (date.toDateString() === today.toDateString()) {
+      return `hoy a las ${timeStr}`;
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return `ayer a las ${timeStr}`;
+    } else {
+      return `${date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' })} a las ${timeStr}`;
+    }
+  };
+
   const formatLastMessageDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -456,13 +478,25 @@ export default function TrainerChats({ onClose }) {
                         </span>
                       }
                   </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`text-[13px] line-clamp-2 flex-1 ${client.unreadCount > 0 ? 'font-bold text-text-primary' : 'text-text-secondary'}`}>
-                        {client.lastMessage ?
-                        String(client.lastMessage.sender_id) !== String(client.id) ? `Entrenador: ${client.lastMessage.content}` : client.lastMessage.content :
-                        'Sin mensajes aún'}
-                      </p>
-                      {client.unreadCount > 0 &&
+                      <div className="flex items-center justify-between gap-2">
+                        <div className={`text-[13px] line-clamp-2 flex-1 flex items-center min-w-0 ${client.unreadCount > 0 ? 'font-bold text-text-primary' : 'text-text-secondary'}`}>
+                          {client.lastMessage ? (
+                            <span className="flex items-center gap-1 w-full">
+                              {String(client.lastMessage.sender_id) !== String(client.id) && (
+                                <div className={`flex items-center -space-x-1.5 shrink-0 ${client.lastMessage.read_at ? 'text-blue-500' : 'text-text-muted'}`}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                </div>
+                              )}
+                              <span className="truncate flex-1">
+                                {client.lastMessage.content ? client.lastMessage.content : '📷 Archivo adjunto'}
+                              </span>
+                            </span>
+                          ) : (
+                            'Sin mensajes aún'
+                          )}
+                        </div>
+                        {client.unreadCount > 0 &&
                       <div className="w-3 h-3 rounded-full bg-accent shrink-0 shadow-sm animate-pulse shadow-accent/50 ml-1"></div>
                       }
                     </div>
@@ -503,13 +537,15 @@ export default function TrainerChats({ onClose }) {
             <img src={getFullImageUrl(selectedClient.profile_image_url)} alt={selectedClient.name} className="w-10 h-10 rounded-full object-cover border border-accent/30" referrerPolicy="no-referrer" /> :
 
             <UserCircleIcon className="w-10 h-10 text-text-secondary" />
-            }
-              <div className="flex-1">
-                <h2 className="font-bold text-text-primary text-sm leading-tight">{selectedClient.name}</h2>
-                <p className="text-xs text-text-secondary">@{selectedClient.username}</p>
-              </div>
-              
-              {/* Botón Vincular si no es trainee */}
+              }
+                <div className="flex-1">
+                  <h2 className="font-bold text-text-primary text-sm leading-tight">{selectedClient.name}</h2>
+                  <p className={`text-[11px] ${selectedClient.lastSeen && (new Date() - new Date(selectedClient.lastSeen) < 2 * 60 * 1000) ? 'text-accent font-medium' : 'text-text-secondary'}`}>
+                    {selectedClient.lastSeen ? formatLastSeen(selectedClient.lastSeen) : `@${selectedClient.username}`}
+                  </p>
+                </div>
+                
+                {/* Botón Vincular si no es trainee */}
               {selectedClient.role !== 'trainee' &&
             <button
               onClick={() => handleLinkClient(selectedClient.id)}
