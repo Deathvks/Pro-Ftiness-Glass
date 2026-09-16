@@ -453,13 +453,246 @@ export const uploadAttachment = async (req, res, next) => {
   }
 };
 
+    }
+
+    // Load trainers to attach trainer name
+    const trainerIds = [...new Set(clients.map(c => c.trainer_id).filter(Boolean))];
+    const trainers = await User.findAll({
+      where: { id: trainerIds },
+      attributes: ['id', 'name']
+    });
+    const trainerMap = {};
+    trainers.forEach(t => { trainerMap[t.id] = t.name; });
+
+    // 2. Para cada cliente, obtener el último mensaje y el conteo de no leídos
+    const trainersAndAdmins = await User.findAll({
+      where: { role: { [Op.in]: ['admin', 'trainer'] } },
+      attributes: ['id']
+    });
+    const trainerAdminIds = trainersAndAdmins.map(u => u.id);
+
+    const clientsWithChatData = await Promise.all(clients.map(async (client) => {
+      let lastMessage;
+      let unreadCount;
+
+      if (isAdmin) {
+        lastMessage = await Message.findOne({
+          where: {
+            [Op.or]: [
+              { sender_id: client.id, receiver_id: { [Op.in]: trainerAdminIds } },
+              { sender_id: { [Op.in]: trainerAdminIds }, receiver_id: client.id }
+            ]
+          },
+          order: [['created_at', 'DESC']]
+        });
+
+        unreadCount = await Message.count({
+          where: {
+            sender_id: client.id,
+            receiver_id: { [Op.in]: trainerAdminIds },
+            read_at: null
+          }
+        });
+      } else {
+        lastMessage = await Message.findOne({
+          where: {
+            [Op.or]: [
+              { sender_id: client.id, receiver_id: userId },
+              { sender_id: userId, receiver_id: client.id }
+            ]
+          },
+          order: [['created_at', 'DESC']]
+        });
+
+        unreadCount = await Message.count({
+          where: {
+            sender_id: client.id,
+            receiver_id: userId,
+            read_at: null
+          }
+        });
+      }
+
+      return {
+        ...client.toJSON(),
+        trainer_name: trainerMap[client.trainer_id] || null,
+        lastMessage: lastMessage ? lastMessage.toJSON() : null,
+        unreadCount
+      };
+    }));
+
+    // Ordenar por mensajes no leídos primero, luego por la fecha del último mensaje
+    clientsWithChatData.sort((a, b) => {
+      if (b.unreadCount !== a.unreadCount) {
+        return b.unreadCount - a.unreadCount;
+      }
+      const timeA = a.lastMessage ? new Date(a.lastMessage.created_at).getTime() : 0;
+      const timeB = b.lastMessage ? new Date(b.lastMessage.created_at).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    res.status(200).json(clientsWithChatData);
+  } catch (error) {
+    console.error('Error al obtener clientes y chats del entrenador:', error);
+    next(error);
+  }
+};
+
+export const markMessagesAsRead = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const { otherUserId } = req.params;
+
+    const requestor = await User.findByPk(userId);
+    const isAdmin = requestor && requestor.role === 'admin';
+
+    let whereCondition;
+
+    if (isAdmin) {
+      const trainersAndAdmins = await User.findAll({
+        where: { role: { [Op.in]: ['admin', 'trainer'] } },
+        attributes: ['id']
+      });
+      const trainerAdminIds = trainersAndAdmins.map(u => u.id);
+
+      whereCondition = {
+        sender_id: otherUserId,
+        receiver_id: { [Op.in]: trainerAdminIds },
+        read_at: null
+      };
+    } else {
+      whereCondition = {
+        sender_id: otherUserId,
+        receiver_id: userId,
+        read_at: null
+      };
+    }
+
+    const [affectedRows] = await Message.update(
+      { read_at: new Date() },
+      { where: whereCondition }
+    );
+    console.log(`markMessagesAsRead: sender=${otherUserId}, receiver=${userId}, affectedRows=${affectedRows}`);
+
+    if (io) {
+      io.to(otherUserId.toString()).emit('messages_read', { byUserId: userId });
+      // Emit to all admins to sync the UI
+      if (isAdmin) {
+        const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
+        admins.forEach(admin => {
+          if (admin.id.toString() !== otherUserId.toString()) {
+            io.to(admin.id.toString()).emit('messages_read', { byUserId: userId });
+          }
+        });
+      }
+    }
+
+    res.status(200).json({ message: 'Mensajes marcados como leídos', affectedRows });
+  } catch (error) {
+    console.error('Error al marcar mensajes como leídos:', error);
+    next(error);
+  }
+};
+
+export const uploadAttachment = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const { receiverId } = req.body;
+    const file = req.file;
+
+    if (!receiverId || !file) {
+      return res.status(400).json({ message: 'Faltan datos para subir el archivo.' });
+    }
+
+    const sender = await User.findByPk(userId);
+    if (!sender) {
+      return res.status(404).json({ message: 'Usuario remitente no encontrado.' });
+    }
+
+    const dateStr = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `${sender.username}_${dateStr}.mp4`;
+
+    const uploadResult = await uploadVideoToCloudinary(file.buffer, fileName, file.mimetype, sender.username);
+
+    const newMessage = await Message.create({
+      sender_id: userId,
+      receiver_id: receiverId,
+      content: '📹 Vídeo enviado',
+      attachment_url: uploadResult.webViewLink,
+      attachment_type: file.mimetype,
+    });
+
+    const populatedMessage = await Message.findByPk(newMessage.id, {
+      include: [
+        { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
+      ]
+    });
+
+    const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
+
+    if (io) {
+      io.to(receiverId.toString()).emit('chat_message', populatedMessage);
+      admins.forEach(admin => {
+        if (admin.id.toString() !== receiverId.toString() && admin.id.toString() !== userId.toString()) {
+          io.to(admin.id.toString()).emit('chat_message', populatedMessage);
+        }
+      });
+    }
+
+    notifyUserIfNeeded(userId, receiverId, '📹 Vídeo enviado');
+
+    res.status(201).json(populatedMessage);
+  } catch (error) {
+    console.error('Error al subir adjunto de chat:', error);
+    next(error);
+  }
+};
+
 const chatController = {
   getTrainerInfo,
   getChatHistory,
   sendMessage,
   getTrainerClientsChats,
   markMessagesAsRead,
-  uploadAttachment
+  uploadAttachment,
+  getUnreadCount
 };
 
 export default chatController;
+
+export const getUnreadCount = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const requestor = await models.User.findByPk(userId);
+    if (!requestor) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    let unreadCount = 0;
+
+    if (requestor.role === 'admin') {
+      const trainersAndAdmins = await models.User.findAll({
+        where: { role: { [models.Sequelize.Op.in]: ['admin', 'trainer'] } },
+        attributes: ['id']
+      });
+      const trainerAdminIds = trainersAndAdmins.map(u => u.id);
+
+      unreadCount = await models.Message.count({
+        where: {
+          receiver_id: { [models.Sequelize.Op.in]: trainerAdminIds },
+          read_at: null
+        }
+      });
+    } else {
+      unreadCount = await models.Message.count({
+        where: {
+          receiver_id: userId,
+          read_at: null
+        }
+      });
+    }
+
+    res.status(200).json({ unreadCount });
+  } catch (error) {
+    console.error('Error al obtener contador de mensajes no leídos:', error);
+    next(error);
+  }
+};

@@ -16,6 +16,7 @@ import {
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import HubTourGuide from '../components/HubTourGuide';
+import apiClient from '../services/apiClient';
 const CoachingPromoModal = lazy(() => import('../components/CoachingPromoModal'));
 
 const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, badge }) => (
@@ -59,18 +60,22 @@ export default function Hub({ setView }) {
   const [visitedChallenges, setVisitedChallenges] = React.useState(true);
   const [visitedAsesoria, setVisitedAsesoria] = React.useState(true);
   const [showCoachingPromo, setShowCoachingPromo] = useState(false);
+  const [unreadAdminChats, setUnreadAdminChats] = useState(0);
 
   React.useEffect(() => {
     if (userProfile?.id) {
       setVisitedChallenges(localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) === 'true');
       setVisitedAsesoria(localStorage.getItem(`visited_asesoria_${userProfile.id}`) === 'true');
       
-      // Show coaching promo if user hasn't seen it yet and is NOT a trainer/admin
       if (!['trainer', 'admin'].includes(userProfile?.role)) {
         const hasSeen = localStorage.getItem(`coaching_promo_seen_v2_${userProfile.id}`);
         if (!hasSeen) {
           setShowCoachingPromo(true);
         }
+      } else {
+        apiClient('/chat/unread-count')
+          .then(res => setUnreadAdminChats(res.unreadCount || 0))
+          .catch(e => console.error(e));
       }
     }
   }, [userProfile?.id, userProfile?.role]);
@@ -182,6 +187,7 @@ export default function Hub({ setView }) {
               title="Panel de Entrenador"
               description="Gestión de clientes y cuestionarios"
               onClick={() => setView('trainerPanel')}
+              badge={unreadAdminChats > 0}
             />
           )}
 

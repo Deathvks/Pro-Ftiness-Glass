@@ -46,6 +46,7 @@ export default function TrainerPanel({ setView }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem('trainer_activeTab') || 'activos');
+  const [unreadAdminChats, setUnreadAdminChats] = useState(0);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -54,6 +55,15 @@ export default function TrainerPanel({ setView }) {
 
   useEffect(() => {
     sessionStorage.setItem('trainer_activeTab', activeTab);
+    
+    // Fetch unread count whenever tab changes to keep it fresh
+    apiClient('/chat/unread-count')
+      .then(chatRes => {
+        if (chatRes && chatRes.unreadCount !== undefined) {
+          setUnreadAdminChats(chatRes.unreadCount);
+        }
+      })
+      .catch(console.error);
   }, [activeTab]);
 
   useEffect(() => {
@@ -76,8 +86,14 @@ export default function TrainerPanel({ setView }) {
     try {
       const res = await apiClient('/trainer/clients', { method: 'GET' });
       setClients(res);
-    } catch (err) {
-      console.error(err);
+
+      // Fetch unread count for the chat tab badge
+      const chatRes = await apiClient('/chat/unread-count');
+      if (chatRes && chatRes.unreadCount !== undefined) {
+        setUnreadAdminChats(chatRes.unreadCount);
+      }
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -286,13 +302,19 @@ export default function TrainerPanel({ setView }) {
             
             Activos
           </button>
-          <button
-            onClick={() => setActiveTab('chats')}
-            className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'chats' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
-            
-            <ChatBubbleLeftRightIcon className="w-5 h-5 shrink-0" />
-            Asesorías
-          </button>
+            <button
+              onClick={() => setActiveTab('chats')}
+              className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all flex items-center justify-center gap-2 relative ${activeTab === 'chats' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
+              
+              <ChatBubbleLeftRightIcon className="w-5 h-5 shrink-0" />
+              Asesorías
+              {unreadAdminChats > 0 && (
+                <span className="absolute top-1 right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-accent shadow-[0_0_8px_rgba(0,0,0,0.5)]"></span>
+                </span>
+              )}
+            </button>
           <button
             onClick={() => setActiveTab('antiguos')}
             className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all ${activeTab === 'antiguos' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
