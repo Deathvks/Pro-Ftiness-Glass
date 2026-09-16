@@ -1,6 +1,7 @@
 /* backend/services/emailService.js */
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import db from '../models/index.js';
 
 // Configurar transporter - Usar createTransport (sin 'er' al final)
 const transporter = nodemailer.createTransport({
@@ -10,6 +11,30 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS  // contraseña de aplicación
   }
 });
+
+const sendMailAndLog = async (mailOptions) => {
+  try {
+    const result = await transporter.sendMail(mailOptions);
+    if (db && db.EmailDeliveryLog) {
+      await db.EmailDeliveryLog.create({
+        recipient_email: mailOptions.to,
+        subject: mailOptions.subject,
+        status: 'sent'
+      }).catch(e => console.error('Error logging email delivery:', e));
+    }
+    return result;
+  } catch (err) {
+    if (db && db.EmailDeliveryLog) {
+      await db.EmailDeliveryLog.create({
+        recipient_email: mailOptions.to,
+        subject: mailOptions.subject,
+        status: 'failed',
+        error_message: err.message
+      }).catch(e => console.error('Error logging email failure:', e));
+    }
+    throw err;
+  }
+};
 
 // Generar código de verificación
 export const generateVerificationCode = () => {
@@ -48,7 +73,7 @@ export const sendVerificationEmail = async (email, code) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMailAndLog(mailOptions);
     return { success: true, message: 'Código enviado correctamente' };
   } catch (error) {
     console.error('Error enviando email:', error);
@@ -82,7 +107,7 @@ export const sendPasswordResetEmail = async (email, token) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMailAndLog(mailOptions);
     return { success: true, message: 'Email de restablecimiento enviado.' };
   } catch (error) {
     console.error('Error enviando email de reseteo:', error);
@@ -126,7 +151,7 @@ export const sendLoginAlertEmail = async (email, { ip, userAgent, token }) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMailAndLog(mailOptions);
     return { success: true, message: 'Alerta de login enviada.' };
   } catch (error) {
     console.error('Error enviando alerta de login:', error);
@@ -158,7 +183,7 @@ export const sendChatReplyEmail = async (email, senderName) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMailAndLog(mailOptions);
     console.log('Correo de respuesta de chat enviado a:', email);
   } catch (error) {
     console.error('Error al enviar correo de respuesta de chat:', error);
@@ -190,7 +215,7 @@ export const sendNewClientMessageEmail = async (email, clientName) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendMailAndLog(mailOptions);
     console.log('Correo de nuevo mensaje de cliente enviado a:', email);
   } catch (error) {
     console.error('Error al enviar correo de nuevo mensaje de cliente:', error);
