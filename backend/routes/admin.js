@@ -58,4 +58,4 @@ router.post('/free-memory', adminController.freeMemory);
 // Reset global
 router.post('/reset-milestones', adminController.resetMilestoneBadges);
 
-export default router;
+router.get('/upload-logs', adminController.getUploadLogs);`n`nexport default router;

@@ -6,7 +6,7 @@ import { uploadVideoToCloudinary } from '../services/cloudinaryService.js';
 import { sendChatReplyEmail, sendNewClientMessageEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
 
-const { User, Message } = models;
+const { User, Message, UploadLog } = models;
 
 const notifyUserIfNeeded = async (senderId, receiverId, content) => {
   try {
@@ -527,12 +527,36 @@ export const uploadAttachment = async (req, res, next) => {
     const dateStr = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `${sender.username}_${dateStr}.mp4`;
 
-    const uploadResult = await uploadVideoToCloudinary(file.buffer, fileName, file.mimetype, sender.username);
+    let uploadResult;
+    try {
+      uploadResult = await uploadVideoToCloudinary(file.buffer, fileName, file.mimetype, sender.username);
+      
+      // Log successful upload
+      await UploadLog.create({
+        uploader_id: userId,
+        file_name: fileName,
+        file_type: file.mimetype,
+        status: 'success',
+        cloudinary_url: uploadResult.webViewLink
+      });
+
+    } catch (uploadError) {
+      // Log failed upload
+      await UploadLog.create({
+        uploader_id: userId,
+        file_name: fileName,
+        file_type: file.mimetype,
+        status: 'error',
+        error_message: uploadError.message || String(uploadError)
+      });
+      console.error('Error uploading to Cloudinary:', uploadError);
+      return res.status(500).json({ message: 'Error al subir el archivo a Cloudinary.' });
+    }
 
     const newMessage = await Message.create({
       sender_id: userId,
       receiver_id: receiverId,
-      content: '📹 Vídeo enviado',
+      content: '🎥 Vídeo enviado',
       attachment_url: uploadResult.webViewLink,
       attachment_type: file.mimetype,
     });
@@ -554,7 +578,7 @@ export const uploadAttachment = async (req, res, next) => {
       });
     }
 
-    notifyUserIfNeeded(userId, receiverId, '📹 Vídeo enviado');
+    notifyUserIfNeeded(userId, receiverId, '🎥 Vídeo enviado');
 
     res.status(201).json(populatedMessage);
   } catch (error) {

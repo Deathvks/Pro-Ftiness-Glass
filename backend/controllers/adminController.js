@@ -567,3 +567,17 @@ export const getSystemStats = async (req, res, next) => {
   }
 };
 
+
+export const getUploadLogs = async (req, res, next) => {
+  try {
+    const logs = await db.UploadLog.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 100
+    });
+    res.status(200).json(logs);
+  } catch (error) {
+    console.error('Error fetching upload logs:', error);
+    next(error);
+  }
+};
+

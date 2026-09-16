@@ -29,6 +29,7 @@ import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
 import UserChallenge from './userChallengeModel.js';
 import Message from './messageModel.js';
+import UploadLog from './uploadLogModel.js';
 
 // Nuevos modelos de Squads
 import Squad from './squadModel.js';
@@ -226,7 +227,8 @@ const models = {
   UserChallenge,
   Message,
   SecurityLog,
-  IpBlacklist
+  IpBlacklist,
+  UploadLog
 };
 
 export default models;
