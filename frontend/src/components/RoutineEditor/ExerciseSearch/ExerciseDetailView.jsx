@@ -73,6 +73,7 @@ const ExerciseDetailView = ({
   isStaged,
   t,
   isReplacing = false,
+  isReadOnly = false,
 }) => {
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState("8-12");
@@ -363,7 +364,8 @@ const ExerciseDetailView = ({
       </div>
 
       {/* FOOTER */}
-      <div className="flex-shrink-0 p-5 sm:p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/90 backdrop-blur-md pb-[calc(1.5rem+var(--safe-bottom))] md:pb-8 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(255,255,255,0.02)]">
+      {!isReadOnly && (
+        <div className="flex-shrink-0 p-5 sm:p-6 border-t border-black/5 dark:border-white/10 bg-bg-primary/90 backdrop-blur-md pb-[calc(1.5rem+var(--safe-bottom))] md:pb-8 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(255,255,255,0.02)]">
         {!isReplacing && (
           <div className="flex gap-4 mb-5">
             <div className="flex-1">
@@ -459,6 +461,7 @@ const ExerciseDetailView = ({
           </button>
         )}
       </div>
+      )}
     </div>
   );
 };

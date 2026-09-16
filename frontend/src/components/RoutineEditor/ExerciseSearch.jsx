@@ -24,7 +24,8 @@ const ExerciseSearch = ({
   initialSelectedExercises = [],
   isReplacing = false, // Por defecto, estamos en modo "Añadir"
   onExerciseSelectForReplace, // Función para reemplazar un ejercicio de la biblioteca
-  onAddCustomExercise // Función para reemplazar con un ejercicio manual
+  onAddCustomExercise, // Función para reemplazar con un ejercicio manual
+  isReadOnly = false // NUEVO: Modo sólo visualización
 }) => {
 
   // Obtenemos 'ready' del hook
@@ -48,7 +49,7 @@ const ExerciseSearch = ({
   // --- STATE ---
   // Inicialización lazy para recuperar la vista guardada
   const [view, setView] = useState(() => {
-    if (isReplacing) return 'list';
+    if (isReplacing || isReadOnly) return 'list';
     // Recuperamos la vista guardada en la sesión (por si recarga la página)
     const savedView = sessionStorage.getItem(VIEW_STORAGE_KEY);
     return savedView === 'summary' ? 'summary' : 'list';
@@ -252,7 +253,8 @@ const ExerciseSearch = ({
     if (!ready) {
       return [];
     }
-    const query = searchQuery.toLowerCase();
+    const stripAccents = (str) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+    const query = stripAccents(searchQuery);
 
     // Obtenemos las etiquetas traducidas para la lógica especial de Biceps/Triceps
     const armsLabel = t('Arms', { ns: 'exercise_muscles', defaultValue: 'Arms' });
@@ -261,12 +263,21 @@ const ExerciseSearch = ({
     const forearmsLabel = t('Forearms', { ns: 'exercise_muscles', defaultValue: 'Forearms' });
 
     return allExercises.filter((ex) => {
+      // 1. Filtro por Búsqueda Libre (Nombre o Músculo)
+      const originalName = stripAccents(ex.name || '');
+      const translatedName = stripAccents(t(ex.name || '', { ns: 'exercise_names', defaultValue: ex.name || '' }));
+
+      const nameMatch = originalName.includes(query) || translatedName.includes(query);
+
       // Preparación de datos (Músculos)
       let rawMuscles = [ex.category || 'Other'];
       if (typeof ex.muscle_group === 'string') {
-        rawMuscles = ex.muscle_group.split(',').map(m => m.trim());
+        rawMuscles = ex.muscle_group.split(',').map((s) => s.trim()).filter(Boolean);
+        if (rawMuscles.length === 0 && ex.category) {
+          rawMuscles = [ex.category];
+        }
       } else if (Array.isArray(ex.muscle_group)) {
-        rawMuscles = ex.muscle_group.map(m => String(m).trim());
+        rawMuscles = ex.muscle_group;
       }
 
       // Traducimos los músculos del ejercicio actual y los agrupamos para el filtro
@@ -278,14 +289,8 @@ const ExerciseSearch = ({
         return label;
       });
 
-      // 1. Filtro Texto: Nombre O Grupo Muscular
-      const originalName = (ex.name || '').toLowerCase();
-      const translatedName = t(ex.name || '', { ns: 'exercise_names', defaultValue: ex.name || '' }).toLowerCase();
-
-      const nameMatch = originalName.includes(query) || translatedName.includes(query);
-
       // Búsqueda por texto en grupo muscular
-      const muscleTextMatch = translatedMuscles.some((m) => m.toLowerCase().includes(query));
+      const muscleTextMatch = translatedMuscles.some((m) => stripAccents(m).includes(query));
 
       const textMatch = nameMatch || muscleTextMatch;
 
@@ -444,12 +449,11 @@ const ExerciseSearch = ({
           onAdd={isReplacing ? onExerciseSelectForReplace : handleStageExercise}
           isStaged={isReplacing ? false : stagedIds.has(selectedExercise.id)}
           isReplacing={isReplacing}
+          isReadOnly={isReadOnly}
           t={t} />);
-
-
     }
 
-    if (view === 'summary' && !isReplacing) {
+    if (view === 'summary' && !isReplacing && !isReadOnly) {
       return (
         <ExerciseSummaryView
           stagedExercises={stagedExercises}
@@ -458,11 +462,9 @@ const ExerciseSearch = ({
           onRemove={handleRemoveStaged}
           onFinalize={handleFinalize}
           t={t} />);
-
-
     }
 
-    if (view === 'summary' && isReplacing) {
+    if (view === 'summary' && (isReplacing || isReadOnly)) {
       setView('list');
     }
 
@@ -470,7 +472,7 @@ const ExerciseSearch = ({
       <ExerciseListView
         onClose={onClose}
         onViewSummary={handleViewSummary}
-        stagedExercisesCount={isReplacing ? 0 : stagedExercises.length}
+        stagedExercisesCount={isReplacing || isReadOnly ? 0 : stagedExercises.length}
         isLoading={isLoading || !ready}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -488,9 +490,8 @@ const ExerciseSearch = ({
         stagedIds={stagedIds}
         onAddManual={handleAddManualExercise}
         isReplacing={isReplacing}
+        isReadOnly={isReadOnly}
         t={t} />);
-
-
   };
 
   return <ModalPortal disableSwipeToClose={true}>

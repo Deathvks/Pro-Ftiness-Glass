@@ -7,7 +7,7 @@ import {
   Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
   Bike, Activity, Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
-  LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy
+  LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter
 } from 'lucide-react';
 import { FaChartPie, FaTrophy } from 'react-icons/fa';
 import { FaMeteor } from 'react-icons/fa6'; 
@@ -27,6 +27,7 @@ import CreatinaTracker from '../components/CreatinaTracker';
 import WaterLogModal from '../components/WaterLogModal';
 import XPGuideModal from '../components/XPGuideModal';
 import TourGuide from '../components/TourGuide';
+import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import LevelBadge from '../components/LevelBadge';
 import * as nutritionService from '../services/nutritionService';
 import { useToast } from '../hooks/useToast';
@@ -193,6 +194,7 @@ const Dashboard = ({ setView }) => {
   const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
   const [showPRList, setShowPRList] = useState(false);
+  const [showExerciseLibrary, setShowExerciseLibrary] = useState(false); // NUEVO
   const [selectedPR, setSelectedPR] = useState(null);
   const [isSharing, setIsSharing] = useState(false);
 
@@ -816,6 +818,23 @@ const Dashboard = ({ setView }) => {
                 </div>
               )}
             </div>
+
+            {/* BOTON BIBLIOTECA EJERCICIOS */}
+            <button
+              onClick={() => setShowExerciseLibrary(true)}
+              className="mt-4 w-full flex items-center justify-between p-4 rounded-[24px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-glass-border group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-[20px] bg-accent/10 flex items-center justify-center">
+                  <ListFilter size={24} className="text-accent" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-bold text-sm text-text-primary">Biblioteca de Ejercicios</h3>
+                  <p className="text-[11px] text-text-secondary font-medium">Explorar y filtrar todos los ejercicios</p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-text-muted group-hover:text-accent transition-colors" />
+            </button>
           </section>
 
           <section id="tour-weight">
@@ -1005,6 +1024,13 @@ const Dashboard = ({ setView }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {showExerciseLibrary && (
+        <ExerciseSearch 
+          isReadOnly={true} 
+          onClose={() => setShowExerciseLibrary(false)} 
+        />
       )}
     </div>
   );
