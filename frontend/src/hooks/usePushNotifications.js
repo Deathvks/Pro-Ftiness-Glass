@@ -1,5 +1,5 @@
 /* frontend/src/hooks/usePushNotifications.js */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from './useToast';
 import * as notificationService from '../services/notificationService';
 import { Capacitor } from '@capacitor/core';
@@ -31,6 +31,7 @@ export const usePushNotifications = () => {
   const [subscription, setSubscription] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const timeoutRef = useRef(null);
 
   // --- NUEVO: Detectar si es App Nativa o Web ---
   const isNative = Capacitor.isNativePlatform();
@@ -54,6 +55,8 @@ export const usePushNotifications = () => {
    * Comprueba el estado de la suscripción al cargar el hook.
    */
   useEffect(() => {
+    let isMounted = true;
+
     if (!isSupported) {
       setError('Notificaciones Push no soportadas por este navegador/dispositivo.');
       setIsLoading(false);
@@ -61,6 +64,7 @@ export const usePushNotifications = () => {
     }
 
     const checkSubscription = async () => {
+      if (!isMounted) return;
       setIsLoading(true);
       setError(null);
       try {
@@ -70,6 +74,7 @@ export const usePushNotifications = () => {
           const isLocallySubscribed = localStorage.getItem('native_push_subscribed') === 'true';
           const localToken = localStorage.getItem('native_push_token');
           
+          if (!isMounted) return;
           if (perm.receive === 'granted' && isLocallySubscribed) {
             setIsSubscribed(true);
             if (localToken) setSubscription(localToken);
@@ -82,6 +87,7 @@ export const usePushNotifications = () => {
           const registration = await getServiceWorkerRegistration();
           const currentSubscription = await registration.pushManager.getSubscription();
 
+          if (!isMounted) return;
           if (currentSubscription) {
             setIsSubscribed(true);
             setSubscription(currentSubscription);
@@ -92,9 +98,13 @@ export const usePushNotifications = () => {
         }
       } catch (err) {
         console.error('Error comprobando suscripción:', err);
-        setError(`Error al comprobar notificaciones: ${err.message}`);
+        if (isMounted) {
+          setError(`Error al comprobar notificaciones: ${err.message}`);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -103,6 +113,7 @@ export const usePushNotifications = () => {
     // --- NUEVO: Listeners Nativos de Firebase ---
     if (isNative) {
       PushNotifications.addListener('registration', async (token) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         try {
           // Guardamos el token FCM con formato especial para identificarlo en el backend
           await notificationService.subscribeToPush({
@@ -122,6 +133,7 @@ export const usePushNotifications = () => {
       });
 
       PushNotifications.addListener('registrationError', (err) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         console.error('Error en el registro nativo:', err);
         setError('Error al registrar dispositivo.');
         setIsLoading(false);
@@ -130,6 +142,7 @@ export const usePushNotifications = () => {
 
     // Limpiamos los listeners al desmontar
     return () => {
+      isMounted = false;
       if (isNative) {
         PushNotifications.removeAllListeners();
       }
@@ -154,6 +167,10 @@ export const usePushNotifications = () => {
         const perm = await PushNotifications.requestPermissions();
         if (perm.receive === 'granted') {
           // Esto dispara el listener 'registration' que configuramos en el useEffect
+          timeoutRef.current = setTimeout(() => {
+             setIsLoading(false);
+             addToast('Tiempo agotado. Revisa tus servicios de Google Play o la conexión.', 'warning');
+          }, 10000);
           await PushNotifications.register(); 
         } else {
           addToast('No se ha concedido el permiso para las notificaciones.', 'warning');
