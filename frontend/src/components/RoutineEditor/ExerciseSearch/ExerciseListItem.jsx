@@ -11,6 +11,7 @@ const ExerciseListItem = ({
   isStaged,
   t,
   isReplacing = false,
+  isReadOnly = false
 }) => {
   const handleAddClick = (e) => {
     e.stopPropagation();
@@ -85,40 +86,42 @@ const ExerciseListItem = ({
         </div>
 
         {/* Botones de Acción */}
-        <div className="mt-auto">
-          {isReplacing ? (
-            <button
-              onClick={handleAddClick}
-              className="w-full flex items-center justify-center gap-2 p-3 rounded-[16px] transition-all duration-300 bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent hover:text-white ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent active:scale-95 shadow-sm font-bold"
-              title={t('exercise_ui:replace_with_this', 'Reemplazar con este')}
-            >
-              <Repeat size={18} strokeWidth={2.5} />
-              {t('exercise_ui:replace', 'Reemplazar')}
-            </button>
-          ) : (
-            <button
-              onClick={handleAddClick}
-              disabled={isStaged}
-              className={`w-full flex items-center justify-center gap-2 p-3 rounded-[16px] transition-all duration-300 active:scale-95 shadow-sm font-bold ${
-                isStaged
-                  ? 'bg-green-500/10 text-green-500 ring-1 ring-green-500/30'
-                  : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 hover:bg-accent hover:text-white hover:ring-accent'
-              }`}
-            >
-              {isStaged ? (
-                <>
-                  <Check size={18} strokeWidth={3} />
-                  {t('exercise_ui:added', 'Añadido')}
-                </>
-              ) : (
-                <>
-                  <Plus size={18} strokeWidth={2.5} />
-                  {t('exercise_ui:add', 'Añadir')}
-                </>
-              )}
-            </button>
-          )}
-        </div>
+        {!isReadOnly && (
+          <div className="mt-auto">
+            {isReplacing ? (
+              <button
+                onClick={handleAddClick}
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-[16px] transition-all duration-300 bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent hover:text-white ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent active:scale-95 shadow-sm font-bold"
+                title={t('exercise_ui:replace_with_this', 'Reemplazar con este')}
+              >
+                <Repeat size={18} strokeWidth={2.5} />
+                {t('exercise_ui:replace', 'Reemplazar')}
+              </button>
+            ) : (
+              <button
+                onClick={handleAddClick}
+                disabled={isStaged}
+                className={`w-full flex items-center justify-center gap-2 p-3 rounded-[16px] transition-all duration-300 active:scale-95 shadow-sm font-bold ${
+                  isStaged
+                    ? 'bg-green-500/10 text-green-500 ring-1 ring-green-500/30'
+                    : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 hover:bg-accent hover:text-white hover:ring-accent'
+                }`}
+              >
+                {isStaged ? (
+                  <>
+                    <Check size={18} strokeWidth={3} />
+                    {t('exercise_ui:added', 'Añadido')}
+                  </>
+                ) : (
+                  <>
+                    <Plus size={18} strokeWidth={2.5} />
+                    {t('exercise_ui:add', 'Añadir')}
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
 
       </div>
     </div>

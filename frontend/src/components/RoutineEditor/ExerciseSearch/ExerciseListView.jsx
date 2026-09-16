@@ -26,6 +26,8 @@ const ExerciseListView = ({
   stagedIds,
   onAddManual,
   t,
+  isReplacing = false,
+  isReadOnly = false
 }) => {
   const listRef = useRef(null);
   const SCROLL_KEY = 'exerciseListScrollPos';
@@ -127,18 +129,20 @@ const ExerciseListView = ({
           {t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
         </h2>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <button
-            onClick={onViewSummary}
-            className="relative flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-full bg-accent text-white font-bold text-sm md:text-base whitespace-nowrap transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20"
-          >
-            <ListChecks size={18} />
-            <span className="hidden sm:inline">{t('exercise_ui:view_cart', 'Ver Selección')}</span>
-            {stagedExercisesCount > 0 && (
-              <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red text-white text-xs font-black flex items-center justify-center border-2 border-bg-primary shadow-sm">
-                {stagedExercisesCount}
-              </span>
-            )}
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={onViewSummary}
+              className="relative flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-full bg-accent text-white font-bold text-sm md:text-base whitespace-nowrap transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20"
+            >
+              <ListChecks size={18} />
+              <span className="hidden sm:inline">{t('exercise_ui:view_cart', 'Ver Selección')}</span>
+              {stagedExercisesCount > 0 && (
+                <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red text-white text-xs font-black flex items-center justify-center border-2 border-bg-primary shadow-sm">
+                  {stagedExercisesCount}
+                </span>
+              )}
+            </button>
+          )}
           <button onClick={onClose} className="p-2.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors">
             <X size={20} />
           </button>
@@ -241,30 +245,32 @@ const ExerciseListView = ({
           <div className="flex justify-center py-12"><Spinner size={32} /></div>
         ) : filteredExercises.length === 0 ? (
           /* Mostrar el botón de añadir manual incluso si no hay resultados */
-          <div className="flex flex-col items-center justify-center p-8 mt-10 max-w-sm mx-auto text-center animate-[fade-in_0.3s_ease-out] bg-black/5 dark:bg-white/5 rounded-[32px] ring-1 ring-black/5 dark:ring-white/10">
-            <div className="w-20 h-20 bg-bg-primary rounded-[24px] flex items-center justify-center mb-6 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
-              <SearchX size={36} className="text-text-muted" />
+          <div className="flex flex-col items-center justify-center p-8 text-center bg-black/5 dark:bg-white/5 rounded-[32px] border border-glass-border w-full max-w-sm mx-auto">
+            <div className="w-20 h-20 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+              <SearchX size={32} className="text-text-muted" />
             </div>
-            <h3 className="text-xl font-extrabold text-text-primary mb-2">
-              {t('exercise_ui:no_exercises_found', 'No se encontraron ejercicios')}
+            <h3 className="text-xl font-black text-text-primary mb-2">
+              {t('exercise_ui:no_exercises_found', 'Sin resultados')}
             </h3>
-            <p className="text-text-secondary text-sm font-medium mb-8 leading-relaxed">
+            <p className="text-text-secondary text-sm mb-8 px-4">
               {searchQuery 
                 ? t('exercise_ui:no_exercises_query', 'No hemos encontrado ningún ejercicio llamado "{{query}}".', { query: searchQuery }) 
                 : t('exercise_ui:no_exercises_desc', 'Ajusta los filtros o intenta con otra búsqueda.')}
             </p>
             
-            <button
-              onClick={onAddManual}
-              className="w-full flex items-center justify-center gap-3 p-4 rounded-[20px] bg-accent text-white hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
-            >
-              <Plus size={20} />
-              <span className="font-bold text-base">
-                {searchQuery 
-                  ? t('exercise_ui:add_specific_manual', 'Añadir "{{query}}" manualmente', { query: searchQuery })
-                  : t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
-              </span>
-            </button>
+            {!isReadOnly && (
+              <button
+                onClick={onAddManual}
+                className="w-full flex items-center justify-center gap-3 p-4 rounded-[20px] bg-accent text-white hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
+              >
+                <Plus size={20} />
+                <span className="font-bold text-base">
+                  {searchQuery 
+                    ? t('exercise_ui:create_custom_with_name', 'Crear "{{query}}"', { query: searchQuery }) 
+                    : t('exercise_ui:create_custom', 'Crear ejercicio manual')}
+                </span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 pb-12">
@@ -280,21 +286,23 @@ const ExerciseListView = ({
             ))}
             
             {/* Botón de añadir manual al final del grid */}
-            <button
-              key="manual-btn"
-              onClick={onAddManual}
-              className="col-span-full w-full flex flex-col items-center justify-center p-6 rounded-[24px] bg-bg-secondary border border-glass-border hover:border-accent/50 hover:bg-bg-tertiary transition-all group min-h-[160px] shadow-sm"
-            >
-              <div className="w-16 h-16 rounded-[16px] bg-bg-primary ring-1 ring-glass-border flex items-center justify-center text-text-secondary group-hover:text-accent group-hover:bg-accent/10 transition-colors shadow-sm mb-4">
-                <Plus size={32} strokeWidth={2.5} />
-              </div>
-              <p className="font-bold text-lg text-text-primary group-hover:text-accent transition-colors text-center">
-                {t('exercise_ui:add_manual_exercise', 'Añadir ejercicio manual')}
-              </p>
-              <p className="text-sm font-medium text-text-secondary text-center mt-2">
-                {t('exercise_ui:add_manual_desc', 'Añade un ejercicio que no esté en la lista.')}
-              </p>
-            </button>
+            {!isReadOnly && (
+              <button
+                key="manual-btn"
+                onClick={onAddManual}
+                className="col-span-full w-full flex flex-col items-center justify-center p-6 rounded-[24px] bg-bg-secondary border border-glass-border hover:border-accent/50 hover:bg-bg-tertiary transition-all group min-h-[160px] shadow-sm"
+              >
+                <div className="w-16 h-16 rounded-[16px] bg-bg-primary ring-1 ring-glass-border flex items-center justify-center text-text-secondary group-hover:text-accent group-hover:bg-accent/10 transition-colors shadow-sm mb-4">
+                  <Plus size={32} strokeWidth={2.5} />
+                </div>
+                <h3 className="font-bold text-text-primary text-base mb-1 group-hover:text-accent transition-colors">
+                  {t('exercise_ui:create_custom', 'Crear ejercicio manual')}
+                </h3>
+                <p className="text-xs text-text-secondary font-medium">
+                  {t('exercise_ui:create_custom_desc', '¿No encuentras lo que buscas?')}
+                </p>
+              </button>
+            )}
           </div>
         )}
       </div>
