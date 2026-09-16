@@ -89,7 +89,7 @@ const AdminEmails = () => {
                     onClick={() => { setFilterRange(days); setPage(1); }}
                     className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 flex items-center justify-center cursor-pointer " + (filterRange === days ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
                   >
-                    {days === 1 ? 'Últimas 24h' : \Últimos \ Días\}
+                    {days === 1 ? 'Últimas 24h' : `Últimos ${days} Días`}
                   </div>
                 ))}
               </div>
