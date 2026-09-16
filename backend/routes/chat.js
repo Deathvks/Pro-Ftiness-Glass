@@ -13,5 +13,6 @@ router.get('/trainer-chats', authenticateToken, chatController.getTrainerClients
 router.post('/mark-read/:otherUserId', authenticateToken, chatController.markMessagesAsRead);
 router.post('/upload', authenticateToken, uploadMemory.single('file'), chatController.uploadAttachment);
 router.get('/unread-count', authenticateToken, chatController.getUnreadCount);
+router.put('/message/:messageId', authenticateToken, chatController.editMessage);
 
 export default router;

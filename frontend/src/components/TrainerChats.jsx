@@ -121,6 +121,60 @@ export default function TrainerChats({ onClose }) {
     ));
   };
 
+  const renderMessageContent = (msg) => {
+    if (msg.attachment_type === 'bot_reply') {
+      const parts = msg.content.split('[notificaciones push]');
+      if (parts.length > 1) {
+        return (
+          <p className="text-[13px] md:text-[14px] font-medium whitespace-pre-wrap">
+            {parts[0]}<span className="font-bold underline">notificaciones push</span>{parts[1]}
+          </p>
+        );
+      }
+    }
+    return <p className="text-[13px] md:text-[14px] font-medium whitespace-pre-wrap">{msg.content}</p>;
+  };
+
+  const handleMessageEdited = (editedMsg) => {
+    setMessages((prev) => prev.map((msg) =>
+      msg.id === editedMsg.id ? { ...msg, content: editedMsg.content } : msg
+    ));
+  };
+
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editContent, setEditContent] = useState('');
+
+  const handleEditSubmit = async (msgId) => {
+    try {
+      const res = await apiClient(`/chat/message/${msgId}`, {
+        method: 'PUT',
+        body: { content: editContent }
+      });
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: res.content } : m));
+      setEditingMessageId(null);
+      setEditContent('');
+    } catch (e) {
+      addToast('Error al editar el mensaje', 'error');
+    }
+  };
+
+  const startEditing = (msg) => {
+    setEditingMessageId(msg.id);
+    setEditContent(msg.content);
+  };
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (socket) {
+      socket.on('message_edited', handleMessageEdited);
+    }
+    return () => {
+      if (socket) {
+        socket.off('message_edited', handleMessageEdited);
+      }
+    }
+  }, []);
+
   const markAsRead = async (clientId) => {
     try {
       await apiClient(`/chat/mark-read/${clientId}`, { method: 'POST' });
@@ -474,38 +528,69 @@ export default function TrainerChats({ onClose }) {
                     )}
                     <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'}`}>
-                        {msg.attachment_url && msg.attachment_type?.startsWith('video/') ?
-                    <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
+                        {msg.attachment_type === 'bot_reply' && (
+                          <div className={`text-[11px] font-bold opacity-80 mb-1 flex items-center gap-1 ${!isMe ? 'text-accent' : ''}`}>
+                            🤖 Bot Coordinador
+                          </div>
+                        )}
+                        {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
+                          <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
                             <video
-                        src={msg.attachment_url}
-                        controls
-                        className="max-w-full h-auto max-h-[300px] rounded-xl" />
-                      
+                              src={msg.attachment_url}
+                              controls
+                              className="max-w-full h-auto max-h-[300px] rounded-xl" />
                             <a
-                        href={msg.attachment_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] block text-center py-1 mt-1 font-bold underline opacity-80 hover:opacity-100">
-                        
+                              href={msg.attachment_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] block text-center py-1 mt-1 font-bold underline opacity-80 hover:opacity-100">
                               Abrir vídeo en pantalla completa
                             </a>
-                          </div> :
-                    null}
-                        <p className="text-[13px] md:text-[14px] font-medium whitespace-pre-wrap">{msg.content}</p>
+                          </div>
+                        ) : null}
+                        
+                        {editingMessageId === msg.id ? (
+                          <div className="flex flex-col gap-2 mt-1">
+                            <textarea
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              className="w-full bg-bg-secondary text-text-primary rounded-md p-2 text-sm border border-glass-border focus:ring-1 focus:ring-accent outline-none"
+                              rows={4}
+                            />
+                            <div className="flex items-center justify-end gap-2">
+                              <button onClick={() => setEditingMessageId(null)} className="text-[10px] uppercase font-bold text-text-muted hover:text-text-primary">Cancelar</button>
+                              <button onClick={() => handleEditSubmit(msg.id)} className="text-[10px] uppercase font-bold text-accent hover:text-accent-hover bg-bg-primary/10 px-2 py-1 rounded">Guardar</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative group">
+                            {renderMessageContent(msg)}
+                            {msg.attachment_type === 'bot_reply' && (
+                              <button
+                                onClick={() => startEditing(msg)}
+                                className={`absolute -top-3 -right-2 opacity-0 group-hover:opacity-100 transition-opacity border border-glass-border rounded p-1 shadow z-10 ${isMe ? 'bg-bg-primary text-text-secondary hover:text-accent' : 'bg-bg-secondary text-text-secondary hover:text-accent'}`}
+                                title="Editar mensaje de bot"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                              </button>
+                            )}
+                          </div>
+                        )}
+
                         <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-bg-primary/70' : 'text-text-muted'}`}>
                           <span>{formatTime(msg.created_at || new Date())}</span>
-                          {isMe &&
-                      <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-blue-500' : 'opacity-70'}`}>
+                          {isMe && (
+                            <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-blue-500' : 'opacity-70'}`}>
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                               </svg>
-                              {msg.read_at &&
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                              {msg.read_at && (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                                 </svg>
-                        }
+                              )}
                             </div>
-                      }
+                          )}
                         </div>
                       </div>
                     </div>

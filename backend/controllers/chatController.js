@@ -190,26 +190,95 @@ export const sendMessage = async (req, res, next) => {
       ]
     });
 
-      // Find all admins
-      const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
+    const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
 
-      // Emitir el evento al receptor a través de Sockets
-      if (io) {
-        // El receptor está en la sala con su propio ID
-        io.to(receiverId.toString()).emit('chat_message', populatedMessage);
-        // Emit to all admins so they can spy/reply
-        admins.forEach(admin => {
-          if (admin.id.toString() !== receiverId.toString() && admin.id.toString() !== userId.toString()) {
-            io.to(admin.id.toString()).emit('chat_message', populatedMessage);
-          }
+    if (io) {
+      io.to(receiverId.toString()).emit('chat_message', populatedMessage);
+      admins.forEach(admin => {
+        if (admin.id.toString() !== receiverId.toString() && admin.id.toString() !== userId.toString()) {
+          io.to(admin.id.toString()).emit('chat_message', populatedMessage);
+        }
+      });
+    }
+
+    notifyUserIfNeeded(userId, receiverId, content.trim());
+
+    // --- LOGICA DEL BOT RESPONDEDOR ---
+    const requestor = await User.findByPk(userId);
+    if (requestor && requestor.role === 'trainee') {
+      const userMessageCount = await Message.count({ where: { sender_id: userId } });
+      if (userMessageCount === 1) {
+        // Es el primer mensaje que envía el usuario, crear respuesta automática del bot
+        const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+        const botMessage = await Message.create({
+          sender_id: receiverId, // Lo envía nominalmente el entrenador
+          receiver_id: userId,
+          content: botContent,
+          attachment_type: 'bot_reply'
         });
-      }
 
-      notifyUserIfNeeded(userId, receiverId, content.trim());
+        const populatedBotMessage = await Message.findByPk(botMessage.id, {
+          include: [
+            { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
+          ]
+        });
+
+        // Enviar por socket
+        if (io) {
+          io.to(userId.toString()).emit('chat_message', populatedBotMessage);
+          admins.forEach(admin => {
+            if (admin.id.toString() !== userId.toString()) {
+              io.to(admin.id.toString()).emit('chat_message', populatedBotMessage);
+            }
+          });
+        }
+
+        // Notificar al usuario (Push, Email, In-app) - como si fuera mensaje del trainer
+        notifyUserIfNeeded(receiverId, userId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
+      }
+    }
 
     res.status(201).json(populatedMessage);
   } catch (error) {
     console.error('Error al enviar mensaje:', error);
+    next(error);
+  }
+};
+
+export const editMessage = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const { messageId } = req.params;
+    const { content } = req.body;
+
+    const requestor = await User.findByPk(userId);
+    if (!requestor || (requestor.role !== 'admin' && requestor.role !== 'trainer')) {
+      return res.status(403).json({ message: 'No tienes permiso para editar mensajes.' });
+    }
+
+    const message = await Message.findByPk(messageId, {
+      include: [
+        { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
+      ]
+    });
+
+    if (!message) return res.status(404).json({ message: 'Mensaje no encontrado.' });
+
+    message.content = content.trim();
+    await message.save();
+
+    if (io) {
+      io.to(message.sender_id.toString()).emit('message_edited', message);
+      io.to(message.receiver_id.toString()).emit('message_edited', message);
+      const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
+      admins.forEach(admin => {
+        io.to(admin.id.toString()).emit('message_edited', message);
+      });
+    }
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error('Error al editar mensaje:', error);
     next(error);
   }
 };
@@ -524,7 +593,8 @@ const chatController = {
   getTrainerClientsChats,
   markMessagesAsRead,
   uploadAttachment,
-  getUnreadCount
+  getUnreadCount,
+  editMessage
 };
 
 export default chatController;
