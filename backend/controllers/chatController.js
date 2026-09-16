@@ -204,15 +204,18 @@ export const sendMessage = async (req, res, next) => {
     notifyUserIfNeeded(userId, receiverId, content.trim());
 
     // --- LOGICA DEL BOT RESPONDEDOR ---
+    console.log('[BOT] Checking bot reply for userId:', userId, 'content:', content.trim().substring(0, 50));
     const requestor = await User.findByPk(userId);
     if (requestor && requestor.role === 'trainee') {
       const isRequestInfoMessage = content.trim().toLowerCase().includes('sin compromiso');
+      console.log('[BOT] Is trainee:', true, 'isRequestInfoMessage:', isRequestInfoMessage);
       
       if (isRequestInfoMessage) {
         // Asegurar que solo se envíe una vez por usuario
         const hasReceivedBotReply = await Message.count({
           where: { receiver_id: userId, attachment_type: 'bot_reply' }
         });
+        console.log('[BOT] hasReceivedBotReply:', hasReceivedBotReply);
         
         if (hasReceivedBotReply === 0) {
           // Es la solicitud de información sin compromiso, crear respuesta automática del bot
@@ -223,6 +226,7 @@ export const sendMessage = async (req, res, next) => {
             content: botContent,
             attachment_type: 'bot_reply'
           });
+          console.log('[BOT] Bot message created with id:', botMessage.id);
 
           const populatedBotMessage = await Message.findByPk(botMessage.id, {
             include: [
@@ -244,6 +248,8 @@ export const sendMessage = async (req, res, next) => {
           notifyUserIfNeeded(receiverId, userId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
         }
       }
+    } else {
+      console.log('[BOT] Skipped: user is not trainee or not found. role:', requestor?.role);
     }
 
     res.status(201).json(populatedMessage);
@@ -602,6 +608,9 @@ export const runRetroactiveBotReplies = async () => {
       }
     });
 
+    console.log('[BOT-RETRO] Found', requestMessages.length, 'messages with "sin compromiso"');
+
+    let sentCount = 0;
     for (const msg of requestMessages) {
       const senderId = msg.sender_id;
       const receiverId = msg.receiver_id;
@@ -614,38 +623,28 @@ export const runRetroactiveBotReplies = async () => {
       });
 
       if (hasBotReply === 0) {
-        const trainerReplies = await Message.count({
-          where: {
-            sender_id: receiverId,
-            receiver_id: senderId
-          }
+        const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+        
+        await Message.create({
+          sender_id: receiverId,
+          receiver_id: senderId,
+          content: botContent,
+          attachment_type: 'bot_reply'
         });
 
-        if (trainerReplies === 0) {
-          const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
-          
-          const botMessage = await Message.create({
-            sender_id: receiverId,
-            receiver_id: senderId,
-            content: botContent,
-            attachment_type: 'bot_reply'
-          });
-
-          // Notificar
-          await notifyUserIfNeeded(receiverId, senderId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
-          
-          if (io) {
-            const populatedBotMessage = await Message.findByPk(botMessage.id, {
-              include: [{ model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }]
-            });
-            io.to(senderId.toString()).emit('chat_message', populatedBotMessage);
-          }
+        // Notificar
+        await notifyUserIfNeeded(receiverId, senderId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
+        
+        if (io) {
+          io.to(senderId.toString()).emit('chat_message', { type: 'refresh' });
         }
+        sentCount++;
+        console.log('[BOT-RETRO] Sent bot reply to user', senderId);
       }
     }
-    console.log('Retroactive bot replies processed successfully.');
+    console.log('[BOT-RETRO] Completed. Sent', sentCount, 'retroactive bot replies.');
   } catch (error) {
-    console.error('Error running retroactive bot replies:', error);
+    console.error('[BOT-RETRO] Error running retroactive bot replies:', error);
   }
 };
 
