@@ -275,6 +275,22 @@ export default function TrainerChats({ onClose }) {
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatLastMessageDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Ayer';
+    } else {
+      return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: date.getFullYear() !== today.getFullYear() ? '2-digit' : undefined });
+    }
+  };
+
   const formatDateHeader = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -360,11 +376,11 @@ export default function TrainerChats({ onClose }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline mb-0.5">
                     <h3 className={`font-bold text-[15px] line-clamp-1 flex-1 ${client.unreadCount > 0 ? 'text-accent' : 'text-text-primary'}`}>{client.name}</h3>
-                    {client.lastMessage &&
-                    <span className="text-[10px] text-text-muted shrink-0 ml-2">
-                        {formatTime(client.lastMessage.created_at)}
-                      </span>
-                    }
+                      {client.lastMessage &&
+                      <span className="text-[10px] text-text-muted shrink-0 ml-2">
+                        {formatLastMessageDate(client.lastMessage.created_at)}
+                        </span>
+                      }
                   </div>
                     <div className="flex items-center justify-between gap-2">
                       <p className={`text-[13px] line-clamp-2 flex-1 ${client.unreadCount > 0 ? 'font-bold text-text-primary' : 'text-text-secondary'}`}>
