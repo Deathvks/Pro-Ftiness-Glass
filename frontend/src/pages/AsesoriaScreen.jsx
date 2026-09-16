@@ -183,6 +183,22 @@ export default function AsesoriaScreen({ onBack }) {
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatDateHeader = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Hoy';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Ayer';
+    } else {
+      return date.toLocaleDateString([], { day: 'numeric', month: 'long', year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
+    }
+  };
+
   const userProfile = useAppStore(state => state.userProfile);
   const isTrainee = userProfile?.role === 'trainee' || userProfile?.role === 'trainer' || userProfile?.role === 'admin';
   
@@ -332,8 +348,17 @@ export default function AsesoriaScreen({ onBack }) {
         ) : (
           messages.map((msg, index) => {
             const isMe = String(msg.sender_id) === String(userId);
+            const showDate = index === 0 || new Date(msg.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
             return (
-              <div key={msg.id || index} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
+              <React.Fragment key={msg.id || index}>
+                {showDate && (
+                  <div className="flex justify-center my-4">
+                    <span className="px-3 py-1 bg-black/20 dark:bg-white/10 rounded-[12px] text-[10px] font-bold text-text-secondary uppercase tracking-wider backdrop-blur-sm shadow-sm border border-glass-border">
+                      {formatDateHeader(msg.created_at)}
+                    </span>
+                  </div>
+                )}
+                <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'}`}>
                   {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
                     <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
@@ -370,6 +395,7 @@ export default function AsesoriaScreen({ onBack }) {
                   </div>
                 </div>
               </div>
+              </React.Fragment>
             );
           })
         )}
