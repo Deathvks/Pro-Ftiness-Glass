@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserCircleIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline';
 import apiClient from '../services/apiClient';
-import { getSocket } from '../services/socket';
+import { initSocket } from '../services/socket';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
 
@@ -46,7 +46,7 @@ export default function TrainerChats({ onClose }) {
   useEffect(() => {
     fetchClients();
 
-    const socket = getSocket();
+    const socket = initSocket();
     if (socket) {
       socket.on('chat_message', handleIncomingMessage);
       socket.on('messages_read', handleMessagesRead);
@@ -144,6 +144,7 @@ export default function TrainerChats({ onClose }) {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [activeMessageOptions, setActiveMessageOptions] = useState(null);
+  const [fullscreenVideo, setFullscreenVideo] = useState(null);
   const longPressRef = useRef(null);
 
   const handlePressStart = (msg) => {
@@ -181,7 +182,7 @@ export default function TrainerChats({ onClose }) {
   };
 
   useEffect(() => {
-    const socket = getSocket();
+    const socket = initSocket();
     if (socket) {
       socket.on('message_edited', handleMessageEdited);
     }
@@ -566,12 +567,17 @@ export default function TrainerChats({ onClose }) {
                               src={msg.attachment_url}
                               controls
                               className="max-w-full h-auto max-h-[300px] rounded-xl" />
+                            <button
+                              onClick={() => setFullscreenVideo(msg.attachment_url)}
+                              className="text-[11px] w-full block text-center py-1 mt-1 font-bold underline opacity-80 hover:opacity-100">
+                              Abrir vídeo en pantalla completa
+                            </button>
                             <a
                               href={msg.attachment_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[11px] block text-center py-1 mt-1 font-bold underline opacity-80 hover:opacity-100">
-                              Abrir vídeo en pantalla completa
+                              className="text-[11px] w-full block text-center py-1 mt-1 font-bold underline opacity-80 hover:opacity-100 text-blue-400">
+                              Ver archivo en la nube
                             </a>
                           </div>
                         ) : null}
@@ -709,6 +715,26 @@ export default function TrainerChats({ onClose }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Modal de Video Fullscreen */}
+      {fullscreenVideo && (
+        <div className="fixed inset-0 z-[1000] bg-black flex flex-col items-center justify-center animate-fade-in">
+          <div className="absolute top-0 left-0 right-0 p-4 z-10 bg-gradient-to-b from-black/80 to-transparent" style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 24px) + 12px)' }}>
+            <button 
+              onClick={() => setFullscreenVideo(null)}
+              className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 backdrop-blur-md transition-colors"
+            >
+              <ChevronLeftIcon className="w-6 h-6" />
+            </button>
+          </div>
+          <video 
+            src={fullscreenVideo} 
+            controls 
+            autoPlay 
+            className="w-full max-h-full object-contain"
+          />
         </div>
       )}
 

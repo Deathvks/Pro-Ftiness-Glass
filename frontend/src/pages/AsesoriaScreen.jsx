@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeftIcon, PaperAirplaneIcon, UserCircleIcon, CheckIcon, PaperClipIcon, VideoCameraIcon, ChatBubbleLeftRightIcon, ClipboardDocumentListIcon, SparklesIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
-import { getSocket } from '../services/socket';
+import { initSocket } from '../services/socket';
 import useAppStore from '../store/useAppStore';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'; 
@@ -21,6 +21,7 @@ export default function AsesoriaScreen({ onBack }) {
   const [trainer, setTrainer] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [fullscreenVideo, setFullscreenVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -31,7 +32,7 @@ export default function AsesoriaScreen({ onBack }) {
   useEffect(() => {
     fetchData();
     
-    const socket = getSocket();
+    const socket = initSocket();
     if (socket) {
       socket.on('chat_message', handleNewMessage);
       socket.on('messages_read', handleMessagesRead);
@@ -434,23 +435,21 @@ export default function AsesoriaScreen({ onBack }) {
                           Coordinador
                         </div>
                       )}
-                      {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
-                        <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
-                          <video 
-                            src={msg.attachment_url} 
-                            controls 
-                            className="max-w-full h-auto max-h-[300px] rounded-xl"
-                          />
-                          <a 
-                            href={msg.attachment_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-[10px] text-center block mt-1 text-accent underline"
-                          >
-                            Abrir vídeo en pantalla completa
-                          </a>
-                        </div>
-                      ) : null}
+                        {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
+                          <div className="mb-2">
+                            <video 
+                              src={msg.attachment_url} 
+                              controls 
+                              className="w-full max-h-[200px] rounded-lg bg-black/10"
+                            />
+                            <button
+                              onClick={() => setFullscreenVideo(msg.attachment_url)}
+                              className="text-[10px] w-full text-center block mt-1 text-accent underline"
+                            >
+                              Abrir vídeo en pantalla completa
+                            </button>
+                          </div>
+                        ) : null}
                       {renderMessageContent(msg)}
                       <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-bg-primary/70' : 'text-text-muted'}`}>
                         <span>{formatTime(msg.created_at || new Date())}</span>
@@ -531,6 +530,26 @@ export default function AsesoriaScreen({ onBack }) {
             <PaperAirplaneIcon className="w-5 h-5 -ml-0.5" />
           </button>
         </form>
+        </div>
+      )}
+
+      {/* Modal de Video Fullscreen */}
+      {fullscreenVideo && (
+        <div className="fixed inset-0 z-[1000] bg-black flex flex-col items-center justify-center animate-fade-in">
+          <div className="absolute top-0 left-0 right-0 p-4 z-10 bg-gradient-to-b from-black/80 to-transparent" style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 24px) + 12px)' }}>
+            <button 
+              onClick={() => setFullscreenVideo(null)}
+              className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 backdrop-blur-md transition-colors"
+            >
+              <ChevronLeftIcon className="w-6 h-6" />
+            </button>
+          </div>
+          <video 
+            src={fullscreenVideo} 
+            controls 
+            autoPlay 
+            className="w-full max-h-full object-contain"
+          />
         </div>
       )}
     </div>
