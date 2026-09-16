@@ -119,6 +119,7 @@ const TourGuide = () => {
       ],
       onDestroyed: () => {
         completeTour();
+        useAppStore.getState().setTourActive(false);
       }
     });
 
@@ -131,8 +132,8 @@ const TourGuide = () => {
     
       const state = useAppStore.getState();
 
-      // 1. Prioridad: Esperar a que se resuelvan las cookies y el modal de bienvenida
-      if (state.cookieConsent === null || state.showWelcomeModal) {
+      // 1. Prioridad: Esperar a que se resuelvan las cookies y el modal de 2FA
+      if (state.cookieConsent === null || state.show2FAPromo) {
         timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
         return;
       }
@@ -151,10 +152,11 @@ const TourGuide = () => {
         timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
       } else {
         if (!hasStartedRef.current && driverRef.current) {
-                    hasStartedRef.current = true;
-                    localStorage.setItem('tourCompleted', 'true');
-                    driverRef.current.drive();
-                }
+            hasStartedRef.current = true;
+            localStorage.setItem('tourCompleted', 'true');
+            useAppStore.getState().setTourActive(true);
+            driverRef.current.drive();
+        }
       }
     };
 

@@ -124,7 +124,7 @@ const RoutineTourGuide = () => {
                 if (!hasStartedRef.current && driverRef.current) {
                     hasStartedRef.current = true;
                     localStorage.setItem('routineTourCompleted', 'true');
-                    driverRef.current.drive();
+                    useAppStore.getState().setTourActive(true); driverRef.current.drive();
                 }
             }
         };

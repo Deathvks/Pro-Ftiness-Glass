@@ -133,7 +133,7 @@ const NutritionTourGuide = () => {
       const state = useAppStore.getState();
 
       // 1. Prioridad: Esperar a que se resuelvan las cookies y el modal de bienvenida
-      if (state.cookieConsent === null || state.showWelcomeModal) {
+      if (state.cookieConsent === null || state.show2FAPromo) {
         timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
         return;
       }
@@ -160,7 +160,7 @@ const NutritionTourGuide = () => {
         if (!hasStartedRef.current && driverRef.current) {
           hasStartedRef.current = true;
           localStorage.setItem('nutritionTourCompleted', 'true');
-                    driverRef.current.drive();
+                    useAppStore.getState().setTourActive(true); driverRef.current.drive();
         }
       }
     };

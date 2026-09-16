@@ -76,7 +76,6 @@ export default function App() {
   const currentPath = location.pathname;
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [show2FAPromo, setShow2FAPromo] = useState(false);
   const [viewingMyStory, setViewingMyStory] = useState(false);
   const [visitedHub, setVisitedHub] = useState(true);
 
@@ -127,6 +126,9 @@ export default function App() {
     sessionExpired,
     cookieConsent,
     showWelcomeModal,
+    show2FAPromo,
+    setShow2FAPromo,
+    checkWelcomeModal,
   } = useAppStore(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
@@ -139,6 +141,9 @@ export default function App() {
     sessionExpired: state.sessionExpired,
     cookieConsent: state.cookieConsent,
     showWelcomeModal: state.showWelcomeModal,
+    show2FAPromo: state.show2FAPromo,
+    setShow2FAPromo: state.setShow2FAPromo,
+    checkWelcomeModal: state.checkWelcomeModal,
   }));
 
   useEffect(() => {
@@ -241,12 +246,9 @@ export default function App() {
       const hasSeenPromo = localStorage.getItem('has_seen_2fa_promo');
       const isAlreadyEnabled = userProfile?.twoFactorEnabled || userProfile?.isTwoFactorEnabled;
 
-      // EL ORDEN IMPORTA: El 2FA espera a que las cookies y el WelcomeModal hayan terminado
-      if (!hasSeenPromo && !isAlreadyEnabled && cookieConsent !== null && !showWelcomeModal) {
-        // Reducido a 500ms para que se monte ANTES de que los tutoriales (TourGuide, HubTourGuide) 
-        // empiecen a comprobar si hay modales abiertos a los 1500ms.
-        const timer = setTimeout(() => setShow2FAPromo(true), 500);
-        return () => clearTimeout(timer);
+      // EL ORDEN IMPORTA: El 2FA espera a que las cookies hayan terminado
+      if (!hasSeenPromo && !isAlreadyEnabled && cookieConsent !== null) {
+        setShow2FAPromo(true);
       }
     }
   }, [isAuthenticated, userProfile, isLoading, cookieConsent, showWelcomeModal]);
