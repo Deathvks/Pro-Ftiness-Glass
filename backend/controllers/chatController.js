@@ -573,14 +573,14 @@ export const getUnreadCount = async (req, res, next) => {
 
     if (requestor.role === 'admin') {
       const trainersAndAdmins = await models.User.findAll({
-        where: { role: { [models.Sequelize.Op.in]: ['admin', 'trainer'] } },
+        where: { role: { [Op.in]: ['admin', 'trainer'] } },
         attributes: ['id']
       });
       const trainerAdminIds = trainersAndAdmins.map(u => u.id);
 
       unreadCount = await models.Message.count({
         where: {
-          receiver_id: { [models.Sequelize.Op.in]: trainerAdminIds },
+          receiver_id: { [Op.in]: trainerAdminIds },
           read_at: null
         }
       });
