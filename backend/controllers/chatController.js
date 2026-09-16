@@ -3,8 +3,32 @@ import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { io } from '../server.js';
 import { uploadVideoToCloudinary } from '../services/cloudinaryService.js';
+import { sendChatReplyEmail } from '../services/emailService.js';
+import { createNotification } from '../services/notificationService.js';
 
 const { User, Message } = models;
+
+const notifyUserIfNeeded = async (senderId, receiverId, content) => {
+  try {
+    const sender = await User.findByPk(senderId);
+    const receiver = await User.findByPk(receiverId);
+
+    if (sender && receiver && (sender.role === 'trainer' || sender.role === 'admin')) {
+      // Enviar correo de notificación de respuesta (sin el contenido del mensaje)
+      sendChatReplyEmail(receiver.email, sender.name || sender.username).catch(e => console.error('Error enviando email:', e));
+
+      // Enviar notificación push (CON el contenido del mensaje)
+      createNotification(receiver.id, {
+        type: 'chat_message',
+        title: `Nuevo mensaje de ${sender.name || sender.username}`,
+        message: content,
+        data: { route: '/asesoria' }
+      }).catch(e => console.error('Error enviando push:', e));
+    }
+  } catch (error) {
+    console.error('Error en notifyUserIfNeeded:', error);
+  }
+};
 
 export const getTrainerInfo = async (req, res, next) => {
   try {
@@ -153,6 +177,8 @@ export const sendMessage = async (req, res, next) => {
           }
         });
       }
+
+      notifyUserIfNeeded(userId, receiverId, content.trim());
 
     res.status(201).json(populatedMessage);
   } catch (error) {
@@ -417,6 +443,8 @@ export const uploadAttachment = async (req, res, next) => {
         }
       });
     }
+
+    notifyUserIfNeeded(userId, receiverId, '📹 Vídeo enviado');
 
     res.status(201).json(populatedMessage);
   } catch (error) {
