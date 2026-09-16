@@ -10,7 +10,7 @@ import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CalorieInputModal from '../components/CalorieInputModal';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
-import ExerciseReplaceModal from './ExerciseReplaceModal';
+import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import WorkoutExerciseDetailModal from './WorkoutExerciseDetailModal';
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
@@ -45,7 +45,8 @@ const Workout = ({ timer, setView }) => {
         openRestModal,
         userProfile,
         fetchInitialData,
-        setExerciseReminder
+        setExerciseReminder,
+        replaceExercise
     } = useAppStore((state) => ({
         activeWorkout: state.activeWorkout,
         logWorkout: state.logWorkout,
@@ -60,7 +61,8 @@ const Workout = ({ timer, setView }) => {
         openRestModal: state.openRestModal,
         userProfile: state.userProfile,
         fetchInitialData: state.fetchInitialData,
-        setExerciseReminder: state.setExerciseReminder
+        setExerciseReminder: state.setExerciseReminder,
+        replaceExercise: state.replaceExercise
     }));
     
     // --- 2. Estado Local (Modales y Notas) ---
@@ -396,9 +398,17 @@ const Workout = ({ timer, setView }) => {
             )}
 
             {exerciseToReplace !== null && (
-                <ExerciseReplaceModal
-                    exerciseIndex={exerciseToReplace}
+                <ExerciseSearch
+                    isReplacing={true}
                     onClose={() => setExerciseToReplace(null)}
+                    onExerciseSelectForReplace={(ex) => {
+                        replaceExercise(exerciseToReplace, ex);
+                        setExerciseToReplace(null);
+                    }}
+                    onAddCustomExercise={(manualEx) => {
+                        replaceExercise(exerciseToReplace, manualEx);
+                        setExerciseToReplace(null);
+                    }}
                 />
             )}
 
