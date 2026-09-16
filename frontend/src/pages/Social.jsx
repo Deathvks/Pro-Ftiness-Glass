@@ -1181,54 +1181,60 @@ export default function Social({ setView }) {
 
             {/* Modal Crear Grupo */}
             {showCreateSquadModal && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
-                    <div className="absolute inset-0" onClick={() => setShowCreateSquadModal(false)} />
-                    <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary">
-                        <button onClick={() => setShowCreateSquadModal(false)} className="absolute top-6 right-6 p-2 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
-                        
-                        <div className="w-16 h-16 bg-accent/10 rounded-[20px] flex items-center justify-center mb-6 text-accent ring-2 ring-accent/30 mx-auto">
-                            <Shield size={32} />
-                        </div>
-                        
-                        <h3 className="text-2xl font-bold text-text-primary mb-6 text-center">Crear Grupo</h3>
-                        
-                        <form onSubmit={handleCreateSquad} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Nombre del Grupo</label>
-                                <input required type="text" maxLength={50} value={squadForm.name} onChange={e => setSquadForm({ ...squadForm, name: e.target.value })} className={baseInputClasses} placeholder="Escribe el nombre" />
+                <ModalPortal>
+                    <div className="fixed inset-0 z-[70] flex flex-col justify-end sm:justify-center items-center bg-black/60 backdrop-blur-md sm:p-4 animate-[fade-in_0.2s_ease-out]">
+                        <div className="absolute inset-0" onClick={() => setShowCreateSquadModal(false)} />
+                        <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.2s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none pb-[calc(max(env(safe-area-inset-bottom,0px),24px)+24px)] sm:pb-8 shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary">
+                            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
+                            <button onClick={() => setShowCreateSquadModal(false)} className="absolute top-6 right-6 p-2 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors hidden sm:block"><X size={20} /></button>
+                            
+                            <div className="w-16 h-16 bg-accent/10 rounded-[20px] flex items-center justify-center mb-6 text-accent ring-2 ring-accent/30 mx-auto">
+                                <Shield size={32} />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Descripción (Opcional)</label>
-                                <input type="text" maxLength={100} value={squadForm.description} onChange={e => setSquadForm({ ...squadForm, description: e.target.value })} className={baseInputClasses} placeholder="¿De qué trata este grupo?" />
-                            </div>
-                            <button type="submit" disabled={!squadForm.name.trim()} className="w-full bg-accent text-white font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Crear Grupo</button>
-                        </form>
-                    </GlassCard>
-                </div>
+                            
+                            <h3 className="text-2xl font-bold text-text-primary mb-6 text-center">Crear Grupo</h3>
+                            
+                            <form onSubmit={handleCreateSquad} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Nombre del Grupo</label>
+                                    <input required type="text" maxLength={50} value={squadForm.name} onChange={e => setSquadForm({ ...squadForm, name: e.target.value })} className={baseInputClasses} placeholder="Escribe el nombre" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Descripción (Opcional)</label>
+                                    <input type="text" maxLength={100} value={squadForm.description} onChange={e => setSquadForm({ ...squadForm, description: e.target.value })} className={baseInputClasses} placeholder="¿De qué trata este grupo?" />
+                                </div>
+                                <button type="submit" disabled={!squadForm.name.trim()} className="w-full bg-accent text-white font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Crear Grupo</button>
+                            </form>
+                        </GlassCard>
+                    </div>
+                </ModalPortal>
             )}
 
             {/* Modal Unirse a Grupo */}
             {showJoinSquadModal && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-[fade-in_0.2s_ease-out]">
-                    <div className="absolute inset-0" onClick={() => setShowJoinSquadModal(false)} />
-                    <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary">
-                        <button onClick={() => setShowJoinSquadModal(false)} className="absolute top-6 right-6 p-2 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
-                        
-                        <div className="w-16 h-16 bg-accent/10 rounded-[20px] flex items-center justify-center mb-6 text-accent ring-2 ring-accent/30 mx-auto">
-                            <Hash size={32} />
-                        </div>
-
-                        <h3 className="text-2xl font-bold text-text-primary mb-6 text-center">Unirse a un Grupo</h3>
-                        
-                        <form onSubmit={handleJoinSquad} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Código de Invitación</label>
-                                <input required type="text" placeholder="Ej: A1B2C3D4" value={squadForm.invite_code} onChange={e => setSquadForm({ ...squadForm, invite_code: e.target.value.toUpperCase() })} className={`${baseInputClasses} font-mono uppercase tracking-widest text-center text-lg`} />
+                <ModalPortal>
+                    <div className="fixed inset-0 z-[70] flex flex-col justify-end sm:justify-center items-center bg-black/60 backdrop-blur-md sm:p-4 animate-[fade-in_0.2s_ease-out]">
+                        <div className="absolute inset-0" onClick={() => setShowJoinSquadModal(false)} />
+                        <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.2s_ease-out] rounded-t-[32px] sm:rounded-[32px] rounded-b-none pb-[calc(max(env(safe-area-inset-bottom,0px),24px)+24px)] sm:pb-8 shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10 bg-bg-primary">
+                            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
+                            <button onClick={() => setShowJoinSquadModal(false)} className="absolute top-6 right-6 p-2 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors hidden sm:block"><X size={20} /></button>
+                            
+                            <div className="w-16 h-16 bg-accent/10 rounded-[20px] flex items-center justify-center mb-6 text-accent ring-2 ring-accent/30 mx-auto">
+                                <Hash size={32} />
                             </div>
-                            <button type="submit" disabled={!squadForm.invite_code.trim()} className="w-full bg-accent text-white font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Unirse</button>
-                        </form>
-                    </GlassCard>
-                </div>
+
+                            <h3 className="text-2xl font-bold text-text-primary mb-6 text-center">Unirse a un Grupo</h3>
+                            
+                            <form onSubmit={handleJoinSquad} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Código de Invitación</label>
+                                    <input required type="text" placeholder="Ej: A1B2C3D4" value={squadForm.invite_code} onChange={e => setSquadForm({ ...squadForm, invite_code: e.target.value.toUpperCase() })} className={`${baseInputClasses} font-mono uppercase tracking-widest text-center text-lg`} />
+                                </div>
+                                <button type="submit" disabled={!squadForm.invite_code.trim()} className="w-full bg-accent text-white font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Unirse</button>
+                            </form>
+                        </GlassCard>
+                    </div>
+                </ModalPortal>
             )}
 
             {/* --- Header --- */}
