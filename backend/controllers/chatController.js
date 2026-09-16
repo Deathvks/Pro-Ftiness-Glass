@@ -206,35 +206,43 @@ export const sendMessage = async (req, res, next) => {
     // --- LOGICA DEL BOT RESPONDEDOR ---
     const requestor = await User.findByPk(userId);
     if (requestor && requestor.role === 'trainee') {
-      const userMessageCount = await Message.count({ where: { sender_id: userId } });
-      if (userMessageCount === 1) {
-        // Es el primer mensaje que envía el usuario, crear respuesta automática del bot
-        const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
-        const botMessage = await Message.create({
-          sender_id: receiverId, // Lo envía nominalmente el entrenador
-          receiver_id: userId,
-          content: botContent,
-          attachment_type: 'bot_reply'
+      const isRequestInfoMessage = content.trim().toLowerCase().includes('sin compromiso');
+      
+      if (isRequestInfoMessage) {
+        // Asegurar que solo se envíe una vez por usuario
+        const hasReceivedBotReply = await Message.count({
+          where: { receiver_id: userId, attachment_type: 'bot_reply' }
         });
-
-        const populatedBotMessage = await Message.findByPk(botMessage.id, {
-          include: [
-            { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
-          ]
-        });
-
-        // Enviar por socket
-        if (io) {
-          io.to(userId.toString()).emit('chat_message', populatedBotMessage);
-          admins.forEach(admin => {
-            if (admin.id.toString() !== userId.toString()) {
-              io.to(admin.id.toString()).emit('chat_message', populatedBotMessage);
-            }
+        
+        if (hasReceivedBotReply === 0) {
+          // Es la solicitud de información sin compromiso, crear respuesta automática del bot
+          const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+          const botMessage = await Message.create({
+            sender_id: receiverId, // Lo envía nominalmente el entrenador
+            receiver_id: userId,
+            content: botContent,
+            attachment_type: 'bot_reply'
           });
-        }
 
-        // Notificar al usuario (Push, Email, In-app) - como si fuera mensaje del trainer
-        notifyUserIfNeeded(receiverId, userId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
+          const populatedBotMessage = await Message.findByPk(botMessage.id, {
+            include: [
+              { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
+            ]
+          });
+
+          // Enviar por socket
+          if (io) {
+            io.to(userId.toString()).emit('chat_message', populatedBotMessage);
+            admins.forEach(admin => {
+              if (admin.id.toString() !== userId.toString()) {
+                io.to(admin.id.toString()).emit('chat_message', populatedBotMessage);
+              }
+            });
+          }
+
+          // Notificar al usuario (Push, Email, In-app) - como si fuera mensaje del trainer
+          notifyUserIfNeeded(receiverId, userId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
+        }
       }
     }
 
@@ -586,6 +594,61 @@ export const getUnreadCount = async (req, res, next) => {
   }
 };
 
+export const runRetroactiveBotReplies = async () => {
+  try {
+    const requestMessages = await Message.findAll({
+      where: {
+        content: { [Op.like]: '%sin compromiso%' }
+      }
+    });
+
+    for (const msg of requestMessages) {
+      const senderId = msg.sender_id;
+      const receiverId = msg.receiver_id;
+
+      const hasBotReply = await Message.count({
+        where: {
+          receiver_id: senderId,
+          attachment_type: 'bot_reply'
+        }
+      });
+
+      if (hasBotReply === 0) {
+        const trainerReplies = await Message.count({
+          where: {
+            sender_id: receiverId,
+            receiver_id: senderId
+          }
+        });
+
+        if (trainerReplies === 0) {
+          const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+          
+          const botMessage = await Message.create({
+            sender_id: receiverId,
+            receiver_id: senderId,
+            content: botContent,
+            attachment_type: 'bot_reply'
+          });
+
+          // Notificar
+          await notifyUserIfNeeded(receiverId, senderId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
+          
+          if (io) {
+            const populatedBotMessage = await Message.findByPk(botMessage.id, {
+              include: [{ model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }]
+            });
+            io.to(senderId.toString()).emit('chat_message', populatedBotMessage);
+          }
+        }
+      }
+    }
+    console.log('Retroactive bot replies processed successfully.');
+  } catch (error) {
+    console.error('Error running retroactive bot replies:', error);
+  }
+};
+
 const chatController = {
   getTrainerInfo,
   getChatHistory,
@@ -594,7 +657,8 @@ const chatController = {
   markMessagesAsRead,
   uploadAttachment,
   getUnreadCount,
-  editMessage
+  editMessage,
+  runRetroactiveBotReplies
 };
 
 export default chatController;
