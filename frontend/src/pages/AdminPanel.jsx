@@ -481,7 +481,7 @@ const AdminPanel = ({ onCancel }) => {
         </div>
       </div>
 
-      <div className="flex overflow-x-auto hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-1">
+      <div className="flex overflow-x-auto sm:flex-wrap hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-1">
         <button
           onClick={() => setActiveTab('users')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'users'

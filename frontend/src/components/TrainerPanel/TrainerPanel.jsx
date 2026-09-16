@@ -295,7 +295,7 @@ export default function TrainerPanel({ setView }) {
         }
 
         {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar bg-bg-secondary p-2 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 border-none w-fit max-w-full mx-auto md:mx-0">
+        <div className="flex gap-2 overflow-x-auto sm:flex-wrap hide-scrollbar bg-bg-secondary p-2 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 border-none w-fit max-w-full mx-auto md:mx-0">
           <button
             onClick={() => setActiveTab('activos')}
             className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all ${activeTab === 'activos' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
