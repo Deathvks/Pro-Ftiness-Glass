@@ -67,15 +67,15 @@ export default function Hub({ setView }) {
       setVisitedChallenges(localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) === 'true');
       setVisitedAsesoria(localStorage.getItem(`visited_asesoria_${userProfile.id}`) === 'true');
       
+      apiClient('/chat/unread-count')
+        .then(res => setUnreadAdminChats(res.unreadCount || 0))
+        .catch(e => console.error(e));
+        
       if (!['trainer', 'admin'].includes(userProfile?.role)) {
         const hasSeen = localStorage.getItem(`coaching_promo_seen_v2_${userProfile.id}`);
         if (!hasSeen) {
           setShowCoachingPromo(true);
         }
-      } else {
-        apiClient('/chat/unread-count')
-          .then(res => setUnreadAdminChats(res.unreadCount || 0))
-          .catch(e => console.error(e));
       }
     }
   }, [userProfile?.id, userProfile?.role]);
@@ -127,18 +127,18 @@ export default function Hub({ setView }) {
           />
           
           {!['trainer', 'admin'].includes(userProfile?.role) && (
-            <HubButton 
-              id="hub-asesoria"
-              icon={ChatBubbleLeftRightIcon}
-              title="Asesoría"
-              description="Habla con tu entrenador"
-              onClick={() => {
-                localStorage.setItem(`visited_asesoria_${userProfile?.id}`, 'true');
-                setVisitedAsesoria(true);
-                setView('asesoria');
-              }}
-              badge={!visitedAsesoria}
-            />
+              <HubButton 
+                id="hub-asesoria"
+                icon={ChatBubbleLeftRightIcon}
+                title="Asesoría"
+                description="Habla con tu entrenador"
+                onClick={() => {
+                  localStorage.setItem(`visited_asesoria_${userProfile?.id}`, 'true');
+                  setVisitedAsesoria(true);
+                  setView('asesoria');
+                }}
+                badge={!visitedAsesoria || unreadAdminChats > 0}
+              />
           )}
 
           <HubButton 

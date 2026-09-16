@@ -70,6 +70,62 @@ export default function AsesoriaScreen({ onBack }) {
     ));
   };
 
+  const handleRequestPushPermission = async (e) => {
+    e.preventDefault();
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+      import('@capacitor/push-notifications').then(async ({ PushNotifications }) => {
+        const permStatus = await PushNotifications.checkPermissions();
+        if (permStatus.receive === 'granted') {
+          addToast('Ya tienes las notificaciones activadas.', 'success');
+        } else {
+          const req = await PushNotifications.requestPermissions();
+          if (req.receive === 'granted') {
+            addToast('Notificaciones activadas.', 'success');
+            PushNotifications.register();
+          } else {
+            addToast('Permiso denegado.', 'error');
+          }
+        }
+      });
+    } else {
+      if (!('Notification' in window)) {
+        addToast('Tu navegador no soporta notificaciones.', 'error');
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        addToast('Ya tienes las notificaciones activadas.', 'success');
+      } else {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          addToast('Notificaciones activadas.', 'success');
+        } else {
+          addToast('Permiso denegado.', 'error');
+        }
+      }
+    }
+  };
+
+  const renderMessageContent = (msg) => {
+    if (msg.attachment_type === 'bot_reply') {
+      const parts = msg.content.split('[notificaciones push]');
+      if (parts.length > 1) {
+        return (
+          <p className="text-[13px] sm:text-sm font-medium whitespace-pre-wrap">
+            {parts[0]}
+            <span 
+              onClick={handleRequestPushPermission}
+              className="text-accent underline cursor-pointer font-bold"
+            >
+              notificaciones push
+            </span>
+            {parts[1]}
+          </p>
+        );
+      }
+    }
+    return <p className="text-[13px] sm:text-sm font-medium whitespace-pre-wrap">{msg.content}</p>;
+  };
+
   const markAsRead = async (otherId) => {
     try {
       await apiClient(`/chat/mark-read/${otherId}`, { method: 'POST' });
@@ -358,43 +414,58 @@ export default function AsesoriaScreen({ onBack }) {
                     </span>
                   </div>
                 )}
-                <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'}`}>
-                  {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
-                    <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
-                      <video 
-                        src={msg.attachment_url} 
-                        controls 
-                        className="max-w-full h-auto max-h-[300px] rounded-xl"
-                      />
-                      <a 
-                        href={msg.attachment_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-[11px] block text-center py-1 mt-1 font-bold underline opacity-80 hover:opacity-100"
-                      >
-                        Abrir vídeo en pantalla completa
-                      </a>
-                    </div>
-                  ) : null}
-                  <p className="text-[13px] sm:text-sm font-medium whitespace-pre-wrap">{msg.content}</p>
-                  <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-bg-primary/70' : 'text-text-muted'}`}>
-                    <span>{formatTime(msg.created_at || new Date())}</span>
-                    {isMe && (
-                      <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-blue-500' : 'opacity-70'}`}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                        </svg>
-                        {msg.read_at && (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                          </svg>
-                        )}
+                  <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    {/* AVATAR DEL BOT (si es bot) */}
+                    {!isMe && msg.attachment_type === 'bot_reply' && (
+                      <div className="flex-shrink-0 mr-2 self-end mb-1">
+                        <img 
+                          src="https://api.dicebear.com/7.x/bottts/svg?seed=Coordinator&backgroundColor=4F46E5" 
+                          alt="Bot" 
+                          className="w-7 h-7 rounded-full bg-accent/20 border border-accent/40 shadow-sm"
+                        />
                       </div>
                     )}
+                    <div className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'}`}>
+                      {!isMe && msg.attachment_type === 'bot_reply' && (
+                        <div className="text-[11px] font-bold text-accent mb-1 flex items-center gap-1">
+                          Coordinador
+                        </div>
+                      )}
+                      {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
+                        <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
+                          <video 
+                            src={msg.attachment_url} 
+                            controls 
+                            className="max-w-full h-auto max-h-[300px] rounded-xl"
+                          />
+                          <a 
+                            href={msg.attachment_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-center block mt-1 text-accent underline"
+                          >
+                            Abrir vídeo en pantalla completa
+                          </a>
+                        </div>
+                      ) : null}
+                      {renderMessageContent(msg)}
+                      <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-bg-primary/70' : 'text-text-muted'}`}>
+                        <span>{formatTime(msg.created_at || new Date())}</span>
+                        {isMe && (
+                          <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-blue-500' : 'opacity-70'}`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                            {msg.read_at && (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                              </svg>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
               </React.Fragment>
             );
           })
