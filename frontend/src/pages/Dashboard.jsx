@@ -820,21 +820,21 @@ const Dashboard = ({ setView }) => {
             </div>
 
             {/* BOTON BIBLIOTECA EJERCICIOS */}
-            <button
+            <GlassCard
               onClick={() => setShowExerciseLibrary(true)}
-              className="mt-4 w-full flex items-center justify-between p-4 rounded-[24px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-glass-border group"
+              className="mt-4 w-full flex items-center justify-between p-5 rounded-[28px] transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-xl glass"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-[20px] bg-accent/10 flex items-center justify-center">
+              <div className="flex items-center gap-4 overflow-hidden">
+                <div className="w-12 h-12 rounded-[20px] bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0 transition-colors">
                   <ListFilter size={24} className="text-accent" />
                 </div>
-                <div className="text-left">
-                  <h3 className="font-bold text-sm text-text-primary">Biblioteca de Ejercicios</h3>
-                  <p className="text-[11px] text-text-secondary font-medium">Explorar y filtrar todos los ejercicios</p>
+                <div className="text-left min-w-0">
+                  <h3 className="font-bold text-base text-text-primary truncate">Biblioteca de Ejercicios</h3>
+                  <p className="text-xs text-text-secondary font-medium mt-0.5 truncate">Explorar y filtrar todos los ejercicios</p>
                 </div>
               </div>
-              <ChevronRight size={18} className="text-text-muted group-hover:text-accent transition-colors" />
-            </button>
+              <ChevronRight size={18} className="text-text-muted group-hover:text-accent transition-colors -mr-1" />
+            </GlassCard>
           </section>
 
           <section id="tour-weight">
