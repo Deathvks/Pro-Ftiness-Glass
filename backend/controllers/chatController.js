@@ -3,7 +3,7 @@ import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { io } from '../server.js';
 import { uploadVideoToCloudinary } from '../services/cloudinaryService.js';
-import { sendChatReplyEmail } from '../services/emailService.js';
+import { sendChatReplyEmail, sendNewClientMessageEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
 
 const { User, Message } = models;
@@ -13,17 +13,44 @@ const notifyUserIfNeeded = async (senderId, receiverId, content) => {
     const sender = await User.findByPk(senderId);
     const receiver = await User.findByPk(receiverId);
 
-    if (sender && receiver && (sender.role === 'trainer' || sender.role === 'admin')) {
+    if (!sender || !receiver) return;
+
+    if (sender.role === 'trainer' || sender.role === 'admin') {
       // Enviar correo de notificación de respuesta (sin el contenido del mensaje)
       sendChatReplyEmail(receiver.email, sender.name || sender.username).catch(e => console.error('Error enviando email:', e));
 
       // Enviar notificación push (CON el contenido del mensaje)
-        createNotification(receiver.id, {
-          type: 'chat_message',
-          title: `Nuevo mensaje de ${sender.name || sender.username}`,
-          message: content,
-          data: { url: '/asesoria' }
-        }).catch(e => console.error('Error enviando push:', e));
+      createNotification(receiver.id, {
+        type: 'chat_message',
+        title: `Nuevo mensaje de ${sender.name || sender.username}`,
+        message: content,
+        data: { url: '/asesoria' }
+      }).catch(e => console.error('Error enviando push:', e));
+    } else {
+      // Es un cliente escribiendo al entrenador o admin
+      sendNewClientMessageEmail(receiver.email, sender.name || sender.username).catch(e => console.error('Error enviando email:', e));
+      
+      createNotification(receiver.id, {
+        type: 'chat_message',
+        title: `Nuevo mensaje de cliente: ${sender.name || sender.username}`,
+        message: content,
+        data: { url: '/trainerPanel' }
+      }).catch(e => console.error('Error enviando push:', e));
+
+      // También notificamos a todos los admins
+      const admins = await User.findAll({ where: { role: 'admin' } });
+      admins.forEach(admin => {
+        if (admin.id.toString() !== receiver.id.toString()) { // Si el receptor no es ya este admin
+          sendNewClientMessageEmail(admin.email, sender.name || sender.username).catch(e => console.error('Error enviando email a admin:', e));
+          
+          createNotification(admin.id, {
+            type: 'chat_message',
+            title: `Mensaje de cliente: ${sender.name || sender.username}`,
+            message: content,
+            data: { url: '/trainerPanel' }
+          }).catch(e => console.error('Error enviando push a admin:', e));
+        }
+      });
     }
   } catch (error) {
     console.error('Error en notifyUserIfNeeded:', error);
