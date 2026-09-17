@@ -225,6 +225,14 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
 
   const headerHeight = 56 + insets.top;
   
+  const getYoutubeId = (url) => {
+    if (!url) return null;
+    if (url.includes('v=')) return url.split('v=')[1]?.split('&')[0];
+    if (url.includes('shorts/')) return url.split('shorts/')[1]?.split('?')[0];
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1]?.split('?')[0];
+    return null;
+  };
+  
   const scrollY = React.useRef(new Animated.Value(0)).current;
   useEffect(() => {
     scrollY.setValue(0);
@@ -315,13 +323,18 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
             scrollEventThrottle={16}
           >
               {playingVideo ? (
-                <WebView 
-                  source={{ uri: selectedExercise.video_url || `https://www.youtube.com/embed/${selectedExercise.youtube_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0` }} 
-                  style={{ width: '100%', height: 300, backgroundColor: colors.card }} 
-                  allowsInlineMediaPlayback={true}
-                mediaPlaybackRequiresUserAction={false}
-              />
-            ) : (
+                <View style={{ width: '100%', height: 300, backgroundColor: colors.card }} pointerEvents="none">
+                  <WebView 
+                    source={{ uri: (() => {
+                      const yid = selectedExercise.youtube_id || getYoutubeId(selectedExercise.video_url);
+                      return yid ? `https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0` : selectedExercise.video_url;
+                    })() }} 
+                    style={{ flex: 1, backgroundColor: colors.card }} 
+                    allowsInlineMediaPlayback={true}
+                    mediaPlaybackRequiresUserAction={false}
+                  />
+                </View>
+              ) : (
               <TouchableOpacity 
                 activeOpacity={0.8}
                 onPress={() => {

@@ -30,16 +30,29 @@ export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
     }
   }, [images.length, item.video_url, item.youtube_id]);
 
+  const getYoutubeId = (url) => {
+    if (!url) return null;
+    if (url.includes('v=')) return url.split('v=')[1]?.split('&')[0];
+    if (url.includes('shorts/')) return url.split('shorts/')[1]?.split('?')[0];
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1]?.split('?')[0];
+    return null;
+  };
+
   if (item.video_url || item.youtube_id) {
-    const uri = item.video_url || `https://www.youtube.com/embed/${item.youtube_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0`;
+    const yid = item.youtube_id || getYoutubeId(item.video_url);
+    const uri = yid 
+      ? `https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0` 
+      : item.video_url;
+      
     return (
-      <View style={{ width: "100%", height: "100%", backgroundColor: "#000" }}>
+      <View style={{ width: "100%", height: "100%", backgroundColor: "#000", pointerEvents: "none" }}>
         <WebView 
           source={{ uri }} 
           style={{ flex: 1, backgroundColor: "#000" }} 
           allowsInlineMediaPlayback={true}
-          mediaPlaybackRequiresUserAction={true}
+          mediaPlaybackRequiresUserAction={false}
           scrollEnabled={false}
+          pointerEvents="none"
         />
       </View>
     );
