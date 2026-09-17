@@ -15,6 +15,7 @@ import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
 import { CropModal } from '@/components/modals/CropModal';
 import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
 import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS } from '@/constants/exerciseOptions';
+import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
 
 export default function RoutineEditorScreen() {
   const router = useRouter();
@@ -306,12 +307,7 @@ export default function RoutineEditorScreen() {
                     }}>
                       {/* Media */}
                       <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
-                        <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                        {(item.video_url || item.youtube_id) && (
-                          <View style={{ position: 'absolute', inset: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-                            <PlayCircle size={48} color="#fff" />
-                          </View>
-                        )}
+                        <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} />
                       </View>
 
                       {/* Content */}

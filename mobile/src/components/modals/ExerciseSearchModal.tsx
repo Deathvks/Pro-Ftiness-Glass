@@ -61,13 +61,18 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
     }
   }, [visible]);
 
-  // Reset playing video and AI explanation when detail view changes
   useEffect(() => {
-    if (view !== 'detail') {
+    if (view === 'detail' && selectedExercise) {
+      if (selectedExercise.video_url || selectedExercise.youtube_id) {
+        setPlayingVideo(true);
+      } else {
+        setPlayingVideo(false);
+      }
+    } else {
       setPlayingVideo(false);
       setAiExplanation(null);
     }
-  }, [view]);
+  }, [view, selectedExercise]);
 
   const loadExercises = async () => {
     setIsLoading(true);
