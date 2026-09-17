@@ -120,10 +120,15 @@ const ExerciseSummaryView = ({
                 item.exercise.target ||
                 item.exercise.category ||
                 "Other";
-              const translatedMusclesList = rawMuscleGroup.split(",").map((m) =>
-                t(m.trim(), {
+              const muscleArray = Array.isArray(rawMuscleGroup)
+                ? rawMuscleGroup
+                : typeof rawMuscleGroup === "string"
+                ? rawMuscleGroup.split(",")
+                : ["Other"];
+              const translatedMusclesList = muscleArray.map((m) =>
+                t(String(m).trim(), {
                   ns: "exercise_muscles",
-                  defaultValue: m.trim(),
+                  defaultValue: String(m).trim(),
                 }),
               );
 

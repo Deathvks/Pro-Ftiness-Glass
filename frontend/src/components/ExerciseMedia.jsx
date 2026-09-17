@@ -170,15 +170,10 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const imageToRender = finalImageUrl || (finalImagesUrls.length > 0 ? finalImagesUrls[0] : youtubeThumbnail);
   
   if ((imageToRender || finalImagesUrls.length > 0) && !imageError) {
-    // Si es imagen de youtube, forzamos aspect-video para que encaje bien. 
-    // Si son imágenes normales, usamos aspect-auto para que adopte la forma real de la foto y el border-radius se aplique a los bordes de la foto.
     const isAuto = fitMode === 'auto' || forceAuto;
-    const aspectRatioClass = (!finalImageUrl && finalImagesUrls.length === 0 && imageToRender === youtubeThumbnail) 
-      ? 'aspect-video' 
-      : (isAuto ? 'w-full h-auto min-h-[200px] max-h-[70vh]' : 'w-full h-full');
+    const aspectRatioClass = isAuto ? 'w-full h-auto min-h-[200px] max-h-[70vh]' : 'w-full h-full';
     
-    // El contenedor tendrá un fondo sutil por si la imagen tarda en cargar o es transparente
-    const finalBgClass = 'bg-black/5 dark:bg-white/5';
+    const finalBgClass = fitMode === 'cover' ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5';
     const containerClasses = `${aspectRatioClass} relative rounded-[24px] overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
 
     // Lógica mágica para eliminar el fondo blanco de los dibujos de Wger

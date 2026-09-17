@@ -14,6 +14,7 @@ import { normalizeText } from "../../../utils/helpers";
 import { askTrainerAI } from "../../../services/aiService";
 import ExerciseMedia from "../../ExerciseMedia";
 import CustomSelect from "../../CustomSelect";
+import { useTranslation } from "react-i18next";
 
 const REP_OPTIONS = [
   { isHeader: true, label: "Repeticiones" },
@@ -71,7 +72,6 @@ const ExerciseDetailView = ({
   onBack,
   onAdd,
   isStaged,
-  t,
   isReplacing = false,
   isReadOnly = false,
 }) => {
@@ -79,6 +79,13 @@ const ExerciseDetailView = ({
   const [reps, setReps] = useState("8-12");
   const [rest, setRest] = useState(60);
   const { theme } = useAppTheme();
+  const { t } = useTranslation([
+    "exercise_names",
+    "exercise_muscles",
+    "exercise_equipment",
+    "exercise_descriptions",
+    "exercise_ui",
+  ]);
 
   // --- LOG PARA CAPTURAR LA CLAVE EXACTA DE CUALQUIER EJERCICIO ---
   useEffect(() => {
@@ -135,16 +142,11 @@ const ExerciseDetailView = ({
     defaultValue: exercise.name,
   });
 
-  const rawMuscleGroup =
-    exercise.muscle_group ||
-    exercise.muscles ||
-    exercise.target ||
-    exercise.category ||
-    "Other";
-  const translatedMuscle = rawMuscleGroup
-    .split(",")
+  const rawMuscleGroup = exercise.muscle_group || exercise.muscles || exercise.target || exercise.category || "Other";
+  const muscleArray = Array.isArray(rawMuscleGroup) ? rawMuscleGroup : (typeof rawMuscleGroup === 'string' ? rawMuscleGroup.split(",") : ["Other"]);
+  const translatedMuscle = muscleArray
     .map((m) => {
-      const trimmed = m.trim();
+      const trimmed = String(m).trim();
       return t(trimmed, {
         ns: "exercise_muscles",
         defaultValue: trimmed,
@@ -153,10 +155,10 @@ const ExerciseDetailView = ({
     .join(", ");
 
   const rawEquipment = exercise.equipment || "None";
-  const translatedEquipment = rawEquipment
-    .split(",")
+  const equipmentArray = Array.isArray(rawEquipment) ? rawEquipment : (typeof rawEquipment === 'string' ? rawEquipment.split(",") : ["None"]);
+  const translatedEquipment = equipmentArray
     .map((e) => {
-      const trimmed = e.trim();
+      const trimmed = String(e).trim();
       return t(trimmed, {
         ns: "exercise_equipment",
         defaultValue: trimmed,
@@ -406,9 +408,9 @@ const ExerciseDetailView = ({
                 {t("exercise_ui:rest_s", "Desc. (s)")}
               </label>
               <div>
-                <CustomSelect
-                  value={currentRest}
-                  onChange={(val) => setRest(Number(val))}
+                  <CustomSelect
+                    value={rest}
+                    onChange={(val) => setRest(Number(val))}
                   options={restOptionsToUse}
                   className="w-full bg-black/5 dark:bg-white/5 rounded-[16px] ring-1 ring-black/5 dark:ring-white/10"
                   triggerClassName={
