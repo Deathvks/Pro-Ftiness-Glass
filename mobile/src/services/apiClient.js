@@ -4,7 +4,12 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 const debuggerHost = Constants.expoConfig?.hostUri;
-const localhost = debuggerHost?.split(':')[0] || '192.168.1.100';
+let localhost = debuggerHost ? debuggerHost.split(':')[0] : '192.168.1.100';
+
+// Si estamos en un emulador/simulador, forzamos las IPs locales de loopback para evitar problemas de Firewall
+if (!Constants.isDevice) {
+  localhost = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+}
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${localhost}:3001/api`;
 
