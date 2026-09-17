@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, Image, Alert, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { X, Check, Image as ImageIcon, Folder, Info, ChevronDown, Plus, Camera, Search, Library, Sparkles, Upload, Save } from 'lucide-react-native';
+import { X, Check, Image as ImageIcon, Folder, Info, ChevronDown, Plus, Camera, Search, Library, Sparkles, Upload, Save, Trash2, GripVertical, PlayCircle } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
@@ -37,6 +37,20 @@ export default function RoutineEditorScreen() {
     const folders = routines.map((r: any) => r.folder).filter((f: string) => f && f.trim() !== '');
     return [...new Set(folders)].sort();
   }, [routines]);
+
+  const getImageUrl = (item: any) => {
+    if (item.image_url_start) return item.image_url_start;
+    if (item.image_url) return item.image_url;
+    if (item.images && Array.isArray(item.images) && item.images.length > 0) return item.images[0];
+    if (item.images && typeof item.images === 'string') {
+      try { const parsed = JSON.parse(item.images); if (parsed.length > 0) return parsed[0]; } catch(e) {}
+    }
+    return item.muscle_group_image_url || 'https://via.placeholder.com/400';
+  };
+
+  const removeExercise = (id: string) => {
+    setExercises(prev => prev.filter(ex => ex.id !== id));
+  };
 
   const handleImagePick = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -226,19 +240,80 @@ export default function RoutineEditorScreen() {
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <DraggableFlatList
-          data={exercises}
-          onDragEnd={({ data }) => setExercises(data)}
-          keyExtractor={(item) => item.id}
-          ListHeaderComponent={renderHeader}
-          ListFooterComponent={renderFooter}
-          renderItem={({ item, drag, isActive }) => (
-            <View style={{ padding: 16, backgroundColor: isActive ? colors.card : colors.background }}>
-              <Text style={{ color: colors.text }}>{item.name}</Text>
-            </View>
-          )}
-          contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: 40 }}
-        />
+          <DraggableFlatList
+            data={exercises}
+            onDragEnd={({ data }) => setExercises(data)}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={renderHeader}
+            ListFooterComponent={renderFooter}
+            renderItem={({ item, drag, isActive }) => {
+              const imgUrl = getImageUrl(item);
+              return (
+                <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+                  <View style={{ 
+                    flexDirection: 'column', 
+                    alignItems: 'stretch',
+                    backgroundColor: colors.card, 
+                    borderRadius: 16, 
+                    borderWidth: 1, 
+                    borderColor: isActive ? colors.tint : colors.border,
+                    overflow: 'hidden',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isActive ? 0.3 : 0.1,
+                    shadowRadius: 4,
+                    elevation: isActive ? 8 : 2
+                  }}>
+                    {/* Media */}
+                    <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
+                      <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      {(item.video_url || item.youtube_id) && (
+                        <View style={{ position: 'absolute', inset: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                          <PlayCircle size={48} color="#fff" />
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Content */}
+                    <View style={{ padding: 16 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, flex: 1, marginRight: 12 }} numberOfLines={2}>
+                          {item.name}
+                        </Text>
+                        <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}>
+                          <Trash2 size={20} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Info Pills */}
+                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                        <View style={{ backgroundColor: colors.background, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 'bold' }}>{item.sets} SERIES</Text>
+                        </View>
+                        <View style={{ backgroundColor: colors.background, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 'bold' }}>{item.reps} REPS</Text>
+                        </View>
+                        <View style={{ backgroundColor: colors.background, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 'bold' }}>{item.rest_seconds || 60}s DESC</Text>
+                        </View>
+                      </View>
+
+                      {/* Drag Handle */}
+                      <TouchableOpacity 
+                        onLongPress={drag} 
+                        disabled={isActive}
+                        style={{ marginTop: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}
+                      >
+                        <GripVertical size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                        <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 14 }}>Mantén para reordenar</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              );
+            }}
+            contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: 40 }}
+          />
       </KeyboardAvoidingView>
 
       <PixabayModal 
@@ -287,19 +362,13 @@ export default function RoutineEditorScreen() {
         visible={showExerciseSearch} 
         onClose={() => setShowExerciseSearch(false)}
         onAddExercises={(newExercises) => {
-          // newExercises is an array of { exercise, sets, reps, rest_seconds }
-          // We need to map them to the routine exercises format
           const mapped = newExercises.map(item => ({
+            ...item.exercise,
             id: Math.random().toString(36).substring(7),
             exercise_id: item.exercise.id,
-            name: item.exercise.name,
             sets: item.sets,
             reps: item.reps,
             rest_seconds: item.rest_seconds,
-            image_url_start: item.exercise.image_url_start,
-            image_url_end: item.exercise.image_url_end,
-            muscle_group: item.exercise.muscle_group,
-            muscle_group_image_url: item.exercise.muscle_group_image_url,
           }));
           setExercises(prev => [...prev, ...mapped]);
         }}
