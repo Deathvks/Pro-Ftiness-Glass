@@ -541,7 +541,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 56,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   iconButton: {
     width: 40,

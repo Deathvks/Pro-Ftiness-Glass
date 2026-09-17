@@ -406,7 +406,7 @@ export default function RoutineEditorScreen() {
             ListFooterComponent={renderFooter}
             renderItem={renderExerciseItem}
             contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: 40 }}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+            onScrollOffsetChange={(offset) => scrollY.setValue(offset)}
             scrollEventThrottle={16}
           />
       </KeyboardAvoidingView>
@@ -490,7 +490,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     zIndex: 10,
   },
   headerButton: {
