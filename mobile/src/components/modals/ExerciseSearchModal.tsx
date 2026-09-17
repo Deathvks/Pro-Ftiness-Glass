@@ -325,11 +325,14 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
               {playingVideo ? (
                 <View style={{ width: '100%', height: 300, backgroundColor: colors.card }} pointerEvents="none">
                   <WebView 
-                    source={{ uri: (() => {
-                      const yid = selectedExercise.youtube_id || getYoutubeId(selectedExercise.video_url);
-                      return yid ? `https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0` : selectedExercise.video_url;
-                    })() }} 
-                    style={{ flex: 1, backgroundColor: colors.card }} 
+                    source={{ 
+                      uri: (() => {
+                        const yid = selectedExercise.youtube_id || getYoutubeId(selectedExercise.video_url);
+                        return yid ? `https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&origin=https://www.youtube.com` : selectedExercise.video_url;
+                      })(),
+                      headers: { 'Referer': 'https://www.youtube.com/' }
+                    }} 
+                    style={{ flex: 1, backgroundColor: colors.card }}  
                     allowsInlineMediaPlayback={true}
                     mediaPlaybackRequiresUserAction={false}
                   />

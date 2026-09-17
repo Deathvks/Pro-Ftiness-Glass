@@ -41,13 +41,13 @@ export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
   if (item.video_url || item.youtube_id) {
     const yid = item.youtube_id || getYoutubeId(item.video_url);
     const uri = yid 
-      ? `https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0` 
+      ? `https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&origin=https://www.youtube.com` 
       : item.video_url;
       
     return (
       <View style={{ width: "100%", height: "100%", backgroundColor: "#000", pointerEvents: "none" }}>
         <WebView 
-          source={{ uri }} 
+          source={{ uri, headers: { 'Referer': 'https://www.youtube.com/' } }} 
           style={{ flex: 1, backgroundColor: "#000" }} 
           allowsInlineMediaPlayback={true}
           mediaPlaybackRequiresUserAction={false}
