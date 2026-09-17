@@ -31,7 +31,7 @@ export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
   }, [images.length, item.video_url, item.youtube_id]);
 
   if (item.video_url || item.youtube_id) {
-    const uri = item.video_url || `https://www.youtube.com/embed/${item.youtube_id}?autoplay=0&playsinline=1`;
+    const uri = item.video_url || `https://www.youtube.com/embed/${item.youtube_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0`;
     return (
       <View style={{ width: "100%", height: "100%", backgroundColor: "#000" }}>
         <WebView 

@@ -369,13 +369,24 @@ export default function RoutineEditorScreen() {
     );
   }, [colors, updateExerciseField, removeExercise]);
 
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const bgOpacity = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [0, 1],
+    extrapolate: 'clamp'
+  });
+
+  const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={[styles.mainHeader, { paddingTop: insets.top + 12, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0 }]}>
-        <BlurView intensity={100} tint={theme === 'light' ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
-        <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+          <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : 'default'} style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
+          <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
+        </Animated.View>
         
         <GlassButton theme={theme} onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
           <X size={20} color={colors.textSecondary} />
@@ -395,6 +406,8 @@ export default function RoutineEditorScreen() {
             ListFooterComponent={renderFooter}
             renderItem={renderExerciseItem}
             contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: 40 }}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+            scrollEventThrottle={16}
           />
       </KeyboardAvoidingView>
 

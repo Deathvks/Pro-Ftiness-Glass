@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image, Platform, Linking, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image, Platform, Linking, ScrollView, Animated } from 'react-native';
 import { useSafeAreaInsets as useSafeAreaInsetsNative } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { X, Search, Plus, Trash2, Check, ArrowLeft, Filter, Sparkles } from 'lucide-react-native';
@@ -224,6 +224,19 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
   };
 
   const headerHeight = 56 + insets.top;
+  
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    scrollY.setValue(0);
+  }, [view]);
+
+  const bgOpacity = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [0, 1],
+    extrapolate: 'clamp'
+  });
+
+  const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
@@ -231,9 +244,11 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
-          <BlurView intensity={100} tint={theme === 'light' ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
-          <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+            <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : 'default'} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
+            <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
+          </Animated.View>
 
           {view !== 'list' ? (
             <GlassButton theme={theme} onPress={() => setView('list')} style={styles.iconButton}>
@@ -265,12 +280,14 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
             {isLoading ? (
               <View style={[styles.centerContainer, { paddingTop: headerHeight }]}><ActivityIndicator size="large" color={colors.tint} /></View>
             ) : (
-              <FlatList
+              <Animated.FlatList
                 data={filteredExercises}
                 keyExtractor={(item) => item.id}
                 renderItem={renderExerciseItem}
                 contentContainerStyle={[styles.listContent, { paddingTop: headerHeight + 16 }]}
                 initialNumToRender={10}
+                onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+                scrollEventThrottle={16}
                 ListHeaderComponent={() => (
                   <View style={{ marginBottom: 16 }}>
                     <View style={[styles.searchInputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -291,12 +308,17 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         )}
 
         {view === 'detail' && selectedExercise && (
-          <ScrollView style={{ flex: 1, paddingTop: headerHeight }} contentContainerStyle={{ paddingBottom: 80 }}>
-            {playingVideo ? (
-              <WebView 
-                source={{ uri: selectedExercise.video_url || `https://www.youtube.com/embed/${selectedExercise.youtube_id}?autoplay=1&playsinline=1` }} 
-                style={{ width: '100%', height: 300, backgroundColor: colors.card }} 
-                allowsInlineMediaPlayback={true}
+          <Animated.ScrollView 
+            style={{ flex: 1, paddingTop: headerHeight }} 
+            contentContainerStyle={{ paddingBottom: 80 }}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+            scrollEventThrottle={16}
+          >
+              {playingVideo ? (
+                <WebView 
+                  source={{ uri: selectedExercise.video_url || `https://www.youtube.com/embed/${selectedExercise.youtube_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0` }} 
+                  style={{ width: '100%', height: 300, backgroundColor: colors.card }} 
+                  allowsInlineMediaPlayback={true}
                 mediaPlaybackRequiresUserAction={false}
               />
             ) : (
@@ -376,7 +398,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                 </Text>
               </GlassButton>
             </View>
-          </ScrollView>
+          </Animated.ScrollView>
         )}
 
         {view === 'summary' && (
@@ -386,10 +408,12 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                 <Text style={{ color: colors.textSecondary }}>El carrito está vacío.</Text>
               </View>
             ) : (
-              <FlatList
+              <Animated.FlatList
                 data={stagedExercises}
                 keyExtractor={(item) => item.exercise.id}
                 contentContainerStyle={[styles.listContent, { paddingTop: headerHeight + 16 }]}
+                onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+                scrollEventThrottle={16}
                 renderItem={({ item }) => {
                   const imageUrl = getImageUrl(item.exercise);
                   return (
