@@ -22,17 +22,8 @@ export default function AnimatedScreen({
     const theme = useAppStore(state => state.theme) || 'oled';
     const colors = Colors[theme] || Colors.oled;
 
-    const headerOpacity = scrollY.interpolate({
-        inputRange: [0, 120],
-        outputRange: [1, 0],
-        extrapolate: 'clamp',
-    });
-    
-    const headerTranslateY = scrollY.interpolate({
-        inputRange: [0, 120],
-        outputRange: [0, -20],
-        extrapolate: 'clamp',
-    });
+    const headerOpacity = 1;
+    const headerTranslateY = 0;
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -61,12 +52,11 @@ export default function AnimatedScreen({
                 top: 0, 
                 left: 0, 
                 right: 0, 
-                paddingTop: insets.top,
                 opacity: headerOpacity,
                 transform: [{ translateY: headerTranslateY }],
                 pointerEvents: 'box-none'
             }}>
-                {header}
+                {React.isValidElement(header) ? React.cloneElement(header as any, { scrollY }) : header}
             </Animated.View>
         </View>
     );

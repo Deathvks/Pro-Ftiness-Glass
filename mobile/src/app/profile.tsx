@@ -7,6 +7,7 @@ import { ChevronLeft, Camera, User, Mail, Shield, Save, Eye, Trophy, AlertTriang
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 import AnimatedScreen from '@/components/AnimatedScreen';
+import GlobalHeader from '@/components/GlobalHeader';
 
 const AnimatedGlassBackground = Animated.createAnimatedComponent(View);
 
@@ -159,15 +160,7 @@ export default function ProfileScreen() {
         }
     };
 
-    const headerContent = (
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
-            <GlassButton onPress={() => router.back()} theme={theme}>
-                <ChevronLeft size={24} color={colors.text} />
-            </GlassButton>
-            <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Perfil</Text>
-            <View style={{ width: 40 }} />
-        </View>
-    );
+    const headerContent = <GlobalHeader title="Perfil" showBackButton />;
 
     return (
         <AnimatedScreen header={headerContent} paddingHorizontal={24} paddingBottom={100}>

@@ -6,6 +6,7 @@ import { ChevronLeft, Info, CheckCircle, AlertTriangle, AlertCircle, UserPlus, U
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 import AnimatedScreen from '@/components/AnimatedScreen';
+import GlobalHeader from '@/components/GlobalHeader';
 
 export default function NotificationsScreen() {
     const router = useRouter();
@@ -58,22 +59,14 @@ export default function NotificationsScreen() {
         }
     };
 
-    const headerContent = (
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
-            <TouchableOpacity onPress={() => router.back()} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}>
-                <ChevronLeft size={24} color={colors.text} />
-            </TouchableOpacity>
-            <View style={{ width: 40 }} />
-        </View>
-    );
-
     const unreadCount = notifications.filter(n => !n.is_read).length;
+    const headerContent = <GlobalHeader title="Notificaciones" showBackButton hideRightButtons />;
 
     return (
         <AnimatedScreen header={headerContent}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, marginTop: 16 }}>
                 <View>
-                    <Text style={{ fontSize: 32, fontWeight: '900', color: colors.text }}>Notificaciones</Text>
+                    <Text style={{ fontSize: 32, fontWeight: '900', color: colors.text }}>Novedades</Text>
                     <Text style={{ fontSize: 16, color: colors.textSecondary, marginTop: 4 }}>
                         Tienes {unreadCount} sin leer
                     </Text>

@@ -1,0 +1,473 @@
+import React, { useState, useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, Image, Alert, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { X, Check, Image as ImageIcon, Folder, Info, ChevronDown, Plus, Camera, Search, Library, Sparkles, Upload, Save } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import * as ImagePicker from 'expo-image-picker';
+import useAppStore from '@/store/useAppStore';
+import { Colors } from '@/constants/theme';
+import { GlassButton } from '@/components/ui/GlassButton';
+import DraggableFlatList from 'react-native-draggable-flatlist';
+import { PixabayModal } from '@/components/modals/PixabayModal';
+import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
+
+import { CropModal } from '@/components/modals/CropModal';
+
+export default function RoutineEditorScreen() {
+  const router = useRouter();
+  const theme = useAppStore(state => state.theme);
+  const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const insets = useSafeAreaInsets();
+
+  // Form State
+  const [routineName, setRoutineName] = useState('');
+  const [description, setDescription] = useState('');
+  const [folder, setFolder] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [exercises, setExercises] = useState<any[]>([]);
+  const [showPixabay, setShowPixabay] = useState(false);
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
+  const [showExerciseSearch, setShowExerciseSearch] = useState(false);
+  const [cropImageUrl, setCropImageUrl] = useState<string | null>(null);
+
+  const routines = useAppStore(state => state.routines || []);
+  const uniqueFolders = useMemo(() => {
+    const folders = routines.map((r: any) => r.folder).filter((f: string) => f && f.trim() !== '');
+    return [...new Set(folders)].sort();
+  }, [routines]);
+
+  const handleImagePick = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setImageUrl(result.assets[0].uri);
+    }
+  };
+
+  const handleSave = () => {
+    router.back();
+  };
+
+
+
+  const renderHeader = () => {
+    const PREDEFINED_GRADIENTS = [
+      { colors: [colors.tint, colors.background], start: { x: 0, y: 0 }, end: { x: 1, y: 1 }, name: 'grad-1' },
+      { colors: [colors.card, colors.tint], start: { x: 0, y: 0 }, end: { x: 1, y: 1 }, name: 'grad-2' },
+      { colors: ['#000000', colors.tint], start: { x: 0, y: 1 }, end: { x: 1, y: 0 }, name: 'grad-3' },
+      { colors: ['rgba(255,255,255,0.1)', colors.tint + '50'], start: { x: 0, y: 0 }, end: { x: 1, y: 0 }, name: 'grad-4' },
+      { colors: [colors.tint, colors.tint], start: { x: 0, y: 0 }, end: { x: 1, y: 1 }, name: 'grad-5' }
+    ];
+
+    return (
+    <View style={styles.content}>
+      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Imagen de Portada</Text>
+      
+      <View style={{ alignItems: 'center', marginBottom: 24 }}>
+        {/* Cover Image Preview */}
+        <View style={[styles.imagePreviewContainer, { backgroundColor: colors.card, borderColor: colors.border, width: '60%', aspectRatio: 16/9, height: 'auto' }]}>
+          {imageUrl ? (
+            <>
+              {imageUrl.startsWith('grad-') ? (
+                <LinearGradient 
+                  colors={PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.colors || [colors.card, colors.tint]} 
+                  start={PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.start || {x: 0, y: 0}}
+                  end={PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.end || {x: 1, y: 1}}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} 
+                />
+              ) : (
+                <Image source={{ uri: imageUrl }} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+              )}
+              <TouchableOpacity
+                onPress={() => setImageUrl(null)}
+                style={{
+                  position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 16, padding: 6, zIndex: 10
+                }}
+              >
+                <X size={16} color="#fff" />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+              <ImageIcon size={32} color={colors.textSecondary} style={{ marginBottom: 8, opacity: 0.5 }} />
+              <Text style={{ color: colors.textSecondary, fontWeight: 'bold' }}>Sin imagen</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Image Actions */}
+        <View style={{ width: '100%', gap: 12, marginBottom: 24 }}>
+          <GlassButton theme={theme} colors={colors} onPress={handleImagePick} style={styles.actionBtn}>
+            <Upload size={18} color={colors.text} style={{ marginRight: 8 }} />
+            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Subir foto</Text>
+          </GlassButton>
+          
+          <GlassButton theme={theme} colors={colors} onPress={() => setShowPixabay(true)} style={styles.actionBtn}>
+            <Search size={18} color={colors.text} style={{ marginRight: 8 }} />
+            <Text style={{ color: colors.text, fontWeight: 'bold' }}>Buscar en Pixabay</Text>
+          </GlassButton>
+        </View>
+
+        {/* Predefined Colors */}
+        <Text style={[styles.sectionLabelSmall, { color: colors.textSecondary }]}>O ELIGE UN ESTILO DE COLOR</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, width: '100%' }}>
+          {PREDEFINED_GRADIENTS.map((grad, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => setImageUrl(grad.name)}
+              style={[styles.colorSwatch, { borderWidth: imageUrl === grad.name ? 3 : 0, borderColor: colors.tint, marginRight: 0 }]}
+            >
+              <LinearGradient colors={grad.colors} start={grad.start} end={grad.end} style={[StyleSheet.absoluteFill, { borderRadius: 12 }]} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Inputs */}
+      <View style={styles.row}>
+        <TextInput
+          style={[styles.input, styles.flex2, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}
+          placeholder="Nombre de la rutina..."
+          placeholderTextColor={colors.textSecondary}
+          value={routineName}
+          onChangeText={setRoutineName}
+        />
+      </View>
+
+      <View style={styles.row}>
+        <TouchableOpacity 
+          style={[styles.input, styles.flex1, { backgroundColor: colors.card, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' }]}
+          onPress={() => setShowFolderPicker(true)}
+        >
+          <Folder size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+          <Text style={{ flex: 1, color: folder ? colors.text : colors.textSecondary }}>{folder || 'Carpeta (Opcional)'}</Text>
+          <ChevronDown size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      <TextInput
+        style={[styles.input, styles.textArea, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}
+        placeholder="Descripción (opcional)..."
+        placeholderTextColor={colors.textSecondary}
+        value={description}
+        onChangeText={setDescription}
+        multiline
+        numberOfLines={3}
+        textAlignVertical="top"
+      />
+
+      <View style={styles.exercisesHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Ejercicios ({exercises.length})</Text>
+      </View>
+    </View>
+    );
+  };
+
+  const renderFooter = () => (
+    <View style={styles.footer}>
+      {exercises.length === 0 && (
+        <View style={[styles.emptyExercises, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 24 }]}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
+            Aún no has añadido ningún ejercicio.
+          </Text>
+        </View>
+      )}
+
+      <View style={{ gap: 12, width: '100%' }}>
+        {/* AI Analizer */}
+        <GlassButton theme={theme} colors={colors} onPress={() => Alert.alert('IA', 'Próximamente')} style={styles.aiButton}>
+          <Sparkles size={20} color={colors.text} />
+          <Text style={[styles.aiButtonText, { color: colors.text }]}>Analizar Rutina con IA</Text>
+        </GlassButton>
+
+        {/* Add from Library */}
+        <GlassButton theme={theme} colors={colors} onPress={() => setShowExerciseSearch(true)} style={styles.libraryBtn}>
+          <Library size={20} color={colors.text} style={{ marginRight: 8 }} />
+          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>Añadir desde Biblioteca</Text>
+        </GlassButton>
+        
+        {/* Add Manual */}
+        <GlassButton theme={theme} colors={colors} onPress={() => {}} style={styles.manualBtn}>
+          <Plus size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+          <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 16 }}>Añadir Ejercicio Manual</Text>
+        </GlassButton>
+
+        {/* Save */}
+        <GlassButton theme={theme} colors={colors} onPress={handleSave} style={[styles.libraryBtn, { marginTop: 12 }]}>
+          <Save size={20} color={colors.text} style={{ marginRight: 8 }} />
+          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>Crear Rutina</Text>
+        </GlassButton>
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Header */}
+      <View style={[styles.mainHeader, { paddingTop: insets.top + 12, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0 }]}>
+        <BlurView intensity={100} tint={theme === 'light' ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
+        <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
+        
+        <GlassButton theme={theme} onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
+          <X size={20} color={colors.textSecondary} />
+        </GlassButton>
+        
+        <Text style={[styles.headerTitle, { color: colors.text, flex: 1, textAlign: 'center' }]}>Crear Nueva Rutina</Text>
+        
+        <View style={{ width: 40 }} />
+      </View>
+
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <DraggableFlatList
+          data={exercises}
+          onDragEnd={({ data }) => setExercises(data)}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
+          renderItem={({ item, drag, isActive }) => (
+            <View style={{ padding: 16, backgroundColor: isActive ? colors.card : colors.background }}>
+              <Text style={{ color: colors.text }}>{item.name}</Text>
+            </View>
+          )}
+          contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: 40 }}
+        />
+      </KeyboardAvoidingView>
+
+      <PixabayModal 
+        visible={showPixabay} 
+        onClose={() => setShowPixabay(false)} 
+        onSelectImage={(url) => { setCropImageUrl(url); setShowPixabay(false); }} 
+      />
+
+      <CropModal
+        visible={!!cropImageUrl}
+        imageUrl={cropImageUrl}
+        onClose={() => setCropImageUrl(null)}
+        onCrop={(url: string) => { setImageUrl(url); setCropImageUrl(null); }}
+      />
+
+      <Modal visible={showFolderPicker} transparent animationType="fade">
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 }} onPress={() => setShowFolderPicker(false)}>
+          <TouchableOpacity activeOpacity={1} style={{ backgroundColor: colors.card, borderRadius: 16, padding: 16, borderColor: colors.border, borderWidth: 1 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 16 }}>Seleccionar Carpeta</Text>
+            
+            <TouchableOpacity style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }} onPress={() => { setFolder(''); setShowFolderPicker(false); }}>
+              <Text style={{ color: colors.error || '#ef4444', fontSize: 16, fontWeight: 'bold' }}>✕ Ninguna (Quitar)</Text>
+            </TouchableOpacity>
+
+            {uniqueFolders.length > 0 ? (
+              uniqueFolders.map((f, i) => (
+                <TouchableOpacity key={i} style={{ paddingVertical: 12, borderBottomWidth: i === uniqueFolders.length -1 ? 0 : 1, borderBottomColor: colors.border }} onPress={() => { setFolder(f as string); setShowFolderPicker(false); }}>
+                  <Text style={{ color: colors.text, fontSize: 16 }}>{f as string}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={{ color: colors.textSecondary }}>No tienes carpetas creadas aún.</Text>
+            )}
+            <TouchableOpacity style={{ marginTop: 16, paddingVertical: 12, backgroundColor: colors.tint, borderRadius: 12, alignItems: 'center' }} onPress={() => {
+              Alert.prompt('Nueva Carpeta', 'Introduce el nombre:', (text) => {
+                if (text) { setFolder(text); setShowFolderPicker(false); }
+              });
+            }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>+ Crear Nueva Carpeta</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      <ExerciseSearchModal 
+        visible={showExerciseSearch} 
+        onClose={() => setShowExerciseSearch(false)}
+        onAddExercises={(newExercises) => {
+          // newExercises is an array of { exercise, sets, reps, rest_seconds }
+          // We need to map them to the routine exercises format
+          const mapped = newExercises.map(item => ({
+            id: Math.random().toString(36).substring(7),
+            exercise_id: item.exercise.id,
+            name: item.exercise.name,
+            sets: item.sets,
+            reps: item.reps,
+            rest_seconds: item.rest_seconds,
+            image_url_start: item.exercise.image_url_start,
+            image_url_end: item.exercise.image_url_end,
+            muscle_group: item.exercise.muscle_group,
+            muscle_group_image_url: item.exercise.muscle_group_image_url,
+          }));
+          setExercises(prev => [...prev, ...mapped]);
+        }}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  mainHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 10,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  saveButtonText: {
+    fontWeight: 'bold',
+  },
+  content: {
+    padding: 16,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  imageUpload: {
+    height: 180,
+    borderWidth: 1.5,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  flex1: { flex: 1 },
+  flex2: { flex: 2 },
+  input: {
+    height: 54,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  textArea: {
+    height: 100,
+    paddingTop: 16,
+    marginBottom: 32,
+  },
+  exercisesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  footer: {
+    paddingHorizontal: 16,
+  },
+  emptyExercises: {
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  imagePreviewContainer: {
+    height: 140,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    width: '100%',
+    height: 'auto',
+  },
+  sectionLabelSmall: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    marginLeft: 4,
+    letterSpacing: 1,
+  },
+  colorSwatch: {
+    width: 60,
+    height: 40,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+    width: '100%',
+    height: 'auto',
+  },
+  aiButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  libraryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+    width: '100%',
+    height: 'auto',
+  },
+  manualBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    width: '100%',
+    height: 'auto',
+  }
+});
