@@ -129,6 +129,7 @@ export default function RoutineEditorScreen() {
         is_trainer_template: false,
         exercises: exercises.map((ex: any, index: number) => ({
           exercise_id: ex.exercise_id || ex.id,
+          name: ex.is_manual ? ex.name : undefined,
           sets: parseInt(String(ex.sets), 10) || 3,
           reps: String(ex.reps),
           rest_seconds: parseInt(String(ex.rest_seconds), 10) || 60,
@@ -145,6 +146,18 @@ export default function RoutineEditorScreen() {
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Error al guardar la rutina');
     }
+  };
+
+  const addManualExercise = () => {
+    setExercises((prev: any) => [...prev, {
+      id: Math.random().toString(36).substring(7),
+      exercise_id: null,
+      name: '',
+      sets: '3',
+      reps: '10',
+      rest_seconds: '60',
+      is_manual: true
+    }]);
   };
 
 
@@ -286,7 +299,7 @@ export default function RoutineEditorScreen() {
         </GlassButton>
         
         {/* Add Manual */}
-        <GlassButton theme={theme} colors={colors} onPress={() => {}} style={styles.manualBtn}>
+        <GlassButton theme={theme} colors={colors} onPress={addManualExercise} style={styles.manualBtn}>
           <Plus size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
           <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 16 }}>Añadir Ejercicio Manual</Text>
         </GlassButton>
@@ -319,17 +332,32 @@ export default function RoutineEditorScreen() {
             shadowRadius: 4,
             elevation: isActive ? 8 : 2
           }}>
-            {/* Media */}
-            <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
-              <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} staticOnly={true} />
-            </View>
+            {/* Media - hide for manual exercises */}
+            {!item.is_manual && (
+              <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
+                <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} staticOnly={true} />
+              </View>
+            )}
 
             {/* Content */}
-            <View style={{ padding: 16 }}>
+            <View style={{ flex: 1, padding: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, flex: 1, marginRight: 12 }} numberOfLines={2}>
-                  {item.name}
-                </Text>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  {item.is_manual ? (
+                    <TextInput
+                      style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, padding: 0, margin: 0, borderBottomWidth: 1, borderBottomColor: colors.border }}
+                      placeholder="Nombre del ejercicio..."
+                      placeholderTextColor={colors.textSecondary}
+                      value={item.name}
+                      onChangeText={(val) => updateExerciseField(item.id, 'name', val)}
+                    />
+                  ) : (
+                    <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18 }} numberOfLines={2}>{item.name}</Text>
+                  )}
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
+                    {item.muscle_group || item.category || 'Varios'}
+                  </Text>
+                </View>
                 <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}>
                   <Trash2 size={20} color="#ef4444" />
                 </TouchableOpacity>

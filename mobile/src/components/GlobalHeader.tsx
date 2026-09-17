@@ -99,8 +99,9 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
             <AnimatedBlurView 
                 intensity={theme === 'oled' ? 50 : 80}
                 tint={blurTint as any}
-                style={[StyleSheet.absoluteFill, { opacity: bgOpacity, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}
+                style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}
             />
+            <Animated.View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.border, opacity: bgOpacity }} />
             <View 
                 style={{ 
                     flexDirection: 'row', 

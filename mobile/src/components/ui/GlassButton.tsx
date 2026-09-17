@@ -15,9 +15,9 @@ interface GlassButtonProps {
 export function GlassButton({ onPress, children, theme, style }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     
-    // Base opacity: 0.4 for light mode, 0.15 for dark mode (using white tint)
-    const baseOpacity = theme === 'light' ? 0.4 : 0.15;
-    const pressedOpacity = theme === 'light' ? 0.6 : 0.3;
+    // Base opacity: 0.25 for light mode, 0.15 for dark mode (using white tint)
+    const baseOpacity = theme === 'light' ? 0.25 : 0.15;
+    const pressedOpacity = theme === 'light' ? 0.4 : 0.3;
     
     const bgOpacityAnim = useRef(new Animated.Value(baseOpacity)).current;
 
@@ -31,7 +31,7 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
 
     const handlePressIn = () => {
         Animated.spring(scaleAnim, {
-            toValue: 0.97,
+            toValue: 0.94,
             useNativeDriver: true,
             friction: 5,
             tension: 100
@@ -74,18 +74,23 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
         >
             <Animated.View style={[finalStyle, {
                 position: 'relative', 
-                transform: [{ scale: scaleAnim }]
+                transform: [{ scale: scaleAnim }],
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: theme === 'light' ? 0.08 : 0,
+                shadowRadius: 8,
+                elevation: theme === 'light' ? 2 : 0,
             }]}>
                 <View style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius, overflow: 'hidden' }]}>
                     <BlurView 
                         tint={theme === 'light' ? 'light' : 'dark'} 
-                        intensity={100}
+                        intensity={theme === 'light' ? 80 : 100}
                         experimentalBlurMethod="dimezisBlurView"
                         style={StyleSheet.absoluteFill} 
                     />
                     <AnimatedGlassBackground style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,1)', opacity: bgOpacityAnim }]} />
                 </View>
-                <View style={[StyleSheet.absoluteFill, { borderWidth: 1, borderColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.2)', borderRadius: finalBorderRadius }]} pointerEvents="none" />
+                <View style={[StyleSheet.absoluteFill, { borderWidth: 1, borderColor: theme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)', borderRadius: finalBorderRadius }]} pointerEvents="none" />
                 {children}
             </Animated.View>
         </Pressable>
