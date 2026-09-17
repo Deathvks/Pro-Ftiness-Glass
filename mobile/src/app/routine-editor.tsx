@@ -470,8 +470,8 @@ export default function RoutineEditorScreen() {
             data={exercises}
             onDragEnd={({ data }) => setExercises(data)}
             keyExtractor={(item) => item.id}
-            ListHeaderComponent={renderHeader}
-            ListFooterComponent={renderFooter}
+            ListHeaderComponent={renderHeader()}
+            ListFooterComponent={renderFooter()}
             renderItem={renderExerciseItem}
             contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: 40 }}
             onScrollOffsetChange={(offset) => scrollY.setValue(offset)}
