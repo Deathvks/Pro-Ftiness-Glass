@@ -338,7 +338,7 @@ export const getTrainerClientsChats = async (req, res, next) => {
           id: { [Op.ne]: userId },
           role: { [Op.not]: 'admin' } // Opcional, para no ver otros admins
         },
-        attributes: ['id', 'username', 'name', 'profile_image_url', 'role', 'trainer_id']
+        attributes: ['id', 'username', 'name', 'profile_image_url', 'role', 'trainer_id', 'lastSeen']
       });
     } else {
       // 1. Obtener todos los IDs de usuarios con los que hay mensajes (prospects)
@@ -366,7 +366,7 @@ export const getTrainerClientsChats = async (req, res, next) => {
             { id: Array.from(prospectIds) }
           ]
         },
-        attributes: ['id', 'username', 'name', 'profile_image_url', 'role', 'trainer_id']
+        attributes: ['id', 'username', 'name', 'profile_image_url', 'role', 'trainer_id', 'lastSeen']
       });
     }
 
