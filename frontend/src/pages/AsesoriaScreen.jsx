@@ -5,6 +5,7 @@ import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
 import { initSocket } from '../services/socket';
 import useAppStore from '../store/useAppStore';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
@@ -40,6 +41,7 @@ const formatLastSeen = (dateString) => {
 };
 
 export default function AsesoriaScreen({ onBack }) {
+  const { subscribe, isSubscribed } = usePushNotifications();
   const [trainer, setTrainer] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -95,37 +97,11 @@ export default function AsesoriaScreen({ onBack }) {
 
   const handleRequestPushPermission = async (e) => {
     e.preventDefault();
-    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-      import('@capacitor/push-notifications').then(async ({ PushNotifications }) => {
-        const permStatus = await PushNotifications.checkPermissions();
-        if (permStatus.receive === 'granted') {
-          addToast('Ya tienes las notificaciones activadas.', 'success');
-        } else {
-          const req = await PushNotifications.requestPermissions();
-          if (req.receive === 'granted') {
-            addToast('Notificaciones activadas.', 'success');
-            PushNotifications.register();
-          } else {
-            addToast('Permiso denegado.', 'error');
-          }
-        }
-      });
-    } else {
-      if (!('Notification' in window)) {
-        addToast('Tu navegador no soporta notificaciones.', 'error');
-        return;
-      }
-      if (Notification.permission === 'granted') {
-        addToast('Ya tienes las notificaciones activadas.', 'success');
-      } else {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          addToast('Notificaciones activadas.', 'success');
-        } else {
-          addToast('Permiso denegado.', 'error');
-        }
-      }
+    if (isSubscribed) {
+      addToast('Ya tienes las notificaciones activadas.', 'success');
+      return;
     }
+    await subscribe();
   };
 
   const renderMessageContent = (msg) => {
