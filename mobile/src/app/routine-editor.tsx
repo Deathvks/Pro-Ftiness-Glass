@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, Image, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, Image, Alert, Modal, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { X, Check, Image as ImageIcon, Folder, Info, ChevronDown, Plus, Camera, Search, Library, Sparkles, Upload, Save, Trash2, GripVertical, PlayCircle } from 'lucide-react-native';

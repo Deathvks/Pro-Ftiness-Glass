@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 import { useEffect, useState } from 'react';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
@@ -13,10 +13,12 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [isReady, setIsReady] = useState(false);
+  const [hasRestoredPath, setHasRestoredPath] = useState(false);
   
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const router = useRouter();
   const segments = useSegments();
+  const pathname = usePathname();
 
   useEffect(() => {
     async function prepare() {
@@ -33,11 +35,22 @@ export default function RootLayout() {
         });
       }
 
+      useAppStore.getState().loadRoutineEditorState();
+
       setIsReady(true);
       SplashScreen.hideAsync();
     }
     prepare();
   }, []);
+
+  // Save last path for reload persistence
+  useEffect(() => {
+    if (isReady && isAuthenticated && pathname && pathname !== '/' && !pathname.includes('login') && !pathname.includes('register')) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('last_path', pathname);
+      }
+    }
+  }, [pathname, isReady, isAuthenticated]);
 
   // Proteccion de Rutas
   useEffect(() => {
@@ -50,8 +63,15 @@ export default function RootLayout() {
       router.replace('/login');
     } else if (isAuthenticated && (inLogin || inRegister)) {
       router.replace('/(tabs)');
+    } else if (isAuthenticated && !hasRestoredPath) {
+      const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
+      if (lastPath && lastPath !== '/' && lastPath !== '/login' && lastPath !== '/register') {
+        // Allow time for initial render before jumping to the deep link
+        setTimeout(() => router.replace(lastPath as any), 0);
+      }
+      setHasRestoredPath(true);
     }
-  }, [isAuthenticated, isReady, segments]);
+  }, [isAuthenticated, isReady, segments, hasRestoredPath]);
 
   // Cargar datos iniciales
   useEffect(() => {
