@@ -8,6 +8,65 @@ import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getExerciseList } from '@/services/exerciseService';
 import apiClient from '@/services/apiClient';
+import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
+
+const SETS_OPTIONS: SelectOption[] = [
+  { value: '1', label: '1 Serie' },
+  { value: '2', label: '2 Series' },
+  { value: '3', label: '3 Series' },
+  { value: '4', label: '4 Series' },
+  { value: '5', label: '5 Series' },
+  { value: '6', label: '6 Series' },
+  { value: '7', label: '7 Series' },
+  { value: '8', label: '8 Series' },
+  { value: '9', label: '9 Series' },
+  { value: '10', label: '10 Series' },
+];
+
+const REPS_OPTIONS: SelectOption[] = [
+  { isHeader: true, label: "Repeticiones", value: 'header_reps' },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
+  { value: "6", label: "6" },
+  { value: "7", label: "7" },
+  { value: "8", label: "8" },
+  { value: "9", label: "9" },
+  { value: "10", label: "10" },
+  { value: "11", label: "11" },
+  { value: "12", label: "12" },
+  { value: "15", label: "15" },
+  { value: "20", label: "20" },
+  { value: "30", label: "30" },
+  { isHeader: true, label: "Rangos", value: 'header_ranges' },
+  { value: "1-3", label: "1-3" },
+  { value: "3-5", label: "3-5" },
+  { value: "5-8", label: "5-8" },
+  { value: "8-12", label: "8-12" },
+  { value: "10-15", label: "10-15" },
+  { value: "15-20", label: "15-20" },
+  { isHeader: true, label: "Especiales", value: 'header_special' },
+  { value: "Fallo", label: "Fallo" },
+  { value: "RIR 1", label: "RIR 1" },
+  { value: "RIR 2", label: "RIR 2" },
+  { value: "RIR 3", label: "RIR 3" },
+];
+
+const REST_OPTIONS: SelectOption[] = [
+  { value: "0", label: "0s" },
+  { value: "15", label: "15s" },
+  { value: "30", label: "30s" },
+  { value: "45", label: "45s" },
+  { value: "60", label: "1 min" },
+  { value: "90", label: "1m 30s" },
+  { value: "120", label: "2 min" },
+  { value: "150", label: "2m 30s" },
+  { value: "180", label: "3 min" },
+  { value: "240", label: "4 min" },
+  { value: "300", label: "5 min" },
+];
 
 interface ExerciseSearchModalProps {
   visible: boolean;
@@ -32,6 +91,26 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
   const [playingVideo, setPlayingVideo] = useState(false);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+
+  const [selectModalConfig, setSelectModalConfig] = useState<{
+    visible: boolean;
+    options: SelectOption[];
+    value: string | number;
+    title: string;
+    onSelect: (val: string | number) => void;
+  }>({
+    visible: false,
+    options: [],
+    value: '',
+    title: '',
+    onSelect: () => {}
+  });
+
+  const updateStagedExercise = (exerciseId: string, field: string, value: any) => {
+    setStagedExercises(prev => prev.map(item => 
+      item.exercise.id === exerciseId ? { ...item, [field]: value } : item
+    ));
+  };
 
   useEffect(() => {
     if (visible) {
@@ -374,40 +453,109 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                       />
                       <View style={{ padding: 12, flex: 1, backgroundColor: colors.background + '80' }}>
                         <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={2}>{item.exercise.name}</Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                          <View style={{ backgroundColor: colors.card, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                            <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }}>
-                              {item.exercise.muscle_group || item.exercise.category || 'OTRO'}
-                            </Text>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                            <View style={{ backgroundColor: colors.card, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                              <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                {item.exercise.muscle_group || item.exercise.category || 'OTRO'}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                            {/* Series */}
+                            <TouchableOpacity
+                              style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                              onPress={() => setSelectModalConfig({
+                                visible: true,
+                                title: 'Series',
+                                options: SETS_OPTIONS,
+                                value: String(item.sets),
+                                onSelect: (val) => updateStagedExercise(item.exercise.id, 'sets', val)
+                              })}
+                            >
+                              <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Series</Text>
+                              <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.sets}</Text>
+                            </TouchableOpacity>
+
+                            {/* Reps */}
+                            <TouchableOpacity
+                              style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                              onPress={() => {
+                                const curr = String(item.reps);
+                                const has = REPS_OPTIONS.some(o => o.value === curr);
+                                const opts = has ? REPS_OPTIONS : [{ value: curr, label: curr }, ...REPS_OPTIONS];
+                                setSelectModalConfig({
+                                  visible: true,
+                                  title: 'Repeticiones',
+                                  options: opts,
+                                  value: curr,
+                                  onSelect: (val) => updateStagedExercise(item.exercise.id, 'reps', val)
+                                });
+                              }}
+                            >
+                              <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Reps</Text>
+                              <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.reps}</Text>
+                            </TouchableOpacity>
+
+                            {/* Rest */}
+                            <TouchableOpacity
+                              style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                              onPress={() => {
+                                const curr = String(item.rest_seconds || "60");
+                                const has = REST_OPTIONS.some(o => o.value === curr);
+                                const opts = has ? REST_OPTIONS : [{ value: curr, label: `${curr}s` }, ...REST_OPTIONS];
+                                setSelectModalConfig({
+                                  visible: true,
+                                  title: 'Descanso',
+                                  options: opts,
+                                  value: curr,
+                                  onSelect: (val) => updateStagedExercise(item.exercise.id, 'rest_seconds', val)
+                                });
+                              }}
+                            >
+                              <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Desc. (s)</Text>
+                              <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.rest_seconds || 60}s</Text>
+                            </TouchableOpacity>
+                          </View>
+
+                          <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
+                            <TouchableOpacity 
+                              style={{ alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, flexDirection: 'row', gap: 8, borderRadius: 12, paddingVertical: 8 }}
+                              onPress={() => toggleStaged(item.exercise)}
+                            >
+                              <Trash2 size={18} color="#ef4444" />
+                              <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>Eliminar</Text>
+                            </TouchableOpacity>
                           </View>
                         </View>
-                        <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
-                          <TouchableOpacity 
-                            style={[styles.addButton, { backgroundColor: colors.background, borderColor: colors.border, alignSelf: 'stretch', width: 'auto', flexDirection: 'row', gap: 8, borderRadius: 12, paddingVertical: 8 }]}
-                            onPress={() => toggleStaged(item.exercise)}
-                          >
-                            <Trash2 size={18} color="#ef4444" />
-                            <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>Eliminar</Text>
-                          </TouchableOpacity>
-                        </View>
                       </View>
-                    </View>
-                  );
-                }}
-              />
-            )}
-            <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
-              <GlassButton theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16 }} onPress={handleConfirm}>
-                <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>
-                  Confirmar {stagedExercises.length} Ejercicios
-                </Text>
-              </GlassButton>
+                    );
+                  }}
+                />
+              )}
+              <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+                <GlassButton theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16 }} onPress={handleConfirm}>
+                  <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>
+                    Confirmar {stagedExercises.length} Ejercicios
+                  </Text>
+                </GlassButton>
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-      </View>
-    </Modal>
+        </View>
+
+        <SelectModal
+          visible={selectModalConfig.visible}
+          onClose={() => setSelectModalConfig(prev => ({ ...prev, visible: false }))}
+          options={selectModalConfig.options}
+          value={selectModalConfig.value}
+          onSelect={selectModalConfig.onSelect}
+          title={selectModalConfig.title}
+          theme={theme as 'light' | 'dark'}
+          colors={colors}
+        />
+      </Modal>
   );
 };
 
