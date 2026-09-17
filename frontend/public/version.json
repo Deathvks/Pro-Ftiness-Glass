@@ -1,5 +1,5 @@
 {
-    "version": "7.1.12",
-    "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.1.12/app-release.apk",
-    "notes": "Mejoras en la sincronización en tiempo real de notificaciones de asesoría en el Hub y panel de entrenador."
+    "version": "7.1.13",
+    "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.1.13/app-release.apk",
+    "notes": "Corrección de bug que causaba carga infinita al activar notificaciones push desde Ajustes, y mejora de sincronización con el asistente de asesoría."
 }
