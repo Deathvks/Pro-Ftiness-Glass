@@ -8,6 +8,7 @@ import { createGamificationSlice } from './gamificationSlice';
 import { createSocialSlice } from './socialSlice';
 import { createSyncSlice } from './syncSlice';
 import { createStorySlice } from './storySlice';
+import { createRoutineEditorSlice } from './routineEditorSlice';
 
 const useAppStore = create((set, get) => ({
     theme: (typeof localStorage !== 'undefined' && (typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null)) || 'oled',
@@ -23,6 +24,7 @@ const useAppStore = create((set, get) => ({
     ...createSocialSlice(set, get),
     ...createSyncSlice(set, get),
     ...createStorySlice(set, get),
+    ...createRoutineEditorSlice(set, get),
 
     // --- Animations Queue ---
     referralAnimationQueue: [],

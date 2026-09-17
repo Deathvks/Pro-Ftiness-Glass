@@ -9,11 +9,12 @@ import * as ImagePicker from 'expo-image-picker';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
-import DraggableFlatList from 'react-native-draggable-flatlist';
+import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 import { PixabayModal } from '@/components/modals/PixabayModal';
 import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
-
 import { CropModal } from '@/components/modals/CropModal';
+import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
+import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS } from '@/constants/exerciseOptions';
 
 export default function RoutineEditorScreen() {
   const router = useRouter();
@@ -21,16 +22,54 @@ export default function RoutineEditorScreen() {
   const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
   const insets = useSafeAreaInsets();
 
-  // Form State
-  const [routineName, setRoutineName] = useState('');
-  const [description, setDescription] = useState('');
-  const [folder, setFolder] = useState('');
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [exercises, setExercises] = useState<any[]>([]);
+  // Global Store State
+  const { routineEditorState, setRoutineEditorState, loadRoutineEditorState } = useAppStore(state => ({
+    routineEditorState: state.routineEditorState,
+    setRoutineEditorState: state.setRoutineEditorState,
+    loadRoutineEditorState: state.loadRoutineEditorState
+  }));
+
+  const { routineName, description, folder, imageUrl, exercises } = routineEditorState;
+
+  React.useEffect(() => {
+    loadRoutineEditorState();
+  }, []);
+
+  const setRoutineName = (val: string) => setRoutineEditorState({ routineName: val });
+  const setDescription = (val: string) => setRoutineEditorState({ description: val });
+  const setFolder = (val: string) => setRoutineEditorState({ folder: val });
+  const setImageUrl = (val: string | null) => setRoutineEditorState({ imageUrl: val });
+  const setExercises = (updater: any) => {
+    setRoutineEditorState((prev: any) => ({ 
+      exercises: typeof updater === 'function' ? updater(prev.exercises) : updater 
+    }));
+  };
+
+  // UI State
   const [showPixabay, setShowPixabay] = useState(false);
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const [showExerciseSearch, setShowExerciseSearch] = useState(false);
   const [cropImageUrl, setCropImageUrl] = useState<string | null>(null);
+
+  const [selectModalConfig, setSelectModalConfig] = useState<{
+    visible: boolean;
+    options: SelectOption[];
+    value: string | number;
+    title: string;
+    onSelect: (val: string | number) => void;
+  }>({
+    visible: false,
+    options: [],
+    value: '',
+    title: '',
+    onSelect: () => {}
+  });
+
+  const updateExerciseField = (exerciseId: string, field: string, value: any) => {
+    setExercises(prev => prev.map(ex => 
+      ex.id === exerciseId ? { ...ex, [field]: value } : ex
+    ));
+  };
 
   const routines = useAppStore(state => state.routines || []);
   const uniqueFolders = useMemo(() => {
@@ -249,67 +288,114 @@ export default function RoutineEditorScreen() {
             renderItem={({ item, drag, isActive }) => {
               const imgUrl = getImageUrl(item);
               return (
-                <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
-                  <View style={{ 
-                    flexDirection: 'column', 
-                    alignItems: 'stretch',
-                    backgroundColor: colors.card, 
-                    borderRadius: 16, 
-                    borderWidth: 1, 
-                    borderColor: isActive ? colors.tint : colors.border,
-                    overflow: 'hidden',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: isActive ? 0.3 : 0.1,
-                    shadowRadius: 4,
-                    elevation: isActive ? 8 : 2
-                  }}>
-                    {/* Media */}
-                    <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
-                      <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                      {(item.video_url || item.youtube_id) && (
-                        <View style={{ position: 'absolute', inset: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-                          <PlayCircle size={48} color="#fff" />
-                        </View>
-                      )}
-                    </View>
+                <ScaleDecorator activeScale={1.02}>
+                  <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+                    <View style={{ 
+                      flexDirection: 'column', 
+                      alignItems: 'stretch',
+                      backgroundColor: colors.card, 
+                      borderRadius: 16, 
+                      borderWidth: 1, 
+                      borderColor: isActive ? colors.tint : colors.border,
+                      overflow: 'hidden',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: isActive ? 0.3 : 0.1,
+                      shadowRadius: 4,
+                      elevation: isActive ? 8 : 2
+                    }}>
+                      {/* Media */}
+                      <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
+                        <Image source={{ uri: imgUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                        {(item.video_url || item.youtube_id) && (
+                          <View style={{ position: 'absolute', inset: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                            <PlayCircle size={48} color="#fff" />
+                          </View>
+                        )}
+                      </View>
 
-                    {/* Content */}
-                    <View style={{ padding: 16 }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, flex: 1, marginRight: 12 }} numberOfLines={2}>
-                          {item.name}
-                        </Text>
-                        <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}>
-                          <Trash2 size={20} color="#ef4444" />
+                      {/* Content */}
+                      <View style={{ padding: 16 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, flex: 1, marginRight: 12 }} numberOfLines={2}>
+                            {item.name}
+                          </Text>
+                          <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}>
+                            <Trash2 size={20} color="#ef4444" />
+                          </TouchableOpacity>
+                        </View>
+
+                        {/* Info Pills */}
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                          {/* Series */}
+                          <TouchableOpacity
+                            style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                            onPress={() => setSelectModalConfig({
+                              visible: true,
+                              title: 'Series',
+                              options: SETS_OPTIONS,
+                              value: String(item.sets),
+                              onSelect: (val) => updateExerciseField(item.id, 'sets', val)
+                            })}
+                          >
+                            <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Series</Text>
+                            <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.sets}</Text>
+                          </TouchableOpacity>
+
+                          {/* Reps */}
+                          <TouchableOpacity
+                            style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                            onPress={() => {
+                              const curr = String(item.reps);
+                              const has = REPS_OPTIONS.some(o => o.value === curr);
+                              const opts = has ? REPS_OPTIONS : [{ value: curr, label: curr }, ...REPS_OPTIONS];
+                              setSelectModalConfig({
+                                visible: true,
+                                title: 'Repeticiones',
+                                options: opts,
+                                value: curr,
+                                onSelect: (val) => updateExerciseField(item.id, 'reps', val)
+                              });
+                            }}
+                          >
+                            <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Reps</Text>
+                            <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.reps}</Text>
+                          </TouchableOpacity>
+
+                          {/* Rest */}
+                          <TouchableOpacity
+                            style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                            onPress={() => {
+                              const curr = String(item.rest_seconds || "60");
+                              const has = REST_OPTIONS.some(o => o.value === curr);
+                              const opts = has ? REST_OPTIONS : [{ value: curr, label: `${curr}s` }, ...REST_OPTIONS];
+                              setSelectModalConfig({
+                                visible: true,
+                                title: 'Descanso',
+                                options: opts,
+                                value: curr,
+                                onSelect: (val) => updateExerciseField(item.id, 'rest_seconds', val)
+                              });
+                            }}
+                          >
+                            <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Desc. (s)</Text>
+                            <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.rest_seconds || 60}s</Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        {/* Drag Handle */}
+                        <TouchableOpacity 
+                          onLongPress={drag} 
+                          disabled={isActive}
+                          style={{ marginTop: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}
+                        >
+                          <GripVertical size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                          <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 14 }}>Mantén para reordenar</Text>
                         </TouchableOpacity>
                       </View>
-
-                      {/* Info Pills */}
-                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                        <View style={{ backgroundColor: colors.background, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
-                          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 'bold' }}>{item.sets} SERIES</Text>
-                        </View>
-                        <View style={{ backgroundColor: colors.background, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
-                          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 'bold' }}>{item.reps} REPS</Text>
-                        </View>
-                        <View style={{ backgroundColor: colors.background, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
-                          <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: 'bold' }}>{item.rest_seconds || 60}s DESC</Text>
-                        </View>
-                      </View>
-
-                      {/* Drag Handle */}
-                      <TouchableOpacity 
-                        onLongPress={drag} 
-                        disabled={isActive}
-                        style={{ marginTop: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}
-                      >
-                        <GripVertical size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                        <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 14 }}>Mantén para reordenar</Text>
-                      </TouchableOpacity>
                     </View>
                   </View>
-                </View>
+                </ScaleDecorator>
               );
             }}
             contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: 40 }}
@@ -372,6 +458,17 @@ export default function RoutineEditorScreen() {
           }));
           setExercises(prev => [...prev, ...mapped]);
         }}
+      />
+
+      <SelectModal
+        visible={selectModalConfig.visible}
+        onClose={() => setSelectModalConfig(prev => ({ ...prev, visible: false }))}
+        options={selectModalConfig.options}
+        value={selectModalConfig.value}
+        onSelect={selectModalConfig.onSelect}
+        title={selectModalConfig.title}
+        theme={theme as 'light' | 'dark'}
+        colors={colors}
       />
     </View>
   );

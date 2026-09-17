@@ -9,64 +9,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { getExerciseList } from '@/services/exerciseService';
 import apiClient from '@/services/apiClient';
 import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
-
-const SETS_OPTIONS: SelectOption[] = [
-  { value: '1', label: '1 Serie' },
-  { value: '2', label: '2 Series' },
-  { value: '3', label: '3 Series' },
-  { value: '4', label: '4 Series' },
-  { value: '5', label: '5 Series' },
-  { value: '6', label: '6 Series' },
-  { value: '7', label: '7 Series' },
-  { value: '8', label: '8 Series' },
-  { value: '9', label: '9 Series' },
-  { value: '10', label: '10 Series' },
-];
-
-const REPS_OPTIONS: SelectOption[] = [
-  { isHeader: true, label: "Repeticiones", value: 'header_reps' },
-  { value: "1", label: "1" },
-  { value: "2", label: "2" },
-  { value: "3", label: "3" },
-  { value: "4", label: "4" },
-  { value: "5", label: "5" },
-  { value: "6", label: "6" },
-  { value: "7", label: "7" },
-  { value: "8", label: "8" },
-  { value: "9", label: "9" },
-  { value: "10", label: "10" },
-  { value: "11", label: "11" },
-  { value: "12", label: "12" },
-  { value: "15", label: "15" },
-  { value: "20", label: "20" },
-  { value: "30", label: "30" },
-  { isHeader: true, label: "Rangos", value: 'header_ranges' },
-  { value: "1-3", label: "1-3" },
-  { value: "3-5", label: "3-5" },
-  { value: "5-8", label: "5-8" },
-  { value: "8-12", label: "8-12" },
-  { value: "10-15", label: "10-15" },
-  { value: "15-20", label: "15-20" },
-  { isHeader: true, label: "Especiales", value: 'header_special' },
-  { value: "Fallo", label: "Fallo" },
-  { value: "RIR 1", label: "RIR 1" },
-  { value: "RIR 2", label: "RIR 2" },
-  { value: "RIR 3", label: "RIR 3" },
-];
-
-const REST_OPTIONS: SelectOption[] = [
-  { value: "0", label: "0s" },
-  { value: "15", label: "15s" },
-  { value: "30", label: "30s" },
-  { value: "45", label: "45s" },
-  { value: "60", label: "1 min" },
-  { value: "90", label: "1m 30s" },
-  { value: "120", label: "2 min" },
-  { value: "150", label: "2m 30s" },
-  { value: "180", label: "3 min" },
-  { value: "240", label: "4 min" },
-  { value: "300", label: "5 min" },
-];
+import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS } from '@/constants/exerciseOptions';
 
 interface ExerciseSearchModalProps {
   visible: boolean;
