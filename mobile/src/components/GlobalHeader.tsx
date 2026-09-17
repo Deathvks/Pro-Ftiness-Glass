@@ -46,6 +46,54 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
 
     const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
+    const ProfileButton = () => {
+        const scaleAnim = useRef(new Animated.Value(1)).current;
+        const opacityAnim = useRef(new Animated.Value(1)).current;
+
+        const handlePressIn = () => {
+            Animated.spring(scaleAnim, { toValue: 0.82, useNativeDriver: true, friction: 5, tension: 100 }).start();
+            Animated.timing(opacityAnim, { toValue: 0.6, duration: 150, useNativeDriver: true }).start();
+        };
+
+        const handlePressOut = () => {
+            Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 5, tension: 100 }).start();
+            Animated.timing(opacityAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+        };
+
+        return (
+            <Pressable 
+                onPress={() => router.push('/profile')} 
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                style={{ width: 40, height: 40, borderRadius: 20 }}
+            >
+                <Animated.View style={{ 
+                    flex: 1, 
+                    borderRadius: 20, 
+                    overflow: 'hidden', 
+                    transform: [{ scale: scaleAnim }],
+                    opacity: opacityAnim,
+                    borderWidth: 1, 
+                    borderColor: colors.border,
+                    backgroundColor: colors.card,
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 8
+                }}>
+                    {imageUrl ? (
+                        <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} />
+                    ) : (
+                        <User size={20} color={colors.textSecondary} />
+                    )}
+                </Animated.View>
+            </Pressable>
+        );
+    };
+
     return (
         <View style={{ position: 'relative' }}>
             <AnimatedBlurView 
@@ -76,20 +124,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                         <ChevronLeft size={24} color={colors.text} />
                     </GlassButton>
                 ) : (
-                    <GlassButton 
-                        onPress={() => router.push('/profile')} 
-                        theme={theme}
-                        style={{
-                            width: 40, height: 40, borderRadius: 20, 
-                            alignItems: 'center', justifyContent: 'center'
-                        }}
-                    >
-                        {imageUrl ? (
-                            <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%', borderRadius: 20 }} />
-                        ) : (
-                            <User size={20} color={colors.textSecondary} />
-                        )}
-                    </GlassButton>
+                    <ProfileButton />
                 )}
                 {title && (
                     <Text style={{ color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 }}>{title}</Text>

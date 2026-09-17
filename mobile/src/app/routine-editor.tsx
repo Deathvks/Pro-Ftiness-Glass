@@ -111,8 +111,40 @@ export default function RoutineEditorScreen() {
     }
   };
 
-  const handleSave = () => {
-    goBackSafe();
+  const handleSave = async () => {
+    if (!routineName.trim()) {
+      Alert.alert('Datos incompletos', 'Por favor ingresa un nombre para la rutina.');
+      return;
+    }
+    if (exercises.length === 0) {
+      Alert.alert('Datos incompletos', 'Añade al menos un ejercicio a tu rutina.');
+      return;
+    }
+
+    const routineData = {
+        name: routineName,
+        description: description,
+        image_url: imageUrl,
+        folder: folder || null,
+        is_trainer_template: false,
+        exercises: exercises.map((ex: any, index: number) => ({
+          exercise_id: ex.exercise_id || ex.id,
+          sets: parseInt(String(ex.sets), 10) || 3,
+          reps: String(ex.reps),
+          rest_seconds: parseInt(String(ex.rest_seconds), 10) || 60,
+          exercise_order: index,
+        }))
+    };
+
+    try {
+      const createRoutine = useAppStore.getState().createRoutine;
+      await createRoutine(routineData);
+      
+      useAppStore.getState().clearRoutineEditorState();
+      goBackSafe();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Error al guardar la rutina');
+    }
   };
 
 
@@ -393,7 +425,7 @@ export default function RoutineEditorScreen() {
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
           <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : 'default'} style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
-          <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
+          <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
         </Animated.View>
         
         <GlassButton theme={theme} onPress={() => goBackSafe()} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
