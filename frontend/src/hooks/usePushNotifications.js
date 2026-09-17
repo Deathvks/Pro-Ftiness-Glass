@@ -160,6 +160,12 @@ export const usePushNotifications = () => {
 
     setIsLoading(true);
     setError(null);
+    
+    // Fallback timeout global absoluto para asegurar que nunca se quede colgado
+    const globalTimeout = setTimeout(() => {
+       setIsLoading(false);
+       addToast('Tiempo agotado. Comprueba tu conexión o reinicia la app.', 'warning');
+    }, 15000);
 
     try {
       if (isNative) {
@@ -169,12 +175,14 @@ export const usePushNotifications = () => {
           // Esto dispara el listener 'registration' que configuramos en el useEffect
           timeoutRef.current = setTimeout(() => {
              setIsLoading(false);
+             clearTimeout(globalTimeout);
              addToast('Tiempo agotado. Revisa tus servicios de Google Play o la conexión.', 'warning');
           }, 10000);
           await PushNotifications.register(); 
         } else {
           addToast('No se ha concedido el permiso para las notificaciones.', 'warning');
           setIsLoading(false);
+          clearTimeout(globalTimeout);
         }
       } else {
         // --- SUSCRIPCIÓN WEB (VAPID) ---
@@ -183,6 +191,7 @@ export const usePushNotifications = () => {
         if (permission === 'denied') {
           addToast('Has bloqueado las notificaciones. Debes activarlas en los ajustes de tu navegador.', 'error');
           setIsLoading(false);
+          clearTimeout(globalTimeout);
           return;
         }
 
@@ -192,6 +201,7 @@ export const usePushNotifications = () => {
           if (newPermission !== 'granted') {
             addToast('No se ha concedido el permiso para las notificaciones.', 'warning');
             setIsLoading(false);
+            clearTimeout(globalTimeout);
             return;
           }
         }
@@ -202,7 +212,11 @@ export const usePushNotifications = () => {
         const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
 
         // 4. Suscribir el PushManager
-        const registration = await getServiceWorkerRegistration();
+        const registration = await Promise.race([
+            getServiceWorkerRegistration(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker timeout')), 5000))
+        ]);
+        
         const newSubscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey,
@@ -215,9 +229,11 @@ export const usePushNotifications = () => {
         setIsSubscribed(true);
         addToast('¡Notificaciones activadas!', 'success');
         setIsLoading(false);
+        clearTimeout(globalTimeout);
       }
 
     } catch (err) {
+      clearTimeout(globalTimeout);
       // --- INICIO DE LA MODIFICACIÓN: Detección de error específico de Brave ---
       const errorMessage = err.message || '';
       
