@@ -123,6 +123,7 @@ export default function App() {
     isResting,
     restTimerMode,
     myStories,
+    unreadChats,
     sessionExpired,
     cookieConsent,
     showWelcomeModal,
@@ -138,6 +139,7 @@ export default function App() {
     isResting: state.isResting,
     restTimerMode: state.restTimerMode,
     myStories: state.myStories,
+    unreadChats: state.unreadChats,
     sessionExpired: state.sessionExpired,
     cookieConsent: state.cookieConsent,
     showWelcomeModal: state.showWelcomeModal,
@@ -401,8 +403,8 @@ export default function App() {
     { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: (active) => active ? <UsersSolid className="w-6 h-6" /> : <UsersOutline className="w-6 h-6" /> },
     { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: (active) => active ? <FireSolid className="w-6 h-6" /> : <FireOutline className="w-6 h-6" /> },
     { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: (active) => active ? <BoltSolid className="w-6 h-6" /> : <BoltOutline className="w-6 h-6" /> },
-    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub, icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
-  ], [t, visitedHub]);
+    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
+  ], [t, visitedHub, unreadChats]);
 
     const mainViews = useMemo(() => ({
       dashboard: <Dashboard setView={navigateInternal} />,

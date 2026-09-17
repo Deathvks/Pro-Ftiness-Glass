@@ -152,6 +152,8 @@ export default function AsesoriaScreen({ onBack }) {
   const markAsRead = async (otherId) => {
     try {
       await apiClient(`/chat/mark-read/${otherId}`, { method: 'POST' });
+      const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
+      if (fetchUnreadChats) fetchUnreadChats();
     } catch (e) {
       console.error('Error marking as read:', e);
     }

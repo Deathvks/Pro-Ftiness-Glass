@@ -97,6 +97,11 @@ export const createDataSlice = (set, get) => ({
 
       set({ userProfile: profileData, isAuthenticated: true });
 
+      // Obtener el conteo de chats no leídos
+      if (get().fetchUnreadChats) {
+        get().fetchUnreadChats();
+      }
+
       if (profileData && get().setGamificationData) {
         get().setGamificationData({
           xp: profileData.xp,

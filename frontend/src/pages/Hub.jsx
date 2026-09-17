@@ -57,20 +57,16 @@ const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, 
 
 export default function Hub({ setView }) {
   const userProfile = useAppStore(state => state.userProfile);
+  const unreadChats = useAppStore(state => state.unreadChats);
   const [visitedChallenges, setVisitedChallenges] = React.useState(true);
   const [visitedAsesoria, setVisitedAsesoria] = React.useState(true);
   const [showCoachingPromo, setShowCoachingPromo] = useState(false);
-  const [unreadAdminChats, setUnreadAdminChats] = useState(0);
 
   React.useEffect(() => {
     if (userProfile?.id) {
       setVisitedChallenges(localStorage.getItem(`visited_challenges_v2_${userProfile.id}`) === 'true');
       setVisitedAsesoria(localStorage.getItem(`visited_asesoria_${userProfile.id}`) === 'true');
       
-      apiClient('/chat/unread-count')
-        .then(res => setUnreadAdminChats(res.unreadCount || 0))
-        .catch(e => console.error(e));
-        
       if (!['trainer', 'admin'].includes(userProfile?.role)) {
         const hasSeen = localStorage.getItem(`coaching_promo_seen_v2_${userProfile.id}`);
         if (!hasSeen) {
@@ -137,7 +133,7 @@ export default function Hub({ setView }) {
                   setVisitedAsesoria(true);
                   setView('asesoria');
                 }}
-                badge={!visitedAsesoria || unreadAdminChats > 0}
+                badge={!visitedAsesoria || unreadChats > 0}
               />
           )}
 
@@ -187,7 +183,7 @@ export default function Hub({ setView }) {
               title="Panel de Entrenador"
               description="Gestión de clientes y cuestionarios"
               onClick={() => setView('trainerPanel')}
-              badge={unreadAdminChats > 0}
+              badge={unreadChats > 0}
             />
           )}
 

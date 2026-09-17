@@ -703,9 +703,19 @@ export default function MainAppLayout({
       }
     };
 
-    socket.on('GAMIFICATION_EVENT', handleGamificationEvent);
-    return () => socket.off('GAMIFICATION_EVENT', handleGamificationEvent);
-  }, [userProfile, addToast, setGamificationData]);
+      const handleChatEvent = () => {
+        const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
+        if (fetchUnreadChats) fetchUnreadChats();
+      };
+
+      socket.on('GAMIFICATION_EVENT', handleGamificationEvent);
+      socket.on('chat_message', handleChatEvent);
+      
+      return () => {
+        socket.off('GAMIFICATION_EVENT', handleGamificationEvent);
+        socket.off('chat_message', handleChatEvent);
+      };
+    }, [userProfile, addToast, setGamificationData]);
 
   useEffect(() => {
     if (userProfile && userProfile.email && userProfile.email.endsWith('@x-auth.local')) {

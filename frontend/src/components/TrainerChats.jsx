@@ -197,6 +197,8 @@ export default function TrainerChats({ onClose }) {
     try {
       await apiClient(`/chat/mark-read/${clientId}`, { method: 'POST' });
       setClients((prev) => prev.map((c) => String(c.id) === String(clientId) ? { ...c, unreadCount: 0 } : c));
+      const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
+      if (fetchUnreadChats) fetchUnreadChats();
     } catch (e) {
       console.error("Error marcando como leido", e);
     }
