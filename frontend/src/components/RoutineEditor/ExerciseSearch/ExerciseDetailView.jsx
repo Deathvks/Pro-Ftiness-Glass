@@ -229,11 +229,17 @@ const ExerciseDetailView = ({
   const inputClasses =
     "w-full text-center px-4 py-3.5 rounded-[16px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:ring-2 focus:ring-accent/50 outline-none transition-all font-bold text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
-  const currentReps = String(reps || "10");
+   const currentReps = String(reps || "10");
   const hasCurrentRep = REP_OPTIONS.some((opt) => opt.value === currentReps);
   const repOptionsToUse = hasCurrentRep
     ? REP_OPTIONS
     : [{ value: currentReps, label: currentReps }, ...REP_OPTIONS];
+
+  const currentRest = String(rest || "60");
+  const hasCurrentRest = REST_OPTIONS.some((opt) => opt.value === currentRest);
+  const restOptionsToUse = hasCurrentRest
+    ? REST_OPTIONS
+    : [{ value: currentRest, label: `${currentRest}s` }, ...REST_OPTIONS];
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
