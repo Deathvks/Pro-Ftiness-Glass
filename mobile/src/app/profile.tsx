@@ -298,11 +298,26 @@ export default function ProfileScreen() {
                                 const IconComp = badge.icon;
                                 return (
                                     <>
-                                        <View style={{ width: 80, height: 80, borderRadius: 24, backgroundColor: badge.bg, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                                            <IconComp size={40} color={badge.color} />
+                                        <View style={{ 
+                                            padding: 20, 
+                                            borderRadius: 20, 
+                                            backgroundColor: colors.background, 
+                                            marginBottom: 16,
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.1,
+                                            shadowRadius: 8,
+                                            elevation: 3,
+                                            borderWidth: 1,
+                                            borderColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'
+                                        }}>
+                                            <IconComp size={36} color={badge.color} strokeWidth={1.5} />
                                         </View>
                                         <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text, textAlign: 'center', marginBottom: 4 }}>{badge.name}</Text>
                                         <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center' }}>{badge.desc}</Text>
+                                        <Text style={{ fontSize: 11, color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+                                            {currentBadgeIndex + 1} / {gamification.unlockedBadges.length}
+                                        </Text>
                                     </>
                                 );
                             })()}

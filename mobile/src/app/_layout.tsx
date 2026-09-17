@@ -43,10 +43,13 @@ export default function RootLayout() {
     prepare();
   }, []);
 
-  // Save last path for reload persistence
+  // Save last path for reload persistence — only save stable tab paths
   useEffect(() => {
-    if (isReady && isAuthenticated && pathname && pathname !== '/' && !pathname.includes('login') && !pathname.includes('register')) {
-      if (typeof localStorage !== 'undefined') {
+    if (isReady && isAuthenticated && pathname && pathname !== '/') {
+      const isStablePath = pathname.startsWith('/(tabs)') || pathname === '/routines' || pathname === '/nutrition' || pathname === '/hub' || pathname === '/social' || pathname === '/profile' || pathname === '/notifications';
+      // Also save if it's the index tab
+      const isIndex = pathname === '/' || pathname === '/index';
+      if ((isStablePath || isIndex) && typeof localStorage !== 'undefined') {
         localStorage.setItem('last_path', pathname);
       }
     }
@@ -64,12 +67,15 @@ export default function RootLayout() {
     } else if (isAuthenticated && (inLogin || inRegister)) {
       router.replace('/(tabs)');
     } else if (isAuthenticated && !hasRestoredPath) {
-      const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
-      if (lastPath && lastPath !== '/' && lastPath !== '/login' && lastPath !== '/register') {
-        // Allow time for initial render before jumping to the deep link
-        setTimeout(() => router.replace(lastPath as any), 0);
-      }
       setHasRestoredPath(true);
+      // Only restore if we're currently at the root/index — don't redirect if already navigated
+      const atRoot = segments.length <= 1 || (segments[0] === '(tabs)' && (!segments[1] || segments[1] === 'index'));
+      if (atRoot) {
+        const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
+        if (lastPath && lastPath !== '/' && lastPath !== '/index' && !lastPath.includes('login') && !lastPath.includes('register')) {
+          setTimeout(() => router.replace(lastPath as any), 100);
+        }
+      }
     }
   }, [isAuthenticated, isReady, segments, hasRestoredPath]);
 

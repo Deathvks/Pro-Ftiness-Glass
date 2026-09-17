@@ -177,7 +177,7 @@ export default function RoutineEditorScreen() {
       
       <View style={{ alignItems: 'center', marginBottom: 24 }}>
         {/* Cover Image Preview */}
-        <View style={[styles.imagePreviewContainer, { backgroundColor: colors.card, borderColor: colors.border, width: '60%', aspectRatio: 16/9, height: 'auto' }]}>
+        <View style={[styles.imagePreviewContainer, { backgroundColor: colors.card, borderColor: imageUrl ? colors.tint : colors.border, borderWidth: imageUrl ? 2 : 1, width: '60%', aspectRatio: 16/9, height: 'auto' }]}>
           {imageUrl ? (
             <>
               {imageUrl.startsWith('grad-') ? (
